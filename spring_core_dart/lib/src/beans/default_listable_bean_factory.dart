@@ -234,6 +234,11 @@ class DefaultListableBeanFactory
       if (!allowBeanDefinitionOverriding) {
         throw BeanDefinitionOverrideException(name, definition.source);
       }
+      _log.debug(
+        () =>
+            "Overriding bean definition for bean '$name' with a different "
+            'definition',
+      );
     } else if (_aliases.containsKey(name)) {
       // Like Spring: with overriding allowed the definition takes the name
       // over from the alias (which is freed); otherwise an alias of an
@@ -1657,6 +1662,7 @@ class DefaultListableBeanFactory
         if (_destroyingSingletons) {
           throw BeanCreationNotAllowedException(name);
         }
+        _log.debug(() => "Creating shared instance of singleton bean '$name'");
         final (raw, exposed) = _createBean(definition);
         _singletons[name] = exposed;
         _rawSingletons[name] = raw;
@@ -1822,6 +1828,7 @@ class DefaultListableBeanFactory
       ]);
     }
     _inCreation.add(name);
+    _log.trace(() => "Creating instance of bean '$name'");
     try {
       for (final dependsOn in definition.dependsOn) {
         registerDependentBean(dependsOn, name);
@@ -1866,6 +1873,7 @@ class DefaultListableBeanFactory
         }
       }
       final exposed = _initialize(raw, name, definition);
+      _log.trace(() => "Finished creating instance of bean '$name'");
       return (raw, exposed);
     } on BeanCreationException catch (error, stackTrace) {
       // Wrap a nested bean's failure once per level so the message shows
@@ -2036,6 +2044,9 @@ class DefaultListableBeanFactory
 
   @override
   void preInstantiateSingletons() {
+    _log.trace(
+      () => 'Pre-instantiating singletons in DefaultListableBeanFactory',
+    );
     final pending = _createEagerSingletons();
     if (pending.isNotEmpty) {
       for (final (_, future) in pending) {
@@ -2056,6 +2067,9 @@ class DefaultListableBeanFactory
 
   @override
   Future<void> preInstantiateSingletonsAsync() async {
+    _log.trace(
+      () => 'Pre-instantiating singletons in DefaultListableBeanFactory',
+    );
     final pending = _createEagerSingletons();
     // Every Future gets its listener right away (no unhandled errors);
     // the first failure wins, named after its bean.
@@ -2313,6 +2327,7 @@ class DefaultListableBeanFactory
     // Reverse creation order; _destroySingleton also destroys dependents
     // first. Singletons registered with registerSingleton are kept (they
     // are owned by the caller and were never initialized here).
+    _log.trace(() => 'Destroying singletons in DefaultListableBeanFactory');
     _destructionErrors.clear();
     _destroyingSingletons = true;
     try {
@@ -2326,6 +2341,7 @@ class DefaultListableBeanFactory
 
   @override
   Future<void> destroySingletonsAsync() async {
+    _log.trace(() => 'Destroying singletons in DefaultListableBeanFactory');
     _destructionErrors.clear();
     _destroyingSingletons = true;
     _asyncDestroy = true;
@@ -2428,14 +2444,30 @@ class DefaultListableBeanFactory
     return _runInOrder(
       [
         () => _guardDestruction(name, () => definition.invokePreDestroy(raw)),
-        if (raw is DisposableBean) () => _guardDestruction(name, raw.destroy),
+        if (raw is DisposableBean)
+          () {
+            _destroyLog.trace(
+              () => "Invoking destroy() on bean with name '$name'",
+            );
+            return _guardDestruction(name, raw.destroy);
+          },
         if (!(disposable &&
             (destroyMethod == BeanDefinition.inferMethod ||
                 destroyMethod == 'destroy')))
-          () => _guardDestruction(
-            name,
-            () => definition.invokeDestroyMethod(raw),
-          ),
+          () {
+            if (destroyMethod != null &&
+                destroyMethod != BeanDefinition.inferMethod) {
+              _destroyLog.trace(
+                () =>
+                    "Invoking custom destroy method '$destroyMethod' on bean "
+                    "with name '$name'",
+              );
+            }
+            return _guardDestruction(
+              name,
+              () => definition.invokeDestroyMethod(raw),
+            );
+          },
       ].iterator,
     );
   }

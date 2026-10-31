@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- Debug and trace lines in Spring Security's words: `Authenticating request with UsernamePasswordAuthenticationToken (1/1)` (trace), `Failed to find user 'ada'` and `Failed to authenticate since password does not match stored value` (debug; the user name goes through `LogFormatUtils`, the password is never logged), `Failed to authenticate since Bad credentials`, and a denied method call (`@PreAuthorize`, `@Secured`). The old debug text for a wrong password is now Spring's.
+
 ## 0.5.0
 
 ### Changes

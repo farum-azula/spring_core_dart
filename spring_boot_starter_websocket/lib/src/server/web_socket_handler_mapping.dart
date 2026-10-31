@@ -10,6 +10,9 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.websocket.server');
 
+// A client's text, quoted and cut for a log line.
+String _quoted(String? value) => LogFormatUtils.formatValue(value);
+
 /// The bean that routes incoming WebSocket handshakes to the right
 /// handler: the `@WebSocketEndpoint` beans and the [WebSocketHandler]s of
 /// the [WebSocketConfigurer] beans.
@@ -190,12 +193,17 @@ final class WebSocketHandlerMapping
     ServerHttpResponse response,
   ) async {
     if (!request.isWebSocketUpgrade) {
+      _log.debug(
+        () => 'Handshake refused for ${route.pattern.pattern}: not an upgrade',
+      );
       return await response.send(400, 'Can "Upgrade" only to "WebSocket".');
     }
     if (!route.allowsOrigin(request)) {
       _log.debug(
-        'Handshake from origin ${request.headers[HttpHeaders.originHeader]} '
-        'refused for ${route.pattern.pattern}',
+        () =>
+            'Handshake from origin '
+            '${_quoted(request.headers[HttpHeaders.originHeader])} '
+            'refused for ${route.pattern.pattern}',
       );
       return await response.send(403, 'Origin not allowed');
     }
@@ -210,12 +218,22 @@ final class WebSocketHandlerMapping
     if (route.handler case final _EndpointAdapter adapter) {
       // Like a controller's path variable that does not convert: 400.
       if (adapter.checkVariables(variables) case final problem?) {
+        _log.debug(
+          () =>
+              'Handshake refused for ${route.pattern.pattern}: a path '
+              'variable does not convert',
+        );
         return await response.send(400, problem);
       }
     }
     final attributes = <String, Object?>{};
     for (final interceptor in route.interceptors) {
       if (!await interceptor.beforeHandshake(request, response, attributes)) {
+        _log.debug(
+          () =>
+              'Handshake refused for ${route.pattern.pattern} by '
+              '${interceptor.runtimeType}',
+        );
         if (!response.isCommitted) {
           await response.send(403, 'Handshake refused');
         }
@@ -242,6 +260,11 @@ final class WebSocketHandlerMapping
       attributes: attributes,
     );
     sessions.register(route.path, session);
+    _log.debug(
+      () =>
+          'Handshake accepted for ${route.pattern.pattern}'
+          '${protocol == null ? '' : ' (subprotocol ${_quoted(protocol)})'}',
+    );
     unawaited(
       _run(route, session).catchError((Object error, StackTrace stackTrace) {
         _log.error(
@@ -286,9 +309,15 @@ final class WebSocketHandlerMapping
       // (refusing the client, or after an error) still ends the stream
       // here, with the close status.
       subscription = session.messages.listen(
-        (message) => handle(
-          () => guarded(() => handler.handleMessage(session, message)),
-        ),
+        (message) {
+          _log.trace(
+            () => message is String
+                ? 'Received a text message of ${message.length} characters'
+                : 'Received a binary message of '
+                      '${(message as List<int>).length} bytes',
+          );
+          handle(() => guarded(() => handler.handleMessage(session, message)));
+        },
         onError: (Object error, StackTrace stackTrace) =>
             handle(() => _failed(handler, session, error, stackTrace)),
         // Delivered after the last message has been handled.
@@ -296,6 +325,11 @@ final class WebSocketHandlerMapping
         cancelOnError: false,
       )..pause();
       established = true;
+      _log.debug(
+        () =>
+            'Opened WebSocket session ${session.id} at '
+            '${route.pattern.pattern}',
+      );
       await guarded(() => handler.afterConnectionEstablished(session));
       subscription.resume();
       await closed.future;
@@ -314,6 +348,11 @@ final class WebSocketHandlerMapping
     } finally {
       sessions.unregister(route.path, session);
       if (established) {
+        _log.debug(
+          () =>
+              'Closed WebSocket session ${session.id} with code '
+              '${(session.closeStatus ?? CloseStatus.noStatusCode).code}',
+        );
         await guarded(
           () => handler.afterConnectionClosed(
             session,

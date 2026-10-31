@@ -9,6 +9,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/multipart_store_stub.dart'
     if (dart.library.io) 'package:spring_boot_starter_web/src/multipart_store_io.dart'
     as store;
+import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
@@ -381,6 +382,10 @@ final class MultipartResolver {
           }
           final stored = await writer.close();
           writing = null;
+          _log.trace(
+            () =>
+                'Part ${logQuoted(name, maxLength: 60)}: a file of $size bytes',
+          );
           if (stored.isTemporary) {
             temporary.add(stored);
           }
@@ -402,6 +407,11 @@ final class MultipartResolver {
             }
           }
           final bytes = out.takeBytes();
+          _log.trace(
+            () =>
+                'Part ${logQuoted(name, maxLength: 60)}: a field of '
+                '${bytes.length} bytes',
+          );
           (parts[name] ??= []).add((part.headers, bytes));
           (fields[name] ??= []).add(_text(part.headers, bytes));
         }
@@ -422,6 +432,12 @@ final class MultipartResolver {
         await _quietly(cleanup);
       }
     }
+    _log.debug(
+      () =>
+          'Read a multipart request: ${files.values.expand((f) => f).length} '
+          'files, ${fields.values.expand((f) => f).length} fields, $total '
+          'bytes',
+    );
     return MultipartRequest._(files, fields, parts, cleanup);
   }
 

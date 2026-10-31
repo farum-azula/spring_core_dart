@@ -7,8 +7,13 @@ import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
 import 'package:spring_boot_starter_security/src/web/authentication.dart';
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
+
+const _log = SpringLog(
+  'spring.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter',
+);
 
 const _rfc6750 = 'https://tools.ietf.org/html/rfc6750#section-3.1';
 
@@ -554,12 +559,17 @@ final class BearerTokenAuthenticationFilter implements WebFilter {
     try {
       token = bearerTokenResolver.resolve(request);
     } on OAuth2AuthenticationException catch (e) {
+      _log.debug(
+        () => 'Failed to process authentication request: ${logText(e.message)}',
+      );
       await authenticationEntryPoint.commence(request, response, e);
       return;
     }
     if (token == null) {
+      _log.trace('Did not find a bearer token in the request');
       return await chain.doFilter(request, response);
     }
+    _log.trace('Found a bearer token in the request');
     final Authentication result;
     try {
       result = await authenticationManager.authenticate(
@@ -568,6 +578,9 @@ final class BearerTokenAuthenticationFilter implements WebFilter {
       );
     } on AuthenticationException catch (e) {
       SecurityContextHolder.clearContext();
+      _log.debug(
+        () => 'Failed to process authentication request: ${logText(e.message)}',
+      );
       await authenticationEntryPoint.commence(request, response, e);
       return;
     }
@@ -580,6 +593,9 @@ final class BearerTokenAuthenticationFilter implements WebFilter {
     if (result.principal case final Jwt jwt
         when jwt.jwkThumbprint != null || jwt.x509Thumbprint != null) {
       SecurityContextHolder.clearContext();
+      _log.debug(
+        'Failed to process authentication request: the token is bound',
+      );
       await authenticationEntryPoint.commence(
         request,
         response,
@@ -592,6 +608,7 @@ final class BearerTokenAuthenticationFilter implements WebFilter {
     final context = SecurityContextHolder.createEmptyContext()
       ..authentication = result;
     SecurityContextHolder.setContext(context);
+    _log.debug(() => 'Authenticated token: ${describeUser(result)}');
     await securityContextRepository.saveContext(context, request, response);
     await chain.doFilter(request, response);
   }

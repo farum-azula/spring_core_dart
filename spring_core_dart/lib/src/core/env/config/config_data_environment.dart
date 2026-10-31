@@ -19,6 +19,8 @@ import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/io/url_resource.dart';
+import 'package:spring_core_dart/src/core/log.dart';
+import 'package:spring_core_dart/src/core/log_format.dart';
 
 /// Reads the application's config files (`application.properties`,
 /// `application.yml` and their profile variants, imports, config trees)
@@ -1754,6 +1756,11 @@ final class _Run {
     );
     if (content == null) {
       if (optional) {
+        _log.trace(
+          () =>
+              'Skipping missing resource '
+              '${LogFormatUtils.formatValue(location)}',
+        );
         return null;
       }
       throw ConfigDataResourceNotFoundException(
@@ -1762,6 +1769,9 @@ final class _Run {
       );
     }
     _loaded.add(normalized);
+    _log.debug(
+      () => 'Loaded config file ${LogFormatUtils.formatValue(location)}',
+    );
     final List<AbstractPropertySource<Object>> sources;
     try {
       sources = loader.load("Config resource '$location'", content);
@@ -2309,3 +2319,5 @@ final class _FileHint {
     return result.toString();
   }
 }
+
+const _log = SpringLog('spring_core_dart.context.config');

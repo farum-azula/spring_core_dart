@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The server logs its WebSocket life at debug as Spring does: handshake accepted or refused (with the origin, quoted and cut), session opened and closed with its close code; at trace the size of each message received. Never the text of a message, a token or a header of the handshake.
+
 ## 0.5.0
 
 ### Breaking

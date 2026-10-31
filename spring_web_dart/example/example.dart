@@ -24,13 +24,10 @@ abstract interface class CatalogApi {
 }
 
 /// The example's logger. There is no application here, so nothing sets up
-/// logging: records go to the console, but only warnings and errors by
-/// default, hence the level set in `main`.
+/// logging: records go to the console, from info up by default.
 const _log = SpringLog('example');
 
 Future<void> main() async {
-  SpringLog.level = SpringLogLevel.info;
-
   // A local server standing in for a real API.
   final server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
   server.listen((request) async {

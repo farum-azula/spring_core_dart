@@ -1,12 +1,20 @@
 import 'dart:async';
 
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_security/src/web/request_cache.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
 
 const _log = SpringLog('spring.security.web.access');
+const _filterLog = SpringLog('spring.security.web.access.intercept');
+const _translationLog = SpringLog(
+  'spring.security.web.access.ExceptionTranslationFilter',
+);
+const _anonymousLog = SpringLog(
+  'spring.security.web.authentication.AnonymousAuthenticationFilter',
+);
 
 /// What a web access rule decides about: the request, and the path
 /// variables of the rule's pattern.
@@ -61,14 +69,20 @@ final class RequestMatcherDelegatingAuthorizationManager
     for (final (matcher, manager) in rules) {
       final match = matcher.matcher(request);
       if (match.isMatch) {
-        _log.trace('Checking authorization on $request using $manager');
+        _filterLog.trace(
+          () =>
+              'Checking authorization on ${requestLine(request)} '
+              'using $manager',
+        );
         return await manager.authorize(
           authentication,
           RequestAuthorizationContext(request, match.variables),
         );
       }
     }
-    _log.trace('Denying request since no rule matched');
+    _filterLog.trace(
+      'Denying request since did not find matching RequestMatcher',
+    );
     return AuthorizationDecision.denied;
   }
 }
@@ -108,13 +122,20 @@ final class AuthorizationFilter implements WebFilter {
       return authentication;
     }
 
+    _filterLog.trace(() => 'Authorizing ${requestLine(request)}');
     final result = await authorizationManager.authorize(current, request);
     if (result == null || !result.isGranted) {
+      _filterLog.debug(
+        () =>
+            'Failed to authorize ${requestLine(request)} with '
+            '${result ?? AuthorizationDecision.denied}',
+      );
       throw AuthorizationDeniedException(
         'Access Denied',
         result ?? AuthorizationDecision.denied,
       );
     }
+    _filterLog.trace(() => 'Authorized ${requestLine(request)}');
     await chain.doFilter(request, response);
   }
 }
@@ -171,10 +192,22 @@ final class ExceptionTranslationFilter implements WebFilter {
     try {
       await chain.doFilter(request, response);
     } on AuthenticationException catch (e) {
+      _translationLog.debug(
+        () =>
+            'Sending to authentication entry point since authentication '
+            'failed: ${logText(e.message)}',
+      );
       await _startAuthentication(request, response, e);
     } on AccessDeniedException catch (e) {
       final authentication = SecurityContextHolder.getContext().authentication;
       if (authentication == null || trustResolver.isAnonymous(authentication)) {
+        _translationLog.debug(() {
+          final who = authentication == null
+              ? 'a missing authentication'
+              : describeUser(authentication);
+          return 'Sending $who to authentication entry point since access '
+              'is denied';
+        });
         await _startAuthentication(
           request,
           response,
@@ -184,6 +217,11 @@ final class ExceptionTranslationFilter implements WebFilter {
           ),
         );
       } else {
+        _translationLog.debug(
+          () =>
+              'Access is denied for ${describeUser(authentication)}, '
+              'handing over to the access denied handler',
+        );
         await accessDeniedHandler.handle(request, response, e);
       }
     }
@@ -242,8 +280,24 @@ final class AnonymousAuthenticationFilter implements WebFilter {
     ServerHttpResponse response,
     WebFilterChain chain,
   ) {
-    SecurityContextHolder.getContext().authentication ??=
-        AnonymousAuthenticationToken(key, principal, authorities);
+    final context = SecurityContextHolder.getContext();
+    final existing = context.authentication;
+    if (existing == null) {
+      context.authentication = AnonymousAuthenticationToken(
+        key,
+        principal,
+        authorities,
+      );
+      _anonymousLog.trace(
+        'Set SecurityContextHolder to anonymous SecurityContext',
+      );
+    } else {
+      _anonymousLog.trace(
+        () =>
+            'Did not set SecurityContextHolder since already authenticated '
+            '${describeAuthentication(existing)}',
+      );
+    }
     return chain.doFilter(request, response);
   }
 }

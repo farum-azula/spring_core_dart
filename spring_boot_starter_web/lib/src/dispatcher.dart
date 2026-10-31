@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/request_mapping.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
+import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
+
+const _log = SpringLog('spring.web.servlet.DispatcherServlet');
 
 /// Code that runs around every request, before the request reaches a
 /// controller.
@@ -166,6 +170,7 @@ final class DispatcherHandler implements HttpHandler {
     required this.writer,
     this.filters = const [],
     this.contextPath = '',
+    this.logRequestDetails = false,
   });
 
   /// The filters every request passes, in the order they run (the
@@ -190,30 +195,78 @@ final class DispatcherHandler implements HttpHandler {
   /// before routing, so the mappings do not repeat it. Empty: no prefix.
   final String contextPath;
 
+  /// Whether the log lines show the request's parameters and headers
+  /// (`spring.mvc.log-request-details`); without it they show `masked`,
+  /// as in Spring. Values of credentials (`Authorization`, cookies,
+  /// names with `token`, `password` ...) are never shown.
+  final bool logRequestDetails;
+
+  void _logRequest(ServerHttpRequest request) {
+    _log.debug(() {
+      final parameters = logParameters(
+        request.queryParameters,
+        logRequestDetails,
+      );
+      final shown = logRequestDetails
+          ? logHeaders(request.headers)
+          : '{masked}';
+      final headers = _log.isEnabled(SpringLogLevel.trace)
+          ? ', headers=$shown'
+          : '';
+      return '${request.method.value} ${logQuoted(request.path)}, '
+          'parameters=$parameters$headers';
+    });
+  }
+
+  void _logResult(ServerHttpResponse response, Object? failure) {
+    _log.debug(() {
+      if (failure != null) {
+        return 'Failed to complete request: ${failure.runtimeType}';
+      }
+      final status = HttpStatus.resolve(response.statusCode);
+      return 'Completed ${response.statusCode}'
+          '${status == null ? '' : ' ${status.reasonPhrase}'}';
+    });
+  }
+
   @override
   Future<void> handle(ServerHttpRequest request, ServerHttpResponse response) =>
       RequestContextHolder.runWith(request, () async {
-        var current = request;
-        if (contextPath.isNotEmpty) {
-          final path = request.path;
-          if (path != contextPath && !path.startsWith('$contextPath/')) {
-            await writer.writeError(
-              NoHandlerFoundException(request.method, path),
-              StackTrace.current,
-              request,
-              response,
-            );
-            return;
-          }
-          final rest = path.substring(contextPath.length);
-          current = _ContextPathRequest(request, rest.isEmpty ? '/' : rest);
-        }
+        _logRequest(request);
         try {
-          await _Chain(this, 0).doFilter(current, response);
-        } on Object catch (error, stackTrace) {
-          await writer.writeError(error, stackTrace, current, response);
+          await _handle(request, response);
+          _logResult(response, null);
+        } on Object catch (error) {
+          _logResult(response, error);
+          rethrow;
         }
       });
+
+  Future<void> _handle(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) async {
+    var current = request;
+    if (contextPath.isNotEmpty) {
+      final path = request.path;
+      if (path != contextPath && !path.startsWith('$contextPath/')) {
+        await writer.writeError(
+          NoHandlerFoundException(request.method, path),
+          StackTrace.current,
+          request,
+          response,
+        );
+        return;
+      }
+      final rest = path.substring(contextPath.length);
+      current = _ContextPathRequest(request, rest.isEmpty ? '/' : rest);
+    }
+    try {
+      await _Chain(this, 0).doFilter(current, response);
+    } on Object catch (error, stackTrace) {
+      await writer.writeError(error, stackTrace, current, response);
+    }
+  }
 
   /// The CORS rules of [request] as this dispatcher routes it, for a
   /// filter that checks CORS before the handler is called (the security

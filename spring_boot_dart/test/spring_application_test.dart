@@ -616,6 +616,112 @@ void main() {
     expect(SpringLog.levelOf('neon.card.visa'), SpringLogLevel.trace);
   });
 
+  group('predefined log groups and --debug / --trace', () {
+    late SpringLogLevel saved;
+    setUp(() => saved = SpringLog.level);
+    tearDown(() {
+      SpringLog.level = saved;
+      SpringLog.resetLevels();
+    });
+
+    void apply(Map<String, Object?> properties) {
+      SpringApplication.applyLoggingLevels(
+        StandardEnvironment(systemEnvironment: {})
+          ..propertySources.addFirst(MapPropertySource('test', properties)),
+      );
+    }
+
+    test('web and sql resolve to the loggers of the web and JDBC code', () {
+      apply({
+        'logging.level.web': 'debug',
+        'logging.level.sql': 'trace',
+      });
+      for (final name in [
+        'spring.web.session',
+        'spring.web.mvc',
+        'spring.web.server',
+        'spring.web.forwarded',
+        'spring.websocket.server',
+      ]) {
+        expect(SpringLog.levelOf(name), SpringLogLevel.debug, reason: name);
+      }
+      for (final name in [
+        'spring.jdbc.core.JdbcTemplate',
+        'spring.jdbc.core.StatementCreatorUtils',
+      ]) {
+        expect(SpringLog.levelOf(name), SpringLogLevel.trace, reason: name);
+      }
+      expect(SpringLog.levelOf('spring.security.web'), SpringLogLevel.info);
+    });
+
+    test('a logging.group.web of the application replaces the list', () {
+      apply({
+        'logging.group.web': 'neon.http',
+        'logging.level.web': 'debug',
+      });
+      expect(SpringLog.levelOf('neon.http'), SpringLogLevel.debug);
+      expect(SpringLog.levelOf('spring.web.mvc'), SpringLogLevel.info);
+    });
+
+    test('--debug sets the container, Boot and the web server to debug', () {
+      apply({'debug': ''});
+      for (final name in SpringApplication.debugLoggers) {
+        expect(SpringLog.levelOf(name), SpringLogLevel.debug, reason: name);
+      }
+      expect(SpringLog.levelOf('spring_core_dart.beans'), SpringLogLevel.debug);
+      expect(SpringLog.levelOf('spring.web.server'), SpringLogLevel.debug);
+      expect(SpringLog.levelOf('neon.checkout'), SpringLogLevel.info);
+      expect(SpringLog.level, SpringLogLevel.info);
+    });
+
+    test('--trace sets them to trace, and wins over --debug', () {
+      apply({'debug': 'true', 'trace': 'true'});
+      expect(SpringLog.levelOf('spring_boot_dart.x'), SpringLogLevel.trace);
+      expect(SpringLog.levelOf('spring.web.server'), SpringLogLevel.trace);
+    });
+
+    test('debug=false changes nothing; logging.level.* wins over --debug', () {
+      apply({'debug': 'false', 'trace': 'false'});
+      expect(SpringLog.configuredLevels, isEmpty);
+      apply({
+        'debug': 'true',
+        'logging.level.spring_core_dart.beans': 'warn',
+      });
+      expect(
+        SpringLog.levelOf('spring_core_dart.beans'),
+        SpringLogLevel.warning,
+      );
+      expect(
+        SpringLog.levelOf('spring_core_dart.context'),
+        SpringLogLevel.debug,
+      );
+    });
+
+    test('the framework lines appear with --debug and not without', () {
+      final records = <SpringLogRecord>[];
+      final handler = SpringLog.handler;
+      addTearDown(() => SpringLog.handler = handler);
+      SpringLog.handler = records.add;
+      run(['--db.url=x']).close();
+      expect(
+        records.where((r) => r.level.index < SpringLogLevel.info.index),
+        isEmpty,
+      );
+      records.clear();
+      run(['--db.url=x', '--debug']).close();
+      final debug = [
+        for (final r in records)
+          if (r.level == SpringLogLevel.debug) r.message,
+      ];
+      expect(debug, contains(startsWith('Running with Spring Boot v')));
+      expect(debug, contains(startsWith('Refreshing ')));
+      expect(
+        debug,
+        contains(startsWith("Creating shared instance of singleton bean '")),
+      );
+    });
+  });
+
   test("an invalid logging.level value fails the start like Boot's "
       'binding', () {
     final saved = SpringLog.level;

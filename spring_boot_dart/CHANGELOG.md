@@ -1,3 +1,12 @@
+## Unreleased
+
+### Changes
+
+- The predefined log groups `web` (`spring.web`, `spring.websocket`) and `sql` (`spring.jdbc.core.JdbcTemplate`, `spring.jdbc.core.StatementCreatorUtils`) work in `logging.level.*` as in Boot (`logging.level.web=debug`); a `logging.group.web` of the application replaces the list. They are `SpringApplication.predefinedLoggerGroups`.
+- `--debug` (`debug=true`) also sets the container, Boot and the web server (`spring_core_dart`, `spring_boot_dart`, `spring.web.server`) to `debug`, and `--trace` (`trace=true`) to `trace`, as Boot does for its own loggers; `logging.level.*` wins. `debug=false` is off.
+- `Running with Spring Boot v...` at `debug`, as Boot's startup logger.
+- The default log level is `info` without the logging starter (see `spring_core_dart`).
+
 ## 0.5.0
 
 ### Changes

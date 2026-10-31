@@ -170,8 +170,9 @@ class Log {
 /// It is the one logging API of the whole family: the framework, the
 /// starters and applications log through it, and a logging backend (such
 /// as `spring_boot_starter_logging`) decides where records go by setting
-/// [handler]. Without a backend, records of [SpringLogLevel.warning] and
-/// above are printed. An application gets a logger from `@Log()` or
+/// [handler]. Without a backend, records of [SpringLogLevel.info] and
+/// above are written to the console (Spring's default level either
+/// way). An application gets a logger from `@Log()` or
 /// declares one as a constant; it sets levels in configuration
 /// (`logging.level.<name>`) or with [setLevel].
 ///
@@ -205,7 +206,7 @@ final class SpringLog {
   /// its level.
   final String name;
 
-  static SpringLogLevel _level = SpringLogLevel.warning;
+  static SpringLogLevel _level = SpringLogLevel.info;
   static final _levels = <String, SpringLogLevel>{};
   static final _effective = <String, SpringLogLevel>{};
   static final _listeners = <SpringLogHandler>[];
@@ -254,7 +255,8 @@ final class SpringLog {
   }
 
   /// The root level: the minimum level of loggers without a level of
-  /// their own ([setLevel]); [SpringLogLevel.warning] unless set. The
+  /// their own ([setLevel]); [SpringLogLevel.info] unless set, as in
+  /// Spring with or without Spring Boot's logging. The
   /// property `logging.level.root` sets it in an application.
   static SpringLogLevel get level => _level;
 
@@ -474,7 +476,9 @@ final class SpringLogHold {
 }
 
 /// The [SpringLog.handler] used until a logging backend replaces it:
-/// prints each record as one line, `[logger] LEVEL: message`.
+/// writes each record as one line, `[logger] LEVEL: message`, to
+/// standard output on the Dart VM, to the device log in Flutter and to
+/// the browser's console on the web.
 ///
 /// The error follows the message; the stack trace is not printed. In a
 /// terminal ([printLogHandlerColours]) the logger name is cyan and the
@@ -487,9 +491,7 @@ void printLogHandler(SpringLogRecord record) {
   final name = record.level.name.toUpperCase();
   final message = '${record.message}${error == null ? '' : ': $error'}';
   if (!printLogHandlerColours) {
-    // Printing is the point of this handler.
-    // ignore: avoid_print
-    print('[${record.loggerName}] $name: $message');
+    printLogHandlerOut('[${record.loggerName}] $name: $message');
     return;
   }
   final level = switch (record.level) {
@@ -497,13 +499,17 @@ void printLogHandler(SpringLogRecord record) {
     SpringLogLevel.warning => '33',
     _ => '32',
   };
-  // Printing is the point of this handler.
-  // ignore: avoid_print
-  print(
+  printLogHandlerOut(
     '[\x1B[36m${record.loggerName}\x1B[0;39m] '
     '\x1B[${level}m$name\x1B[0;39m: $message',
   );
 }
+
+/// Where [printLogHandler] writes its lines: standard output on the Dart
+/// VM, `print` in Flutter (the device log) and on the web (the browser's
+/// console). Replace it to send them elsewhere, or in a test of the
+/// output.
+void Function(String line) printLogHandlerOut = writeConsoleLine;
 
 /// Whether [printLogHandler] colours its lines with ANSI escape codes.
 ///

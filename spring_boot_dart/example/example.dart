@@ -50,10 +50,6 @@ class GreetOnStartup implements CommandLineRunner {
   }
 }
 
-/// Without the logging starter only warnings show, so this example turns
-/// its own logger up to info; `--logging.level.greeting=warn` silences it.
+/// `--logging.level.greeting=warn` silences the example's own lines.
 @SpringBootApplication()
-void main(List<String> args) =>
-    (springApplication
-          ..setDefaultProperties({'logging.level.greeting': 'info'}))
-        .run(args);
+void main(List<String> args) => springApplication.run(args);

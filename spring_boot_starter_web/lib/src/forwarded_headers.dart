@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
+import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.forwarded');
@@ -109,12 +110,18 @@ final class ForwardedHeaderFilter implements WebFilter, Ordered {
     }
     if (!isTrusted(request.remoteAddress)) {
       _log.debug(
-        'Forwarded headers from ${request.remoteAddress} ignored: not a '
-        'trusted proxy (server.forward-headers.trusted-proxies)',
+        'Forwarded headers from ${logSafe(request.remoteAddress)} ignored: '
+        'not a trusted proxy (server.forward-headers.trusted-proxies)',
       );
       return await chain.doFilter(request, response);
     }
-    return await chain.doFilter(_Forwarded.of(request, this), response);
+    final forwarded = _Forwarded.of(request, this);
+    _log.debug(
+      () =>
+          'Forwarded headers applied: ${logSafe(forwarded.uri.scheme)}://'
+          '${logSafe(forwarded.uri.authority)}',
+    );
+    return await chain.doFilter(forwarded, response);
   }
 }
 

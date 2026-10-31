@@ -150,7 +150,8 @@ List<VerificationKey> parseJwkSet(String json) {
         result.add(parsed);
       }
     } on Object catch (e) {
-      _log.debug('Skipping an unreadable JWK: $e');
+      // The type only: the message may quote the key.
+      _log.debug('Skipping an unreadable JWK: ${e.runtimeType}');
     }
   }
   return result;
@@ -234,6 +235,11 @@ JwkFetcher transportJwkFetcher(HttpTransport transport) => (uri) async {
       timeout: const Duration(seconds: 10),
       readTimeout: const Duration(seconds: 10),
     ),
+  );
+  _log.debug(
+    () =>
+        'The JWK Set endpoint ${_endpoint(uri)} answered '
+        '${response.statusCode.value}',
   );
   if (response.statusCode.value != 200) {
     throw JwtException('$uri answered ${response.statusCode.value}');
@@ -348,6 +354,9 @@ final class RemoteJwkSource implements JwkSource {
       _failure = e;
       rethrow;
     }
+    _log.debug(
+      () => 'Loaded ${keys.length} verification keys from ${_endpoint(uri)}',
+    );
     _cached = keys;
     _fetched = Since(_clock());
     _failure = null;
@@ -686,3 +695,6 @@ final class _IssuerJwtDecoder implements JwtDecoder {
     );
   }
 }
+
+// The host and the path: a query can hold a key or a token.
+String _endpoint(Uri uri) => '${uri.host}${uri.path}';

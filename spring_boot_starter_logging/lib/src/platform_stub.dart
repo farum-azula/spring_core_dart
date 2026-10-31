@@ -13,3 +13,6 @@ String get isolateName => 'main';
 bool get stdoutSupportsAnsi =>
     const bool.fromEnvironment('dart.library.ui') &&
     !const bool.fromEnvironment('dart.vm.product');
+
+/// Where the console's lines go: `print`, the browser's console.
+void Function(String line) consoleOut({bool stderr = false}) => print;

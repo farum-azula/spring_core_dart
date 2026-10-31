@@ -5,34 +5,35 @@ differences from Spring found in reviews: [fix_plan.md](fix_plan.md).
 
 ## Logging like Spring's
 
-The levels, groups, `logging.level.*` properties, `--debug` (the
-conditions report) and changing levels at runtime are there; what the
-framework logs is not. Found in October 2026:
+Done (October 2026): the root level is INFO with or without the logging
+starter, the console writes to stdout on the VM (`print` in Flutter and on
+the web), `LogFormatUtils.formatValue`, the `web` and `sql` groups, and
+`--debug` / `--trace` selecting the framework's loggers
+(`SpringApplication.debugLoggers`: `spring_core_dart`, `spring_boot_dart`,
+`spring.web.server`). The container logs with Spring's texts: at debug
+`Creating shared instance of singleton bean 'x'`, `Refreshing ...`,
+`Closing ...`, `Loaded config file ...`, `Activating profiles [...]`,
+`Running with Spring Boot v...`; at trace `Creating instance of bean 'x'`,
+`Finished creating instance of bean 'x'`, `Pre-instantiating singletons`,
+`Destroying singletons`, `Invoking destroy() on bean with name 'x'`,
+`Publishing event in ...` (the type only), `Skipping missing resource ...`.
+Values of properties are never logged.
 
-- **The default level.** Without `spring_boot_starter_logging`,
-  `SpringLog` shows only warnings and errors, so an application of
-  `spring_boot_dart` alone (and the package examples) sees none of its
-  `log.info` lines. Spring's default is INFO either way (logback in Boot,
-  commons-logging over java.util.logging without it): make the root level
-  INFO, then drop the workarounds in the examples
-  (`setDefaultProperties({'logging.level.<topic>': 'info'})`,
-  `SpringLog.level = SpringLogLevel.info`) and the last `print` of the
-  `spring_web_dart` README.
-- **The framework's own lines.** Almost none today (debug and trace
-  calls: `spring_core_dart` 0, `spring_boot_dart` 0, the web starter 3,
-  security 8), so `logging.level.root=debug` shows next to nothing. Port
-  Spring's debug and trace lines for the main steps, with Spring's texts
-  so they are recognised: the container (`Creating shared instance of
-  singleton bean 'x'`, profiles, the config files loaded, events), the
-  web starter (`GET "/api/books", parameters={}`, `Mapped to
-  BookController#list()`, `Completed 200 OK`), security (`Securing GET
-  /api/books`, `Secured GET /api/books`, `Set SecurityContextHolder to
-  anonymous`, the chain's filters at startup), cache, scheduling, Feign,
-  WebSocket, the OAuth2 client.
-- **Boot's switches.** The predefined `web` group (`logging.level.web=debug`);
-  `--debug` also turning on debug for a selection of the framework's
-  loggers, and `--trace`, as Boot does.
-- Tests: the lines appear at debug and trace and not at info.
+Left:
+
+- **The other packages' lines.** The web starter (`GET "/api/books",
+  parameters={}`, `Mapped to BookController#list()`, `Completed 200 OK`),
+  security (`Securing GET /api/books`, `Secured GET /api/books`, `Set
+  SecurityContextHolder to anonymous`, the chain's filters at startup),
+  cache, scheduling, Feign, WebSocket, the OAuth2 client.
+- **More container lines**, where Spring has them: autowiring by type at
+  trace, `Filtered N auto configuration class`, the property lookups of
+  `PropertySourcesPropertyResolver` (`Found key 'x' in PropertySource 'y'
+  with value of type String`, left out: they would run before the levels
+  are known and fill the startup hold).
+- The `sql` group names loggers (`spring.jdbc.core.JdbcTemplate`,
+  `spring.jdbc.core.StatementCreatorUtils`) that exist when the data
+  starter does.
 
 ## JSON, next steps
 

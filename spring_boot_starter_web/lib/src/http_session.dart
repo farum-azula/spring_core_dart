@@ -363,6 +363,7 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
     }
     final session = _MemorySession(this, newSessionId(), now, timeout);
     _sessions[session.id] = session;
+    _log.trace(() => 'Stored a new session (${_sessions.length} kept)');
     return session;
   }
 
@@ -513,6 +514,7 @@ final class _MemorySession extends StoredHttpSession {
     _attributes.clear();
     _repository.deleteById(_id);
     _invalidated = true;
+    _log.debug('Invalidated the session');
   }
 
   @override
@@ -566,7 +568,9 @@ final class HttpSessionManager {
     StoredHttpSession? session;
     if (requested != null && requested.isNotEmpty && requested.length <= 128) {
       session = await repository.findById(requested);
-      if (session != null) {
+      if (session == null) {
+        _log.debug('The session of the request is unknown or expired');
+      } else {
         session
           ..touch(DateTime.now())
           ..isNew = false;
@@ -631,12 +635,14 @@ final class _RequestSessions {
   HttpSession _started(StoredHttpSession created) {
     created.maxInactiveInterval = manager.properties.timeout;
     session = created;
+    _log.debug('Created a session');
     _sendCookie(created.id);
     return created;
   }
 
   Future<String> changeId(StoredHttpSession current) async {
     await manager.repository.changeSessionId(current);
+    _log.debug('Changed the session id');
     _sendCookie(current.id);
     return current.id;
   }

@@ -10,6 +10,7 @@ import 'package:spring_boot_starter_web/src/platform_web_server_stub.dart'
     as platform;
 import 'package:spring_boot_starter_web/src/request_mapping.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
+import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_boot_starter_web/src/web_server_lifecycle.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
@@ -257,6 +258,13 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
         requestMapping: requestMapping,
         writer: r.dependency<ResponseWriter>(),
         contextPath: serverProperties(r.dependency<Environment>()).contextPath,
+        logRequestDetails:
+            r
+                .dependency<Environment>()
+                .getProperty(logRequestDetailsProperty)
+                ?.trim()
+                .toLowerCase() ==
+            'true',
       );
     },
   ),

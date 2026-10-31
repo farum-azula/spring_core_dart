@@ -17,6 +17,7 @@ import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
     if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
 import 'package:spring_boot_dart/src/startup_runtime.dart';
+import 'package:spring_boot_dart/src/version.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _log = SpringLog('spring_boot_dart.SpringApplication');
@@ -1004,8 +1005,7 @@ class SpringApplication {
     ConfigurableApplicationContext context, {
     bool crash = false,
   }) {
-    final debug = context.environment.getProperty('debug');
-    if (debug != null && debug.trim().toLowerCase() != 'false') {
+    if (_isSet(context.environment, 'debug')) {
       _reportLog.info('${ConditionEvaluationReport.of(context)}');
     } else if (crash) {
       _reportLog.info(
@@ -1356,6 +1356,42 @@ class SpringApplication {
     }
   }
 
+  // Boot's LoggingApplicationListener.isSet: `debug` and `trace` are on
+  // when present, unless `false` (`--debug` alone has an empty value).
+  static bool _isSet(Environment environment, String property) {
+    final value = environment.getProperty(property);
+    return value != null && value.trim().toLowerCase() != 'false';
+  }
+
+  /// The loggers `--debug` (or `debug=true`) turns to debug: the container
+  /// (`spring_core_dart`), Boot (`spring_boot_dart`) and the web server
+  /// (`spring.web.server`), like Boot's debug of `org.springframework`,
+  /// `org.springframework.boot` and the embedded server. Levels in
+  /// `logging.level.*` win.
+  static const debugLoggers = [
+    'spring_core_dart',
+    'spring_boot_dart',
+    'spring.web.server',
+  ];
+
+  /// The loggers `--trace` (or `trace=true`) turns to trace; the same
+  /// selection as [debugLoggers]. `trace` wins over `debug`.
+  static const List<String> traceLoggers = debugLoggers;
+
+  /// The log groups that exist without `logging.group.*`, like Boot's
+  /// `web` and `sql`: `logging.level.web=debug` sets the web starters'
+  /// loggers (`spring.web.*`, `spring.websocket.*`), `logging.level.sql`
+  /// those of JDBC (`spring.jdbc.core.JdbcTemplate`,
+  /// `spring.jdbc.core.StatementCreatorUtils`). A `logging.group.web`
+  /// of the application replaces the predefined list.
+  static const predefinedLoggerGroups = <String, List<String>>{
+    'web': ['spring.web', 'spring.websocket'],
+    'sql': [
+      'spring.jdbc.core.JdbcTemplate',
+      'spring.jdbc.core.StatementCreatorUtils',
+    ],
+  };
+
   // Like Boot's LenientObjectToEnumConverterFactory: `false` (YAML's `off`)
   // is OFF.
   static SpringLogLevel? _parseLevel(String? value) =>
@@ -1391,15 +1427,18 @@ class SpringApplication {
     // comma list or `logging.group.x[0]`), levels as a map whose values
     // must be log levels (anything else fails the start).
     final binder = Binder.get(environment);
-    final groups = binder
-        .bind(
-          'logging.group',
-          const MapType<String, List<String>>(
-            ClassType<String>(),
-            ListType<String>(ClassType<String>()),
-          ),
-        )
-        .orElse(const {});
+    final groups = <String, List<String>>{
+      ...predefinedLoggerGroups,
+      ...binder
+          .bind(
+            'logging.group',
+            const MapType<String, List<String>>(
+              ClassType<String>(),
+              ListType<String>(ClassType<String>()),
+            ),
+          )
+          .orElse(const {}),
+    };
     final values = binder
         .bind(
           'logging.level',
@@ -1450,6 +1489,18 @@ class SpringApplication {
       SpringLog.level = root;
     }
     SpringLog.resetLevels();
+    // `--debug` and `--trace` come first: the levels of the properties win,
+    // as in Boot's LoggingApplicationListener.
+    for (final (property, level, loggers) in [
+      ('debug', SpringLogLevel.debug, debugLoggers),
+      ('trace', SpringLogLevel.trace, traceLoggers),
+    ]) {
+      if (_isSet(environment, property)) {
+        for (final name in loggers) {
+          SpringLog.setLevel(name, level);
+        }
+      }
+    }
     for (final MapEntry(key: logger, value: level) in levels.entries) {
       for (final name in groups[logger] ?? [logger]) {
         if (name.trim().isNotEmpty) {
@@ -1527,6 +1578,7 @@ final class _StartupInfoLogger implements BeanFactoryPostProcessor, Ordered {
       '${runtime == null ? '' : ' using $runtime'}'
       '${pid == null ? '' : ' with PID $pid'}',
     );
+    _log.debug(() => 'Running with Spring Boot v$springBootVersion');
     String quoted(List<String> profiles) =>
         profiles.map((p) => '"$p"').join(', ');
     final active = environment.activeProfiles;

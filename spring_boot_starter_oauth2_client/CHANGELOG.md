@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- Debug lines for the main steps, never with a secret: the token request (`Sending the authorization_code token request of registration keycloak to sso.test/token`, the status of the answer), the discovery documents and JWK Sets fetched (host, path, status, key count), and a refresh of an access token. The query of a URL, tokens, codes, the client secret and its JWT are never logged.
+
 ## 0.5.0
 
 ### Breaking

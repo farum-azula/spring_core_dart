@@ -245,8 +245,11 @@ final class RequestMappingHandlerMapping
       );
     }
     _mappings.sort((a, b) => a.compareTo(b));
+    _log.debug(
+      "${_mappings.length} mappings in 'requestMappingHandlerMapping'",
+    );
     for (final mapping in _mappings) {
-      _log.debug('Mapped $mapping');
+      _log.trace(() => 'Mapped $mapping');
     }
   }
 
@@ -1809,6 +1812,9 @@ final class _Execution implements HttpHandler {
   ) async {
     final owner = mapping.owner;
     final handler = mapping.handler;
+    _log.debug(
+      () => 'Mapped to ${handler.beanTypeName}#${handler.method.name}()',
+    );
     // Every request to a handler with CORS rules, as Spring's
     // CorsInterceptor: a CORS request is checked (its origin and its
     // method), and every answer gets Vary. A request a filter answered

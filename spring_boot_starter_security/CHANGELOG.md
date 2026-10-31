@@ -1,3 +1,10 @@
+## Unreleased
+
+### Changes
+
+- The chain logs its main steps with Spring Security's texts, so `logging.level.root=debug` shows what security decides. Debug: `Will secure <matcher> with filters: ...` (when a chain is built), `Securing GET /api/books`, `Secured GET /api/books`, `Set SecurityContextHolder to UsernamePasswordAuthenticationToken [Principal=ada, Credentials=[PROTECTED], ...]` (form, Basic, bearer, DPoP and OAuth 2.0 logins), `Failed to process authentication request: Bad credentials`, `Sending AnonymousAuthenticationToken [...] to authentication entry point since access is denied`, `Failed to authorize GET /x with ...`, `Invalid CSRF token found for /login`, `Changed session id`, `Logging out [...]`, `Authenticated token` (resource server), the DPoP proof accepted or rejected with its reason, the redirect to the provider, the callback received, the ID token validated, the JWK Set fetched. Trace: `Invoking <Filter> (n/m)`, `Authorizing GET /x`, `Checking authorization on GET /x using ...`, `Set SecurityContextHolder to anonymous SecurityContext`, the context stored and retrieved. Nothing at the default level. Never logged at any level: passwords, tokens, DPoP proofs, session ids, CSRF tokens, the signed cookies, `code`, `state`, `nonce`, the PKCE verifier, client secrets, `Authorization` and `Cookie` values; the credentials of an authentication always show as `[PROTECTED]`, and paths are logged without the query. Values that come from a client go through `LogFormatUtils` (line breaks and control characters replaced). `test/log_secrets_test.dart` runs the heavy scenarios at trace and checks the whole log for every secret they use.
+- The unreadable-JWK debug line names the exception type only: its message could quote the key.
+
 ## 0.5.0
 
 ### Breaking

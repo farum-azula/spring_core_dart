@@ -8,6 +8,8 @@ import 'package:spring_security_core/src/core/exceptions.dart';
 import 'package:spring_security_core/src/method/annotations.dart';
 import 'package:spring_security_core/src/method/expression_handler.dart';
 
+const _log = SpringLog('spring.security.authorization.method');
+
 /// Whether [annotation] is one of the five method security annotations:
 /// [PreAuthorize], [PostAuthorize], [Secured], [PreFilter] or
 /// [PostFilter].
@@ -264,6 +266,11 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
 
   void _require(bool granted, MethodSignature signature) {
     if (!granted) {
+      _log.debug(
+        () =>
+            'Failed to authorize ${signature.targetType}.${signature.name}: '
+            'access is denied',
+      );
       throw AuthorizationDeniedException(
         'Access Denied',
         AuthorizationDecision.denied,

@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' show SpringLog;
 import 'package:spring_boot_starter_oauth2_client/src/core/crypto_primitives.dart';
+import 'package:spring_boot_starter_oauth2_client/src/core/log_support.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/oauth2_error.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/since.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token.dart';
@@ -9,6 +11,8 @@ import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token_decoder
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token_validator.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
+
+const _log = SpringLog('spring.security.oauth2.client.oidc');
 
 /// An [OidcIdTokenDecoder] that verifies the ID token's signature with the
 /// provider's public keys (its JWK Set), then checks its claims: for ID
@@ -211,6 +215,11 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
     } on HttpTransportException catch (e) {
       fail('The JWK Set could not be fetched: ${e.message}');
     }
+    _log.debug(
+      () =>
+          'The JWK Set endpoint ${logEndpoint(Uri.parse(jwkSetUri))} '
+          'answered ${response.statusCode}',
+    );
     if (response.statusCode != 200 ||
         response.bodyBytes.length > _maxJwkSetBytes) {
       fail('The JWK Set could not be fetched (${response.statusCode})');
@@ -224,10 +233,16 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
     if (json is! Map<String, Object?> || json['keys'] is! List<Object?>) {
       fail('The JWK Set has no keys');
     }
-    return [
+    final keys = [
       for (final jwk in json['keys']! as List<Object?>)
         if (jwk is Map<String, Object?>) ?_Key.of(jwk),
     ];
+    _log.debug(
+      () =>
+          'Loaded ${keys.length} verification keys from '
+          '${logEndpoint(Uri.parse(jwkSetUri))}',
+    );
+    return keys;
   }
 
   static Map<String, Object?>? _json(String part) {

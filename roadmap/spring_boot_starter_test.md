@@ -82,6 +82,81 @@ void main() => runSpringTests();
    generated file; the builder needs a way for a starter to add method
    annotations and what they generate.
 
+### Containers in tests (planned with the data starter, the owner's request)
+
+As Spring Boot with Testcontainers (`@Testcontainers`, `@Container`,
+`@ServiceConnection`, 3.1+): a test starts the database or service it
+needs in Docker, the application is wired to it by itself, and the
+container is removed afterwards. Without Docker the test is skipped with
+the reason, or fails where Docker is required (`CONTAINERS_REQUIRED`,
+set in CI, as `DESKTOP_SECRET_STORE_REQUIRED`).
+
+```dart
+@SpringBootTest()
+class BookRepositoryTest {
+  // Started once for the class (static), removed at the end; its host and
+  // port become spring.datasource.* for the test's context.
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer('postgres:17-alpine');
+
+  @Container()
+  @ServiceConnection()
+  static final redis = RedisContainer('redis:7.4-alpine');
+
+  // Any image: wait for a log line or a port, map ports, set properties.
+  @Container()
+  static final keycloak = GenericContainer('quay.io/keycloak/keycloak:26.8')
+      .withCommand(['start-dev', '--import-realm'])
+      .withCopyFile('../example/keycloak/neon-realm.json',
+          '/opt/keycloak/data/import/neon-realm.json')
+      .withExposedPorts([8080])
+      .waitingFor(Wait.forHttp('/realms/neon').forStatusCode(200));
+
+  @DynamicPropertySource()
+  static void properties(DynamicPropertyRegistry registry) => registry.add(
+      'spring.security.oauth2.client.provider.keycloak.issuer-uri',
+      () => '${keycloak.baseUrl(8080)}/realms/neon');
+
+  @Autowired()
+  late BookRepository books;
+
+  @Test()
+  Future<void> savesAndFinds() async { /* ... */ }
+}
+```
+
+- **Our own Docker client, no third-party package:** the Docker Engine
+  API over its socket (`/var/run/docker.sock`, `DOCKER_HOST`, Docker
+  Desktop's and Colima's sockets, Windows' named pipe later): pull,
+  create, start, logs, inspect (the mapped ports), stop, remove. A few
+  hundred lines on `dart:io`'s `HttpClient` with a Unix socket.
+- **Wait strategies:** a log line (`Wait.forLogMessage`), a port that
+  accepts connections, an HTTP status, the container's health check.
+- **Cleanup that survives a crash:** containers labelled with the test
+  run's id and removed at the end; a reaper (Testcontainers' Ryuk: a
+  small container that removes the run's containers when the test
+  process's connection to it closes) so a killed `dart test` leaves
+  nothing behind.
+- **Ready-made containers:** `PostgresContainer`, `RedisContainer`,
+  `KeycloakContainer` (realm import), later `MongoContainer`; each knows
+  its `@ServiceConnection` properties (`spring.datasource.*`,
+  `spring.data.redis.*`, the issuer URI).
+- **Reuse between runs** (`withReuse(true)`, Testcontainers' reuse, off
+  in CI): a local container kept alive across `dart test` runs, found by
+  a hash of its configuration, for fast iterations.
+- **The existing Docker-based tests** (the Keycloak e2e tests that need a
+  Keycloak started by hand or by CI) move to containers.
+- **Development, not tests:** Spring Boot's Docker Compose support
+  (`spring-boot-docker-compose`, 3.1+): with a `compose.yaml` next to the
+  application, `dart run` starts its services and wires their connection
+  properties, `spring.docker.compose.lifecycle-management` stops them;
+  only in development (`spring.docker.compose.enabled`), never in an AOT
+  executable or a Flutter app.
+
+Not in Flutter apps or on the web (they have no Docker); the containers
+part of the starter is `dart:io` only, behind a conditional import.
+
 ### Open questions
 
 - A shared context between classes with the same configuration (Spring's

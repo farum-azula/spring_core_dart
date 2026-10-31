@@ -115,7 +115,9 @@ final class LoggingSystem {
   /// The console output. The starter sets its pattern, colours and
   /// threshold from `logging.pattern.console`,
   /// `spring.output.ansi.enabled` and `logging.threshold.console`; its
-  /// lines go to `print` unless you change `console.out`.
+  /// lines go to standard output on the Dart VM
+  /// (`logging.console.target=stderr` for standard error) and to `print`
+  /// in Flutter and on the web, unless you change `console.out`.
   final console = ConsoleAppender();
 
   /// The last records in memory, for an in-app log screen; also the
@@ -254,8 +256,8 @@ final class LoggingSystem {
   /// the ones listed on this class. It does not [install] the system.
   ///
   /// The root level becomes `info`, Spring Boot's default, unless
-  /// `logging.level` or `logging.level.root` (in any case) is set;
-  /// without this starter `SpringLog` starts at `warning`. The console
+  /// `logging.level` or `logging.level.root` (in any case) is set
+  /// (`SpringLog` starts at `info` without this starter too). The console
   /// gets `logging.pattern.console` or Spring Boot's pattern
   /// ([LogPattern.defaultConsolePattern]). An open log file is closed and
   /// a new one is opened from the current `logging.file.*` values.
@@ -294,6 +296,7 @@ final class LoggingSystem {
       ansi: _ansi(environment),
     );
     console.threshold = _threshold(environment, 'logging.threshold.console');
+    _consoleTarget(environment);
     buffer.threshold = _threshold(environment, 'logging.threshold.buffer');
     if (_int(environment, 'logging.buffer.capacity') case final capacity?) {
       buffer.capacity = capacity;
@@ -354,6 +357,35 @@ final class LoggingSystem {
       return null;
     }
     return environment.getProperty(key);
+  }
+
+  // The out set by logging.console.target, to tell it from one the
+  // application set (debugPrint in Flutter): only ours is replaced.
+  void Function(String)? _targetOut;
+
+  // `logging.console.target`: `stdout` (the default, Logback's
+  // `System.out`) or `stderr` (`System.err`). Logback's ConsoleAppender
+  // has the setting; Spring Boot has no property for it. In Flutter and
+  // on the web both are `print`.
+  void _consoleTarget(PropertyResolver environment) {
+    final value = environment.getProperty('logging.console.target');
+    final stderr = switch (value?.trim().toLowerCase()) {
+      null || '' => null,
+      'stdout' || 'system.out' => false,
+      'stderr' || 'system.err' => true,
+      _ => throw FormatException(
+        'logging.console.target must be stdout or stderr',
+        value,
+      ),
+    };
+    if (stderr == null) {
+      if (_targetOut != null && identical(console.out, _targetOut)) {
+        console.out = platform.consoleOut();
+      }
+      _targetOut = null;
+      return;
+    }
+    console.out = _targetOut = platform.consoleOut(stderr: stderr);
   }
 
   // `spring.output.ansi.enabled`: the console's colours. On by default

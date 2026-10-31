@@ -27,7 +27,6 @@
 /// const log = SpringLog('app');
 ///
 /// void main() {
-///   SpringLog.level = SpringLogLevel.info; // only warnings by default
 ///   final context = ApplicationContext.run([appBeans]);
 ///   log.info(context.getBean<Greeter>().greeting);
 ///   context.close();

@@ -148,9 +148,6 @@ Start the container:
 const log = SpringLog('neon');
 
 Future<void> main(List<String> args) async {
-  // Without a logging backend only warnings are shown; show info too.
-  SpringLog.level = SpringLogLevel.info;
-
   // Creating the module registers the embedded lib/resources/ files.
   final modules = [appBeans];
 

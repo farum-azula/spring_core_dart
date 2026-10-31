@@ -7,6 +7,7 @@ import 'package:spring_boot_starter_web/src/cors.dart' show addVary;
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/sse_emitter.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
+import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
@@ -589,8 +590,8 @@ final class ResponseWriter {
   ) async {
     if (response.isCommitted) {
       _log.warning(
-        'Request ${request.method.value} ${request.path} failed after the '
-        'response was committed',
+        'Request ${request.method.value} ${logSafe(request.path)} failed '
+        'after the response was committed',
         error: error,
         stackTrace: stackTrace,
       );
@@ -602,7 +603,10 @@ final class ResponseWriter {
         if (errorResponse.statusCode >= 500) {
           _warnRateLimited(errorResponse, request);
         } else {
-          _log.debug('Resolved [$error]');
+          final detail = errorResponse.body.detail ?? errorResponse.statusCode;
+          _log.debug(
+            () => 'Resolved [${error.runtimeType}: ${logSafe(detail)}]',
+          );
         }
         return await writeErrorResponse(errorResponse, request, response);
       case PayloadTooLargeException(:final maxLength):
@@ -613,7 +617,7 @@ final class ResponseWriter {
         );
       default:
         _log.error(
-          'Request ${request.method.value} ${request.path} failed',
+          'Request ${request.method.value} ${logSafe(request.path)} failed',
           error: error,
           stackTrace: stackTrace,
         );
@@ -645,14 +649,15 @@ final class ResponseWriter {
     if (last != null && now.difference(last) < warningInterval) {
       _lastWarnings[key] = (last, skipped + 1);
       _log.debug(
-        'Request ${request.method.value} ${request.path} answered with '
-        '$error',
+        'Request ${request.method.value} ${logSafe(request.path)} answered '
+        'with $error',
       );
       return;
     }
     _lastWarnings[key] = (now, 0);
     _log.warning(
-      'Request ${request.method.value} ${request.path} answered with $error'
+      'Request ${request.method.value} ${logSafe(request.path)} answered '
+      'with $error'
       '${skipped == 0 ? '' : ' ($skipped more of these not logged since '
                 'the last warning)'}',
     );
@@ -928,7 +933,8 @@ final class ResponseWriter {
       },
       onError: (Object error, StackTrace stackTrace) {
         _log.warning(
-          'The stream of ${request.method.value} ${request.path} failed',
+          'The stream of ${request.method.value} ${logSafe(request.path)} '
+          'failed',
           error: error,
           stackTrace: stackTrace,
         );

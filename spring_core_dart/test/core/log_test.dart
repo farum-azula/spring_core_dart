@@ -46,21 +46,33 @@ void main() {
     expect(outer.isHolding, isTrue);
     final released = outer.release();
     expect(outer.isHolding, isFalse);
-    expect(released.map((r) => r.message), ['debug', 'warning']);
-    expect(records.map((r) => r.message), ['debug', 'warning']);
-    expect(listened, ['debug', 'warning']);
+    // info is the root level, as in Spring.
+    expect(released.map((r) => r.message), [
+      'debug',
+      'info elsewhere',
+      'warning',
+    ]);
+    expect(records.map((r) => r.message), [
+      'debug',
+      'info elsewhere',
+      'warning',
+    ]);
+    expect(listened, ['debug', 'info elsewhere', 'warning']);
     expect(outer.release(), isEmpty);
     expect(log.isEnabled(SpringLogLevel.trace), isFalse);
   });
 
-  test('warning is the default threshold', () {
+  test("info is the default threshold, as Spring's", () {
+    SpringLog.level = SpringLogLevel.info; // the default, set by others
     const log = SpringLog('test.log');
     log
+      ..trace('hidden')
       ..debug('hidden')
-      ..info('hidden')
+      ..info('info')
       ..warning('shown', error: StateError('boom'))
       ..error('also shown');
-    expect(records.map((r) => r.message), ['shown', 'also shown']);
+    expect(records.map((r) => r.message), ['info', 'shown', 'also shown']);
+    records.removeAt(0);
     expect(records.first.loggerName, 'test.log');
     expect(
       records.first.toString(),
@@ -154,7 +166,7 @@ void main() {
     final failing = SpringLog.listen((_) => throw StateError('ignored'));
     const SpringLog('l')
       ..warning('a')
-      ..info('below level');
+      ..debug('below level');
     cancel();
     failing();
     const SpringLog('l').warning('b');
@@ -180,17 +192,16 @@ void main() {
       final printed = <String>[];
       SpringLog.handler = printLogHandler;
       SpringLog.level = SpringLogLevel.info;
-      runZoned(
-        () {
-          log
-            ..info('ready')
-            ..warning('slow')
-            ..error('down', error: 'eof');
-        },
-        zoneSpecification: ZoneSpecification(
-          print: (self, parent, zone, line) => printed.add(line),
-        ),
-      );
+      final out = printLogHandlerOut;
+      printLogHandlerOut = printed.add;
+      try {
+        log
+          ..info('ready')
+          ..warning('slow')
+          ..error('down', error: 'eof');
+      } finally {
+        printLogHandlerOut = out;
+      }
       return printed;
     }
 

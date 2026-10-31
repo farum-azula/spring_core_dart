@@ -26,6 +26,19 @@ bool get stdoutSupportsAnsi {
   }
 }
 
+/// Where the console's lines go by default ([stderr]: standard error):
+/// standard output, written at once (a line written before `exit` is
+/// not lost), not `print`, which any zone may redirect. In a Flutter app
+/// `print`: its device log (logcat, the system log, `flutter run`), also
+/// when the app runs a server.
+void Function(String line) consoleOut({bool stderr = false}) {
+  if (const bool.fromEnvironment('dart.library.ui')) {
+    return print;
+  }
+  final sink = stderr ? io.stderr : io.stdout;
+  return sink.writeln;
+}
+
 const bool _isFlutterDebug =
     bool.fromEnvironment('dart.library.ui') &&
     !bool.fromEnvironment('dart.vm.product');

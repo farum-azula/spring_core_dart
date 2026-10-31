@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:spring_boot_starter_security/src/web/csrf.dart';
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_security/src/web/request_cache.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
@@ -110,6 +111,8 @@ final class ChangeSessionIdAuthenticationStrategy
   ) async {
     if (request.getSession(create: false) != null) {
       await request.changeSessionId();
+      // Spring names the old id; no session id is ever logged here.
+      _log.debug('Changed session id');
     }
   }
 }
@@ -390,6 +393,9 @@ final class BasicAuthenticationFilter implements WebFilter {
       token = convert(request);
     } on AuthenticationException catch (e) {
       SecurityContextHolder.clearContext();
+      _log.debug(
+        () => 'Failed to process authentication request: ${logText(e.message)}',
+      );
       await authenticationEntryPoint.commence(request, response, e);
       return;
     }
@@ -410,10 +416,15 @@ final class BasicAuthenticationFilter implements WebFilter {
       final context = SecurityContextHolder.createEmptyContext()
         ..authentication = result;
       SecurityContextHolder.setContext(context);
+      _log.debug(
+        () => 'Set SecurityContextHolder to ${describeAuthentication(result)}',
+      );
       await securityContextRepository.saveContext(context, request, response);
     } on AuthenticationException catch (e) {
       SecurityContextHolder.clearContext();
-      _log.debug('Failed to process authentication request: ${e.message}');
+      _log.debug(
+        () => 'Failed to process authentication request: ${logText(e.message)}',
+      );
       await authenticationEntryPoint.commence(request, response, e);
       return;
     }
@@ -565,12 +576,18 @@ final class UsernamePasswordAuthenticationFilter implements WebFilter {
       await sessionStrategy.onAuthentication(result, current, response);
     } on AuthenticationException catch (e) {
       SecurityContextHolder.clearContext();
+      _log.debug(
+        () => 'Failed to process authentication request: ${logText(e.message)}',
+      );
       await failureHandler.onAuthenticationFailure(current, response, e);
       return;
     }
     final context = SecurityContextHolder.createEmptyContext()
       ..authentication = result;
     SecurityContextHolder.setContext(context);
+    _log.debug(
+      () => 'Set SecurityContextHolder to ${describeAuthentication(result)}',
+    );
     await securityContextRepository.saveContext(context, current, response);
     eventPublisher?.publishEvent(InteractiveAuthenticationSuccessEvent(result));
     await successHandler.onAuthenticationSuccess(current, response, result);
@@ -809,6 +826,12 @@ final class LogoutFilter implements WebFilter {
       return await chain.doFilter(request, response);
     }
     final authentication = SecurityContextHolder.getContext().authentication;
+    _log.debug(() {
+      final who = authentication == null
+          ? 'no authentication'
+          : describeUser(authentication);
+      return 'Logging out [$who]';
+    });
     for (final handler in handlers) {
       await handler.logout(request, response, authentication);
     }

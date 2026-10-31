@@ -1,3 +1,14 @@
+## Unreleased
+
+### Breaking
+
+- Without `spring_boot_starter_logging` the default log level is now `info` (it was `warning`), as Spring's with or without Boot: `log.info` lines of an application of `spring_boot_dart` alone appear, and so do the framework's own `info` lines. Set `logging.level.root=warn` (or `SpringLog.level`) to get the old output.
+
+### Changes
+
+- The container logs its main steps with Spring's texts, at `debug`: `Creating shared instance of singleton bean 'x'`, `Refreshing ...`, `Closing ...`, `Loaded config file ...`, `Activating profiles [...]`, `Overriding bean definition for bean 'x' with a different definition`; and at `trace`: `Creating instance of bean 'x'`, `Finished creating instance of bean 'x'`, `Pre-instantiating singletons in ...`, `Destroying singletons in ...`, `Invoking destroy() on bean with name 'x'`, `Publishing event in ...: Type` (the event's type only), `Skipping missing resource ...`. The loggers are `spring_core_dart.beans`, `.context`, `.context.config` and `.core.env`. Values of properties are never logged.
+- `printLogHandlerOut`: where `printLogHandler` writes its lines (standard output on the VM, `print` in Flutter and on the web); replace it to send them elsewhere.
+
 ## 0.5.0
 
 ### Breaking

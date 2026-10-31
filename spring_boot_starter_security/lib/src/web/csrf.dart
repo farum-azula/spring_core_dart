@@ -3,9 +3,12 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
+
+const _log = SpringLog('spring.security.web.csrf.CsrfFilter');
 
 final Random _random = Random.secure();
 
@@ -459,6 +462,7 @@ final class CsrfFilter implements WebFilter {
       if (valid) {
         return await chain.doFilter(current, response);
       }
+      _logInvalid(current);
       await accessDeniedHandler.handle(
         current,
         response,
@@ -484,12 +488,18 @@ final class CsrfFilter implements WebFilter {
 
     requestHandler.handle(current, token);
     if (!requireCsrfProtectionMatcher.matches(current)) {
+      _log.trace(
+        () =>
+            'Did not protect against CSRF since request did not match '
+            '$requireCsrfProtectionMatcher',
+      );
       return await chain.doFilter(current, response);
     }
     if (loaded == null) {
       // Nothing to compare with: a token is created for the next page, and
       // this request fails.
       token();
+      _logInvalid(current);
       await accessDeniedHandler.handle(
         current,
         response,
@@ -504,6 +514,7 @@ final class CsrfFilter implements WebFilter {
     final sent = requestHandler.resolveCsrfTokenValue(current, loaded, form);
     if (sent == null ||
         !constantTimeEquals(utf8.encode(sent), utf8.encode(loaded.token))) {
+      _logInvalid(current);
       await accessDeniedHandler.handle(
         current,
         response,
@@ -539,3 +550,7 @@ CsrfToken? csrfTokenOf(ServerHttpRequest request) => switch (request
   final CsrfToken Function() read => read(),
   _ => null,
 };
+
+// Never the token, the one sent or the stored one.
+void _logInvalid(ServerHttpRequest request) =>
+    _log.debug(() => 'Invalid CSRF token found for ${logText(request.path)}');

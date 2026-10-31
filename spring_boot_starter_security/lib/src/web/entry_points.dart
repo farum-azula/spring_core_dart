@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
+
+const _log = SpringLog('spring.security.web.access.AccessDeniedHandlerImpl');
 
 /// Writes a security error as an `application/problem+json` body with
 /// [status], the standard title, the fixed [detail] text and the request's
@@ -95,12 +98,15 @@ final class AccessDeniedHandlerImpl implements AccessDeniedHandler {
     ServerHttpRequest request,
     ServerHttpResponse response,
     AccessDeniedException accessDeniedException,
-  ) => writeSecurityProblem(
-    request,
-    response,
-    HttpStatus.forbidden,
-    'Access Denied',
-  );
+  ) {
+    _log.debug('Responding with 403 status code');
+    return writeSecurityProblem(
+      request,
+      response,
+      HttpStatus.forbidden,
+      'Access Denied',
+    );
+  }
 }
 
 /// The [AuthenticationEntryPoint] of HTTP Basic: a `401` with
@@ -227,6 +233,10 @@ Future<void> sendRedirect(ServerHttpResponse response, String location) async {
   if (response.isCommitted) {
     return;
   }
+  // The query is left out: an authorization request carries its `state`.
+  _log.debug(
+    () => 'Redirecting to ${logText(location.split(RegExp('[?#]')).first)}',
+  );
   response
     ..statusCode = HttpStatus.found
     ..headers.set(HttpHeaders.locationHeader, location);

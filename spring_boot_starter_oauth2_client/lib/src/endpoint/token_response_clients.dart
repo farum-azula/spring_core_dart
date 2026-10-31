@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart' show SpringLog;
+import 'package:spring_boot_starter_oauth2_client/src/core/log_support.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/oauth2_error.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/parameter_names.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/tokens.dart';
@@ -211,6 +212,12 @@ abstract class AbstractTokenResponseClient<
           await proofs.build(method: 'POST', url: url, nonce: nonce),
         );
       }
+      _log.debug(
+        () =>
+            'Sending the ${logText(form['grant_type'])} token request of '
+            'registration ${logText(registration.registrationId)} to '
+            '${logEndpoint(url)}',
+      );
       final response = await transport.send(
         HttpRequest(
           method: HttpMethod.post,
@@ -220,6 +227,11 @@ abstract class AbstractTokenResponseClient<
           // Credentials and codes never follow a redirect elsewhere.
           followRedirects: false,
         ),
+      );
+      _log.debug(
+        () =>
+            'The token endpoint ${logEndpoint(url)} answered '
+            '${response.statusCode.value}',
       );
       return response;
     }

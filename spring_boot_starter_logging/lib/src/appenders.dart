@@ -1,5 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
+import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 
 /// One output of the logging system: it receives every log record that
 /// passes the logger levels and writes it somewhere.
@@ -83,14 +84,16 @@ class ConsoleAppender extends LogAppender {
   /// A console appender writing with [pattern] to [out]. By default the
   /// pattern is Spring Boot's console pattern
   /// ([LogPattern.defaultConsolePattern]) with colours, and [out] is
-  /// `print`.
+  /// standard output on the Dart VM (written at once, not through
+  /// `print`) and `print` in a Flutter app (its device log, also when it
+  /// runs a server) and on the web (the browser's console).
   ConsoleAppender({
     LogPattern? pattern,
     void Function(String line)? out,
     super.threshold,
   }) : pattern =
            pattern ?? LogPattern(LogPattern.defaultConsolePattern, ansi: true),
-       out = out ?? print;
+       out = out ?? platform.consoleOut();
 
   /// How a record becomes a line; replace it to change the format at
   /// runtime.

@@ -7,6 +7,7 @@ import 'package:spring_security_core/src/authentication/offload_stub.dart'
 import 'package:spring_security_core/src/authentication/password_checks.dart';
 import 'package:spring_security_core/src/core/authentication.dart';
 import 'package:spring_security_core/src/core/exceptions.dart';
+import 'package:spring_security_core/src/core/log_support.dart';
 import 'package:spring_security_core/src/crypto/password_encoder.dart';
 import 'package:spring_security_core/src/userdetails/user_details.dart';
 import 'package:spring_security_core/src/userdetails/user_details_service.dart';
@@ -182,10 +183,17 @@ final class ProviderManager implements AuthenticationManager {
     AuthenticationException? lastException;
     AuthenticationException? parentException;
     Authentication? result;
+    var position = 0;
     for (final provider in providers) {
+      position++;
       if (!provider.supports(authentication)) {
         continue;
       }
+      _log.trace(
+        () =>
+            'Authenticating request with ${authentication.runtimeType} '
+            '($position/${providers.length})',
+      );
       try {
         result = await provider.authenticate(authentication);
         if (result != null) {
@@ -224,6 +232,9 @@ final class ProviderManager implements AuthenticationManager {
         ProviderNotFoundException(
           'No AuthenticationProvider found for ${authentication.runtimeType}',
         );
+    _log.debug(
+      () => 'Failed to authenticate since ${logText(failure.message)}',
+    );
     // The parent published its own failure already.
     if (parentException == null) {
       _prepare(failure, authentication);
@@ -346,6 +357,7 @@ final class DaoAuthenticationProvider implements AuthenticationProvider {
     try {
       user = await _load(username);
     } on UsernameNotFoundException catch (e) {
+      _log.debug(() => "Failed to find user '${logText(username)}'");
       // The same work as for a known user: timing must not tell.
       await _check(_presented(authentication), await _dummyHash());
       if (hideUserNotFoundExceptions) {
@@ -356,7 +368,9 @@ final class DaoAuthenticationProvider implements AuthenticationProvider {
     preAuthenticationChecks.check(user);
     final presented = _presented(authentication);
     if (!await _check(presented, user.password)) {
-      _log.debug('Failed to authenticate since password does not match');
+      _log.debug(
+        'Failed to authenticate since password does not match stored value',
+      );
       throw BadCredentialsException();
     }
     postAuthenticationChecks.check(user);

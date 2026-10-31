@@ -34,6 +34,40 @@ Future<ServerHttpRequest> _through(
 void main() {
   final filter = ForwardedHeaderFilter();
 
+  test(
+    'debug lines: the resulting scheme and host, no header values',
+    () async {
+      final records = <SpringLogRecord>[];
+      final stop = SpringLog.listen(records.add);
+      final before = SpringLog.level;
+      SpringLog.level = SpringLogLevel.debug;
+      addTearDown(() {
+        stop();
+        SpringLog.level = before;
+      });
+      await _through(filter, {
+        'X-Forwarded-Proto': 'https',
+        'X-Forwarded-Host': 'shop.example.com',
+        'X-Forwarded-For': '203.0.113.7',
+      });
+      await _through(filter, {
+        'X-Forwarded-For': '198.51.100.9',
+      }, from: '8.8.8.8');
+      final forwarded = records
+          .where((r) => r.loggerName == 'spring.web.forwarded')
+          .toList();
+      expect(forwarded, hasLength(2));
+      expect(
+        forwarded.first.message,
+        'Forwarded headers applied: https://shop.example.com',
+      );
+      expect(forwarded.last.message, contains('8.8.8.8'));
+      final text = forwarded.map((r) => r.message).join('\n');
+      expect(text, isNot(contains('203.0.113.7')));
+      expect(text, isNot(contains('198.51.100.9')));
+    },
+  );
+
   test('X-Forwarded-*: https, the public host, the client', () async {
     final r = await _through(filter, {
       'X-Forwarded-Proto': 'https',

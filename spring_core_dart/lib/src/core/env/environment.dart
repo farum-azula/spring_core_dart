@@ -5,6 +5,8 @@ import 'package:spring_core_dart/src/core/env/platform_environment_stub.dart'
 import 'package:spring_core_dart/src/core/env/profiles.dart';
 import 'package:spring_core_dart/src/core/env/property_resolver.dart';
 import 'package:spring_core_dart/src/core/env/system_environment_property_source.dart';
+import 'package:spring_core_dart/src/core/log.dart';
+import 'package:spring_core_dart/src/core/log_format.dart';
 
 /// The application's configuration as code sees it: every property from
 /// every source (config files, command line, environment variables), and
@@ -307,6 +309,7 @@ class StandardEnvironment implements ConfigurableEnvironment {
   @override
   void setActiveProfiles(List<String> profiles) {
     profiles.forEach(_validateProfile);
+    _log.debug(() => 'Activating profiles ${profiles.map(_quote).toList()}');
     _active
       ..clear()
       ..addAll(profiles);
@@ -316,6 +319,7 @@ class StandardEnvironment implements ConfigurableEnvironment {
   void addActiveProfile(String profile) {
     _validateProfile(profile);
     _doGetActive();
+    _log.debug(() => 'Activating profile ${_quote(profile)}');
     _active.add(profile);
   }
 
@@ -441,3 +445,7 @@ class StandardEnvironment implements ConfigurableEnvironment {
       'StandardEnvironment {activeProfiles=$_active, '
       'defaultProfiles=$_defaults, propertySources=$propertySources}';
 }
+
+const _log = SpringLog('spring_core_dart.core.env');
+
+String _quote(String profile) => LogFormatUtils.formatValue(profile);

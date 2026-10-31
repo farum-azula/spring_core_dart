@@ -2,11 +2,17 @@ import 'dart:async';
 
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/firewall.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
 
 const _log = SpringLog('spring.security.web');
+const _chainLog = SpringLog('spring.security.web.DefaultSecurityFilterChain');
+const _proxyLog = SpringLog('spring.security.web.FilterChainProxy');
+const _contextLog = SpringLog(
+  'spring.security.web.context.HttpSessionSecurityContextRepository',
+);
 
 /// One security setup for a group of requests: which requests it covers,
 /// and the filters (login, CSRF, access rules, ...) that run on them.
@@ -62,7 +68,13 @@ final class DefaultSecurityFilterChain implements SecurityFilterChain {
   /// A chain running [filters] (copied, cannot be modified) on the
   /// requests [requestMatcher] matches.
   DefaultSecurityFilterChain(this.requestMatcher, List<WebFilter> filters)
-    : filters = List.unmodifiable(filters);
+    : filters = List.unmodifiable(filters) {
+    _chainLog.debug(
+      () =>
+          'Will secure $requestMatcher with filters: '
+          '${this.filters.map((f) => f.runtimeType).join(', ')}',
+    );
+  }
 
   /// Decides which requests this chain handles.
   final RequestMatcher requestMatcher;
@@ -190,7 +202,9 @@ final class FilterChainProxy implements WebFilter, Ordered {
     try {
       firewall.check(request);
     } on RequestRejectedException catch (e) {
-      _log.debug('Rejecting request ${request.method.value}: ${e.reason}');
+      _proxyLog.debug(
+        () => 'Rejecting request ${request.method.value}: ${logText(e.reason)}',
+      );
       await requestRejectedHandler.handle(request, response, e);
       return;
     }
@@ -198,14 +212,19 @@ final class FilterChainProxy implements WebFilter, Ordered {
     await SecurityContextHolder.runWithContext(() async {
       try {
         if (selected == null || selected.filters.isEmpty) {
+          _proxyLog.trace(() => 'No security for ${requestLine(request)}');
           return await chain.doFilter(request, response);
         }
+        _proxyLog.debug(() => 'Securing ${requestLine(request)}');
         return await _VirtualChain(
           selected.filters,
           chain,
+          request,
         ).doFilter(request, response);
       } on AuthenticationException catch (e) {
-        _log.debug('Unauthenticated ${request.method.value}: $e');
+        _proxyLog.debug(
+          () => 'Unauthenticated ${requestLine(request)}: ${logText(e)}',
+        );
         await writeSecurityProblem(
           request,
           response,
@@ -213,7 +232,7 @@ final class FilterChainProxy implements WebFilter, Ordered {
           'Full authentication is required to access this resource',
         );
       } on AccessDeniedException catch (e) {
-        _log.debug('Denied ${request.method.value}: $e');
+        _proxyLog.debug(() => 'Denied ${requestLine(request)}: ${logText(e)}');
         await writeSecurityProblem(
           request,
           response,
@@ -253,10 +272,11 @@ void _warnBusy(PasswordChecksBusyException e) {
 }
 
 final class _VirtualChain implements WebFilterChain {
-  _VirtualChain(this.filters, this.original, [this.index = 0]);
+  _VirtualChain(this.filters, this.original, this.logged, [this.index = 0]);
 
   final List<WebFilter> filters;
   final WebFilterChain original;
+  final ServerHttpRequest logged;
   final int index;
 
   @override
@@ -265,12 +285,18 @@ final class _VirtualChain implements WebFilterChain {
     ServerHttpResponse response,
   ) {
     if (index == filters.length) {
+      _proxyLog.debug(() => 'Secured ${requestLine(logged)}');
       return original.doFilter(request, response);
     }
+    _proxyLog.trace(
+      () =>
+          'Invoking ${filters[index].runtimeType} '
+          '(${index + 1}/${filters.length})',
+    );
     return filters[index].doFilter(
       request,
       response,
-      _VirtualChain(filters, original, index + 1),
+      _VirtualChain(filters, original, logged, index + 1),
     );
   }
 }
@@ -341,9 +367,19 @@ final class HttpSessionSecurityContextRepository
     final stored = request
         .getSession(create: false)
         ?.getAttribute(springSecurityContextKey);
-    return stored is SecurityContext
-        ? SecurityContextImpl(stored.authentication)
-        : null;
+    if (stored is! SecurityContext) {
+      _contextLog.trace(
+        'No SecurityContext was available from the HttpSession',
+      );
+      return null;
+    }
+    final copy = SecurityContextImpl(stored.authentication);
+    _contextLog.trace(
+      () =>
+          'Retrieved SecurityContextImpl [Authentication='
+          '${_describe(copy.authentication)}]',
+    );
+    return copy;
   }
 
   @override
@@ -354,14 +390,27 @@ final class HttpSessionSecurityContextRepository
   ) {
     final authentication = context.authentication;
     if (authentication == null || trustResolver.isAnonymous(authentication)) {
-      request
-          .getSession(create: false)
-          ?.removeAttribute(springSecurityContextKey);
+      final session = request.getSession(create: false);
+      if (session?.getAttribute(springSecurityContextKey) != null) {
+        _contextLog.trace('Removed SecurityContext stored in HttpSession');
+      } else {
+        _contextLog.trace(
+          authentication == null
+              ? 'Did not store empty SecurityContext'
+              : 'Did not store anonymous SecurityContext',
+        );
+      }
+      session?.removeAttribute(springSecurityContextKey);
       return;
     }
     request.getSession()!.setAttribute(
       springSecurityContextKey,
       SecurityContextImpl(authentication),
+    );
+    _contextLog.trace(
+      () =>
+          'Stored SecurityContextImpl [Authentication='
+          '${describeAuthentication(authentication)}] to HttpSession',
     );
   }
 
@@ -509,3 +558,6 @@ final class SecurityContextHolderFilter implements WebFilter {
     await chain.doFilter(request, response);
   }
 }
+
+String _describe(Authentication? authentication) =>
+    authentication == null ? 'null' : describeAuthentication(authentication);

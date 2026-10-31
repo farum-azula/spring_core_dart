@@ -32,7 +32,8 @@ the application adds the driver it wants, the generator sees it.
   `DataSource`, more are beans written by hand). The driver is chosen by
   the URL's scheme.
 - **Stores behind one repository interface:** JDBC-like over SQLite and
-  PostgreSQL, key-value over Redis, Supabase over PostgREST (HTTP: Flutter apps never hold
+  PostgreSQL, key-value over Redis, Supabase (its own starter) over
+  PostgREST (HTTP: Flutter apps never hold
   database credentials; the user's token and row-level security decide),
   and in memory for tests. A repository chooses its store and database:
   `@Repository(dataSource: 'analytics')`, `@Repository(store: 'supabase')`.
@@ -45,6 +46,9 @@ the application adds the driver it wants, the generator sees it.
    repository implementations, derived queries parsed at build time (a
    wrong property name is a build error); `@Query` with named parameters
    and SpEL; auditing; `@Version`; the in-memory store; `@DataTest`.
+   Containers in tests (`@Container`, `@ServiceConnection`, our own
+   Docker client: [spring_boot_starter_test.md](spring_boot_starter_test.md))
+   come with it, before SQLite and PostgreSQL need them.
 2. Transactions: `PlatformTransactionManager`, `@Transactional` on the AOP
    proxies (propagation, isolation, read-only, rollback rules),
    `TransactionTemplate`; the current transaction in a `Zone`, so it
@@ -73,12 +77,16 @@ the application adds the driver it wants, the generator sees it.
    - a distributed lock (`RedisLockRegistry`, Spring Integration's) and
      optimistic updates with `WATCH` / `MULTI`.
    Not in Flutter apps.
-6. Supabase over PostgREST: derived queries as filters
-   (`findByTitleContaining` → `title=ilike.*dune*`), `@Version` as a
-   conditional `PATCH`, the user's token from the Flutter security
-   starter. No transactions and no pessimistic locks there: a
-   `@Transactional` or `@Lock` method of a Supabase repository is a build
-   error, not a silent no-op.
+6. Supabase: in its own starter, on its official packages
+   ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)):
+   a store for these repositories, its Auth as a login of the security
+   starters.
+
+Later, not in 0.6.0 (the owner): MongoDB (`@Document`, `MongoTemplate`,
+`MongoRepository`, `@Version` and `findAndModify` instead of pessimistic
+locks, `MongoTransactionManager` on a replica set; the driver to decide:
+`mongo_dart` behind our template first, checked on a replica set, our
+own if it falls short).
 
 ## The full example
 
@@ -424,6 +432,212 @@ class Counters {
   Future<int> visit(String page) => redis.opsForValue().increment('visits:$page');
 }
 ```
+
+### Locks
+
+**Optimistic: `@Version`** (Spring Data's), on an `int` or `DateTime`
+property of an aggregate root:
+- `save` of a new entity (id `null`, or version `0`) inserts with
+  version 1; of a loaded one updates `... set version = version + 1
+  where id = ? and version = ?`; no row updated:
+  `OptimisticLockingFailureException` (409 from the web starter).
+- `delete(entity)` checks the version the same way; `deleteById` does
+  not (it has no version), as in Spring Data JDBC.
+- The children of an aggregate are covered by the root's version.
+- Retried on fresh data with `@Retryable` (the retry starter), or
+  answered as a conflict.
+- Supabase: a `PATCH` filtered on `version=eq.N` returning the row; none
+  returned: the same exception.
+- Redis: `WATCH` / `MULTI` / `EXEC` in `RedisTemplate`; a `@RedisHash`
+  with `@Version` checks it in a Lua script, atomically.
+
+**Pessimistic: `@Lock`** on a repository query method (Spring Data's):
+- `LockMode.pessimisticWrite` → `select ... for update`;
+  `LockMode.pessimisticRead` → `for share`; `timeout:` (PostgreSQL's
+  `lock_timeout`; 0 = `nowait`), `skipLocked: true` (a work queue).
+- Only inside a transaction: a `@Lock` method called outside one fails
+  at once (`IllegalTransactionStateException`), never runs unlocked.
+- A lock that cannot be had: `CannotAcquireLockException`; a deadlock:
+  `DeadlockLoserDataAccessException` (both transient: worth a retry).
+- SQLite has no row locks: the transaction becomes `BEGIN IMMEDIATE`
+  (one writer for the whole database), stated in the docs.
+- Supabase: none (a build error on its repositories).
+- In SQL by hand: `jdbc.sql('select ... for update')` inside
+  `@Transactional`.
+
+**Between instances: a distributed lock** over Redis
+(`RedisLockRegistry`, Spring Integration's): `lock.tryLock(timeout)`,
+with an expiry so a dead instance does not keep it.
+
+### Transactions: the test matrix (the owner's request)
+
+Every combination of `propagation` × `isolation` gets tests, on every
+store that has transactions (SQLite, PostgreSQL in Docker in CI), with
+races between real connections:
+
+- **Propagation** (Spring's seven): `required`, `requiresNew`,
+  `supports`, `notSupported`, `mandatory`, `never`, `nested`
+  (savepoints). For each: called with and without a transaction around
+  it, the inner one throwing or not, the outer one rolling back or not:
+  what is committed, what is rolled back, which connection is used,
+  `UnexpectedRollbackException` when an inner `required` marked the
+  transaction rollback-only and the outer one tries to commit,
+  `IllegalTransactionStateException` for `mandatory` without one and
+  `never` within one, a `nested` rollback to its savepoint only.
+- **Isolation** (`defaultLevel`, `readUncommitted`, `readCommitted`,
+  `repeatableRead`, `serializable`) × the anomalies, each provoked by two
+  transactions on two connections, ordered by completers (barriers), not
+  by sleeps, so the race happens every run:
+  dirty read, non-repeatable read, phantom read, lost update, write
+  skew. The expected result per database is a table in the docs
+  (PostgreSQL: `readUncommitted` behaves as `readCommitted`,
+  `repeatableRead` has no phantoms, `serializable` fails one of two
+  conflicting transactions with `CannotSerializeTransactionException`,
+  transient); a level a database does not offer (SQLite: only
+  serializable writes) fails at the transaction's start, never silently
+  downgraded.
+- **The rest of `@Transactional`:** `readOnly` (PostgreSQL: a write
+  fails), `timeout` (a statement past it is cancelled,
+  `QueryTimeoutException`), `rollbackFor` / `noRollbackFor`, checked and
+  unchecked exceptions as in Spring (here: every exception rolls back
+  unless listed), the qualifier of a second datasource
+  (`@Transactional('analytics')`), `TransactionTemplate` with the same
+  settings.
+- **Dart's own cases:** the transaction follows `await` (the `Zone`);
+  `Future.wait` of two statements in one transaction (one connection:
+  run in turn, never interleaved on the wire); `unawaited` work started
+  inside a transaction and running after its end (fails, does not use a
+  returned connection); a transaction across `Isolate.run` (refused);
+  the pool exhausted by nested `requiresNew` (bounded wait, then
+  `CannotGetJdbcConnectionException`, never a deadlock of the pool).
+- **Locks in the same matrix:** `@Lock` under each isolation;
+  `@Version` lost-update test under `readCommitted` (the version catches
+  what the level lets through).
+- **Compared with Spring:** the same scenarios against a Spring Boot +
+  Spring Data JDBC reference on the same PostgreSQL (the way
+  `tool/security_reference` compares security): what commits, what
+  fails and with which exception must match, or the difference is
+  documented on purpose.
+
+### The imperative layer: JdbcTemplate, JdbcClient, RedisTemplate
+
+The repositories are generated over it; applications use it where a
+repository is not enough. Everything returns a `Future` (one thread: no
+blocking API). Inside `@Transactional` / `TransactionTemplate` the
+templates use the transaction's connection, the same as the
+repositories (the transaction lives in a `Zone`).
+
+```dart
+// JdbcTemplate: positional parameters.
+final books = await jdbc.query('select id, title from books where year > ?',
+    [2000], (row) => Book(id: row.int_('id'), title: row.string('title')));
+final count = await jdbc.queryForObject<int>('select count(*) from books');
+await jdbc.update('update stock set available = ? where book_id = ?', [5, 42]);
+await jdbc.batchUpdate('insert into tags(book_id, tag) values (?, ?)',
+    [[1, 'sf'], [1, 'classic']]);
+
+// NamedParameterJdbcTemplate: names, lists expanded in IN.
+await named.query('select * from books where id in (:ids)',
+    {'ids': [1, 2, 3]}, bookMapper);
+
+// JdbcClient (Spring 6.1).
+final book = await jdbc.sql('select * from books where id = :id')
+    .param('id', 42).query(bookMapper).optional();
+
+// Large results as a stream, not all in memory.
+await for (final row in jdbc.queryForStream('select * from events', [])) {}
+```
+
+- Row mapping: a function (`RowMapper`), `DataClassRowMapper<T>`
+  generated at build time (columns by name, `author_name` →
+  `authorName`), `ResultSetExtractor` (one to many).
+- Values only as parameters: the API never puts a value into the SQL
+  text.
+
+```dart
+// RedisTemplate / StringRedisTemplate, serializers (strings, JSON through
+// the ObjectMapper, bytes).
+await redis.opsForValue().set('session:42', 'data', ttl: Duration(minutes: 30));
+await redis.opsForValue().increment('visits:/books');
+await redis.opsForHash().putAll('book:1', {'title': 'Dune', 'year': '1965'});
+await redis.opsForList().rightPush('queue:emails', jsonEncode(mail));
+await redis.opsForZSet().add('top-books', '1', score: 42);
+
+// WATCH / MULTI / EXEC (optimistic), pipelines, Lua scripts, Pub/Sub.
+await redis.execute((ops) async { await ops.watch(['stock:42']); /* ... */ });
+await redis.executePipelined((ops) { for (final id in ids) ops.opsForValue().get('book:$id'); });
+await redis.execute(RedisScript<int>(decrementIfPositive), ['stock:42']);
+await redis.convertAndSend('events', 'book-added:42');
+// SCAN, never KEYS: keys as a Stream.
+```
+
+Redis transactions (`MULTI` / `EXEC`) are not joined with SQL ones by
+`@Transactional`, as in Spring; the docs say so. Order of work: the JDBC
+templates with SQLite (step 3), `RedisTemplate` first in step 5.
+
+### Errors: exception translation
+
+As in Spring, a `@Repository` bean (and every template) translates the
+driver's errors (`PersistenceExceptionTranslationPostProcessor`,
+`SQLErrorCodeSQLExceptionTranslator`) into one hierarchy, the same for
+SQLite, PostgreSQL, Redis and Supabase:
+
+`DataAccessException` → `DuplicateKeyException`,
+`DataIntegrityViolationException`, `EmptyResultDataAccessException`,
+`IncorrectResultSizeDataAccessException`,
+`OptimisticLockingFailureException`, `PessimisticLockingFailureException`
+/ `CannotAcquireLockException`, `DeadlockLoserDataAccessException`,
+`QueryTimeoutException`, `DataAccessResourceFailureException`
+(connection lost), `BadSqlGrammarException`,
+`TransientDataAccessException` (worth a retry) /
+`NonTransientDataAccessException`.
+
+Each carries what is needed to understand it: the SQL (with `?` /
+`:name`, never the values), the SQL state and the vendor code, the
+constraint or column when the driver gives it, the cause. The web
+starter answers them: `OptimisticLockingFailureException` → 409,
+`DuplicateKeyException` → 409, `EmptyResultDataAccessException` → 404,
+the others → 500 without details (the log has them).
+
+### Logs: what goes to the database
+
+Spring's way, our logger (`SpringLog`), logger names after Spring's
+classes so the same switches work:
+
+```properties
+# The SQL of each statement (Spring: org.springframework.jdbc.core.JdbcTemplate).
+logging.level.spring.jdbc.core.JdbcTemplate=debug
+# The bound values too (Spring: ...StatementCreatorUtils=trace).
+logging.level.spring.jdbc.core.StatementCreatorUtils=trace
+# Transactions: begin, commit, rollback, the connection (Spring's).
+logging.level.spring.jdbc.datasource.DataSourceTransactionManager=debug
+# Redis commands (Spring Data Redis).
+logging.level.spring.data.redis=debug
+# A repository's derived query, as generated.
+logging.level.spring.data.repository=debug
+
+# Short switches (Spring Boot has spring.jpa.show-sql; these are its
+# counterparts here, not in Spring Boot for JDBC):
+spring.data.jdbc.show-sql=true            # = JdbcTemplate at debug
+spring.data.jdbc.format-sql=true          # SQL on several lines
+spring.data.jdbc.show-parameters=true     # = the values, at trace
+spring.data.jdbc.slow-query-threshold=500ms   # warn on slower statements
+```
+
+A logged statement: the SQL, the time it took, the rows, the
+datasource's name, the transaction's id and the request's id (the MDC
+the web starter already fills), so a slow page leads to its queries:
+
+```
+DEBUG spring.jdbc.core.JdbcTemplate : [shop tx#12] select * from stock where book_id = ? for update  (1 row, 3 ms) {request=7f3a}
+TRACE ...StatementCreatorUtils      : [shop tx#12]   ?1 = 42 (int)
+WARN  spring.jdbc.core.JdbcTemplate : [shop] slow statement, 812 ms: select ... from books b join authors a ...  {request=7f3a}
+```
+
+Values are logged only at trace; parameters whose name looks secret
+(`password`, `token`, `secret`, `key`) are masked even there, Redis
+`AUTH` never shows its password, and the connection URL is logged without
+its password.
 
 ## Differences from Spring to state in the docs
 

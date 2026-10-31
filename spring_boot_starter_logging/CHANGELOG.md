@@ -1,3 +1,10 @@
+## Unreleased
+
+### Changes
+
+- `logging.console.target` (`stdout` or `stderr`) chooses the console's stream on the Dart VM, as Logback's `ConsoleAppender` target; it is not a Spring Boot property.
+- The console writes to standard output on the VM (it was `print`), and uses `print` in Flutter and on the web.
+
 ## 0.5.0
 
 ### Changes

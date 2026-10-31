@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client.dart';
+import 'package:spring_boot_starter_oauth2_client/src/core/log_support.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/oauth2_error.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/tokens.dart';
 import 'package:spring_boot_starter_oauth2_client/src/endpoint/token_response_clients.dart';
@@ -268,6 +269,12 @@ final class RefreshTokenOAuth2AuthorizedClientProvider
       _ => const <String>{},
     };
     final registration = context.clientRegistration;
+    _log.debug(
+      () =>
+          'The access token of registration '
+          '${logText(registration.registrationId)} expires soon: '
+          'refreshing it',
+    );
     final response = await accessTokenResponseClient
         .getTokenResponse(
           OAuth2RefreshTokenGrantRequest(
@@ -292,6 +299,11 @@ final class RefreshTokenOAuth2AuthorizedClientProvider
     if (response.additionalParameters['id_token'] case final String raw) {
       idToken = await _refreshedIdToken(registration, client.idToken, raw);
     }
+    _log.debug(
+      () =>
+          'Refreshed the access token of registration '
+          '${logText(registration.registrationId)}',
+    );
     return OAuth2AuthorizedClient(
       registration,
       client.principalName,

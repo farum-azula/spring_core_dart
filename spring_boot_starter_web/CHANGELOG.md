@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The framework logs its main steps as Spring does, so `logging.level.root=debug` (or `logging.level.web=debug`) shows what happens: `GET "/api/books", parameters={masked}`, `Mapped to BookController#search()`, `Completed 200 OK` and `Resolved [Type: detail]` for the dispatcher; `N mappings in 'requestMappingHandlerMapping'` at debug and each mapping at trace; created, invalidated and re-keyed sessions (never their ids); the forwarded headers applied (scheme and host only); the parts and bytes of a multipart request. Parameters show as `masked`, and headers (trace) as `{masked}`, unless `spring.mvc.log-request-details=true`; even then `Authorization`, `Cookie`, `Set-Cookie` and any header or parameter whose name contains `token`, `secret`, `key`, `password` or `session` stay `masked`. Paths, parameter values and other client text go through `LogFormatUtils.formatValue`: line breaks show as `<EOL>`. The query string is not logged in the request line (parameters are, when allowed), unlike Spring.
+
 ## 0.5.0
 
 ### Breaking

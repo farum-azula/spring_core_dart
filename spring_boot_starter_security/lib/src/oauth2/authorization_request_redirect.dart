@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
@@ -565,6 +566,14 @@ final class OAuth2AuthorizationRequestRedirectFilter implements WebFilter {
         response,
       );
     }
+    // Never the URL itself: its query holds the state, the nonce and the
+    // PKCE challenge.
+    _log.debug(
+      () =>
+          'Redirecting to the authorization endpoint of registration '
+          '${logText(authorizationRequest!.registrationId)} at '
+          '${logText(authorizationRequest.authorizationRequestUri.host)}',
+    );
     await sendRedirect(
       response,
       authorizationRequest.authorizationRequestUri.toString(),

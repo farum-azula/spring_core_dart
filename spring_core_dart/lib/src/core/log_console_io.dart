@@ -16,3 +16,16 @@ bool get consoleSupportsAnsi {
     return false;
   }
 }
+
+/// Writes one line of `printLogHandler`: to standard output on the Dart
+/// VM, at once and not through `print` (which a zone may redirect); with
+/// `print` in a Flutter app (its device log, also when it runs a server).
+void writeConsoleLine(String line) {
+  if (const bool.fromEnvironment('dart.library.ui')) {
+    // The device log is the console of a Flutter app.
+    // ignore: avoid_print
+    print(line);
+    return;
+  }
+  io.stdout.writeln(line);
+}

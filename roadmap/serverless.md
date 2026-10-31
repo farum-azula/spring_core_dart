@@ -1,4 +1,4 @@
-# The edge starter: the same application on fetch platforms (planned, a 0.5.x patch)
+# The edge starter: the same application on fetch platforms (planned, after the data and Supabase starters)
 
 Dart compiles to JavaScript, and the family already runs without
 `dart:io` and without reflection (Flutter web proves it). Serverless
@@ -164,8 +164,9 @@ native image's unsupported features).
 
 ## When and the name
 
-A 0.5.x patch, after the review and the 0.5.0 release
-([review_0_5.md](review_0_5.md)), Supabase first. One package, working
+After the data starter and the Supabase starter (the owner's order,
+October 2026: an Edge Function on Supabase then uses the Supabase
+starter — its tables, its Auth), Supabase first. One package, working
 name `spring_boot_starter_edge` ("Spring edge"): the fetch adapter and
 the platforms' integrations (Supabase first) together, split only if a
 platform needs dependencies of its own; the exact name settled when it is

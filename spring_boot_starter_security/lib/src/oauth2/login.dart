@@ -7,6 +7,7 @@ import 'package:spring_boot_starter_security/src/oauth2/authorized_client_reposi
 import 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
 import 'package:spring_boot_starter_security/src/web/authentication.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
@@ -303,6 +304,13 @@ final class OidcAuthorizationCodeAuthenticationProvider
       throw OAuth2AuthenticationException(error, error.toString());
     }
     final idToken = await idTokenDecoder.decode(registration, raw);
+    _log.debug(
+      () =>
+          'ID token validated for registration '
+          '${logText(registration.registrationId)}: '
+          'issuer=${logText(idToken.issuer)}, '
+          'subject=${logText(idToken.subject)}',
+    );
     if (request.nonce case final nonce?) {
       final result = OidcIdTokenValidator.validateNonce(idToken, nonce);
       if (result.hasErrors) {
@@ -472,13 +480,16 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
       final reason = e is OAuth2AuthenticationException
           ? e.error.errorCode
           : '${e.runtimeType}';
-      _log.debug('OAuth2 login failed: $reason');
+      _log.debug(() => 'Failed to process authentication request: $reason');
       await failureHandler.onAuthenticationFailure(request, response, e);
       return;
     }
     final context = SecurityContextHolder.createEmptyContext()
       ..authentication = result;
     SecurityContextHolder.setContext(context);
+    _log.debug(
+      () => 'Set SecurityContextHolder to ${describeAuthentication(result)}',
+    );
     await securityContextRepository.saveContext(context, request, response);
     eventPublisher?.publishEvent(InteractiveAuthenticationSuccessEvent(result));
     await successHandler.onAuthenticationSuccess(request, response, result);
@@ -577,6 +588,11 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
         'login',
       );
     }
+    _log.debug(
+      () =>
+          'Received the authorization response of registration '
+          '${logText(registration.registrationId)}',
+    );
     final details = WebAuthenticationDetails.of(current);
     final login = OAuth2LoginAuthenticationToken.unauthenticated(
       registration,

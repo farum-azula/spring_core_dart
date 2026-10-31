@@ -904,6 +904,7 @@ class AnnotationConfigApplicationContext
     }
     _state = _State.refreshing;
     startupDate = DateTime.now();
+    _log.debug(() => 'Refreshing $displayName');
     // Events published while refreshing (before the multicaster and the
     // listeners exist) are buffered and replayed in _registerListeners.
     _earlyEvents = [];
@@ -1618,10 +1619,18 @@ class AnnotationConfigApplicationContext
       _multicaster = _factory.getBeanByName(
         applicationEventMulticasterBeanName,
       ) as ApplicationEventMulticaster;
+      _log.trace(
+        () => 'Using ApplicationEventMulticaster [${_multicaster.runtimeType}]',
+      );
       return;
     }
     final multicaster = SimpleApplicationEventMulticaster();
     _multicaster = multicaster;
+    _log.trace(
+      () =>
+          'No ApplicationEventMulticaster bean, using '
+          'SimpleApplicationEventMulticaster',
+    );
     _factory.registerSingleton(
       applicationEventMulticasterBeanName,
       multicaster,
@@ -1878,6 +1887,7 @@ class AnnotationConfigApplicationContext
       return false;
     }
     _state = _State.closing;
+    _log.debug(() => 'Closing $displayName');
     // Like Spring removing the JVM shutdown hook on an explicit close.
     _stopShutdownHook?.call();
     _stopShutdownHook = null;
@@ -1940,6 +1950,10 @@ class AnnotationConfigApplicationContext
     final applicationEvent = event is ApplicationEvent
         ? event
         : PayloadApplicationEvent<T>(this, event);
+    // The type only: the text of an event may hold user data.
+    _log.trace(
+      () => 'Publishing event in $displayName: ${applicationEvent.runtimeType}',
+    );
     final early = _earlyEvents;
     if (early != null) {
       early.add(applicationEvent);

@@ -74,9 +74,5 @@ class Tour implements CommandLineRunner {
   }
 }
 
-/// Without the logging starter only warnings show, so this example turns
-/// its own logger (`tour`) up to info.
 @SpringBootApplication()
-void main(List<String> args) =>
-    (springApplication..setDefaultProperties({'logging.level.tour': 'info'}))
-        .run(args);
+void main(List<String> args) => springApplication.run(args);

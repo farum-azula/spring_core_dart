@@ -20,8 +20,11 @@ import 'package:spring_boot_starter_security/src/jwt/since.dart';
 import 'package:spring_boot_starter_security/src/web/authentication.dart';
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
+import 'package:spring_boot_starter_security/src/web/log_support.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
+
+const _log = SpringLog('spring.security.oauth2.server.resource.web.dpop');
 
 /// The OAuth 2.0 error of a refused DPoP proof (RFC 9449 §7.1).
 ///
@@ -716,7 +719,11 @@ final class DPoPAuthenticationProvider implements AuthenticationProvider {
     // the jti); its factory is final, so no decoder skips that.
     try {
       await decoder.decode(request.dPoPProof);
+      _log.debug(
+        () => 'DPoP proof accepted for ${logText(request.method)} (bound key)',
+      );
     } on JwtException catch (e) {
+      _log.debug(() => 'DPoP proof rejected: ${logText(e.message)}');
       throw OAuth2AuthenticationException(
         OAuth2Error(invalidDPoPProof, e.message),
         e.message,
@@ -889,12 +896,16 @@ final class DPoPAuthenticationFilter implements WebFilter {
       );
     } on AuthenticationException catch (e) {
       SecurityContextHolder.clearContext();
+      _log.debug(
+        () => 'Failed to process authentication request: ${logText(e.message)}',
+      );
       await authenticationEntryPoint.commence(request, response, e);
       return;
     }
     final context = SecurityContextHolder.createEmptyContext()
       ..authentication = result;
     SecurityContextHolder.setContext(context);
+    _log.debug(() => 'Authenticated token: ${describeUser(result)}');
     await securityContextRepository.saveContext(context, request, response);
     await chain.doFilter(request, response);
   }

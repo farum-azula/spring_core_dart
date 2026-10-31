@@ -1,7 +1,11 @@
 import 'dart:convert';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' show SpringLog;
+import 'package:spring_boot_starter_oauth2_client/src/core/log_support.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
+
+const _log = SpringLog('spring.security.oauth2.client.registration');
 
 const _oidcMetadataPath = '/.well-known/openid-configuration';
 const _oauthMetadataPath = '/.well-known/oauth-authorization-server';
@@ -213,6 +217,9 @@ abstract final class ClientRegistrations {
       ),
     );
     final status = response.statusCode;
+    _log.debug(
+      () => 'The metadata location ${logEndpoint(uri)} answered $status',
+    );
     if (status >= 400 && status < 500) {
       return null; // try the next location
     }
