@@ -244,8 +244,10 @@ enum LockMode {
 /// that cannot be had throws `CannotAcquireLockException`.
 ///
 /// SQLite has no row locks: the transaction takes the whole database
-/// (`BEGIN IMMEDIATE`). The store in memory has no transactions: a `@Lock`
-/// method fails there (use a SQL store).
+/// (`BEGIN IMMEDIATE`). The store in memory has row locks of its own (read
+/// committed, with deadlock detection): the transaction is the one of the
+/// repository's store. It applies to the derived `find` methods and to
+/// `findById`.
 ///
 /// Spring (Java): `org.springframework.data.relational.repository.Lock`
 /// (`timeout` and `skipLocked` are extensions; Spring sets them with query

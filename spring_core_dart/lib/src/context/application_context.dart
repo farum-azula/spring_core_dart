@@ -1286,7 +1286,9 @@ class AnnotationConfigApplicationContext
           preDestroy: module.configurablePreDestroy[type],
         ),
       );
-      introspector.registerAll(module.introspections);
+      introspector
+        ..registerAll(module.introspections)
+        ..registerTypeTests(module.typeTests);
     }
 
     for (final component in _components) {

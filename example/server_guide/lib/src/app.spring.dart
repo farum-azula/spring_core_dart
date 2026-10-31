@@ -12368,6 +12368,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       target.shopName = r.value<String>(r'${neon.shop.name}');
     },
   },
+  typeTests: {
+    _i60.NoDeliveries: (value) => value is _i60.NoDeliveries,
+    _i34.Clock: (value) => value is _i34.Clock,
+    _i93.SupplierConfigured: (value) => value is _i93.SupplierConfigured,
+    _i9.Catalogued: (value) => value is _i9.Catalogued,
+  },
 );
 
 /// `@Log` of [AuditAspect]: the logger 'neon.audit'.

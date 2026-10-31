@@ -1,3 +1,11 @@
+## Unreleased
+
+### Changes
+
+- An interface extending `spring_boot_starter_data`'s `DataRepository` (directly or through `CrudRepository` and the others) gets a generated implementation and is a bean, annotated or not, as in Spring Data; a generic one is a base for others, never a bean. `@Repository('name')` names it. Its `InterfaceMetadata` carries the type arguments of its supertypes.
+- An interface proxy's bean takes the name of its `@Component`/`@Repository` annotation when it has one.
+- Each module gets `typeTests`: a `value is T` test for every class type written in an annotation of its classes, so a `Type` in an annotation matches subtypes at run time. Regenerated files change where annotations hold types.
+
 ## 0.5.0
 
 ### Breaking

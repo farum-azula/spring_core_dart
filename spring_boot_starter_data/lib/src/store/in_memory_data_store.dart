@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/log_values.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
@@ -9,6 +10,12 @@ import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/store/in_memory_transaction.dart';
+import 'package:spring_boot_starter_data/src/store/row_locks.dart';
+import 'package:spring_boot_starter_data/src/store/stored_aggregate.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_synchronization_manager.dart';
 
 /// A [DataStore] that keeps the aggregates in memory, in tables of rows,
 /// like a database would: for tests, prototypes and applications whose
@@ -26,7 +33,9 @@ import 'package:spring_boot_starter_data/src/store/data_store.dart';
 /// (an id that is set moves the counter past it); the ids of children
 /// that are `int?` are generated the same way, in the stored rows. An id
 /// of another type must be set by the application; a duplicate id on
-/// insert is a `DuplicateKeyException`.
+/// insert is a `DuplicateKeyException`. A generated id is taken at the
+/// insert and never given again, even when the transaction is rolled back
+/// (like a sequence).
 ///
 /// **`@Version`.** Insert sets it to 1 (an `int`) or to the current time (a
 /// `DateTime`, made strictly greater at each write). Update checks the
@@ -52,24 +61,72 @@ import 'package:spring_boot_starter_data/src/store/data_store.dart';
 /// in descending order. Equal keys keep the table's order, which is the
 /// order of insertion.
 ///
-/// **Atomic operations.** Dart runs one piece of code at a time, but
-/// `await` lets others in between. Every operation reads and writes the
-/// tables in one go, without waiting in the middle, so two saves of the
-/// same version cannot both succeed: one wins, the other gets an
-/// `OptimisticLockingFailureException`. There are no transactions beyond
-/// that: an operation on several aggregates is not undone when a later
-/// step fails.
+/// **Transactions.** Without a transaction bound for the store (see
+/// below) each operation runs alone, as a database does in auto-commit:
+/// it reads and writes the tables in one go, without waiting in the
+/// middle, so two saves of the same version cannot both succeed (one wins,
+/// the other gets an `OptimisticLockingFailureException`); it waits for the
+/// row locks of open transactions, as a database does.
+///
+/// With a transaction ([begin], bound as the resource of the store in
+/// `TransactionSynchronizationManager`) the store is read committed:
+///
+/// - reads see the committed rows overlaid with the transaction's own
+///   writes, never what other open transactions wrote (no dirty reads); a
+///   row read twice may differ (non-repeatable reads are allowed);
+/// - writes go to a private write set that [commit] applies in one
+///   synchronous section and [rollback] throws away; the children of an
+///   aggregate go with their root;
+/// - a write takes an exclusive lock on its row, held until the
+///   transaction ends. A write to a row locked by another transaction
+///   waits, first come first served, then reads the row again as it is
+///   after that transaction ended (as PostgreSQL does in read committed):
+///   the second writer of a lost-update race gets an
+///   `OptimisticLockingFailureException` with a `@Version`, and without
+///   one writes over the fresh row. Inserting an id another open
+///   transaction inserted waits, then fails with `DuplicateKeyException`
+///   when that one committed;
+/// - a wait ends after the smaller of the transaction's time left and the
+///   [lockTimeout]: `CannotAcquireLockException`, or `QueryTimeoutException`
+///   when the transaction's deadline cut it. A wait that would close a
+///   cycle of waiting transactions fails at once with
+///   `DeadlockLoserDataAccessException` (the caller then rolls back);
+/// - a find with a lock ([LockMode]) locks the rows it reads: exclusive
+///   for `pessimisticWrite`, shared for `pessimisticRead`; only inside a
+///   transaction;
+/// - savepoints ([createSavepoint]) restore the write set and release the
+///   locks taken after them;
+/// - a read-only transaction refuses writes and locking reads.
+///
+/// Differences from PostgreSQL: only row locks exist (no table locks, no
+/// predicate locks, so no phantom protection for `deleteWhere` or a
+/// locking `find`: a row that starts to match after the read is not
+/// locked); a locking read locks the rows it returns and the ones it
+/// skips for `offset`, like PostgreSQL, but `distinct` is allowed with a
+/// lock; a transaction that lost a deadlock is not marked aborted (the
+/// caller must roll it back); the isolation levels above read committed
+/// are refused instead of being offered.
 ///
 /// Logging, under `spring.data.memory.InMemoryDataStore`: each operation at
-/// debug (the table and the counts), the values only at trace.
+/// debug (the table and the counts), the transaction statements (`begin`,
+/// `commit`, `rollback`, lock waits) at debug too, the values only at
+/// trace.
 ///
 /// Spring (Java): `JdbcAggregateTemplate` over an embedded database such as
-/// H2 (`EmbeddedDatabaseBuilder`), which this store replaces for tests.
+/// H2 (`EmbeddedDatabaseBuilder`), which this store replaces for tests; the
+/// transactions are what `DataSourceTransactionManager` gets from the
+/// connection.
 final class InMemoryDataStore implements DataStore {
   /// A store that converts entities with [converter]. [name] is what
   /// `@UseStore` selects (`memory`) and what the log shows; a store per
-  /// `@UseDataSource` name is named `memory:<data source>`.
-  InMemoryDataStore({required this.converter, this.name = 'memory'});
+  /// `@UseDataSource` name is named `memory:<data source>`. [lockTimeout]
+  /// is the longest a write or a lock waits for a row another transaction
+  /// locked.
+  InMemoryDataStore({
+    required this.converter,
+    this.name = 'memory',
+    this.lockTimeout = const Duration(seconds: 10),
+  });
 
   /// Turns the aggregates' instances into rows and back.
   final EntityConverter converter;
@@ -77,26 +134,298 @@ final class InMemoryDataStore implements DataStore {
   @override
   final String name;
 
+  /// The longest a statement waits for a row lock (the transaction's time
+  /// left may cut it shorter); `Duration.zero` fails at once.
+  final Duration lockTimeout;
+
   static const _log = SpringLog('spring.data.memory.InMemoryDataStore');
 
   final _tables = <String, _Table>{};
+  final _locks = RowLockManager();
+  var _transactionCount = 0;
 
-  /// The number of aggregates stored for [entity], for tests and logs.
+  /// The number of aggregates committed for [entity], for tests and logs.
   int size(PersistentEntity<Object> entity) => _table(entity).rows.length;
 
-  /// Removes every row of every table and starts the ids again from 1.
+  /// How many statements wait for a row lock now, for tests and logs.
+  int get waitingCount => _locks.waiting;
+
+  /// Removes every committed row of every table and starts the ids again
+  /// from 1.
   void clear() {
     _tables.clear();
     _log.debug('$name: cleared');
   }
 
+  // --------------------------------------------------------- transactions
+
+  /// Starts a transaction: [isolation] is `defaultLevel` or
+  /// `readCommitted` (the same here), any other level is an
+  /// `InvalidIsolationLevelException`, never a weaker one given silently.
+  /// A [readOnly] transaction refuses writes and locking reads. [name] is
+  /// for logs.
+  ///
+  /// Bind the result with
+  /// `TransactionSynchronizationManager.bindResource(store, transaction)`
+  /// so the operations of the store find it; end it with [commit] or
+  /// [rollback].
+  InMemoryTransaction begin({
+    Isolation isolation = Isolation.defaultLevel,
+    bool readOnly = false,
+    String? name,
+  }) {
+    if (isolation != Isolation.defaultLevel &&
+        isolation != Isolation.readCommitted) {
+      throw InvalidIsolationLevelException(
+        'The ${this.name} store offers read committed only: ${isolation.name} '
+        'is refused',
+      );
+    }
+    final tx = _newTransaction(
+      name: name,
+      readOnly: readOnly,
+      isolation: isolation,
+    );
+    _log.debug(
+      '${this.name}: begin ${tx.label}${readOnly ? ' read only' : ''}',
+    );
+    return tx;
+  }
+
+  InMemoryTransaction _newTransaction({
+    String? name,
+    bool readOnly = false,
+    Isolation isolation = Isolation.defaultLevel,
+  }) => InMemoryTransaction.internal(
+    id: ++_transactionCount,
+    name: name,
+    readOnly: readOnly,
+    isolation: isolation,
+  );
+
+  /// Makes the writes of [tx] visible to everyone, in one synchronous
+  /// section, then releases its locks and wakes the transactions waiting
+  /// for them.
+  ///
+  /// Throws an `IllegalTransactionStateException` when [tx] has ended, and
+  /// when it is rollback-only (then it stays active: roll it back).
+  Future<void> commit(InMemoryTransaction tx) => Future.sync(() {
+    _requireActive(tx, 'commit');
+    if (tx.rollbackOnly) {
+      throw IllegalTransactionStateException(
+        'The transaction ${tx.label} is rollback-only: roll it back instead '
+        'of committing',
+      );
+    }
+    _commit(tx);
+  });
+
+  void _commit(InMemoryTransaction tx) {
+    var rows = 0;
+    for (final MapEntry(:key, :value) in tx.writes.entries) {
+      final table = _tables.putIfAbsent(key, _Table.new);
+      for (final MapEntry(key: id, value: stored) in value.entries) {
+        rows++;
+        if (stored == null) {
+          table.rows.remove(id);
+        } else {
+          table.rows[id] = stored;
+        }
+      }
+    }
+    _finish(tx, InMemoryTransactionState.committed);
+    _log.debug('$name: commit ${tx.label}, $rows row(s) written');
+  }
+
+  /// Throws the writes of [tx] away, releases its locks and wakes the
+  /// transactions waiting for them. Throws an
+  /// `IllegalTransactionStateException` when [tx] has ended.
+  Future<void> rollback(InMemoryTransaction tx) => Future.sync(() {
+    _requireActive(tx, 'roll back');
+    _rollback(tx);
+  });
+
+  void _rollback(InMemoryTransaction tx) {
+    _finish(tx, InMemoryTransactionState.rolledBack);
+    _log.debug('$name: rollback ${tx.label}');
+  }
+
+  void _finish(InMemoryTransaction tx, InMemoryTransactionState state) {
+    tx
+      ..state = state
+      ..writes = {};
+    for (final savepoint in tx.savepoints) {
+      savepoint.released = true;
+    }
+    tx.savepoints.clear();
+    _locks.releaseAll(tx);
+  }
+
+  /// Marks a point in [tx] that [rollbackToSavepoint] can return to.
+  InMemorySavepoint createSavepoint(InMemoryTransaction tx) {
+    _requireActive(tx, 'create a savepoint');
+    final savepoint = InMemorySavepoint.internal(
+      tx,
+      _copyWrites(tx.writes),
+      tx.acquisitions.length,
+    );
+    tx.savepoints.add(savepoint);
+    _log.debug('$name: savepoint in ${tx.label}');
+    return savepoint;
+  }
+
+  /// Puts the writes of [tx] back as they were at [savepoint] and releases
+  /// the locks taken since (a lock made exclusive since is shared again),
+  /// as PostgreSQL does for a rolled-back subtransaction. The savepoints
+  /// made after it are gone; it stays usable.
+  void rollbackToSavepoint(
+    InMemoryTransaction tx,
+    InMemorySavepoint savepoint,
+  ) {
+    _requireSavepoint(tx, savepoint, 'roll back to');
+    tx.writes = _copyWrites(savepoint.writes);
+    _locks.undoTo(tx, savepoint.acquisitionMark);
+    _dropSavepointsAfter(tx, savepoint);
+    _log.debug('$name: rollback to savepoint in ${tx.label}');
+  }
+
+  /// Forgets [savepoint] and the ones made after it; the writes and the
+  /// locks stay.
+  void releaseSavepoint(InMemoryTransaction tx, InMemorySavepoint savepoint) {
+    _requireSavepoint(tx, savepoint, 'release');
+    _dropSavepointsAfter(tx, savepoint);
+    tx.savepoints.remove(savepoint);
+    savepoint.released = true;
+    _log.debug('$name: release savepoint in ${tx.label}');
+  }
+
+  void _dropSavepointsAfter(
+    InMemoryTransaction tx,
+    InMemorySavepoint savepoint,
+  ) {
+    final index = tx.savepoints.indexOf(savepoint);
+    for (final later in tx.savepoints.sublist(index + 1)) {
+      later.released = true;
+    }
+    tx.savepoints.removeRange(index + 1, tx.savepoints.length);
+  }
+
+  void _requireSavepoint(
+    InMemoryTransaction tx,
+    InMemorySavepoint savepoint,
+    String what,
+  ) {
+    _requireActive(tx, what);
+    if (savepoint.owner != tx || savepoint.released) {
+      throw IllegalTransactionStateException(
+        'Cannot $what a savepoint that belongs to another transaction or '
+        'was released',
+      );
+    }
+  }
+
+  Map<String, Map<Object?, StoredAggregate?>> _copyWrites(
+    Map<String, Map<Object?, StoredAggregate?>> writes,
+  ) => {
+    for (final MapEntry(:key, :value) in writes.entries) key: {...value},
+  };
+
+  void _requireActive(InMemoryTransaction tx, String what) {
+    if (!tx.isActive) {
+      throw IllegalTransactionStateException(
+        'Cannot $what: the transaction ${tx.label} has already ended '
+        '(${tx.state.name})',
+      );
+    }
+  }
+
+  // The transaction bound for this store in the current scope, if any,
+  // after the checks every operation makes: the transaction's deadline,
+  // that it is active, and that it may write when [write].
+  InMemoryTransaction? _enter(String operation, {bool write = false}) {
+    TransactionSynchronizationManager.currentTransactionFor(
+      this,
+    )?.checkDeadline();
+    final bound = TransactionSynchronizationManager.getResource(this);
+    if (bound == null) {
+      return null;
+    }
+    if (bound is! InMemoryTransaction) {
+      throw IllegalTransactionStateException(
+        'The resource bound for the $name store is a '
+        '${bound.runtimeType}, not an InMemoryTransaction',
+      );
+    }
+    _requireActive(bound, operation);
+    if (write && bound.readOnly) {
+      throw InvalidDataAccessResourceUsageException(
+        'cannot execute $operation in a read-only transaction',
+      );
+    }
+    return bound;
+  }
+
+  // Runs a write in the bound transaction or, without one, in a
+  // transaction of its own that commits when the write is done.
+  Future<R> _write<R>(
+    String operation,
+    Future<R> Function(InMemoryTransaction tx) body,
+  ) async {
+    final bound = _enter(operation, write: true);
+    if (bound != null) {
+      return await body(bound);
+    }
+    final tx = _newTransaction(name: 'auto-commit');
+    try {
+      final result = await body(tx);
+      _commit(tx);
+      return result;
+    } on Object {
+      _finish(tx, InMemoryTransactionState.rolledBack);
+      rethrow;
+    }
+  }
+
+  // The longest a wait for a lock lasts: the smaller of the lock timeout
+  // (the call's, else the store's) and the transaction's time left.
+  Future<void> _lock(
+    InMemoryTransaction tx,
+    RowKey key, {
+    required bool exclusive,
+    Duration? timeout,
+  }) {
+    final limit = timeout ?? lockTimeout;
+    final left = TransactionSynchronizationManager.currentTransactionFor(
+      this,
+    )?.timeLeft;
+    final byDeadline = left != null && left < limit;
+    return _locks.acquire(
+      tx,
+      key,
+      exclusive: exclusive,
+      wait: byDeadline ? left : limit,
+      deadlineBound: byDeadline,
+      onWait: (blockedBy) => _log.debug(
+        '$name: ${tx.label} waits for a lock on ${key.$1}, held by '
+        '${blockedBy.join(', ')}',
+      ),
+    );
+  }
+
+  RowKey _key(PersistentEntity<Object> entity, Object? id) =>
+      (_tableKey(entity), id);
+
   // ---------------------------------------------------------------- write
 
   @override
   Future<T> insert<T extends Object>(PersistentEntity<T> entity, T instance) =>
-      Future.sync(() => _insert(entity, instance));
+      _write('insert', (tx) => _insert(tx, entity, instance));
 
-  T _insert<T extends Object>(PersistentEntity<T> entity, T instance) {
+  Future<T> _insert<T extends Object>(
+    InMemoryTransaction tx,
+    PersistentEntity<T> entity,
+    T instance,
+  ) async {
     final idProperty = _requireId(entity);
     final table = _table(entity);
     var id = converter.toColumnValue(idProperty.getValue(instance));
@@ -110,13 +439,17 @@ final class InMemoryDataStore implements DataStore {
         );
       }
       id = table.nextId++;
-    } else if (table.rows.containsKey(id)) {
+    } else if (id is int && id >= table.nextId) {
+      table.nextId = id + 1;
+    }
+    // The lock of the id, also for a generated one: nobody can know it, but
+    // an insert of the same id by hand must wait.
+    await _lock(tx, _key(entity, id), exclusive: true);
+    if (!generated && _get(tx, entity, id) != null) {
       throw DuplicateKeyException(
         'Duplicate id in table ${entity.tableName}',
         constraint: '${entity.tableName}_pkey',
       );
-    } else if (id is int && id >= table.nextId) {
-      table.nextId = id + 1;
     }
     final versionProperty = entity.versionProperty;
     final version = versionProperty == null
@@ -129,10 +462,10 @@ final class InMemoryDataStore implements DataStore {
         version,
       );
     }
-    table.rows[id] = stored;
+    _put(tx, entity, id, stored);
     _log.debug('$name: insert into ${entity.tableName}');
     _trace('insert', entity, stored.values);
-    return _withIdAndVersion(
+    return await _withIdAndVersion(
       entity,
       instance,
       idProperty,
@@ -147,17 +480,18 @@ final class InMemoryDataStore implements DataStore {
     PersistentEntity<T> entity,
     T instance, {
     Object? expectedVersion,
-  }) => Future.sync(
-    () => _update(entity, instance, expectedVersion: expectedVersion),
+  }) => _write(
+    'update',
+    (tx) => _update(tx, entity, instance, expectedVersion: expectedVersion),
   );
 
-  T _update<T extends Object>(
+  Future<T> _update<T extends Object>(
+    InMemoryTransaction tx,
     PersistentEntity<T> entity,
     T instance, {
     Object? expectedVersion,
-  }) {
+  }) async {
     final idProperty = _requireId(entity);
-    final table = _table(entity);
     final id = converter.toColumnValue(idProperty.getValue(instance));
     if (id == null) {
       throw InvalidDataAccessApiUsageException(
@@ -165,32 +499,17 @@ final class InMemoryDataStore implements DataStore {
       );
     }
     final versionProperty = entity.versionProperty;
-    final existing = table.rows[id];
-    Object? version;
-    if (versionProperty != null) {
-      final expected = converter.toColumnValue(
-        expectedVersion ?? versionProperty.getValue(instance),
-      );
-      if (existing == null ||
-          !_equals(existing.values[versionProperty.columnName], expected)) {
-        throw OptimisticLockingFailureException(
-          'Failed to update ${entity.introspection.className} in table '
-          '${entity.tableName}: it was changed or deleted since it was '
-          'loaded (its version no longer matches)',
-        );
-      }
-      version = _nextVersion(
-        versionProperty,
-        existing.values[versionProperty.columnName],
-      );
-    } else if (existing == null) {
-      throw IncorrectUpdateSemanticsDataAccessException(
-        'Failed to update ${entity.introspection.className} in table '
-        '${entity.tableName}: no row has this id (an entity with an id is '
-        'updated, not inserted; give an entity whose id is set by the '
-        'application a @Version property)',
-      );
-    }
+    // A row that is not there or has another version is not waited for: no
+    // row matches the statement, as `update ... where version = ?` finds
+    // none. The row is checked again once the lock is had.
+    _checkUpdate(entity, instance, _get(tx, entity, id), expectedVersion);
+    await _lock(tx, _key(entity, id), exclusive: true);
+    final version = _checkUpdate(
+      entity,
+      instance,
+      _get(tx, entity, id),
+      expectedVersion,
+    );
     final stored = _store(entity, instance);
     stored.values[idProperty.columnName] = id;
     if (versionProperty != null) {
@@ -198,10 +517,10 @@ final class InMemoryDataStore implements DataStore {
         version,
       );
     }
-    table.rows[id] = stored;
+    _put(tx, entity, id, stored);
     _log.debug('$name: update ${entity.tableName}');
     _trace('update', entity, stored.values);
-    return _withIdAndVersion(
+    return await _withIdAndVersion(
       entity,
       instance,
       idProperty,
@@ -211,65 +530,132 @@ final class InMemoryDataStore implements DataStore {
     );
   }
 
+  // Throws when [existing] cannot be updated by [instance]; returns the
+  // version it gets (null without a @Version).
+  Object? _checkUpdate(
+    PersistentEntity<Object> entity,
+    Object instance,
+    StoredAggregate? existing,
+    Object? expectedVersion,
+  ) {
+    final versionProperty = entity.versionProperty;
+    if (versionProperty == null) {
+      if (existing == null) {
+        throw IncorrectUpdateSemanticsDataAccessException(
+          'Failed to update ${entity.introspection.className} in table '
+          '${entity.tableName}: no row has this id (an entity with an id is '
+          'updated, not inserted; give an entity whose id is set by the '
+          'application a @Version property)',
+        );
+      }
+      return null;
+    }
+    final expected = converter.toColumnValue(
+      expectedVersion ?? versionProperty.getValue(instance),
+    );
+    if (existing == null ||
+        !_equals(existing.values[versionProperty.columnName], expected)) {
+      throw OptimisticLockingFailureException(
+        'Failed to update ${entity.introspection.className} in table '
+        '${entity.tableName}: it was changed or deleted since it was '
+        'loaded (its version no longer matches)',
+      );
+    }
+    return _nextVersion(
+      versionProperty,
+      existing.values[versionProperty.columnName],
+    );
+  }
+
   @override
   Future<bool> deleteById<T extends Object>(
     PersistentEntity<T> entity,
     Object id, {
     Object? expectedVersion,
-  }) => Future.sync(() {
-    final table = _table(entity);
-    final existing = table.rows[converter.toColumnValue(id)];
+  }) => _write('delete', (tx) async {
+    final columnId = converter.toColumnValue(id);
     final versionProperty = entity.versionProperty;
-    if (expectedVersion != null && versionProperty != null) {
-      if (existing == null ||
-          !_equals(
-            existing.values[versionProperty.columnName],
-            converter.toColumnValue(expectedVersion),
-          )) {
-        throw OptimisticLockingFailureException(
-          'Failed to delete ${entity.introspection.className} from table '
-          '${entity.tableName}: it was changed or deleted since it was '
-          'loaded (its version no longer matches)',
-        );
+    void check(StoredAggregate? existing) {
+      if (expectedVersion != null && versionProperty != null) {
+        if (existing == null ||
+            !_equals(
+              existing.values[versionProperty.columnName],
+              converter.toColumnValue(expectedVersion),
+            )) {
+          throw OptimisticLockingFailureException(
+            'Failed to delete ${entity.introspection.className} from table '
+            '${entity.tableName}: it was changed or deleted since it was '
+            'loaded (its version no longer matches)',
+          );
+        }
       }
     }
-    final removed = table.rows.remove(converter.toColumnValue(id)) != null;
+
+    var existing = _get(tx, entity, columnId);
+    check(existing);
+    if (existing != null) {
+      await _lock(tx, _key(entity, columnId), exclusive: true);
+      existing = _get(tx, entity, columnId);
+      check(existing);
+    }
+    if (existing != null) {
+      _put(tx, entity, columnId, null);
+    }
     _log.debug(
-      '$name: delete from ${entity.tableName}, ${removed ? 1 : 0} row(s)',
+      '$name: delete from ${entity.tableName}, ${existing == null ? 0 : 1} '
+      'row(s)',
     );
-    return removed;
+    return existing != null;
   });
 
   @override
   Future<int> deleteWhere<T extends Object>(
     PersistentEntity<T> entity, {
     Criteria? criteria,
-  }) => Future.sync(() => _deleteWhere(entity, criteria).length);
+  }) => _write(
+    'delete',
+    (tx) async => (await _deleteWhere(tx, entity, criteria)).length,
+  );
 
   @override
   Future<List<T>> deleteWhereAndReturn<T extends Object>(
     PersistentEntity<T> entity, {
     Criteria? criteria,
-  }) => Future.sync(() {
-    final removed = _deleteWhere(entity, criteria);
+  }) => _write('delete', (tx) async {
+    final removed = await _deleteWhere(tx, entity, criteria);
     return [for (final stored in removed) _read(entity, stored)];
   });
 
-  List<_Stored> _deleteWhere(
+  // Locks the rows that match, one after the other; when a wait happened
+  // the rows are looked for again, as they may have changed meanwhile.
+  Future<List<StoredAggregate>> _deleteWhere(
+    InMemoryTransaction tx,
     PersistentEntity<Object> entity,
     Criteria? criteria,
-  ) {
-    final table = _table(entity);
-    final matches = _matching(entity, criteria);
+  ) async {
     final idColumn = _requireId(entity).columnName;
-    for (final stored in matches) {
-      table.rows.remove(stored.values[idColumn]);
+    while (true) {
+      final matches = _matching(entity, criteria, tx);
+      var waited = false;
+      for (final stored in matches) {
+        final key = _key(entity, stored.values[idColumn]);
+        if (!_locks.tryAcquire(tx, key, exclusive: true)) {
+          await _lock(tx, key, exclusive: true);
+          waited = true;
+          break;
+        }
+      }
+      if (!waited) {
+        for (final stored in matches) {
+          _put(tx, entity, stored.values[idColumn], null);
+        }
+        _log.debug(
+          '$name: delete from ${entity.tableName} where '
+          '${criteria ?? 'all'}, ${matches.length} row(s)',
+        );
+        return matches;
+      }
     }
-    _log.debug(
-      '$name: delete from ${entity.tableName} where '
-      '${criteria ?? 'all'}, ${matches.length} row(s)',
-    );
-    return matches;
   }
 
   // ----------------------------------------------------------------- read
@@ -277,25 +663,63 @@ final class InMemoryDataStore implements DataStore {
   @override
   Future<T?> findById<T extends Object>(
     PersistentEntity<T> entity,
-    Object id,
-  ) => Future<T?>.sync(() {
-    final stored = _table(entity).rows[converter.toColumnValue(id)];
+    Object id, {
+    LockMode? lock,
+    Duration? lockTimeout,
+    bool skipLocked = false,
+  }) async {
+    final tx = _enter('select', write: lock != null);
+    final columnId = converter.toColumnValue(id);
+    var stored = _get(tx, entity, columnId);
+    if (lock != null && stored != null) {
+      final key = _key(entity, columnId);
+      final exclusive = lock == LockMode.pessimisticWrite;
+      if (!_locks.tryAcquire(
+        _requireLockTx(tx, lock),
+        key,
+        exclusive: exclusive,
+      )) {
+        if (skipLocked) {
+          stored = null;
+        } else {
+          await _lock(tx!, key, exclusive: exclusive, timeout: lockTimeout);
+          stored = _get(tx, entity, columnId);
+        }
+      }
+    } else if (lock != null) {
+      _requireLockTx(tx, lock);
+    }
     _log.debug(
-      '$name: select from ${entity.tableName} by id, '
-      '${stored == null ? 0 : 1} row(s)',
+      '$name: select from ${entity.tableName} by id'
+      '${_lockSuffix(lock, skipLocked)}, ${stored == null ? 0 : 1} row(s)',
     );
     return stored == null ? null : _read<T>(entity, stored);
-  });
+  }
+
+  // A locking read needs a transaction: it never runs unlocked.
+  InMemoryTransaction _requireLockTx(InMemoryTransaction? tx, LockMode lock) =>
+      tx ??
+      (throw IllegalTransactionStateException(
+        'A read with ${lock.name} needs a transaction: it never runs '
+        'without its lock',
+      ));
+
+  String _lockSuffix(LockMode? lock, bool skipLocked) => lock == null
+      ? ''
+      : ' for ${lock == LockMode.pessimisticWrite ? 'update' : 'share'}'
+            '${skipLocked ? ' skip locked' : ''}';
 
   @override
   Future<List<T>> findAllById<T extends Object>(
     PersistentEntity<T> entity,
     Iterable<Object> ids,
   ) => Future.sync(() {
+    final tx = _enter('select');
     final wanted = {for (final id in ids) converter.toColumnValue(id)};
+    final idColumn = _requireId(entity).columnName;
     final found = [
-      for (final MapEntry(:key, :value) in _table(entity).rows.entries)
-        if (wanted.contains(key)) value,
+      for (final stored in _rows(entity, tx))
+        if (wanted.contains(stored.values[idColumn])) stored,
     ];
     _log.debug(
       '$name: select from ${entity.tableName} by ${wanted.length} id(s), '
@@ -312,40 +736,135 @@ final class InMemoryDataStore implements DataStore {
     int? offset,
     int? limit,
     bool distinct = false,
-  }) => Future.sync(() {
-    var rows = _matching(entity, criteria);
-    if (sort.isSorted) {
-      rows = _sorted(entity, rows, sort);
+    LockMode? lock,
+    Duration? lockTimeout,
+    bool skipLocked = false,
+  }) async {
+    final tx = _enter('select', write: lock != null);
+    if (lock != null) {
+      _requireLockTx(tx, lock);
     }
-    if (distinct) {
-      rows = _distinct(rows);
-    }
-    if (offset != null && offset > 0) {
-      rows = rows.length <= offset ? const [] : rows.sublist(offset);
-    }
-    if (limit != null && limit < rows.length) {
-      rows = rows.sublist(0, limit < 0 ? 0 : limit);
+    List<StoredAggregate> selected;
+    if (lock == null) {
+      selected = _slice(
+        _ordered(entity, criteria, sort, distinct, tx),
+        offset,
+        limit,
+      );
+    } else {
+      selected = await _selectLocking(
+        tx!,
+        entity,
+        lock,
+        criteria: criteria,
+        sort: sort,
+        offset: offset,
+        limit: limit,
+        distinct: distinct,
+        timeout: lockTimeout,
+        skipLocked: skipLocked,
+      );
     }
     _log.debug(
       '$name: select from ${entity.tableName} where ${criteria ?? 'all'}'
       '${sort.isSorted ? ' order by $sort' : ''}'
       '${offset == null ? '' : ' offset $offset'}'
-      '${limit == null ? '' : ' limit $limit'}, ${rows.length} row(s)',
+      '${limit == null ? '' : ' limit $limit'}'
+      '${_lockSuffix(lock, skipLocked)}, ${selected.length} row(s)',
     );
     if (criteria != null &&
         criteria.arguments.isNotEmpty &&
         _log.isEnabled(SpringLogLevel.trace)) {
       _log.trace('$name: arguments ${LogValues.criteria(criteria)}');
     }
-    return [for (final stored in rows) _read(entity, stored)];
-  });
+    return [for (final stored in selected) _read(entity, stored)];
+  }
+
+  List<StoredAggregate> _ordered(
+    PersistentEntity<Object> entity,
+    Criteria? criteria,
+    Sort sort,
+    bool distinct,
+    InMemoryTransaction? tx,
+  ) {
+    var rows = _matching(entity, criteria, tx);
+    if (sort.isSorted) {
+      rows = _sorted(entity, rows, sort);
+    }
+    return distinct ? _distinct(rows) : rows;
+  }
+
+  List<StoredAggregate> _slice(
+    List<StoredAggregate> rows,
+    int? offset,
+    int? limit,
+  ) {
+    var out = rows;
+    if (offset != null && offset > 0) {
+      out = out.length <= offset ? const [] : out.sublist(offset);
+    }
+    if (limit != null && limit < out.length) {
+      out = out.sublist(0, limit < 0 ? 0 : limit);
+    }
+    return out;
+  }
+
+  // The rows of a read with a lock, locked in order. Rows another
+  // transaction holds are skipped (and do not count for offset or limit)
+  // with [skipLocked], else waited for; after a wait the rows are looked
+  // for again, as they may have changed meanwhile. The locks already taken
+  // are kept.
+  Future<List<StoredAggregate>> _selectLocking(
+    InMemoryTransaction tx,
+    PersistentEntity<Object> entity,
+    LockMode lock, {
+    required Criteria? criteria,
+    required Sort sort,
+    required int? offset,
+    required int? limit,
+    required bool distinct,
+    required Duration? timeout,
+    required bool skipLocked,
+  }) async {
+    final idColumn = _requireId(entity).columnName;
+    final exclusive = lock == LockMode.pessimisticWrite;
+    while (true) {
+      final rows = _ordered(entity, criteria, sort, distinct, tx);
+      final taken = <StoredAggregate>[];
+      var toSkip = offset == null || offset < 0 ? 0 : offset;
+      var waited = false;
+      for (final stored in rows) {
+        if (limit != null && taken.length >= (limit < 0 ? 0 : limit)) {
+          break;
+        }
+        final key = _key(entity, stored.values[idColumn]);
+        if (!_locks.tryAcquire(tx, key, exclusive: exclusive)) {
+          if (skipLocked) {
+            continue;
+          }
+          await _lock(tx, key, exclusive: exclusive, timeout: timeout);
+          waited = true;
+          break;
+        }
+        if (toSkip > 0) {
+          toSkip--;
+        } else {
+          taken.add(stored);
+        }
+      }
+      if (!waited) {
+        return taken;
+      }
+    }
+  }
 
   @override
   Future<int> count<T extends Object>(
     PersistentEntity<T> entity, {
     Criteria? criteria,
   }) => Future.sync(() {
-    final count = _matching(entity, criteria).length;
+    final tx = _enter('select');
+    final count = _matching(entity, criteria, tx).length;
     _log.debug(
       '$name: count ${entity.tableName} where ${criteria ?? 'all'}: $count',
     );
@@ -357,7 +876,8 @@ final class InMemoryDataStore implements DataStore {
     PersistentEntity<T> entity, {
     Criteria? criteria,
   }) => Future.sync(() {
-    final exists = _matching(entity, criteria).isNotEmpty;
+    final tx = _enter('select');
+    final exists = _matching(entity, criteria, tx).isNotEmpty;
     _log.debug(
       '$name: exists ${entity.tableName} where ${criteria ?? 'all'}: '
       '$exists',
@@ -367,10 +887,71 @@ final class InMemoryDataStore implements DataStore {
 
   // ------------------------------------------------------------- internals
 
-  _Table _table(PersistentEntity<Object> entity) => _tables.putIfAbsent(
-    '${entity.schema == null ? '' : '${entity.schema}.'}${entity.tableName}',
-    _Table.new,
-  );
+  String _tableKey(PersistentEntity<Object> entity) =>
+      '${entity.schema == null ? '' : '${entity.schema}.'}${entity.tableName}';
+
+  _Table _table(PersistentEntity<Object> entity) =>
+      _tables.putIfAbsent(_tableKey(entity), _Table.new);
+
+  // The row with [id] as [tx] sees it: its own write, else the committed
+  // row.
+  StoredAggregate? _get(
+    InMemoryTransaction? tx,
+    PersistentEntity<Object> entity,
+    Object? id,
+  ) {
+    final written = tx?.writes[_tableKey(entity)];
+    if (written != null && written.containsKey(id)) {
+      return written[id];
+    }
+    return _table(entity).rows[id];
+  }
+
+  // Records a write of [tx], or of nobody (null [stored] removes the row).
+  void _put(
+    InMemoryTransaction tx,
+    PersistentEntity<Object> entity,
+    Object? id,
+    StoredAggregate? stored,
+  ) {
+    (tx.writes[_tableKey(entity)] ??= {})[id] = stored;
+  }
+
+  // The rows of the table as [tx] sees them (the committed ones without
+  // a transaction): the committed rows, the ones [tx] changed replaced and
+  // the ones it removed left out, then the ones it inserted.
+  List<StoredAggregate> _rows(
+    PersistentEntity<Object> entity,
+    InMemoryTransaction? tx,
+  ) {
+    final committed = _table(entity).rows;
+    final written = tx?.writes[_tableKey(entity)];
+    if (written == null || written.isEmpty) {
+      return committed.values.toList();
+    }
+    return [
+      for (final MapEntry(:key, :value) in committed.entries)
+        if (!written.containsKey(key)) value else ?written[key],
+      for (final MapEntry(:key, :value) in written.entries)
+        if (value != null && !committed.containsKey(key)) value,
+    ];
+  }
+
+  List<StoredAggregate> _matching(
+    PersistentEntity<Object> entity,
+    Criteria? criteria,
+    InMemoryTransaction? tx,
+  ) {
+    final rows = _rows(entity, tx);
+    if (criteria == null || criteria.isEmpty) {
+      return rows;
+    }
+    final matches = _compile(entity, criteria);
+    return [
+      for (final stored in rows)
+        if (matches(stored.values)) stored,
+    ];
+  }
 
   PersistentProperty _requireId(PersistentEntity<Object> entity) =>
       entity.idProperty ??
@@ -424,12 +1005,12 @@ final class InMemoryDataStore implements DataStore {
   }
 
   // The row of [instance] and of its children.
-  _Stored _store(PersistentEntity<Object> entity, Object instance) {
+  StoredAggregate _store(PersistentEntity<Object> entity, Object instance) {
     final values = converter.write(entity, instance);
     for (final key in values.keys.toList()) {
       values[key] = _copy(values[key]);
     }
-    final children = <String, List<_Child>>{};
+    final children = <String, List<StoredChild>>{};
     for (final property in entity.properties) {
       if (!property.isMappedCollection) {
         continue;
@@ -441,7 +1022,7 @@ final class InMemoryDataStore implements DataStore {
       final child = property.childEntity!;
       final childTable = _table(child);
       final childId = child.idProperty;
-      _Child make(Object? key, Object element) {
+      StoredChild make(Object? key, Object element) {
         final stored = _store(child, element);
         if (childId != null) {
           final id = stored.values[childId.columnName];
@@ -451,7 +1032,7 @@ final class InMemoryDataStore implements DataStore {
             childTable.nextId = id + 1;
           }
         }
-        return _Child(key, stored);
+        return StoredChild(key, stored);
       }
 
       children[property.name] = switch (value) {
@@ -470,11 +1051,14 @@ final class InMemoryDataStore implements DataStore {
         ),
       };
     }
-    return _Stored(values, children);
+    return StoredAggregate(values, children);
   }
 
   // A new instance of the aggregate stored as [stored].
-  T _read<T extends Object>(PersistentEntity<T> entity, _Stored stored) {
+  T _read<T extends Object>(
+    PersistentEntity<T> entity,
+    StoredAggregate stored,
+  ) {
     final children = <String, Object?>{};
     for (final property in entity.properties) {
       if (!property.isMappedCollection) {
@@ -504,17 +1088,7 @@ final class InMemoryDataStore implements DataStore {
 
   // ------------------------------------------------------------ predicates
 
-  List<_Stored> _matching(PersistentEntity<Object> entity, Criteria? criteria) {
-    final rows = _table(entity).rows.values;
-    if (criteria == null || criteria.isEmpty) {
-      return rows.toList();
-    }
-    final matches = _compile(entity, criteria);
-    return [
-      for (final stored in rows)
-        if (matches(stored.values)) stored,
-    ];
-  }
+  // ------------------------------------------------------------ predicates
 
   bool Function(Map<String, Object?> row) _compile(
     PersistentEntity<Object> entity,
@@ -688,9 +1262,9 @@ final class InMemoryDataStore implements DataStore {
 
   // ----------------------------------------------------------------- sort
 
-  List<_Stored> _sorted(
+  List<StoredAggregate> _sorted(
     PersistentEntity<Object> entity,
-    List<_Stored> rows,
+    List<StoredAggregate> rows,
     Sort sort,
   ) {
     final keys = [
@@ -732,9 +1306,9 @@ final class InMemoryDataStore implements DataStore {
     return order.isDescending ? -c : c;
   }
 
-  List<_Stored> _distinct(List<_Stored> rows) {
-    final seen = <int, List<_Stored>>{};
-    final out = <_Stored>[];
+  List<StoredAggregate> _distinct(List<StoredAggregate> rows) {
+    final seen = <int, List<StoredAggregate>>{};
+    final out = <StoredAggregate>[];
     for (final stored in rows) {
       final bucket = seen.putIfAbsent(
         Object.hashAll(stored.values.values.map(_hash)),
@@ -801,24 +1375,6 @@ final class InMemoryDataStore implements DataStore {
 // One table: the stored aggregates by id, in insertion order, and the
 // counter of generated ids (children's tables only use the counter).
 final class _Table {
-  final rows = <Object?, _Stored>{};
+  final rows = <Object?, StoredAggregate>{};
   int nextId = 1;
-}
-
-// The row of an aggregate (a root or a child) and the rows of its
-// children, by the name of the mapped property.
-final class _Stored {
-  _Stored(this.values, this.children);
-
-  final Map<String, Object?> values;
-  final Map<String, List<_Child>> children;
-}
-
-// A child row with its position in a list (an int), its key in a map, or
-// null in a set.
-final class _Child {
-  _Child(this.key, this.stored);
-
-  final Object? key;
-  final _Stored stored;
 }

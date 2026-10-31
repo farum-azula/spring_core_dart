@@ -3308,4 +3308,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
       ),
     ),
   ],
+  typeTests: {
+    _i17.ReviewController: (value) => value is _i17.ReviewController,
+    _i17.ReviewApi: (value) => value is _i17.ReviewApi,
+  },
 );

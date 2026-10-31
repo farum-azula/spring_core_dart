@@ -1,9 +1,13 @@
-# The generator only writes the example's application (example/example.spring.dart);
-# the package itself is written by hand.
+# The generator writes the example's application (example/example.spring.dart)
+# and the applications of the transaction tests; the package itself is written
+# by hand.
 targets:
   $default:
     builders:
       spring_core_dart_generator:spring_core_dart:
-        generate_for: [example/**]
+        generate_for:
+          - example/**
+          - test/transaction/app/**
+          - test/integration/app/**
       spring_core_dart_generator:spring_test:
         enabled: false

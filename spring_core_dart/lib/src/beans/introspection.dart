@@ -639,6 +639,31 @@ class BeanIntrospector {
   void registerAll(Iterable<BeanIntrospection<Object>> introspections) =>
       introspections.forEach(register);
 
+  final _typeTests = <Type, bool Function(Object? value)>{};
+
+  /// Adds [tests], each telling whether a value is of its type (or a
+  /// subtype); the generated modules give one per type written in an
+  /// annotation.
+  void registerTypeTests(Map<Type, bool Function(Object? value)> tests) =>
+      _typeTests.addAll(tests);
+
+  /// Whether [value] is of [type] or of a subtype of it.
+  ///
+  /// Dart cannot test `value is T` for a `Type` value without reflection;
+  /// this uses the test registered for [type] here or in the [parent]
+  /// (the generator registers one for every type written in an annotation,
+  /// such as `@Transactional(noRollbackFor: [OutOfStock])`), and without
+  /// one compares the exact runtime type.
+  bool isInstanceOf(Type type, Object? value) {
+    if (_typeTest(type) case final test?) {
+      return test(value);
+    }
+    return value != null && value.runtimeType == type;
+  }
+
+  bool Function(Object? value)? _typeTest(Type type) =>
+      _typeTests[type] ?? parent?._typeTest(type);
+
   /// The introspection registered for exactly [type], here or in the
   /// [parent]; `null` when there is none.
   BeanIntrospection<Object>? forType(Type type) =>

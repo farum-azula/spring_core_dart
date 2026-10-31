@@ -78,10 +78,26 @@ the application adds the driver it wants, the generator sees it.
 2. Transactions: `PlatformTransactionManager`, `@Transactional` on the AOP
    proxies (propagation, isolation, read-only, rollback rules),
    `TransactionTemplate`; the current transaction in a `Zone`, so it
-   follows `await`.
+   follows `await`. Decided while building it:
+   - each transactional block runs in its own zone scope; `requiresNew`
+     and `notSupported` isolate the scope instead of Spring's suspend and
+     resume (the outer transaction goes on when the block's code ends);
+     work started in a transaction without `await` and still running
+     after it fails (`IllegalTransactionStateException`), it never runs
+     outside the transaction unnoticed;
+   - `@Transactional(transactionManager: 'analytics')`: Dart cannot mix
+     Spring's positional `value` with named parameters;
+   - every exception rolls back unless listed in `noRollbackFor`; types
+     match with subtypes: the generator writes a `value is T` test for
+     every type written in an annotation (`BeanModule.typeTests`,
+     `BeanIntrospector.isInstanceOf`), usable later by `@ExceptionHandler`
+     and `@Retryable` too;
+   - the in-memory store has transactions (read committed, row locks,
+     deadlock detection, savepoints) and `@Lock`, so the propagation
+     matrix and the locks are tested before SQLite.
 3. SQLite (the `sqlite3` package): server and Flutter; `spring.sql.init`
    (`schema.sql`, `data.sql`); migrations `db/migration/V1__*.sql`
-   (Flyway's naming, `spring.flyway.*`).
+   (Flyway's naming, `spring.sql.migration.*`).
 4. PostgreSQL (the `postgres` package): a connection pool
    (`spring.datasource.pool.*`), `FOR UPDATE` / `FOR SHARE`, `NOWAIT`,
    `SKIP LOCKED`.
@@ -147,7 +163,7 @@ spring.datasource.pool.max-size=10
 spring.datasources.analytics.url=postgresql://warehouse:5432/stats
 
 # Migrations: lib/resources/db/migration/V1__books.sql, V2__orders.sql
-spring.flyway.enabled=true
+spring.sql.migration.enabled=true
 
 books.page-size=20
 ```
@@ -495,6 +511,9 @@ property of an aggregate root:
   `DeadlockLoserDataAccessException` (both transient: worth a retry).
 - SQLite has no row locks: the transaction becomes `BEGIN IMMEDIATE`
   (one writer for the whole database), stated in the docs.
+- In memory (done in step 2): row locks, shared and exclusive, with the
+  timeout (`spring.data.memory.lock-timeout`), `skipLocked` and deadlock
+  detection, so the same code runs before a database is there.
 - Supabase: none (a build error on its repositories).
 - In SQL by hand: `jdbc.sql('select ... for update')` inside
   `@Transactional`.
@@ -535,7 +554,7 @@ races between real connections:
   `QueryTimeoutException`), `rollbackFor` / `noRollbackFor`, checked and
   unchecked exceptions as in Spring (here: every exception rolls back
   unless listed), the qualifier of a second datasource
-  (`@Transactional('analytics')`), `TransactionTemplate` with the same
+  (`@Transactional(transactionManager: 'analytics')`), `TransactionTemplate` with the same
   settings.
 - **Dart's own cases:** the transaction follows `await` (the `Zone`);
   `Future.wait` of two statements in one transaction (one connection:
@@ -672,6 +691,108 @@ Values are logged only at trace; parameters whose name looks secret
 (`password`, `token`, `secret`, `key`) are masked even there, Redis
 `AUTH` never shows its password, and the connection URL is logged without
 its password.
+
+## The schema: migrations, validation, creation (step 3)
+
+Spring Data JDBC creates no schema (unlike Hibernate's `ddl-auto`): the
+schema is the application's SQL. Here the same, plus what the mapping
+model makes cheap.
+
+**Migrations, Flyway's way** (`spring.sql.migration.*`, next to
+`spring.sql.init.*`; Flyway's file naming, our own runner, no Flyway):
+
+- Files in `lib/resources/db/migration/`: `V1__create_books.sql`,
+  `V2__add_year.sql` (versioned, run once, in order), `R__views.sql`
+  (repeatable, run again when its checksum changes). Per database when
+  needed: `spring.sql.migration.locations=classpath:db/migration/{vendor}`
+  (`sqlite`, `postgresql`). Several data sources: `spring.datasources.
+  <name>.sql.migration.*`.
+- The generator already embeds `lib/resources/` in the generated module,
+  so the migrations are in the binary on every platform (server, Flutter,
+  web) with no assets to declare.
+- At startup, before any repository is used: the history table
+  (`schema_history`: version, description, script, CRC32
+  checksum, installed on, execution time, success) is read, the pending
+  migrations run in order, each in its own transaction (PostgreSQL and
+  SQLite both roll DDL back), the failed one stops the start with its
+  file and line.
+- A changed checksum of an applied migration stops the start
+  (`validate-on-migrate`, on by default); a migration newer than the
+  application (a database from a later version) is ignored, as Flyway
+  does by default; `out-of-order` off; `baseline-on-migrate` and
+  `baseline-version` for an existing database; `clean` is never run
+  (no switch to allow it).
+- Several server instances starting together: the first takes a
+  PostgreSQL advisory lock (`pg_advisory_lock`), the others wait, then
+  find nothing to do. SQLite: one process, a `BEGIN IMMEDIATE`.
+- `spring.sql.init` (`schema.sql`, `data.sql`, `mode=embedded|always|
+  never`) for simple cases and tests, as in Boot; not both with Flyway
+  (Boot's rule: the start fails).
+
+**Validation against the entities** (an extension;
+`spring.data.jdbc.schema=validate`, the default): after the migrations,
+every entity's table and columns must exist with a type that fits the
+property (`int` → integer types, `String` → text types, `DateTime` →
+timestamp / text in SQLite, `bool`, `double`, `Uint8List`), and a
+non-null property must not sit on a nullable column without a default
+being noted. A missing table or column stops the start naming the entity,
+property and column; extra columns and tables are fine. Hibernate's
+`validate`, which Spring Data JDBC lacks.
+
+**Creation from the entities** (`spring.data.jdbc.schema=create` or
+`create-drop`): `CREATE TABLE` for each entity and child table from the
+mapping (id as identity / `INTEGER PRIMARY KEY`, `@Version`, the reverse
+and key columns of `@MappedCollection`, foreign keys to the root), for
+tests, prototypes and on-device caches. `update` is not offered (the
+classic Hibernate accident: it never drops or renames, the schema
+drifts).
+
+**A migration written from the entities** (a tool, like Spring Data
+JDBC's `LiquibaseChangeSetWriter`): `dart run
+spring_boot_starter_data:schema diff` applies the existing migrations to
+a scratch database (SQLite in memory, or PostgreSQL in a container),
+compares with the entities, and writes the next `V<n>__<name>.sql` to
+review and commit; never applied by itself.
+
+**Flutter**:
+
+- The migrations run on the device at the app's start, on its SQLite
+  file (`spring.datasource.url=sqlite:file:books.db`, relative to the
+  app's support directory); on the web on `sqlite3`'s WASM build (the
+  file in OPFS / IndexedDB).
+- A failed migration on a phone cannot be fixed by hand: each runs in a
+  transaction (the database stays at the previous version, the error
+  goes to the app as a startup failure it can show), and a test helper
+  applies every migration in turn to SQLite in memory (and, from saved
+  schemas of released versions, each upgrade path), so CI catches it.
+- No downgrades (stores refuse older versions); a database from a newer
+  version (a restored backup) is left as is, its unknown migrations
+  ignored.
+- An on-device database that is only a cache may use
+  `schema=create-drop` (rebuilt when the entities change) instead of
+  migrations.
+- Supabase repositories run no DDL: the schema is the server's (Supabase
+  CLI migrations); a Flutter app never holds the credentials for it.
+
+## Renaming properties named after Java libraries (the owner, at the end of 0.6.0)
+
+Properties named after a library or a Java technology this project does
+not use are renamed; names of Spring's own concepts stay. The old Spring
+Boot name stops the start with the new one (a forgotten
+`server.servlet.session.*` silently ignored would leave sessions on their
+defaults):
+
+| Now | New |
+|---|---|
+| `spring.cloud.openfeign.*` | `spring.feign.*` |
+| `spring.jackson.*` | `spring.json.*` |
+| `spring.servlet.multipart.*` | `spring.web.multipart.*` |
+| `server.servlet.context-path`, `server.servlet.session.*` | `server.context-path`, `server.session.*` |
+| `logging.logback.rollingpolicy.*` | `logging.file.rolling-policy.*` |
+| (`spring.flyway.*`, planned) | `spring.sql.migration.*` |
+
+Code, tests, READMEs, docs, guides, and a Breaking entry in each
+package's CHANGELOG.
 
 ## Differences from Spring to state in the docs
 

@@ -7,7 +7,10 @@ import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/repository/repository_invocation_handler.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/store/in_memory_data_sources.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_store.dart';
+import 'package:spring_boot_starter_data/src/store/in_memory_transaction_manager.dart';
+import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
 
 /// Builds the working handler behind each repository interface: it finds
 /// the entity and the store of the repository and creates its
@@ -26,10 +29,16 @@ import 'package:spring_boot_starter_data/src/store/in_memory_data_store.dart';
 ///   (the in-memory store of the application);
 /// - `@UseStore('memory')` with `@UseDataSource('name')`: an in-memory
 ///   store of its own for that data source name, shared by the
-///   repositories that name it;
+///   repositories that name it (and by the transaction manager bean of
+///   that name, through `InMemoryDataSources`);
 /// - `@UseDataSource` without `@UseStore('memory')`: an error, as it asks
 ///   for a SQL database, which this version cannot offer;
 /// - any other `@UseStore` name: an error naming the stores there are.
+///
+/// The repository runs its writes in transactions of its store: for a memory
+/// store the factory gives the handler an `InMemoryTransactionManager` of
+/// its own over that store. It joins the transaction of a `@Transactional`
+/// service because both look for the same resource, the store.
 ///
 /// Every mistake of the repository (the store, the entity, each method) is
 /// collected and reported together by the handler, so the application stops
@@ -49,7 +58,9 @@ final class RepositoryFactory implements InvocationHandlerFactory {
     Iterable<DataStore> stores = const [],
     this.auditing,
     this.isNewStrategy = const IsNewStrategy(),
-  }) : stores = {for (final store in stores) store.name: store} {
+    InMemoryDataSources? dataSources,
+  }) : stores = {for (final store in stores) store.name: store},
+       dataSources = dataSources ?? InMemoryDataSources(converter: converter) {
     this.stores.putIfAbsent(
       'memory',
       () => InMemoryDataStore(converter: converter),
@@ -73,8 +84,11 @@ final class RepositoryFactory implements InvocationHandlerFactory {
   /// Tells a new entity from one to update.
   final IsNewStrategy isNewStrategy;
 
-  // The in-memory stores of `@UseDataSource` names.
-  final _dataSources = <String, DataStore>{};
+  /// The in-memory stores of the `@UseDataSource` names.
+  final InMemoryDataSources dataSources;
+
+  // The transaction managers of the repositories, one per store.
+  final _managers = Map<DataStore, PlatformTransactionManager>.identity();
 
   @override
   bool supports(InterfaceMetadata<Object> metadata) =>
@@ -93,13 +107,20 @@ final class RepositoryFactory implements InvocationHandlerFactory {
         'Invalid repository ${metadata.typeName}:\n  - ${e.message}',
       );
     }
-    final store = _storeOf(metadata, problems);
+    final store = _storeOf(metadata, problems) ?? stores['memory']!;
     return RepositoryInvocationHandler(
       metadata: metadata,
       entity: entity,
       entityType: entityType,
       converter: converter,
-      store: store ?? stores['memory']!,
+      store: store,
+      transactionManager: switch (store) {
+        final InMemoryDataStore memory => _managers.putIfAbsent(
+          memory,
+          () => InMemoryTransactionManager(memory),
+        ),
+        _ => null,
+      },
       auditing: auditing,
       isNewStrategy: isNewStrategy,
       problems: problems,
@@ -155,12 +176,6 @@ final class RepositoryFactory implements InvocationHandlerFactory {
       );
       return null;
     }
-    return _dataSources.putIfAbsent(
-      dataSource,
-      () => InMemoryDataStore(
-        converter: converter,
-        name: 'memory:$dataSource',
-      ),
-    );
+    return dataSources.storeFor(dataSource);
   }
 }

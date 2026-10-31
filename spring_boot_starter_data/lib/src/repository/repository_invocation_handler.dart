@@ -12,6 +12,10 @@ import 'package:spring_boot_starter_data/src/query/part_tree_parser.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_template.dart';
 
 typedef _Plan = Object? Function(List<Object?> arguments);
 
@@ -31,8 +35,8 @@ typedef _Plan = Object? Function(List<Object?> arguments);
 ///   `PartTree` and checked against the entity, the parameters and the
 ///   return type; it must be asynchronous (return a `Future` or a
 ///   `Stream`);
-/// - `@Query` and `@Lock` need a SQL store and are refused with the
-///   in-memory store.
+/// - `@Query` needs a SQL store and is refused with the in-memory store;
+///   `@Lock` is allowed on derived `find` methods and on `findById`.
 ///
 /// A call then does what its plan says. `save` inserts a new entity (by
 /// `IsNewStrategy`: no version or version 0, else no id) and updates the
@@ -59,6 +63,21 @@ typedef _Plan = Object? Function(List<Object?> arguments);
 /// window is cut at the limit of the name (`findTop3By(Pageable)` with a
 /// page size of 2 gives pages of 2 and 1).
 ///
+/// **Transactions.** The write methods (`save`, `saveAll`, `delete*`,
+/// `deleteAll*` and the derived `delete`/`remove` methods) run in a
+/// `required` transaction of the repository's store, as Spring's
+/// `SimpleJdbcRepository` is `@Transactional`: `saveAll` and an aggregate
+/// with its children are atomic, and inside a transaction of the caller
+/// (a `@Transactional` service, a `TransactionTemplate`) they join it. The
+/// read methods run in the caller's transaction when there is one, else on
+/// their own. Without a [transactionManager] nothing is wrapped.
+///
+/// **Locks.** A derived `find` method (and `findById`) with `@Lock` reads
+/// with the lock, the timeout and `skipLocked` of the annotation; the
+/// store locks the rows until the transaction ends. Called without a
+/// transaction of that store it throws an `IllegalTransactionStateException`
+/// when called, and never runs unlocked.
+///
 /// What the store throws (all `DataAccessException`s) reaches the caller
 /// unchanged; any other error is wrapped in one with the original as its
 /// cause (`InvalidDataAccessApiUsageException` for a misuse such as a null
@@ -81,6 +100,7 @@ final class RepositoryInvocationHandler implements InvocationHandler {
     required TypeInfo<Object?> entityType,
     required this.converter,
     required this.store,
+    this.transactionManager,
     this.auditing,
     this.isNewStrategy = const IsNewStrategy(),
     List<String> problems = const [],
@@ -126,6 +146,9 @@ final class RepositoryInvocationHandler implements InvocationHandler {
   /// Where the aggregates are kept.
   final DataStore store;
 
+  /// Runs the write methods in transactions of [store]; `null` for none.
+  final PlatformTransactionManager? transactionManager;
+
   /// Fills the audit properties on save; `null` when auditing is off.
   final AuditingHandler? auditing;
 
@@ -164,12 +187,6 @@ final class RepositoryInvocationHandler implements InvocationHandler {
   ) {
     final where = '$typeName.${method.name}';
     final before = problems.length;
-    if (method.annotation<Lock>() != null) {
-      problems.add(
-        '$where: @Lock needs transactions, which the ${store.name} store '
-        'has not: use a SQL store (coming in a later version)',
-      );
-    }
     if (method.annotation<Query>() != null) {
       problems.add(
         '$where: @Query needs a SQL store: set spring.datasource.url and '
@@ -182,6 +199,13 @@ final class RepositoryInvocationHandler implements InvocationHandler {
     }
     final crud = _crud(method);
     if (crud != null) {
+      if (method.annotation<Lock>() != null && method.name != 'findById') {
+        problems.add(
+          '$where: @Lock is for the derived find methods (findByTitle) and '
+          'findById: a lock is taken by reading rows',
+        );
+        return null;
+      }
       return crud;
     }
     if (!PartTreeParser.isDerivedQuery(method.name)) {
@@ -226,6 +250,15 @@ final class RepositoryInvocationHandler implements InvocationHandler {
       problems.add('$where: ${e.message}');
       return null;
     }
+    if (method.annotation<Lock>() != null &&
+        tree.subject.kind != SubjectKind.find) {
+      problems.add(
+        '$where: @Lock is for the derived find methods (findByTitle) and '
+        'findById: a lock is taken by reading rows, and this one '
+        '${tree.subject.kind.name}s',
+      );
+      return null;
+    }
     if (!method.isFuture && !isStream) {
       return null;
     }
@@ -235,11 +268,16 @@ final class RepositoryInvocationHandler implements InvocationHandler {
   _Plan? _crud(ProxyMethod method) {
     final count = method.parameters.length;
     Future<Object?> run(Future<Object?> Function() body) => _guarded(body);
+    // A write: atomic, and part of the caller's transaction when there is
+    // one.
+    Future<Object?> write(Future<Object?> Function() body) =>
+        _guarded(() => _inTransaction(body));
+    final lock = method.annotation<Lock>();
     switch ((method.name, count)) {
       case ('save', 1):
-        return (a) => run(() => _save(_instance(a[0])));
+        return (a) => write(() => _save(_instance(a[0])));
       case ('saveAll', 1):
-        return (a) => run(() async {
+        return (a) => write(() async {
           final saved = <Object>[];
           for (final instance in _iterable(a[0])) {
             saved.add(await _save(_instance(instance)));
@@ -247,7 +285,15 @@ final class RepositoryInvocationHandler implements InvocationHandler {
           return _shaper.list(saved);
         });
       case ('findById', 1):
-        return (a) => run(() => store.findById(entity, _id(a[0])));
+        return (a) => run(
+          () => store.findById(
+            entity,
+            _id(a[0]),
+            lock: lock?.value,
+            lockTimeout: lock?.timeout,
+            skipLocked: lock?.skipLocked ?? false,
+          ),
+        );
       case ('existsById', 1):
         return (a) => run(() => store.exists(entity, criteria: _byId(a[0])));
       case ('findAll', 0):
@@ -263,31 +309,31 @@ final class RepositoryInvocationHandler implements InvocationHandler {
       case ('count', 0):
         return (a) => run(() => store.count(entity));
       case ('deleteById', 1):
-        return (a) => run(() async {
+        return (a) => write(() async {
           await store.deleteById(entity, _id(a[0]));
           return null;
         });
       case ('delete', 1):
-        return (a) => run(() async {
+        return (a) => write(() async {
           await _delete(_instance(a[0]));
           return null;
         });
       case ('deleteAllById', 1):
-        return (a) => run(() async {
+        return (a) => write(() async {
           for (final id in _iterable(a[0])) {
             await store.deleteById(entity, _id(id));
           }
           return null;
         });
       case ('deleteAllOf', 1):
-        return (a) => run(() async {
+        return (a) => write(() async {
           for (final instance in _iterable(a[0])) {
             await _delete(_instance(instance));
           }
           return null;
         });
       case ('deleteAll', 0):
-        return (a) => run(() async {
+        return (a) => write(() async {
           await store.deleteWhere(entity);
           return null;
         });
@@ -311,9 +357,26 @@ final class RepositoryInvocationHandler implements InvocationHandler {
       return await body();
     } on DataAccessException {
       rethrow;
+    } on TransactionException {
+      rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_translate(error), stackTrace);
     }
+  }
+
+  /// Runs [body] in a `required` transaction of the store: joins the
+  /// caller's, or begins one that commits when [body] completes and rolls
+  /// back when it fails.
+  Future<R> _inTransaction<R>(Future<R> Function() body) {
+    final manager = transactionManager;
+    if (manager == null) {
+      return body();
+    }
+    return runInTransaction<R>(
+      manager,
+      TransactionDefinition(name: '$typeName.write'),
+      (_) => body(),
+    );
   }
 
   DataAccessException _translate(Object error) {
@@ -467,6 +530,7 @@ final class _DerivedQuery {
   int? _sort;
   late final bool _nullable;
   late final _Shape _shape;
+  late final Lock? _lock = method.annotation<Lock>();
 
   DataStore get _store => handler.store;
   PersistentEntity<Object> get _entity => handler.entity;
@@ -491,13 +555,18 @@ final class _DerivedQuery {
         return await _store.exists(_entity, criteria: criteria);
       case SubjectKind.delete:
         final returnType = method.returnType;
-        if (returnType is ListType) {
-          return _shaper.list(
-            await _store.deleteWhereAndReturn(_entity, criteria: criteria),
+        return await handler._inTransaction(() async {
+          if (returnType is ListType) {
+            return _shaper.list(
+              await _store.deleteWhereAndReturn(_entity, criteria: criteria),
+            );
+          }
+          final deleted = await _store.deleteWhere(
+            _entity,
+            criteria: criteria,
           );
-        }
-        final deleted = await _store.deleteWhere(_entity, criteria: criteria);
-        return returnType.type == int ? deleted : null;
+          return returnType.type == int ? deleted : null;
+        });
       case SubjectKind.find:
         return await _find(arguments, criteria);
     }
@@ -529,6 +598,9 @@ final class _DerivedQuery {
               null => null,
             },
             distinct: subject.distinct,
+            lock: _lock?.value,
+            lockTimeout: _lock?.timeout,
+            skipLocked: _lock?.skipLocked ?? false,
           );
 
     switch (_shape) {

@@ -52,9 +52,25 @@ class Author {
   String name;
 }
 
+class Rules {
+  const Rules(this.types);
+  final List<Type> types;
+}
+
+class OutOfStock implements Exception {}
+
+class NotFound implements Exception {}
+
+@Service()
+class Checkout {
+  @Rules([OutOfStock])
+  void place() {}
+}
+
 // No annotation: a repository all the same.
 abstract interface class BookRepository
     implements ListCrudRepository<Book, int> {
+  @Rules([NotFound, OutOfStock])
   Future<List<Book>> findByTitle(String title);
 }
 
@@ -167,6 +183,17 @@ void main() {
   test('a concrete @Repository class stays a component', () {
     expect(output, _has("name: r'auditLog'"));
     expect(output, isNot(contains(r'_$AuditLogImpl')));
+  });
+
+  test('a value-is test for each type written in an annotation', () {
+    expect(output, _has('typeTests: {'));
+    expect(output, _has('OutOfStock: (value) => value is OutOfStock'));
+    expect(output, _has('NotFound: (value) => value is NotFound'));
+    // Once per type.
+    expect(
+      'OutOfStock: (value)'.allMatches(raw.replaceAll(RegExp(r'\s'), ' ')),
+      hasLength(1),
+    );
   });
 
   test('the generated code compiles', () async {

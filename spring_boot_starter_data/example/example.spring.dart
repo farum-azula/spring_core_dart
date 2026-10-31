@@ -12,15 +12,17 @@ import 'dart:async' as _i4;
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i10;
 import 'package:spring_boot_dart/src/runners.dart' as _i9;
-import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i12;
+import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
+    as _i13;
 import 'package:spring_boot_starter_data/src/annotations.dart' as _i5;
 import 'package:spring_boot_starter_data/src/mapping/auditing.dart' as _i8;
 import 'package:spring_boot_starter_data/src/repository/page.dart' as _i7;
 import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i2;
 import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i13;
+    as _i14;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 
 import 'example.dart' as _i1;
@@ -6793,8 +6795,9 @@ _i10.SpringApplication get springApplication => _i10.SpringApplication(
   [$application],
   autoConfigurations: [
     _i11.springBootAutoConfiguration,
-    _i12.springBootStarterDataAutoConfiguration,
-    _i13.springBootStarterLoggingAutoConfiguration,
+    _i12.springBootStarterCacheAutoConfiguration,
+    _i13.springBootStarterDataAutoConfiguration,
+    _i14.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -6842,7 +6845,7 @@ _i10.SpringApplication get springApplication => _i10.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '46971096',
+  fingerprint: 'b12693cc',
 );
 
 /// Starts the application: config files, environment, context, runners

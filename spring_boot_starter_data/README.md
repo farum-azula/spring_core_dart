@@ -4,8 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-> **In development.** This first version keeps the data in memory; SQLite
-> and PostgreSQL, transactions and pessimistic locks come next (see
+> **In development.** The data is kept in memory for now (with
+> transactions and locks); SQLite and PostgreSQL come next (see
 > [the roadmap](https://github.com/farum-azula/spring_core_dart/blob/main/roadmap/spring_boot_starter_data.md)).
 
 Spring Data for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
@@ -47,6 +47,31 @@ A method name the entity does not support (`findByTitel`) stops the
 application at startup: `No property 'titel' found for type 'Book'; did
 you mean 'title'?`.
 
+## Transactions
+
+```dart
+@Service()
+class Checkout {
+  Checkout(this.stock, this.orders);
+  final StockRepository stock;
+  final OrderRepository orders;
+
+  // One transaction: the stock row stays locked until the order is saved;
+  // any exception rolls everything back.
+  @Transactional()
+  Future<void> place(int bookId) async {
+    final row = (await stock.findByBookId(bookId))!; // @Lock(pessimisticWrite)
+    row.available--;
+    await stock.save(row);
+    await orders.save(PurchaseOrder(bookId: bookId));
+  }
+}
+```
+
+The transaction lives in a `Zone`: it follows `await`, and work started
+in it without `await` that outlives it fails instead of running outside
+it.
+
 ## Differences from Spring
 
 - The repository marker is `DataRepository` (`@Repository` is the
@@ -57,3 +82,6 @@ you mean 'title'?`.
 - The database and store of a repository: `@UseDataSource('analytics')`,
   `@UseStore('memory')`.
 - Every method is asynchronous (`Future` or `Stream`).
+- `@Transactional(transactionManager: 'x')` instead of a positional value;
+  every exception rolls back unless listed in `noRollbackFor` (Dart has
+  no checked exceptions).

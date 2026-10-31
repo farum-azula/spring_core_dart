@@ -168,10 +168,10 @@ void main() {
   );
 
   test(
-    '@Lock is refused: the memory store has no transactions',
+    '@Lock is accepted on a derived find method and on findById',
     () => run(() async {
       expect(
-        () => factory.create(
+        factory.create(
           repository([
             method(
               'findByTitle',
@@ -179,9 +179,49 @@ void main() {
               returnType: bookList,
               annotations: const [Lock(LockMode.pessimisticWrite)],
             ),
+            method(
+              'findById',
+              parameters: [parameter('id', const ClassType<int>())],
+              returnType: const ClassType<Book>(),
+              annotations: const [Lock(LockMode.pessimisticRead)],
+            ),
           ]),
         ),
-        invalid(['BrokenRepository.findByTitle', '@Lock', 'transactions']),
+        isA<RepositoryInvocationHandler>(),
+      );
+    }),
+  );
+
+  test(
+    '@Lock is refused where no row is read: count, delete, other CRUD',
+    () => run(() async {
+      expect(
+        () => factory.create(
+          repository([
+            method(
+              'countByTitle',
+              parameters: [parameter('title', text)],
+              returnType: const ClassType<int>(),
+              annotations: const [Lock(LockMode.pessimisticWrite)],
+            ),
+            method(
+              'deleteByTitle',
+              parameters: [parameter('title', text)],
+              annotations: const [Lock(LockMode.pessimisticWrite)],
+            ),
+            method(
+              'findAll',
+              returnType: bookList,
+              annotations: const [Lock(LockMode.pessimisticWrite)],
+            ),
+          ]),
+        ),
+        invalid([
+          'BrokenRepository.countByTitle',
+          'BrokenRepository.deleteByTitle',
+          'BrokenRepository.findAll',
+          '@Lock is for the derived find methods',
+        ]),
       );
     }),
   );

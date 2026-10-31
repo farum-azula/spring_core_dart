@@ -198,7 +198,38 @@ class ModuleEmitter {
   }) {
     _module = module;
     _usesTypeOf = false;
+    _annotationTypes.clear();
     analyzeAop(module, prune: pruneProxies, foreign: foreignAdvice);
+    // Classes and definitions first: the types in their annotations go
+    // into the module's typeTests.
+    final classes = <Spec>[
+      for (final bean in module.beans)
+        if (bean.proxy case final proxy? when proxy.unavailableReason == null)
+          _proxyClass(proxy, bean.element, lookup: _lookupOf(bean)),
+      for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
+      for (final bean in module.beans)
+        if (bean.creation case InterfaceProxyCreation(:final model))
+          _interfaceImplClass(model),
+      for (final bean in module.beans)
+        if (bean.creation case ConstructorCreation(
+          configuration: final model?,
+        ))
+          configurationClass(model),
+      for (final bean in module.beans)
+        if (_lookupOf(bean) case final model?) lookupClass(model),
+      if (module.beans.any(
+        (bean) => switch (bean.creation) {
+          ConstructorCreation(:final configuration?) =>
+            configuration.beanMethods.any((m) => m.defaults.isNotEmpty),
+          _ => false,
+        },
+      ))
+        absentMarkerClass(),
+    ];
+    final definitions = literalList([
+      for (final bean in module.beans) _definition(bean),
+      if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
+    ]);
     final arguments = <String, Expression>{
       if (module.imports.isNotEmpty)
         'imports': literalList([
@@ -264,43 +295,27 @@ class ModuleEmitter {
                   _configurableCalls(configurable, configurable.preDestroy),
         }),
     };
+    if (_annotationTypes.isNotEmpty) {
+      arguments['typeTests'] = literalMap({
+        for (final (type, element) in _annotationTypes.values)
+          _type(type, element): Method(
+            (m) => m
+              ..requiredParameters.add(Parameter((p) => p..name = 'value'))
+              ..lambda = true
+              ..body = refer('value').isA(_type(type, element)).code,
+          ).closure,
+      });
+    }
     final moduleExpression = _spring('BeanModule').newInstance([
       _str(moduleName),
-      literalList([
-        for (final bean in module.beans) _definition(bean),
-        if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
-      ]),
+      definitions,
     ], arguments);
     final buildContextAccess = module.buildContextAccess.isEmpty
         ? null
         : _contextAccessExtension();
     final library = Library(
       (b) => b
-        ..body.addAll([
-          for (final bean in module.beans)
-            if (bean.proxy case final proxy?
-                when proxy.unavailableReason == null)
-              _proxyClass(proxy, bean.element, lookup: _lookupOf(bean)),
-          for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
-          for (final bean in module.beans)
-            if (bean.creation case InterfaceProxyCreation(:final model))
-              _interfaceImplClass(model),
-          for (final bean in module.beans)
-            if (bean.creation case ConstructorCreation(
-              configuration: final model?,
-            ))
-              configurationClass(model),
-          for (final bean in module.beans)
-            if (_lookupOf(bean) case final model?) lookupClass(model),
-          if (module.beans.any(
-            (bean) => switch (bean.creation) {
-              ConstructorCreation(:final configuration?) =>
-                configuration.beanMethods.any((m) => m.defaults.isNotEmpty),
-              _ => false,
-            },
-          ))
-            absentMarkerClass(),
-        ])
+        ..body.addAll(classes)
         ..body.addAll([
           if (_usesTypeOf)
             Method(
@@ -505,6 +520,11 @@ class ModuleEmitter {
 
   // Whether `_$typeOf` is used by the module being emitted.
   bool _usesTypeOf = false;
+
+  // The class types written in the annotations of the module being
+  // emitted, by name, each with the element it was found on: the module
+  // gets a `value is T` test for each (`BeanModule.typeTests`).
+  final _annotationTypes = <String, (InterfaceType, Element)>{};
 
   /// The name of the generated `Type _$typeOf<T>() => T;` helper.
   ///
@@ -2867,7 +2887,17 @@ class ModuleEmitter {
       return _str(reader.stringValue);
     }
     if (reader.isType) {
-      return _type(reader.typeValue, element);
+      final type = reader.typeValue;
+      if (type is InterfaceType &&
+          type.element.isPublic &&
+          type.typeArguments.isEmpty &&
+          !type.isDartCoreObject) {
+        _annotationTypes.putIfAbsent(
+          type.getDisplayString(),
+          () => (type, element),
+        );
+      }
+      return _type(type, element);
     }
     if (reader.isSymbol) {
       return CodeExpression(Code('#${value.toSymbolValue()}'));

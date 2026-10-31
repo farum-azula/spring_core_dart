@@ -1,3 +1,4 @@
+import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
@@ -134,7 +135,16 @@ abstract interface class DataStore {
   });
 
   /// The aggregate with [id], or null.
-  Future<T?> findById<T extends Object>(PersistentEntity<T> entity, Object id);
+  ///
+  /// With [lock] the row is locked until the transaction ends, as
+  /// [find] does ([lockTimeout], [skipLocked]: a locked row is then null).
+  Future<T?> findById<T extends Object>(
+    PersistentEntity<T> entity,
+    Object id, {
+    LockMode? lock,
+    Duration? lockTimeout,
+    bool skipLocked = false,
+  });
 
   /// The aggregates with one of [ids], in the table's order; ids without an
   /// aggregate are skipped.
@@ -150,6 +160,19 @@ abstract interface class DataStore {
   ///
   /// Throws `InvalidDataAccessApiUsageException` when the criteria or the
   /// sort name a property that is not a column of the entity.
+  ///
+  /// **Locks** (`@Lock`): with [lock] the rows read are locked until the
+  /// transaction ends. A SQL store maps it to `for update`
+  /// ([LockMode.pessimisticWrite]) or `for share`
+  /// ([LockMode.pessimisticRead]); [lockTimeout] to `nowait` (zero) or
+  /// `lock_timeout` (the longest wait; null for the store's default); and
+  /// [skipLocked] to `skip locked` (rows another transaction has locked
+  /// are left out, and do not count for [offset] and [limit]). A lock that
+  /// cannot be had is a `CannotAcquireLockException`. A read with a lock
+  /// outside a transaction is an `IllegalTransactionStateException`: it
+  /// never runs unlocked. Readers share a `pessimisticRead` lock; a
+  /// `pessimisticWrite` lock is exclusive; a writer waits for the readers
+  /// and the readers wait for the writer.
   Future<List<T>> find<T extends Object>(
     PersistentEntity<T> entity, {
     Criteria? criteria,
@@ -157,6 +180,9 @@ abstract interface class DataStore {
     int? offset,
     int? limit,
     bool distinct = false,
+    LockMode? lock,
+    Duration? lockTimeout,
+    bool skipLocked = false,
   });
 
   /// How many aggregates match [criteria] (all without it).
