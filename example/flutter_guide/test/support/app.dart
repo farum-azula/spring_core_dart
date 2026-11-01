@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
@@ -26,6 +27,21 @@ Future<ConfigurableApplicationContext> startApp(
     ..physicalSize = size * 2
     ..devicePixelRatio = 2;
   addTearDown(tester.view.reset);
+  // A desktop profile sets the window (application-desktop.properties); no
+  // window plugin runs in a widget test, so the platform side is a fake
+  // that answers with no space taken by window buttons.
+  const windowChannel = MethodChannel(DesktopWindowChannel.name);
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    windowChannel,
+    (call) async =>
+        call.method == 'apply' ? {'insets': <String, Object?>{}} : null,
+  );
+  addTearDown(
+    () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      windowChannel,
+      null,
+    ),
+  );
   await tester.pumpWidget(
     SpringApplicationWidget(
       application: server.application,

@@ -1994,6 +1994,29 @@ Write `locales`, and in Flutter apps `spring.messages.basename`, as one
 comma-separated value, also in YAML. The app widget reads them as single
 values, so a YAML list (`[en, ja]`) is not seen.
 
+
+The window of a desktop app (macOS, Windows, Linux) has keys of its own.
+They carry `desktop` in their name because only desktop apps read them: a
+phone or the web ignores them, even a malformed value. A value for one OS
+goes into that platform's profile file (`application-macos.properties`).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.desktop.window.title-bar` | `default` / `transparent` / `hidden` | `default` | `default`: the OS's title bar, untouched. `transparent`: the content is drawn under a transparent title bar and the window buttons stay over it (macOS: transparent title bar, hidden title, full-size content view; Windows: the frame extended into the client area, the system's caption buttons over the content; Linux: GTK draws no content under a header bar, so it becomes a flat header bar with no title, with the window buttons). `hidden`: no title bar and no window buttons (the app draws its own; macOS and Windows: no caption, Linux: no decoration). `DesktopWindow.insetsOf(context)` says how much room the buttons take (macOS: the traffic lights at the left, Windows: the caption buttons at the right, 0 elsewhere); `WindowDragArea` moves the window |
+| `spring.flutter.desktop.window.initial-size` | `<width>x<height>`, logical pixels | the runner's size | The size of the window's content area when it opens, centered on the screen (not under Wayland, where the compositor places windows). A malformed value (`1280x`, a negative or zero number) stops the start with the expected format |
+| `spring.flutter.desktop.window.min-size` | `<width>x<height>`, logical pixels | none | The smallest content size the user can drag the window to (macOS `contentMinSize`, Windows `WM_GETMINMAXINFO`, GTK `gtk_window_set_geometry_hints`). An `initial-size` smaller than it stops the start naming both values |
+
+```properties
+spring.flutter.desktop.window.title-bar=transparent
+spring.flutter.desktop.window.initial-size=1280x800
+spring.flutter.desktop.window.min-size=800x600
+```
+
+The properties are applied before the first frame is shown, so the window
+does not open at the runner's size first. The runners show the window with
+the first frame; the starter holds that frame back until the native side has
+answered (at most five seconds), then the window appears already as set.
+
 ### Themes, step by step
 
 The theme can be set entirely from properties: colours, fonts, shapes,

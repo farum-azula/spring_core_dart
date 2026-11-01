@@ -46,9 +46,29 @@ class _HomePageState extends SpringState<HomePage, (AppProperties,)> {
     String label(Section section) => context.message('section.${section.name}');
     void select(int index) => setState(() => _section = Section.values[index]);
 
-    final appBar = AppBar(
-      title: Text(app.title),
-      actions: const [AccountButton()],
+    // The desktop window has a transparent title bar
+    // (application-desktop.properties): the window buttons are over the
+    // app bar, so it leaves room for them, and its empty part moves the
+    // window. Zero insets elsewhere.
+    final insets = DesktopWindow.insetsOf(context);
+    final bar = AppBar(
+      title: insets.left == 0
+          ? Text(app.title)
+          : Padding(
+              padding: EdgeInsets.only(left: insets.left),
+              child: Text(app.title),
+            ),
+      actions: [
+        const AccountButton(),
+        // (a second action also turns off the centered title of Apple
+        // platforms, so only where there are buttons to leave room for)
+        if (insets.right > 0) SizedBox(width: insets.right),
+      ],
+    );
+    // Dragging the bar's empty part moves the window.
+    final appBar = PreferredSize(
+      preferredSize: bar.preferredSize,
+      child: WindowDragArea(child: bar),
     );
     if (app.navigation == NavigationStyle.rail) {
       return Scaffold(

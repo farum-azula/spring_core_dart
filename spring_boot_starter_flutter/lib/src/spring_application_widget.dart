@@ -5,6 +5,8 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
+import 'package:spring_boot_starter_flutter/src/desktop_window/desktop_window.dart';
+import 'package:spring_boot_starter_flutter/src/desktop_window/desktop_window_setup.dart';
 import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
@@ -65,6 +67,12 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///   or `documents`; on Android `databases/`) and
 ///   `spring.datasource.sqlite.isolate` to `true`, with the lowest
 ///   precedence: the app's own properties win. Nothing on the web.
+/// - On macOS, Windows and Linux the native window is set up from
+///   `spring.flutter.desktop.window.title-bar` (`default`, `transparent`,
+///   `hidden`), `initial-size` and `min-size` (`1280x800`, logical
+///   pixels) before the first frame is shown; `DesktopWindow` gives the
+///   space the window buttons take to the widgets below, and
+///   `WindowDragArea` moves the window. Nothing on phones and the web.
 /// - Each change of the app's lifecycle is published as an
 ///   [AppLifecycleStateEvent]. In the background the context is paused
 ///   (`@Scheduled` tasks and WebSocket connections stop) and it restarts
@@ -86,6 +94,7 @@ class SpringApplicationWidget extends StatefulWidget {
     this.failure,
     this.args = const [],
     this.rerunRunnersOnReload = false,
+    this.desktopWindowSetup,
     super.key,
   }) : assert(
          (child == null) != (home == null),
@@ -125,6 +134,11 @@ class SpringApplicationWidget extends StatefulWidget {
   /// `false` by default: the app did not really start again.
   final bool rerunRunnersOnReload;
 
+  /// How the desktop window is set up from the properties; the plugin's
+  /// by default. Only tests pass another.
+  @visibleForTesting
+  final DesktopWindowSetup? desktopWindowSetup;
+
   @override
   State<SpringApplicationWidget> createState() =>
       _SpringApplicationWidgetState();
@@ -138,12 +152,38 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   Future<void> _lifecycleWork = Future.value();
   // Where the SQLite files can live; read once, before the first start.
   SqliteDirectories? _directories;
+  // `spring.flutter.desktop.window.*`, applied while the start goes on.
+  late final DesktopWindowSetup _windowSetup;
+  DesktopWindowData _window = DesktopWindowData.none;
+  bool _firstFrameHeld = false;
 
   @override
   void initState() {
     super.initState();
+    _windowSetup = widget.desktopWindowSetup ?? DesktopWindowSetup();
+    _holdFirstFrame();
     _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
     unawaited(_start());
+  }
+
+  // The runners show the window with the first frame, so holding it back
+  // keeps the window hidden until the title bar and the size are set: no
+  // flicker. Released as soon as the properties are applied (or none
+  // are), and in any case when the start ends.
+  void _holdFirstFrame() {
+    if (!_windowSetup.isSupported) {
+      return;
+    }
+    _firstFrameHeld = true;
+    WidgetsBinding.instance.deferFirstFrame();
+    unawaited(_windowSetup.ready.whenComplete(_releaseFirstFrame));
+  }
+
+  void _releaseFirstFrame() {
+    if (_firstFrameHeld) {
+      _firstFrameHeld = false;
+      WidgetsBinding.instance.allowFirstFrame();
+    }
   }
 
   Future<void> _start() async {
@@ -154,6 +194,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       _directories ??= await SqliteDirectories.resolve();
       final application = widget.application();
       _directories?.provideTo(application);
+      _windowSetup.provideTo(application);
       final context = started = await application.runAsync(
         widget.args,
         systemEnvironment: _scanOsEnvironment(application) ? null : const {},
@@ -162,6 +203,11 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       SpringWidgetBindings.check(context);
       _checkApp(context);
       await _loadFonts(context);
+      if (!mounted) {
+        await context.closeAsync();
+        return;
+      }
+      _window = await _windowSetup.settle();
       if (!mounted) {
         await context.closeAsync();
         return;
@@ -177,6 +223,8 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       if (mounted) {
         setState(() => _error = error);
       }
+    } finally {
+      unawaited(_windowSetup.settle());
     }
   }
 
@@ -254,6 +302,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     try {
       final application = widget.application();
       _directories?.provideTo(application);
+      _windowSetup.provideTo(application);
       final context = application.reload(
         running,
         runners: widget.rerunRunnersOnReload,
@@ -263,6 +312,15 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         SpringWidgetBindings.check(context);
         _checkApp(context);
         _paused = false;
+        // A changed window property is applied by the new context's
+        // start; its answer replaces the data.
+        unawaited(
+          _windowSetup.settle().then((data) {
+            if (mounted && data != _window) {
+              setState(() => _window = data);
+            }
+          }),
+        );
         setState(() => _context = context);
       }
     } catch (error) {
@@ -341,6 +399,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
 
   @override
   void dispose() {
+    _releaseFirstFrame();
     _lifecycle.dispose();
     final context = _context;
     _context = null;
@@ -364,9 +423,12 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       applicationContext: running,
       // A new context starts the widgets afresh: none keeps a bean of the
       // closed one in its state.
-      child: KeyedSubtree(
-        key: ObjectKey(running),
-        child: widget.child ?? SpringApp(home: widget.home!),
+      child: DesktopWindow(
+        data: _window,
+        child: KeyedSubtree(
+          key: ObjectKey(running),
+          child: widget.child ?? SpringApp(home: widget.home!),
+        ),
       ),
     );
   }

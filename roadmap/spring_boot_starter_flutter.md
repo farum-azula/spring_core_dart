@@ -496,6 +496,55 @@ property keys.
 `shared_preferences` as a property source, and `@ConfigurationProperties`
 beans written back to it, so user settings are ordinary configuration.
 
+## The window on desktop (0.6.1, a patch right after 0.6.0; the owner, November 2026)
+
+**Done** (November 2026; docs in the starter's README, "Desktop window", and
+[docs/configuration.md](../docs/configuration.md)). Left: `max-size`, the
+position, the title, restoring the size and position the user left. Not yet
+run on real Windows and Linux machines (CI builds them: the `Desktop window`
+job); macOS is checked by `integration_test/desktop_window_test.dart` in the
+Flutter guide. On Linux `transparent` is a flat header bar of its own, since
+GTK draws no content under one.
+
+The native window of a desktop app set up by properties, like the app
+widget: the title bar, as in Zed or VS Code (content drawn under a
+transparent title bar, the window buttons over it), and the window's size:
+
+```properties
+spring.flutter.desktop.window.title-bar=transparent   # default | transparent | hidden
+spring.flutter.desktop.window.initial-size=1280x800   # the size of a first start
+spring.flutter.desktop.window.min-size=800x600        # the user cannot make it smaller
+```
+
+- `initial-size`: width x height in logical pixels, the size the window
+  opens with (centered on the screen); without it the runner's default.
+- `min-size`: the smallest size the user can drag the window's edges to
+  (macOS `contentMinSize`, Windows `WM_GETMINMAXINFO`, GTK
+  `gtk_window_set_geometry_hints`); without it no limit. An `initial-size`
+  smaller than `min-size` stops the start with both values named.
+
+The key carries the platform in its name, as the other platform-only keys
+(`spring.flutter.web.*`, `spring.flutter.security.web.mode`): only desktop
+apps read it; another value for one OS goes into its platform profile file
+(`application-macos.properties`, `application-windows.properties`).
+
+- macOS: `titlebarAppearsTransparent`, `titleVisibility = .hidden`,
+  `.fullSizeContentView` on the `NSWindow` (three lines in the runner today,
+  see `MainFlutterWindow.swift`);
+- Windows: the frame extended into the client area (DWM) and a drag area
+  the app marks;
+- Linux (GTK): a header bar of our own (`gtk_window_set_titlebar`);
+- the space the window buttons take reaches Flutter (a padding in
+  `MediaQuery`, or a widget) so layouts leave room for them; a widget marks
+  the area that drags the window.
+
+This needs native code in the Flutter starter (as
+`spring_boot_starter_flutter_security` has); no third-party package
+(`window_manager` and the like are not allowed by the dependency rules).
+Later in the same place: `max-size`, the position, the title, and the
+size and position the user left restored on the next start (then
+`initial-size` applies to the first start only).
+
 ## Environment of the app
 
 Flutter's `main()` gets no arguments, so two sources stand in for Boot's

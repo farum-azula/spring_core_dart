@@ -151,6 +151,12 @@ debug banner), its locales from the message files, and its themes from
   `application-desktop.properties` and `application-web.properties` in a
   side rail. The setting is `app.navigation`, bound to `AppProperties`
   (`lib/src/app/app_properties.dart`), which `HomePage` reads.
+  `application-desktop.properties` also sets the window: a transparent
+  title bar (`HomePage` leaves room for the window buttons with
+  `DesktopWindow.insetsOf` and its app bar is a `WindowDragArea`), opening at
+  1280x800 and not smaller than 800x600 (`spring.flutter.desktop.window.*`;
+  `integration_test/desktop_window_test.dart` reads the window back:
+  `flutter test integration_test/desktop_window_test.dart -d macos`).
   `application-android.properties` points the app at `10.0.2.2:8080`,
   the Android emulator's way to the computer. `@Profile(['!web'])` keeps
   two beans out of the browser (chapter 6).

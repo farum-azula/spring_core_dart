@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The desktop window from properties (0.6.1): `spring.flutter.desktop.window.title-bar` (`default`, `transparent`, `hidden`), `initial-size` and `min-size` (`1280x800`, logical pixels). `SpringApplicationWidget` reads them when the environment is ready and makes one call to the new platform code, before the first frame is shown (the frame is held back until the window is set, at most five seconds). A malformed value, or an initial size below the minimum, stops the start; phones and the web ignore the keys. `DesktopWindow` / `DesktopWindowInsets` give the space the window buttons take, `WindowDragArea` moves the window and maximizes it on a double click. The starter becomes a Flutter plugin for macOS (Swift: `NSWindow`), Windows (C++: DWM, `WM_GETMINMAXINFO`, `WM_NCCALCSIZE`) and Linux (GTK): its own code, no third-party package; it needs Flutter 3.47.
+
 ## 0.6.0
 
 ### Changes
