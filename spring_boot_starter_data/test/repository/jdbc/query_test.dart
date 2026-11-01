@@ -112,6 +112,46 @@ void _suite(String db) {
     );
 
     test(
+      r'a pattern ending with \ in a @Query: the caller wrote the SQL, so '
+      'the database decides, and PostgreSQL says it clearly',
+      () => run(() async {
+        if (db == 'postgres') {
+          await expectLater(
+            books.byTitleLike(r'Dune\'),
+            throwsA(
+              isA<InvalidDataAccessApiUsageException>().having(
+                (e) => e.message,
+                'message',
+                contains('escape character'),
+              ),
+            ),
+          );
+        } else {
+          // SQLite's LIKE has no escape character without ESCAPE.
+          expect(await books.byTitleLike(r'Dune\'), isEmpty);
+        }
+        // Escaped by the caller, it works on both.
+        expect(await books.byTitleLike(r'Dune\\%'), isEmpty);
+        expect(ids(await books.byTitleLike('Dune%')), [1, 2]);
+      }),
+    );
+
+    test(
+      'a NUL in a @Query text parameter is refused before PostgreSQL sees it',
+      () => run(() async {
+        if (db == 'postgres') {
+          await expectLater(
+            books.byTitle('Du\u0000ne'),
+            throwsA(isA<InvalidDataAccessApiUsageException>()),
+          );
+        } else {
+          expect(await books.byTitle('Du\u0000ne'), isEmpty);
+        }
+        expect(ids(await books.byTitle('Dune')), [1]);
+      }),
+    );
+
+    test(
       'a value is never in the text of the statement',
       () => run(() async {
         final sql = await statements(() => books.byTitle('Dune'));

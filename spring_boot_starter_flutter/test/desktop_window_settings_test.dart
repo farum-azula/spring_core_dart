@@ -141,6 +141,93 @@ void main() {
       );
     });
 
+    test('title and max size', () {
+      final settings = DesktopWindowSettings.fromEnvironment(
+        env({
+          'spring.flutter.desktop.window.title': '  NEON Books  ',
+          'spring.flutter.desktop.window.max-size': '1920x1080',
+        }),
+      );
+      expect(settings.title, 'NEON Books');
+      expect(settings.maxSize, const WindowSize(1920, 1080));
+      expect(settings.isEmpty, isFalse);
+    });
+
+    test('a blank title is no title', () {
+      final settings = DesktopWindowSettings.fromEnvironment(
+        env({'spring.flutter.desktop.window.title': '   '}),
+      );
+      expect(settings.title, isNull);
+      expect(settings.isEmpty, isTrue);
+    });
+
+    test('a maximum below the minimum names both values', () {
+      expect(
+        () => DesktopWindowSettings.fromEnvironment(
+          env({
+            'spring.flutter.desktop.window.min-size': '800x600',
+            'spring.flutter.desktop.window.max-size': '700x900',
+          }),
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(contains('max-size=700x900'), contains('min-size=800x600')),
+          ),
+        ),
+      );
+    });
+
+    test('an initial size above the maximum names both values', () {
+      expect(
+        () => DesktopWindowSettings.fromEnvironment(
+          env({
+            'spring.flutter.desktop.window.initial-size': '1280x800',
+            'spring.flutter.desktop.window.max-size': '1000x900',
+          }),
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('initial-size=1280x800'),
+              contains('max-size=1000x900'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('min <= initial <= max, equal allowed', () {
+      expect(
+        DesktopWindowSettings.fromEnvironment(
+          env({
+            'spring.flutter.desktop.window.initial-size': '800x600',
+            'spring.flutter.desktop.window.min-size': '800x600',
+            'spring.flutter.desktop.window.max-size': '800x600',
+          }),
+        ).maxSize,
+        const WindowSize(800, 600),
+      );
+    });
+
+    test('a malformed max size names its key', () {
+      expect(
+        () => DesktopWindowSettings.fromEnvironment(
+          env({'spring.flutter.desktop.window.max-size': 'big'}),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.toString(),
+            'message',
+            contains('spring.flutter.desktop.window.max-size'),
+          ),
+        ),
+      );
+    });
+
     test('a malformed value names its key', () {
       expect(
         () => DesktopWindowSettings.fromEnvironment(

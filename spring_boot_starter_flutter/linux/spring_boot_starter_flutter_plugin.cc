@@ -1,6 +1,8 @@
 // The desktop window on Linux (GTK 3): channel
 // "dev.farumazula/spring_boot_starter_flutter/window" with apply, describe,
-// startDrag and toggleMaximize.
+// startDrag and toggleMaximize. apply also sets the title
+// (gtk_window_set_title) and the size limits (geometry hints; a window
+// manager may refuse to maximize past the maximum size).
 //
 // title-bar=transparent: GTK draws a header bar next to the content, never
 // under it, so the closest is a header bar of our own that is flat (no
@@ -27,6 +29,9 @@ struct _SpringBootStarterFlutterPlugin {
   gboolean has_min_size;
   double min_width;
   double min_height;
+  gboolean has_max_size;
+  double max_width;
+  double max_height;
   // The last button press on the Flutter view: begin_move_drag needs its
   // time and position, and the call from Dart arrives after it.
   gboolean tracking_presses;
@@ -115,16 +120,28 @@ static int title_bar_height(GtkWindow* window) {
   return height;
 }
 
-static void apply_min_size(SpringBootStarterFlutterPlugin* self,
-                           GtkWindow* window) {
-  if (!self->has_min_size) {
+// The minimum and maximum sizes are one set of hints: setting them apart
+// would replace one with the other.
+static void apply_size_limits(SpringBootStarterFlutterPlugin* self,
+                              GtkWindow* window) {
+  if (!self->has_min_size && !self->has_max_size) {
     return;
   }
+  const int bar = title_bar_height(window);
   GdkGeometry geometry = {};
-  geometry.min_width = static_cast<int>(ceil(self->min_width));
-  geometry.min_height =
-      static_cast<int>(ceil(self->min_height)) + title_bar_height(window);
-  gtk_window_set_geometry_hints(window, nullptr, &geometry, GDK_HINT_MIN_SIZE);
+  int mask = 0;
+  if (self->has_min_size) {
+    geometry.min_width = static_cast<int>(ceil(self->min_width));
+    geometry.min_height = static_cast<int>(ceil(self->min_height)) + bar;
+    mask |= GDK_HINT_MIN_SIZE;
+  }
+  if (self->has_max_size) {
+    geometry.max_width = static_cast<int>(floor(self->max_width));
+    geometry.max_height = static_cast<int>(floor(self->max_height)) + bar;
+    mask |= GDK_HINT_MAX_SIZE;
+  }
+  gtk_window_set_geometry_hints(window, nullptr, &geometry,
+                                static_cast<GdkWindowHints>(mask));
 }
 
 static void apply_title_bar(SpringBootStarterFlutterPlugin* self,
@@ -223,9 +240,24 @@ static FlMethodResponse* apply(SpringBootStarterFlutterPlugin* self,
     self->min_width = min_width;
     self->min_height = min_height;
   }
+  double max_width = 0;
+  double max_height = 0;
+  if (read_number(arguments, "maxWidth", &max_width) &&
+      read_number(arguments, "maxHeight", &max_height)) {
+    self->has_max_size = TRUE;
+    self->max_width = max_width;
+    self->max_height = max_height;
+  }
+  if (arguments != nullptr && fl_value_get_type(arguments) == FL_VALUE_TYPE_MAP) {
+    FlValue* title = fl_value_lookup_string(arguments, "title");
+    if (title != nullptr && fl_value_get_type(title) == FL_VALUE_TYPE_STRING) {
+      // UTF-8, as GTK takes it.
+      gtk_window_set_title(window, fl_value_get_string(title));
+    }
+  }
   track_presses(self);
   apply_title_bar(self, window);
-  apply_min_size(self, window);
+  apply_size_limits(self, window);
   double width = 0;
   double height = 0;
   if (read_number(arguments, "initialWidth", &width) &&
@@ -255,6 +287,15 @@ static FlMethodResponse* describe(SpringBootStarterFlutterPlugin* self,
   fl_value_set_string_take(
       map, "minHeight",
       fl_value_new_float(self->has_min_size ? self->min_height : 0));
+  fl_value_set_string_take(
+      map, "maxWidth", fl_value_new_float(self->has_max_size ? self->max_width : 0));
+  fl_value_set_string_take(
+      map, "maxHeight",
+      fl_value_new_float(self->has_max_size ? self->max_height : 0));
+  fl_value_set_string_take(map, "title",
+                           fl_value_new_string(gtk_window_get_title(window) != nullptr
+                                                   ? gtk_window_get_title(window)
+                                                   : ""));
   fl_value_set_string_take(map, "titleBar", fl_value_new_string(self->title_bar));
   fl_value_set_string_take(map, "x", fl_value_new_float(x));
   fl_value_set_string_take(map, "y", fl_value_new_float(y));

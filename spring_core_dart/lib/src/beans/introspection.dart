@@ -890,6 +890,18 @@ class BeanIntrospector {
   void registerTypeTests(Map<Type, bool Function(Object? value)> tests) =>
       _typeTests.addAll(tests);
 
+  final _typeDepths = <Type, int>{};
+
+  /// Adds [depths], the supertype chain length of each type (see
+  /// `BeanModule.typeDepths`).
+  void registerTypeDepths(Map<Type, int> depths) => _typeDepths.addAll(depths);
+
+  /// The length of the longest chain of supertypes from [type] up to
+  /// `Object`, as registered here or in the [parent]; `null` when no module
+  /// described it. Of two types a value is an instance of, the one with
+  /// the greater depth is the closer to the value's class.
+  int? typeDepth(Type type) => _typeDepths[type] ?? parent?.typeDepth(type);
+
   /// Whether [value] is of [type] or of a subtype of it.
   ///
   /// Dart cannot test `value is T` for a `Type` value without reflection;

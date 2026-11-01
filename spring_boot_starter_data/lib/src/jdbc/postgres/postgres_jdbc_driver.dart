@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
 import 'package:spring_boot_starter_data/src/jdbc/postgres/postgres_binding.dart';
 import 'package:spring_boot_starter_data/src/jdbc/postgres/postgres_dialect.dart';
@@ -420,6 +421,8 @@ final class _PostgresConnection implements JdbcConnection {
   @override
   bool get isClosed => _closed || !_session.isOpen;
 
+  static const _maxParameters = 65535;
+
   // The text for the server, with its markers; [parameters] is what the
   // statement was given.
   static String _text(String sql, List<Object?> parameters) {
@@ -429,6 +432,26 @@ final class _PostgresConnection implements JdbcConnection {
         'The statement has ${rewritten.count} parameter marker(s) and '
         '${parameters.length} value(s) were given',
       );
+    }
+    if (parameters.length > _maxParameters) {
+      // The protocol counts them in 16 bits: the server would only say
+      // that the message is malformed.
+      throw InvalidDataArgumentException(
+        'A statement binds ${parameters.length} values, more than '
+        'PostgreSQL accepts ($_maxParameters): split the list, or bind it '
+        'as one array (a derived In does)',
+        sql: sql,
+      );
+    }
+    for (final value in parameters) {
+      // `22021` from the server otherwise; the value is not repeated.
+      if (value is String && value.contains('\u0000')) {
+        throw InvalidDataArgumentException(
+          'A text value contains a NUL character (U+0000), which '
+          'PostgreSQL cannot store or compare',
+          sql: sql,
+        );
+      }
     }
     return rewritten.sql;
   }

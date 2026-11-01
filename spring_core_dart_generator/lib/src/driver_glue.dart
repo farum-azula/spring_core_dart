@@ -20,8 +20,9 @@ const _webUrl = 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 ///
 /// The same table holds the glue between the data starter and another
 /// starter it must not depend on: the web starter's, which answers data
-/// errors with their HTTP status (`spring_boot_starter_web`). The bean is
-/// then of a type of that starter ([type] in [typeUrl]).
+/// errors with their HTTP status and fills `Pageable` and `Sort` controller
+/// parameters (`spring_boot_starter_web`). The bean is then of a type of
+/// that starter ([type] in [typeUrl]).
 ///
 /// Spring (Java): the driver jar on the classpath that
 /// `DataSourceAutoConfiguration` finds by its class.
@@ -37,6 +38,7 @@ final class DriverGlue {
     required this.factory,
     this.type = 'JdbcDriver',
     this.typeUrl = _starterUrl,
+    this.takesEnvironment = false,
   });
 
   /// The dependency that switches it on (`sqlite3`).
@@ -59,6 +61,10 @@ final class DriverGlue {
 
   /// The library [type] is imported from.
   final String typeUrl;
+
+  /// Whether [factory] takes the context's `Environment` (the glue reads
+  /// properties) instead of no argument.
+  final bool takesEnvironment;
 }
 
 /// The drivers the starter has glue for.
@@ -84,6 +90,18 @@ const driverGlues = [
     factory: r'_$dataAccessExceptionResolver',
     type: 'HandlerExceptionResolver',
     typeUrl: _webUrl,
+  ),
+  // The web starter's resolver of `Pageable` and `Sort` controller
+  // parameters (Spring Data Web's argument resolvers), a `WebMvcConfigurer`
+  // reading `spring.data.web.*`.
+  DriverGlue(
+    package: 'spring_boot_starter_web',
+    template: 'lib/src/web/paging_argument_resolver.dart.tmpl',
+    beanName: 'pagingArgumentResolvers',
+    factory: r'_$pagingArgumentResolvers',
+    type: 'WebMvcConfigurer',
+    typeUrl: _webUrl,
+    takesEnvironment: true,
   ),
 ];
 
@@ -176,7 +194,14 @@ Expression _definition(DriverGlue glue) {
         (m) => m
           ..requiredParameters.add(Parameter((p) => p..name = 'r'))
           ..lambda = true
-          ..body = refer(glue.factory).call([]).code,
+          ..body = refer(glue.factory).call([
+            if (glue.takesEnvironment)
+              refer('r').property('dependency').call(
+                [],
+                {},
+                [refer('Environment', _springUrl)],
+              ),
+          ]).code,
       ).closure,
     },
     [driver],

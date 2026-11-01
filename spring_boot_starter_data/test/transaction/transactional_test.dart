@@ -136,6 +136,36 @@ void main() {
     });
   });
 
+  group('the closest rule decides (generated type depths)', () {
+    test(
+      'noRollbackFor of a subtype beats rollbackFor of its supertype',
+      () async {
+        await withApp((shop, _, main, _) async {
+          await expectLater(
+            shop.failClosest(Counterfeit()),
+            throwsA(isA<Counterfeit>()),
+          );
+          await expectLater(
+            shop.failClosest(SoldOut()),
+            throwsA(isA<SoldOut>()),
+          );
+          await expectLater(
+            shop.failClosest(StateError('other')),
+            throwsStateError,
+          );
+          expect(main.calls, [
+            'begin 1',
+            'commit 1',
+            'begin 2',
+            'rollback 2',
+            'begin 3',
+            'rollback 3',
+          ]);
+        });
+      },
+    );
+  });
+
   group('transaction manager', () {
     test('by qualifier', () async {
       await withApp((shop, _, main, archive) async {

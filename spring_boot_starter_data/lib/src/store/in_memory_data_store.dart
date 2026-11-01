@@ -8,6 +8,7 @@ import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree.dart';
+import 'package:spring_boot_starter_data/src/query/query_arguments.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_transaction.dart';
@@ -1538,8 +1539,12 @@ final class InMemoryDataStore implements DataStore {
     List<Object?> arguments,
   ) {
     final ic = part.ignoreCase;
-    Object? argument(int index) =>
-        _fold(converter.toColumnValue(arguments[index]), ignoreCase: ic);
+    Object? argument(int index) {
+      final value = converter.toColumnValue(arguments[index]);
+      rejectNul(value, property.name);
+      return _fold(value, ignoreCase: ic);
+    }
+
     Object? fold(Object? value) => _fold(value, ignoreCase: ic);
     bool compare(Object? value, Object? other, bool Function(int c) holds) {
       if (value == null || other == null) {
@@ -1616,6 +1621,9 @@ final class InMemoryDataStore implements DataStore {
           for (final element in raw)
             _fold(converter.toColumnValue(element), ignoreCase: ic),
         ];
+        for (final element in elements) {
+          rejectNul(element, property.name);
+        }
         if (part.type == PartType.in_) {
           return (value) =>
               value != null &&

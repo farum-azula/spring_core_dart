@@ -1,0 +1,103 @@
+// The glue between this starter and the web starter for controller
+// parameters of type `Pageable` and `Sort`, as the generator writes it into
+// a module whose package depends on both. This is NOT a Dart library: this
+// starter does not depend on the web starter (nor the web starter on this
+// one), so no analyzer and no pub check may see an import of it. The
+// generator reads this file (an asset of `spring_boot_starter_data`),
+// resolves the placeholders and appends the result to the generated library,
+// as it does for the database drivers (see `sqlite3.dart.tmpl` for the
+// placeholder syntax: every symbol of another library is written
+// `{{package:<library uri without "package:">#<Symbol>}}`, and no `import`
+// line).
+//
+// The generator makes the bean `pagingArgumentResolvers` (a web
+// `WebMvcConfigurer` that registers the resolver) from the function
+// `_$pagingArgumentResolvers` below, which gets the `Environment`; the
+// bean's name and the function are in the generator's table. An application
+// bean of that name replaces it.
+//
+// All of the logic (the parameters, the defaults and bounds) is the
+// starter's `WebPaging`, which Dart code may test without the web starter;
+// this file only connects it to the web starter's types. Keep it small: each
+// line is copied into every application.
+
+final class _$PagingArgumentResolver
+    implements {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HandlerMethodArgumentResolver}} {
+  const _$PagingArgumentResolver(this._paging);
+
+  final {{package:spring_boot_starter_data/spring_boot_starter_data.dart#WebPaging}} _paging;
+
+  @override
+  bool supportsParameter(
+    {{package:spring_boot_starter_web/spring_boot_starter_web.dart#MethodParameter}} parameter,
+  ) {
+    final type = parameter.type.type;
+    if (type == {{package:spring_boot_starter_data/spring_boot_starter_data.dart#Pageable}}) {
+      // Spring: two Pageable parameters need a @Qualifier each, or they
+      // would read the same query parameters.
+      final unqualified = parameter.handler.parameters.where(
+        (other) =>
+            other.type.type == {{package:spring_boot_starter_data/spring_boot_starter_data.dart#Pageable}} &&
+            !other.has<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#Qualifier}}>(),
+      );
+      if (unqualified.length > 1) {
+        throw StateError(
+          'Ambiguous Pageable arguments in handler method '
+          '${parameter.handler.description}: use @Qualifier to tell them '
+          'apart',
+        );
+      }
+      return true;
+    }
+    return type == {{package:spring_boot_starter_data/spring_boot_starter_data.dart#Sort}};
+  }
+
+  @override
+  Object? resolveArgument(
+    {{package:spring_boot_starter_web/spring_boot_starter_web.dart#MethodParameter}} parameter,
+    {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ServerHttpRequest}} request,
+    {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ServerHttpResponse}} response,
+  ) {
+    final qualifier = parameter
+        .annotation<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#Qualifier}}>()
+        ?.value;
+    final defaults = parameter.annotations
+        .whereType<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#SortDefault}}>()
+        .toList();
+    return parameter.type.type == {{package:spring_boot_starter_data/spring_boot_starter_data.dart#Pageable}}
+        ? _paging.pageable(
+            request.queryParameters,
+            pageableDefault: parameter
+                .annotation<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#PageableDefault}}>(),
+            sortDefaults: defaults,
+            qualifier: qualifier,
+          )
+        : _paging.sort(
+            request.queryParameters,
+            sortDefaults: defaults,
+            qualifier: qualifier,
+          );
+  }
+}
+
+final class _$PagingWebMvcConfigurer
+    with {{package:spring_boot_starter_web/spring_boot_starter_web.dart#WebMvcConfigurer}} {
+  const _$PagingWebMvcConfigurer(this._resolver);
+
+  final _$PagingArgumentResolver _resolver;
+
+  @override
+  void addArgumentResolvers(
+    List<{{package:spring_boot_starter_web/spring_boot_starter_web.dart#HandlerMethodArgumentResolver}}> resolvers,
+  ) => resolvers.add(_resolver);
+}
+
+{{package:spring_boot_starter_web/spring_boot_starter_web.dart#WebMvcConfigurer}} _$pagingArgumentResolvers(
+  {{package:spring_core_dart/spring_core_dart.dart#Environment}} environment,
+) => _$PagingWebMvcConfigurer(
+  _$PagingArgumentResolver(
+    {{package:spring_boot_starter_data/spring_boot_starter_data.dart#WebPaging}}(
+      {{package:spring_boot_starter_data/spring_boot_starter_data.dart#WebPagingProperties}}.of(environment),
+    ),
+  ),
+);

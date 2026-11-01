@@ -4475,7 +4475,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       "# The Android emulator reaches the computer's localhost at 10.0.2.2.\napi.host=10.0.2.2:8080\n",
     ),
     r'application-desktop.properties': _i2.EmbeddedResource.text(
-      '# Desktops: the sections in a navigation rail, the window is wide.\napp.title=NEON Books for desktop\napp.navigation=rail\n',
+      '# Desktops: the sections in a navigation rail, the window is wide.\napp.title=NEON Books for desktop\napp.navigation=rail\n\n# The window (macOS, Windows, Linux): content under a transparent title bar\n# (HomePage leaves room for the window buttons and the empty part of its app\n# bar moves the window), opens at 1280x800 and cannot be made smaller than\n# 800x600.\nspring.flutter.desktop.window.title-bar=transparent\nspring.flutter.desktop.window.initial-size=1280x800\nspring.flutter.desktop.window.min-size=800x600\n',
     ),
     r'application-mobile.properties': _i2.EmbeddedResource.text(
       '# Phones: the sections in a bottom navigation bar.\napp.navigation=bar\n',
@@ -5255,6 +5255,18 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
       'SPRING_FLUTTER_APP_TYPE': const String.fromEnvironment(
         'SPRING_FLUTTER_APP_TYPE',
       ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_DESKTOP_WINDOW_INITIALSIZE'))
+      'SPRING_FLUTTER_DESKTOP_WINDOW_INITIALSIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_DESKTOP_WINDOW_INITIALSIZE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_DESKTOP_WINDOW_MINSIZE'))
+      'SPRING_FLUTTER_DESKTOP_WINDOW_MINSIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_DESKTOP_WINDOW_MINSIZE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_DESKTOP_WINDOW_TITLEBAR'))
+      'SPRING_FLUTTER_DESKTOP_WINDOW_TITLEBAR': const String.fromEnvironment(
+        'SPRING_FLUTTER_DESKTOP_WINDOW_TITLEBAR',
+      ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
         'SPRING_FLUTTER_SCANOSENVIRONMENT',
@@ -5603,6 +5615,19 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
       'spring.flutter.app.type': const String.fromEnvironment(
         'spring.flutter.app.type',
       ),
+    if (const bool.hasEnvironment('spring.flutter.desktop.window.initial-size'))
+      'spring.flutter.desktop.window.initial-size':
+          const String.fromEnvironment(
+            'spring.flutter.desktop.window.initial-size',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.desktop.window.min-size'))
+      'spring.flutter.desktop.window.min-size': const String.fromEnvironment(
+        'spring.flutter.desktop.window.min-size',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.desktop.window.title-bar'))
+      'spring.flutter.desktop.window.title-bar': const String.fromEnvironment(
+        'spring.flutter.desktop.window.title-bar',
+      ),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
         'spring.flutter.scan-os-environment',
@@ -5854,7 +5879,7 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '0082fca9',
+  fingerprint: 'c1420acd',
 );
 
 /// Starts the application: config files, environment, context, runners

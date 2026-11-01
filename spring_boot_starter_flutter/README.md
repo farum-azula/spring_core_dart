@@ -1018,9 +1018,11 @@ before the first frame is shown:
 
 ```properties
 # lib/resources/application-desktop.properties
+spring.flutter.desktop.window.title=NEON Books        # the OS's title bar, Dock, taskbar
 spring.flutter.desktop.window.title-bar=transparent   # default | transparent | hidden
 spring.flutter.desktop.window.initial-size=1280x800   # logical pixels, centered
 spring.flutter.desktop.window.min-size=800x600        # the user cannot drag smaller
+spring.flutter.desktop.window.max-size=1920x1080      # ... or larger
 ```
 
 - `transparent`: the content is drawn under a transparent title bar and the
@@ -1029,8 +1031,16 @@ spring.flutter.desktop.window.min-size=800x600        # the user cannot drag sma
   area, the caption buttons are the system's; Linux: GTK cannot draw under a
   header bar, so it is a flat header bar of its own with no title).
 - `hidden`: no title bar and no window buttons; the app draws its own.
-- `initial-size` and `min-size` are `<width>x<height>` in logical pixels. A
-  malformed value, or an initial size below the minimum, stops the start.
+- `title` is the window's title, shown by the OS in the title bar (not with
+  `transparent` or `hidden`, which draw none) and in the Dock, taskbar and
+  window switcher; a blank value is the same as none (the runner's title
+  stays).
+- `initial-size`, `min-size` and `max-size` are `<width>x<height>` in
+  logical pixels. A malformed value, or sizes that contradict each other
+  (min <= initial <= max), stops the start naming the values. Maximizing a
+  window with a `max-size`: macOS zoom stops at it, Windows maximizes to the
+  largest allowed size, and a Linux window manager may refuse to maximize
+  past it.
 - Phones and the web ignore the keys.
 
 Two widgets for the title bar the app draws itself:

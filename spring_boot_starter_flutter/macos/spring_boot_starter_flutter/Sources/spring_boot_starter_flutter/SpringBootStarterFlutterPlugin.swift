@@ -4,9 +4,10 @@ import FlutterMacOS
 /// The macOS side of the desktop window of spring_boot_starter_flutter: one
 /// method channel, `dev.farumazula/spring_boot_starter_flutter/window`.
 ///
-/// - `apply`: the title bar (`transparent`, `hidden`), the minimum size
-///   (`NSWindow.contentMinSize`) and the initial size (centered); answers
-///   the space the window buttons take.
+/// - `apply`: the title (`NSWindow.title`), the title bar (`transparent`,
+///   `hidden`), the minimum and maximum sizes (`NSWindow.contentMinSize`,
+///   `contentMaxSize`; the zoom button respects the maximum) and the
+///   initial size (centered); answers the space the window buttons take.
 /// - `describe`: the window as it is now (for tests).
 /// - `startDrag`: `NSWindow.performDrag`; `toggleMaximize`: the system's
 ///   double-click action on a title bar.
@@ -66,6 +67,9 @@ public final class SpringBootStarterFlutterPlugin: NSObject, FlutterPlugin {
   private func apply(_ arguments: [String: Any], to window: NSWindow) {
     // The title bar first: with the full-size content view the content is
     // the whole window, which the sizes below are the sizes of.
+    if let title = arguments["title"] as? String {
+      window.title = title
+    }
     titleBar = arguments["titleBar"] as? String ?? "default"
     if titleBar == "transparent" || titleBar == "hidden" {
       window.titlebarAppearsTransparent = true
@@ -81,6 +85,11 @@ public final class SpringBootStarterFlutterPlugin: NSObject, FlutterPlugin {
       let height = (arguments["minHeight"] as? NSNumber)?.doubleValue
     {
       window.contentMinSize = NSSize(width: width, height: height)
+    }
+    if let width = (arguments["maxWidth"] as? NSNumber)?.doubleValue,
+      let height = (arguments["maxHeight"] as? NSNumber)?.doubleValue
+    {
+      window.contentMaxSize = NSSize(width: width, height: height)
     }
     if let width = (arguments["initialWidth"] as? NSNumber)?.doubleValue,
       let height = (arguments["initialHeight"] as? NSNumber)?.doubleValue
@@ -113,11 +122,17 @@ public final class SpringBootStarterFlutterPlugin: NSObject, FlutterPlugin {
 
   private func describe(_ window: NSWindow) -> [String: Any] {
     let content = window.contentView?.bounds.size ?? .zero
+    // No maximum is the system's "unbounded" (the largest float).
+    let max = window.contentMaxSize
+    let hasMax = max.width < 1_000_000 && max.height < 1_000_000
     return [
       "contentWidth": Double(content.width),
       "contentHeight": Double(content.height),
       "minWidth": Double(window.contentMinSize.width),
       "minHeight": Double(window.contentMinSize.height),
+      "maxWidth": hasMax ? Double(max.width) : 0.0,
+      "maxHeight": hasMax ? Double(max.height) : 0.0,
+      "title": window.title,
       "titleBar": titleBar,
       "titlebarAppearsTransparent": window.titlebarAppearsTransparent,
       "titleHidden": window.titleVisibility == .hidden,

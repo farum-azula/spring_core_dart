@@ -50,6 +50,33 @@ std::string ReadString(const flutter::EncodableMap& map, const char* key,
   return fallback;
 }
 
+// UTF-8 to the UTF-16 Windows takes.
+std::wstring ToWide(const std::string& text) {
+  if (text.empty()) {
+    return std::wstring();
+  }
+  int length = ::MultiByteToWideChar(CP_UTF8, 0, text.data(),
+                                     static_cast<int>(text.size()), nullptr, 0);
+  std::wstring wide(length, L'\0');
+  ::MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()),
+                        wide.data(), length);
+  return wide;
+}
+
+// UTF-16 to UTF-8.
+std::string ToUtf8(const std::wstring& text) {
+  if (text.empty()) {
+    return std::string();
+  }
+  int length = ::WideCharToMultiByte(CP_UTF8, 0, text.data(),
+                                     static_cast<int>(text.size()), nullptr, 0,
+                                     nullptr, nullptr);
+  std::string utf8(length, '\0');
+  ::WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()),
+                        utf8.data(), length, nullptr, nullptr);
+  return utf8;
+}
+
 double ScaleOf(HWND hwnd) {
   UINT dpi = ::GetDpiForWindow(hwnd);
   return dpi == 0 ? 1.0 : static_cast<double>(dpi) / 96.0;
@@ -174,6 +201,21 @@ void SpringBootStarterFlutterPlugin::Apply(
     HWND hwnd, const flutter::EncodableMap& arguments) {
   title_bar_ = ReadString(arguments, "titleBar", "default");
 
+  auto title_it = arguments.find(flutter::EncodableValue(std::string("title")));
+  if (title_it != arguments.end()) {
+    if (const std::string* title = std::get_if<std::string>(&title_it->second)) {
+      ::SetWindowTextW(hwnd, ToWide(*title).c_str());
+    }
+  }
+
+  auto max_width = ReadNumber(arguments, "maxWidth");
+  auto max_height = ReadNumber(arguments, "maxHeight");
+  if (max_width && max_height) {
+    has_max_size_ = true;
+    max_width_ = *max_width;
+    max_height_ = *max_height;
+  }
+
   auto min_width = ReadNumber(arguments, "minWidth");
   auto min_height = ReadNumber(arguments, "minHeight");
   if (min_width && min_height) {
@@ -272,6 +314,15 @@ flutter::EncodableMap SpringBootStarterFlutterPlugin::Describe(
       flutter::EncodableValue(has_min_size_ ? min_width_ : 0.0);
   map[flutter::EncodableValue("minHeight")] =
       flutter::EncodableValue(has_min_size_ ? min_height_ : 0.0);
+  map[flutter::EncodableValue("maxWidth")] =
+      flutter::EncodableValue(has_max_size_ ? max_width_ : 0.0);
+  map[flutter::EncodableValue("maxHeight")] =
+      flutter::EncodableValue(has_max_size_ ? max_height_ : 0.0);
+  int title_length = ::GetWindowTextLengthW(hwnd);
+  std::wstring title(static_cast<size_t>(title_length) + 1, L'\0');
+  title.resize(::GetWindowTextW(hwnd, title.data(), title_length + 1));
+  map[flutter::EncodableValue("title")] =
+      flutter::EncodableValue(ToUtf8(title));
   map[flutter::EncodableValue("titleBar")] = flutter::EncodableValue(title_bar_);
   map[flutter::EncodableValue("x")] =
       flutter::EncodableValue(static_cast<double>(window.left));
@@ -295,7 +346,7 @@ std::optional<LRESULT> SpringBootStarterFlutterPlugin::HandleWindowProc(
 
   switch (message) {
     case WM_GETMINMAXINFO: {
-      if (!has_min_size_) {
+      if (!has_min_size_ && !has_max_size_) {
         break;
       }
       double scale = ScaleOf(hwnd);
@@ -303,8 +354,22 @@ std::optional<LRESULT> SpringBootStarterFlutterPlugin::HandleWindowProc(
       int frame_height = 0;
       NonClientSize(hwnd, &frame_width, &frame_height);
       MINMAXINFO* info = reinterpret_cast<MINMAXINFO*>(lparam);
-      info->ptMinTrackSize.x = ToPixels(min_width_, scale) + frame_width;
-      info->ptMinTrackSize.y = ToPixels(min_height_, scale) + frame_height;
+      if (has_min_size_) {
+        info->ptMinTrackSize.x = ToPixels(min_width_, scale) + frame_width;
+        info->ptMinTrackSize.y = ToPixels(min_height_, scale) + frame_height;
+      }
+      if (has_max_size_) {
+        // The largest size the user can drag to. ptMaxSize, the size a
+        // maximized window takes, is the same, so maximizing gives the
+        // largest allowed window (at the position Windows chose, which is
+        // the work area's corner) instead of a screen-filling one.
+        const LONG max_x = ToPixels(max_width_, scale) + frame_width;
+        const LONG max_y = ToPixels(max_height_, scale) + frame_height;
+        info->ptMaxTrackSize.x = max_x;
+        info->ptMaxTrackSize.y = max_y;
+        info->ptMaxSize.x = (std::min)(info->ptMaxSize.x, max_x);
+        info->ptMaxSize.y = (std::min)(info->ptMaxSize.y, max_y);
+      }
       return 0;
     }
     case WM_NCCALCSIZE: {

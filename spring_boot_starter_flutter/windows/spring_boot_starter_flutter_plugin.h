@@ -16,7 +16,7 @@ namespace spring_boot_starter_flutter {
 // The window of a desktop app: channel
 // "dev.farumazula/spring_boot_starter_flutter/window" (apply, describe,
 // startDrag, toggleMaximize) and the top-level window procedure delegate
-// that answers WM_GETMINMAXINFO (the minimum size), WM_NCCALCSIZE and
+// that answers WM_GETMINMAXINFO (the minimum and maximum sizes), WM_NCCALCSIZE and
 // WM_NCHITTEST (the client area under the title bar).
 class SpringBootStarterFlutterPlugin : public flutter::Plugin {
  public:
@@ -49,6 +49,9 @@ class SpringBootStarterFlutterPlugin : public flutter::Plugin {
   bool has_min_size_ = false;
   double min_width_ = 0;
   double min_height_ = 0;
+  bool has_max_size_ = false;
+  double max_width_ = 0;
+  double max_height_ = 0;
   // The window frame's size beyond the client area, from the last time it
   // could be measured (not while the window is minimized).
   int non_client_width_ = 0;

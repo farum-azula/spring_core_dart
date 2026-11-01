@@ -1,3 +1,11 @@
+## Unreleased
+
+### Changes
+
+- Each module that has `typeTests` also gets `typeDepths`: the longest chain of supertypes (superclass, interfaces, mixins) up to `Object` of every class type written in an annotation, so the runtime can tell which of two matching types is the closer. Regenerate the `.spring.dart` files that have `typeTests`.
+- The glue table has a row for `spring_boot_starter_data`'s `lib/src/web/paging_argument_resolver.dart.tmpl`: an application depending on both the web and the data starter gets the bean `pagingArgumentResolvers` (a `WebMvcConfigurer`, made from the `Environment`) that fills `Pageable` and `Sort` controller parameters. The data starter's resolver for data errors also maps `InvalidDataArgumentException` to a 400.
+- `@DataTest` tests: `@Transactional(transactionManager: 'name')` on a test method, a `@Nested` group or the test class picks the transaction manager of that test (the innermost one that names a manager wins, then `@DataTest(transactionManager:)`); the generated `runInTestTransaction` gets it as `transactionManager:`. Regenerate the `.test.spring.dart` files.
+
 ## 0.6.0
 
 ### Breaking

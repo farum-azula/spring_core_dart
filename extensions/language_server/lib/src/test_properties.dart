@@ -16,7 +16,11 @@ import 'package:dart_spring_language_server/src/properties_index.dart';
 ///   and `withSystemEnvironment({...})` (environment variables);
 /// - `registry.add('key', () => ...)` of `@DynamicPropertySource` and
 ///   `dynamicProperties:`;
-/// - `ApplicationContextRunner().withPropertyValues(['key=value'])`.
+/// - `ApplicationContextRunner().withPropertyValues(['key=value'])`;
+/// - the properties of a `@ServiceConnection` container field
+///   (`PostgresContainer`: `spring.datasource.url|username|password`,
+///   `KeycloakContainer`: the `issuer-uri` keys), placed at the field and
+///   marked with the container that provides them.
 ///
 /// Only keys written as string literals count. Files outside a `test/` or
 /// `integration_test/` directory give an empty list. The result is cached
@@ -60,6 +64,28 @@ final class _Collector extends RecursiveAstVisitor<void> {
         _map(positionalArgument(node), environment: true);
     }
     super.visitAnnotation(node);
+  }
+
+  @override
+  void visitFieldDeclaration(FieldDeclaration node) {
+    final info = _container(node);
+    if (info != null && info.connection) {
+      final provided = _provided[info.type];
+      if (provided != null) {
+        final variable = node.fields.variables.first;
+        final providerId = _providerId(variable.initializer) ?? 'keycloak';
+        for (final key in provided) {
+          _entry(
+            variable,
+            key.replaceAll('<id>', providerId),
+            variable.name.offset,
+            variable.name.end,
+            provider: '${info.type} ${variable.name.lexeme}',
+          );
+        }
+      }
+    }
+    super.visitFieldDeclaration(node);
   }
 
   @override
@@ -158,6 +184,7 @@ final class _Collector extends RecursiveAstVisitor<void> {
     int end, {
     String value = '',
     bool environment = false,
+    String? provider,
   }) {
     final from = file.lineInfo.getLocation(start);
     final to = file.lineInfo.getLocation(end);
@@ -172,7 +199,148 @@ final class _Collector extends RecursiveAstVisitor<void> {
             ? to.columnNumber - 1
             : from.columnNumber - 1 + key.length,
         environment: environment,
+        provider: provider,
       ),
     );
+  }
+}
+
+// What a container module provides as a `@ServiceConnection`.
+const _provided = {
+  'PostgresContainer': [
+    'spring.datasource.url',
+    'spring.datasource.username',
+    'spring.datasource.password',
+  ],
+  'KeycloakContainer': [
+    'spring.security.oauth2.resourceserver.jwt.issuer-uri',
+    'spring.security.oauth2.client.provider.<id>.issuer-uri',
+  ],
+};
+
+typedef _ContainerField = ({
+  bool container,
+  bool connection,
+  String? type,
+});
+
+// The container annotations of a field and its container type: the type
+// the initializer creates (`PostgresContainer('...')..withReuse(true)`),
+// else the declared type.
+_ContainerField? _container(FieldDeclaration node) {
+  final names = {
+    for (final annotation in node.metadata) annotationName(annotation),
+  };
+  final container = names.contains('Container');
+  final connection = names.contains('ServiceConnection');
+  if (!container && !connection) {
+    return null;
+  }
+  final initializer = node.fields.variables.first.initializer;
+  return (
+    container: container,
+    connection: connection,
+    type: _createdType(initializer) ?? typeName(node.fields.type),
+  );
+}
+
+String? _createdType(Expression? expression) {
+  var current = expression;
+  while (current != null) {
+    switch (current) {
+      case CascadeExpression(:final target):
+        current = target;
+      case InstanceCreationExpression(:final constructorName):
+        return constructorName.type.name.lexeme;
+      case MethodInvocation(:final target?):
+        current = target;
+      case MethodInvocation(:final methodName):
+        final name = methodName.name;
+        return name.isNotEmpty && name[0].toUpperCase() == name[0]
+            ? name
+            : null;
+      case ParenthesizedExpression(:final expression):
+        current = expression;
+      default:
+        return null;
+    }
+  }
+  return null;
+}
+
+// The literal of `withProviderId('x')` in the chain or cascade of a
+// KeycloakContainer initializer.
+String? _providerId(Expression? expression) {
+  final finder = _ProviderIdFinder();
+  expression?.accept(finder);
+  return finder.found;
+}
+
+final class _ProviderIdFinder extends RecursiveAstVisitor<void> {
+  String? found;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (node.methodName.name == 'withProviderId') {
+      found ??= stringValue(
+        node.argumentList.arguments.firstOrNull?.argumentExpression,
+      );
+    }
+    super.visitMethodInvocation(node);
+  }
+}
+
+/// A mistake in how a test uses containers, at `start` to `end`.
+typedef ContainerProblem = ({int start, int end, String message});
+
+/// The container mistakes of a test file, as the generator reports them at
+/// build time and `@ServiceConnection` does at run time:
+///
+/// - a `@Container` field that is not `static`;
+/// - `@ServiceConnection` on a `GenericContainer`, which cannot say how to
+///   connect to it (`PostgresContainer` and `KeycloakContainer` can).
+///
+/// Other files give an empty list.
+List<ContainerProblem> containerProblems(DartFile file) {
+  if (!_isTest(file.path)) {
+    return const [];
+  }
+  final problems = <ContainerProblem>[];
+  file.unit.accept(_ContainerChecker(problems));
+  return problems;
+}
+
+final class _ContainerChecker extends RecursiveAstVisitor<void> {
+  _ContainerChecker(this.problems);
+
+  final List<ContainerProblem> problems;
+
+  @override
+  void visitFieldDeclaration(FieldDeclaration node) {
+    final info = _container(node);
+    if (info != null) {
+      final name = node.fields.variables.first.name;
+      if (info.container && !node.isStatic) {
+        problems.add((
+          start: name.offset,
+          end: name.end,
+          message:
+              "@Container field '${name.lexeme}' must be static: the "
+              'containers start before the test class is created',
+        ));
+      }
+      if (info.connection && info.type == 'GenericContainer') {
+        problems.add((
+          start: name.offset,
+          end: name.end,
+          message:
+              "@ServiceConnection on '${name.lexeme}': GenericContainer "
+              'cannot say how to connect to it. Use PostgresContainer or '
+              'KeycloakContainer, or a container that implements '
+              'ServiceConnectionProperties',
+        ));
+      }
+    }
+    super.visitFieldDeclaration(node);
   }
 }

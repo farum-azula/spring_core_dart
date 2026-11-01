@@ -85,9 +85,11 @@ Future<void> pump(
 }
 
 const all = {
+  'spring.flutter.desktop.window.title': 'NEON Books',
   'spring.flutter.desktop.window.title-bar': 'transparent',
   'spring.flutter.desktop.window.initial-size': '1280x800',
   'spring.flutter.desktop.window.min-size': '800x600',
+  'spring.flutter.desktop.window.max-size': '1920x1080',
 };
 
 // A test that may set the platform: reset before the binding checks it.
@@ -103,7 +105,7 @@ void testDesktop(
 });
 
 void main() {
-  testDesktop('macOS: one apply call with the three values, insets reach '
+  testDesktop('macOS: one apply call with all the values, insets reach '
       'the widgets', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
     final calls = installChannel(tester);
@@ -112,11 +114,14 @@ void main() {
     expect(calls.calls, hasLength(1));
     expect(calls.calls.single.method, 'apply');
     expect(calls.calls.single.arguments, {
+      'title': 'NEON Books',
       'titleBar': 'transparent',
       'initialWidth': 1280.0,
       'initialHeight': 800.0,
       'minWidth': 800.0,
       'minHeight': 600.0,
+      'maxWidth': 1920.0,
+      'maxHeight': 1080.0,
     });
     expect(find.text('transparent 70/28'), findsOneWidget);
   });

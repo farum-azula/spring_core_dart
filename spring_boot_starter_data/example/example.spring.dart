@@ -1574,6 +1574,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   },
   typeTests: {_i1.Book: (value) => value is _i1.Book},
+  typeDepths: {_i1.Book: 1},
 );
 
 final class _$Sqlite3Binding implements _i4.SqliteBinding {
@@ -1923,7 +1924,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'f0539f0d',
+  fingerprint: '0e7c6aa2',
 );
 
 /// Starts the application: config files, environment, context, runners

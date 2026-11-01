@@ -188,8 +188,10 @@ final class BeanModule {
     List<BeanIntrospection<Object>> introspections = const [],
     Map<String, EmbeddedResource> resources = const {},
     Map<Type, bool Function(Object? value)> typeTests = const {},
+    Map<Type, int> typeDepths = const {},
   }) : definitions = List.unmodifiable(definitions),
        typeTests = Map.unmodifiable(typeTests),
+       typeDepths = Map.unmodifiable(typeDepths),
        introspections = List.unmodifiable(introspections),
        propertySources = List.unmodifiable(propertySources),
        imports = List.unmodifiable(imports),
@@ -215,6 +217,15 @@ final class BeanModule {
   /// tell whether an object is of a subtype. Registered in the context's
   /// introspector ([BeanIntrospector.isInstanceOf]).
   final Map<Type, bool Function(Object? value)> typeTests;
+
+  /// For each type of [typeTests], the length of the longest chain of
+  /// supertypes from it up to `Object` (`Object` itself is 0): of two types
+  /// a value is an instance of, the one with the greater depth is the
+  /// closer. Without reflection a `Type` value alone cannot tell which of
+  /// two types is the subtype; the generator reads it from the analyzer.
+  /// Registered in the context's introspector
+  /// ([BeanIntrospector.typeDepth]).
+  final Map<Type, int> typeDepths;
 
   /// The module name, by convention the name of the annotated variable;
   /// shown in logs and errors.

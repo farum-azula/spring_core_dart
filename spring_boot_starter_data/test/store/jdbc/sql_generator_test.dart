@@ -482,6 +482,138 @@ void main() {
     );
 
     test(
+      'in and not in on PostgreSQL: one array parameter, any length',
+      () => run(() async {
+        final gen = SqlGenerator(
+          dialect: const PostgresDialect(),
+          converter: converter,
+        );
+        final inside = where(
+          gen,
+          criteria(PartType.in_, [
+            ['a', null, 'b'],
+          ]),
+        );
+        expect(condition(inside), '("title" = any(?))');
+        expect(inside.parameters, [
+          ['a', 'b'],
+        ]);
+        final many = where(
+          gen,
+          criteria(PartType.in_, [
+            List.generate(70000, (i) => 'v$i'),
+          ]),
+        );
+        expect(condition(many), '("title" = any(?))');
+        expect(many.parameters, hasLength(1));
+        final notInside = where(
+          gen,
+          criteria(PartType.notIn, [
+            {'a', 'b'},
+          ]),
+        );
+        expect(condition(notInside), '("title" <> all(?))');
+        expect(
+          condition(
+            where(
+              gen,
+              criteria(PartType.in_, [
+                ['A'],
+              ], ignoreCase: true),
+            ),
+          ),
+          '(lower("title") = any(array(select lower(element) '
+          'from unnest(cast(? as text[])) as element)))',
+        );
+        // Null and empty keep their meaning.
+        expect(
+          condition(where(gen, criteria(PartType.in_, [<String>[]]))),
+          '(1 = 0)',
+        );
+        expect(
+          condition(
+            where(
+              gen,
+              criteria(PartType.notIn, [
+                ['a', null],
+              ]),
+            ),
+          ),
+          '(1 = 0)',
+        );
+        expect(
+          condition(where(gen, criteria(PartType.notIn, [<String>[]]))),
+          '(1 = 1)',
+        );
+      }),
+    );
+
+    test(
+      'in on SQLite: a list past the limit of bound values is refused',
+      () => run(() async {
+        final fits = where(
+          lite,
+          criteria(PartType.in_, [
+            List.generate(32766, (i) => 'v$i'),
+          ]),
+        );
+        expect(fits.parameters, hasLength(32766));
+        for (final type in [PartType.in_, PartType.notIn]) {
+          expect(
+            () => where(
+              lite,
+              criteria(type, [
+                List.generate(70000, (i) => 'v$i'),
+              ]),
+            ),
+            throwsA(
+              isA<InvalidDataArgumentException>().having(
+                (e) => e.message,
+                'message',
+                allOf(contains('70000'), contains('32766')),
+              ),
+            ),
+          );
+        }
+      }),
+    );
+
+    test(
+      'a NUL in a text argument is refused, without the value',
+      () => run(() async {
+        for (final type in [
+          PartType.simpleProperty,
+          PartType.containing,
+          PartType.startingWith,
+          PartType.like,
+        ]) {
+          for (final generator in [pg, lite]) {
+            expect(
+              () => where(generator, criteria(type, ['a\u0000b'])),
+              throwsA(
+                isA<InvalidDataArgumentException>().having(
+                  (e) => e.message,
+                  'message',
+                  allOf(contains('NUL'), contains("'title'")),
+                ),
+              ),
+              reason: type.name,
+            );
+          }
+        }
+        expect(
+          () => where(
+            pg,
+            criteria(PartType.in_, [
+              ['a', 'b\u0000'],
+            ]),
+          ),
+          throwsA(isA<InvalidDataAccessApiUsageException>()),
+        );
+      }),
+    );
+
+    test(
       'in and not in: expanded, empty without invalid SQL, null aside',
       () => run(() async {
         final inside = where(

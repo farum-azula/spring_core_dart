@@ -111,10 +111,19 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
       ], (args) => this._target.failWithRules((args[0] as Object)));
 
   @override
-  _i3.Future<int?> archived() => this._invoker.invokeAsync<int?>(
+  _i3.Future<void> failClosest(Object error) => this._invoker.invokeAsync<void>(
     this,
     this._target,
     6,
+    [error],
+    (args) => this._target.failClosest((args[0] as Object)),
+  );
+
+  @override
+  _i3.Future<int?> archived() => this._invoker.invokeAsync<int?>(
+    this,
+    this._target,
+    7,
     const [],
     (args) => this._target.archived(),
   );
@@ -123,7 +132,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _i3.Future<int?> archivedByName() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
-    7,
+    8,
     const [],
     (args) => this._target.archivedByName(),
   );
@@ -132,7 +141,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _i3.Future<int?> fresh() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
-    8,
+    9,
     const [],
     (args) => this._target.fresh(),
   );
@@ -141,7 +150,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _i3.Future<int?> mandatory() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
-    9,
+    10,
     const [],
     (args) => this._target.mandatory(),
   );
@@ -150,14 +159,14 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _i3.Future<String> settings() => this._invoker.invokeAsync<String>(
     this,
     this._target,
-    10,
+    11,
     const [],
     (args) => this._target.settings(),
   );
 
   @override
   _i3.Future<List<int?>> callsLedger(_i1.Ledger ledger) =>
-      this._invoker.invokeAsync<List<int?>>(this, this._target, 11, [
+      this._invoker.invokeAsync<List<int?>>(this, this._target, 12, [
         ledger,
       ], (args) => this._target.callsLedger((args[0] as _i1.Ledger)));
 
@@ -165,7 +174,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _i3.Future<int?> callsItself() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
-    12,
+    13,
     const [],
     (args) => this._target.callsItself(),
   );
@@ -175,7 +184,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
       this._invoker.invokeAsync<_i3.Completer<Object?>>(
         this,
         this._target,
-        13,
+        14,
         const [],
         (args) => this._target.forgets(),
       );
@@ -184,7 +193,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _i4.RecordingTransactionManager get manager => (this._invoker.invoke(
     this,
     this._target,
-    14,
+    15,
     const [],
     (_) => this._target.manager,
   ) as _i4.RecordingTransactionManager);
@@ -193,7 +202,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _i4.RecordingTransactionManager get archive => (this._invoker.invoke(
     this,
     this._target,
-    15,
+    16,
     const [],
     (_) => this._target.archive,
   ) as _i4.RecordingTransactionManager);
@@ -468,6 +477,25 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetAnnotationTypes: [r'Service'],
           ),
           _i2.MethodSignature(
+            name: r'failClosest',
+            declaringType: r'Shop',
+            targetType: r'Shop',
+            declaringTypes: [r'Shop'],
+            returnType: r'Future',
+            parameterTypes: [r'Object'],
+            parameterNames: [r'error'],
+            annotations: [
+              _i7.Transactional(
+                rollbackFor: [_i1.OutOfStock],
+                noRollbackFor: [_i1.Counterfeit],
+              ),
+            ],
+            annotationTypes: [r'Transactional'],
+            targetTypes: [r'Shop'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
             name: r'archived',
             declaringType: r'Shop',
             targetType: r'Shop',
@@ -699,6 +727,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i1.OutOfStock: (value) => value is _i1.OutOfStock,
     _i1.Counterfeit: (value) => value is _i1.Counterfeit,
   },
+  typeDepths: {_i1.OutOfStock: 2, _i1.Counterfeit: 3},
 );
 
 final class _$Sqlite3Binding implements _i8.SqliteBinding {
@@ -1031,7 +1060,7 @@ _i12.SpringApplication get springApplication => _i12.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'ea05201c',
+  fingerprint: '2f01e13c',
 );
 
 /// Starts the application: config files, environment, context, runners

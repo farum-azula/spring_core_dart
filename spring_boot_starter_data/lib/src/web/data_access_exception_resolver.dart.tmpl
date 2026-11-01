@@ -21,6 +21,7 @@
 //     EmptyResultDataAccessException     404  Not found
 //     PropertyReferenceException         400  Invalid sort property
 //     InvalidPagingRequestException      400  Invalid page or sort request
+//     InvalidDataArgumentException       400  Invalid request value
 //
 // The detail is fixed: an exception's message may hold SQL, table names or
 // values, and must never reach a client (the web starter logs an answer
@@ -65,6 +66,12 @@ final class _$DataAccessExceptionResolver
       {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ResponseStatusException}}(
         {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HttpStatus}}.badRequest,
         'Invalid page or sort request',
+        error,
+      ),
+    {{package:spring_boot_starter_data/spring_boot_starter_data.dart#InvalidDataArgumentException}}() =>
+      {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ResponseStatusException}}(
+        {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HttpStatus}}.badRequest,
+        'Invalid request value',
         error,
       ),
     _ => null,

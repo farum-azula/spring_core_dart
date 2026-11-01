@@ -8587,6 +8587,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
     _i88.SupplierConfigured: (value) => value is _i88.SupplierConfigured,
     _i9.Catalogued: (value) => value is _i9.Catalogued,
   },
+  typeDepths: {
+    _i37.NoDeliveries: 2,
+    _i28.Clock: 1,
+    _i88.SupplierConfigured: 2,
+    _i9.Catalogued: 1,
+  },
 );
 
 /// `@Log` of [AuditAspect]: the logger 'neon.audit'.

@@ -58,8 +58,6 @@ its reason (the starter's README, "Compared with Spring"):
 
 - Spring commits after a checked exception; Dart has none, every exception
   rolls back unless `noRollbackFor` lists it.
-- Spring picks the rollback rule closest to the exception's class; the
-  starter lets `rollbackFor` win.
 - A `@Lock` query outside a transaction runs in autocommit in Spring and
   fails in the starter.
 - Spring 7's `JdbcTemplate` translates PostgreSQL errors by SQL state alone

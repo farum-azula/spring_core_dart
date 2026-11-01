@@ -62,6 +62,24 @@ abstract class SqlDialect {
   /// escapes a special character, no escape character).
   String get globOperator => 'GLOB';
 
+  /// The most values one statement binds (the protocol's or the library's
+  /// limit), or null when none is known. A derived `In` with more values
+  /// than this on a dialect that cannot bind a list as one value
+  /// ([arrayMembership] is null) is refused with a clear message instead of
+  /// the database's.
+  int? get maxBoundParameters => null;
+
+  /// The SQL of `column in (values)` (`negate`: `not in`) that binds all
+  /// the values as ONE array parameter (the single `?`), or null when the
+  /// dialect has no array parameters (the generator then writes one
+  /// marker per value). With [ignoreCase] each element is folded to lower
+  /// case on the server, as the column is.
+  String? arrayMembership(
+    String column, {
+    required bool ignoreCase,
+    required bool negate,
+  }) => null;
+
   /// How the database takes the row locks of a `@Lock` query.
   LockStrategy get lockStrategy;
 

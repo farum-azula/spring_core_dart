@@ -137,7 +137,11 @@ the application adds the driver it wants, the generator sees it.
      match with subtypes: the generator writes a `value is T` test for
      every type written in an annotation (`BeanModule.typeTests`,
      `BeanIntrospector.isInstanceOf`), usable later by `@ExceptionHandler`
-     and `@Retryable` too;
+     and `@Retryable` too; when `rollbackFor` and `noRollbackFor` both match,
+     the entry closest to the exception's class decides, as Spring's
+     `RuleBasedTransactionAttribute` (the generator also writes each type's
+     depth in the hierarchy: `BeanModule.typeDepths`; a tie goes to
+     `rollbackFor`);
    - the in-memory store has transactions (read committed, row locks,
      deadlock detection, savepoints) and `@Lock`, so the propagation
      matrix and the locks are tested before SQLite.
@@ -167,8 +171,9 @@ the application adds the driver it wants, the generator sees it.
      the isolate (keep `busy-timeout` short in a UI); two transactions
      that read then write: the second fails with
      `CannotAcquireLockException`; ids reused after a delete (no
-     `AUTOINCREMENT`); `lower()` folds ASCII only (to fix: a Dart
-     `lower` registered through the glue);
+     `AUTOINCREMENT`); `lower()` folds every letter
+     (the driver registers Dart's `toLowerCase` as `spring_lower`, also in
+     the worker isolate);
    - references and keys (the owner): another aggregate is referenced
      as `AggregateReference<Author, int>` or as a plain id
      `@Reference(Author) int authorId` (the id type checked against the
@@ -300,9 +305,7 @@ the application adds the driver it wants, the generator sees it.
      was wrapped in a `TransactionSystemException` instead of Spring's
      translated `DataAccessException`; no `ConcurrencyFailureException` root.
      Deliberate differences (README, "Compared with Spring"): no checked
-     exceptions, `rollbackFor` beats a closer `noRollbackFor` (Dart cannot
-     rank two types: the generator could write the subtype relation of the
-     types of one annotation to fix it), a `@Lock` query outside a
+     exceptions, a `@Lock` query outside a
      transaction fails, the finer exception classes by SQL state (Spring 7's
      `JdbcTemplate` translates by SQL state alone).
    - done (November 2026): containers in tests (`@Container`,

@@ -460,22 +460,41 @@ final class DockerClient {
   /// Removes the container [id]; [force] kills it first, [volumes] removes
   /// its anonymous volumes. A container that does not exist, or that the
   /// daemon is already removing (a container started with auto-remove
-  /// goes away on its own once stopped), is not an error.
+  /// goes away on its own once stopped), is not an error. Returns once the
+  /// container is gone, or after [wait] if the daemon is still removing it.
   Future<void> removeContainer(
     String id, {
     bool force = true,
     bool volumes = true,
-  }) => _ignoreGone(
-    () async {
-      await _drain(
-        await _send(
-          'DELETE',
-          '/containers/$id',
-          query: {'force': '$force', 'v': '$volumes'},
-        ),
-      );
-    },
-  );
+    Duration wait = const Duration(seconds: 10),
+  }) async {
+    await _ignoreGone(
+      () async {
+        await _drain(
+          await _send(
+            'DELETE',
+            '/containers/$id',
+            query: {'force': '$force', 'v': '$volumes'},
+          ),
+        );
+      },
+    );
+    // A removal the daemon was already doing goes on after its 409:
+    // wait until the container no longer exists, so what follows (a
+    // listing, a new container of the same name) does not see it.
+    final deadline = DateTime.now().add(wait);
+    while (DateTime.now().isBefore(deadline)) {
+      try {
+        await inspectContainer(id);
+      } on DockerException catch (e) {
+        if (e.statusCode == 404) {
+          return;
+        }
+        rethrow;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+  }
 
   /// The state of the container [id]: whether it runs, its health, its
   /// published ports. Throws a [DockerException] (status 404) when it does

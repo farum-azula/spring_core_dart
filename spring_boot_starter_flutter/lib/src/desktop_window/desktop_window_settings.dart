@@ -40,7 +40,7 @@ enum TitleBarStyle {
 }
 
 /// A window size in logical pixels: the value of
-/// `spring.flutter.desktop.window.initial-size` and `min-size`.
+/// `spring.flutter.desktop.window.initial-size`, `min-size` and `max-size`.
 final class WindowSize {
   /// A size of [width] by [height] logical pixels, both positive.
   const WindowSize(this.width, this.height)
@@ -74,6 +74,10 @@ final class WindowSize {
     return WindowSize(width, height);
   }
 
+  /// Whether this is at least [other] in both directions.
+  bool isAtLeast(WindowSize other) =>
+      width >= other.width && height >= other.height;
+
   @override
   bool operator ==(Object other) =>
       other is WindowSize && other.width == width && other.height == height;
@@ -93,23 +97,41 @@ final class WindowSize {
 /// Internal to the starter; read once while the application starts.
 final class DesktopWindowSettings {
   /// Settings for a test or an app that knows them. Throws a
-  /// [StateError] when [initialSize] is smaller than [minSize].
+  /// [StateError] naming the values when [initialSize] is smaller than
+  /// [minSize], [maxSize] is smaller than [minSize] or [initialSize] is
+  /// larger than [maxSize].
   DesktopWindowSettings({
+    this.title,
     this.titleBar = TitleBarStyle.defaultStyle,
     this.initialSize,
     this.minSize,
+    this.maxSize,
   }) {
     final initial = initialSize;
     final min = minSize;
-    if (initial != null &&
-        min != null &&
-        (initial.width < min.width || initial.height < min.height)) {
+    final max = maxSize;
+    if (initial != null && min != null && !initial.isAtLeast(min)) {
       throw StateError(
         '$initialSizeProperty=$initial is smaller than '
         '$minSizeProperty=$min: the window could not open with it.',
       );
     }
+    if (max != null && min != null && !max.isAtLeast(min)) {
+      throw StateError(
+        '$maxSizeProperty=$max is smaller than '
+        '$minSizeProperty=$min: no size would be allowed.',
+      );
+    }
+    if (max != null && initial != null && !max.isAtLeast(initial)) {
+      throw StateError(
+        '$initialSizeProperty=$initial is larger than '
+        '$maxSizeProperty=$max: the window could not open with it.',
+      );
+    }
   }
+
+  /// `spring.flutter.desktop.window.title`.
+  static const titleProperty = 'spring.flutter.desktop.window.title';
 
   /// `spring.flutter.desktop.window.title-bar`.
   static const titleBarProperty = 'spring.flutter.desktop.window.title-bar';
@@ -121,19 +143,26 @@ final class DesktopWindowSettings {
   /// `spring.flutter.desktop.window.min-size`.
   static const minSizeProperty = 'spring.flutter.desktop.window.min-size';
 
-  /// Reads the three properties of [environment]; a missing or empty one
-  /// is its default. Throws for a malformed value (naming the key and the
-  /// expected format) and for an initial size below the minimum.
+  /// `spring.flutter.desktop.window.max-size`.
+  static const maxSizeProperty = 'spring.flutter.desktop.window.max-size';
+
+  /// Reads the properties of [environment]; a missing, empty or blank one
+  /// is its default (a blank title is no title: the runner's stays). Throws
+  /// for a malformed value (naming the key and the expected format) and for
+  /// sizes that contradict each other (min <= initial <= max).
   factory DesktopWindowSettings.fromEnvironment(Environment environment) {
     String? read(String key) {
       final text = environment.getProperty(key)?.trim() ?? '';
       return text.isEmpty ? null : text;
     }
 
+    final title = read(titleProperty);
     final titleBar = read(titleBarProperty);
     final initial = read(initialSizeProperty);
     final min = read(minSizeProperty);
+    final max = read(maxSizeProperty);
     return DesktopWindowSettings(
+      title: title,
       titleBar: titleBar == null
           ? TitleBarStyle.defaultStyle
           : TitleBarStyle.parse(titleBar),
@@ -143,8 +172,14 @@ final class DesktopWindowSettings {
       minSize: min == null
           ? null
           : WindowSize.parse(min, property: minSizeProperty),
+      maxSize: max == null
+          ? null
+          : WindowSize.parse(max, property: maxSizeProperty),
     );
   }
+
+  /// The window's title (trimmed), or null: the runner's stays.
+  final String? title;
 
   /// The title bar, `default` when not set.
   final TitleBarStyle titleBar;
@@ -155,14 +190,20 @@ final class DesktopWindowSettings {
   /// The smallest size the user can drag the window to, or null.
   final WindowSize? minSize;
 
+  /// The largest size the user can drag the window to, or null.
+  final WindowSize? maxSize;
+
   /// Whether nothing is set: the window stays as the runner made it.
   bool get isEmpty =>
+      title == null &&
       titleBar == TitleBarStyle.defaultStyle &&
       initialSize == null &&
-      minSize == null;
+      minSize == null &&
+      maxSize == null;
 
   @override
   String toString() =>
-      'DesktopWindowSettings(titleBar: ${titleBar.propertyValue}, '
-      'initialSize: $initialSize, minSize: $minSize)';
+      'DesktopWindowSettings(title: $title, '
+      'titleBar: ${titleBar.propertyValue}, initialSize: $initialSize, '
+      'minSize: $minSize, maxSize: $maxSize)';
 }

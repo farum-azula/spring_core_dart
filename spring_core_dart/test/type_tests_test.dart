@@ -40,4 +40,18 @@ void main() {
       isTrue,
     );
   });
+
+  test('depths are registered, found through the parent, and from modules', () {
+    final parent = BeanIntrospector()..registerTypeDepths({Base: 2});
+    final child = BeanIntrospector(parent: parent)
+      ..registerTypeDepths({Sub: 3});
+    expect(child.typeDepth(Base), 2);
+    expect(child.typeDepth(Sub), 3);
+    expect(parent.typeDepth(Sub), isNull);
+    final context = ApplicationContext.run([
+      BeanModule('m', const [], typeDepths: {Base: 2}),
+    ]);
+    addTearDown(context.close);
+    expect(context.getBean<BeanIntrospector>().typeDepth(Base), 2);
+  });
 }

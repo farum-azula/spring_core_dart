@@ -446,6 +446,42 @@ void main() {
       expect(plan.rollsBackOn(_SubBoom()), isTrue);
     });
 
+    test('rules: the entry closest to the error decides, as in Spring', () {
+      final introspector = BeanIntrospector()
+        ..registerTypeTests({
+          _Boom: (value) => value is _Boom,
+          _SubBoom: (value) => value is _SubBoom,
+        })
+        ..registerTypeDepths({_Boom: 2, _SubBoom: 3});
+      final custom = TransactionInterceptor(
+        transactionManager: manager,
+        introspector: introspector,
+      );
+      bool rolls(Transactional rules, Object error) =>
+          custom.planOf(_sig('place', [rules]))!.rollsBackOn(error);
+      // The subtype's entry is closer, whichever list it is in.
+      const commitsSub = Transactional(
+        rollbackFor: [_Boom],
+        noRollbackFor: [_SubBoom],
+      );
+      expect(rolls(commitsSub, _SubBoom()), isFalse);
+      expect(rolls(commitsSub, _Boom()), isTrue);
+      const rollsSub = Transactional(
+        noRollbackFor: [_Boom],
+        rollbackFor: [_SubBoom],
+      );
+      expect(rolls(rollsSub, _SubBoom()), isTrue);
+      expect(rolls(rollsSub, _Boom()), isFalse);
+      // The same type in both: the first entry wins, rollbackFor.
+      const same = Transactional(
+        rollbackFor: [_Boom],
+        noRollbackFor: [_Boom],
+      );
+      expect(rolls(same, _Boom()), isTrue);
+      // Nothing matches: rolls back.
+      expect(rolls(commitsSub, StateError('x')), isTrue);
+    });
+
     test("rules use the introspector's subtype tests", () {
       final introspector = BeanIntrospector()
         ..registerTypeTests({_Boom: (value) => value is _Boom});

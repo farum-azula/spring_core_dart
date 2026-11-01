@@ -181,6 +181,24 @@ class InvalidDataAccessApiUsageException
   InvalidDataAccessApiUsageException(super.message, {super.cause, super.sql});
 }
 
+/// An argument VALUE the caller gave cannot be used by the database: a text
+/// with a NUL character, a list longer than a statement binds, a `LIKE`
+/// pattern the database rejects.
+///
+/// It is the caller's input (often from a request), not a mistake of the
+/// developer, which is what the other
+/// [InvalidDataAccessApiUsageException]s signal. The message and the SQL
+/// never contain the value. The web glue answers it with a 400 and the
+/// fixed detail `Invalid request value`.
+///
+/// Spring (Java): none; Spring's drivers fail with a `PSQLException`
+/// that becomes a `DataIntegrityViolationException` or
+/// `InvalidDataAccessApiUsageException`.
+class InvalidDataArgumentException extends InvalidDataAccessApiUsageException {
+  /// A refused argument value described by [message] (without the value).
+  InvalidDataArgumentException(super.message, {super.cause, super.sql});
+}
+
 /// A sort asked for a property the entity does not have (or, for a `@Query`,
 /// a name that is no column or property).
 ///

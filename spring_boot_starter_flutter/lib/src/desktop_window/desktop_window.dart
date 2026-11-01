@@ -169,12 +169,16 @@ abstract final class DesktopWindowChannel {
   ) async {
     final initial = settings.initialSize;
     final min = settings.minSize;
+    final max = settings.maxSize;
     final answer = await _channel.invokeMapMethod<Object?, Object?>('apply', {
+      'title': ?settings.title,
       'titleBar': settings.titleBar.propertyValue,
       'initialWidth': ?initial?.width,
       'initialHeight': ?initial?.height,
       'minWidth': ?min?.width,
       'minHeight': ?min?.height,
+      'maxWidth': ?max?.width,
+      'maxHeight': ?max?.height,
     });
     if (answer == null) {
       throw MissingPluginException('No answer to apply on $name');
@@ -186,7 +190,7 @@ abstract final class DesktopWindowChannel {
 
   /// What the native window is now: `contentWidth`, `contentHeight`,
   /// `minWidth`, `minHeight` (logical pixels, 0 for no minimum),
-  /// `titleBar`, `x`, `y`. For tests that read the window back.
+  /// `maxWidth`, `maxHeight` (0 for no maximum), `title`, `titleBar`, `x`, `y`. For tests that read the window back.
   static Future<Map<String, Object?>> describe() async =>
       (await _channel.invokeMapMethod<String, Object?>('describe')) ?? const {};
 

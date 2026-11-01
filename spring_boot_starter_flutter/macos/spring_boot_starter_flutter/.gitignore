@@ -1,0 +1,3 @@
+# Swift Package Manager build output (Flutter writes it when building the plugin).
+.build/
+.swiftpm/
