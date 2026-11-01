@@ -136,9 +136,18 @@ What comes next, in order:
    done without it
    ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)):
    Flutter web uses the server as its backend-for-frontend.
-16. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
+16. **Generated code: speed, size, platforms** ([generated_code_performance.md](generated_code_performance.md)):
+   a release of its own (the owner's decision, November 2026), measured
+   before and after: no `Function.apply` in generated code, direct AOP
+   when the chain is known, conditions and bean order decided by the
+   build, smaller descriptions, `@pragma` where it pays, per-platform
+   code through compile-time constants (deferred loading on the web),
+   incremental output per library (a change regenerates only what
+   depends on it), and `docs/codegen.md` describing every kind of
+   generated code.
+17. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
    actuator, MongoDB, the rest of the table.
-17. Under question, far off: **the starters on the generator** —
+18. Under question, far off: **the starters on the generator** —
    `@AutoConfiguration` classes with `@Bean` methods instead of the
    hand-written `BeanDefinition`s of their auto-configurations. For now
    hand-written stays: it reads better for this code and needs no
@@ -147,7 +156,8 @@ What comes next, in order:
 
 | File | Package | Status |
 |---|---|---|
-| [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, incremental generation per library, Jakarta annotations under question |
+| [generated_code_performance.md](generated_code_performance.md) | generator, all packages | planned, a release of its own: faster and smaller generated code, incremental output per library, per-platform branches, `docs/codegen.md` |
+| [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, Jakarta annotations under question (incremental generation moved to [generated_code_performance.md](generated_code_performance.md)) |
 | [dependencies.md](dependencies.md) | all packages | what an application must list (one package and the generator), what each package re-exports, the gaps left |
 | [fix_plan.md](fix_plan.md) | all packages | open differences from Spring 7 / Boot 4 found in reviews, how close each area is |
 | [spring_boot_starter_web.md](spring_boot_starter_web.md) | `spring_boot_starter_web` | first version on `dart:io` behind a replaceable `WebServerFactory` (done): controllers, `ProblemDetail`, SSE and `SseEmitter`, files (multipart uploads, `Resource` downloads with `Range`, byte streams), filters, CORS, WebSocket endpoints, `MockMvc`, the slots for Spring Security; next: a shared session store, static files, forwarded headers, Flutter isolates (blocking warnings, JSON offload, background server), `shelf` |
