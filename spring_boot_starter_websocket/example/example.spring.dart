@@ -7,168 +7,20 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i3;
+import 'dart:async' as _i4;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i6;
-import 'package:spring_boot_dart/src/runners.dart' as _i4;
+import 'package:spring_boot_dart/src/runners.dart' as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i8;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i9;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i5;
+    as _i3;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 import 'example.dart' as _i1;
-
-class _$ChatSocketProxy implements _i1.ChatSocket, _i2.Advised {
-  _$ChatSocketProxy(this._target, this._invoker);
-
-  final _i1.ChatSocket _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Stream<_i1.ChatMessage> messages() => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (args) => this._target.messages(),
-  ) as _i3.Stream<_i1.ChatMessage>);
-
-  @override
-  _i3.Future<void> send(_i1.ChatMessage message) =>
-      this._invoker.invokeAsync<void>(this, this._target, 1, [
-        message,
-      ], (args) => this._target.send((args[0] as _i1.ChatMessage)));
-}
-
-class _$ChatProxy implements _i1.Chat, _i2.Advised {
-  _$ChatProxy(this._target, this._invoker);
-
-  final _i1.Chat _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<_i1.ChatMessage> ask(String text) =>
-      this._invoker.invokeAsync<_i1.ChatMessage>(this, this._target, 0, [
-        text,
-      ], (args) => this._target.ask((args[0] as String)));
-
-  @override
-  _i1.ChatSocket get socket => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.socket,
-  ) as _i1.ChatSocket);
-}
-
-class _$ChatTourProxy
-    implements _i1.ChatTour, _i4.CommandLineRunner, _i2.Advised {
-  _$ChatTourProxy(this._target, this._invoker);
-
-  final _i1.ChatTour _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<void> run(List<String> args) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    0,
-    [args],
-    (args) => this._target.run((args[0] as List<String>)),
-  );
-
-  @override
-  _i1.Chat get chat => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.chat,
-  ) as _i1.Chat);
-}
 
 /// Implements `ChatSocket` through an `InvocationHandler`.
 class _$ChatSocketImpl implements _i1.ChatSocket {
@@ -181,14 +33,14 @@ class _$ChatSocketImpl implements _i1.ChatSocket {
   static _$ChatSocketImpl $create(_i2.DependencyResolver r) {
     final metadata = _i2.InterfaceMetadata<_i1.ChatSocket>(
       typeName: r'ChatSocket',
-      annotations: const [_i5.WebSocketClient(r'chat', url: r'${chat.url}')],
+      annotations: const [_i3.WebSocketClient(r'chat', url: r'${chat.url}')],
       methods: [
         _i2.ProxyMethod(
           r'messages',
-          returnType: const _i2.GenericType<_i3.Stream<_i1.ChatMessage>>([
+          returnType: const _i2.GenericType<_i4.Stream<_i1.ChatMessage>>([
             _i2.ClassType<_i1.ChatMessage>(),
           ]),
-          annotations: const [_i5.OnMessage()],
+          annotations: const [_i3.OnMessage()],
           call: (target, arguments) => (target as _i1.ChatSocket).messages(),
         ),
         _i2.ProxyMethod(
@@ -203,7 +55,7 @@ class _$ChatSocketImpl implements _i1.ChatSocket {
           returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i5.SendMessage()],
+          annotations: const [_i3.SendMessage()],
           call: (target, arguments) => (target as _i1.ChatSocket).send(
             (arguments[0] as _i1.ChatMessage),
           ),
@@ -217,12 +69,12 @@ class _$ChatSocketImpl implements _i1.ChatSocket {
   }
 
   @override
-  _i3.Stream<_i1.ChatMessage> messages() =>
+  _i4.Stream<_i1.ChatMessage> messages() =>
       (this._handler.invoke(this._metadata.methods[0], const [])
-          as _i3.Stream<_i1.ChatMessage>);
+          as _i4.Stream<_i1.ChatMessage>);
 
   @override
-  _i3.Future<void> send(_i1.ChatMessage message) => _i2.retypeFuture<void>(
+  _i4.Future<void> send(_i1.ChatMessage message) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[1], [message]),
   );
 }
@@ -237,42 +89,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       types: const [_i1.ChatSocket],
       primary: true,
       create: (r) => _$ChatSocketImpl.$create(r),
-      annotations: const [_i5.WebSocketClient(r'chat', url: r'${chat.url}')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'messages',
-            declaringType: r'ChatSocket',
-            targetType: r'ChatSocket',
-            declaringTypes: [r'ChatSocket'],
-            returnType: r'Stream',
-            annotations: [_i5.OnMessage()],
-            annotationTypes: [r'OnMessage'],
-            targetTypes: [r'ChatSocket'],
-            targetAnnotations: [
-              _i5.WebSocketClient(r'chat', url: r'${chat.url}'),
-            ],
-            targetAnnotationTypes: [r'WebSocketClient'],
-          ),
-          _i2.MethodSignature(
-            name: r'send',
-            declaringType: r'ChatSocket',
-            targetType: r'ChatSocket',
-            declaringTypes: [r'ChatSocket'],
-            returnType: r'Future',
-            parameterTypes: [r'ChatMessage'],
-            parameterNames: [r'message'],
-            annotations: [_i5.SendMessage()],
-            annotationTypes: [r'SendMessage'],
-            targetTypes: [r'ChatSocket'],
-            targetAnnotations: [
-              _i5.WebSocketClient(r'chat', url: r'${chat.url}'),
-            ],
-            targetAnnotationTypes: [r'WebSocketClient'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ChatSocketProxy((target as _i1.ChatSocket), invoker),
+      annotations: const [_i3.WebSocketClient(r'chat', url: r'${chat.url}')],
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ChatSocket, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
     _i2.BeanDefinition<_i1.Chat>(
@@ -282,80 +101,23 @@ _i2.BeanModule get $application => _i2.BeanModule(
       dependencies: const [_i2.Dependency(_i1.ChatSocket, name: r'socket')],
       create: (r) => _i1.Chat(r.dependency<_i1.ChatSocket>(name: r'socket')),
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'ask',
-            declaringType: r'Chat',
-            targetType: r'Chat',
-            declaringTypes: [r'Chat'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'text'],
-            targetTypes: [r'Chat'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'socket',
-            declaringType: r'Chat',
-            targetType: r'Chat',
-            declaringTypes: [r'Chat'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'ChatSocket',
-            targetTypes: [r'Chat'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-        ],
-        create: (target, invoker) => _$ChatProxy((target as _i1.Chat), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches Chat, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
     _i2.BeanDefinition<_i1.ChatTour>(
       name: r'chatTour',
       source:
           r'asset:spring_boot_starter_websocket/example/example.dart#ChatTour',
-      types: const [_i1.ChatTour, _i4.CommandLineRunner],
+      types: const [_i1.ChatTour, _i5.CommandLineRunner],
       dependencies: const [_i2.Dependency(_i1.Chat, name: r'chat')],
       create: (r) => _i1.ChatTour(r.dependency<_i1.Chat>(name: r'chat')),
       annotations: const [
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'run',
-            declaringType: r'CommandLineRunner',
-            targetType: r'ChatTour',
-            declaringTypes: [r'ChatTour', r'CommandLineRunner'],
-            returnType: r'Future',
-            parameterTypes: [r'List'],
-            parameterNames: [r'args'],
-            targetTypes: [r'ChatTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'chat',
-            declaringType: r'ChatTour',
-            targetType: r'ChatTour',
-            declaringTypes: [r'ChatTour'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Chat',
-            targetTypes: [r'ChatTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ChatTourProxy((target as _i1.ChatTour), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ChatTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
   ],
@@ -463,7 +225,7 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'a9d391b4',
+  fingerprint: 'a34b2b7d',
 );
 
 /// Starts the application: config files, environment, context, runners

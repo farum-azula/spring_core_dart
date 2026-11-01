@@ -72,15 +72,16 @@ What comes next, in order:
    dependencies' known vulnerabilities (Dart, Gradle, Swift), the threat
    model and ASVS checklist extended, the ZAP scan; then **0.5.0**, the
    minor release.
-7. **The data starter** ([spring_boot_starter_data.md](spring_boot_starter_data.md),
-   0.6.0; the owner's order, October 2026): Spring Data JDBC's model, one
+7. ~~**The data starter**~~ Done, to be released as 0.6.0 (checklist:
+   [release_0_6.md](release_0_6.md)) ([spring_boot_starter_data.md](spring_boot_starter_data.md);
+   the owner's order, October 2026): Spring Data JDBC's model, one
    starter without drivers (the application's `postgres` / `sqlite3`
    wired by the generator), several databases, transactions with the
    propagation × isolation test matrix, `@Version` and `@Lock`,
-   `JdbcTemplate` / `JdbcClient`, Redis with our own client (shared
-   sessions, cache, `RedisTemplate`), containers in tests
-   ([spring_boot_starter_test.md](spring_boot_starter_test.md)).
-8. **The Supabase starter** ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)),
+   `JdbcTemplate` / `JdbcClient`, containers in tests
+   ([spring_boot_starter_test.md](spring_boot_starter_test.md)). Redis is out of 0.6.0, postponed
+   indefinitely (the owner, November 2026).
+8. **The Supabase starter**, after the 0.6.0 release ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)),
    on the data starter: its tables through the repositories (PostgreSQL
    directly on a server, PostgREST in apps), its Auth as a login of the
    security starters, one session (ours).
@@ -136,9 +137,18 @@ What comes next, in order:
    done without it
    ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)):
    Flutter web uses the server as its backend-for-frontend.
-16. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
+16. **Generated code: speed, size, platforms** ([generated_code_performance.md](generated_code_performance.md)):
+   a release of its own (the owner's decision, November 2026), measured
+   before and after: no `Function.apply` in generated code, direct AOP
+   when the chain is known, conditions and bean order decided by the
+   build, smaller descriptions, `@pragma` where it pays, per-platform
+   code through compile-time constants (deferred loading on the web),
+   incremental output per library (a change regenerates only what
+   depends on it), and `docs/codegen.md` describing every kind of
+   generated code.
+17. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
    actuator, MongoDB, the rest of the table.
-17. Under question, far off: **the starters on the generator** —
+18. Under question, far off: **the starters on the generator** —
    `@AutoConfiguration` classes with `@Bean` methods instead of the
    hand-written `BeanDefinition`s of their auto-configurations. For now
    hand-written stays: it reads better for this code and needs no
@@ -147,7 +157,8 @@ What comes next, in order:
 
 | File | Package | Status |
 |---|---|---|
-| [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, incremental generation per library, Jakarta annotations under question |
+| [generated_code_performance.md](generated_code_performance.md) | generator, all packages | planned, a release of its own: faster and smaller generated code, incremental output per library, per-platform branches, `docs/codegen.md` |
+| [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, Jakarta annotations under question (incremental generation moved to [generated_code_performance.md](generated_code_performance.md)) |
 | [dependencies.md](dependencies.md) | all packages | what an application must list (one package and the generator), what each package re-exports, the gaps left |
 | [fix_plan.md](fix_plan.md) | all packages | open differences from Spring 7 / Boot 4 found in reviews, how close each area is |
 | [spring_boot_starter_web.md](spring_boot_starter_web.md) | `spring_boot_starter_web` | first version on `dart:io` behind a replaceable `WebServerFactory` (done): controllers, `ProblemDetail`, SSE and `SseEmitter`, files (multipart uploads, `Resource` downloads with `Range`, byte streams), filters, CORS, WebSocket endpoints, `MockMvc`, the slots for Spring Security; next: a shared session store, static files, forwarded headers, Flutter isolates (blocking warnings, JSON offload, background server), `shelf` |
@@ -158,8 +169,9 @@ What comes next, in order:
 | [spring_ai.md](spring_ai.md) | `spring_boot_starter_ai` | planned: `ChatClient`, the model providers in one package, streaming, tool calling, structured output, chat memory, embeddings |
 | [spring_ai_mcp.md](spring_ai_mcp.md) | `spring_boot_starter_ai` | MCP, later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
 | [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: Spring's OAuth2 client: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant with PKCE, authorized clients and their refresh, users, Bearer and DPoP tokens on Feign (DPoP `auto` by default), the token headers of WebSocket handshakes (`OAuth2AccessTokenHeaders`), the hardening (the plain `http://` warning, one discovery with the resource server, differential and mutation tests); next: runs on devices |
-| [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | planned for 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), several databases, Redis (own client: sessions, cache, repositories), `@Transactional`, `@Version`, `@Lock`, SpEL in `@Query` |
-| [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the data starter: Supabase's official packages; its database as a store of the repositories, its Auth as a login of the security starters (one session, ours), later Storage, Realtime, Edge Functions |
+| [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | done, in 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), SQLite and PostgreSQL (Redis postponed indefinitely), `@Transactional` compared with Spring's propagation and isolation matrix, `@Version`, `@Lock`, SpEL in `@Query` compiled by the build, migrations, `@DataTest`, `JdbcTemplate` and `JdbcClient`; what is left is in the file |
+| [release_0_6.md](release_0_6.md) | all packages | the checklist of the 0.6.0 release: what was verified, what remains before the Release button |
+| [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the 0.6.0 release (the data starter ships without it): Supabase's official packages; its database as a store of the repositories, its Auth as a login of the security starters (one session, ours), later Storage, Realtime, Edge Functions |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
 | [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |
 | [serverless.md](serverless.md) | `spring_boot_starter_edge` (name to settle) | planned after the data and Supabase starters: Spring Boot for Dart applications on Supabase Edge Functions, Deno Deploy, Cloudflare Workers; deploys from GitHub Actions |
@@ -168,7 +180,7 @@ What comes next, in order:
 | [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | clients and server endpoints (on the web starter) done; next: STOMP, connection state |
 | [spring_boot_starter_scheduling.md](spring_boot_starter_scheduling.md) | `spring_boot_starter_scheduling` | next: `TaskExecutor` (a pool of worker isolates), `@Async` on it |
 | [spring_boot_starter_cache.md](spring_boot_starter_cache.md) | `spring_boot_starter_cache` | next: persistent stores |
-| [spring_boot_starter_test.md](spring_boot_starter_test.md) | `spring_boot_starter_test` | test classes with annotations (done, [docs/testing.md](../docs/testing.md)); next: editor run buttons and snippets |
+| [spring_boot_starter_test.md](spring_boot_starter_test.md) | `spring_boot_starter_test` | test classes with annotations and containers in tests (Docker client of our own, `@Container`, `@ServiceConnection`, Ryuk; done, [docs/testing.md](../docs/testing.md)); next: editor run buttons and snippets, Windows' named pipe, Docker Compose for development |
 | [spring_boot_starter_flutter_test.md](spring_boot_starter_flutter_test.md) | `spring_boot_starter_flutter_test` | planned: Flutter tests on top of the test starter (`@WidgetTest`, `pumpSpring`, themes, platforms, goldens), spec in [docs/flutter-testing.md](../docs/flutter-testing.md) |
 | [spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md) | `spring_boot_starter_flutter_security` | done: the app login (`OAuth2LoginService`, the login windows) moved out of the OAuth2 client, the platform code of logins and secrets out of the Flutter starter, `SecretStore` / `SecretTemplate`, display-only widgets that follow the user (`PrincipalNotifier`, `PrincipalBuilder`, `PrincipalView`), the web login in server mode (backend-for-frontend, `ServerOAuth2LoginService`) and in spa mode (the browser logs in, `SpaOAuth2LoginService`, a non-extractable WebCrypto DPoP key), DPoP keys of the apps (`PlatformDPoPKey`: Secure Enclave / Keychain, Android Keystore, `SecretStore`); login screens (`LoginForm`, `OAuth2LoginButton`, the Google, Apple, Microsoft and GitHub buttons), the hardening (October 2026); next: its runs on devices (the Windows and Linux stores' first CI run, iOS cancel, https redirects) |
 | [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md) | `spring_boot_starter_flutter` | first version: `SpringApplicationWidget`, beans in widgets, lifecycle, platform profiles; the app widget and themes from properties (done; the secret store and login window moved to `spring_boot_starter_flutter_security`), next: navigation, settings |

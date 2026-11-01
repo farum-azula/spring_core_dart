@@ -9,6 +9,7 @@
 /// imports.
 library;
 
+export 'package:spring_boot_starter_test/containers.dart';
 export 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 export 'package:test_api/scaffolding.dart'
     show group, setUp, setUpAll, tearDown, tearDownAll, test;

@@ -25,6 +25,7 @@ const family = [
   'spring_security_core',
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
+  'spring_boot_starter_data',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
   'spring_boot_starter_web',

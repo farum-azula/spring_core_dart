@@ -45,12 +45,12 @@ Where the tests are: `core` is `spring_security_core/test/`, `starter` is
 | 3.2.3 tokens only in secure cookies | done | `starter/web_attacks_test.dart` (cookie flags) |
 | 3.2.4 approved random generator | done | `Random.secure` for session ids, CSRF tokens and salts |
 | 3.3.1 logout invalidates the session | done | `starter/defaults_test.dart` (after logout, the old session is anonymous) |
-| 3.3.2 re-authentication after idle | done | `server.servlet.session.timeout` (30 min); `web/http_session_test.dart` (expiry) |
+| 3.3.2 re-authentication after idle | done | `server.session.timeout` (30 min); `web/http_session_test.dart` (expiry) |
 | 3.3.3 / 3.3.4 end other sessions | open | there is no session registry yet |
-| 3.4.1 `Secure` | done | when the request was secure, or with `server.servlet.session.cookie.secure=true`; `starter/web_attacks_test.dart` |
+| 3.4.1 `Secure` | done | when the request was secure, or with `server.session.cookie.secure=true`; `starter/web_attacks_test.dart` |
 | 3.4.2 `HttpOnly` | done | `starter/web_attacks_test.dart`; the CSRF cookie too, unless `withHttpOnlyFalse()`: `starter/csrf_test.dart` |
 | 3.4.3 `SameSite` | done | `Lax` by default (Spring Boot sends none); `starter/web_attacks_test.dart` |
-| 3.4.4 `__Host-` prefix | option | `server.servlet.session.cookie.name=__Host-SESSION` with `secure=true` |
+| 3.4.4 `__Host-` prefix | option | `server.session.cookie.name=__Host-SESSION` with `secure=true` |
 | 3.5.3 signed stateless tokens, no null cipher, key checks | done | `starter/jwt_test.dart`: RFC 7515 vectors, `alg: none`, algorithm confusion, embedded keys, tampering, expiry; `starter/jose_test.dart`: key sizes, curve points, key use and `alg` restrictions, strict base64url |
 
 ## V4 Access control

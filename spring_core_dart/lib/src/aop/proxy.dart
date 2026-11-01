@@ -246,6 +246,18 @@ final class AopProxyFactory {
        _advise = null,
        unavailableReason = reason;
 
+  /// A bean the build gave no proxy class: no pointcut it knows of matches
+  /// the bean ([reason] says so). Nothing is generated for its members, so
+  /// advice registered at run time without the build seeing it (an
+  /// advisor bean added by hand to a context) is not applied to it; build
+  /// with the option `aop_prune: false` to keep every proxy.
+  const AopProxyFactory.pruned({required String reason})
+    : signatures = const [],
+      introductions = const [],
+      _create = null,
+      _advise = null,
+      unavailableReason = reason;
+
   /// A factory for a bean whose class cannot be implemented but can be
   /// extended, which the container creates as a generated subclass.
   ///

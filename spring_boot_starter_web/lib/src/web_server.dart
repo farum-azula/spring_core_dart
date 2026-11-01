@@ -227,7 +227,7 @@ enum ClientAuth {
 /// | `server.address` | all interfaces (`127.0.0.1` in Flutter apps) |
 /// | `server.shutdown` | `graceful` |
 /// | `server.ssl.enabled`, `server.ssl.certificate`, `server.ssl.certificate-private-key`, `server.ssl.key-password`, `server.ssl.trust-certificate`, `server.ssl.client-auth` | no TLS |
-/// | `server.servlet.context-path` | none: a prefix of every mapping |
+/// | `server.context-path` | none: a prefix of every mapping |
 /// | `server.max-http-request-body-size` | `10MB` (`-1`: no limit) |
 /// | `server.http2.enabled` | ignored (`dart:io` speaks HTTP/1.1) |
 /// | `server.compression.enabled` | `false`; `true` gzips the responses of `mime-types` from `min-response-size` on, for clients that accept gzip |
@@ -236,6 +236,7 @@ enum ClientAuth {
 /// | `server.forward-headers-strategy` | `none`; `native` or `framework` applies the headers of trusted proxies (`ForwardedHeaderFilter`) |
 /// | `server.forward-headers.trusted-proxies` | loopback and private networks (addresses and CIDR ranges) |
 /// | `server.connection-timeout` | `60s` (`-1`, `0` or less: none): a request body that sends nothing for this long is a 408; also how long an idle connection stays open |
+/// | `server.request-timeout` | none (`0` or less: none): the longest the filters and the handler may take to answer, else a 503; a deadline for the calls the request makes too (an extension: Spring has no such key) |
 /// | `server.websocket.max-text-message-size`, `server.websocket.max-binary-message-size` | `8KB` each (`-1`: no limit); a larger message closes the session with 1009 |
 /// | `server.websocket.send-buffer-size-limit` | `512KB` (`-1`: no limit): more waiting to be sent drops the connection (4500) |
 /// | `server.websocket.send-time-limit` | `10s` (`-1`: no limit): what was sent and has not left by then drops the connection (4500) |
@@ -256,6 +257,7 @@ final class ServerProperties {
     this.webSocketSendBufferSizeLimit = 512 * 1024,
     this.webSocketSendTimeLimit = const Duration(seconds: 10),
     this.connectionTimeout = const Duration(seconds: 60),
+    this.requestTimeout,
   });
 
   /// Reads `server.*` from [environment]. [defaultAddress] applies when
@@ -263,9 +265,8 @@ final class ServerProperties {
   /// Flutter apps, so they open no port to the network by accident.
   ///
   /// TLS is on when `server.ssl.certificate` is set and
-  /// `server.ssl.enabled` is not `false`. The legacy
-  /// `server.context-path` is read when `server.servlet.context-path` is
-  /// not set; a context path gets a leading `/` and loses a trailing
+  /// `server.ssl.enabled` is not `false`. A context path
+  /// (`server.context-path`) gets a leading `/` and loses a trailing
   /// one. Durations are written as `10s`, `500ms` (a bare number is
   /// milliseconds) or `PT10S`. Throws an
   /// [ArgumentError] for a port that is not a number, an unknown
@@ -324,8 +325,7 @@ final class ServerProperties {
             },
           )
         : null;
-    var contextPath =
-        text('server.servlet.context-path') ?? text('server.context-path');
+    var contextPath = text('server.context-path');
     if (contextPath != null) {
       if (!contextPath.startsWith('/')) {
         contextPath = '/$contextPath';
@@ -345,6 +345,10 @@ final class ServerProperties {
       final value => DurationStyle.parse(value),
     };
     final mimeTypes = text('server.compression.mime-types');
+    final requestTimeoutText = text('server.request-timeout');
+    final requestTimeout = requestTimeoutText == null
+        ? null
+        : DurationStyle.parse(requestTimeoutText);
     return ServerProperties(
       port: port,
       address: text('server.address') ?? defaultAddress,
@@ -390,6 +394,9 @@ final class ServerProperties {
         final timeout? when timeout > Duration.zero => timeout,
         _ => null,
       },
+      requestTimeout: requestTimeout != null && requestTimeout > Duration.zero
+          ? requestTimeout
+          : null,
     );
   }
 
@@ -429,7 +436,7 @@ final class ServerProperties {
   /// The largest request body accepted, in bytes; 10 MB by default, `-1`
   /// for no limit. A larger body is a 413, whatever its `Content-Type`.
   /// Only the multipart resolver reads uploads with its own limit
-  /// (`spring.servlet.multipart.max-request-size`), through
+  /// (`spring.web.multipart.max-request-size`), through
   /// [maxRequestBodySizeAttribute].
   final int maxRequestBodySize;
 
@@ -489,10 +496,32 @@ final class ServerProperties {
     _ => null,
   };
 
+  /// The longest the filters and the handler of a request may take to
+  /// answer (`server.request-timeout`); `null`, the default, for no limit,
+  /// and zero or a negative duration mean none too. When it passes before
+  /// the answer starts, the request is answered with a 503 (an
+  /// `AsyncRequestTimeoutException`) and what the handler returns later is
+  /// dropped. The request runs under a `RequestDeadline` of this length,
+  /// so the Feign calls it makes stop at it.
+  ///
+  /// It does not apply to a response that became a stream (server-sent
+  /// events, a streamed body: `spring.mvc.async.request-timeout` limits an
+  /// `SseEmitter`) or to a WebSocket. A body the client uploads slowly is
+  /// limited by [connectionTimeout] while it sends nothing, but the time
+  /// the handler spends reading it counts here. The dispatcher reads this
+  /// from the property, like `server.context-path`; a
+  /// `WebServerFactoryCustomizer` cannot change it.
+  ///
+  /// Spring Boot has no such key: Tomcat times out connections, not the
+  /// handling of a request, and Spring MVC times out only asynchronous
+  /// requests (`spring.mvc.async.request-timeout`). This is an extension
+  /// of Spring for Dart.
+  final Duration? requestTimeout;
+
   /// A copy with the given settings changed and the others kept. A
   /// `null` argument keeps the old value, so [address], [ssl],
-  /// [webSocketSendTimeLimit] and [connectionTimeout] cannot be reset to
-  /// `null` this way.
+  /// [webSocketSendTimeLimit], [connectionTimeout] and [requestTimeout]
+  /// cannot be reset to `null` this way.
   ServerProperties copyWith({
     int? port,
     String? address,
@@ -508,6 +537,7 @@ final class ServerProperties {
     int? webSocketSendBufferSizeLimit,
     Duration? webSocketSendTimeLimit,
     Duration? connectionTimeout,
+    Duration? requestTimeout,
   }) => ServerProperties(
     port: port ?? this.port,
     address: address ?? this.address,
@@ -528,6 +558,7 @@ final class ServerProperties {
     webSocketSendTimeLimit:
         webSocketSendTimeLimit ?? this.webSocketSendTimeLimit,
     connectionTimeout: connectionTimeout ?? this.connectionTimeout,
+    requestTimeout: requestTimeout ?? this.requestTimeout,
   );
 }
 
@@ -536,7 +567,7 @@ final class ServerProperties {
 /// largest body in bytes, `-1` for no limit. Set it before the body is
 /// read.
 ///
-/// The multipart resolver sets it to `spring.servlet.multipart.max-request-size`,
+/// The multipart resolver sets it to `spring.web.multipart.max-request-size`,
 /// so uploads have their own limit while every other reader of a
 /// `multipart/*` body keeps the server's. A handler that streams a large
 /// body of its own can do the same:

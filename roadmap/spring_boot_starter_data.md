@@ -1,4 +1,10 @@
-# spring_boot_starter_data (planned, 0.6.0)
+# spring_boot_starter_data (done, in 0.6.0)
+
+Steps 1 to 4 below are done and released together as 0.6.0 (the
+checklist: [release_0_6.md](release_0_6.md)); Redis is postponed
+indefinitely, the Supabase starter comes next, and the "Later" items at the
+end of the order of work stay open. The sections below keep the plan and
+the decisions as they were made.
 
 Spring Data for Dart: entities, repositories, transactions, locks, SpEL in
 queries; on a server and in Flutter apps. One starter, no driver inside:
@@ -36,7 +42,73 @@ the application adds the driver it wants, the generator sees it.
   PostgREST (HTTP: Flutter apps never hold
   database credentials; the user's token and row-level security decide),
   and in memory for tests. A repository chooses its store and database:
-  `@Repository(dataSource: 'analytics')`, `@Repository(store: 'supabase')`.
+  `@UseDataSource('analytics')`, `@UseStore('supabase')`.
+
+## Decisions made while building it (step 1)
+
+- **No annotation needed on a repository**, as in Spring Data: an
+  interface extending `DataRepository<T, ID>` (directly or through
+  `CrudRepository` and the others) gets a generated implementation and is
+  a bean. `@Repository('name')` only names the bean. A generic interface
+  is a base for others, never a bean (Spring's `@NoRepositoryBean`).
+- **Names that differ from Spring**, because Dart has one namespace per
+  import and the core already has these names: the marker is
+  `DataRepository` (`@Repository` is the stereotype annotation), a sort
+  step is `SortOrder` (`@Order` orders beans), the database and store of a
+  repository are `@UseDataSource('analytics')` and `@UseStore('supabase')`
+  (Dart cannot mix an optional positional `name` with named parameters on
+  `@Repository`).
+- **No overloading in Dart:** `findAll()`, `findAllSorted(Sort)` and
+  `findAllPaged(Pageable)` instead of Spring's three `findAll`.
+- **How it works:** the generator writes `_$BookRepositoryImpl`, a small
+  class that extends the starter's `SimpleRepository<Book, int>` (the CRUD,
+  sorting and paging methods, which call `RepositoryOperations`) and adds
+  only what the interface declares: for each derived query a constant
+  `PartTree` and one call (`operations.list`, `page`, `countBy`...), for
+  each `@Query` method a small constant `QueryMethod` (the annotation, the
+  parameter names, the shape of the result, the element type, and for each
+  `:#{...}` expression the function the build compiled from it, or `null`
+  for one it leaves to the SpEL interpreter). The build
+  parses the method names and checks them against the entity: a wrong
+  property (`findByTitel`) is a build error with the reason and a
+  suggestion (`did you mean 'title'?`), never a startup error. At startup
+  the repository checks what the build cannot know: its store and data
+  source, its entity, the `${property}` placeholders and the expressions of
+  its `@Query` texts that the build left to the interpreter.
+- **`@Query` is checked by the build.** Everything in a `@Query` that does
+  not depend on the run time is an error of the build, listed with the
+  other problems of the repository: the method against its annotation (the
+  return type and `Future`/`Stream`, `Page` and `Slice` need a `Pageable`,
+  `@Modifying` returns `int`, `bool` or nothing, `rowMapper` and
+  `resultSetExtractor` are functions of the right shape, no `@Lock`), the
+  text (each `:name` is a parameter, no plain `?`, only `#{#entityName}`
+  outside a parameter) and the result type (the entity, a class of yours, a
+  column type, a `Map<String, Object?>`). In the text, `{Book}` is the
+  quoted table of the entity and `{Book.authorId}` the quoted column of its
+  property (`author_id`, or what the naming strategy, `@Table` and
+  `@Column` say; the names are written at run time through the mapping, the
+  build checks that the class is a `@Table` of the application and the
+  property is stored). The build also knows a schema: the tables and columns
+  of the entities, and what `lib/resources/db/migration` and the init
+  scripts create (`create table`, `alter table` add, rename and drop column,
+  rename to, `drop table`, `create view` with its select list, in file
+  order; what it does not understand leaves a table "incomplete" and is
+  never an error). A table after `from`, `join`, `update`, `into` or
+  `delete from`, a qualified `alias.column` and an unqualified column that
+  is unknown, with a known name close to it, is a build error (`books.titel:
+  no column titel in books, did you mean 'title'?`); a name nothing is
+  close to is left alone (external tables, functions, dialect words). A
+  `NamingStrategy` bean of the application hides the names derived from the
+  entities. The SpEL of a `:#{...}` is compiled to Dart (`#book.title` is
+  `(arguments[0] as Book).title`): a typo in a property (`#book.titel`), an
+  unknown variable, a wrong call or a syntax error is a build error with a
+  suggestion; an expression the compiler does not support is interpreted at
+  run time.
+  For each `@Table` class (and each class a `@Query` returns) the
+  generator writes a compact `EntityIntrospection`: its properties with
+  their types and annotations, and `get`, `create` and `write` functions,
+  so entities are stored and loaded with no reflection and the build
+  writes no more than the class itself says.
 
 ## Order of work
 
@@ -52,14 +124,206 @@ the application adds the driver it wants, the generator sees it.
 2. Transactions: `PlatformTransactionManager`, `@Transactional` on the AOP
    proxies (propagation, isolation, read-only, rollback rules),
    `TransactionTemplate`; the current transaction in a `Zone`, so it
-   follows `await`.
+   follows `await`. Decided while building it:
+   - each transactional block runs in its own zone scope; `requiresNew`
+     and `notSupported` isolate the scope instead of Spring's suspend and
+     resume (the outer transaction goes on when the block's code ends);
+     work started in a transaction without `await` and still running
+     after it fails (`IllegalTransactionStateException`), it never runs
+     outside the transaction unnoticed;
+   - `@Transactional(transactionManager: 'analytics')`: Dart cannot mix
+     Spring's positional `value` with named parameters;
+   - every exception rolls back unless listed in `noRollbackFor`; types
+     match with subtypes: the generator writes a `value is T` test for
+     every type written in an annotation (`BeanModule.typeTests`,
+     `BeanIntrospector.isInstanceOf`), usable later by `@ExceptionHandler`
+     and `@Retryable` too;
+   - the in-memory store has transactions (read committed, row locks,
+     deadlock detection, savepoints) and `@Lock`, so the propagation
+     matrix and the locks are tested before SQLite.
 3. SQLite (the `sqlite3` package): server and Flutter; `spring.sql.init`
    (`schema.sql`, `data.sql`); migrations `db/migration/V1__*.sql`
-   (Flyway's naming, `spring.flyway.*`).
+   (Flyway's naming, `spring.sql.migration.*`).
+   Built (server); decided while building it:
+   - the driver: the generator writes a thin glue over `package:sqlite3`
+     into each module of an application that lists `sqlite3` (a template
+     in the starter, `lib/src/jdbc/drivers/sqlite3.dart.tmpl`, its symbols
+     imported through the module's prefixes); everything else
+     (`SqliteJdbcDriver`, `SqliteDialect`, transactions, savepoints, one
+     statement at a time per connection) is the starter's, without
+     importing `sqlite3`. `postgres` is one more row of the same table;
+   - the JDBC layer: `PooledDataSource`, `DataSourceTransactionManager`,
+     `JdbcTemplate`, `NamedParameterJdbcTemplate`, `JdbcClient`,
+     `DataClassRowMapper`; `JdbcDataStore` turns derived queries into SQL,
+     `@Query` with named parameters, SpEL and DTOs; one test suite runs on
+     the in-memory store and on SQLite and must give the same answers,
+     with hostile strings in every operator;
+   - startup: the `dataSource` bean runs scripts, migrations and the
+     schema check before handing out its first connection, so no
+     application code reaches the database first;
+   - SQLite's limits, in the docs: a `@Lock` query takes the database's
+     write lock and must be the transaction's first statement; no
+     statement timeout (the package cannot interrupt); a busy wait blocks
+     the isolate (keep `busy-timeout` short in a UI); two transactions
+     that read then write: the second fails with
+     `CannotAcquireLockException`; ids reused after a delete (no
+     `AUTOINCREMENT`); `lower()` folds ASCII only (to fix: a Dart
+     `lower` registered through the glue);
+   - references and keys (the owner): another aggregate is referenced
+     as `AggregateReference<Author, int>` or as a plain id
+     `@Reference(Author) int authorId` (the id type checked against the
+     target's `@Id`); a field typed as an entity is a startup error with
+     both forms as the hint (never guessed: Spring Data JDBC would read it
+     as a child). Every reference gets a foreign key and an index in
+     generated schemas; `@OnDelete(OnDeleteAction.cascade / setNull /
+     setDefault / restrict / noAction)` (Hibernate's name) is its action.
+     `@Unique` and `@UniqueConstraint([...])` (JPA's names: Dart cannot
+     add a named `unique:` to `@Column('x')`). Defaults: a field's
+     constant initializer (or the constructor parameter's constant
+     default), described by the generator, is the column's `DEFAULT` and
+     what `setDefault` sets. The in-memory store enforces all of it as
+     SQLite does with `foreign_keys = ON` (checked case by case against
+     sqlite3), and the shared suite runs it on both. `validate` checks
+     them: an explicit annotation missing in the database is an error, a
+     plain reference without a foreign key a warning;
+   - data errors in a web application: the web starter has a
+     `HandlerExceptionResolver` extension point (Spring's name; beans
+     asked in `@Order` after the `@ExceptionHandler` methods of the
+     controller and of the advice beans, before the default 500, answering
+     with an `ErrorResponse`), and the generator writes the data starter's
+     resolver (`lib/src/web/data_access_exception_resolver.dart.tmpl`, the
+     bean `dataAccessExceptionResolver`, replaceable by name) into the
+     modules of an application that depends on both starters, as it does
+     for a driver (one more row of the same table; neither starter imports
+     the other): `OptimisticLockingFailureException` and
+     `DuplicateKeyException` → 409, `EmptyResultDataAccessException` →
+     404, with a fixed detail (never the exception's message: it may hold
+     SQL or values). The template is the data starter's because it owns the
+     exceptions, as it owns the driver templates; the web starter only
+     defines the plug. The end-to-end test (a real application over HTTP)
+     belongs to the integration step;
+   - done for Flutter: the app's directory for relative file names (the
+     Flutter starter sets `spring.datasource.sqlite.base-directory` from
+     `spring.datasource.sqlite.location`: `support`, `cache` or
+     `documents`) and a background isolate for the synchronous calls
+     (`spring.datasource.sqlite.isolate`, which the Flutter starter turns
+     on); left: the web build (WASM);
+   - done: `@DataTest` (Spring's `@DataJdbcTest`): the application's data
+     beans and the starter's auto-configuration on an in-memory SQLite
+     database (one pooled connection, the migrations applied or the tables
+     created from the entities), each test in a transaction rolled back at
+     its end, `@Commit` / `@Rollback(false)` to keep it, `include:` and
+     `replaceDatabase:`. The generator joins the data starter and the test
+     starter in the generated test file (`DataTestSetup`,
+     `runInTestTransaction` of `spring_boot_starter_data/testing.dart`);
+     `@DataTest(transactionManager: 'name')` (Spring's
+     `@Transactional(transactionManager:)`) runs the tests in that one
+     manager's transaction; the database of a container
+     (`replaceDatabase: false` with a `@ServiceConnection` `PostgresContainer`,
+     tested in `test/data_test/container_postgres_test.dart`); left: a
+     per-test choice of the manager.
 4. PostgreSQL (the `postgres` package): a connection pool
    (`spring.datasource.pool.*`), `FOR UPDATE` / `FOR SHARE`, `NOWAIT`,
    `SKIP LOCKED`.
-5. Redis, with this project's own client (RESP over `dart:io`: a few
+   Built; decided while building it:
+   - the driver is the SQLite one's twin: the generator writes a thin glue
+     (`lib/src/jdbc/drivers/postgres.dart.tmpl`, one more row of the same
+     table, bean `postgresJdbcDriver`) that implements the starter's
+     `PostgresBinding` over `package:postgres` (open, `execute` with `$n`
+     parameters, a stream of rows, close; the package's exceptions as
+     `SqlError`s with the SQL state, the constraint's name and no `DETAIL`);
+     `PostgresJdbcDriver` and `PostgresDialect` are the starter's, tested
+     without a server over a fake binding. The driver parses
+     `postgresql://user:password@host:port/db?sslmode=…` (`jdbc:` dropped by
+     the properties; unknown parameters are errors, so a typo never weakens
+     TLS), rewrites `?` to `$1` outside quotes, comments and `$$` (`??` is a
+     literal `?`), takes the generated key with `RETURNING <id column>`
+     (`JdbcConnection.update(keyColumn:)`), begins transactions with their
+     isolation level and `READ ONLY`, bounds statements with the package's
+     per-statement timeout (the server cancels, `57014`), and drops from the
+     message what the server says about the data (the `DETAIL` line, the
+     rejected value of a class 22 error);
+   - `sslmode` has libpq's names and default `prefer` (TLS, then plain text
+     if the server has none); `require` does not check the certificate,
+     `verify-ca` and `verify-full` do (the package offers no weaker check);
+   - the package writes a non-finite `double` as text the server refuses:
+     the glue types it; the package's `execute` of several statements that
+     return rows fails, so scripts are split by the starter as they already
+     were;
+   - the dialect: `BIGINT`, `TEXT`, `BOOLEAN`, `DOUBLE PRECISION`,
+     `TIMESTAMPTZ`, `BYTEA`, `NUMERIC`; identity ids; `LIMIT` / `OFFSET`
+     (`OFFSET` alone); row locks; `SET LOCAL lock_timeout`; schema
+     validation from `information_schema` and `pg_catalog` (types by
+     `data_type`, foreign keys with their action, unique keys, partial and
+     expression indexes left out); foreign keys of cycles added by `ALTER
+     TABLE` after the tables; `DROP … CASCADE` for referenced tables;
+     transactional DDL for the migrations and an advisory lock for their
+     run; errors by SQL state;
+   - differences the tests state: text is ordered and compared by the
+     database's collation (`COLLATE "C"` would match the in-memory store,
+     but would make `lower()` ASCII only and the ordering unlike what a
+     Spring Data application on PostgreSQL gives); `ON DELETE RESTRICT` is
+     checked when the statement ends, not row by row; the identity
+     sequence does not follow ids written by hand; a failed statement
+     aborts the transaction (`25P02`) until a savepoint or the rollback;
+   - tests: unit tests of the dialect, the markers, the URL and the driver
+     (a fake binding); the glue; and, tagged `postgres` and run when
+     `SPRING_TEST_POSTGRES_URL` is set, the driver (values, streams, keys,
+     transactions, isolation, savepoints, locks, timeouts, TLS, errors and
+     a killed connection), the schema (creation, validation, scripts,
+     migrations, concurrent runners), the locks and optimistic locking
+     through repositories, and the shared suites (entity stores, derived
+     queries, references, injection, `@Query`) beside the in-memory store
+     and SQLite. CI runs them on a `postgres:17` service container.
+   - done (November 2026): the transaction matrix on PostgreSQL, compared
+     with Spring. `spring_boot_starter_data/test/transaction_matrix` (tag
+     `postgres`) has 304 scenarios, each giving a normalized outcome (the rows
+     committed, the values read, the exception kinds with their SQL states):
+     every outer propagation (and none) against every inner one in four
+     variants (nothing fails, the inner throws and the outer catches it, the
+     inner throws through the outer, the outer throws after it), the lock wait
+     of a second connection (a statement timeout shows it), rollback rules,
+     `TransactionTemplate`, read only, dirty read, non-repeatable read,
+     phantom, lost update (read-modify-write and atomic) and write skew at
+     five isolation levels, a deadlock, `FOR UPDATE` / `FOR SHARE` /
+     `NOWAIT` / `SKIP LOCKED` / lock timeouts, `@Version` races and
+     `@Transactional(timeout:)`; two transactions run side by side with no
+     sleeps (the test waits until `pg_stat_activity` shows a backend waiting
+     for a lock). The propagation outcomes also come from a model of Spring's
+     rules, the others from the reviewed outcomes of Spring itself.
+     `tool/data_reference` is the Spring twin (Spring Boot 4.1, Spring Data
+     JDBC, real `@Transactional` services, `@Version`, `@Lock`) and
+     `test/transaction_matrix/differential_test.dart` (tag `differential`)
+     compares both outcome by outcome; the CI job "Data compared with Spring
+     Data" runs it. What it found in the starter, fixed with regression
+     tests: a timed-out transaction was not rollback-only; a failed commit
+     was wrapped in a `TransactionSystemException` instead of Spring's
+     translated `DataAccessException`; no `ConcurrencyFailureException` root.
+     Deliberate differences (README, "Compared with Spring"): no checked
+     exceptions, `rollbackFor` beats a closer `noRollbackFor` (Dart cannot
+     rank two types: the generator could write the subtype relation of the
+     types of one annotation to fix it), a `@Lock` query outside a
+     transaction fails, the finer exception classes by SQL state (Spring 7's
+     `JdbcTemplate` translates by SQL state alone).
+   - done (November 2026): containers in tests (`@Container`,
+     `@ServiceConnection`, our own Docker client:
+     [spring_boot_starter_test.md](spring_boot_starter_test.md)). The tests
+     tagged `postgres` run on `SPRING_TEST_POSTGRES_URL` when it is set (CI
+     keeps its service container for them) and otherwise on a
+     `PostgresContainer` each test file starts; `@DataTest(replaceDatabase:
+     false)` with a `@Container() @ServiceConnection()` `PostgresContainer`
+     runs the repositories on it with the migrations and the rollback per
+     test (`test/data_test/container_postgres_test.dart`, tag `docker`), and
+     a `@SpringBootTest` class does too. The transaction matrix still needs
+     `SPRING_TEST_POSTGRES_URL` (it can switch to `usePostgresServer()` and
+     `postgresServerSkip` of `test/postgres/support.dart`).
+   Left: `COPY` and other bulk paths; a `LISTEN` / `NOTIFY` bridge; Unix sockets
+   and several hosts in one URL; client certificates (`sslcert`, `sslkey`).
+5. **Postponed indefinitely, not in 0.6.0** (the owner, November 2026).
+   Until it comes, an application that needs Redis wires a client of its
+   choice by hand, e.g. as its own `CacheManager` bean for the cache
+   starter. The plan, kept for when it comes back:
+   Redis, with this project's own client (RESP over `dart:io`: a few
    hundred lines, a pool, TLS, `AUTH`, the database index, Pub/Sub; no
    third-party package), switched on by `spring.data.redis.*` (Spring
    Boot's names: `url`, `host`, `port`, `password`, `database`, `ssl`):
@@ -77,16 +341,34 @@ the application adds the driver it wants, the generator sees it.
    - a distributed lock (`RedisLockRegistry`, Spring Integration's) and
      optimistic updates with `WATCH` / `MULTI`.
    Not in Flutter apps.
-6. Supabase: in its own starter, on its official packages
+6. Supabase, after the 0.6.0 release (the owner): in its own starter, on
+   its official packages
    ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)):
    a store for these repositories, its Auth as a login of the security
    starters.
+
+Later (the owner, October 2026): `BigDecimal` in `spring_core_dart` (an
+unscaled `BigInt` and a scale, `RoundingMode`; no third-party package,
+the repository's rule) for money: `NUMERIC` in PostgreSQL, `TEXT` in
+SQLite, a string in JSON, `@DecimalMin` / `@Digits`; and custom
+converters (Spring Data's `@ReadingConverter` / `@WritingConverter`) so
+an application can map its own types. Until then: money as an `int` in
+minor units, never a `double`.
 
 Later, not in 0.6.0 (the owner): MongoDB (`@Document`, `MongoTemplate`,
 `MongoRepository`, `@Version` and `findAndModify` instead of pessimistic
 locks, `MongoTransactionManager` on a replica set; the driver to decide:
 `mongo_dart` behind our template first, checked on a replica set, our
 own if it falls short).
+
+Later (the security check of 0.6.0): a `Pageable` / `Sort` argument
+resolver for controllers in the web starter, as Spring Data Web's
+`PageableHandlerMethodArgumentResolver` and `SortHandlerMethodArgumentResolver`:
+`page`, `size` and `sort=property,direction` read from the request, a
+maximum page size (`spring.data.web.pageable.max-page-size`, Spring's
+default 2000) and a default size, invalid values answered with a 400 or
+replaced by the defaults, a property allow-list for `sort`. Until then every
+application parses these itself (and must cap `size`; the README says so).
 
 ## The full example
 
@@ -113,7 +395,7 @@ spring.datasource.pool.max-size=10
 spring.datasources.analytics.url=postgresql://warehouse:5432/stats
 
 # Migrations: lib/resources/db/migration/V1__books.sql, V2__orders.sql
-spring.flyway.enabled=true
+spring.sql.migration.enabled=true
 
 books.page-size=20
 ```
@@ -255,7 +537,7 @@ abstract interface class OrderRepository extends CrudRepository<Order, int> {
 }
 
 // The second database.
-@Repository(dataSource: 'analytics')
+@UseDataSource('analytics')
 abstract interface class SaleStatsRepository
     extends CrudRepository<SaleStat, int> {}
 ```
@@ -309,7 +591,7 @@ class Pricing {
 
   @Transactional(readOnly: true)
   Future<Page<Book>> catalog(int page) =>
-      books.findAll(PageRequest.of(page, 20, Sort.by(['title'])));
+      books.findAllPaged(PageRequest.of(page, 20, Sort.by(['title'])));
 
   /// A step that must commit on its own (an audit line), whatever
   /// happens to the caller's transaction.
@@ -347,7 +629,7 @@ abstract interface class LocalBooks extends ListCrudRepository<Book, int> {
 // Supabase over PostgREST, with the user's token; row-level security
 // decides. @Version works (a conditional PATCH); @Lock and
 // @Transactional here are build errors.
-@Repository(store: 'supabase')
+@UseStore('supabase')
 abstract interface class RemoteBooks extends ListCrudRepository<Book, int> {
   Future<Page<Book>> findByAuthorId(int authorId, Pageable page);
 }
@@ -461,6 +743,9 @@ property of an aggregate root:
   `DeadlockLoserDataAccessException` (both transient: worth a retry).
 - SQLite has no row locks: the transaction becomes `BEGIN IMMEDIATE`
   (one writer for the whole database), stated in the docs.
+- In memory (done in step 2): row locks, shared and exclusive, with the
+  timeout (`spring.data.memory.lock-timeout`), `skipLocked` and deadlock
+  detection, so the same code runs before a database is there.
 - Supabase: none (a build error on its repositories).
 - In SQL by hand: `jdbc.sql('select ... for update')` inside
   `@Transactional`.
@@ -501,7 +786,7 @@ races between real connections:
   `QueryTimeoutException`), `rollbackFor` / `noRollbackFor`, checked and
   unchecked exceptions as in Spring (here: every exception rolls back
   unless listed), the qualifier of a second datasource
-  (`@Transactional('analytics')`), `TransactionTemplate` with the same
+  (`@Transactional(transactionManager: 'analytics')`), `TransactionTemplate` with the same
   settings.
 - **Dart's own cases:** the transaction follows `await` (the `Zone`);
   `Future.wait` of two statements in one transaction (one connection:
@@ -638,6 +923,116 @@ Values are logged only at trace; parameters whose name looks secret
 (`password`, `token`, `secret`, `key`) are masked even there, Redis
 `AUTH` never shows its password, and the connection URL is logged without
 its password.
+
+## The schema: migrations, validation, creation (step 3)
+
+Spring Data JDBC creates no schema (unlike Hibernate's `ddl-auto`): the
+schema is the application's SQL. Here the same, plus what the mapping
+model makes cheap.
+
+**Migrations, Flyway's way** (`spring.sql.migration.*`, next to
+`spring.sql.init.*`; Flyway's file naming, our own runner, no Flyway):
+
+- Files in `lib/resources/db/migration/`: `V1__create_books.sql`,
+  `V2__add_year.sql` (versioned, run once, in order), `R__views.sql`
+  (repeatable, run again when its checksum changes). Per database when
+  needed: `spring.sql.migration.locations=classpath:db/migration/{vendor}`
+  (`sqlite`, `postgresql`). Several data sources: `spring.datasources.
+  <name>.sql.migration.*`.
+- The generator already embeds `lib/resources/` in the generated module,
+  so the migrations are in the binary on every platform (server, Flutter,
+  web) with no assets to declare.
+- At startup, before any repository is used: the history table
+  (`schema_history`: version, description, script, CRC32
+  checksum, installed on, execution time, success) is read, the pending
+  migrations run in order, each in its own transaction (PostgreSQL and
+  SQLite both roll DDL back), the failed one stops the start with its
+  file and line.
+- A changed checksum of an applied migration stops the start
+  (`validate-on-migrate`, on by default); a migration newer than the
+  application (a database from a later version) is ignored, as Flyway
+  does by default; `out-of-order` off; `baseline-on-migrate` and
+  `baseline-version` for an existing database; `clean` is never run
+  (no switch to allow it).
+- Several server instances starting together: the first takes a
+  PostgreSQL advisory lock (`pg_advisory_lock`), the others wait, then
+  find nothing to do. SQLite: one process, a `BEGIN IMMEDIATE`.
+- `spring.sql.init` (`schema.sql`, `data.sql`, `mode=embedded|always|
+  never`) for simple cases and tests, as in Boot; not both with
+  migrations on one database: the start fails (stricter than Boot, which
+  only advises against it — the schema has one owner).
+
+**Validation against the entities** (an extension;
+`spring.data.jdbc.schema=validate`, the default): after the migrations,
+every entity's table and columns must exist with a type that fits the
+property (`int` → integer types, `String` → text types, `DateTime` →
+timestamp / text in SQLite, `bool`, `double`, `Uint8List`), and a
+non-null property must not sit on a nullable column without a default
+being noted. A missing table or column stops the start naming the entity,
+property and column; extra columns and tables are fine. Hibernate's
+`validate`, which Spring Data JDBC lacks.
+
+**Creation from the entities** (`spring.data.jdbc.schema=create` or
+`create-drop`): `CREATE TABLE` for each entity and child table from the
+mapping (id as identity / `INTEGER PRIMARY KEY`, `@Version`, the reverse
+and key columns of `@MappedCollection`, foreign keys to the root), for
+tests, prototypes and on-device caches. `update` is not offered (the
+classic Hibernate accident: it never drops or renames, the schema
+drifts).
+
+**A migration written from the entities** (a tool, like Spring Data
+JDBC's `LiquibaseChangeSetWriter`): `dart run
+spring_boot_starter_data:schema diff` applies the existing migrations to
+a scratch database (SQLite in memory, or PostgreSQL in a container),
+compares with the entities, and writes the next `V<n>__<name>.sql` to
+review and commit; never applied by itself.
+
+**Flutter**:
+
+- The migrations run on the device at the app's start, on its SQLite
+  file (`spring.datasource.url=sqlite:file:books.db`, relative to the
+  app's support directory); on the web on `sqlite3`'s WASM build (the
+  file in OPFS / IndexedDB).
+- A failed migration on a phone cannot be fixed by hand: each runs in a
+  transaction (the database stays at the previous version, the error
+  goes to the app as a startup failure it can show), and a test helper
+  applies every migration in turn to SQLite in memory (and, from saved
+  schemas of released versions, each upgrade path), so CI catches it.
+- No downgrades (stores refuse older versions); a database from a newer
+  version (a restored backup) is left as is, its unknown migrations
+  ignored.
+- An on-device database that is only a cache may use
+  `schema=create-drop` (rebuilt when the entities change) instead of
+  migrations.
+- Supabase repositories run no DDL: the schema is the server's (Supabase
+  CLI migrations); a Flutter app never holds the credentials for it.
+
+## Renaming properties named after Java libraries (the owner, at the end of 0.6.0; done)
+
+Properties named after a library or a Java technology this project does
+not use are renamed; names of Spring's own concepts stay. The old Spring
+Boot name stops the start with the new one (a forgotten
+`server.servlet.session.*` silently ignored would leave sessions on their
+defaults):
+
+| Now | New |
+|---|---|
+| `spring.cloud.openfeign.*` | `spring.feign.*` |
+| `spring.jackson.*` | `spring.json.*` |
+| `spring.servlet.multipart.*` | `spring.web.multipart.*` |
+| `server.servlet.context-path`, `server.servlet.session.*` | `server.context-path`, `server.session.*` |
+| `logging.logback.rollingpolicy.*` | `logging.file.rolling-policy.*` |
+| `spring.flyway.*` | `spring.sql.migration.*` |
+
+Code, tests, READMEs, docs, guides, and a Breaking entry in each
+package's CHANGELOG.
+
+Done: every binding, test, example and doc uses the new names, and
+`spring_boot_dart` has the check (`RenamedPropertiesEnvironmentPostProcessor`,
+the one table of old prefixes) that stops the start for an old name in
+any property source, in a file, an argument, a `--dart-define` or an
+environment variable, naming the new key. docs/configuration.md lists the
+renames under "Differences from Spring Boot".
 
 ## Differences from Spring to state in the docs
 

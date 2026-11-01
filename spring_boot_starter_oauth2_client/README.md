@@ -34,8 +34,8 @@ spring.security.oauth2.client.registration.partner.scope=orders.read
 spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token
 
 # Every Feign call carries the token.
-spring.cloud.openfeign.oauth2.enabled=true
-spring.cloud.openfeign.oauth2.client-registration-id=partner
+spring.feign.oauth2.enabled=true
+spring.feign.oauth2.client-registration-id=partner
 ```
 
 ```dart
@@ -205,12 +205,12 @@ token signed with the same keys is refused), then the claims.
 
 ## Tokens on Feign calls
 
-With `spring.cloud.openfeign.oauth2.enabled=true`, every Feign client gets
+With `spring.feign.oauth2.enabled=true`, every Feign client gets
 the `OAuth2AccessTokenInterceptor`: `Authorization: Bearer <token>` of
 the user of the security context (or, for a `client_credentials`
 registration, of the client), refreshed through the `OAuth2AuthorizedClientManager` when it
 expires within a minute. The registration is
-`spring.cloud.openfeign.oauth2.client-registration-id`, else the Feign
+`spring.feign.oauth2.client-registration-id`, else the Feign
 client's name, as in Spring Cloud OpenFeign. A DPoP-bound token goes as
 `Authorization: DPoP <token>` with a proof
 ([below](#dpop-tokens-bound-to-the-apps-key)).
@@ -382,6 +382,10 @@ package for the `OAuth2AuthorizedClientService` (and, next, the
 
 ## Differences from Spring
 
+- **Renamed Feign properties.** `spring.feign.oauth2.enabled` and
+  `spring.feign.oauth2.client-registration-id` are Spring Cloud's
+  `spring.cloud.openfeign.oauth2.*` without Spring Cloud; the old names
+  stop the start and name the new ones.
 - **What the starter brings.** In Spring, `spring-boot-starter-oauth2-client`
   brings web security and `oauth2Login()` too. Here this package is the
   client only, because it must also run in Flutter apps and browsers,

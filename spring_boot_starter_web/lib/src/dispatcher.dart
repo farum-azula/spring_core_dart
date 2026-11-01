@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/request_mapping.dart';
+import 'package:spring_boot_starter_web/src/request_timeout.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
 import 'package:spring_boot_starter_web/src/web_logging.dart';
@@ -23,7 +24,8 @@ const _log = SpringLog('spring.web.servlet.DispatcherServlet');
 /// a `HandlerInterceptor` fits better.
 ///
 /// An exception thrown by a filter skips the `@ExceptionHandler` methods
-/// and gets the default error answer.
+/// and the `HandlerExceptionResolver` beans, and gets the default error
+/// answer.
 ///
 /// ```dart
 /// // Every answer carries an id the logs can be searched by.
@@ -147,15 +149,32 @@ abstract class OncePerRequestFilter implements WebFilter {
 ///
 /// 1. runs the request in its own `Zone`, so that
 ///    `RequestContextHolder.currentRequest` is the request anywhere in its
-///    handling, across `await`s;
+///    handling, across `await`s; with [requestTimeout] it runs under a
+///    `RequestDeadline` too (see below);
 /// 2. strips [contextPath] (a request outside it gets a 404);
 /// 3. runs the [filters], in order;
 /// 4. asks each of the [handlerMappings] in turn for a handler and calls
 ///    the first one found (none: a 404);
 /// 5. turns an exception into an answer: first through the
-///    `@ExceptionHandler` methods of [requestMapping], else as a
-///    `ProblemDetail` written by [writer]. Exceptions from the filters go
-///    straight to [writer].
+///    `@ExceptionHandler` methods of [requestMapping], then through its
+///    `HandlerExceptionResolver` beans, else as a `ProblemDetail` written
+///    by [writer]. Exceptions from the filters go straight to [writer].
+///
+/// With [requestTimeout] (`server.request-timeout`) the steps above run
+/// under a `RequestDeadline` of that length, which the code they call can
+/// read: a Feign call, for one, never outlives it. When it passes before
+/// the answer starts, the request is answered with a 503 problem
+/// (`AsyncRequestTimeoutException`, a generic detail, logged as a warning
+/// like other 5xx answers, at most once per 10 seconds), and everything
+/// the handler does to the response afterwards is dropped: no second
+/// answer, no error. The handler itself is not interrupted (Dart cannot
+/// stop running code): it ends when it reaches its next check or call
+/// that reads the deadline, or by itself. A response already committed is
+/// left alone, so a response that became a stream (server-sent events, a
+/// streamed body) is not cut, and a WebSocket handshake is exempt.
+/// `@ExceptionHandler` methods do not see this 503, as the handler still
+/// runs. Spring has no such limit for synchronous requests; this is an
+/// extension.
 ///
 /// The starter declares it as the `dispatcherHandler` bean, and both the
 /// server and `MockMvc` call it. Applications do not create one; they add
@@ -171,7 +190,12 @@ final class DispatcherHandler implements HttpHandler {
     this.filters = const [],
     this.contextPath = '',
     this.logRequestDetails = false,
+    this.requestTimeout,
   });
+
+  /// The longest the filters and the handler may take to answer
+  /// (`server.request-timeout`); `null`, the default, for no limit.
+  final Duration? requestTimeout;
 
   /// The filters every request passes, in the order they run (the
   /// `@Order` of the beans).
@@ -183,15 +207,17 @@ final class DispatcherHandler implements HttpHandler {
 
   /// The controllers' mapping. Its `@ExceptionHandler` methods also
   /// answer the errors of the other mappings and the 404 of a request no
-  /// mapping takes.
+  /// mapping takes; its `HandlerExceptionResolver` beans, the errors of
+  /// the other mappings.
   final RequestMappingHandlerMapping requestMapping;
 
   /// Writes the default error answer (a `ProblemDetail`) when no
-  /// `@ExceptionHandler` method handles an exception.
+  /// `@ExceptionHandler` method or `HandlerExceptionResolver` handles an
+  /// exception.
   final ResponseWriter writer;
 
   /// The prefix every request path must start with
-  /// (`server.servlet.context-path`, such as `/shop`); it is removed
+  /// (`server.context-path`, such as `/shop`); it is removed
   /// before routing, so the mappings do not repeat it. Empty: no prefix.
   final String contextPath;
 
@@ -234,13 +260,83 @@ final class DispatcherHandler implements HttpHandler {
       RequestContextHolder.runWith(request, () async {
         _logRequest(request);
         try {
-          await _handle(request, response);
+          await _handleWithinDeadline(request, response);
           _logResult(response, null);
         } on Object catch (error) {
           _logResult(response, error);
           rethrow;
         }
       });
+
+  // The request under server.request-timeout: the filters and the handler
+  // run in a RequestDeadline; when it passes before the response is
+  // committed, the answer is a 503 and the handler's response becomes a
+  // black hole ([_DeadlineResponse]), so its late result and its late
+  // error change nothing. Streams and WebSocket handshakes are not timed.
+  Future<void> _handleWithinDeadline(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) {
+    final timeout = requestTimeout;
+    if (timeout == null || request.isWebSocketUpgrade) {
+      return _handle(request, response);
+    }
+    final guarded = _DeadlineResponse(response);
+    final outcome = Completer<void>();
+    RequestDeadline.run(timeout, () {
+      final deadline = RequestDeadline.current!;
+      late final Timer timer;
+
+      void answerTimeout() {
+        if (outcome.isCompleted || guarded.abandoned) {
+          return;
+        }
+        guarded.abandon();
+        _log.debug(() => 'The request passed its deadline');
+        unawaited(
+          writer
+              .writeError(
+                requestTimeoutError(),
+                StackTrace.current,
+                request,
+                response,
+              )
+              .then(outcome.complete, onError: outcome.completeError),
+        );
+      }
+
+      timer = Timer(timeout, () {
+        // Nothing to answer once the response is committed (the answer or
+        // a stream is on its way), or when the deadline was released.
+        if (!response.isCommitted && !deadline.isReleased) {
+          answerTimeout();
+        }
+      });
+      unawaited(
+        _handle(request, guarded).then(
+          (_) {
+            timer.cancel();
+            if (!outcome.isCompleted) {
+              outcome.complete();
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            timer.cancel();
+            if (outcome.isCompleted || guarded.abandoned) {
+              _log.debug(
+                () =>
+                    'The handler failed after the request deadline: '
+                    '${error.runtimeType}',
+              );
+            } else {
+              outcome.completeError(error, stackTrace);
+            }
+          },
+        ),
+      );
+    });
+    return outcome.future;
+  }
 
   Future<void> _handle(
     ServerHttpRequest request,
@@ -264,6 +360,13 @@ final class DispatcherHandler implements HttpHandler {
     try {
       await _Chain(this, 0).doFilter(current, response);
     } on Object catch (error, stackTrace) {
+      if (response is _DeadlineResponse && response.abandoned) {
+        // The request was answered with a 503 already.
+        _log.debug(
+          () => 'The request failed after its deadline: ${error.runtimeType}',
+        );
+        return;
+      }
       await writer.writeError(error, stackTrace, current, response);
     }
   }
@@ -340,4 +443,65 @@ final class _ContextPathRequest extends ServerHttpRequestDecorator {
 
   @override
   final String path;
+}
+
+/// The response a handler sees while the request has a deadline: it passes
+/// everything on until the deadline answered with a 503, then drops it
+/// all (`isCommitted` is `false` and the headers are a scratch copy, so
+/// the late code goes through its motions and nothing reaches the client).
+final class _DeadlineResponse extends ServerHttpResponseDecorator {
+  _DeadlineResponse(super.delegate);
+
+  var _abandoned = false;
+  final _scratch = HttpHeaders();
+
+  /// Whether the 503 was answered and this response now drops writes.
+  bool get abandoned => _abandoned;
+
+  /// Stops passing anything on.
+  void abandon() => _abandoned = true;
+
+  @override
+  set statusCode(int value) {
+    if (!_abandoned) {
+      super.statusCode = value;
+    }
+  }
+
+  @override
+  HttpHeaders get headers => _abandoned ? _scratch : super.headers;
+
+  @override
+  void addCookie(ResponseCookie cookie) {
+    if (!_abandoned) {
+      super.addCookie(cookie);
+    }
+  }
+
+  @override
+  bool get isCommitted => !_abandoned && super.isCommitted;
+
+  @override
+  void add(List<int> bytes) {
+    if (!_abandoned) {
+      super.add(bytes);
+    }
+  }
+
+  @override
+  void write(String text) {
+    if (!_abandoned) {
+      super.write(text);
+    }
+  }
+
+  @override
+  Future<void> flush() => _abandoned ? Future.value() : super.flush();
+
+  @override
+  Future<void> addStream(Stream<List<int>> stream) =>
+      _abandoned ? stream.drain<void>() : super.addStream(stream);
+
+  @override
+  Future<void> close() => _abandoned ? Future.value() : super.close();
 }

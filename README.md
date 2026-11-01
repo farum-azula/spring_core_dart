@@ -215,14 +215,15 @@ brings and re-exports the packages below it, so a web server lists
 | `spring_boot_starter_logging` | [`spring_boot_starter_logging/`](spring_boot_starter_logging/README.md) | Where log lines go: the console with patterns, log files with rollover, levels from `logging.*` properties, and an in-memory `LogBuffer` (filters, streams, export) for a log screen in an app. Add the dependency, nothing else. |
 | `spring_boot_starter_scheduling` | [`spring_boot_starter_scheduling/`](spring_boot_starter_scheduling/README.md) | `@Scheduled` methods that run at a fixed rate, with a fixed delay or on a cron expression (taken from properties if you like), and a `TaskScheduler` bean; the tasks stop when the application closes. Add the dependency, nothing else. |
 | `spring_boot_starter_cache` | [`spring_boot_starter_cache/`](spring_boot_starter_cache/README.md) | Caching of method results with `@Cacheable`, `@CachePut`, `@CacheEvict` and `@Caching` (sync and async methods, keys and conditions in SpEL); an in-memory `CacheManager` with time-to-live and size limits from `spring.cache.*`. |
+| `spring_boot_starter_data` | [`spring_boot_starter_data/`](spring_boot_starter_data/README.md) | Spring Data for Dart on Spring Data JDBC's model: `@Table` aggregates, repository interfaces the generator implements (CRUD, `Page` and `Sort`, derived queries such as `findByTitleContainingIgnoreCase`, `@Query` with SQL), `@Transactional` with Spring's propagations and isolation levels, `@Version` and `@Lock`, `JdbcTemplate` and `JdbcClient`, migrations, and `@DataTest` for its tests. In memory or on SQLite and PostgreSQL from `spring.datasource.*`; the database driver (`sqlite3`, `postgres`) is the application's own dependency and the generator wires it. Queries and names are checked at build time. |
 | `spring_web_dart` | [`spring_web_dart/`](spring_web_dart/README.md) | The HTTP vocabulary shared by servers and clients: the mapping annotations (`@GetMapping`, `@PostMapping`, `@PathVariable`, `@RequestParam`, `@RequestBody`, `@RestController`, `@ExceptionHandler`), `ResponseEntity`, `HttpHeaders`, `ProblemDetail`, HTTP and WebSocket client transports (`dart:io`; `fetch` and `WebSocket` on the web), server-sent events as `EventStream<T>`, multipart types (`MultipartFile`, `@RequestPart`), the server-side contracts (`ServerHttpRequest`, `ServerHttpResponse`, `HandlerMapping`, `PathPattern`) and mocks for tests. Applications get it through a starter. |
-| `spring_boot_starter_feign` | [`spring_boot_starter_feign/`](spring_boot_starter_feign/README.md) | HTTP clients without HTTP code: an abstract class with `@FeignClient` and mapping annotations becomes an injectable client. JSON through the `ObjectMapper`, interceptors, retries, fallbacks, per-client settings in `spring.cloud.openfeign.client.config.*`. |
+| `spring_boot_starter_feign` | [`spring_boot_starter_feign/`](spring_boot_starter_feign/README.md) | HTTP clients without HTTP code: an abstract class with `@FeignClient` and mapping annotations becomes an injectable client. JSON through the `ObjectMapper`, interceptors, retries, fallbacks, per-client settings in `spring.feign.client.config.*`. |
 | `spring_boot_starter_websocket` | [`spring_boot_starter_websocket/`](spring_boot_starter_websocket/README.md) | WebSocket clients written the same way: an abstract class with `@WebSocketClient`, `@OnMessage` (a `Stream<T>`) and `@SendMessage` methods becomes an injectable socket, with JSON, one shared connection opened on demand, reconnection with backoff and handshake interceptors. Spring has no declarative WebSocket client; this one follows the `@FeignClient` style. Server side, together with the web starter: `@WebSocketEndpoint` beans (`@OnOpen`, `@OnMessage`, `@OnClose`, `@OnError`), Spring's `WebSocketHandler` and `WebSocketConfigurer`, origin checks, and a session registry for broadcasting. |
 | `spring_boot_starter_web` | [`spring_boot_starter_web/`](spring_boot_starter_web/README.md) | A web server (Spring MVC): `@RestController` classes with `@GetMapping`, `@PostMapping`, ... served by `dart:io`'s `HttpServer` (behind a replaceable `WebServerFactory`; VM and Flutter mobile and desktop), JSON through the `ObjectMapper`, `@Valid` request bodies, errors as `ProblemDetail` with `@ExceptionHandler` and `@ControllerAdvice`, server-sent events (`EventStream`, `SseEmitter`), file uploads (`@RequestPart`, `MultipartFile`) and downloads (`Resource` with `Range`, byte streams), filters, interceptors, CORS, `server.*` properties and graceful shutdown. `MockMvc` for its tests is in the test starter. |
 | `spring_security_core` | [`spring_security_core/`](spring_security_core/README.md) | The core of Spring Security, for servers and Flutter apps alike: who is logged in (`SecurityContextHolder`, one per `Zone`), users (`UserDetailsService`, `InMemoryUserDetailsManager`), password hashing (Argon2 by default, PBKDF2, scrypt, in Spring's formats, with Bouncy Castle's cryptography), `AuthenticationManager`, and method security: `@PreAuthorize`, `@PostAuthorize`, `@Secured`, `@PreFilter`, `@PostFilter` with SpEL, always on and checked at startup. |
 | `spring_boot_starter_oauth2_client` | [`spring_boot_starter_oauth2_client/`](spring_boot_starter_oauth2_client/README.md) | Spring Security's OAuth 2.0 / OpenID Connect client from Spring Boot's `spring.security.oauth2.client.*` properties: registrations (Google, GitHub, Facebook, Okta built in; any provider by its issuer), the token endpoint of every grant (authorization code with PKCE, refresh token, client credentials), authorized clients refreshed once before they expire, the users of OAuth 2.0 and OpenID Connect with the ID token checked, and the token on every Feign call. The logins build on it: `oauth2Login()` of the security starter, the app login of the Flutter security package. Pure Dart: the VM, Flutter, the web. |
 | `spring_boot_starter_security` | [`spring_boot_starter_security/`](spring_boot_starter_security/README.md) | Security for the web starter, secure by default: the filter chain configured with `HttpSecurity` (request rules on the router's path patterns; a request no rule matches is denied), HTTP Basic, form login, single sign-on with OAuth 2.0 / OpenID Connect providers (`oauth2Login()`, ID tokens checked with the provider's keys), JWT resource servers (RS, PS, ES and HS algorithms, JWK sets, issuer discovery), sessions, CSRF, CORS, security headers and a strict firewall; `user()`, `jwt()` and `csrf()` for `MockMvc`. Compared with Spring Security 7 request by request in [docs/security.md](docs/security.md). |
-| `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (Spring's `@SpringBootTest`) starts the application, `BeanOverride` (`@MockitoBean`) replaces beans, `ApplicationContextRunner` tests auto-configuration, plus matchers, `captureLogs`, and `MockMvc` and `webEnvironment` (`@LocalServerPort`) for the web starter. Works with `package:test` and `flutter_test`. |
+| `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (Spring's `@SpringBootTest`) starts the application, `BeanOverride` (`@MockitoBean`) replaces beans, `ApplicationContextRunner` tests auto-configuration, plus matchers, `captureLogs`, and `MockMvc` and `webEnvironment` (`@LocalServerPort`) for the web starter, and containers in tests (`@Container`, `@ServiceConnection`, `PostgresContainer`: a Docker client of its own). Works with `package:test` and `flutter_test`. |
 | `spring_boot_starter_flutter` | [`spring_boot_starter_flutter/`](spring_boot_starter_flutter/README.md) | Spring Boot in Flutter apps: `SpringApplicationWidget` starts the application and hands its beans to the widgets (`context.bean<T>()`, getters for `@BuildContextAccess` beans, `SpringStatelessWidget<(...)>`, `SpringStatefulWidget<(...)>`). It brings and exports the core and Boot, so an app depends on it alone. The app's lifecycle pauses and restarts the context, the platform is a profile (`android`, `ios`, `mobile`, `desktop`, `web`, ...), and `context.message` gives texts in the app's locale. No platform code: an app without a login carries none. |
 | `spring_boot_starter_flutter_security` | [`spring_boot_starter_flutter_security/`](spring_boot_starter_flutter_security/README.md) | Security of Flutter apps, a plugin with its own platform code: the app login with OAuth 2.0 / OpenID Connect (`OAuth2LoginService`: authorization code with PKCE, `state`, `nonce` and the ID token checked; `restore` and `logout` with revocation; in a browser the same calls let the app's server log the user in, with the CSRF token and the session cookie handled), secrets in the Keychain, the Android Keystore, DPAPI or libsecret (`PlatformSecretStore`, the app's `SecretStore`, which keeps the login's tokens; `SecretTemplate` for the app's own objects), the provider's login page in the system's login window (`PlatformAuthorizationWindow`: a Safari sheet, a Chrome tab; `LoopbackAuthorizationWindow`: the default browser on Windows and Linux), and display-only widgets that follow the logged-in user (`context.principal`, `PrincipalBuilder`, `PrincipalView`). It brings and exports the Flutter starter, the OAuth2 client and `spring_security_core`, so an app with a login depends on it alone. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | The `build_runner` builder that reads the annotations and writes the `*.spring.dart` files. A dev dependency of every application. |
@@ -571,7 +572,7 @@ final again = mapper.readValue<Book>(json);
 ```
 
 More: [JSON](spring_core_dart/README.md#json-objectmapper), and its
-`spring.jackson.*` settings in
+`spring.json.*` settings in
 [`spring_boot_dart`](spring_boot_dart/README.md#json-the-objectmapper-bean).
 
 ### Logging
@@ -582,8 +583,8 @@ More: [JSON](spring_core_dart/README.md#json-objectmapper), and its
 creating its logger by hand. The framework, the starters and your code
 all log through `SpringLog`; levels come from `logging.level.*`
 properties, and `spring_boot_starter_logging` decides where the lines go
-(console, files, an in-app log screen). Without it, warnings and errors
-are printed.
+(console, files, an in-app log screen). Without it, lines from `info` up
+are printed to the console.
 
 ```dart
 // The getter is an extension in the generated file of the scan that
@@ -602,6 +603,87 @@ class Checkout {
 
 More: [logging](spring_core_dart/README.md#logging) and the
 [logging starter](spring_boot_starter_logging/README.md).
+
+### Data
+
+*In the guides:* none yet; the starter has its own
+[example](spring_boot_starter_data/example/example.dart).
+
+`spring_boot_starter_data` stores your objects in a database without SQL
+for the usual cases. You describe an **aggregate** (a class mapped to a
+table) with `@Table`, declare a **repository** (an interface), and the
+generator writes its implementation, so `save`, `findById` and a query
+named `findByYearGreaterThan` work without code of yours. Use it when an
+application keeps data in SQLite (a Flutter app, a small server) or
+PostgreSQL. The model is Spring Data JDBC's: an aggregate is loaded and
+saved whole, other aggregates are referenced by id, and there is no lazy
+loading and no persistence context.
+
+```yaml
+dependencies:
+  spring_boot_starter_data: ^0.5.0
+  sqlite3: ^3.8.0          # or postgres: ^3.5.0; the driver is yours
+```
+
+```dart
+@Table('books')
+class Book {
+  Book({this.id, required this.title, this.year});
+
+  @Id()
+  int? id;               // null: not saved yet; the database makes it
+  String title;
+  int? year;
+
+  @Version()
+  int version = 0;       // a lost update is an OptimisticLockingFailureException
+}
+
+abstract interface class BookRepository
+    implements ListCrudRepository<Book, int> {
+  // Derived from the name; findByTitel would be a build error.
+  Future<List<Book>> findByTitleContainingIgnoreCase(String text);
+
+  // Your own SQL, named parameters; checked by the build against the entities.
+  @Query('select * from books where year > :year order by year')
+  Future<List<Book>> since(int year);
+}
+
+@Service()
+class Shelf {
+  Shelf(this.books);
+  final BookRepository books;
+
+  // One transaction: an exception rolls back every save.
+  @Transactional()
+  Future<void> restock(List<Book> arrivals) async {
+    for (final book in arrivals) {
+      await books.save(book);
+    }
+  }
+}
+```
+
+The database is a property; without one the repositories keep their data
+in memory, which is what tests use:
+
+```properties
+# lib/resources/application.properties
+spring.datasource.url=sqlite:file:library.db
+# spring.datasource.url=postgresql://user:password@localhost:5432/library
+```
+
+Migrations in `lib/resources/db/migration/` (`V1__books.sql`, as Flyway
+names them) run at startup, before the first query; a test class marked
+`@DataTest()` runs on the repositories alone, in a transaction that is
+rolled back after each test. Spring (Java): Spring Data JDBC and
+`@Transactional`, with `@DataJdbcTest` for the tests.
+
+More: the [starter's README](spring_boot_starter_data/README.md)
+(`@Query`, references and keys, transactions compared with Spring,
+PostgreSQL, SQLite on an isolate), its
+[properties](docs/configuration.md#20-reference-sql-databases) and
+[`@DataTest`](docs/testing.md#19-data-tests-datatest).
 
 ### More in the core
 
@@ -671,6 +753,7 @@ Every difference, with the reason, is listed per package:
 [logging](spring_boot_starter_logging/README.md#differences-from-spring),
 [scheduling](spring_boot_starter_scheduling/README.md#differences-from-spring),
 [cache](spring_boot_starter_cache/README.md#differences-from-spring),
+[data](spring_boot_starter_data/README.md#differences-from-spring),
 [security core](spring_security_core/README.md#differences-from-spring-security),
 [OAuth2 client](spring_boot_starter_oauth2_client/README.md#differences-from-spring),
 [security starter](spring_boot_starter_security/README.md#differences-from-spring-security),
@@ -679,8 +762,8 @@ Every difference, with the reason, is listed per package:
 ## Roadmap
 
 Plans and sketches of coming features are in [`roadmap/`](roadmap/README.md),
-one file per package: Data, retry, an HTTP client, an MCP server, the
-actuator, OAuth2 clients, the next steps of the existing starters and of
+one file per package: Supabase, retry, an HTTP client, an MCP server, the
+actuator, generated code (faster and smaller), the next steps of the existing starters and of
 Security (the web starter's static files and Flutter isolates among
 them), Flutter (signals, Flutter Scene and Rust), the editor extensions,
 and the [fix plan](roadmap/fix_plan.md): open differences from Spring
@@ -720,7 +803,10 @@ up in applications (`spring_core_dart`, `spring_boot_dart`,
 this repository except the Dart team's `package:yaml` (for
 `application.yml`), the Flutter SDK for the two Flutter packages, and, for
 the two security packages only and until it can be replaced,
-`pointycastle` (Bouncy Castle's cryptography). CI enforces it with
+`pointycastle` (Bouncy Castle's cryptography). The data starter has no
+database driver inside: `sqlite3` and `postgres` are the application's own
+dependencies and the starter's dev dependencies (to test the glue the
+generator writes), allowed only there. CI enforces it with
 `tool/check_dependencies.dart`; any other package needs an exception
 there, with a reason and the packages allowed to use it. Every package,
 its publisher, the exceptions and the full graph:

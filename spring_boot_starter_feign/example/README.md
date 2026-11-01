@@ -145,7 +145,7 @@ catalog.stock().events.listen(
 
 ```properties
 # Wait 1 second before reconnecting (3 seconds by default).
-spring.cloud.openfeign.client.config.catalog.event-stream.reconnect-delay=1s
+spring.feign.client.config.catalog.event-stream.reconnect-delay=1s
 ```
 
 This is not in Spring: OpenFeign cannot stream, and Spring reads events

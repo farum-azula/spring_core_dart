@@ -37,6 +37,7 @@ export 'package:spring_boot_dart/src/exit_code.dart'
     show ExitCodeEvent, ExitCodeExceptionMapper, ExitCodeGenerator;
 export 'package:spring_boot_dart/src/failure_analyzer.dart';
 export 'package:spring_boot_dart/src/hot_reload.dart';
+export 'package:spring_boot_dart/src/renamed_properties.dart';
 export 'package:spring_boot_dart/src/runners.dart';
 export 'package:spring_boot_dart/src/spring_application.dart';
 export 'package:spring_boot_dart/src/version.dart';

@@ -134,8 +134,8 @@ read stops the start.
 
 ```properties
 logging.file.name=logs/app.log
-logging.logback.rollingpolicy.max-file-size=10MB   # then app.log.1, app.log.2, ...
-logging.logback.rollingpolicy.max-history=7        # how many old files to keep
+logging.file.rolling-policy.max-file-size=10MB   # then app.log.1, app.log.2, ...
+logging.file.rolling-policy.max-history=7        # how many old files to keep
 ```
 
 In Flutter, set the writable directory before starting:

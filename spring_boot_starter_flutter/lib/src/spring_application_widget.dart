@@ -9,6 +9,7 @@ import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/spring_widgets.dart';
+import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_fonts.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -56,6 +57,14 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///   such a restart the runners run again only with
 ///   [rerunRunnersOnReload]; `spring.devtools.restart.enabled=false` turns
 ///   the restarts off.
+/// - A SQL database (`spring.datasource.url`, or `spring.datasources.<name>`)
+///   on SQLite finds its file in the app's own directory, and its calls run
+///   on an isolate of their own, not the UI's: the starter sets
+///   `spring.datasource.sqlite.base-directory` to the directory of
+///   `spring.datasource.sqlite.location` (`support`, the default, `cache`
+///   or `documents`; on Android `databases/`) and
+///   `spring.datasource.sqlite.isolate` to `true`, with the lowest
+///   precedence: the app's own properties win. Nothing on the web.
 /// - Each change of the app's lifecycle is published as an
 ///   [AppLifecycleStateEvent]. In the background the context is paused
 ///   (`@Scheduled` tasks and WebSocket connections stop) and it restarts
@@ -127,6 +136,8 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   late final AppLifecycleListener _lifecycle;
   bool _paused = false;
   Future<void> _lifecycleWork = Future.value();
+  // Where the SQLite files can live; read once, before the first start.
+  SqliteDirectories? _directories;
 
   @override
   void initState() {
@@ -140,7 +151,9 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     try {
       // `asset:` resources: exists() needs the asset manifest.
       await AssetProtocolResolver.loadRootManifest();
+      _directories ??= await SqliteDirectories.resolve();
       final application = widget.application();
+      _directories?.provideTo(application);
       final context = started = await application.runAsync(
         widget.args,
         systemEnvironment: _scanOsEnvironment(application) ? null : const {},
@@ -239,7 +252,9 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     }
     ConfigurableApplicationContext? restarted;
     try {
-      final context = widget.application().reload(
+      final application = widget.application();
+      _directories?.provideTo(application);
+      final context = application.reload(
         running,
         runners: widget.rerunRunnersOnReload,
       );

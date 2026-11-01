@@ -15,7 +15,7 @@ import 'package:spring_web_dart/src/media_type.dart';
 /// field. A nullable parameter makes the file optional. The web starter
 /// writes the content of each file part to a temporary file while the
 /// request is read, unless it fits under
-/// `spring.servlet.multipart.file-size-threshold` (0 by default) or there
+/// `spring.web.multipart.file-size-threshold` (0 by default) or there
 /// is no `dart:io` (then it stays in memory); the temporary files are
 /// deleted when the request ends. Keep the content with [transferTo] or
 /// by reading it during the request.

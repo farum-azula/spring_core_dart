@@ -144,6 +144,13 @@ final class NotifyListenersPointcut implements AnnotationPointcut {
   /// The pointcut; it has no settings.
   const NotifyListenersPointcut();
 
+  /// The annotations this pointcut matches; the generator reads them to
+  /// give a proxy class only to the beans that carry one.
+  static const List<Type> annotationTypes = [
+    NotifyListeners,
+    ChangeNotifierComponent,
+  ];
+
   static const _notifierMembers = {
     'addListener',
     'removeListener',

@@ -21,7 +21,9 @@ test change what it must:
   socket (`MockMvc`), or start a real server on a free port;
 - check what a starter's auto-configuration creates under which
   properties (`ApplicationContextRunner`);
-- check what the application logged.
+- check what the application logged;
+- start a database, a Keycloak or any Docker image for the tests and wire
+  the application to it ([containers](#containers-any-image-in-docker)).
 
 Tests can be written as plain functions in `main` or as test classes with
 annotations (`@SpringBootTest()`, `@Autowired()`, `@Test()`), the way
@@ -564,12 +566,75 @@ void main() => runSpringTests();
 Every annotation, the generated code and the build errors are described in
 the [testing guide](../docs/testing.md).
 
+## Containers: any image, in Docker
+
+A test that needs a PostgreSQL, a Keycloak or any other service starts it in
+Docker, wires the application to it, and removes it afterwards, as with
+Testcontainers and Spring Boot's `@ServiceConnection`. It is a library of its
+own, `package:spring_boot_starter_test/containers.dart` (it needs `dart:io`,
+and nothing of it exists on the web; its `Container` annotation would clash
+with Flutter's widget if it came with the rest):
+
+```dart
+import 'package:spring_boot_starter_test/containers.dart';
+
+@SpringBootTest()
+class BookRepositoryTest {
+  // Started once for the class, before its context, removed after it; its
+  // URL, user and password become spring.datasource.* of the context.
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer('postgres:17-alpine');
+
+  // Any image: ports, files, a wait for a log line or an HTTP answer.
+  @Container()
+  static final redis = GenericContainer('redis:7.4-alpine')
+      .withExposedPorts([6379])
+      .waitingFor(Wait.forLogMessage('Ready to accept connections'));
+
+  // Runs after the containers started.
+  @DynamicPropertySource()
+  static void properties(DynamicPropertyRegistry registry) => registry.add(
+    'cache.redis.url',
+    () => 'redis://${redis.host}:${redis.mappedPort(6379)}',
+  );
+
+  @Autowired()
+  late BookRepository books;
+
+  @Test()
+  Future<void> savesAndFinds() async { /* ... */ }
+}
+```
+
+- **No package:** `DockerClient` speaks the Docker Engine API over the
+  daemon's Unix socket (`DOCKER_HOST`, `/var/run/docker.sock`, Docker
+  Desktop's and Colima's sockets, `tcp://`) with `dart:io`.
+- **Without Docker** the class is skipped, with the reason; with
+  `CONTAINERS_REQUIRED=true` (set it in CI) it fails.
+- **Cleanup survives a crash:** every container is labelled with the run's
+  id, and Testcontainers' reaper (`testcontainers/ryuk`) removes them when
+  the test process dies, even with `kill -9`
+  (`TESTCONTAINERS_RYUK_DISABLED=true` switches it off).
+- **`withReuse(true)`** keeps a container for the next run (never in CI).
+- **Modules:** `PostgresContainer` and `KeycloakContainer` know their
+  `@ServiceConnection` properties; `GenericContainer` covers the rest.
+- **`@DataTest(replaceDatabase: false)`** with such a `PostgresContainer`
+  runs the data starter's repository tests on that PostgreSQL.
+
+The testing guide has [the whole of it](../docs/testing.md#20-containers-in-tests):
+the wait strategies, the client, the reaper, reuse, and how it differs from
+Testcontainers.
+
 ## Differences from Spring
 
 - **Functions first.** `springBootTest` is a function for the tests of a
   `main` or `group`; test classes with `@SpringBootTest()` are generated
-  into it. There are no test slices (`@WebMvcTest`, `@DataJpaTest`, ...)
-  and no `@TestConfiguration`: pass extra modules to the
+  into it. The one test slice is `@DataTest` of `spring_boot_starter_data`
+  (Spring's `@DataJdbcTest`: the repositories on an in-memory database,
+  each test rolled back; [testing guide, section
+  19](../docs/testing.md#19-data-tests-datatest)); there is no
+  `@WebMvcTest` and no `@TestConfiguration`: pass extra modules to the
   `SpringApplication`, or use `ApplicationContextRunner` for a part of the
   configuration.
 - **`MockMvc` needs no `@AutoConfigureMockMvc`.** `app.mockMvc` (or an

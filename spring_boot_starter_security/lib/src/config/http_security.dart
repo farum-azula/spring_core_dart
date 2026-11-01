@@ -187,7 +187,7 @@ abstract final class SecurityFilterOrder {
 /// ```
 final class HttpSecurity {
   /// A builder taking the application's optional beans from
-  /// [beanFactory]; [contextPath] is `server.servlet.context-path`;
+  /// [beanFactory]; [contextPath] is `server.context-path`;
   /// [maximumSessions] and [maxSessionsPreventsLogin] are the defaults of
   /// [SessionManagementConfigurer.maximumSessions] and
   /// [SessionManagementConfigurer.maxSessionsPreventsLogin] (the
@@ -1775,7 +1775,7 @@ final class SessionManagementConfigurer {
   /// default (`spring.security.session.maximum-sessions`): a new login
   /// ends the user's least recently used session, or is refused with
   /// [maxSessionsPreventsLogin]. So one account cannot fill the session
-  /// store (`server.servlet.session.max-sessions`) by logging in again
+  /// store (`server.session.max-sessions`) by logging in again
   /// and again. Only chains that keep logins in sessions (form login,
   /// `oauth2Login()`) use it.
   ///

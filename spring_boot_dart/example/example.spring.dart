@@ -9,385 +9,93 @@
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i5;
-import 'package:spring_boot_dart/src/annotations.dart' as _i4;
-import 'package:spring_boot_dart/src/runners.dart' as _i3;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_boot_dart/src/annotations.dart' as _i3;
+import 'package:spring_boot_dart/src/runners.dart' as _i4;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
-import 'example.dart' as _i1;
-
-class _$GreetingPropertiesProxy implements _i1.GreetingProperties, _i2.Advised {
-  _$GreetingPropertiesProxy(this._target, this._invoker);
-
-  final _i1.GreetingProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String get name => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.name,
-  ) as String);
-
-  @override
-  int get times => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.times,
-  ) as int);
-
-  @override
-  set name(String value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.name = (args[0] as String);
-      return null;
-    });
-  }
-
-  @override
-  set times(int value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.times = (args[0] as int);
-      return null;
-    });
-  }
-}
-
-class _$GreeterProxy implements _i1.Greeter, _i2.Advised {
-  _$GreeterProxy(this._target, this._invoker);
-
-  final _i1.Greeter _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String greeting() => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (args) => this._target.greeting(),
-  ) as String);
-
-  @override
-  _i1.GreetingProperties get properties => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.properties,
-  ) as _i1.GreetingProperties);
-}
-
-class _$GreetOnStartupProxy
-    implements _i1.GreetOnStartup, _i3.CommandLineRunner, _i2.Advised {
-  _$GreetOnStartupProxy(this._target, this._invoker);
-
-  final _i1.GreetOnStartup _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void run(List<String> args) {
-    this._invoker.invoke(this, this._target, 0, [args], (args) {
-      this._target.run((args[0] as List<String>));
-      return null;
-    });
-  }
-
-  @override
-  _i1.Greeter get greeter => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.greeter,
-  ) as _i1.Greeter);
-
-  @override
-  _i1.GreetingProperties get properties => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.properties,
-  ) as _i1.GreetingProperties);
-}
+import 'example.dart' as _i2;
 
 /// Beans found by `@ComponentScan` in `example/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i1.GreetingProperties>(
+    _i1.BeanDefinition<_i2.GreetingProperties>(
       name: r'greetingProperties',
       source: r'asset:spring_boot_dart/example/example.dart#GreetingProperties',
-      types: const [_i1.GreetingProperties],
-      create: (r) => _i1.GreetingProperties(),
-      annotations: const [_i4.ConfigurationProperties(r'greeting')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'name',
-            declaringType: r'GreetingProperties',
-            targetType: r'GreetingProperties',
-            declaringTypes: [r'GreetingProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            targetTypes: [r'GreetingProperties'],
-            targetAnnotations: [_i4.ConfigurationProperties(r'greeting')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-          _i2.MethodSignature(
-            name: r'times',
-            declaringType: r'GreetingProperties',
-            targetType: r'GreetingProperties',
-            declaringTypes: [r'GreetingProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            targetTypes: [r'GreetingProperties'],
-            targetAnnotations: [_i4.ConfigurationProperties(r'greeting')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-          _i2.MethodSignature(
-            name: r'name',
-            declaringType: r'GreetingProperties',
-            targetType: r'GreetingProperties',
-            declaringTypes: [r'GreetingProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            targetTypes: [r'GreetingProperties'],
-            targetAnnotations: [_i4.ConfigurationProperties(r'greeting')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-          _i2.MethodSignature(
-            name: r'times',
-            declaringType: r'GreetingProperties',
-            targetType: r'GreetingProperties',
-            declaringTypes: [r'GreetingProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            targetTypes: [r'GreetingProperties'],
-            targetAnnotations: [_i4.ConfigurationProperties(r'greeting')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-        ],
-        create: (target, invoker) => _$GreetingPropertiesProxy(
-          (target as _i1.GreetingProperties),
-          invoker,
-        ),
+      types: const [_i2.GreetingProperties],
+      create: (r) => _i2.GreetingProperties(),
+      annotations: const [_i3.ConfigurationProperties(r'greeting')],
+      aopProxy: _i1.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches GreetingProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.Greeter>(
+    _i1.BeanDefinition<_i2.Greeter>(
       name: r'greeter',
       source: r'asset:spring_boot_dart/example/example.dart#Greeter',
-      types: const [_i1.Greeter],
+      types: const [_i2.Greeter],
       dependencies: const [
-        _i2.Dependency(_i1.GreetingProperties, name: r'properties'),
+        _i1.Dependency(_i2.GreetingProperties, name: r'properties'),
       ],
-      create: (r) => _i1.Greeter(
-        r.dependency<_i1.GreetingProperties>(name: r'properties'),
+      create: (r) => _i2.Greeter(
+        r.dependency<_i2.GreetingProperties>(name: r'properties'),
       ),
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'greeting',
-            declaringType: r'Greeter',
-            targetType: r'Greeter',
-            declaringTypes: [r'Greeter'],
-            returnType: r'String',
-            targetTypes: [r'Greeter'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'properties',
-            declaringType: r'Greeter',
-            targetType: r'Greeter',
-            declaringTypes: [r'Greeter'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'GreetingProperties',
-            targetTypes: [r'Greeter'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$GreeterProxy((target as _i1.Greeter), invoker),
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches Greeter, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.GreetOnStartup>(
+    _i1.BeanDefinition<_i2.GreetOnStartup>(
       name: r'greetOnStartup',
       source: r'asset:spring_boot_dart/example/example.dart#GreetOnStartup',
-      types: const [_i1.GreetOnStartup, _i3.CommandLineRunner],
+      types: const [_i2.GreetOnStartup, _i4.CommandLineRunner],
       dependencies: const [
-        _i2.Dependency(_i1.Greeter, name: r'greeter'),
-        _i2.Dependency(_i1.GreetingProperties, name: r'properties'),
+        _i1.Dependency(_i2.Greeter, name: r'greeter'),
+        _i1.Dependency(_i2.GreetingProperties, name: r'properties'),
       ],
-      create: (r) => _i1.GreetOnStartup(
-        r.dependency<_i1.Greeter>(name: r'greeter'),
-        r.dependency<_i1.GreetingProperties>(name: r'properties'),
+      create: (r) => _i2.GreetOnStartup(
+        r.dependency<_i2.Greeter>(name: r'greeter'),
+        r.dependency<_i2.GreetingProperties>(name: r'properties'),
       ),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'greeting'),
+        _i1.Component(),
+        _i1.Log(topic: r'greeting'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'run',
-            declaringType: r'CommandLineRunner',
-            targetType: r'GreetOnStartup',
-            declaringTypes: [r'GreetOnStartup', r'CommandLineRunner'],
-            returnType: r'void',
-            parameterTypes: [r'List'],
-            parameterNames: [r'args'],
-            targetTypes: [r'GreetOnStartup', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'greeting'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'greeter',
-            declaringType: r'GreetOnStartup',
-            targetType: r'GreetOnStartup',
-            declaringTypes: [r'GreetOnStartup'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Greeter',
-            targetTypes: [r'GreetOnStartup', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'greeting'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'properties',
-            declaringType: r'GreetOnStartup',
-            targetType: r'GreetOnStartup',
-            declaringTypes: [r'GreetOnStartup'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'GreetingProperties',
-            targetTypes: [r'GreetOnStartup', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'greeting'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$GreetOnStartupProxy((target as _i1.GreetOnStartup), invoker),
+      aopProxy: _i1.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches GreetOnStartup, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.GreetingProperties>(
+    _i1.BeanIntrospection<_i2.GreetingProperties>(
       className: r'GreetingProperties',
       properties: [
-        _i2.BeanProperty<_i1.GreetingProperties>(
+        _i1.BeanProperty<_i2.GreetingProperties>(
           r'name',
           type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: const _i1.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'World',
           get: (bean) => bean.name,
           set: (bean, value) => bean.name = (value as String),
         ),
-        _i2.BeanProperty<_i1.GreetingProperties>(
+        _i1.BeanProperty<_i2.GreetingProperties>(
           r'times',
           type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: const _i1.ClassType<int>(),
+          hasInitialValue: true,
+          initialValue: 1,
           get: (bean) => bean.times,
           set: (bean, value) => bean.times = (value as int),
         ),
       ],
-      annotations: const [_i4.ConfigurationProperties(r'greeting')],
-      instantiate: () => _i1.GreetingProperties(),
-      constructor: _i2.BeanConstructor<_i1.GreetingProperties>(
+      annotations: const [_i3.ConfigurationProperties(r'greeting')],
+      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: () => _i2.GreetingProperties(),
+      constructor: _i1.BeanConstructor<_i2.GreetingProperties>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i1.GreetingProperties.new, positional, named)
-                as _i1.GreetingProperties),
+            (Function.apply(_i2.GreetingProperties.new, positional, named)
+                as _i2.GreetingProperties),
       ),
     ),
   ],
@@ -452,7 +160,7 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '4fbf47ae',
+  fingerprint: 'c239e041',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -482,6 +190,6 @@ Future<_i5.ConfigurableApplicationContext> reloadApplicationAsync(
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// `@Log` of [GreetOnStartup]: the logger 'greeting'.
-extension $GreetOnStartupLog on _i1.GreetOnStartup {
-  _i2.SpringLog get log => const _i2.SpringLog(r'greeting');
+extension $GreetOnStartupLog on _i2.GreetOnStartup {
+  _i1.SpringLog get log => const _i1.SpringLog(r'greeting');
 }

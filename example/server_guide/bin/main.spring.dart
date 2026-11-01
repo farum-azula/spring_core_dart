@@ -38,13 +38,13 @@ _i1.BeanModule get $application => _i1.BeanModule(
       '# The dev profile (the default): sample data, a local supplier stub, more\n# logging. Profile files are read on top of application.properties.\n\n# Loaded into the empty catalog at startup (SampleData, @Profile dev).\nneon.catalog.sample-data=classpath:data/books.json\n# Faster restocking to watch the live stock in the app.\nneon.stock.restock-interval=20s\nlogging.level.spring.web.mvc=info\n',
     ),
     r'application-prod.yml': _i1.EmbeddedResource.text(
-      "# The prod profile, in YAML (application.properties and YAML files mix;\n# a .properties file wins over a YAML file in the same place). No sample\n# data, logs to a file, secrets from the environment.\nserver:\n  address: 0.0.0.0\n  servlet:\n    session:\n      cookie:\n        secure: true\n\nneon:\n  stock:\n    restock-interval: 5m\n  # The Flutter web build is served from the shop's own site.\n  cors:\n    allowed-origin-patterns: https://*.neon.books\n\nlogging:\n  level:\n    shop: info\n    feign: info\n  file:\n    name: build/logs/neon-books.log\n  logback:\n    rollingpolicy:\n      max-file-size: 10MB\n      max-history: 5\n",
+      "# The prod profile, in YAML (application.properties and YAML files mix;\n# a .properties file wins over a YAML file in the same place). No sample\n# data, logs to a file, secrets from the environment.\nserver:\n  address: 0.0.0.0\n  session:\n    cookie:\n      secure: true\n\nneon:\n  stock:\n    restock-interval: 5m\n  # The Flutter web build is served from the shop's own site.\n  cors:\n    allowed-origin-patterns: https://*.neon.books\n\nlogging:\n  level:\n    shop: info\n    feign: info\n  file:\n    name: build/logs/neon-books.log\n    rolling-policy:\n      max-file-size: 10MB\n      max-history: 5\n",
     ),
     r'application-sso.properties': _i1.EmbeddedResource.text(
       '# The sso profile: single sign-on with Keycloak (example/keycloak, the\n# realm `neon` on port 8180) instead of the form login. Chapter 4.\n#   dart run bin/main.dart --spring.profiles.active=dev,sso\n\n# Where the browser goes after a Keycloak login or logout: the Flutter web\n# app (`flutter run -d chrome --web-port 5050` in example/flutter_guide).\nneon.app.web-url=http://localhost:5050/\n\n# --- oauth2Login(): this server logs browsers in (Flutter web) -----------\n# A confidential client: the server has a secret, the browser never sees\n# the tokens. Keycloak sends the browser back to the default redirect URI,\n# {baseUrl}/login/oauth2/code/{registrationId}\n# (http://localhost:8080/login/oauth2/code/keycloak).\nspring.security.oauth2.client.registration.keycloak.client-id=neon-server\n# A development value, public in example/keycloak/neon-realm.json. Any\n# real Keycloak gets its own secret, from the environment:\n# NEON_KEYCLOAK_SECRET=... dart run bin/main.dart ...\nspring.security.oauth2.client.registration.keycloak.client-secret=\${NEON_KEYCLOAK_SECRET:neon-server-dev-secret}\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# Everything else (endpoints, keys) comes from the issuer\'s metadata.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# The user\'s name is `ada` or `root`, as with the form login (orders\n# belong to a name), not Keycloak\'s id (`sub`).\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n# --- Bearer tokens: the native apps log in themselves ---------------------\n# Their access tokens are checked against the realm\'s keys, issuer and\n# audience (Keycloak adds `neon-api` to the tokens of neon-app).\nspring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8180/realms/neon\nspring.security.oauth2.resourceserver.jwt.audiences=neon-api\nspring.security.oauth2.resourceserver.jwt.principal-claim-name=preferred_username\n# The realm roles, in the token\'s `roles` claim: USER -> ROLE_USER.\nspring.security.oauth2.resourceserver.jwt.authorities-claim-name=roles\nspring.security.oauth2.resourceserver.jwt.authority-prefix=ROLE_\n',
     ),
     r'application.properties': _i1.EmbeddedResource.text(
-      '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `classpath:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:classpath:config/supplier.properties\n# MessageSource: classpath:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.servlet.session.timeout=30m\nspring.servlet.multipart.max-file-size=2MB\nspring.servlet.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.jackson.default-property-inclusion=non_null\nspring.jackson.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.cloud.openfeign.client.config.default.connect-timeout=2s\nspring.cloud.openfeign.client.config.default.read-timeout=5s\nspring.cloud.openfeign.client.config.supplier-offers.logger-level=basic\nspring.cloud.openfeign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\n# Shorter than Spring Boot\'s, aligned the same way: the level padded to 5,\n# the logger abbreviated and padded to 30. Coloured like Spring Boot\'s\n# (spring.output.ansi.enabled=never for plain text).\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p %-30.30logger{29} : %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\nspring.config.activate.on-profile=!prod\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
+      '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `classpath:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:classpath:config/supplier.properties\n# MessageSource: classpath:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.session.timeout=30m\nspring.web.multipart.max-file-size=2MB\nspring.web.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.json.default-property-inclusion=non_null\nspring.json.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.feign.client.config.default.connect-timeout=2s\nspring.feign.client.config.default.read-timeout=5s\nspring.feign.client.config.supplier-offers.logger-level=basic\nspring.feign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\n# Shorter than Spring Boot\'s, aligned the same way: the level padded to 5,\n# the logger abbreviated and padded to 30. Coloured like Spring Boot\'s\n# (spring.output.ansi.enabled=never for plain text).\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p %-30.30logger{29} : %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\nspring.config.activate.on-profile=!prod\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
     ),
     r'banner.txt': _i1.EmbeddedResource.text(
       ' _  _ ___ ___  _  _   ___           _\n| \\| | __/ _ \\| \\| | | _ ) ___  ___| |__ ___\n| .` | _| (_) | .` | | _ \\/ _ \\/ _ \\ / /(_-<\n|_|\\_|___\\___/|_|\\_| |___/\\___/\\___/_\\_\\/__/\n',
@@ -121,6 +121,14 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       ),
     if (const bool.hasEnvironment('LOGGING_FILE_NAME'))
       'LOGGING_FILE_NAME': const String.fromEnvironment('LOGGING_FILE_NAME'),
+    if (const bool.hasEnvironment('LOGGING_FILE_ROLLINGPOLICY_MAXFILESIZE'))
+      'LOGGING_FILE_ROLLINGPOLICY_MAXFILESIZE': const String.fromEnvironment(
+        'LOGGING_FILE_ROLLINGPOLICY_MAXFILESIZE',
+      ),
+    if (const bool.hasEnvironment('LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY'))
+      'LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY': const String.fromEnvironment(
+        'LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY',
+      ),
     if (const bool.hasEnvironment('LOGGING_GROUP_SHOP'))
       'LOGGING_GROUP_SHOP': const String.fromEnvironment('LOGGING_GROUP_SHOP'),
     if (const bool.hasEnvironment('LOGGING_LEVEL_FEIGN'))
@@ -134,14 +142,6 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('LOGGING_LEVEL_SPRING_WEB_MVC'))
       'LOGGING_LEVEL_SPRING_WEB_MVC': const String.fromEnvironment(
         'LOGGING_LEVEL_SPRING_WEB_MVC',
-      ),
-    if (const bool.hasEnvironment('LOGGING_LOGBACK_ROLLINGPOLICY_MAXFILESIZE'))
-      'LOGGING_LOGBACK_ROLLINGPOLICY_MAXFILESIZE': const String.fromEnvironment(
-        'LOGGING_LOGBACK_ROLLINGPOLICY_MAXFILESIZE',
-      ),
-    if (const bool.hasEnvironment('LOGGING_LOGBACK_ROLLINGPOLICY_MAXHISTORY'))
-      'LOGGING_LOGBACK_ROLLINGPOLICY_MAXHISTORY': const String.fromEnvironment(
-        'LOGGING_LOGBACK_ROLLINGPOLICY_MAXHISTORY',
       ),
     if (const bool.hasEnvironment('LOGGING_PATTERN_CONSOLE'))
       'LOGGING_PATTERN_CONSOLE': const String.fromEnvironment(
@@ -243,13 +243,13 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       ),
     if (const bool.hasEnvironment('SERVER_PORT'))
       'SERVER_PORT': const String.fromEnvironment('SERVER_PORT'),
-    if (const bool.hasEnvironment('SERVER_SERVLET_SESSION_COOKIE_SECURE'))
-      'SERVER_SERVLET_SESSION_COOKIE_SECURE': const String.fromEnvironment(
-        'SERVER_SERVLET_SESSION_COOKIE_SECURE',
+    if (const bool.hasEnvironment('SERVER_SESSION_COOKIE_SECURE'))
+      'SERVER_SESSION_COOKIE_SECURE': const String.fromEnvironment(
+        'SERVER_SESSION_COOKIE_SECURE',
       ),
-    if (const bool.hasEnvironment('SERVER_SERVLET_SESSION_TIMEOUT'))
-      'SERVER_SERVLET_SESSION_TIMEOUT': const String.fromEnvironment(
-        'SERVER_SERVLET_SESSION_TIMEOUT',
+    if (const bool.hasEnvironment('SERVER_SESSION_TIMEOUT'))
+      'SERVER_SESSION_TIMEOUT': const String.fromEnvironment(
+        'SERVER_SESSION_TIMEOUT',
       ),
     if (const bool.hasEnvironment('SERVER_SHUTDOWN'))
       'SERVER_SHUTDOWN': const String.fromEnvironment('SERVER_SHUTDOWN'),
@@ -279,34 +279,6 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_CACHE_SIMPLE_TIMETOLIVE': const String.fromEnvironment(
         'SPRING_CACHE_SIMPLE_TIMETOLIVE',
       ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT',
-          ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
-          ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL',
-          ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL',
-          ),
     if (const bool.hasEnvironment('SPRING_CONFIG_ACTIVATE_ONPROFILE'))
       'SPRING_CONFIG_ACTIVATE_ONPROFILE': const String.fromEnvironment(
         'SPRING_CONFIG_ACTIVATE_ONPROFILE',
@@ -315,17 +287,45 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_CONFIG_IMPORT': const String.fromEnvironment(
         'SPRING_CONFIG_IMPORT',
       ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL',
+          ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
         'SPRING_FLUTTER_SCANOSENVIRONMENT',
       ),
-    if (const bool.hasEnvironment('SPRING_JACKSON_DEFAULTPROPERTYINCLUSION'))
-      'SPRING_JACKSON_DEFAULTPROPERTYINCLUSION': const String.fromEnvironment(
-        'SPRING_JACKSON_DEFAULTPROPERTYINCLUSION',
+    if (const bool.hasEnvironment('SPRING_JSON_DEFAULTPROPERTYINCLUSION'))
+      'SPRING_JSON_DEFAULTPROPERTYINCLUSION': const String.fromEnvironment(
+        'SPRING_JSON_DEFAULTPROPERTYINCLUSION',
       ),
-    if (const bool.hasEnvironment('SPRING_JACKSON_TIMEZONE'))
-      'SPRING_JACKSON_TIMEZONE': const String.fromEnvironment(
-        'SPRING_JACKSON_TIMEZONE',
+    if (const bool.hasEnvironment('SPRING_JSON_TIMEZONE'))
+      'SPRING_JSON_TIMEZONE': const String.fromEnvironment(
+        'SPRING_JSON_TIMEZONE',
       ),
     if (const bool.hasEnvironment('SPRING_LIFECYCLE_TIMEOUTPERSHUTDOWNPHASE'))
       'SPRING_LIFECYCLE_TIMEOUTPERSHUTDOWNPHASE': const String.fromEnvironment(
@@ -436,13 +436,13 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
           const String.fromEnvironment(
             'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_PRINCIPALCLAIMNAME',
           ),
-    if (const bool.hasEnvironment('SPRING_SERVLET_MULTIPART_MAXFILESIZE'))
-      'SPRING_SERVLET_MULTIPART_MAXFILESIZE': const String.fromEnvironment(
-        'SPRING_SERVLET_MULTIPART_MAXFILESIZE',
+    if (const bool.hasEnvironment('SPRING_WEB_MULTIPART_MAXFILESIZE'))
+      'SPRING_WEB_MULTIPART_MAXFILESIZE': const String.fromEnvironment(
+        'SPRING_WEB_MULTIPART_MAXFILESIZE',
       ),
-    if (const bool.hasEnvironment('SPRING_SERVLET_MULTIPART_MAXREQUESTSIZE'))
-      'SPRING_SERVLET_MULTIPART_MAXREQUESTSIZE': const String.fromEnvironment(
-        'SPRING_SERVLET_MULTIPART_MAXREQUESTSIZE',
+    if (const bool.hasEnvironment('SPRING_WEB_MULTIPART_MAXREQUESTSIZE'))
+      'SPRING_WEB_MULTIPART_MAXREQUESTSIZE': const String.fromEnvironment(
+        'SPRING_WEB_MULTIPART_MAXREQUESTSIZE',
       ),
     if (const bool.hasEnvironment('TRACE'))
       'TRACE': const String.fromEnvironment('TRACE'),
@@ -454,6 +454,14 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       ),
     if (const bool.hasEnvironment('logging.file.name'))
       'logging.file.name': const String.fromEnvironment('logging.file.name'),
+    if (const bool.hasEnvironment('logging.file.rolling-policy.max-file-size'))
+      'logging.file.rolling-policy.max-file-size': const String.fromEnvironment(
+        'logging.file.rolling-policy.max-file-size',
+      ),
+    if (const bool.hasEnvironment('logging.file.rolling-policy.max-history'))
+      'logging.file.rolling-policy.max-history': const String.fromEnvironment(
+        'logging.file.rolling-policy.max-history',
+      ),
     if (const bool.hasEnvironment('logging.group.shop'))
       'logging.group.shop': const String.fromEnvironment('logging.group.shop'),
     if (const bool.hasEnvironment('logging.level.feign'))
@@ -467,17 +475,6 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('logging.level.spring.web.mvc'))
       'logging.level.spring.web.mvc': const String.fromEnvironment(
         'logging.level.spring.web.mvc',
-      ),
-    if (const bool.hasEnvironment(
-      'logging.logback.rollingpolicy.max-file-size',
-    ))
-      'logging.logback.rollingpolicy.max-file-size':
-          const String.fromEnvironment(
-            'logging.logback.rollingpolicy.max-file-size',
-          ),
-    if (const bool.hasEnvironment('logging.logback.rollingpolicy.max-history'))
-      'logging.logback.rollingpolicy.max-history': const String.fromEnvironment(
-        'logging.logback.rollingpolicy.max-history',
       ),
     if (const bool.hasEnvironment('logging.pattern.console'))
       'logging.pattern.console': const String.fromEnvironment(
@@ -577,13 +574,13 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       ),
     if (const bool.hasEnvironment('server.port'))
       'server.port': const String.fromEnvironment('server.port'),
-    if (const bool.hasEnvironment('server.servlet.session.cookie.secure'))
-      'server.servlet.session.cookie.secure': const String.fromEnvironment(
-        'server.servlet.session.cookie.secure',
+    if (const bool.hasEnvironment('server.session.cookie.secure'))
+      'server.session.cookie.secure': const String.fromEnvironment(
+        'server.session.cookie.secure',
       ),
-    if (const bool.hasEnvironment('server.servlet.session.timeout'))
-      'server.servlet.session.timeout': const String.fromEnvironment(
-        'server.servlet.session.timeout',
+    if (const bool.hasEnvironment('server.session.timeout'))
+      'server.session.timeout': const String.fromEnvironment(
+        'server.session.timeout',
       ),
     if (const bool.hasEnvironment('server.shutdown'))
       'server.shutdown': const String.fromEnvironment('server.shutdown'),
@@ -613,34 +610,6 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.cache.simple.time-to-live': const String.fromEnvironment(
         'spring.cache.simple.time-to-live',
       ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.default.connect-timeout',
-    ))
-      'spring.cloud.openfeign.client.config.default.connect-timeout':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.default.connect-timeout',
-          ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.default.read-timeout',
-    ))
-      'spring.cloud.openfeign.client.config.default.read-timeout':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.default.read-timeout',
-          ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.supplier-deliveries.logger-level',
-    ))
-      'spring.cloud.openfeign.client.config.supplier-deliveries.logger-level':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.supplier-deliveries.logger-level',
-          ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.supplier-offers.logger-level',
-    ))
-      'spring.cloud.openfeign.client.config.supplier-offers.logger-level':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.supplier-offers.logger-level',
-          ),
     if (const bool.hasEnvironment('spring.config.activate.on-profile'))
       'spring.config.activate.on-profile': const String.fromEnvironment(
         'spring.config.activate.on-profile',
@@ -649,17 +618,45 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.config.import': const String.fromEnvironment(
         'spring.config.import',
       ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.default.connect-timeout',
+    ))
+      'spring.feign.client.config.default.connect-timeout':
+          const String.fromEnvironment(
+            'spring.feign.client.config.default.connect-timeout',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.default.read-timeout',
+    ))
+      'spring.feign.client.config.default.read-timeout':
+          const String.fromEnvironment(
+            'spring.feign.client.config.default.read-timeout',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.supplier-deliveries.logger-level',
+    ))
+      'spring.feign.client.config.supplier-deliveries.logger-level':
+          const String.fromEnvironment(
+            'spring.feign.client.config.supplier-deliveries.logger-level',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.supplier-offers.logger-level',
+    ))
+      'spring.feign.client.config.supplier-offers.logger-level':
+          const String.fromEnvironment(
+            'spring.feign.client.config.supplier-offers.logger-level',
+          ),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
         'spring.flutter.scan-os-environment',
       ),
-    if (const bool.hasEnvironment('spring.jackson.default-property-inclusion'))
-      'spring.jackson.default-property-inclusion': const String.fromEnvironment(
-        'spring.jackson.default-property-inclusion',
+    if (const bool.hasEnvironment('spring.json.default-property-inclusion'))
+      'spring.json.default-property-inclusion': const String.fromEnvironment(
+        'spring.json.default-property-inclusion',
       ),
-    if (const bool.hasEnvironment('spring.jackson.time-zone'))
-      'spring.jackson.time-zone': const String.fromEnvironment(
-        'spring.jackson.time-zone',
+    if (const bool.hasEnvironment('spring.json.time-zone'))
+      'spring.json.time-zone': const String.fromEnvironment(
+        'spring.json.time-zone',
       ),
     if (const bool.hasEnvironment(
       'spring.lifecycle.timeout-per-shutdown-phase',
@@ -773,18 +770,18 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
           const String.fromEnvironment(
             'spring.security.oauth2.resourceserver.jwt.principal-claim-name',
           ),
-    if (const bool.hasEnvironment('spring.servlet.multipart.max-file-size'))
-      'spring.servlet.multipart.max-file-size': const String.fromEnvironment(
-        'spring.servlet.multipart.max-file-size',
+    if (const bool.hasEnvironment('spring.web.multipart.max-file-size'))
+      'spring.web.multipart.max-file-size': const String.fromEnvironment(
+        'spring.web.multipart.max-file-size',
       ),
-    if (const bool.hasEnvironment('spring.servlet.multipart.max-request-size'))
-      'spring.servlet.multipart.max-request-size': const String.fromEnvironment(
-        'spring.servlet.multipart.max-request-size',
+    if (const bool.hasEnvironment('spring.web.multipart.max-request-size'))
+      'spring.web.multipart.max-request-size': const String.fromEnvironment(
+        'spring.web.multipart.max-request-size',
       ),
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '219fdc01',
+  fingerprint: '501c0ed1',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -9,34 +9,32 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i16;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i15;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i14;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i13;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i17;
+    as _i15;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i18;
+    as _i16;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i19;
+    as _i17;
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
-    as _i20;
+    as _i18;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
-    as _i10;
-import 'package:spring_boot_starter_security/src/web/arguments.dart' as _i14;
-import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i6;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i21;
-import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i8;
+    as _i5;
+import 'package:spring_boot_starter_security/src/web/arguments.dart' as _i12;
+import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i4;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i19;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i22;
+    as _i20;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i23;
-import 'package:spring_security_core/src/core/authentication.dart' as _i4;
-import 'package:spring_security_core/src/method/annotations.dart' as _i11;
-import 'package:spring_security_core/src/userdetails/user_details.dart' as _i5;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i21;
+import 'package:spring_security_core/src/core/authentication.dart' as _i10;
+import 'package:spring_security_core/src/method/annotations.dart' as _i7;
+import 'package:spring_security_core/src/userdetails/user_details.dart' as _i11;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
-    as _i9;
-import 'package:spring_web_dart/src/annotations.dart' as _i12;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i13;
-import 'package:spring_web_dart/src/server/server_http_request.dart' as _i7;
+    as _i6;
+import 'package:spring_web_dart/src/annotations.dart' as _i8;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i9;
 
 import 'example.dart' as _i1;
 
@@ -96,314 +94,6 @@ class _$BookServiceProxy extends _i1.BookService implements _i2.Advised {
   }
 }
 
-class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
-  _$BookControllerProxy(this._target, this._invoker);
-
-  final _i1.BookController _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  List<String> all() => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (args) => this._target.all(),
-  ) as List<String>);
-
-  @override
-  _i3.Future<void> remove(String id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    1,
-    [id],
-    (args) => this._target.remove((args[0] as String)),
-  );
-
-  @override
-  String me(_i4.Authentication authentication) => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    [authentication],
-    (args) => this._target.me((args[0] as _i4.Authentication)),
-  ) as String);
-
-  @override
-  _i1.BookService get books => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.books,
-  ) as _i1.BookService);
-}
-
-class _$AccountControllerProxy implements _i1.AccountController, _i2.Advised {
-  _$AccountControllerProxy(this._target, this._invoker);
-
-  final _i1.AccountController _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String account(_i5.UserDetails user) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [user],
-    (args) => this._target.account((args[0] as _i5.UserDetails)),
-  ) as String);
-}
-
-class _$SecurityConfig$ApiProxy
-    implements _i6.SecurityFilterChain, _i2.Advised {
-  _$SecurityConfig$ApiProxy(this._target, this._invoker);
-
-  final _i6.SecurityFilterChain _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool matches(_i7.ServerHttpRequest request) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [request],
-    (args) => this._target.matches((args[0] as _i7.ServerHttpRequest)),
-  ) as bool);
-
-  @override
-  List<_i8.WebFilter> get filters => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.filters,
-  ) as List<_i8.WebFilter>);
-}
-
-class _$SecurityConfig$PagesProxy
-    implements _i6.SecurityFilterChain, _i2.Advised {
-  _$SecurityConfig$PagesProxy(this._target, this._invoker);
-
-  final _i6.SecurityFilterChain _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool matches(_i7.ServerHttpRequest request) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [request],
-    (args) => this._target.matches((args[0] as _i7.ServerHttpRequest)),
-  ) as bool);
-
-  @override
-  List<_i8.WebFilter> get filters => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.filters,
-  ) as List<_i8.WebFilter>);
-}
-
-class _$SecurityConfig$UsersProxy
-    implements
-        _i9.UserDetailsManager,
-        _i9.UserDetailsService,
-        _i9.UserDetailsPasswordService,
-        _i2.Advised {
-  _$SecurityConfig$UsersProxy(this._target, this._invoker);
-
-  final _i9.InMemoryUserDetailsManager _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void createUser(_i5.UserDetails user) {
-    this._invoker.invoke(this, this._target, 0, [user], (args) {
-      this._target.createUser((args[0] as _i5.UserDetails));
-      return null;
-    });
-  }
-
-  @override
-  void updateUser(_i5.UserDetails user) {
-    this._invoker.invoke(this, this._target, 1, [user], (args) {
-      this._target.updateUser((args[0] as _i5.UserDetails));
-      return null;
-    });
-  }
-
-  @override
-  void deleteUser(String username) {
-    this._invoker.invoke(this, this._target, 2, [username], (args) {
-      this._target.deleteUser((args[0] as String));
-      return null;
-    });
-  }
-
-  @override
-  bool userExists(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    [username],
-    (args) => this._target.userExists((args[0] as String)),
-  ) as bool);
-
-  @override
-  _i5.UserDetails loadUserByUsername(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [username],
-    (args) => this._target.loadUserByUsername((args[0] as String)),
-  ) as _i5.UserDetails);
-
-  @override
-  _i5.UserDetails updatePassword(_i5.UserDetails user, String newPassword) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        5,
-        [user, newPassword],
-        (args) => this._target.updatePassword(
-          (args[0] as _i5.UserDetails),
-          (args[1] as String),
-        ),
-      ) as _i5.UserDetails);
-}
-
 /// `SecurityConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
 class _$SecurityConfigConfiguration extends _i1.SecurityConfig {
@@ -414,50 +104,50 @@ class _$SecurityConfigConfiguration extends _i1.SecurityConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i6.SecurityFilterChain api(_i10.HttpSecurity http) {
+  _i4.SecurityFilterChain api(_i5.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'api'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'api')
-          as _i6.SecurityFilterChain);
+          as _i4.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'api');
     }
   }
 
-  _i6.SecurityFilterChain _$api(_i2.DependencyResolver r) {
+  _i4.SecurityFilterChain _$api(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'api');
     if (_$args != null) {
-      return super.api((_$args[0] as _i10.HttpSecurity));
+      return super.api((_$args[0] as _i5.HttpSecurity));
     }
-    return super.api(r.dependency<_i10.HttpSecurity>(name: r'http'));
+    return super.api(r.dependency<_i5.HttpSecurity>(name: r'http'));
   }
 
   @override
-  _i6.SecurityFilterChain pages(_i10.HttpSecurity http) {
+  _i4.SecurityFilterChain pages(_i5.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'pages'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'pages')
-          as _i6.SecurityFilterChain);
+          as _i4.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'pages');
     }
   }
 
-  _i6.SecurityFilterChain _$pages(_i2.DependencyResolver r) {
+  _i4.SecurityFilterChain _$pages(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'pages');
     if (_$args != null) {
-      return super.pages((_$args[0] as _i10.HttpSecurity));
+      return super.pages((_$args[0] as _i5.HttpSecurity));
     }
-    return super.pages(r.dependency<_i10.HttpSecurity>(name: r'http'));
+    return super.pages(r.dependency<_i5.HttpSecurity>(name: r'http'));
   }
 
   @override
-  _i9.UserDetailsService users() =>
-      (this._$beanFactory.getBeanByName(r'users') as _i9.UserDetailsService);
+  _i6.UserDetailsService users() =>
+      (this._$beanFactory.getBeanByName(r'users') as _i6.UserDetailsService);
 
-  _i9.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
+  _i6.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
 }
 
 /// Beans found by `@ComponentScan` in `example/`.
@@ -482,7 +172,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         isFuture: true,
         isVoid: true,
         invoke: (bean, arguments) => Function.apply(bean.remove, arguments),
-        annotations: const [_i11.PreAuthorize("hasRole('ADMIN')")],
+        annotations: const [_i7.PreAuthorize("hasRole('ADMIN')")],
       ),
     ],
     annotations: const [_i2.Service()],
@@ -506,7 +196,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'id'],
-          annotations: [_i11.PreAuthorize("hasRole('ADMIN')")],
+          annotations: [_i7.PreAuthorize("hasRole('ADMIN')")],
           annotationTypes: [r'PreAuthorize'],
           targetTypes: [r'BookService'],
           targetAnnotations: [_i2.Service()],
@@ -529,7 +219,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         r'all',
         returnTypeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
         invoke: (bean, arguments) => Function.apply(bean.all, arguments),
-        annotations: const [_i12.GetMapping(r'/books')],
+        annotations: const [_i8.GetMapping(r'/books')],
       ),
       _i2.BeanMethod<_i1.BookController>(
         r'remove',
@@ -539,107 +229,35 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
             r'id',
             type: const _i2.ClassType<String>(),
             isRequired: true,
-            annotations: const [_i12.PathVariable()],
+            annotations: const [_i8.PathVariable()],
           ),
         ],
         isFuture: true,
         isVoid: true,
         invoke: (bean, arguments) => Function.apply(bean.remove, arguments),
         annotations: const [
-          _i12.DeleteMapping(r'/books/{id}'),
-          _i13.ResponseStatus(204),
+          _i8.DeleteMapping(r'/books/{id}'),
+          _i9.ResponseStatus(204),
         ],
       ),
       _i2.BeanMethod<_i1.BookController>(
         r'me',
-        parameterTypes: const [_i4.Authentication],
+        parameterTypes: const [_i10.Authentication],
         parameters: [
           _i2.BeanParameter(
             r'authentication',
-            type: const _i2.ClassType<_i4.Authentication>(),
+            type: const _i2.ClassType<_i10.Authentication>(),
             isRequired: true,
           ),
         ],
         returnTypeInfo: const _i2.ClassType<String>(),
         invoke: (bean, arguments) => Function.apply(bean.me, arguments),
-        annotations: const [_i12.GetMapping(r'/me')],
+        annotations: const [_i8.GetMapping(r'/me')],
       ),
     ],
-    annotations: const [_i13.RestController(), _i12.RequestMapping(r'/api')],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'all',
-          declaringType: r'BookController',
-          targetType: r'BookController',
-          declaringTypes: [r'BookController'],
-          returnType: r'List',
-          annotations: [_i12.GetMapping(r'/books')],
-          annotationTypes: [r'GetMapping'],
-          targetTypes: [r'BookController'],
-          targetAnnotations: [
-            _i13.RestController(),
-            _i12.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
-        ),
-        _i2.MethodSignature(
-          name: r'remove',
-          declaringType: r'BookController',
-          targetType: r'BookController',
-          declaringTypes: [r'BookController'],
-          returnType: r'Future',
-          parameterTypes: [r'String'],
-          parameterNames: [r'id'],
-          parameterAnnotations: [
-            [_i12.PathVariable()],
-          ],
-          annotations: [
-            _i12.DeleteMapping(r'/books/{id}'),
-            _i13.ResponseStatus(204),
-          ],
-          annotationTypes: [r'DeleteMapping', r'ResponseStatus'],
-          targetTypes: [r'BookController'],
-          targetAnnotations: [
-            _i13.RestController(),
-            _i12.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
-        ),
-        _i2.MethodSignature(
-          name: r'me',
-          declaringType: r'BookController',
-          targetType: r'BookController',
-          declaringTypes: [r'BookController'],
-          returnType: r'String',
-          parameterTypes: [r'Authentication'],
-          parameterNames: [r'authentication'],
-          annotations: [_i12.GetMapping(r'/me')],
-          annotationTypes: [r'GetMapping'],
-          targetTypes: [r'BookController'],
-          targetAnnotations: [
-            _i13.RestController(),
-            _i12.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
-        ),
-        _i2.MethodSignature(
-          name: r'books',
-          declaringType: r'BookController',
-          targetType: r'BookController',
-          declaringTypes: [r'BookController'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'BookService',
-          targetTypes: [r'BookController'],
-          targetAnnotations: [
-            _i13.RestController(),
-            _i12.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$BookControllerProxy((target as _i1.BookController), invoker),
+    annotations: const [_i9.RestController(), _i8.RequestMapping(r'/api')],
+    aopProxy: _i2.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches BookController, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
   _i2.BeanDefinition<_i1.AccountController>(
@@ -650,43 +268,23 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     annotatedMethods: [
       _i2.BeanMethod<_i1.AccountController>(
         r'account',
-        parameterTypes: const [_i5.UserDetails],
+        parameterTypes: const [_i11.UserDetails],
         parameters: [
           _i2.BeanParameter(
             r'user',
-            type: const _i2.ClassType<_i5.UserDetails>(),
+            type: const _i2.ClassType<_i11.UserDetails>(),
             isRequired: true,
-            annotations: const [_i14.AuthenticationPrincipal()],
+            annotations: const [_i12.AuthenticationPrincipal()],
           ),
         ],
         returnTypeInfo: const _i2.ClassType<String>(),
         invoke: (bean, arguments) => Function.apply(bean.account, arguments),
-        annotations: const [_i12.GetMapping(r'/account')],
+        annotations: const [_i8.GetMapping(r'/account')],
       ),
     ],
-    annotations: const [_i13.RestController()],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'account',
-          declaringType: r'AccountController',
-          targetType: r'AccountController',
-          declaringTypes: [r'AccountController'],
-          returnType: r'String',
-          parameterTypes: [r'UserDetails'],
-          parameterNames: [r'user'],
-          parameterAnnotations: [
-            [_i14.AuthenticationPrincipal()],
-          ],
-          annotations: [_i12.GetMapping(r'/account')],
-          annotationTypes: [r'GetMapping'],
-          targetTypes: [r'AccountController'],
-          targetAnnotations: [_i13.RestController()],
-          targetAnnotationTypes: [r'RestController'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$AccountControllerProxy((target as _i1.AccountController), invoker),
+    annotations: const [_i9.RestController()],
+    aopProxy: _i2.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches AccountController, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
   _i2.BeanDefinition<_i1.SecurityConfig>(
@@ -696,100 +294,52 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     create: (r) => _$SecurityConfigConfiguration(r),
     annotations: const [_i2.Configuration()],
   ),
-  _i2.BeanDefinition<_i6.SecurityFilterChain>(
+  _i2.BeanDefinition<_i4.SecurityFilterChain>(
     name: r'api',
     source: r'asset:spring_boot_starter_security/example/example.dart#SecurityConfig.api',
-    types: const [_i6.SecurityFilterChain],
+    types: const [_i4.SecurityFilterChain],
     factoryBeanName: r'securityConfig',
     factoryMethodName: r'api',
     order: 1,
     dependencies: const [
       _i2.Dependency(_i1.SecurityConfig, qualifier: r'securityConfig'),
-      _i2.Dependency(_i10.HttpSecurity, name: r'http'),
+      _i2.Dependency(_i5.HttpSecurity, name: r'http'),
     ],
     create: (r) => (r.dependency<_i1.SecurityConfig>(
       qualifier: r'securityConfig',
     ) as _$SecurityConfigConfiguration)._$api(r),
     annotations: const [_i2.Bean(), _i2.Order(1)],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'matches',
-          declaringType: r'SecurityFilterChain',
-          targetType: r'SecurityFilterChain',
-          declaringTypes: [r'SecurityFilterChain'],
-          returnType: r'bool',
-          parameterTypes: [r'ServerHttpRequest'],
-          parameterNames: [r'request'],
-          targetTypes: [r'SecurityFilterChain'],
-        ),
-        _i2.MethodSignature(
-          name: r'filters',
-          declaringType: r'SecurityFilterChain',
-          targetType: r'SecurityFilterChain',
-          declaringTypes: [r'SecurityFilterChain'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'List',
-          targetTypes: [r'SecurityFilterChain'],
-        ),
-      ],
-      create: (target, invoker) => _$SecurityConfig$ApiProxy(
-        (target as _i6.SecurityFilterChain),
-        invoker,
-      ),
+    aopProxy: _i2.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches SecurityFilterChain, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
-  _i2.BeanDefinition<_i6.SecurityFilterChain>(
+  _i2.BeanDefinition<_i4.SecurityFilterChain>(
     name: r'pages',
     source: r'asset:spring_boot_starter_security/example/example.dart#SecurityConfig.pages',
-    types: const [_i6.SecurityFilterChain],
+    types: const [_i4.SecurityFilterChain],
     factoryBeanName: r'securityConfig',
     factoryMethodName: r'pages',
     order: 2,
     dependencies: const [
       _i2.Dependency(_i1.SecurityConfig, qualifier: r'securityConfig'),
-      _i2.Dependency(_i10.HttpSecurity, name: r'http'),
+      _i2.Dependency(_i5.HttpSecurity, name: r'http'),
     ],
     create: (r) => (r.dependency<_i1.SecurityConfig>(
       qualifier: r'securityConfig',
     ) as _$SecurityConfigConfiguration)._$pages(r),
     annotations: const [_i2.Bean(), _i2.Order(2)],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'matches',
-          declaringType: r'SecurityFilterChain',
-          targetType: r'SecurityFilterChain',
-          declaringTypes: [r'SecurityFilterChain'],
-          returnType: r'bool',
-          parameterTypes: [r'ServerHttpRequest'],
-          parameterNames: [r'request'],
-          targetTypes: [r'SecurityFilterChain'],
-        ),
-        _i2.MethodSignature(
-          name: r'filters',
-          declaringType: r'SecurityFilterChain',
-          targetType: r'SecurityFilterChain',
-          declaringTypes: [r'SecurityFilterChain'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'List',
-          targetTypes: [r'SecurityFilterChain'],
-        ),
-      ],
-      create: (target, invoker) => _$SecurityConfig$PagesProxy(
-        (target as _i6.SecurityFilterChain),
-        invoker,
-      ),
+    aopProxy: _i2.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches SecurityFilterChain, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
-  _i2.BeanDefinition<_i9.InMemoryUserDetailsManager>(
+  _i2.BeanDefinition<_i6.InMemoryUserDetailsManager>(
     name: r'users',
     source: r'asset:spring_boot_starter_security/example/example.dart#SecurityConfig.users',
     types: const [
-      _i9.InMemoryUserDetailsManager,
-      _i9.UserDetailsManager,
-      _i9.UserDetailsService,
-      _i9.UserDetailsPasswordService,
+      _i6.InMemoryUserDetailsManager,
+      _i6.UserDetailsManager,
+      _i6.UserDetailsService,
+      _i6.UserDetailsPasswordService,
     ],
     factoryBeanName: r'securityConfig',
     factoryMethodName: r'users',
@@ -800,131 +350,36 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         ((r.dependency<_i1.SecurityConfig>(
               qualifier: r'securityConfig',
             ) as _$SecurityConfigConfiguration)._$users(r)
-            as _i9.InMemoryUserDetailsManager),
+            as _i6.InMemoryUserDetailsManager),
     annotations: const [_i2.Bean()],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'createUser',
-          declaringType: r'UserDetailsManager',
-          targetType: r'InMemoryUserDetailsManager',
-          declaringTypes: [r'UserDetailsManager'],
-          returnType: r'void',
-          parameterTypes: [r'UserDetails'],
-          parameterNames: [r'user'],
-          targetTypes: [
-            r'InMemoryUserDetailsManager',
-            r'UserDetailsManager',
-            r'UserDetailsService',
-            r'UserDetailsPasswordService',
-          ],
-        ),
-        _i2.MethodSignature(
-          name: r'updateUser',
-          declaringType: r'UserDetailsManager',
-          targetType: r'InMemoryUserDetailsManager',
-          declaringTypes: [r'UserDetailsManager'],
-          returnType: r'void',
-          parameterTypes: [r'UserDetails'],
-          parameterNames: [r'user'],
-          targetTypes: [
-            r'InMemoryUserDetailsManager',
-            r'UserDetailsManager',
-            r'UserDetailsService',
-            r'UserDetailsPasswordService',
-          ],
-        ),
-        _i2.MethodSignature(
-          name: r'deleteUser',
-          declaringType: r'UserDetailsManager',
-          targetType: r'InMemoryUserDetailsManager',
-          declaringTypes: [r'UserDetailsManager'],
-          returnType: r'void',
-          parameterTypes: [r'String'],
-          parameterNames: [r'username'],
-          targetTypes: [
-            r'InMemoryUserDetailsManager',
-            r'UserDetailsManager',
-            r'UserDetailsService',
-            r'UserDetailsPasswordService',
-          ],
-        ),
-        _i2.MethodSignature(
-          name: r'userExists',
-          declaringType: r'UserDetailsManager',
-          targetType: r'InMemoryUserDetailsManager',
-          declaringTypes: [r'UserDetailsManager'],
-          returnType: r'bool',
-          parameterTypes: [r'String'],
-          parameterNames: [r'username'],
-          targetTypes: [
-            r'InMemoryUserDetailsManager',
-            r'UserDetailsManager',
-            r'UserDetailsService',
-            r'UserDetailsPasswordService',
-          ],
-        ),
-        _i2.MethodSignature(
-          name: r'loadUserByUsername',
-          declaringType: r'UserDetailsService',
-          targetType: r'InMemoryUserDetailsManager',
-          declaringTypes: [r'UserDetailsService'],
-          returnType: r'UserDetails',
-          parameterTypes: [r'String'],
-          parameterNames: [r'username'],
-          targetTypes: [
-            r'InMemoryUserDetailsManager',
-            r'UserDetailsManager',
-            r'UserDetailsService',
-            r'UserDetailsPasswordService',
-          ],
-        ),
-        _i2.MethodSignature(
-          name: r'updatePassword',
-          declaringType: r'UserDetailsPasswordService',
-          targetType: r'InMemoryUserDetailsManager',
-          declaringTypes: [r'UserDetailsPasswordService'],
-          returnType: r'UserDetails',
-          parameterTypes: [r'UserDetails', r'String'],
-          parameterNames: [r'user', r'newPassword'],
-          targetTypes: [
-            r'InMemoryUserDetailsManager',
-            r'UserDetailsManager',
-            r'UserDetailsService',
-            r'UserDetailsPasswordService',
-          ],
-        ),
-      ],
-      create: (target, invoker) => _$SecurityConfig$UsersProxy(
-        (target as _i9.InMemoryUserDetailsManager),
-        invoker,
-      ),
+    aopProxy: _i2.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches InMemoryUserDetailsManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
 ]);
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i15.SpringApplication get springApplication => _i15.SpringApplication(
+_i13.SpringApplication get springApplication => _i13.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i16.springBootAutoConfiguration,
-    _i17.springBootStarterFeignAutoConfiguration,
-    _i18.springBootStarterLoggingAutoConfiguration,
-    _i19.springBootStarterOauth2ClientAutoConfiguration,
-    _i20.springBootStarterSecurityAutoConfiguration,
-    _i20.springBootStarterSecurityOAuth2ClientAutoConfiguration,
-    _i21.springBootStarterWebAutoConfiguration,
-    _i22.springBootStarterWebsocketAutoConfiguration,
-    _i23.springSecurityCoreAutoConfiguration,
+    _i14.springBootAutoConfiguration,
+    _i15.springBootStarterFeignAutoConfiguration,
+    _i16.springBootStarterLoggingAutoConfiguration,
+    _i17.springBootStarterOauth2ClientAutoConfiguration,
+    _i18.springBootStarterSecurityAutoConfiguration,
+    _i18.springBootStarterSecurityOAuth2ClientAutoConfiguration,
+    _i19.springBootStarterWebAutoConfiguration,
+    _i20.springBootStarterWebsocketAutoConfiguration,
+    _i21.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i20.springBootStarterSecurityAutoConfiguration:
-        const _i15.AutoConfigurationModule(
+    _i18.springBootStarterSecurityAutoConfiguration:
+        const _i13.AutoConfigurationModule(
           after: ['springBootStarterOauth2ClientAutoConfiguration'],
         ),
-    _i20.springBootStarterSecurityOAuth2ClientAutoConfiguration:
-        const _i15.AutoConfigurationModule(
+    _i18.springBootStarterSecurityOAuth2ClientAutoConfiguration:
+        const _i13.AutoConfigurationModule(
           before: ['springBootStarterOauth2ClientAutoConfiguration'],
         ),
   },
@@ -974,31 +429,31 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '7cee7167',
+  fingerprint: '41e677a6',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i15.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i13.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i15.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i13.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i15.ConfigurableApplicationContext reloadApplication(
-  _i15.ConfigurableApplicationContext running, {
+_i13.ConfigurableApplicationContext reloadApplication(
+  _i13.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i15.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i15.ConfigurableApplicationContext running, {
+Future<_i13.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i13.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

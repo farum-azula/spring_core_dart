@@ -33,7 +33,11 @@
 /// `@Introspected` metadata or accessors you register, `T(...)` and `new`
 /// only know registered types, `matches` uses Dart's `RegExp`, and String
 /// methods are Dart's (plus the common Java names). There is no compiler
-/// mode.
+/// mode of the interpreter; instead the build compiles the expressions it
+/// can to plain Dart: the `:#{...}` of the data starter's `@Query` (a typo
+/// in `#book.titel` is a build error), written with `SpelOperations`, the
+/// operators the interpreter runs as well. What it cannot compile stays
+/// interpreted.
 ///
 /// Spring (Java):
 /// ```java
@@ -50,6 +54,7 @@ export 'package:spring_core_dart/src/expression/evaluation_context.dart';
 export 'package:spring_core_dart/src/expression/expression.dart';
 export 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 export 'package:spring_core_dart/src/expression/introspection_access.dart';
+export 'package:spring_core_dart/src/expression/spel_operations.dart';
 export 'package:spring_core_dart/src/expression/spel_parser.dart';
 export 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 export 'package:spring_core_dart/src/expression/spel_patterns.dart';

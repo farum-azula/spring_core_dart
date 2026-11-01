@@ -333,13 +333,13 @@ void main() {
       introspections: [_orderIntrospection],
     );
 
-    test('an ObjectMapper from spring.jackson.* with the app classes', () {
+    test('an ObjectMapper from spring.json.* with the app classes', () {
       final context = run(
         [app],
         [
-          '--spring.jackson.property-naming-strategy=SNAKE_CASE',
-          '--spring.jackson.default-property-inclusion=non_null',
-          '--spring.jackson.deserialization.fail-on-unknown-properties=true',
+          '--spring.json.property-naming-strategy=SNAKE_CASE',
+          '--spring.json.default-property-inclusion=non_null',
+          '--spring.json.deserialization.fail-on-unknown-properties=true',
         ],
       );
       final mapper = context.getBean<ObjectMapper>();
@@ -362,10 +362,10 @@ void main() {
       context.close();
     });
 
-    test('spring.jackson.deserialization.fail-on-null-for-primitives', () {
+    test('spring.json.deserialization.fail-on-null-for-primitives', () {
       final context = run(
         [app],
-        ['--spring.jackson.deserialization.fail-on-null-for-primitives=false'],
+        ['--spring.json.deserialization.fail-on-null-for-primitives=false'],
       );
       final mapper = context.getBean<ObjectMapper>();
       expect(mapper.readValue<int>('null'), 0);
@@ -409,11 +409,11 @@ void main() {
       context.close();
     });
 
-    test('spring.jackson.datatype.datetime.write-dates-as-timestamps', () {
+    test('spring.json.datatype.datetime.write-dates-as-timestamps', () {
       final instant = DateTime.utc(2026, 1, 1, 10);
       final context = run(
         [app],
-        ['--spring.jackson.datatype.datetime.write-dates-as-timestamps=true'],
+        ['--spring.json.datatype.datetime.write-dates-as-timestamps=true'],
       );
       // Jackson 3: seconds with the fraction.
       expect(
@@ -424,14 +424,12 @@ void main() {
       final millis = run(
         [app],
         [
-          '--spring.jackson.datatype.datetime.write-dates-as-timestamps=true',
+          '--spring.json.datatype.datetime.write-dates-as-timestamps=true',
           // A string that cannot be split without changing it.
           // ignore: lines_longer_than_80_chars
-          '--spring.jackson.datatype.datetime.write-date-timestamps-as-nanoseconds=false',
-          // A string that cannot be split without changing it.
-          // ignore: lines_longer_than_80_chars
-          '--spring.jackson.datatype.datetime.write-durations-as-timestamps=true',
-          '--spring.jackson.default-property-inclusion=non_default',
+          '--spring.json.datatype.datetime.write-date-timestamps-as-nanoseconds=false',
+          '--spring.json.datatype.datetime.write-durations-as-timestamps=true',
+          '--spring.json.default-property-inclusion=non_default',
         ],
       );
       final mapper = millis.getBean<ObjectMapper>();
@@ -443,8 +441,8 @@ void main() {
       final both = run(
         [app],
         [
-          '--spring.jackson.datatype.datetime.write-dates-as-timestamps=false',
-          '--spring.jackson.serialization.write-dates-as-timestamps=true',
+          '--spring.json.datatype.datetime.write-dates-as-timestamps=false',
+          '--spring.json.serialization.write-dates-as-timestamps=true',
         ],
       );
       expect(
@@ -454,7 +452,7 @@ void main() {
       both.close();
     });
 
-    test('unsupported spring.jackson.* keys are logged, not applied', () {
+    test('unsupported spring.json.* keys are logged, not applied', () {
       final warnings = <String>[];
       final handler = SpringLog.handler;
       SpringLog.handler = (record) {
@@ -466,24 +464,24 @@ void main() {
       final context = run(
         [app],
         [
-          '--spring.jackson.date-format=yyyy',
-          '--spring.jackson.serialization.fail-on-empty-beans=false',
-          '--spring.jackson.property-naming-strategy=SNAKE_CASE',
-          '--spring.jackson.time-zone=UTC',
+          '--spring.json.date-format=yyyy',
+          '--spring.json.serialization.fail-on-empty-beans=false',
+          '--spring.json.property-naming-strategy=SNAKE_CASE',
+          '--spring.json.time-zone=UTC',
         ],
       );
       expect(warnings, hasLength(2));
-      expect(warnings[0], contains("'spring.jackson.date-format'"));
+      expect(warnings[0], contains("'spring.json.date-format'"));
       expect(
         warnings[1],
-        contains("'spring.jackson.serialization.fail-on-empty-beans'"),
+        contains("'spring.json.serialization.fail-on-empty-beans'"),
       );
       context.close();
     });
 
     test('a named time zone fails with a clear message', () {
       expect(
-        () => run([app], ['--spring.jackson.time-zone=Europe/Berlin']),
+        () => run([app], ['--spring.json.time-zone=Europe/Berlin']),
         throwsA(
           predicate(
             (e) =>
@@ -494,8 +492,8 @@ void main() {
       );
     });
 
-    test('spring.jackson.time-zone', () {
-      final context = run([app], ['--spring.jackson.time-zone=+02:00']);
+    test('spring.json.time-zone', () {
+      final context = run([app], ['--spring.json.time-zone=+02:00']);
       final mapper = context.getBean<ObjectMapper>();
       expect(mapper.timeZone, '+02:00');
       expect(
@@ -505,10 +503,10 @@ void main() {
       context.close();
     });
 
-    test('spring.jackson.mapper.sort-properties-alphabetically=false', () {
+    test('spring.json.mapper.sort-properties-alphabetically=false', () {
       final context = run(
         [app],
-        ['--spring.jackson.mapper.sort-properties-alphabetically=false'],
+        ['--spring.json.mapper.sort-properties-alphabetically=false'],
       );
       final mapper = context.getBean<ObjectMapper>();
       expect(mapper.sortPropertiesAlphabetically, isFalse);

@@ -94,10 +94,10 @@ logging.file.name=logs/shop.log          # or logging.file.path=logs: logs/sprin
 logging.pattern.file=%d %5p [%logger] %m%X%n%ex   # default: Boot's
 logging.threshold.file=info
 logging.charset.file=UTF-8               # also ISO-8859-1, US-ASCII
-logging.logback.rollingpolicy.max-file-size=10MB  # then roll over into shop.log.1, .2, ...
-logging.logback.rollingpolicy.max-history=7       # rolled-over files kept; 0: all
-logging.logback.rollingpolicy.total-size-cap=0B   # their total size; 0B: no limit
-logging.logback.rollingpolicy.clean-history-on-start=false
+logging.file.rolling-policy.max-file-size=10MB  # then roll over into shop.log.1, .2, ...
+logging.file.rolling-policy.max-history=7       # rolled-over files kept; 0: all
+logging.file.rolling-policy.total-size-cap=0B   # their total size; 0B: no limit
+logging.file.rolling-policy.clean-history-on-start=false
 
 logging.enabled=false                    # turn the starter off
 ```
@@ -337,6 +337,9 @@ per-logger levels (`logging.level.*`, `logging.group.*`) are applied by
 
 ## Differences from Spring
 
+- The rolling policy keys are `logging.file.rolling-policy.*`, not
+  `logging.logback.rollingpolicy.*` (there is no Logback); the old names
+  stop the start and name the new ones.
 - One line per record: patterns are Logback's, but the console (`print`)
   and the file add the line break, so a pattern's final `%n` is dropped
   (`LogPattern.formatLine`). Spring Boot's default patterns are used as
@@ -365,7 +368,7 @@ per-logger levels (`logging.level.*`, `logging.group.*`) are applied by
   `logger=`, `%X{key}` as `key=`). `%property` reads the pattern
   variables, then the environment.
 - Rolling is by size only, into numbered files (`shop.log.1`, `.2`, ...).
-  `logging.logback.rollingpolicy.file-name-pattern` (dates, `%i`, `.gz`)
+  `logging.file.rolling-policy.file-name-pattern` (dates, `%i`, `.gz`)
   is ignored with a warning; `max-history` counts files, not days;
   archives are not compressed.
 - `logging.charset.file` takes the encodings Dart knows (UTF-8,

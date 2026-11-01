@@ -516,6 +516,7 @@ or a library that plugs into the server.
 | `HttpHandler`, `FunctionHttpHandler` | `HttpHandler` | Answers one request. The web starter's dispatcher is one. |
 | `HandlerMapping` | `HandlerMapping` | Finds the handler for a request (`getHandler`, or `null`). The web starter asks every `HandlerMapping` bean, in `@Order`. |
 | `RequestContextHolder` | `RequestContextHolder` | `currentRequest`: the request being handled, from anywhere in its handling. Each request runs in its own `Zone`. |
+| `RequestDeadline` | none (an extension) | A time limit for the total work of a request, found through the `Zone`: `RequestDeadline.run(budget, body)` / `runUntil(instant, body)` (a nested one ends at the earlier of the two, never later), `RequestDeadline.current` (`null` outside any), `remaining`, `isExpired`, `check()` (throws `RequestDeadlineExceededException`). The web starter runs requests under one (`server.request-timeout`) and the Feign starter's calls stop at it. It works in the browser too. |
 | `PathPattern` | `PathPattern` | Path patterns such as `/books/{isbn}`, `{isbn:\d+}`, `{*rest}`, `*`, `?`, `**`: `match(path)?.variables`, `matches`, `combine`; `compareTo` sorts the most specific first. |
 
 ```dart
@@ -662,6 +663,11 @@ sockets.failNextConnect();                      // the next connect fails
 - **Timeouts:** an `HttpRequest` has a `readTimeout` (the longest wait
   for data, Spring's read timeout) and a `timeout` (a deadline for the
   whole exchange, which Spring's request factories do not have).
+- **`RequestDeadline`** has no Spring counterpart: Spring's timeouts are
+  per call (read timeout, transaction timeout), and nothing limits the
+  total time of a request and the calls it makes. Here a deadline is
+  carried in the `Zone` like a transaction, and the web and Feign
+  starters honour it.
 - **`WebSocketSession`** hands out the incoming messages as a `Stream`,
   where Spring calls a `WebSocketHandler`. `sendMessage` takes a
   `String` (text) or a `List<int>` (binary) instead of a `TextMessage` or

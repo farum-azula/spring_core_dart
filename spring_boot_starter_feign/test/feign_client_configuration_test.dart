@@ -1,6 +1,6 @@
 // The property strings are lists of independent entries, each one a single
 // string; a long key cannot be split in two (adjacent strings in a list).
-// ignore_for_file: no_adjacent_strings_in_list, lines_longer_than_80_chars
+// ignore_for_file: no_adjacent_strings_in_list
 
 import 'dart:convert';
 
@@ -112,11 +112,11 @@ void main() {
           .withBean<RequestInterceptor>(AuditInterceptor.new, name: 'audit')
           .withBean<Retryer>(FastRetryer.new, name: 'fast')
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.plain.retryer='
+            'spring.feign.client.config.plain.retryer='
                 'com.example.FastRetryer',
-            'spring.cloud.openfeign.client.config.plain.request-interceptors[0]='
+            'spring.feign.client.config.plain.request-interceptors[0]='
                 'audit',
-            'spring.cloud.openfeign.client.config.inventory.error-decoder='
+            'spring.feign.client.config.inventory.error-decoder='
                 'inventoryErrors',
           ])
           .runAsync((context) async {
@@ -132,14 +132,14 @@ void main() {
     test('an unknown bean stops the application', () {
       runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.plain.retryer=nope',
+            'spring.feign.client.config.plain.retryer=nope',
           ])
           .run((context) {
             expect(context, hasFailed());
             expect(
               '${context.startupFailure}',
               contains(
-                'spring.cloud.openfeign.client.config.plain.retryer=nope',
+                'spring.feign.client.config.plain.retryer=nope',
               ),
             );
           });
@@ -163,7 +163,7 @@ void main() {
           .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
           .withBean<HttpTransport>(() => server)
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.fromProperty.url='
+            'spring.feign.client.config.fromProperty.url='
                 'https://api.test',
           ])
           .runAsync((context) async {
@@ -176,7 +176,7 @@ void main() {
       server.when(HttpMethod.get, '/items').respond(200, body: 'ok');
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.plain.'
+            'spring.feign.client.config.plain.'
                 'default-query-parameters.lang=en,de',
           ])
           .runAsync((context) async {
@@ -194,13 +194,13 @@ void main() {
     server.when(HttpMethod.get, '/ping').respond(200, body: 'ok');
     await runner
         .withPropertyValues([
-          'spring.cloud.openfeign.client.config.plain.'
+          'spring.feign.client.config.plain.'
               'default-request-headers.X-Tags=a,b',
-          'spring.cloud.openfeign.client.config.plain.'
+          'spring.feign.client.config.plain.'
               'default-request-headers.X-List[0]=one',
-          'spring.cloud.openfeign.client.config.plain.'
+          'spring.feign.client.config.plain.'
               'default-request-headers.X-List[1]=two',
-          'spring.cloud.openfeign.client.config.default.'
+          'spring.feign.client.config.default.'
               'default-query-parameters.q[0]=x',
         ])
         .runAsync((context) async {
@@ -259,13 +259,13 @@ void main() {
             ..propertySources.addFirst(MapPropertySource('p', properties)),
           'plain',
         );
-    const prefix = 'spring.cloud.openfeign.client.config.';
+    const prefix = 'spring.feign.client.config.';
 
     test('on / yes / 1 and off / no / 0 in any case', () {
       final on = config({
         '${prefix}plain.dismiss404': 'ON',
         '${prefix}default.follow-redirects': 'no',
-        'spring.cloud.openfeign.client.decode-slash': '0',
+        'spring.feign.client.decode-slash': '0',
         '${prefix}plain.event-stream.reconnect': 'off',
       });
       expect(on.dismiss404, isTrue);
@@ -275,7 +275,7 @@ void main() {
       final yes = config({
         '${prefix}default.dismiss404': 'yes',
         '${prefix}plain.follow-redirects': '1',
-        'spring.cloud.openfeign.client.decode-slash': 'True',
+        'spring.feign.client.decode-slash': 'True',
       });
       expect(yes.dismiss404, isTrue);
       expect(yes.followRedirects, isTrue);
@@ -291,7 +291,7 @@ void main() {
       for (final (key, value) in [
         ('${prefix}plain.dismiss404', 'sure'),
         ('${prefix}default.follow-redirects', 'nope'),
-        ('spring.cloud.openfeign.client.decode-slash', 'maybe'),
+        ('spring.feign.client.decode-slash', 'maybe'),
         ('${prefix}plain.event-stream.reconnect', '2'),
       ]) {
         expect(

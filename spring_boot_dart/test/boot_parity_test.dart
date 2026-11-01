@@ -692,7 +692,7 @@ void main() {
           ),
         ),
       ],
-      args: ['--spring.jackson.serialization.indent-output=true'],
+      args: ['--spring.json.serialization.indent-output=true'],
       autoConfigurations: [springBootAutoConfiguration],
     );
     expect(context.getBean<ObjectMapper>().indentOutput, isFalse);

@@ -549,12 +549,15 @@ class BeanWrapper {
   /// or a map.
   Object _growProperty(Object target, String name, String path) {
     final property = _property(target, name);
-    final created = property == null
-        ? null
-        : (property.typeInfo == null
-              ? _instantiate(property.type)
-              : _newValue(property.typeInfo!));
-    if (property == null || created == null || !property.isWritable) {
+    // A property that cannot be set stays null, whatever the value's class
+    // is described with.
+    if (property == null || !property.isWritable) {
+      throw NullValueInNestedPathException(wrappedInstance.runtimeType, name);
+    }
+    final created = property.typeInfo == null
+        ? _instantiate(property.type)
+        : _newValue(property.typeInfo!);
+    if (created == null) {
       throw NullValueInNestedPathException(wrappedInstance.runtimeType, name);
     }
     property.setValue(target, created);
@@ -564,6 +567,12 @@ class BeanWrapper {
   /// A new instance of the introspected [type], or `null`.
   Object? _instantiate(Type type) {
     final introspection = introspector.forType(type);
+    if (introspection != null && !introspection.isInstantiable) {
+      introspection.requirePart(
+        IntrospectionPart.write,
+        'an instance is created for a nested property',
+      );
+    }
     return introspection != null && introspection.isInstantiable
         ? introspection.instantiate()
         : null;
@@ -621,8 +630,30 @@ class BeanWrapper {
         "no property '$name'",
       );
     }
+    if (!property.isReadable) {
+      throw NotReadablePropertyException(
+        target.runtimeType,
+        path,
+        _withoutPart(
+          introspection,
+          IntrospectionPart.read,
+          "the value of property '$name' is read",
+        ),
+      );
+    }
     return (property.getValue(target), property.typeInfo);
   }
+
+  // Why a property cannot be used: the description of the class lacks the
+  // part (the message of its `IntrospectionPartError`), or it is a plain
+  // missing accessor of a hand-written description.
+  static String _withoutPart(
+    BeanIntrospection<Object> introspection,
+    IntrospectionPart part,
+    String use,
+  ) => introspection.describesPart(part)
+      ? 'no ${part == IntrospectionPart.read ? 'getter' : 'setter'}'
+      : IntrospectionPartError(introspection.beanType, part, use).message;
 
   void _writeProperty(Object target, String name, Object? value, String path) {
     if (target is Map) {
@@ -639,7 +670,13 @@ class BeanWrapper {
             ? 'not @Introspected'
             : property == null
             ? "no property '$name'"
-            : 'read-only',
+            : introspection.describesPart(IntrospectionPart.write)
+            ? 'read-only'
+            : _withoutPart(
+                introspection,
+                IntrospectionPart.write,
+                "property '$name' is set",
+              ),
       );
     }
     final converted = _convert(value, property.type, property.nullable, path);
@@ -961,6 +998,12 @@ final class _NewValue implements TypeInfoVisitor<Object?> {
       return '';
     }
     final introspection = wrapper.introspector.forTypeArgument<T>();
+    if (introspection != null && !introspection.isInstantiable) {
+      introspection.requirePart(
+        IntrospectionPart.write,
+        'an instance is created for a nested property',
+      );
+    }
     return introspection != null && introspection.isInstantiable
         ? introspection.instantiate()
         : null;

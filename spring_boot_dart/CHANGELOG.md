@@ -1,11 +1,17 @@
 ## Unreleased
 
+### Breaking
+
+- Properties renamed, as this project's own names (Java's servlet, Jackson, Spring Cloud, Logback and Flyway mean nothing in Dart): `spring.jackson.*` is `spring.json.*` (the `ObjectMapper` bean's settings). The table is in `docs/configuration.md` ("Renamed properties").
+- An old name stops the start: `RenamedPropertiesEnvironmentPostProcessor` (always run, after the config files are read) fails with `RenamedPropertiesException` when any property source holds a key under `spring.cloud.openfeign`, `spring.jackson`, `spring.servlet.multipart`, `server.servlet`, `logging.logback.rollingpolicy` or `spring.flyway` (in a file, an argument, a `--dart-define` or an environment variable such as `SPRING_JACKSON_TIMEZONE`), and the `APPLICATION FAILED TO START` report lists each key with its new name (`spring.jackson.time-zone is now spring.json.time-zone`). The table is `RenamedPropertiesEnvironmentPostProcessor.renamed`; Spring Boot's `spring-boot-properties-migrator` only warns.
+- Without `spring_boot_starter_logging` the default log level is `info`, as Spring's (it was `warning`; see `spring_core_dart`): set `logging.level.root=warn` for the old output.
+
 ### Changes
 
+- `@ConfigurationProperties` binding works on a description that has no methods (the generator describes these classes with getters and setters only) and reads a property's current value only when it has a getter; a class described without its constructor and setters fails with an `IntrospectionPartError`.
 - The predefined log groups `web` (`spring.web`, `spring.websocket`) and `sql` (`spring.jdbc.core.JdbcTemplate`, `spring.jdbc.core.StatementCreatorUtils`) work in `logging.level.*` as in Boot (`logging.level.web=debug`); a `logging.group.web` of the application replaces the list. They are `SpringApplication.predefinedLoggerGroups`.
 - `--debug` (`debug=true`) also sets the container, Boot and the web server (`spring_core_dart`, `spring_boot_dart`, `spring.web.server`) to `debug`, and `--trace` (`trace=true`) to `trace`, as Boot does for its own loggers; `logging.level.*` wins. `debug=false` is off.
 - `Running with Spring Boot v...` at `debug`, as Boot's startup logger.
-- The default log level is `info` without the logging starter (see `spring_core_dart`).
 
 ## 0.5.0
 

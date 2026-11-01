@@ -19,9 +19,9 @@ void main() {
     properties: {
       'logging.level.root': 'warn',
       'server.address': '127.0.0.1',
-      'spring.servlet.multipart.max-file-size': '20MB',
-      'spring.servlet.multipart.max-request-size': '20MB',
-      'spring.servlet.multipart.file-size-threshold': '1KB',
+      'spring.web.multipart.max-file-size': '20MB',
+      'spring.web.multipart.max-request-size': '20MB',
+      'spring.web.multipart.file-size-threshold': '1KB',
     },
   );
 

@@ -36,6 +36,7 @@ const repositoryOnly = {
   'spring_boot_starter_logging',
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
+  'spring_boot_starter_data',
   'spring_web_dart',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
@@ -66,6 +67,16 @@ const repositoryOnlyExceptions = {
       'The fakeable current time (tools.dart.dev, no dependencies): the '
       "scheduling starter's TaskScheduler reads clock.now(), which "
       'fake_async and Flutter widget tests move with their fake timers.',
+  'path_provider':
+      "Where an app's files live (flutter.dev): the Flutter starter points "
+      "the data starter's SQLite database at the app's support directory "
+      '(spring_boot_starter_flutter; the owner allowed it). Its own '
+      "dependencies are the Flutter and Dart teams' too.",
+  'path_provider_platform_interface':
+      "path_provider's platform interface (flutter.dev, the same plugin): "
+      'the Flutter starter asks whether a platform implementation is '
+      'registered before it reads a directory, as a widget test has none '
+      'and the call would wait for ever.',
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
       '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '
@@ -88,8 +99,7 @@ final class AllowedPackage {
   final Set<String>? onlyIn;
 }
 
-/// Exceptions to [allowedPublishers]. Database drivers will be added here,
-/// e.g.:
+/// Exceptions to [allowedPublishers]: the database drivers, for example:
 ///
 /// ```dart
 /// 'sqlite3': AllowedPackage(
@@ -98,6 +108,25 @@ final class AllowedPackage {
 /// ),
 /// ```
 const allowedPackages = {
+  'postgres': AllowedPackage(
+    'The PostgreSQL driver (agilord.com; the owner allowed database '
+    'drivers, as sqlite3): only a dev dependency of spring_boot_starter_data, '
+    'to test the driver glue the generator writes into applications that '
+    "list postgres themselves; the starter's runtime never depends on it. "
+    'It is pure Dart: unlike sqlite3 it needs no entry for the workspace '
+    'root. Its own dependencies (buffer, charcode, pool...) are allowed '
+    'through it only.',
+    onlyIn: {'spring_boot_starter_data'},
+  ),
+  'sqlite3': AllowedPackage(
+    'The SQLite driver (the owner allowed database drivers): only a dev '
+    'dependency of spring_boot_starter_data, to test the driver glue the '
+    'generator writes into applications that list sqlite3 themselves; the '
+    "starter's runtime never depends on it. Also a dev dependency of the "
+    'workspace root: `dart test` from the root builds only the native '
+    "assets of the root's dependencies.",
+    onlyIn: {'spring_boot_starter_data', 'spring_core_dart_workspace'},
+  ),
   'very_good_analysis': AllowedPackage(
     "Lint rules of analysis_options.yaml (Very Good Ventures'), the "
     'quality gate of CI; only rules, no code, and only a dev dependency of '

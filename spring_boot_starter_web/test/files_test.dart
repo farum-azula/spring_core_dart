@@ -13,8 +13,8 @@ void main() {
     testApplication,
     properties: {
       'logging.level.root': 'warn',
-      'spring.servlet.multipart.max-file-size': '64KB',
-      'spring.servlet.multipart.max-request-size': '256KB',
+      'spring.web.multipart.max-file-size': '64KB',
+      'spring.web.multipart.max-request-size': '256KB',
     },
   );
 

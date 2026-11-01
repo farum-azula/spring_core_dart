@@ -438,6 +438,13 @@ class BeanValidator implements SmartValidator {
       );
     }
     final violations = <ConstraintViolation>[];
+    if (!beanProperty.isReadable) {
+      throw IntrospectionPartError(
+        introspection.beanType,
+        IntrospectionPart.read,
+        "the validator reads property '$property'",
+      );
+    }
     final value = beanProperty.getValue(target);
     _inGroups(
       groups,
@@ -761,7 +768,10 @@ class BeanValidator implements SmartValidator {
           }
         }
         for (final property in introspection.properties) {
-          final value = property.getValue(target);
+          final value = _valueOf(introspection, property, target);
+          if (identical(value, _unread)) {
+            continue;
+          }
           _checkValue(
             root: root,
             leaf: target,
@@ -791,9 +801,13 @@ class BeanValidator implements SmartValidator {
       }
       _ownGroups(introspection, groups, violations, checkOwn);
       for (final property in introspection.properties) {
+        final value = _valueOf(introspection, property, target);
+        if (identical(value, _unread)) {
+          continue;
+        }
         _cascade(
           root,
-          property.getValue(target),
+          value,
           '$path${property.name}',
           property.annotations,
           groups,
@@ -804,6 +818,34 @@ class BeanValidator implements SmartValidator {
     } finally {
       ancestors.remove(target);
     }
+  }
+
+  // What [_valueOf] gives for a property that is not read.
+  static final _unread = Object();
+
+  // The value of [property] of [target]. A property without a getter is
+  // skipped (`_unread`) when no rule looks at it: the generator describes a
+  // validated class with the getters of the properties that have
+  // constraints or `@Valid()`, and no more.
+  Object? _valueOf(
+    BeanIntrospection<Object> introspection,
+    BeanProperty<Object> property,
+    Object target,
+  ) {
+    if (property.isReadable) {
+      return property.getValue(target);
+    }
+    if (property.annotations.any(
+      (a) => a is Constraint || a is Valid || a is Each || a is EachKey,
+    )) {
+      throw IntrospectionPartError(
+        introspection.beanType,
+        IntrospectionPart.read,
+        "the validator reads property '${property.name}', which has "
+        'constraints',
+      );
+    }
+    return _unread;
   }
 
   // Checks the constraints in [annotations] that [applies] accepts on one

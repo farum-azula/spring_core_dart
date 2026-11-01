@@ -30,7 +30,7 @@ void main() {
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
         .withPropertyValues([
-          'spring.cloud.openfeign.client.config.default.event-stream.reconnect-delay=10ms',
+          'spring.feign.client.config.default.event-stream.reconnect-delay=10ms',
         ])
         .withBean<HttpTransport>(() => server);
   });
@@ -147,7 +147,7 @@ void main() {
       await runner
           .withBeanOverride<HttpTransport>(once) // replaces `server`
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.orders.event-stream.reconnect=false',
+            'spring.feign.client.config.orders.event-stream.reconnect=false',
           ])
           .runAsync((context) async {
             expect(await context.getBean<OrdersClient>().ticks().toList(), [

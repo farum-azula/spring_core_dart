@@ -62,7 +62,7 @@ an application's `dependencies` (`spring_core_dart`, `spring_boot_dart`,
 logging, scheduling, cache, Feign, WebSocket, web, OAuth2 client,
 security, Flutter, Flutter security)
 depend only on packages of this repository. Not even other Dart team
-packages are allowed there. Four exceptions:
+packages are allowed there. Five exceptions:
 
 - the Dart team's `yaml`, which parses `application.yml` (Spring Boot uses
   SnakeYAML for this);
@@ -71,6 +71,9 @@ packages are allowed there. Four exceptions:
   Flutter widget tests fake that time along with their timers;
 - the Flutter SDK, for `spring_boot_starter_flutter` and
   `spring_boot_starter_flutter_security`;
+- the Flutter team's `path_provider` and its `path_provider_platform_interface`,
+  for `spring_boot_starter_flutter`, which gives the SQLite databases of an
+  app its own directory;
 - ⚠️ `pointycastle`, a **third-party** package, for the two security
   packages and the OAuth2 client only, **until it can be removed**
   ([section 2](#pointycastle-third-party-to-be-removed)).
@@ -107,6 +110,8 @@ too, but only through it.
 |---|---|---|---|
 | `very_good_analysis` | `verygood.ventures` (Very Good Ventures) | The lint rules of `analysis_options.yaml`, which CI's `quality` job enforces. Only rules (a YAML file), no code; a dev dependency of the workspace root, never of a package. | `spring_core_dart_workspace` only |
 | `melos` | `invertase.io` | Workspace scripts (`dart run melos run check`). It is a dev tool of the workspace root and is never a dependency of a package. | `spring_core_dart_workspace` only |
+| `postgres` | ⚠️ `agilord.com` (Istvan Soos) | The PostgreSQL driver; the owner allowed database drivers, as `sqlite3`. Only a dev dependency of `spring_boot_starter_data`, to test the driver glue the generator writes into applications that list `postgres` themselves; the starter's runtime never depends on it. Pure Dart: no entry for the workspace root. Its own dependencies (`buffer`, `charcode`, `pool`...) come only through it. | `spring_boot_starter_data` (dev) |
+| `sqlite3` | ⚠️ `simonbinder.eu` (Simon Binder) | The SQLite driver; the owner allowed database drivers. Only a dev dependency of `spring_boot_starter_data`, to test the driver glue the generator writes into applications that list `sqlite3` themselves; the starter's runtime never depends on it (pub has no optional dependencies, and `sqlite3` bundles a native library). | `spring_boot_starter_data` (dev); the workspace root (dev), so tests run from the root build SQLite too |
 | `material_color_utilities` | `material.io` (Google's Material team) | `package:flutter` depends on it and the Flutter SDK pins its version, so it cannot be avoided. | the Flutter packages only |
 | `pointycastle` | ⚠️ `bouncycastle.org` (Legion of the Bouncy Castle) | **Third-party, temporary.** The JWT signatures and the password hashes of the security packages, and the SHA-256 of PKCE and the ES256 DPoP proofs in the OAuth2 client, until a Dart team package covers them: [below](#pointycastle-third-party-to-be-removed). | `spring_security_core`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_security`; the Flutter guide as a dev dependency (its integration test verifies the DPoP proofs of the platform keys) |
 | `node_preamble` | none | `package:test` (Dart team) pulls it for browser tests. It has no publisher on pub.dev. | any package (through `test`) |
@@ -153,7 +158,10 @@ million downloads a month).
   `spring_boot_starter_security/test/app/jwt/keys.dart`).
 - **Its results are checked against other implementations**: password
   hashes against Spring Security's Java encoders both ways, signatures
-  against the RFC 7515 vectors, the DPoP signatures against the RFC 6979
+  against the RFC 7515 vectors and Project Wycheproof's (ECDSA, RSA
+  PKCS#1 and PSS, HMAC, PBKDF2, invalid curve points: Apache-2.0 test
+  data vendored under each package's `test/fixtures/wycheproof/`, never
+  published), the DPoP signatures against the RFC 6979
   vectors (and checked by the security starter's verifier), SHA-256
   against the RFC 7636 vector,
   plus fuzz and mutation tests
@@ -197,13 +205,14 @@ in its `pubspec.yaml`.
 | `spring_boot_starter_logging` | Logging: console, files, `logging.*` properties (the base starter) | yes | `spring_boot_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_scheduling` | `@Scheduled`, `TaskScheduler` | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `clock` | same as logging, plus `fake_async` |
 | `spring_boot_starter_cache` | `@Cacheable`, `@CachePut`, `@CacheEvict`, `CacheManager` | yes | `spring_boot_dart`, `spring_boot_starter_logging` | same as logging |
+| `spring_boot_starter_data` | Spring Data: entities, repositories, derived queries, transactions, locks, SQL databases (the driver is the application's), migrations | yes | `spring_boot_dart`, `spring_boot_starter_logging` | same as logging, plus `spring_boot_starter_cache`, `postgres`, `sqlite3` |
 | `spring_boot_starter_feign` | `@FeignClient` HTTP clients | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_websocket` | `@WebSocketClient` clients; `@WebSocketEndpoint` server endpoints (served by the web starter) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_web` | Spring MVC: `@RestController`, the `dart:io` server, `ProblemDetail`, SSE, filters, CORS | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
 | `spring_security_core` | Spring Security's core: `SecurityContextHolder`, users and password encoders, `AuthenticationManager`, `@PreAuthorize` and the other method security annotations | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `pointycastle` (no web: it works in Flutter apps and Feign clients without a server) | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_cache`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_oauth2_client` | OAuth 2.0 and OpenID Connect clients: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant, token refresh, Bearer tokens on Feign calls (pure Dart: no server, works in Flutter apps) | yes | `spring_boot_dart`, `spring_boot_starter_feign`, `spring_boot_starter_logging`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_security` | Spring Security for the web starter: the filter chain, `HttpSecurity`, HTTP Basic, form login, OAuth 2.0 / OpenID Connect login (`oauth2Login`), JWT resource servers, CSRF, CORS, security headers | yes | `spring_boot_dart`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_web`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
-| `spring_boot_starter_flutter` | Flutter apps: `SpringApplicationWidget`, beans in widgets (no platform code) | yes | `flutter`, `flutter_localizations` (SDK), `spring_boot_dart`, `spring_boot_starter_logging` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
+| `spring_boot_starter_flutter` | Flutter apps: `SpringApplicationWidget`, beans in widgets, the directory of the SQLite databases (no platform code of its own) | yes | `flutter`, `flutter_localizations` (SDK), `path_provider`, `path_provider_platform_interface`, `spring_boot_dart`, `spring_boot_starter_logging` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `plugin_platform_interface`, `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_flutter_security` | Security of Flutter apps, a plugin with its own platform code: the app login (`OAuth2LoginService`), `PlatformSecretStore` (Keychain, Keystore, DPAPI, libsecret), `PlatformAuthorizationWindow` and `LoopbackAuthorizationWindow` (the system's login window), `SecretTemplate`, `PrincipalNotifier` and the widgets that follow the user | yes | `flutter`, `flutter_web_plugins` (SDK), `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_oauth2_client`, `spring_security_core` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_test` | Tests (`springBootTest`, `@SpringBootTest`) | yes | `spring_boot_dart`, `spring_web_dart`, `matcher`, `test_api` | `test` |
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
@@ -249,6 +258,7 @@ graph TD
   yaml([yaml])
   clock([clock])
   flutterSdk([Flutter SDK: flutter, flutter_localizations, flutter_web_plugins])
+  pathProvider([path_provider, path_provider_platform_interface])
   testApi([matcher, test_api])
   codegen([analyzer, build, code_builder, dart_style, glob, path, pub_semver, source_gen, yaml])
   analyzer([analyzer, yaml])
@@ -290,6 +300,7 @@ graph TD
   flutterStarter --> boot
   flutterStarter --> logging
   flutterStarter --> flutterSdk
+  flutterStarter --> pathProvider
   flutterSecurity --> boot
   flutterSecurity --> flutterStarter
   flutterSecurity --> oauth2Client
@@ -319,7 +330,7 @@ spring_core_dart ─────────────── yaml
 │   │   │   └── spring_boot_starter_security (+ the OAuth2 client, spring_security_core, ⚠️ pointycastle)
 │   │   ├── spring_security_core             (+ spring_boot_dart, ⚠️ pointycastle)
 │   │   │   └── spring_boot_starter_oauth2_client (+ Feign, spring_web_dart, ⚠️ pointycastle)
-│   │   └── spring_boot_starter_flutter      (+ spring_boot_dart, Flutter SDK)
+│   │   └── spring_boot_starter_flutter      (+ spring_boot_dart, Flutter SDK, path_provider)
 │   │       └── spring_boot_starter_flutter_security (+ the OAuth2 client, spring_security_core, flutter_web_plugins)
 │   ├── spring_boot_starter_test             (+ spring_web_dart, matcher, test_api)
 │   └── dart_spring_language_server          (+ spring_core_dart, analyzer, yaml)
@@ -369,11 +380,11 @@ package of the family. Packages of the repository are left out.
 | `spring_core_dart`, `spring_boot_dart`, `spring_web_dart` or any Dart starter (logging, cache, Feign, WebSocket, web) | 6: `yaml` and its dependencies `collection`, `path`, `source_span`, `string_scanner`, `term_glyph` |
 | `spring_boot_starter_scheduling` | the 6 above, plus `clock` (no dependencies): 7 |
 | `spring_security_core`, `spring_boot_starter_oauth2_client` or `spring_boot_starter_security` | the 6 above, plus ⚠️ `pointycastle` (third-party, [to be removed](#pointycastle-third-party-to-be-removed)) and its `convert` and `typed_data` (`dart.dev`): 9 |
-| `spring_boot_starter_flutter` | the 6 above, plus the Flutter SDK (`flutter`, `flutter_localizations`, `sky_engine`) and what the SDK pins: `characters`, `clock`, `intl`, `material_color_utilities`, `meta`, `vector_math` |
+| `spring_boot_starter_flutter` | the 6 above, plus the Flutter SDK (`flutter`, `flutter_localizations`, `sky_engine`) and what the SDK pins: `characters`, `clock`, `intl`, `material_color_utilities`, `meta`, `vector_math`; and `path_provider` (`flutter.dev`) with its platform packages `path_provider_android`, `path_provider_foundation`, `path_provider_linux`, `path_provider_windows`, `path_provider_platform_interface`, `plugin_platform_interface`, `platform`, `xdg_directories`, the FFI packages `ffi`, `jni`, `jni_flutter`, `jni_util`, `objective_c` and, for their build hooks, `code_assets`, `hooks`, `record_use` (`dart.dev`) |
 | `spring_boot_starter_flutter_security` | those of the Flutter starter, plus `flutter_web_plugins` (Flutter SDK) and those of the security packages: ⚠️ `pointycastle`, `convert`, `typed_data` |
 
-All of them are Dart team packages, except `material_color_utilities`,
-which is part of the Flutter SDK, and ⚠️ `pointycastle`, the security
+All of them are Dart or Flutter team packages, except
+`material_color_utilities`, which is part of the Flutter SDK, and ⚠️ `pointycastle`, the security
 packages' cryptography: a third-party package, [to be
 removed](#pointycastle-third-party-to-be-removed).
 
@@ -410,6 +421,29 @@ flutter_localizations      Flutter SDK
 │   ├── meta
 │   └── path
 └── path
+
+path_provider              flutter.dev
+├── flutter
+├── path_provider_platform_interface   flutter.dev
+│   ├── flutter
+│   ├── platform           dart.dev
+│   └── plugin_platform_interface   flutter.dev
+├── path_provider_android  flutter.dev
+│   ├── jni                dart.dev
+│   │   ├── ffi            dart.dev
+│   │   └── jni_util       dart.dev
+│   └── jni_flutter        dart.dev
+├── path_provider_foundation   flutter.dev
+│   ├── ffi
+│   └── objective_c        dart.dev
+│       └── code_assets, hooks, record_use   dart.dev
+├── path_provider_linux    flutter.dev
+│   ├── ffi
+│   ├── path
+│   └── xdg_directories    flutter.dev
+└── path_provider_windows  flutter.dev
+    ├── ffi
+    └── path
 ```
 
 The dev dependencies (`build_runner`, the generator,
@@ -508,9 +542,10 @@ pub workspace and the three Flutter packages). Columns:
 | `_fe_analyzer_shared` | `tools.dart.dev` | codegen, tests, language server | `meta` | `analyzer` |
 | `analyzer` | `tools.dart.dev` | codegen, tests, language server | `_fe_analyzer_shared`, `collection`, `convert`, `crypto`, `glob`, `meta`, `package_config`, `path`, `pub_semver`, `source_span`, `watcher`, `yaml` | `build`, `build_runner`, `dart_spring_language_server`, `dart_style`, `source_gen`, `spring_core_dart_generator`, `test`, `test_core` |
 | `ansi_styles` | ⚠️ `invertase.io` — only through `melos` | melos only | — | `melos` |
-| `args` | `dart.dev` | codegen, tests, melos | — | `build_runner`, `cli_config`, `coverage`, `dart_style`, `melos`, `test_core`, `xml` |
-| `async` | `dart.dev` | codegen, tests, language server, melos | `collection`, `meta` | `build_runner`, `frontend_server_client`, `glob`, `http`, `http_multi_server`, `matcher`, `melos`, `pool`, `shelf`, `source_gen`, `stream_channel`, `test`, `test_api`, `test_core`, `watcher`, `web_socket_channel` |
+| `args` | `dart.dev` | codegen, tests, melos | — | `build_runner`, `cli_config`, `coverage`, `dart_style`, `jni`, `melos`, `test_core`, `xml` |
+| `async` | `dart.dev` | codegen, tests, language server, melos | `collection`, `meta` | `build_runner`, `frontend_server_client`, `glob`, `http`, `http_multi_server`, `matcher`, `melos`, `pool`, `postgres`, `shelf`, `source_gen`, `stream_channel`, `test`, `test_api`, `test_core`, `watcher`, `web_socket_channel` |
 | `boolean_selector` | `tools.dart.dev` | codegen, tests | `source_span`, `string_scanner` | `test`, `test_api`, `test_core` |
+| `buffer` | ⚠️ `agilord.com` — only through `postgres` | tests (data starter) | — | `postgres` |
 | `build` | `dart.dev` | codegen, tests | `analyzer`, `crypto`, `glob`, `logging`, `package_config`, `path` | `build_runner`, `build_test`, `source_gen`, `spring_core_dart_generator` |
 | `build_config` | `tools.dart.dev` | codegen, tests | `checked_yaml`, `json_annotation`, `path`, `pubspec_parse` | `build_runner`, `build_test` |
 | `build_daemon` | `tools.dart.dev` | codegen, tests | `built_collection`, `built_value`, `crypto`, `http_multi_server`, `logging`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_runner` |
@@ -519,62 +554,78 @@ pub workspace and the three Flutter packages). Columns:
 | `built_collection` | `dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test`, `built_value`, `code_builder` |
 | `built_value` | `dart.dev` | codegen, tests | `built_collection`, `collection`, `fixnum`, `meta` | `build_daemon`, `build_runner`, `code_builder` |
 | `characters` | `dart.dev` | app, tests | — | `flutter` |
-| `charcode` | ⚠️ `infimum.dk` — only through `melos` | melos only | — | `prompts` |
+| `charcode` | ⚠️ `infimum.dk` — only through `melos` and `postgres` | melos, tests (data starter) | — | `postgres`, `prompts` |
 | `checked_yaml` | `google.dev` | codegen, tests, melos | `json_annotation`, `source_span`, `yaml` | `build_config`, `pubspec_parse` |
 | `cli_config` | `tools.dart.dev` | tests | `args`, `yaml` | `coverage` |
 | `cli_launcher` | ⚠️ `gabriel.terwesten.net` — only through `melos` | melos only | `path`, `yaml` | `melos` |
 | `cli_util` | `tools.dart.dev` | tests, melos | `ffi`, `meta`, `path` | `coverage`, `melos` |
 | `clock` | `tools.dart.dev` | app, tests | — | `fake_async`, `flutter_test`, `intl`, `leak_tracker`, `spring_boot_starter_scheduling` |
+| `code_assets` | `dart.dev` | app (Flutter build hooks), tests (data starter) | `collection`, `hooks`, `logging` | `native_toolchain_c`, `objective_c`, `sqlite3` |
 | `code_builder` | `tools.dart.dev` | codegen | `built_collection`, `built_value`, `collection`, `matcher`, `meta` | `spring_core_dart_generator` |
-| `collection` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `async`, `build_runner`, `built_value`, `code_builder`, `dart_style`, `fake_async`, `flutter`, `flutter_test`, `glob`, `graphs`, `http_parser`, `leak_tracker`, `material_color_utilities`, `melos`, `petitparser`, `pointycastle`, `pub_semver`, `pubspec_parse`, `shelf`, `source_span`, `test`, `test_api`, `test_core`, `typed_data`, `xml`, `yaml`, `yaml_edit` |
+| `collection` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `async`, `build_runner`, `built_value`, `code_assets`, `code_builder`, `dart_style`, `fake_async`, `flutter`, `flutter_test`, `glob`, `graphs`, `hooks`, `http_parser`, `jni`, `leak_tracker`, `material_color_utilities`, `melos`, `objective_c`, `petitparser`, `pointycastle`, `postgres`, `pub_semver`, `pubspec_parse`, `record_use`, `shelf`, `source_span`, `sqlite3`, `test`, `test_api`, `test_core`, `typed_data`, `xml`, `yaml`, `yaml_edit` |
 | `conventional_commit` | ⚠️ `invertase.io` — only through `melos` | melos only | — | `melos` |
 | `convert` | `dart.dev` | app (security), codegen, tests, language server | `typed_data` | `analyzer`, `build_runner`, `pointycastle`, `shelf_static` |
 | `coverage` | `tools.dart.dev` | tests | `args`, `cli_config`, `cli_util`, `glob`, `logging`, `meta`, `package_config`, `path`, `source_maps`, `stack_trace`, `vm_service`, `yaml` | `spring_core_dart` (dev), `spring_core_dart_generator` (dev), `test`, `test_core` |
-| `crypto` | `dart.dev` | codegen, tests, language server, melos | `typed_data` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `melos`, `web_socket_channel` |
+| `crypto` | `dart.dev` | codegen, tests, language server, melos | `typed_data` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `hooks`, `melos`, `postgres`, `sqlite3`, `web_socket_channel` |
 | `csslib` | `tools.dart.dev` | tests | `source_span` | `html` |
 | `dart_style` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `collection`, `package_config`, `path`, `pub_semver`, `source_span`, `yaml` | `build_runner`, `source_gen`, `spring_core_dart_generator` |
 | `fake_async` | `dart.dev` | tests | `clock`, `collection` | `flutter_test`, `spring_boot_starter_scheduling` (dev) |
-| `ffi` | `dart.dev` | tests, melos | — | `cli_util` |
-| `file` | `tools.dart.dev` | codegen, tests, language server, melos | `meta`, `path` | `glob`, `melos`, `process` |
+| `ffi` | `dart.dev` | app (Flutter), tests, melos | — | `cli_util`, `jni`, `objective_c`, `path_provider_foundation`, `path_provider_linux`, `path_provider_windows`, `sqlite3` |
+| `file` | `tools.dart.dev` | codegen, tests, language server, melos | `meta`, `path` | `glob`, `melos`, `native_toolchain_c`, `process` |
 | `fixnum` | `dart.dev` | codegen, tests | — | `built_value` |
-| `flutter` | Flutter SDK | app, tests | `characters`, `collection`, `material_color_utilities`, `meta`, `sky_engine`, `vector_math` | `flutter_localizations`, `flutter_test`, `flutter_web_plugins`, `leak_tracker_flutter_testing`, `neon_books_app`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_security` |
+| `flutter` | Flutter SDK | app, tests | `characters`, `collection`, `material_color_utilities`, `meta`, `sky_engine`, `vector_math` | `flutter_localizations`, `flutter_test`, `flutter_web_plugins`, `jni_flutter`, `leak_tracker_flutter_testing`, `neon_books_app`, `path_provider`, `path_provider_android`, `path_provider_foundation`, `path_provider_linux`, `path_provider_platform_interface`, `path_provider_windows`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_security` |
 | `flutter_lints` | `flutter.dev` | lints | `lints` | `neon_books_app` (dev) |
 | `flutter_localizations` | Flutter SDK | app | `flutter`, `intl`, `path` | `spring_boot_starter_flutter` |
 | `flutter_test` | Flutter SDK | tests | `clock`, `collection`, `fake_async`, `flutter`, `leak_tracker_flutter_testing`, `matcher`, `meta`, `path`, `stack_trace`, `stream_channel`, `test_api`, `vector_math` | `neon_books_app` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_flutter_security` (dev) |
 | `flutter_web_plugins` | Flutter SDK | app | `flutter` | `spring_boot_starter_flutter_security` (the plugin's web entry) |
 | `frontend_server_client` | `tools.dart.dev` | tests | `async`, `package_config`, `path` | `test_core` |
-| `glob` | `tools.dart.dev` | codegen, tests, language server, melos | `async`, `collection`, `file`, `path`, `string_scanner` | `analyzer`, `build`, `build_runner`, `build_test`, `coverage`, `melos`, `source_gen`, `spring_core_dart_generator`, `test_core` |
+| `glob` | `tools.dart.dev` | codegen, tests, language server, melos | `async`, `collection`, `file`, `path`, `string_scanner` | `analyzer`, `build`, `build_runner`, `build_test`, `coverage`, `melos`, `native_toolchain_c`, `source_gen`, `spring_core_dart_generator`, `test_core` |
 | `graphs` | `tools.dart.dev` | codegen, tests, melos | `collection` | `build_runner`, `melos` |
+| `hooks` | `dart.dev` | app (Flutter build hooks), tests (data starter: SQLite's build hook) | `collection`, `crypto`, `logging`, `pub_semver`, `record_use`, `yaml` | `code_assets`, `native_toolchain_c`, `objective_c`, `sqlite3` |
 | `html` | `tools.dart.dev` | tests | `csslib`, `source_span` | `build_test` |
 | `http` | `dart.dev` | melos only | `async`, `http_parser`, `meta`, `web` | `melos`, `pub_updater` |
 | `http_multi_server` | `tools.dart.dev` | codegen, tests | `async` | `build_daemon`, `build_runner`, `test` |
 | `http_parser` | `dart.dev` | codegen, tests, melos | `collection`, `source_span`, `string_scanner`, `typed_data` | `http`, `shelf`, `shelf_static` |
 | `intl` | `dart.dev` | app | `clock`, `meta`, `path` | `flutter_localizations` |
 | `io` | `tools.dart.dev` | codegen, tests, melos | `meta`, `path`, `string_scanner` | `build_runner`, `prompts`, `test`, `test_core` |
+| `jni` | `dart.dev` | app (Flutter, Android) | `args`, `collection`, `ffi`, `jni_util`, `meta`, `package_config`, `path`, `plugin_platform_interface` | `jni_flutter`, `path_provider_android` |
+| `jni_flutter` | `dart.dev` | app (Flutter, Android) | `flutter`, `jni` | `path_provider_android` |
+| `jni_util` | `dart.dev` | app (Flutter, Android) | `path` | `jni` |
 | `json_annotation` | `google.dev` | codegen, tests, melos | `meta` | `build_config`, `build_runner`, `checked_yaml`, `pub_updater`, `pubspec_parse` |
 | `leak_tracker` | `tools.dart.dev` | tests | `clock`, `collection`, `meta`, `path`, `vm_service` | `leak_tracker_flutter_testing`, `leak_tracker_testing` |
 | `leak_tracker_flutter_testing` | `flutter.dev` | tests | `flutter`, `leak_tracker`, `leak_tracker_testing`, `matcher`, `meta` | `flutter_test` |
 | `leak_tracker_testing` | `tools.dart.dev` | tests | `leak_tracker`, `matcher`, `meta` | `leak_tracker_flutter_testing` |
 | `lints` | `dart.dev` | lints | — | `flutter_lints`, `spring_boot_starter_flutter` (dev), `spring_boot_starter_flutter_security` (dev), `spring_core_dart_workspace` (dev) |
-| `logging` | `dart.dev` | codegen, tests | — | `build`, `build_daemon`, `build_runner`, `build_test`, `coverage`, `webkit_inspection_protocol` |
+| `logging` | `dart.dev` | codegen, tests | — | `build`, `build_daemon`, `build_runner`, `build_test`, `code_assets`, `coverage`, `hooks`, `native_toolchain_c`, `objective_c`, `webkit_inspection_protocol` |
 | `matcher` | `dart.dev` | codegen, tests | `async`, `meta`, `stack_trace`, `term_glyph`, `test_api` | `build_test`, `code_builder`, `flutter_test`, `leak_tracker_flutter_testing`, `leak_tracker_testing`, `spring_boot_starter_test`, `test` |
 | `material_color_utilities` | ⚠️ `material.io` — exception: part of the Flutter SDK | app, tests | `collection` | `flutter` |
 | `melos` | ⚠️ `invertase.io` — exception: workspace tool | melos only | `ansi_styles`, `args`, `async`, `cli_launcher`, `cli_util`, `collection`, `conventional_commit`, `crypto`, `file`, `glob`, `graphs`, `http`, `meta`, `mustache_template`, `path`, `platform`, `pool`, `prompts`, `pub_semver`, `pub_updater`, `pubspec_parse`, `string_scanner`, `xml`, `yaml`, `yaml_edit` | `spring_core_dart_workspace` (dev) |
-| `meta` | `dart.dev` | app, codegen, tests, language server, melos | — | `_fe_analyzer_shared`, `analyzer`, `async`, `build_runner`, `built_value`, `cli_util`, `code_builder`, `coverage`, `file`, `flutter`, `flutter_test`, `http`, `intl`, `io`, `json_annotation`, `leak_tracker`, `leak_tracker_flutter_testing`, `leak_tracker_testing`, `matcher`, `melos`, `package_config`, `petitparser`, `test_api`, `test_core`, `xml`, `yaml_edit` |
+| `meta` | `dart.dev` | app, codegen, tests, language server, melos | — | `_fe_analyzer_shared`, `analyzer`, `async`, `build_runner`, `built_value`, `cli_util`, `code_builder`, `coverage`, `file`, `flutter`, `flutter_test`, `http`, `intl`, `io`, `jni`, `json_annotation`, `leak_tracker`, `leak_tracker_flutter_testing`, `leak_tracker_testing`, `matcher`, `melos`, `native_toolchain_c`, `objective_c`, `package_config`, `petitparser`, `platform`, `plugin_platform_interface`, `postgres`, `record_use`, `sqlite3`, `test_api`, `test_core`, `xdg_directories`, `xml`, `yaml_edit` |
 | `mime` | `tools.dart.dev` | codegen, tests | — | `build_runner`, `shelf_static` |
 | `mustache_template` | `flutter.dev` | melos only | — | `melos` |
+| `native_toolchain_c` | `labs.dart.dev` | tests (data starter: builds SQLite) | `code_assets`, `file`, `glob`, `hooks`, `logging`, `meta`, `process`, `pub_semver` | `sqlite3` |
 | `node_preamble` | ⚠️ none — exception: pulled by `test` | tests | — | `test` |
-| `package_config` | `tools.dart.dev` | codegen, tests, language server | `meta` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `coverage`, `dart_style`, `frontend_server_client`, `spring_core_dart_generator` (dev), `test`, `test_core` |
-| `path` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `build`, `build_config`, `build_daemon`, `build_runner`, `build_test`, `cli_launcher`, `cli_util`, `coverage`, `dart_style`, `file`, `flutter_localizations`, `flutter_test`, `frontend_server_client`, `glob`, `intl`, `io`, `leak_tracker`, `melos`, `process`, `shelf`, `shelf_packages_handler`, `shelf_static`, `source_gen`, `source_map_stack_trace`, `source_span`, `spring_core_dart_generator`, `spring_core_dart_workspace` (dev), `stack_trace`, `test`, `test_core`, `watcher` |
+| `objective_c` | `dart.dev` | app (Flutter, iOS and macOS) | `code_assets`, `collection`, `ffi`, `hooks`, `logging`, `meta`, `pub_semver` | `path_provider_foundation` |
+| `package_config` | `tools.dart.dev` | codegen, tests, language server | `meta` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `coverage`, `dart_style`, `frontend_server_client`, `jni`, `spring_core_dart_generator` (dev), `test`, `test_core` |
+| `path` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `build`, `build_config`, `build_daemon`, `build_runner`, `build_test`, `cli_launcher`, `cli_util`, `coverage`, `dart_style`, `file`, `flutter_localizations`, `flutter_test`, `frontend_server_client`, `glob`, `intl`, `io`, `jni`, `jni_util`, `leak_tracker`, `melos`, `path_provider_linux`, `path_provider_windows`, `process`, `shelf`, `shelf_packages_handler`, `shelf_static`, `source_gen`, `source_map_stack_trace`, `source_span`, `spring_core_dart_generator`, `spring_core_dart_workspace` (dev), `sqlite3`, `stack_trace`, `test`, `test_core`, `watcher`, `xdg_directories` |
+| `path_provider` | `flutter.dev` | app (Flutter) | `flutter`, `path_provider_android`, `path_provider_foundation`, `path_provider_linux`, `path_provider_platform_interface`, `path_provider_windows` | `spring_boot_starter_flutter` |
+| `path_provider_android` | `flutter.dev` | app (Flutter, Android) | `flutter`, `jni`, `jni_flutter`, `path_provider_platform_interface` | `path_provider` |
+| `path_provider_foundation` | `flutter.dev` | app (Flutter, iOS and macOS) | `ffi`, `flutter`, `objective_c`, `path_provider_platform_interface` | `path_provider` |
+| `path_provider_linux` | `flutter.dev` | app (Flutter, Linux) | `ffi`, `flutter`, `path`, `path_provider_platform_interface`, `xdg_directories` | `path_provider` |
+| `path_provider_platform_interface` | `flutter.dev` | app (Flutter) | `flutter`, `platform`, `plugin_platform_interface` | `path_provider`, `path_provider_android`, `path_provider_foundation`, `path_provider_linux`, `path_provider_windows`, `spring_boot_starter_flutter` |
+| `path_provider_windows` | `flutter.dev` | app (Flutter, Windows) | `ffi`, `flutter`, `path`, `path_provider_platform_interface` | `path_provider` |
 | `petitparser` | ⚠️ `lukas-renggli.ch` — only through `melos` | melos only | `collection`, `meta` | `xml` |
-| `platform` | `dart.dev` | melos only | — | `melos`, `process` |
+| `platform` | `dart.dev` | app (Flutter), melos | `meta` | `melos`, `path_provider_platform_interface`, `process` |
+| `plugin_platform_interface` | `flutter.dev` | app (Flutter), tests | `meta` | `jni`, `path_provider_platform_interface`, `spring_boot_starter_flutter` (dev) |
 | `pointycastle` | ⚠️ `bouncycastle.org` — third-party, [to be removed](#pointycastle-third-party-to-be-removed) | app (security, OAuth2 client) | `collection`, `convert` | `spring_boot_starter_oauth2_client`, `spring_boot_starter_security`, `spring_security_core` |
-| `pool` | `tools.dart.dev` | codegen, tests, melos | `async`, `stack_trace` | `build_daemon`, `build_runner`, `melos`, `test`, `test_core` |
-| `process` | `tools.dart.dev` | melos only | `file`, `path`, `platform` | `pub_updater` |
+| `pool` | `tools.dart.dev` | codegen, tests, melos | `async`, `stack_trace` | `build_daemon`, `build_runner`, `melos`, `postgres`, `test`, `test_core` |
+| `postgres` | ⚠️ `agilord.com` — [exception](#2-exceptions): the data starter's tests | tests (data starter) | `async`, `buffer`, `charcode`, `collection`, `crypto`, `meta`, `pool`, `stack_trace`, `stream_channel` | `spring_boot_starter_data` (dev) |
+| `process` | `tools.dart.dev` | melos only | `file`, `path`, `platform` | `native_toolchain_c`, `pub_updater` |
 | `prompts` | ⚠️ none — only through `melos` | melos only | `charcode`, `io` | `melos` |
-| `pub_semver` | `tools.dart.dev` | codegen, tests, language server, melos | `collection` | `analyzer`, `build_daemon`, `build_runner`, `dart_style`, `melos`, `pub_updater`, `pubspec_parse`, `source_gen`, `spring_core_dart_generator` |
+| `pub_semver` | `tools.dart.dev` | codegen, tests, language server, melos | `collection` | `analyzer`, `build_daemon`, `build_runner`, `dart_style`, `hooks`, `melos`, `native_toolchain_c`, `objective_c`, `pub_updater`, `pubspec_parse`, `record_use`, `source_gen`, `spring_core_dart_generator` |
 | `pub_updater` | ⚠️ `verygood.ventures` — only through `melos` | melos only | `http`, `json_annotation`, `process`, `pub_semver` | `melos` |
 | `pubspec_parse` | `tools.dart.dev` | codegen, tests, melos | `checked_yaml`, `collection`, `json_annotation`, `pub_semver`, `yaml` | `build_config`, `melos` |
+| `record_use` | `dart.dev` | app (Flutter build hooks), tests (data starter) | `collection`, `meta`, `pub_semver` | `hooks` |
 | `shelf` | `tools.dart.dev` | codegen, tests | `async`, `collection`, `http_parser`, `path`, `stack_trace`, `stream_channel` | `build_daemon`, `build_runner`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `test` |
 | `shelf_packages_handler` | `tools.dart.dev` | tests | `path`, `shelf`, `shelf_static` | `test` |
 | `shelf_static` | `tools.dart.dev` | tests | `convert`, `http_parser`, `mime`, `path`, `shelf` | `shelf_packages_handler`, `test` |
@@ -584,25 +635,27 @@ pub workspace and the three Flutter packages). Columns:
 | `source_map_stack_trace` | `tools.dart.dev` | tests | `path`, `source_maps`, `stack_trace` | `test_core` |
 | `source_maps` | `tools.dart.dev` | tests | `source_span` | `coverage`, `source_map_stack_trace`, `test_core` |
 | `source_span` | `tools.dart.dev` | app, codegen, tests, language server, melos | `collection`, `path`, `term_glyph` | `analyzer`, `boolean_selector`, `checked_yaml`, `csslib`, `dart_style`, `html`, `http_parser`, `source_gen`, `source_maps`, `string_scanner`, `test`, `test_api`, `test_core`, `yaml`, `yaml_edit` |
-| `stack_trace` | `tools.dart.dev` | codegen, tests, melos | `path` | `coverage`, `flutter_test`, `matcher`, `pool`, `shelf`, `source_map_stack_trace`, `test`, `test_api`, `test_core` |
-| `stream_channel` | `tools.dart.dev` | codegen, tests | `async` | `flutter_test`, `shelf`, `shelf_web_socket`, `test`, `test_api`, `test_core`, `web_socket_channel` |
+| `sqlite3` | ⚠️ `simonbinder.eu` — [exception](#2-exceptions): the data starter's tests | tests (data starter) | `code_assets`, `collection`, `crypto`, `ffi`, `hooks`, `meta`, `native_toolchain_c`, `path`, `typed_data`, `web` | `spring_boot_starter_data` (dev), `spring_core_dart_workspace` (dev) |
+| `stack_trace` | `tools.dart.dev` | codegen, tests, melos | `path` | `coverage`, `flutter_test`, `matcher`, `pool`, `postgres`, `shelf`, `source_map_stack_trace`, `test`, `test_api`, `test_core` |
+| `stream_channel` | `tools.dart.dev` | codegen, tests | `async` | `flutter_test`, `postgres`, `shelf`, `shelf_web_socket`, `test`, `test_api`, `test_core`, `web_socket_channel` |
 | `stream_transform` | `tools.dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test` |
 | `string_scanner` | `tools.dart.dev` | app, codegen, tests, language server, melos | `source_span` | `boolean_selector`, `glob`, `http_parser`, `io`, `melos`, `test_api`, `yaml` |
 | `term_glyph` | `tools.dart.dev` | app, codegen, tests, language server, melos | — | `matcher`, `source_span`, `test_api` |
 | `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_dart` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_oauth2_client` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_security` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `spring_security_core` (dev), `neon_books_server` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
 | `test_api` | `tools.dart.dev` | codegen, tests | `async`, `boolean_selector`, `collection`, `meta`, `source_span`, `stack_trace`, `stream_channel`, `string_scanner`, `term_glyph` | `flutter_test`, `matcher`, `spring_boot_starter_test`, `test`, `test_core` |
 | `test_core` | `tools.dart.dev` | tests | `analyzer`, `args`, `async`, `boolean_selector`, `collection`, `coverage`, `frontend_server_client`, `glob`, `io`, `meta`, `package_config`, `path`, `pool`, `source_map_stack_trace`, `source_maps`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `vm_service`, `yaml` | `build_test`, `test` |
-| `typed_data` | `dart.dev` | app (security), codegen, tests, language server, melos | `collection` | `convert`, `crypto`, `http_parser`, `test` |
+| `typed_data` | `dart.dev` | app (security), codegen, tests, language server, melos | `collection` | `convert`, `crypto`, `http_parser`, `sqlite3`, `test` |
 | `vector_math` | `flutter.dev` | app, tests | — | `flutter`, `flutter_test` |
 | `very_good_analysis` | ⚠️ `verygood.ventures` — [exception](#2-exceptions) | lints | — | `spring_core_dart_workspace` (dev) |
 | `vm_service` | `tools.dart.dev` | tests | — | `coverage`, `leak_tracker`, `test_core` |
 | `watcher` | `tools.dart.dev` | codegen, tests, language server | `async`, `path` | `analyzer`, `build_daemon`, `build_runner`, `build_test` |
-| `web` | `dart.dev` | codegen, tests, melos | — | `http`, `web_socket`, `web_socket_channel` |
+| `web` | `dart.dev` | codegen, tests, melos | — | `http`, `sqlite3`, `web_socket`, `web_socket_channel` |
 | `web_socket` | `dart.dev` | codegen, tests | `web` | `web_socket_channel` |
 | `web_socket_channel` | `tools.dart.dev` | codegen, tests | `async`, `crypto`, `stream_channel`, `web`, `web_socket` | `build_daemon`, `build_runner`, `shelf_web_socket`, `test` |
 | `webkit_inspection_protocol` | `google.dev` | tests | `logging` | `test` |
+| `xdg_directories` | `flutter.dev` | app (Flutter, Linux) | `meta`, `path` | `path_provider_linux` |
 | `xml` | ⚠️ `lukas-renggli.ch` — only through `melos` | melos only | `args`, `collection`, `meta`, `petitparser` | `melos` |
-| `yaml` | `tools.dart.dev` | app, codegen, tests, language server, melos | `collection`, `source_span`, `string_scanner` | `analyzer`, `build_daemon`, `build_runner`, `checked_yaml`, `cli_config`, `cli_launcher`, `coverage`, `dart_spring_language_server`, `dart_style`, `melos`, `pubspec_parse`, `source_gen`, `spring_core_dart`, `spring_core_dart_generator`, `spring_core_dart_workspace` (dev), `test`, `test_core`, `yaml_edit` |
+| `yaml` | `tools.dart.dev` | app, codegen, tests, language server, melos | `collection`, `source_span`, `string_scanner` | `analyzer`, `build_daemon`, `build_runner`, `checked_yaml`, `cli_config`, `cli_launcher`, `coverage`, `dart_spring_language_server`, `dart_style`, `hooks`, `melos`, `pubspec_parse`, `source_gen`, `spring_core_dart`, `spring_core_dart_generator`, `spring_core_dart_workspace` (dev), `test`, `test_core`, `yaml_edit` |
 | `yaml_edit` | `tools.dart.dev` | melos only | `collection`, `meta`, `source_span`, `yaml` | `melos` |
 
 ## 10. Outside pub.dev

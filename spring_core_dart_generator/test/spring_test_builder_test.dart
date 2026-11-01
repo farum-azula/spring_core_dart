@@ -975,6 +975,286 @@ class Inner {
     });
   });
 
+  group('containers', () {
+    const imports =
+        "import 'package:spring_boot_starter_test/containers.dart';\n";
+
+    Future<String> generated(String testClass) =>
+        _generated('$imports$testClass');
+
+    test('@Container fields start before everything and stop last', () async {
+      final source = _squash(
+        await generated('''
+@SpringBootTest()
+class ShopTest {
+  @Container()
+  static final first = GenericContainer('redis:7');
+
+  @Container()
+  static final second = GenericContainer('nginx:1');
+
+  @BeforeAll()
+  static Future<void> before() async {}
+
+  @AfterAll()
+  static Future<void> after() async {}
+}
+'''),
+      );
+      expect(
+        source,
+        _has(
+          [
+            r'final $containers = _sbt.TestContainers({',
+            "'ShopTest.first': ShopTest.first, ",
+            "'ShopTest.second': ShopTest.second});",
+          ].join(),
+        ),
+      );
+      // Declared first: set up before @BeforeAll, torn down after
+      // @AfterAll and after the context closed.
+      final start = source.indexOf(r'_sbt.setUpAll($containers.start);');
+      final stop = source.indexOf(r'_sbt.tearDownAll($containers.stop);');
+      expect(start, isNonNegative);
+      expect(stop, greaterThan(start));
+      expect(start, lessThan(source.indexOf('ShopTest.before')));
+      expect(stop, lessThan(source.indexOf('ShopTest.after')));
+      expect(stop, lessThan(source.indexOf('_sbt.springBootTest(')));
+    });
+
+    test('without Docker the class is skipped with the reason', () async {
+      final source = _squash(
+        await generated('''
+@SpringBootTest()
+class ShopTest {
+  @Container()
+  static final redis = GenericContainer('redis:7');
+}
+'''),
+      );
+      expect(source, _has('}, skip: _sbt.TestContainers.skipReason());'));
+    });
+
+    test(
+      '@Testcontainers(disabledWithoutDocker: false) is passed on',
+      () async {
+        final source = _squash(
+          await generated('''
+@SpringBootTest()
+@Testcontainers(disabledWithoutDocker: false)
+class ShopTest {
+  @Container()
+  static final redis = GenericContainer('redis:7');
+}
+'''),
+        );
+        expect(
+          source,
+          _has(
+            [
+              '}, skip: _sbt.TestContainers.skipReason(',
+              'skipWithoutDocker: false));',
+            ].join(),
+          ),
+        );
+      },
+    );
+
+    test('@Disabled wins over the container skip', () async {
+      final source = await generated('''
+@SpringBootTest()
+@Disabled('off')
+class ShopTest {
+  @Container()
+  static final redis = GenericContainer('redis:7');
+}
+''');
+      expect(source, contains("skip: 'off'"));
+      expect(source, isNot(contains('skipReason')));
+    });
+
+    test('a class without @Container fields has no container code', () async {
+      final source = await generated('''
+@SpringBootTest()
+@Testcontainers()
+class ShopTest {}
+''');
+      expect(source, isNot(contains('TestContainers')));
+      expect(source, isNot(contains('skip:')));
+    });
+
+    test('@ServiceConnection registers the connections first', () async {
+      final source = _squash(
+        await generated('''
+@SpringBootTest()
+class ShopTest {
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer();
+
+  @Container()
+  static final redis = GenericContainer('redis:7');
+
+  @DynamicPropertySource()
+  static void extra(DynamicPropertyRegistry registry) {}
+}
+'''),
+      );
+      expect(
+        source,
+        _has(
+          [
+            r'final $containers = _sbt.TestContainers({',
+            "'ShopTest.postgres': ShopTest.postgres, ",
+            "'ShopTest.redis': ShopTest.redis}, ",
+            "serviceConnections: {'ShopTest.postgres'});",
+          ].join(),
+        ),
+      );
+      expect(
+        source,
+        _has(
+          [
+            'dynamicProperties: (registry) { ',
+            r'$containers.registerConnections(registry); ',
+            'ShopTest.extra(registry); }',
+          ].join(),
+        ),
+      );
+    });
+
+    test('@ServiceConnection alone registers the connections', () async {
+      final source = _squash(
+        await generated('''
+@SpringBootTest()
+class ShopTest {
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer();
+}
+'''),
+      );
+      expect(
+        source,
+        _has(
+          [
+            'dynamicProperties: (registry) { ',
+            r'$containers.registerConnections(registry); }',
+          ].join(),
+        ),
+      );
+    });
+
+    test('a @DataTest class gets the containers too', () async {
+      final source = _squash(
+        await _generated('''
+${imports}import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+
+@DataTest(replaceDatabase: false)
+class ShopTest {
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer();
+}
+'''),
+      );
+      expect(source, contains('_sbt.TestContainers('));
+      expect(source, contains('replaceDatabase: false'));
+      expect(source, contains(r'$containers.registerConnections(registry);'));
+    });
+
+    test('the generated file compiles', () async {
+      const testClass = '''
+@SpringBootTest()
+@Testcontainers()
+class ShopTest {
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer();
+
+  @Container()
+  static final redis = GenericContainer('redis:7')
+      .withExposedPorts([6379])
+      .waitingFor(Wait.forLogMessage('Ready'));
+
+  @DynamicPropertySource()
+  static void extra(DynamicPropertyRegistry registry) =>
+      registry.add('redis.port', () => redis.mappedPort(6379));
+
+  @Test()
+  void works() {}
+}
+''';
+      final source = await generated(testClass);
+      final errors = await _compileErrors({
+        'bin/app.dart': _app,
+        'test/shop_test.dart':
+            '$_imports$imports\n$testClass\nvoid main() => runSpringTests();\n',
+        'test/spring/shop.test.spring.dart': source,
+      });
+      expect(errors, isEmpty, reason: source);
+    });
+
+    group('build errors', () {
+      final cases = {
+        '@Container()\n  final redis = GenericContainer("redis:7");':
+            "@Container field 'redis' must be static",
+        '@ServiceConnection()\n  static final redis = GenericContainer("r");':
+            "@ServiceConnection on 'redis' needs @Container",
+        '@Container()\n  static final _redis = GenericContainer("r");':
+            "'_redis' is private",
+        '@Container()\n  static late final GenericContainer redis;':
+            null, // late statics are allowed: assigned in @BeforeAll
+        '@Container()\n  static GenericContainer redis;':
+            "@Container field 'redis' needs a value",
+      };
+      for (final MapEntry(key: member, value: message) in cases.entries) {
+        test(message ?? 'a late static @Container field is accepted', () async {
+          final testClass =
+              '@SpringBootTest()\nclass ShopTest {\n  $member\n}\n';
+          if (message == null) {
+            expect(await generated(testClass), contains('TestContainers'));
+            return;
+          }
+          final error = _error('$imports$testClass');
+          expect(await error, contains(message));
+        });
+      }
+
+      test('@Container in a @Nested class', () async {
+        expect(
+          await _error('''
+$imports@SpringBootTest()
+class ShopTest {
+  @Nested()
+  final inner = Inner();
+}
+
+class Inner {
+  @Container()
+  static final redis = GenericContainer('redis:7');
+}
+'''),
+          contains("@Container field 'redis' in a @Nested class"),
+        );
+      });
+
+      test('@Testcontainers on a method', () async {
+        expect(
+          await _error('''
+$imports@SpringBootTest()
+class ShopTest {
+  @Testcontainers()
+  @Test()
+  void t() {}
+}
+'''),
+          contains('@Testcontainers on a method'),
+        );
+      });
+    });
+  });
+
   test('a test file not importing its generated file gets a warning', () async {
     final readerWriter = TestReaderWriter(
       rootPackage: 'pkg',

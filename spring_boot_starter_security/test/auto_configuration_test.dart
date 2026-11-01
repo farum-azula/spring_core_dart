@@ -235,7 +235,7 @@ void main() {
       'HttpSecurity is a new builder for each chain, under the context path',
       () async {
         await securityRunner(null, [
-          'server.servlet.context-path=/app',
+          'server.context-path=/app',
         ]).runAsync((started) async {
           final first = started.context.getBean<HttpSecurity>();
           final second = started.context.getBean<HttpSecurity>();

@@ -73,6 +73,47 @@ class Prices {
   });
 ''',
   ),
+  // No database driver: the repositories keep their data in memory, so the
+  // check needs nothing but the starter (an application on SQLite or
+  // PostgreSQL also lists `sqlite3` or `postgres` itself).
+  _Starter(
+    'spring_boot_starter_data',
+    feature: '''
+@Table('books')
+class Book {
+  Book({required this.title, this.id});
+
+  @Id()
+  int? id;
+
+  String title;
+}
+
+abstract interface class BookRepository
+    implements ListCrudRepository<Book, int> {
+  Future<List<Book>> findByTitle(String title);
+}
+
+@Service()
+class Shelf {
+  Shelf(this.books);
+
+  final BookRepository books;
+
+  @Transactional()
+  Future<void> add(String title) async {
+    await books.save(Book(title: title));
+  }
+}
+''',
+    featureTest: '''
+  test('repositories and @Transactional come with the starter', () async {
+    await app.getBean<Shelf>().add('Dune');
+    final found = await app.getBean<BookRepository>().findByTitle('Dune');
+    expect(found, hasLength(1));
+  });
+''',
+  ),
   _Starter(
     'spring_boot_starter_scheduling',
     feature: r'''

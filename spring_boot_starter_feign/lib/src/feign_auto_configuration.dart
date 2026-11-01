@@ -13,7 +13,7 @@ const _source = 'package:spring_boot_starter_feign#FeignAutoConfiguration';
 ///   (`dart:io` on the VM and in Flutter, `fetch` on the web), unless the
 ///   application declares an [HttpTransport] (a mock in tests, an adapter
 ///   over another HTTP library). Its connection timeout is
-///   `spring.cloud.openfeign.client.config.default.connect-timeout`; it is
+///   `spring.feign.client.config.default.connect-timeout`; it is
 ///   closed with the context.
 /// - `feignClientFactory` — builds each client with the `ObjectMapper`,
 ///   the transport and the `RequestInterceptor`, `ErrorDecoder` and

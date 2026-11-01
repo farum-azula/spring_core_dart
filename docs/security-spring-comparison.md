@@ -68,7 +68,7 @@ Where each missing feature is planned:
 | `SessionCreationPolicy` | partial | `ifRequired` and `stateless`; not `always` and `never` |
 | Concurrency control (`maximumSessions`, `maxSessionsPreventsLogin`, `SessionRegistry`) | done (no `expiredUrl`) | 10 sessions per user by default (Spring: no limit); the registry keeps ids and asks the session repository which live, and ends a session by removing it (Spring marks it expired for `ConcurrentSessionFilter`, which has no counterpart here: the old browser is simply logged out) |
 | Invalid session detection (`invalidSessionUrl`) | missing | |
-| A limit on all sessions | done | `server.servlet.session.max-sessions` (10 000), as WebFlux's `InMemoryWebSessionStore`: expired sessions are removed, then a new one is refused with 503. Only a login makes a session (the CSRF token, the saved request and the OAuth 2.0 authorization request are signed cookies), so requests without a login cannot fill it |
+| A limit on all sessions | done | `server.session.max-sessions` (10 000), as WebFlux's `InMemoryWebSessionStore`: expired sessions are removed, then a new one is refused with 503. Only a login makes a session (the CSRF token, the saved request and the OAuth 2.0 authorization request are signed cookies), so requests without a login cannot fill it |
 | Shared session store (Spring Session) | missing | the sessions live in one process |
 
 ## Authorization

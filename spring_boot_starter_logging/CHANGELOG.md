@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Breaking
+
+- Properties renamed: `logging.logback.rollingpolicy.*` is `logging.file.rolling-policy.*` (there is no Logback). An old name stops the start, naming the new one. The names from before Spring Boot 2.4 (`logging.file.max-size`, ...) are still ignored with a warning, which now names the new keys.
+
 ### Changes
 
 - `logging.console.target` (`stdout` or `stderr`) chooses the console's stream on the Dart VM, as Logback's `ConsoleAppender` target; it is not a Spring Boot property.

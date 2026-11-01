@@ -104,8 +104,9 @@ class JsonIgnore {
 ///
 /// Use it to keep responses small or to send partial updates, where a
 /// missing property means "unchanged". It wins over the mapper's
-/// `inclusion` (`spring.jackson.default-property-inclusion` in Spring
-/// Boot); on a property it wins over the class's.
+/// `inclusion` (`spring.json.default-property-inclusion`; Spring
+/// Boot: `spring.jackson.default-property-inclusion`); on a property it
+/// wins over the class's.
 ///
 /// ```dart
 /// // A partial update: only the fields that were set are sent.

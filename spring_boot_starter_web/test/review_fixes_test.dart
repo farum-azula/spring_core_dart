@@ -417,7 +417,7 @@ void main() {
 
   // Review before 0.5.0: no limit on the number of parts (the class of
   // CVE-2023-24998: thousands of tiny parts, as many temporary files).
-  test('more parts than spring.servlet.multipart.max-part-count is a '
+  test('more parts than spring.web.multipart.max-part-count is a '
       '413', () async {
     await app.mockMvc
         .multipart(

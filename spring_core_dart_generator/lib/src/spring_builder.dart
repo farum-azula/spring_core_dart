@@ -17,6 +17,7 @@ import 'package:spring_core_dart_generator/src/asset_check.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/driver_glue.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
@@ -319,6 +320,7 @@ class SpringBuilder implements Builder {
       scanRoot: directory,
     );
 
+    final resources = await SpringBuilder.resources(buildStep);
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
@@ -326,6 +328,7 @@ class SpringBuilder implements Builder {
         componentScanChecker.firstAnnotationOf(scan)!,
         scan,
       ),
+      sqlResources: _texts(resources),
     );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
@@ -338,21 +341,44 @@ class SpringBuilder implements Builder {
     );
     scanner.throwErrors();
 
-    // Any module may import this one, so its beans may be advised by
-    // aspects the build cannot see: no proxy is pruned (only the
-    // @SpringBootApplication output, which knows every module, prunes).
+    // In a library package any module may import this one, so its beans
+    // may be advised by aspects the build cannot see: no proxy is pruned.
+    // In an application (`publish_to: none`) nothing outside imports it:
+    // it is pruned knowing the advice of the package's other libraries and
+    // of the auto-configurations, as the @SpringBootApplication output.
+    final dependencies = await _dependencies(buildStep);
+    final glue = await driverGlueFor(buildStep, dependencies);
+    final prune = pruneProxies && await _isApplication(buildStep);
     return ModuleEmitter(
       output,
-      dependencies: await _dependencies(buildStep),
-      pruneProxies: false,
+      dependencies: dependencies,
+      pruneProxies: prune,
+      foreignAdvice: prune
+          ? await _foreignAdvice(
+              buildStep,
+              scanner,
+              await _otherLibraries(buildStep, assets),
+              includeOwn: true,
+            )
+          : null,
     ).emit(
       moduleName: variableName,
       variableName: '\$$variableName',
       scannedDirectory: directory,
       module: module,
-      resources: await SpringBuilder.resources(buildStep),
+      extra: [for (final output in glue) output.code],
+      extraDefinitions: [for (final output in glue) output.definition],
+      resources: resources,
     );
   }
+
+  // The text files among [resources], by path.
+  static Map<String, String> _texts(
+    Map<String, ({String? text, String? base64})> resources,
+  ) => {
+    for (final MapEntry(:key, :value) in resources.entries)
+      if (value.text != null) key: value.text!,
+  };
 
   /// The files under `lib/resources/`, keyed by their path below that
   /// directory, to embed in the generated module.
@@ -497,7 +523,15 @@ class SpringBuilder implements Builder {
       nestedAssets: nested,
     );
 
-    final scanner = BeanScanner(module, proxyMode: proxyMode);
+    final resources = await SpringBuilder.resources(
+      buildStep,
+      entryDirectory: directory,
+    );
+    final scanner = BeanScanner(
+      module,
+      proxyMode: proxyMode,
+      sqlResources: _texts(resources),
+    );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
     scanBuildContextAccess(module, scanner.collectErrors);
@@ -514,24 +548,25 @@ class SpringBuilder implements Builder {
       includeOwn: example,
     );
     final springApplication = refer('springApplication');
+    final dependencies = await _dependencies(buildStep);
+    final glue = await driverGlueFor(buildStep, dependencies);
     final emitter = ModuleEmitter(
       output,
-      dependencies: await _dependencies(buildStep),
+      dependencies: dependencies,
       pruneProxies: pruneProxies,
       foreignAdvice: pruneProxies
           ? await _foreignAdvice(
               buildStep,
               scanner,
               nested,
-              includeOwn: example,
+              // The package's own advisors too, whatever the entry point (a
+              // starter's test applications use its auto-configuration):
+              // knowing one more advisor only keeps more proxies.
+              includeOwn: true,
             )
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
-    final resources = await SpringBuilder.resources(
-      buildStep,
-      entryDirectory: directory,
-    );
     final defines = await _dartDefineKeys(buildStep, assets, resources);
     final source = emitter.emit(
       moduleName: 'application',
@@ -539,7 +574,9 @@ class SpringBuilder implements Builder {
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
       module: module,
       resources: resources,
+      extraDefinitions: [for (final output in glue) output.definition],
       extra: [
+        for (final output in glue) output.code,
         Method(
           (m) => m
             ..docs.add(
@@ -769,7 +806,14 @@ class SpringBuilder implements Builder {
     final resolver = buildStep.resolver;
     for (final asset in nested) {
       if (await resolver.isLibrary(asset)) {
-        scanner.collectAdvice(await resolver.libraryFor(asset), foreign);
+        final library = await resolver.libraryFor(asset);
+        // The bodies of their `@Bean` methods, to read the pointcuts of
+        // advisor beans.
+        await scanner.resolveBeanMethods(
+          library,
+          (fragment) => resolver.astNodeFor(fragment, resolve: true),
+        );
+        scanner.collectAdvice(library, foreign);
       }
     }
     final root = buildStep.inputId.package;
@@ -813,6 +857,10 @@ class SpringBuilder implements Builder {
       }
       if (advisors.mentioned && !advisors.annotationDriven) {
         foreign.advisors = true;
+      }
+      foreign.advisedAnnotations.addAll(advisors.annotations);
+      if (advisors.undeclared) {
+        foreign.undeclaredAnnotations = true;
       }
     }
     return foreign;
@@ -1152,6 +1200,41 @@ class SpringBuilder implements Builder {
   /// type through the public library of one of these packages, when the
   /// scanned library imports it that way, rather than through its `src/`
   /// file.
+  // Whether the package is an application: `publish_to: none` in its
+  // pubspec (nothing outside it imports its modules).
+  static Future<bool> _isApplication(BuildStep buildStep) async {
+    final pubspec = AssetId(buildStep.inputId.package, 'pubspec.yaml');
+    if (!await buildStep.canRead(pubspec)) {
+      return false;
+    }
+    try {
+      final yaml = loadYaml(await buildStep.readAsString(pubspec));
+      return yaml is Map && '${yaml['publish_to']}' == 'none';
+    } on YamlException {
+      return false;
+    }
+  }
+
+  // The Dart files of the package's lib/ and bin/ outside [scanned] (the
+  // module's own), generated files excluded: where other aspects and
+  // advisors of the application live.
+  static Future<List<AssetId>> _otherLibraries(
+    BuildStep buildStep,
+    Iterable<AssetId> scanned,
+  ) async {
+    final own = scanned.toSet();
+    return [
+      for (final directory in const ['lib', 'bin'])
+        ...await buildStep
+            .findAssets(Glob('$directory/**.dart'))
+            .where(
+              (asset) =>
+                  !asset.path.endsWith('.spring.dart') && !own.contains(asset),
+            )
+            .toList(),
+    ];
+  }
+
   static Future<Set<String>?> _dependencies(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
     final pubspec = AssetId(package, 'pubspec.yaml');
@@ -1258,6 +1341,14 @@ class SpringBuilder implements Builder {
           library,
           (fragment) => resolver.astNodeFor(fragment, resolve: true),
         );
+        await scanner.resolveFieldInitializers(
+          library,
+          (fragment) => resolver.astNodeFor(fragment, resolve: true),
+        );
+        await scanner.resolveMapperCalls(
+          library,
+          (fragment) => resolver.astNodeFor(fragment, resolve: true),
+        );
         scanner.scanLibrary(library);
       }
     }
@@ -1348,10 +1439,55 @@ class _AdvisorCreations extends RecursiveAstVisitor<void> {
           : type.lookUpGetter('pointcut', type.element.library)?.returnType;
       if (!_matchesByForeignAnnotation(pointcut)) {
         _annotationDriven = false;
+      } else if (!_declaredAnnotations(pointcut, annotations) &&
+          !_declaredAnnotations(type, annotations)) {
+        undeclared = true;
       }
     }
     super.visitInstanceCreationExpression(node);
   }
+
+  /// The annotations the annotation-driven advisors match, by
+  /// `library#Name` (see [ForeignAdvice.advisedAnnotations]).
+  final annotations = <String>{};
+
+  /// Whether one of them does not declare its annotations.
+  bool undeclared = false;
+
+  // Adds to [into] the annotations [type] declares it matches: the `A` of
+  // `AnnotationMatchingPointcut<A>`, or the `static const annotationTypes`
+  // list of the pointcut's (or advisor's) class. False when it declares
+  // none.
+  static bool _declaredAnnotations(DartType? type, Set<String> into) {
+    if (type is! InterfaceType) {
+      return false;
+    }
+    if (_annotationMatchingPointcutChecker.isExactlyType(type)) {
+      final annotation = type.typeArguments.single;
+      if (annotation is InterfaceType) {
+        into.add(_qualified(annotation));
+        return true;
+      }
+      return false;
+    }
+    final field = type.element.getField('annotationTypes');
+    if (field == null || !field.isStatic || !field.isConst) {
+      return false;
+    }
+    final values = field.computeConstantValue()?.toListValue();
+    if (values == null) {
+      return false;
+    }
+    for (final value in values) {
+      if (value.toTypeValue() case final InterfaceType annotation) {
+        into.add(_qualified(annotation));
+      }
+    }
+    return true;
+  }
+
+  static String _qualified(InterfaceType type) =>
+      '${type.element.library.uri}#${type.element.name}';
 
   static bool _matchesByForeignAnnotation(DartType? pointcut) {
     if (pointcut is! InterfaceType ||

@@ -210,7 +210,7 @@ void main() {
           .respond(200, body: 'ok');
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.decode-slash=false',
+            'spring.feign.client.decode-slash=false',
           ])
           .runAsync((context) async {
             await context.getBean<ContractClient>().file('docs/a.txt');
@@ -256,7 +256,7 @@ void main() {
       server.when(HttpMethod.get, '/files/..%2Fa').respond(200, body: 'ok');
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.decode-slash=false',
+            'spring.feign.client.decode-slash=false',
           ])
           .runAsync((context) async {
             final client = context.getBean<ContractClient>();
@@ -291,7 +291,7 @@ void main() {
           .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
           .withPropertyValues([
             'catalog.url=https://api.neon.test',
-            'spring.cloud.openfeign.client.config.catalog.dismiss404=true',
+            'spring.feign.client.config.catalog.dismiss404=true',
           ])
           .withBean<HttpTransport>(() => server)
           .runAsync((context) async {
@@ -306,8 +306,8 @@ void main() {
       server.when(HttpMethod.get, '/static').respond(200, body: 'ok');
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.contract-v2.default-request-headers.X-Context=v2',
-            'spring.cloud.openfeign.client.config.contract.default-request-headers.X-Name=ignored',
+            'spring.feign.client.config.contract-v2.default-request-headers.X-Context=v2',
+            'spring.feign.client.config.contract.default-request-headers.X-Name=ignored',
           ])
           .runAsync((context) async {
             await context.getBean<ContractClient>().statics();
@@ -339,8 +339,8 @@ void main() {
       server.when(HttpMethod.get, '/static').respond(200, body: 'ok');
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.default.read-timeout=0',
-            'spring.cloud.openfeign.client.config.contract-v2.follow-redirects=false',
+            'spring.feign.client.config.default.read-timeout=0',
+            'spring.feign.client.config.contract-v2.follow-redirects=false',
           ])
           .runAsync((context) async {
             await context.getBean<ContractClient>().statics();
@@ -356,8 +356,8 @@ void main() {
         ..when(HttpMethod.get, '/books').respond(200, body: 'ok');
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.default.default-query-parameters.lang=en',
-            'spring.cloud.openfeign.client.config.contract-v2.default-query-parameters.tag=a,b',
+            'spring.feign.client.config.default.default-query-parameters.lang=en',
+            'spring.feign.client.config.contract-v2.default-query-parameters.tag=a,b',
           ])
           .withBean<RequestInterceptor>(() => Tracing())
           .runAsync((context) async {
@@ -381,8 +381,8 @@ void main() {
       server.when(HttpMethod.get, '/static').respond(200, body: 'ok');
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.default.default-request-headers.X-Shop=default',
-            'spring.cloud.openfeign.client.config.default.default-request-headers.Accept=text/plain',
+            'spring.feign.client.config.default.default-request-headers.X-Shop=default',
+            'spring.feign.client.config.default.default-request-headers.Accept=text/plain',
           ])
           .withBean<RequestInterceptor>(() => Tracing())
           .runAsync((context) async {
@@ -596,7 +596,7 @@ void main() {
     test('ERROR and RETRYING lines above none', () async {
       await failOnce(
         runner.withPropertyValues([
-          'spring.cloud.openfeign.client.config.contract-v2.logger-level=basic',
+          'spring.feign.client.config.contract-v2.logger-level=basic',
         ]),
       );
       expect(logs.where((l) => l.startsWith('<--- ERROR')), hasLength(1));
@@ -609,7 +609,7 @@ void main() {
         server.when(HttpMethod.get, '/headers').respond(200, body: 'ok');
         await runner
             .withPropertyValues([
-              'spring.cloud.openfeign.client.config.contract-v2.logger-level=headers',
+              'spring.feign.client.config.contract-v2.logger-level=headers',
             ])
             .runAsync((context) async {
               await context.getBean<ContractClient>().headers({
@@ -640,9 +640,9 @@ void main() {
           );
       await runner
           .withPropertyValues([
-            'spring.cloud.openfeign.client.config.contract-v2.logger-level=headers',
-            'spring.cloud.openfeign.client.config.default.sensitive-headers=X-Api-Key',
-            'spring.cloud.openfeign.client.config.contract-v2.sensitive-headers[0]=x-partner-token',
+            'spring.feign.client.config.contract-v2.logger-level=headers',
+            'spring.feign.client.config.default.sensitive-headers=X-Api-Key',
+            'spring.feign.client.config.contract-v2.sensitive-headers[0]=x-partner-token',
           ])
           .runAsync((context) async {
             await context.getBean<ContractClient>().headers({

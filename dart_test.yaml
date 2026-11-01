@@ -13,3 +13,7 @@ tags:
   # (tool/security_reference): CI's `differential` job.
   differential:
     timeout: 4x
+  # Tests that start containers (@Tags at the top of the file): skipped
+  # without Docker, a failure with CONTAINERS_REQUIRED=true. CI's `docker` job.
+  docker:
+    timeout: 4x

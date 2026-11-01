@@ -187,7 +187,9 @@ final class BeanModule {
     Map<Type, void Function(Object bean)> configurablePreDestroy = const {},
     List<BeanIntrospection<Object>> introspections = const [],
     Map<String, EmbeddedResource> resources = const {},
+    Map<Type, bool Function(Object? value)> typeTests = const {},
   }) : definitions = List.unmodifiable(definitions),
+       typeTests = Map.unmodifiable(typeTests),
        introspections = List.unmodifiable(introspections),
        propertySources = List.unmodifiable(propertySources),
        imports = List.unmodifiable(imports),
@@ -206,6 +208,13 @@ final class BeanModule {
   /// resources (see [ClasspathResources]), which works in AOT, Flutter and
   /// the web too.
   final Map<String, EmbeddedResource> resources;
+
+  /// A test `value is T` for each type `T` written in an annotation of the
+  /// module's classes (`@Transactional(noRollbackFor: [OutOfStock])`),
+  /// keyed by the type: without reflection, a `Type` value alone cannot
+  /// tell whether an object is of a subtype. Registered in the context's
+  /// introspector ([BeanIntrospector.isInstanceOf]).
+  final Map<Type, bool Function(Object? value)> typeTests;
 
   /// The module name, by convention the name of the annotated variable;
   /// shown in logs and errors.

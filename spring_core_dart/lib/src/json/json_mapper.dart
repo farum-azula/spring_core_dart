@@ -11,8 +11,8 @@ import 'package:spring_core_dart/src/json/object_mapper.dart';
 /// written against Jackson's style configure a mapper with
 /// [JsonMapperBuilder.enable] / [JsonMapperBuilder.disable] and ask
 /// [ObjectMapper.isEnabled]. Each flag is also a named parameter of the
-/// `ObjectMapper` constructor; in Spring Boot the `spring.jackson.*`
-/// properties set them.
+/// `ObjectMapper` constructor; the `spring.json.*` properties set them
+/// (Spring Boot: `spring.jackson.*`).
 ///
 /// ```dart
 /// // Reject unknown properties in this mapper.
@@ -63,7 +63,8 @@ enum DeserializationFeature implements JsonFeature {
 }
 
 /// On/off settings for writing and reading `DateTime` and `Duration`,
-/// named after Jackson 3's `DateTimeFeature` (Spring Boot 4's
+/// named after Jackson 3's `DateTimeFeature` (set by
+/// `spring.json.datatype.datetime.*`; Spring Boot 4:
 /// `spring.jackson.datatype.datetime.*`).
 enum DateTimeFeature implements JsonFeature {
   /// `DateTime` is written as a number instead of ISO-8601 text

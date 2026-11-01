@@ -15,9 +15,14 @@ import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/part_tree.dart';
+import 'package:spring_core_dart_generator/src/query_expressions.dart';
+import 'package:spring_core_dart_generator/src/spel_compiler.dart';
 
 part 'configuration_emitter.dart';
+part 'entity_emitter.dart';
 part 'lookup_emitter.dart';
+part 'repository_emitter.dart';
 
 // Runtime types are always imported from the public library, never from
 // `src/`.
@@ -56,9 +61,9 @@ String _docText(String value) => value.replaceAllMapped(
 /// emitter writes one output file. The library contains, in this order:
 ///
 /// - the generated classes: an AOP proxy per proxied bean, lazy-resolution
-///   proxies, implementations of `@InterfaceProxy` interfaces, subclasses
-///   of full-mode `@Configuration` classes and of classes with `@Lookup`
-///   methods;
+///   proxies, implementations of `@InterfaceProxy` interfaces and the
+///   classes of data repositories, subclasses of full-mode `@Configuration`
+///   classes and of classes with `@Lookup` methods;
 /// - a getter `BeanModule get $<name>` with a `BeanDefinition` per bean
 ///   and the module's property sources, embedded resources, imports,
 ///   registrars, introspections and configurers. It is a getter, not a
@@ -118,7 +123,8 @@ class ModuleEmitter {
   ///
   /// [dependencies] are the packages the output may import from (see the
   /// field). [pruneProxies] and [foreignAdvice] turn on proxy pruning; the
-  /// `@ComponentScan` output passes `pruneProxies: false`.
+  /// `@ComponentScan` output of a library package passes
+  /// `pruneProxies: false` (any module may import it).
   ///
   /// ```dart
   /// final emitter = ModuleEmitter(input.changeExtension('.spring.dart'));
@@ -194,11 +200,48 @@ class ModuleEmitter {
     required String scannedDirectory,
     required ModuleModel module,
     List<Spec> extra = const [],
+    List<Expression> extraDefinitions = const [],
     Map<String, ({String? text, String? base64})> resources = const {},
   }) {
     _module = module;
     _usesTypeOf = false;
+    _annotationTypes.clear();
     analyzeAop(module, prune: pruneProxies, foreign: foreignAdvice);
+    // Classes and definitions first: the types in their annotations go
+    // into the module's typeTests.
+    final classes = <Spec>[
+      for (final bean in module.beans)
+        if (bean.proxy case final proxy? when proxy.unavailableReason == null)
+          _proxyClass(proxy, bean.element, lookup: _lookupOf(bean)),
+      for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
+      for (final bean in module.beans)
+        if (bean.creation case InterfaceProxyCreation(:final model))
+          _interfaceImplClass(model),
+      for (final bean in module.beans)
+        if (bean.creation case RepositoryCreation(:final model))
+          repositoryClass(model),
+      for (final bean in module.beans)
+        if (bean.creation case ConstructorCreation(
+          configuration: final model?,
+        ))
+          configurationClass(model),
+      for (final bean in module.beans)
+        if (_lookupOf(bean) case final model?) lookupClass(model),
+      if (module.beans.any(
+        (bean) => switch (bean.creation) {
+          ConstructorCreation(:final configuration?) =>
+            configuration.beanMethods.any((m) => m.defaults.isNotEmpty),
+          _ => false,
+        },
+      ))
+        absentMarkerClass(),
+    ];
+    final definitions = literalList([
+      for (final bean in module.beans) _definition(bean),
+      if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
+      if (module.entities.isNotEmpty) entityIntrospectionsBean(moduleName),
+      ...extraDefinitions,
+    ]);
     final arguments = <String, Expression>{
       if (module.imports.isNotEmpty)
         'imports': literalList([
@@ -264,43 +307,27 @@ class ModuleEmitter {
                   _configurableCalls(configurable, configurable.preDestroy),
         }),
     };
+    if (_annotationTypes.isNotEmpty) {
+      arguments['typeTests'] = literalMap({
+        for (final (type, element) in _annotationTypes.values)
+          _type(type, element): Method(
+            (m) => m
+              ..requiredParameters.add(Parameter((p) => p..name = 'value'))
+              ..lambda = true
+              ..body = refer('value').isA(_type(type, element)).code,
+          ).closure,
+      });
+    }
     final moduleExpression = _spring('BeanModule').newInstance([
       _str(moduleName),
-      literalList([
-        for (final bean in module.beans) _definition(bean),
-        if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
-      ]),
+      definitions,
     ], arguments);
     final buildContextAccess = module.buildContextAccess.isEmpty
         ? null
         : _contextAccessExtension();
     final library = Library(
       (b) => b
-        ..body.addAll([
-          for (final bean in module.beans)
-            if (bean.proxy case final proxy?
-                when proxy.unavailableReason == null)
-              _proxyClass(proxy, bean.element, lookup: _lookupOf(bean)),
-          for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
-          for (final bean in module.beans)
-            if (bean.creation case InterfaceProxyCreation(:final model))
-              _interfaceImplClass(model),
-          for (final bean in module.beans)
-            if (bean.creation case ConstructorCreation(
-              configuration: final model?,
-            ))
-              configurationClass(model),
-          for (final bean in module.beans)
-            if (_lookupOf(bean) case final model?) lookupClass(model),
-          if (module.beans.any(
-            (bean) => switch (bean.creation) {
-              ConstructorCreation(:final configuration?) =>
-                configuration.beanMethods.any((m) => m.defaults.isNotEmpty),
-              _ => false,
-            },
-          ))
-            absentMarkerClass(),
-        ])
+        ..body.addAll(classes)
         ..body.addAll([
           if (_usesTypeOf)
             Method(
@@ -505,6 +532,11 @@ class ModuleEmitter {
 
   // Whether `_$typeOf` is used by the module being emitted.
   bool _usesTypeOf = false;
+
+  // The class types written in the annotations of the module being
+  // emitted, by name, each with the element it was found on: the module
+  // gets a `value is T` test for each (`BeanModule.typeTests`).
+  final _annotationTypes = <String, (InterfaceType, Element)>{};
 
   /// The name of the generated `Type _$typeOf<T>() => T;` helper.
   ///
@@ -729,31 +761,62 @@ class ModuleEmitter {
         : beanType.newInstanceNamed(constructor.name, positional, named);
   }
 
+  // The methods to describe: all of them when expressions may call them,
+  // else those a JSON annotation makes part of writing (`@JsonValue`,
+  // `@JsonAnyGetter`) or reading (`@JsonAnySetter`) the class out or in.
+  List<IntrospectedMethod> _methodsOf(IntrospectionModel model) {
+    final need = model.need;
+    if (need.includes(IntrospectionNeed.methods)) {
+      return model.methods;
+    }
+    return [
+      for (final method in model.methods)
+        if (method.jsonNeed.intersects(need)) method,
+    ];
+  }
+
   Expression _introspectionOf(
     IntrospectionModel model, {
     Expression? specialize,
   }) {
     final element = model.element;
     final beanType = _type(model.type, element);
+    // Only the parts of the class the build saw used (IntrospectionNeed).
+    final need = model.need;
+    final reads = need.includes(IntrospectionNeed.read);
+    final writes = need.includes(IntrospectionNeed.write);
+    final validates = need.includes(IntrospectionNeed.validate);
+    final calls = need.includes(IntrospectionNeed.methods);
     return _spring('BeanIntrospection').newInstance(
       [],
       {
         'className': _str(model.element.name!),
         'specialize': ?specialize,
+        // The properties of a class that is only known are of no use.
         'properties': literalList([
-          for (final property in model.properties)
+          for (final property
+              in need.isNone
+                  ? const <IntrospectedProperty>[]
+                  : model.properties)
             _spring('BeanProperty').newInstance(
               [_str(property.name)],
               {
                 'type': _anyType(property.type, element),
                 if (property.nullable) 'nullable': literalTrue,
                 'typeInfo': _typeInfo(property.declaredType, element).$1,
-                'get': _closure(
-                  ['bean'],
-                  refer('bean').property(property.name).code,
-                  lambda: true,
-                ),
-                if (property.writable)
+                if (writes)
+                  if (property.initialValue case final initial?) ...{
+                    'hasInitialValue': literalTrue,
+                    'initialValue': _initialValue(initial.value, element),
+                  },
+                // Validation reads the properties that have rules only.
+                if (reads || (validates && property.validated))
+                  'get': _closure(
+                    ['bean'],
+                    refer('bean').property(property.name).code,
+                    lambda: true,
+                  ),
+                if (writes && property.writable)
                   'set': _closure(
                     ['bean', 'value'],
                     refer('bean')
@@ -779,9 +842,9 @@ class ModuleEmitter {
               [beanType],
             ),
         ]),
-        if (model.methods.isNotEmpty)
+        if (_methodsOf(model) case final described when described.isNotEmpty)
           'methods': literalList([
-            for (final method in model.methods)
+            for (final method in described)
               _spring('BeanMethod').newInstance(
                 [_str(method.name)],
                 {
@@ -816,63 +879,75 @@ class ModuleEmitter {
             for (final annotation in model.annotations)
               _constant(annotation, element),
           ]),
-        if (model.instantiable)
+        if (!(reads && writes && calls))
+          'parts': literalConstSet({
+            if (reads) _spring('IntrospectionPart').property('read'),
+            if (writes) _spring('IntrospectionPart').property('write'),
+            if (calls) _spring('IntrospectionPart').property('methods'),
+          }),
+        if (writes && model.instantiable)
           'instantiate': _closure(
             [],
             beanType.newInstance([]).code,
             lambda: true,
           ),
-        if (model.constructor case final constructor?)
-          'constructor': _spring('BeanConstructor').newInstance(
-            [],
-            {
-              'parameters': literalList([
-                for (final parameter in constructor.parameters)
-                  _spring('BeanParameter').newInstance(
-                    [_str(parameter.name)],
-                    {
-                      'type': _typeInfo(parameter.type, element).$1,
-                      if (parameter.isNamed)
-                        'symbol': CodeExpression(Code('#${parameter.name}')),
-                      if (parameter.isRequired) 'isRequired': literalTrue,
-                      if (parameter.annotations.isNotEmpty)
-                        'annotations': literalConstList([
-                          for (final annotation in parameter.annotations)
-                            _constant(annotation, element),
-                        ]),
-                    },
-                  ),
-              ]),
-              'create': _closure(
-                ['positional', 'named'],
-                (_directCall(model, constructor, beanType) ??
-                        refer('Function')
-                            .property('apply')
-                            .call([
-                              beanType.property(
-                                constructor.name.isEmpty
-                                    ? 'new'
-                                    : constructor.name,
-                              ),
-                              refer('positional'),
-                              refer('named'),
-                            ])
-                            .asA(beanType))
-                    .code,
-                lambda: true,
-              ),
-            },
-            [beanType],
-          ),
-        if (model.fromJson case final fromJson?)
-          'fromJson': _closure(
-            ['json'],
-            beanType.property('fromJson').call([
-              refer('json').asA(_anyType(fromJson.parameterType, element)),
-            ]).code,
-            lambda: true,
-          ),
-        if (model.hasToJson)
+        if (writes)
+          if (model.constructor case final constructor?)
+            'constructor': _spring('BeanConstructor').newInstance(
+              [],
+              {
+                'parameters': literalList([
+                  for (final parameter in constructor.parameters)
+                    _spring('BeanParameter').newInstance(
+                      [_str(parameter.name)],
+                      {
+                        'type': _typeInfo(parameter.type, element).$1,
+                        if (parameter.isNamed)
+                          'symbol': CodeExpression(Code('#${parameter.name}')),
+                        if (parameter.isRequired) 'isRequired': literalTrue,
+                        if (parameter.defaultValue case final value?) ...{
+                          'hasDefaultValue': literalTrue,
+                          'defaultValue': _constant(value, element),
+                        },
+                        if (parameter.annotations.isNotEmpty)
+                          'annotations': literalConstList([
+                            for (final annotation in parameter.annotations)
+                              _constant(annotation, element),
+                          ]),
+                      },
+                    ),
+                ]),
+                'create': _closure(
+                  ['positional', 'named'],
+                  (_directCall(model, constructor, beanType) ??
+                          refer('Function')
+                              .property('apply')
+                              .call([
+                                beanType.property(
+                                  constructor.name.isEmpty
+                                      ? 'new'
+                                      : constructor.name,
+                                ),
+                                refer('positional'),
+                                refer('named'),
+                              ])
+                              .asA(beanType))
+                      .code,
+                  lambda: true,
+                ),
+              },
+              [beanType],
+            ),
+        if (writes)
+          if (model.fromJson case final fromJson?)
+            'fromJson': _closure(
+              ['json'],
+              beanType.property('fromJson').call([
+                refer('json').asA(_anyType(fromJson.parameterType, element)),
+              ]).code,
+              lambda: true,
+            ),
+        if (reads && model.hasToJson)
           'toJson': _closure(
             ['bean'],
             refer('bean').property('toJson').call([]).code,
@@ -1223,6 +1298,13 @@ class ModuleEmitter {
   // The runtime decides whether to proxy (any advisor matching one of the
   // signatures) and then calls `create` with the target and an invoker.
   Expression _proxyFactory(ProxyModel proxy, Element element) {
+    if (proxy.pruned) {
+      return _spring(
+        'AopProxyFactory',
+      ).newInstanceNamed('pruned', [], {
+        'reason': _str(proxy.unavailableReason!),
+      });
+    }
     final signatures = literalConstList([
       for (final member in proxy.members) _signature(proxy, member, element),
     ]);
@@ -1701,44 +1783,15 @@ class ModuleEmitter {
                 if (parameter.isNamed) parameter.name: arguments[index],
             },
           );
-      return _spring('ProxyMethod').newInstance(
-        [_str(method.name)],
-        {
-          if (method.parameters.isNotEmpty)
-            'parameters': literalList([
-              for (final parameter in method.parameters)
-                _spring('BeanParameter').newInstance(
-                  [_str(parameter.name)],
-                  {
-                    'type': _typeInfo(parameter.type, element).$1,
-                    if (parameter.isNamed)
-                      'symbol': CodeExpression(Code('#${parameter.name}')),
-                    if (parameter.isRequired) 'isRequired': literalTrue,
-                    if (parameter.annotations.isNotEmpty)
-                      'annotations': literalConstList([
-                        for (final annotation in parameter.annotations)
-                          _constant(annotation, element),
-                      ]),
-                  },
-                ),
-            ]),
-          'returnType': method.isVoid
-              ? _spring('DynamicType').constInstance([])
-              : _typeInfo(method.valueType, element).$1,
-          if (method.isFuture) 'isFuture': literalTrue,
-          if (method.isVoid) 'isVoid': literalTrue,
-          if (method.annotations.isNotEmpty)
-            'annotations': literalConstList([
-              for (final annotation in method.annotations)
-                _constant(annotation, element),
-            ]),
-          'call': method.isVoid && !method.isFuture
-              ? _closure([
-                  'target',
-                  'arguments',
-                ], Block.of([call.statement, literalNull.returned.statement]))
-              : _closure(['target', 'arguments'], call.code, lambda: true),
-        },
+      return _interfaceProxyMethod(
+        method,
+        element,
+        call: method.isVoid && !method.isFuture
+            ? _closure([
+                'target',
+                'arguments',
+              ], Block.of([call.statement, literalNull.returned.statement]))
+            : _closure(['target', 'arguments'], call.code, lambda: true),
       );
     }
 
@@ -1876,6 +1929,48 @@ class ModuleEmitter {
         ]),
     );
   }
+
+  // The `ProxyMethod` that tells the starter of an interface method: its
+  // parameters, result and annotations; [call] invokes the method on an
+  // implementation (a Feign fallback), left out where none can exist.
+  Expression _interfaceProxyMethod(
+    InterfaceMethodModel method,
+    Element element, {
+    Expression? call,
+  }) => _spring('ProxyMethod').newInstance(
+    [_str(method.name)],
+    {
+      if (method.parameters.isNotEmpty)
+        'parameters': literalList([
+          for (final parameter in method.parameters)
+            _spring('BeanParameter').newInstance(
+              [_str(parameter.name)],
+              {
+                'type': _typeInfo(parameter.type, element).$1,
+                if (parameter.isNamed)
+                  'symbol': CodeExpression(Code('#${parameter.name}')),
+                if (parameter.isRequired) 'isRequired': literalTrue,
+                if (parameter.annotations.isNotEmpty)
+                  'annotations': literalConstList([
+                    for (final annotation in parameter.annotations)
+                      _constant(annotation, element),
+                  ]),
+              },
+            ),
+        ]),
+      'returnType': method.isVoid
+          ? _spring('DynamicType').constInstance([])
+          : _typeInfo(method.valueType, element).$1,
+      if (method.isFuture) 'isFuture': literalTrue,
+      if (method.isVoid) 'isVoid': literalTrue,
+      if (method.annotations.isNotEmpty)
+        'annotations': literalConstList([
+          for (final annotation in method.annotations)
+            _constant(annotation, element),
+        ]),
+      'call': ?call,
+    },
+  );
 
   // A `@Lazy` injection point gets an instance of this class instead of the
   // bean: every member resolves the bean again (cheap once the factory is
@@ -2561,6 +2656,8 @@ class ModuleEmitter {
               );
       case InterfaceProxyCreation(:final model):
         return refer(model.className).property(r'$create').call([refer('r')]);
+      case RepositoryCreation(:final model):
+        return refer(model.className).property(r'$create').call([refer('r')]);
       case ConfigurationPropertiesCreation():
         return refer(
               'ConstructorBound',
@@ -2838,6 +2935,27 @@ class ModuleEmitter {
     return refer(name, url);
   }
 
+  /// Writes the initial value of a field (see `InitialValue`): a literal, a
+  /// referenced constant, or a `const` collection of those.
+  Expression _initialValue(Object? value, Element element) => switch (value) {
+    null => literalNull,
+    final bool value => literalBool(value),
+    final num value => literalNum(value),
+    final String value => _str(value),
+    final DartObject value => _constant(value, element),
+    final List<Object?> value => literalConstList([
+      for (final item in value) _initialValue(item, element),
+    ]),
+    final Set<Object?> value => literalConstSet({
+      for (final item in value) _initialValue(item, element),
+    }),
+    final Map<Object?, Object?> value => literalConstMap({
+      for (final MapEntry(:key, value: item) in value.entries)
+        _initialValue(key, element): _initialValue(item, element),
+    }),
+    _ => throw StateError('Unsupported initial value $value'),
+  };
+
   /// Writes a constant value (a default value, an annotation instance) as
   /// code that re-creates it: literals, lists, maps, sets, records, types,
   /// enum values, functions and `const` constructor calls.
@@ -2859,7 +2977,17 @@ class ModuleEmitter {
       return _str(reader.stringValue);
     }
     if (reader.isType) {
-      return _type(reader.typeValue, element);
+      final type = reader.typeValue;
+      if (type is InterfaceType &&
+          type.element.isPublic &&
+          type.typeArguments.isEmpty &&
+          !type.isDartCoreObject) {
+        _annotationTypes.putIfAbsent(
+          type.getDisplayString(),
+          () => (type, element),
+        );
+      }
+      return _type(type, element);
     }
     if (reader.isSymbol) {
       return CodeExpression(Code('#${value.toSymbolValue()}'));

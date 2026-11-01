@@ -182,6 +182,10 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
   /// `@ConfigurationProperties` class known to the introspector.
   T bindOrCreate<T extends Object>(String beanName) {
     final introspection = introspector.forTypeArgument<T>();
+    introspection?.requirePart(
+      IntrospectionPart.write,
+      'it is bound from configuration',
+    );
     final annotation = introspection?.annotations
         .whereType<ConfigurationProperties>()
         .firstOrNull;

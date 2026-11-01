@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart' show addVary;
 import 'package:spring_boot_starter_web/src/handler_method.dart';
+import 'package:spring_boot_starter_web/src/request_timeout.dart';
 import 'package:spring_boot_starter_web/src/sse_emitter.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
 import 'package:spring_boot_starter_web/src/web_logging.dart';
@@ -616,6 +617,23 @@ final class ResponseWriter {
           response,
         );
       default:
+        // An error that ends a request after its deadline passed is the
+        // timeout, whatever it says (a Feign call that gave up at the
+        // deadline, a check of the deadline): a 503, not a 500 with a stack
+        // trace. The slack covers timers that fire a moment apart.
+        if (endsAtRequestDeadline(error)) {
+          _log.debug(
+            () =>
+                'Request ${request.method.value} ${logSafe(request.path)} '
+                'failed at its deadline: ${error.runtimeType}',
+          );
+          return await writeError(
+            requestTimeoutError(),
+            stackTrace,
+            request,
+            response,
+          );
+        }
         _log.error(
           'Request ${request.method.value} ${logSafe(request.path)} failed',
           error: error,
@@ -663,6 +681,13 @@ final class ResponseWriter {
     );
   }
 
+  // A response that becomes a stream lives longer than one request: the
+  // request's deadline (server.request-timeout) ends, so that what the
+  // stream does later (an emitter's callbacks, a Feign call) is not cut
+  // at it. The dispatcher does not answer a 503 for a streaming response
+  // either (it is committed).
+  static void _leaveRequestDeadline() => RequestDeadline.current?.release();
+
   // ---------------------------------------------------------------------
   // Bytes: resources, byte streams, StreamingResponseBody
   // ---------------------------------------------------------------------
@@ -691,6 +716,7 @@ final class ResponseWriter {
     ServerHttpResponse response,
     List<MediaType> produces,
   ) async {
+    _leaveRequestDeadline();
     response.headers.contentType = _bytesType(response, produces);
     await response.addStream(stream);
     await response.close();
@@ -701,6 +727,7 @@ final class ResponseWriter {
     ServerHttpResponse response,
     List<MediaType> produces,
   ) async {
+    _leaveRequestDeadline();
     response.headers.contentType = _bytesType(response, produces);
     await body.writeTo(ResponseBodySink._(response));
     await response.close();
@@ -893,6 +920,7 @@ final class ResponseWriter {
     List<MediaType> produces, {
     int status = 200,
   }) async {
+    _leaveRequestDeadline();
     final ndjson = produces.any(
       (p) => p.type == 'application' && p.subtype == 'x-ndjson',
     );
@@ -964,6 +992,7 @@ final class ResponseWriter {
     ServerHttpResponse response, {
     int status = 200,
   }) async {
+    _leaveRequestDeadline();
     final handler = _EmitterHandler(this, response);
     await _startEvents(response, status: status);
     final interval = sseHeartbeat;

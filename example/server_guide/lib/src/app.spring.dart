@@ -7,117 +7,116 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i16;
+import 'dart:async' as _i14;
 
 import 'package:neon_books_server/src/admin/admin_controller.dart' as _i1;
 import 'package:neon_books_server/src/admin/log_service.dart' as _i3;
 import 'package:neon_books_server/src/admin/order_feed.dart' as _i5;
-import 'package:neon_books_server/src/advanced/advanced_tour.dart' as _i86;
-import 'package:neon_books_server/src/advanced/alarm_registrar.dart' as _i85;
-import 'package:neon_books_server/src/advanced/bean_init_timer.dart' as _i87;
+import 'package:neon_books_server/src/advanced/advanced_tour.dart' as _i74;
+import 'package:neon_books_server/src/advanced/alarm_registrar.dart' as _i73;
+import 'package:neon_books_server/src/advanced/bean_init_timer.dart' as _i75;
 import 'package:neon_books_server/src/advanced/import_batch.dart' as _i8;
-import 'package:neon_books_server/src/advanced/lifecycle_probe.dart' as _i10;
+import 'package:neon_books_server/src/advanced/lifecycle_probe.dart' as _i51;
 import 'package:neon_books_server/src/advanced/stock_report_printer.dart'
-    as _i99;
-import 'package:neon_books_server/src/aop/aspects.dart' as _i88;
-import 'package:neon_books_server/src/aop/handler_metrics.dart' as _i11;
-import 'package:neon_books_server/src/aop/timed.dart' as _i89;
+    as _i98;
+import 'package:neon_books_server/src/aop/aspects.dart' as _i76;
+import 'package:neon_books_server/src/aop/handler_metrics.dart' as _i52;
+import 'package:neon_books_server/src/aop/timed.dart' as _i77;
 import 'package:neon_books_server/src/catalog/book.dart' as _i9;
-import 'package:neon_books_server/src/catalog/book_controller.dart' as _i12;
-import 'package:neon_books_server/src/catalog/book_repository.dart' as _i21;
-import 'package:neon_books_server/src/catalog/catalog_service.dart' as _i18;
-import 'package:neon_books_server/src/catalog/cover_store.dart' as _i19;
-import 'package:neon_books_server/src/orders/basket_controller.dart' as _i22;
-import 'package:neon_books_server/src/orders/basket_service.dart' as _i23;
-import 'package:neon_books_server/src/orders/mail.dart' as _i25;
+import 'package:neon_books_server/src/catalog/book_controller.dart' as _i10;
+import 'package:neon_books_server/src/catalog/book_repository.dart' as _i19;
+import 'package:neon_books_server/src/catalog/catalog_service.dart' as _i16;
+import 'package:neon_books_server/src/catalog/cover_store.dart' as _i17;
+import 'package:neon_books_server/src/orders/basket_controller.dart' as _i20;
+import 'package:neon_books_server/src/orders/basket_service.dart' as _i21;
+import 'package:neon_books_server/src/orders/mail.dart' as _i53;
 import 'package:neon_books_server/src/orders/order.dart' as _i6;
-import 'package:neon_books_server/src/orders/order_controller.dart' as _i26;
-import 'package:neon_books_server/src/orders/order_listeners.dart' as _i29;
-import 'package:neon_books_server/src/orders/order_repository.dart' as _i32;
-import 'package:neon_books_server/src/orders/order_service.dart' as _i28;
-import 'package:neon_books_server/src/security/login_audit.dart' as _i35;
-import 'package:neon_books_server/src/security/me_controller.dart' as _i37;
-import 'package:neon_books_server/src/security/security_config.dart' as _i38;
-import 'package:neon_books_server/src/security/sso_config.dart' as _i45;
-import 'package:neon_books_server/src/security/users.dart' as _i46;
-import 'package:neon_books_server/src/shop/clock.dart' as _i34;
-import 'package:neon_books_server/src/shop/payments.dart' as _i33;
-import 'package:neon_books_server/src/shop/pricing.dart' as _i50;
-import 'package:neon_books_server/src/shop/receipt.dart' as _i30;
-import 'package:neon_books_server/src/shop/shop_config.dart' as _i81;
-import 'package:neon_books_server/src/shop/shop_properties.dart' as _i20;
-import 'package:neon_books_server/src/shop/startup.dart' as _i51;
-import 'package:neon_books_server/src/stock/restock_job.dart' as _i55;
+import 'package:neon_books_server/src/orders/order_controller.dart' as _i23;
+import 'package:neon_books_server/src/orders/order_listeners.dart' as _i69;
+import 'package:neon_books_server/src/orders/order_repository.dart' as _i26;
+import 'package:neon_books_server/src/orders/order_service.dart' as _i25;
+import 'package:neon_books_server/src/security/login_audit.dart' as _i80;
+import 'package:neon_books_server/src/security/me_controller.dart' as _i29;
+import 'package:neon_books_server/src/security/security_config.dart' as _i54;
+import 'package:neon_books_server/src/security/sso_config.dart' as _i58;
+import 'package:neon_books_server/src/security/users.dart' as _i61;
+import 'package:neon_books_server/src/shop/clock.dart' as _i28;
+import 'package:neon_books_server/src/shop/payments.dart' as _i27;
+import 'package:neon_books_server/src/shop/pricing.dart' as _i78;
+import 'package:neon_books_server/src/shop/receipt.dart' as _i65;
+import 'package:neon_books_server/src/shop/shop_config.dart' as _i64;
+import 'package:neon_books_server/src/shop/shop_properties.dart' as _i18;
+import 'package:neon_books_server/src/shop/startup.dart' as _i30;
+import 'package:neon_books_server/src/stock/restock_job.dart' as _i32;
 import 'package:neon_books_server/src/stock/stock_changed.dart' as _i7;
-import 'package:neon_books_server/src/stock/stock_controller.dart' as _i56;
-import 'package:neon_books_server/src/stock/stock_feed.dart' as _i58;
-import 'package:neon_books_server/src/stock/stock_service.dart' as _i59;
-import 'package:neon_books_server/src/supplier/supplier_clients.dart' as _i60;
-import 'package:neon_books_server/src/supplier/supplier_config.dart' as _i62;
+import 'package:neon_books_server/src/stock/stock_controller.dart' as _i33;
+import 'package:neon_books_server/src/stock/stock_feed.dart' as _i35;
+import 'package:neon_books_server/src/stock/stock_service.dart' as _i36;
+import 'package:neon_books_server/src/supplier/supplier_clients.dart' as _i37;
+import 'package:neon_books_server/src/supplier/supplier_config.dart' as _i66;
 import 'package:neon_books_server/src/supplier/supplier_configured.dart'
-    as _i93;
-import 'package:neon_books_server/src/supplier/supplier_models.dart' as _i61;
-import 'package:neon_books_server/src/supplier/supplier_stub.dart' as _i66;
-import 'package:neon_books_server/src/support/chat_message.dart' as _i70;
-import 'package:neon_books_server/src/support/support_bot.dart' as _i67;
-import 'package:neon_books_server/src/support/support_endpoint.dart' as _i68;
-import 'package:neon_books_server/src/support/support_sessions.dart' as _i31;
-import 'package:neon_books_server/src/web/api_errors.dart' as _i72;
-import 'package:neon_books_server/src/web/request_id_filter.dart' as _i75;
-import 'package:neon_books_server/src/web/web_config.dart' as _i97;
-import 'package:spring_boot_dart/src/annotations.dart' as _i91;
-import 'package:spring_boot_dart/src/conditions.dart' as _i92;
-import 'package:spring_boot_dart/src/events.dart' as _i53;
-import 'package:spring_boot_dart/src/runners.dart' as _i52;
-import 'package:spring_boot_starter_cache/src/annotations.dart' as _i78;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i76;
-import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i65;
-import 'package:spring_boot_starter_feign/src/request_template.dart' as _i63;
-import 'package:spring_boot_starter_feign/src/retryer.dart' as _i64;
-import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i83;
-import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i94;
-import 'package:spring_boot_starter_scheduling/src/task_scheduler.dart' as _i90;
+    as _i88;
+import 'package:neon_books_server/src/supplier/supplier_models.dart' as _i38;
+import 'package:neon_books_server/src/supplier/supplier_stub.dart' as _i39;
+import 'package:neon_books_server/src/support/chat_message.dart' as _i43;
+import 'package:neon_books_server/src/support/support_bot.dart' as _i40;
+import 'package:neon_books_server/src/support/support_endpoint.dart' as _i41;
+import 'package:neon_books_server/src/support/support_sessions.dart' as _i45;
+import 'package:neon_books_server/src/web/api_errors.dart' as _i92;
+import 'package:neon_books_server/src/web/request_id_filter.dart' as _i46;
+import 'package:neon_books_server/src/web/web_config.dart' as _i96;
+import 'package:spring_boot_dart/src/annotations.dart' as _i82;
+import 'package:spring_boot_dart/src/conditions.dart' as _i85;
+import 'package:spring_boot_dart/src/events.dart' as _i86;
+import 'package:spring_boot_dart/src/runners.dart' as _i31;
+import 'package:spring_boot_starter_cache/src/annotations.dart' as _i50;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i48;
+import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i94;
+import 'package:spring_boot_starter_feign/src/request_template.dart' as _i67;
+import 'package:spring_boot_starter_feign/src/retryer.dart' as _i68;
+import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i71;
+import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i89;
+import 'package:spring_boot_starter_scheduling/src/task_scheduler.dart' as _i79;
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart'
-    as _i80;
+    as _i57;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
-    as _i79;
-import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i39;
-import 'package:spring_boot_starter_web/src/cors.dart' as _i43;
-import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i40;
-import 'package:spring_boot_starter_web/src/handler_method.dart' as _i98;
-import 'package:spring_boot_starter_web/src/http_session.dart' as _i24;
+    as _i56;
+import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i55;
+import 'package:spring_boot_starter_web/src/cors.dart' as _i59;
+import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i47;
+import 'package:spring_boot_starter_web/src/handler_method.dart' as _i97;
+import 'package:spring_boot_starter_web/src/http_session.dart' as _i22;
 import 'package:spring_boot_starter_web/src/sse_emitter.dart' as _i4;
-import 'package:spring_boot_starter_web/src/web_exceptions.dart' as _i74;
-import 'package:spring_boot_starter_web/src/web_server.dart' as _i54;
+import 'package:spring_boot_starter_web/src/web_exceptions.dart' as _i95;
+import 'package:spring_boot_starter_web/src/web_server.dart' as _i87;
 import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dart'
-    as _i95;
+    as _i90;
 import 'package:spring_boot_starter_websocket/src/server/web_socket_handler.dart'
-    as _i69;
+    as _i42;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i96;
+    as _i91;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/src/authentication/events.dart' as _i36;
+import 'package:spring_security_core/src/authentication/events.dart' as _i81;
 import 'package:spring_security_core/src/authorization/authorization_manager.dart'
-    as _i41;
-import 'package:spring_security_core/src/core/authentication.dart' as _i27;
-import 'package:spring_security_core/src/core/authority.dart' as _i42;
-import 'package:spring_security_core/src/crypto/password_encoder.dart' as _i47;
-import 'package:spring_security_core/src/method/annotations.dart' as _i84;
+    as _i83;
+import 'package:spring_security_core/src/core/authentication.dart' as _i24;
+import 'package:spring_security_core/src/core/authority.dart' as _i60;
+import 'package:spring_security_core/src/crypto/password_encoder.dart' as _i62;
+import 'package:spring_security_core/src/method/annotations.dart' as _i72;
 import 'package:spring_security_core/src/method/expression_handler.dart'
-    as _i44;
-import 'package:spring_security_core/src/userdetails/user_details.dart' as _i49;
+    as _i84;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
-    as _i48;
-import 'package:spring_web_dart/src/annotations.dart' as _i77;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i82;
-import 'package:spring_web_dart/src/multipart/multipart.dart' as _i17;
-import 'package:spring_web_dart/src/problem_detail.dart' as _i73;
-import 'package:spring_web_dart/src/response_entity.dart' as _i15;
-import 'package:spring_web_dart/src/server/server_http_request.dart' as _i13;
-import 'package:spring_web_dart/src/server/server_http_response.dart' as _i14;
-import 'package:spring_web_dart/src/sse/event_stream.dart' as _i57;
+    as _i63;
+import 'package:spring_web_dart/src/annotations.dart' as _i49;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i70;
+import 'package:spring_web_dart/src/multipart/multipart.dart' as _i15;
+import 'package:spring_web_dart/src/problem_detail.dart' as _i93;
+import 'package:spring_web_dart/src/response_entity.dart' as _i13;
+import 'package:spring_web_dart/src/server/server_http_request.dart' as _i11;
+import 'package:spring_web_dart/src/server/server_http_response.dart' as _i12;
+import 'package:spring_web_dart/src/sse/event_stream.dart' as _i34;
 import 'package:spring_web_dart/src/websocket/web_socket_transport.dart'
-    as _i71;
+    as _i44;
 
 class _$AdminControllerProxy implements _i1.AdminController, _i2.Advised {
   _$AdminControllerProxy(this._target, this._invoker);
@@ -349,57 +348,6 @@ class _$AdminOrderFeedProxy extends _i5.AdminOrderFeed implements _i2.Advised {
   }
 }
 
-class _$ImportBatchProxy implements _i8.ImportBatch, _i2.Advised {
-  _$ImportBatchProxy(this._target, this._invoker);
-
-  final _i8.ImportBatch _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  List<String> get isbns => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.isbns,
-  ) as List<String>);
-
-  @override
-  List<String> get rejected => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.rejected,
-  ) as List<String>);
-}
-
 class _$CatalogImporterProxy extends _i8.CatalogImporter
     implements _i2.Advised {
   _$CatalogImporterProxy(super.p0, super.p1, super.p2, super.p3);
@@ -452,183 +400,10 @@ class _$CatalogImporterProxy extends _i8.CatalogImporter
   }
 }
 
-class _$LifecycleConfig$LifecycleProbeProxy
-    implements
-        _i10.LifecycleProbe,
-        _i2.BeanNameAware,
-        _i2.Aware,
-        _i2.BeanFactoryAware,
-        _i2.EnvironmentAware,
-        _i2.ApplicationContextAware,
-        _i2.InitializingBean,
-        _i2.DisposableBean,
-        _i2.Advised {
-  _$LifecycleConfig$LifecycleProbeProxy(this._target, this._invoker);
-
-  final _i10.LifecycleProbe _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void inject(_i2.Environment environment) {
-    this._invoker.invoke(this, this._target, 0, [environment], (args) {
-      this._target.inject((args[0] as _i2.Environment));
-      return null;
-    });
-  }
-
-  @override
-  void setBeanName(String name) {
-    this._invoker.invoke(this, this._target, 1, [name], (args) {
-      this._target.setBeanName((args[0] as String));
-      return null;
-    });
-  }
-
-  @override
-  void setBeanFactory(_i2.BeanFactory beanFactory) {
-    this._invoker.invoke(this, this._target, 2, [beanFactory], (args) {
-      this._target.setBeanFactory((args[0] as _i2.BeanFactory));
-      return null;
-    });
-  }
-
-  @override
-  void setEnvironment(_i2.Environment environment) {
-    this._invoker.invoke(this, this._target, 3, [environment], (args) {
-      this._target.setEnvironment((args[0] as _i2.Environment));
-      return null;
-    });
-  }
-
-  @override
-  void setApplicationContext(_i2.ApplicationContext context) {
-    this._invoker.invoke(this, this._target, 4, [context], (args) {
-      this._target.setApplicationContext((args[0] as _i2.ApplicationContext));
-      return null;
-    });
-  }
-
-  @override
-  void postConstruct() {
-    this._invoker.invoke(this, this._target, 5, const [], (args) {
-      this._target.postConstruct();
-      return null;
-    });
-  }
-
-  @override
-  void afterPropertiesSet() {
-    this._invoker.invoke(this, this._target, 6, const [], (args) {
-      this._target.afterPropertiesSet();
-      return null;
-    });
-  }
-
-  @override
-  void customInit() {
-    this._invoker.invoke(this, this._target, 7, const [], (args) {
-      this._target.customInit();
-      return null;
-    });
-  }
-
-  @override
-  void preDestroy() {
-    this._invoker.invoke(this, this._target, 8, const [], (args) {
-      this._target.preDestroy();
-      return null;
-    });
-  }
-
-  @override
-  void destroy() {
-    this._invoker.invoke(this, this._target, 9, const [], (args) {
-      this._target.destroy();
-      return null;
-    });
-  }
-
-  @override
-  void customDestroy() {
-    this._invoker.invoke(this, this._target, 10, const [], (args) {
-      this._target.customDestroy();
-      return null;
-    });
-  }
-}
-
-class _$HandlerMetricsProxy implements _i11.HandlerMetrics, _i2.Advised {
-  _$HandlerMetricsProxy(this._target, this._invoker);
-
-  final _i11.HandlerMetrics _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  Map<String, int> get calls => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.calls,
-  ) as Map<String, int>);
-}
-
-class _$BookControllerProxy implements _i12.BookController, _i2.Advised {
+class _$BookControllerProxy implements _i10.BookController, _i2.Advised {
   _$BookControllerProxy(this._target, this._invoker);
 
-  final _i12.BookController _target;
+  final _i10.BookController _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -682,8 +457,8 @@ class _$BookControllerProxy implements _i12.BookController, _i2.Advised {
   @override
   _i9.Book find(
     String isbn,
-    _i13.ServerHttpRequest request,
-    _i14.ServerHttpResponse response,
+    _i11.ServerHttpRequest request,
+    _i12.ServerHttpResponse response,
   ) => (this._invoker.invoke(
     this,
     this._target,
@@ -691,32 +466,32 @@ class _$BookControllerProxy implements _i12.BookController, _i2.Advised {
     [isbn, request, response],
     (args) => this._target.find(
       (args[0] as String),
-      (args[1] as _i13.ServerHttpRequest),
-      (args[2] as _i14.ServerHttpResponse),
+      (args[1] as _i11.ServerHttpRequest),
+      (args[2] as _i12.ServerHttpResponse),
     ),
   ) as _i9.Book);
 
   @override
-  _i15.ResponseEntity<_i2.Resource> cover(String isbn) => (this._invoker.invoke(
+  _i13.ResponseEntity<_i2.Resource> cover(String isbn) => (this._invoker.invoke(
     this,
     this._target,
     3,
     [isbn],
     (args) => this._target.cover((args[0] as String)),
-  ) as _i15.ResponseEntity<_i2.Resource>);
+  ) as _i13.ResponseEntity<_i2.Resource>);
 
   @override
-  _i15.ResponseEntity<_i9.Book> add(_i9.NewBook newBook) =>
+  _i13.ResponseEntity<_i9.Book> add(_i9.NewBook newBook) =>
       (this._invoker.invoke(
         this,
         this._target,
         4,
         [newBook],
         (args) => this._target.add((args[0] as _i9.NewBook)),
-      ) as _i15.ResponseEntity<_i9.Book>);
+      ) as _i13.ResponseEntity<_i9.Book>);
 
   @override
-  _i16.Future<void> uploadCover(String isbn, _i17.MultipartFile cover) =>
+  _i14.Future<void> uploadCover(String isbn, _i15.MultipartFile cover) =>
       this._invoker.invokeAsync<void>(
         this,
         this._target,
@@ -724,7 +499,7 @@ class _$BookControllerProxy implements _i12.BookController, _i2.Advised {
         [isbn, cover],
         (args) => this._target.uploadCover(
           (args[0] as String),
-          (args[1] as _i17.MultipartFile),
+          (args[1] as _i15.MultipartFile),
         ),
       );
 
@@ -737,31 +512,31 @@ class _$BookControllerProxy implements _i12.BookController, _i2.Advised {
   }
 
   @override
-  _i18.Catalog get catalog => (this._invoker.invoke(
+  _i16.Catalog get catalog => (this._invoker.invoke(
     this,
     this._target,
     7,
     const [],
     (_) => this._target.catalog,
-  ) as _i18.Catalog);
+  ) as _i16.Catalog);
 
   @override
-  _i2.ObjectProvider<_i19.CoverStore> get covers => (this._invoker.invoke(
+  _i2.ObjectProvider<_i17.CoverStore> get covers => (this._invoker.invoke(
     this,
     this._target,
     8,
     const [],
     (_) => this._target.covers,
-  ) as _i2.ObjectProvider<_i19.CoverStore>);
+  ) as _i2.ObjectProvider<_i17.CoverStore>);
 
   @override
-  _i20.ShopProperties get shop => (this._invoker.invoke(
+  _i18.ShopProperties get shop => (this._invoker.invoke(
     this,
     this._target,
     9,
     const [],
     (_) => this._target.shop,
-  ) as _i20.ShopProperties);
+  ) as _i18.ShopProperties);
 
   @override
   int get recentLimit => (this._invoker.invoke(
@@ -773,7 +548,7 @@ class _$BookControllerProxy implements _i12.BookController, _i2.Advised {
   ) as int);
 }
 
-class _$InMemoryBookRepositoryProxy extends _i21.InMemoryBookRepository
+class _$InMemoryBookRepositoryProxy extends _i19.InMemoryBookRepository
     implements _i2.Advised {
   _$InMemoryBookRepositoryProxy();
 
@@ -871,7 +646,7 @@ class _$InMemoryBookRepositoryProxy extends _i21.InMemoryBookRepository
   }
 }
 
-class _$CatalogServiceProxy extends _i18.CatalogService implements _i2.Advised {
+class _$CatalogServiceProxy extends _i16.CatalogService implements _i2.Advised {
   _$CatalogServiceProxy(super.p0, super.p1, super.p2);
 
   _i2.ProxyInvoker? _$invoker;
@@ -1023,10 +798,10 @@ class _$CatalogServiceProxy extends _i18.CatalogService implements _i2.Advised {
   }
 }
 
-class _$BasketControllerProxy implements _i22.BasketController, _i2.Advised {
+class _$BasketControllerProxy implements _i20.BasketController, _i2.Advised {
   _$BasketControllerProxy(this._target, this._invoker);
 
-  final _i22.BasketController _target;
+  final _i20.BasketController _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -1056,19 +831,19 @@ class _$BasketControllerProxy implements _i22.BasketController, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i6.Basket basket(_i13.ServerHttpRequest request) => (this._invoker.invoke(
+  _i6.Basket basket(_i11.ServerHttpRequest request) => (this._invoker.invoke(
     this,
     this._target,
     0,
     [request],
-    (args) => this._target.basket((args[0] as _i13.ServerHttpRequest)),
+    (args) => this._target.basket((args[0] as _i11.ServerHttpRequest)),
   ) as _i6.Basket);
 
   @override
   _i6.Basket setQuantity(
     String isbn,
     _i6.QuantityRequest quantityRequest,
-    _i13.ServerHttpRequest request,
+    _i11.ServerHttpRequest request,
   ) => (this._invoker.invoke(
     this,
     this._target,
@@ -1077,21 +852,21 @@ class _$BasketControllerProxy implements _i22.BasketController, _i2.Advised {
     (args) => this._target.setQuantity(
       (args[0] as String),
       (args[1] as _i6.QuantityRequest),
-      (args[2] as _i13.ServerHttpRequest),
+      (args[2] as _i11.ServerHttpRequest),
     ),
   ) as _i6.Basket);
 
   @override
-  _i23.BasketService get baskets => (this._invoker.invoke(
+  _i21.BasketService get baskets => (this._invoker.invoke(
     this,
     this._target,
     2,
     const [],
     (_) => this._target.baskets,
-  ) as _i23.BasketService);
+  ) as _i21.BasketService);
 }
 
-class _$BasketServiceProxy extends _i23.BasketService implements _i2.Advised {
+class _$BasketServiceProxy extends _i21.BasketService implements _i2.Advised {
   _$BasketServiceProxy(super.p0, super.p1, super.p2);
 
   _i2.ProxyInvoker? _$invoker;
@@ -1128,7 +903,7 @@ class _$BasketServiceProxy extends _i23.BasketService implements _i2.Advised {
       );
 
   @override
-  Map<String, int> contentOf(_i24.HttpSession session) {
+  Map<String, int> contentOf(_i22.HttpSession session) {
     final _$i = this._$invoker;
     return _$i == null
         ? super.contentOf(session)
@@ -1137,12 +912,12 @@ class _$BasketServiceProxy extends _i23.BasketService implements _i2.Advised {
             this,
             0,
             [session],
-            (args) => super.contentOf((args[0] as _i24.HttpSession)),
+            (args) => super.contentOf((args[0] as _i22.HttpSession)),
           ) as Map<String, int>);
   }
 
   @override
-  _i6.Basket setQuantity(_i24.HttpSession session, String isbn, int quantity) {
+  _i6.Basket setQuantity(_i22.HttpSession session, String isbn, int quantity) {
     final _$i = this._$invoker;
     return _$i == null
         ? super.setQuantity(session, isbn, quantity)
@@ -1152,7 +927,7 @@ class _$BasketServiceProxy extends _i23.BasketService implements _i2.Advised {
             1,
             [session, isbn, quantity],
             (args) => super.setQuantity(
-              (args[0] as _i24.HttpSession),
+              (args[0] as _i22.HttpSession),
               (args[1] as String),
               (args[2] as int),
             ),
@@ -1160,13 +935,13 @@ class _$BasketServiceProxy extends _i23.BasketService implements _i2.Advised {
   }
 
   @override
-  void clear(_i24.HttpSession session) {
+  void clear(_i22.HttpSession session) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.clear(session);
     } else {
       _$i.invoke(this, this, 2, [session], (args) {
-        super.clear((args[0] as _i24.HttpSession));
+        super.clear((args[0] as _i22.HttpSession));
         return null;
       });
     }
@@ -1187,111 +962,10 @@ class _$BasketServiceProxy extends _i23.BasketService implements _i2.Advised {
   }
 }
 
-class _$DevMailConfig$MailSenderProxy
-    implements _i25.LogMailSender, _i25.MailSender, _i2.Advised {
-  _$DevMailConfig$MailSenderProxy(this._target, this._invoker);
-
-  final _i25.LogMailSender _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void send(String to, String subject, String body) {
-    this._invoker.invoke(this, this._target, 0, [to, subject, body], (args) {
-      this._target.send(
-        (args[0] as String),
-        (args[1] as String),
-        (args[2] as String),
-      );
-      return null;
-    });
-  }
-}
-
-class _$ProdMailConfig$MailSenderProxy
-    implements _i25.SmtpMailSender, _i25.MailSender, _i2.Advised {
-  _$ProdMailConfig$MailSenderProxy(this._target, this._invoker);
-
-  final _i25.SmtpMailSender _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void send(String to, String subject, String body) {
-    this._invoker.invoke(this, this._target, 0, [to, subject, body], (args) {
-      this._target.send(
-        (args[0] as String),
-        (args[1] as String),
-        (args[2] as String),
-      );
-      return null;
-    });
-  }
-
-  @override
-  String get host => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.host,
-  ) as String);
-}
-
-class _$OrderControllerProxy implements _i26.OrderController, _i2.Advised {
+class _$OrderControllerProxy implements _i23.OrderController, _i2.Advised {
   _$OrderControllerProxy(this._target, this._invoker);
 
-  final _i26.OrderController _target;
+  final _i23.OrderController _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -1321,19 +995,19 @@ class _$OrderControllerProxy implements _i26.OrderController, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i15.ResponseEntity<_i6.CustomerOrder> place(
-    _i27.Authentication authentication,
-    _i13.ServerHttpRequest request,
+  _i13.ResponseEntity<_i6.CustomerOrder> place(
+    _i24.Authentication authentication,
+    _i11.ServerHttpRequest request,
   ) => (this._invoker.invoke(
     this,
     this._target,
     0,
     [authentication, request],
     (args) => this._target.place(
-      (args[0] as _i27.Authentication),
-      (args[1] as _i13.ServerHttpRequest),
+      (args[0] as _i24.Authentication),
+      (args[1] as _i11.ServerHttpRequest),
     ),
-  ) as _i15.ResponseEntity<_i6.CustomerOrder>);
+  ) as _i13.ResponseEntity<_i6.CustomerOrder>);
 
   @override
   List<_i6.CustomerOrder> all() => (this._invoker.invoke(
@@ -1354,204 +1028,25 @@ class _$OrderControllerProxy implements _i26.OrderController, _i2.Advised {
   ) as _i6.CustomerOrder);
 
   @override
-  _i28.OrderService get orders => (this._invoker.invoke(
+  _i25.OrderService get orders => (this._invoker.invoke(
     this,
     this._target,
     3,
     const [],
     (_) => this._target.orders,
-  ) as _i28.OrderService);
+  ) as _i25.OrderService);
 
   @override
-  _i23.BasketService get baskets => (this._invoker.invoke(
+  _i21.BasketService get baskets => (this._invoker.invoke(
     this,
     this._target,
     4,
     const [],
     (_) => this._target.baskets,
-  ) as _i23.BasketService);
+  ) as _i21.BasketService);
 }
 
-class _$VipDeskProxy implements _i29.VipDesk, _i2.Advised {
-  _$VipDeskProxy(this._target, this._invoker);
-
-  final _i29.VipDesk _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void onVipOrder(_i6.OrderPlaced placed) {
-    this._invoker.invoke(this, this._target, 0, [placed], (args) {
-      this._target.onVipOrder((args[0] as _i6.OrderPlaced));
-      return null;
-    });
-  }
-}
-
-class _$OrderMailerProxy implements _i29.OrderMailer, _i2.Advised {
-  _$OrderMailerProxy(this._target, this._invoker);
-
-  final _i29.OrderMailer _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i30.ReceiptBuilder newReceipt() => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (args) => this._target.newReceipt(),
-  ) as _i30.ReceiptBuilder);
-
-  @override
-  _i16.Future<void> onOrderPlaced(_i6.OrderPlaced placed) =>
-      this._invoker.invokeAsync<void>(this, this._target, 1, [
-        placed,
-      ], (args) => this._target.onOrderPlaced((args[0] as _i6.OrderPlaced)));
-
-  @override
-  _i2.Resource get template => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.template,
-  ) as _i2.Resource);
-
-  @override
-  _i2.MessageSource get messages => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.messages,
-  ) as _i2.MessageSource);
-
-  @override
-  _i25.MailSender get mail => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.mail,
-  ) as _i25.MailSender);
-
-  @override
-  _i20.ShopProperties get shop => (this._invoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.shop,
-  ) as _i20.ShopProperties);
-}
-
-class _$ShippingNotifierProxy
-    implements
-        _i29.ShippingNotifier,
-        _i2.ApplicationListener<_i6.OrderShipped>,
-        _i2.Advised {
-  _$ShippingNotifierProxy(this._target, this._invoker);
-
-  final _i29.ShippingNotifier _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void onApplicationEvent(_i6.OrderShipped event) {
-    this._invoker.invoke(this, this._target, 0, [event], (args) {
-      this._target.onApplicationEvent((args[0] as _i6.OrderShipped));
-      return null;
-    });
-  }
-
-  @override
-  _i31.SupportSessions get support => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.support,
-  ) as _i31.SupportSessions);
-}
-
-class _$OrderRepositoryProxy extends _i32.OrderRepository
+class _$OrderRepositoryProxy extends _i26.OrderRepository
     implements _i2.Advised {
   _$OrderRepositoryProxy();
 
@@ -1644,7 +1139,7 @@ class _$OrderRepositoryProxy extends _i32.OrderRepository
   }
 }
 
-class _$OrderServiceProxy extends _i28.OrderService implements _i2.Advised {
+class _$OrderServiceProxy extends _i25.OrderService implements _i2.Advised {
   _$OrderServiceProxy(
     super.p0,
     super.p1,
@@ -1743,113 +1238,45 @@ class _$OrderServiceProxy extends _i28.OrderService implements _i2.Advised {
   }
 
   @override
-  _i33.Checkout get checkout {
+  _i27.Checkout get checkout {
     final _$i = this._$invoker;
     return _$i == null
         ? super.checkout
         : (_$i.invoke(this, this, 5, const [], (_) => super.checkout)
-              as _i33.Checkout);
+              as _i27.Checkout);
   }
 
   @override
-  set checkout(_i33.Checkout value) {
+  set checkout(_i27.Checkout value) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.checkout = value;
     } else {
       _$i.invoke(this, this, 6, [value], (args) {
-        super.checkout = (args[0] as _i33.Checkout);
+        super.checkout = (args[0] as _i27.Checkout);
         return null;
       });
     }
   }
 
   @override
-  set clock(_i34.Clock value) {
+  set clock(_i28.Clock value) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.clock = value;
     } else {
       _$i.invoke(this, this, 7, [value], (args) {
-        super.clock = (args[0] as _i34.Clock);
+        super.clock = (args[0] as _i28.Clock);
         return null;
       });
     }
   }
 }
 
-class _$LoginAuditProxy implements _i35.LoginAudit, _i2.Advised {
-  _$LoginAuditProxy(this._target, this._invoker);
-
-  final _i35.LoginAudit _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void onSuccess(_i36.AuthenticationSuccessEvent event) {
-    this._invoker.invoke(this, this._target, 0, [event], (args) {
-      this._target.onSuccess((args[0] as _i36.AuthenticationSuccessEvent));
-      return null;
-    });
-  }
-
-  @override
-  void onBadCredentials(_i36.AuthenticationFailureBadCredentialsEvent event) {
-    this._invoker.invoke(this, this._target, 1, [event], (args) {
-      this._target.onBadCredentials(
-        (args[0] as _i36.AuthenticationFailureBadCredentialsEvent),
-      );
-      return null;
-    });
-  }
-
-  @override
-  void onLogout(_i36.LogoutSuccessEvent event) {
-    this._invoker.invoke(this, this._target, 2, [event], (args) {
-      this._target.onLogout((args[0] as _i36.LogoutSuccessEvent));
-      return null;
-    });
-  }
-
-  @override
-  Map<String, int> get failures => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.failures,
-  ) as Map<String, int>);
-}
-
-class _$MeControllerProxy implements _i37.MeController, _i2.Advised {
+class _$MeControllerProxy implements _i29.MeController, _i2.Advised {
   _$MeControllerProxy(this._target, this._invoker);
 
-  final _i37.MeController _target;
+  final _i29.MeController _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -1879,1221 +1306,16 @@ class _$MeControllerProxy implements _i37.MeController, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i37.Me me(_i27.Authentication authentication) => (this._invoker.invoke(
+  _i29.Me me(_i24.Authentication authentication) => (this._invoker.invoke(
     this,
     this._target,
     0,
     [authentication],
-    (args) => this._target.me((args[0] as _i27.Authentication)),
-  ) as _i37.Me);
+    (args) => this._target.me((args[0] as _i24.Authentication)),
+  ) as _i29.Me);
 }
 
-class _$CorsPropertiesProxy implements _i38.CorsProperties, _i2.Advised {
-  _$CorsPropertiesProxy(this._target, this._invoker);
-
-  final _i38.CorsProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  List<String> get allowedOriginPatterns => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.allowedOriginPatterns,
-  ) as List<String>);
-
-  @override
-  set allowedOriginPatterns(List<String> value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.allowedOriginPatterns = (args[0] as List<String>);
-      return null;
-    });
-  }
-}
-
-class _$SecurityConfig$SupplierStubChainProxy
-    implements _i39.SecurityFilterChain, _i2.Advised {
-  _$SecurityConfig$SupplierStubChainProxy(this._target, this._invoker);
-
-  final _i39.SecurityFilterChain _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool matches(_i13.ServerHttpRequest request) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [request],
-    (args) => this._target.matches((args[0] as _i13.ServerHttpRequest)),
-  ) as bool);
-
-  @override
-  List<_i40.WebFilter> get filters => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.filters,
-  ) as List<_i40.WebFilter>);
-}
-
-class _$SecurityConfig$ApiChainProxy
-    implements _i39.SecurityFilterChain, _i2.Advised {
-  _$SecurityConfig$ApiChainProxy(this._target, this._invoker);
-
-  final _i39.SecurityFilterChain _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool matches(_i13.ServerHttpRequest request) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [request],
-    (args) => this._target.matches((args[0] as _i13.ServerHttpRequest)),
-  ) as bool);
-
-  @override
-  List<_i40.WebFilter> get filters => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.filters,
-  ) as List<_i40.WebFilter>);
-}
-
-class _$SecurityConfig$SsoChainProxy
-    implements _i39.SecurityFilterChain, _i2.Advised {
-  _$SecurityConfig$SsoChainProxy(this._target, this._invoker);
-
-  final _i39.SecurityFilterChain _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool matches(_i13.ServerHttpRequest request) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [request],
-    (args) => this._target.matches((args[0] as _i13.ServerHttpRequest)),
-  ) as bool);
-
-  @override
-  List<_i40.WebFilter> get filters => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.filters,
-  ) as List<_i40.WebFilter>);
-}
-
-class _$SecurityConfig$RoleHierarchyProxy
-    implements _i41.RoleHierarchy, _i2.Advised {
-  _$SecurityConfig$RoleHierarchyProxy(this._target, this._invoker);
-
-  final _i41.RoleHierarchyImpl _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  List<_i42.GrantedAuthority> getReachableGrantedAuthorities(
-    Iterable<_i42.GrantedAuthority> authorities,
-  ) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [authorities],
-    (args) => this._target.getReachableGrantedAuthorities(
-      (args[0] as Iterable<_i42.GrantedAuthority>),
-    ),
-  ) as List<_i42.GrantedAuthority>);
-}
-
-class _$SecurityConfig$CorsConfigurationSourceProxy
-    implements _i43.CorsConfigurationSource, _i2.Advised {
-  _$SecurityConfig$CorsConfigurationSourceProxy(this._target, this._invoker);
-
-  final _i43.UrlBasedCorsConfigurationSource _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i43.CorsConfiguration? getCorsConfiguration(
-    _i13.ServerHttpRequest request,
-  ) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [request],
-    (args) =>
-        this._target.getCorsConfiguration((args[0] as _i13.ServerHttpRequest)),
-  ) as _i43.CorsConfiguration?);
-}
-
-class _$OrderPermissionEvaluatorProxy
-    implements
-        _i38.OrderPermissionEvaluator,
-        _i44.PermissionEvaluator,
-        _i2.Advised {
-  _$OrderPermissionEvaluatorProxy(this._target, this._invoker);
-
-  final _i38.OrderPermissionEvaluator _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool hasPermission(
-    _i27.Authentication authentication,
-    Object? targetDomainObject,
-    Object permission,
-  ) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [authentication, targetDomainObject, permission],
-    (args) => this._target.hasPermission(
-      (args[0] as _i27.Authentication),
-      (args[1] as Object?),
-      (args[2] as Object),
-    ),
-  ) as bool);
-
-  @override
-  bool hasPermissionById(
-    _i27.Authentication authentication,
-    Object? targetId,
-    String targetType,
-    Object permission,
-  ) => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    [authentication, targetId, targetType, permission],
-    (args) => this._target.hasPermissionById(
-      (args[0] as _i27.Authentication),
-      (args[1] as Object?),
-      (args[2] as String),
-      (args[3] as Object),
-    ),
-  ) as bool);
-}
-
-class _$AppPropertiesProxy implements _i45.AppProperties, _i2.Advised {
-  _$AppPropertiesProxy(this._target, this._invoker);
-
-  final _i45.AppProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String get webUrl => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.webUrl,
-  ) as String);
-
-  @override
-  set webUrl(String value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.webUrl = (args[0] as String);
-      return null;
-    });
-  }
-}
-
-class _$SsoConfig$KeycloakRolesProxy
-    implements _i42.GrantedAuthoritiesMapper, _i2.Advised {
-  _$SsoConfig$KeycloakRolesProxy(this._target, this._invoker);
-
-  final _i45.KeycloakRolesMapper _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  List<_i42.GrantedAuthority> mapAuthorities(
-    Iterable<_i42.GrantedAuthority> authorities,
-  ) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [authorities],
-    (args) => this._target.mapAuthorities(
-      (args[0] as Iterable<_i42.GrantedAuthority>),
-    ),
-  ) as List<_i42.GrantedAuthority>);
-}
-
-class _$UsersPropertiesProxy implements _i46.UsersProperties, _i2.Advised {
-  _$UsersPropertiesProxy(this._target, this._invoker);
-
-  final _i46.UsersProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  Map<String, _i46.UserEntry> get users => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.users,
-  ) as Map<String, _i46.UserEntry>);
-
-  @override
-  set users(Map<String, _i46.UserEntry> value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.users = (args[0] as Map<String, _i46.UserEntry>);
-      return null;
-    });
-  }
-}
-
-class _$UsersConfig$PasswordEncoderProxy
-    implements _i47.PasswordEncoder, _i2.Advised {
-  _$UsersConfig$PasswordEncoderProxy(this._target, this._invoker);
-
-  final _i47.PasswordEncoder _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String encode(String rawPassword) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [rawPassword],
-    (args) => this._target.encode((args[0] as String)),
-  ) as String);
-
-  @override
-  bool matches(String rawPassword, String? encodedPassword) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        1,
-        [rawPassword, encodedPassword],
-        (args) =>
-            this._target.matches((args[0] as String), (args[1] as String?)),
-      ) as bool);
-
-  @override
-  bool upgradeEncoding(String? encodedPassword) => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    [encodedPassword],
-    (args) => this._target.upgradeEncoding((args[0] as String?)),
-  ) as bool);
-}
-
-class _$UsersConfig$UserDetailsServiceProxy
-    implements
-        _i48.UserDetailsManager,
-        _i48.UserDetailsService,
-        _i48.UserDetailsPasswordService,
-        _i2.Advised {
-  _$UsersConfig$UserDetailsServiceProxy(this._target, this._invoker);
-
-  final _i48.InMemoryUserDetailsManager _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void createUser(_i49.UserDetails user) {
-    this._invoker.invoke(this, this._target, 0, [user], (args) {
-      this._target.createUser((args[0] as _i49.UserDetails));
-      return null;
-    });
-  }
-
-  @override
-  void updateUser(_i49.UserDetails user) {
-    this._invoker.invoke(this, this._target, 1, [user], (args) {
-      this._target.updateUser((args[0] as _i49.UserDetails));
-      return null;
-    });
-  }
-
-  @override
-  void deleteUser(String username) {
-    this._invoker.invoke(this, this._target, 2, [username], (args) {
-      this._target.deleteUser((args[0] as String));
-      return null;
-    });
-  }
-
-  @override
-  bool userExists(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    [username],
-    (args) => this._target.userExists((args[0] as String)),
-  ) as bool);
-
-  @override
-  _i49.UserDetails loadUserByUsername(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [username],
-    (args) => this._target.loadUserByUsername((args[0] as String)),
-  ) as _i49.UserDetails);
-
-  @override
-  _i49.UserDetails updatePassword(_i49.UserDetails user, String newPassword) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        5,
-        [user, newPassword],
-        (args) => this._target.updatePassword(
-          (args[0] as _i49.UserDetails),
-          (args[1] as String),
-        ),
-      ) as _i49.UserDetails);
-}
-
-class _$SandboxGatewayProxy
-    implements _i33.SandboxGateway, _i33.PaymentGateway, _i2.Advised {
-  _$SandboxGatewayProxy(this._target, this._invoker);
-
-  final _i33.SandboxGateway _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String charge(_i6.CustomerOrder order) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [order],
-    (args) => this._target.charge((args[0] as _i6.CustomerOrder)),
-  ) as String);
-}
-
-class _$LiveGatewayProxy
-    implements _i33.LiveGateway, _i33.PaymentGateway, _i2.Advised {
-  _$LiveGatewayProxy(this._target, this._invoker);
-
-  final _i33.LiveGateway _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String charge(_i6.CustomerOrder order) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [order],
-    (args) => this._target.charge((args[0] as _i6.CustomerOrder)),
-  ) as String);
-}
-
-class _$OfflineGatewayProxy
-    implements _i33.OfflineGateway, _i33.PaymentGateway, _i2.Advised {
-  _$OfflineGatewayProxy(this._target, this._invoker);
-
-  final _i33.OfflineGateway _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String charge(_i6.CustomerOrder order) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [order],
-    (args) => this._target.charge((args[0] as _i6.CustomerOrder)),
-  ) as String);
-}
-
-class _$CheckoutProxy implements _i33.Checkout, _i2.Advised {
-  _$CheckoutProxy(this._target, this._invoker);
-
-  final _i33.Checkout _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String pay(_i6.CustomerOrder order) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [order],
-    (args) => this._target.pay((args[0] as _i6.CustomerOrder)),
-  ) as String);
-
-  @override
-  _i33.PaymentGateway get gateway => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.gateway,
-  ) as _i33.PaymentGateway);
-
-  @override
-  _i33.PaymentGateway get backup => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.backup,
-  ) as _i33.PaymentGateway);
-}
-
-class _$BulkDiscountProxy
-    implements _i50.BulkDiscount, _i50.PriceRule, _i2.Advised {
-  _$BulkDiscountProxy(this._target, this._invoker);
-
-  final _i50.BulkDiscount _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  int discountPercent(_i9.Book book, int quantity) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [book, quantity],
-    (args) =>
-        this._target.discountPercent((args[0] as _i9.Book), (args[1] as int)),
-  ) as int);
-}
-
-class _$PoetryDiscountProxy
-    implements _i50.PoetryDiscount, _i50.PriceRule, _i2.Advised {
-  _$PoetryDiscountProxy(this._target, this._invoker);
-
-  final _i50.PoetryDiscount _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  int discountPercent(_i9.Book book, int quantity) => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    [book, quantity],
-    (args) =>
-        this._target.discountPercent((args[0] as _i9.Book), (args[1] as int)),
-  ) as int);
-}
-
-class _$BestDiscountProxy
-    implements _i50.BestDiscount, _i50.PriceRule, _i2.Advised {
-  _$BestDiscountProxy(this._target, this._invoker);
-
-  final _i50.BestDiscount _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void report() {
-    this._invoker.invoke(this, this._target, 0, const [], (args) {
-      this._target.report();
-      return null;
-    });
-  }
-
-  @override
-  int discountPercent(_i9.Book book, int quantity) => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    [book, quantity],
-    (args) =>
-        this._target.discountPercent((args[0] as _i9.Book), (args[1] as int)),
-  ) as int);
-
-  @override
-  List<_i50.PriceRule> get rules => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.rules,
-  ) as List<_i50.PriceRule>);
-
-  @override
-  Map<String, _i50.PriceRule> get rulesByName => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.rulesByName,
-  ) as Map<String, _i50.PriceRule>);
-}
-
-class _$ShopConfig$ClockProxy
-    implements _i34.SystemClock, _i34.Clock, _i2.Advised {
-  _$ShopConfig$ClockProxy(this._target, this._invoker);
-
-  final _i34.SystemClock _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  DateTime now() => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (args) => this._target.now(),
-  ) as DateTime);
-}
-
-class _$ShopPropertiesProxy implements _i20.ShopProperties, _i2.Advised {
-  _$ShopPropertiesProxy(this._target, this._invoker);
-
-  final _i20.ShopProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool isOpenAt(DateTime time) => (this._invoker.invoke(this, this._target, 0, [
-    time,
-  ], (args) => this._target.isOpenAt((args[0] as DateTime))) as bool);
-
-  @override
-  String get name => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.name,
-  ) as String);
-
-  @override
-  int get opensAt => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.opensAt,
-  ) as int);
-
-  @override
-  int get closesAt => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.closesAt,
-  ) as int);
-
-  @override
-  int get maxBasketSize => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.maxBasketSize,
-  ) as int);
-
-  @override
-  Duration get deliveryTime => (this._invoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.deliveryTime,
-  ) as Duration);
-
-  @override
-  _i2.DataSize get maxCoverSize => (this._invoker.invoke(
-    this,
-    this._target,
-    6,
-    const [],
-    (_) => this._target.maxCoverSize,
-  ) as _i2.DataSize);
-
-  @override
-  set name(String value) {
-    this._invoker.invoke(this, this._target, 7, [value], (args) {
-      this._target.name = (args[0] as String);
-      return null;
-    });
-  }
-
-  @override
-  set opensAt(int value) {
-    this._invoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.opensAt = (args[0] as int);
-      return null;
-    });
-  }
-
-  @override
-  set closesAt(int value) {
-    this._invoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.closesAt = (args[0] as int);
-      return null;
-    });
-  }
-
-  @override
-  set maxBasketSize(int value) {
-    this._invoker.invoke(this, this._target, 10, [value], (args) {
-      this._target.maxBasketSize = (args[0] as int);
-      return null;
-    });
-  }
-
-  @override
-  set deliveryTime(Duration value) {
-    this._invoker.invoke(this, this._target, 11, [value], (args) {
-      this._target.deliveryTime = (args[0] as Duration);
-      return null;
-    });
-  }
-
-  @override
-  set maxCoverSize(_i2.DataSize value) {
-    this._invoker.invoke(this, this._target, 12, [value], (args) {
-      this._target.maxCoverSize = (args[0] as _i2.DataSize);
-      return null;
-    });
-  }
-}
-
-class _$SampleDataProxy extends _i51.SampleData implements _i2.Advised {
+class _$SampleDataProxy extends _i30.SampleData implements _i2.Advised {
   _$SampleDataProxy(super.p0, super.p1, super.p2);
 
   _i2.ProxyInvoker? _$invoker;
@@ -3130,17 +1352,17 @@ class _$SampleDataProxy extends _i51.SampleData implements _i2.Advised {
       );
 
   @override
-  _i16.Future<void> run(_i52.ApplicationArguments args) {
+  _i14.Future<void> run(_i31.ApplicationArguments args) {
     final _$i = this._$invoker;
     return _$i == null
         ? super.run(args)
         : _$i.invokeAsync<void>(this, this, 0, [
             args,
-          ], (args) => super.run((args[0] as _i52.ApplicationArguments)));
+          ], (args) => super.run((args[0] as _i31.ApplicationArguments)));
   }
 }
 
-class _$StartupAnnouncementProxy extends _i51.StartupAnnouncement
+class _$StartupAnnouncementProxy extends _i30.StartupAnnouncement
     implements _i2.Advised {
   _$StartupAnnouncementProxy(super.p0, super.p1);
 
@@ -3228,7 +1450,7 @@ class _$StartupAnnouncementProxy extends _i51.StartupAnnouncement
   }
 }
 
-class _$CatalogStatisticsProxy extends _i51.CatalogStatistics
+class _$CatalogStatisticsProxy extends _i30.CatalogStatistics
     implements _i2.Advised {
   _$CatalogStatisticsProxy(super.p0);
 
@@ -3279,64 +1501,7 @@ class _$CatalogStatisticsProxy extends _i51.CatalogStatistics
   }
 }
 
-class _$ServerAnnouncerProxy implements _i51.ServerAnnouncer, _i2.Advised {
-  _$ServerAnnouncerProxy(this._target, this._invoker);
-
-  final _i51.ServerAnnouncer _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void onReady(_i53.ApplicationReadyEvent event) {
-    this._invoker.invoke(this, this._target, 0, [event], (args) {
-      this._target.onReady((args[0] as _i53.ApplicationReadyEvent));
-      return null;
-    });
-  }
-
-  @override
-  void onContext(_i2.ApplicationEvent event) {
-    this._invoker.invoke(this, this._target, 1, [event], (args) {
-      this._target.onContext((args[0] as _i2.ApplicationEvent));
-      return null;
-    });
-  }
-
-  @override
-  void onServerStarted(_i54.WebServerInitializedEvent event) {
-    this._invoker.invoke(this, this._target, 2, [event], (args) {
-      this._target.onServerStarted((args[0] as _i54.WebServerInitializedEvent));
-      return null;
-    });
-  }
-}
-
-class _$RestockJobProxy extends _i55.RestockJob implements _i2.Advised {
+class _$RestockJobProxy extends _i32.RestockJob implements _i2.Advised {
   _$RestockJobProxy(super.p0, super.p1, super.p2);
 
   _i2.ProxyInvoker? _$invoker;
@@ -3373,7 +1538,7 @@ class _$RestockJobProxy extends _i55.RestockJob implements _i2.Advised {
       );
 
   @override
-  _i16.Future<void> restockLowStock() {
+  _i14.Future<void> restockLowStock() {
     final _$i = this._$invoker;
     return _$i == null
         ? super.restockLowStock()
@@ -3408,7 +1573,7 @@ class _$RestockJobProxy extends _i55.RestockJob implements _i2.Advised {
   }
 }
 
-class _$StockReportProxy extends _i55.StockReport implements _i2.Advised {
+class _$StockReportProxy extends _i32.StockReport implements _i2.Advised {
   _$StockReportProxy(super.p0);
 
   _i2.ProxyInvoker? _$invoker;
@@ -3458,10 +1623,10 @@ class _$StockReportProxy extends _i55.StockReport implements _i2.Advised {
   }
 }
 
-class _$StockControllerProxy implements _i56.StockController, _i2.Advised {
+class _$StockControllerProxy implements _i33.StockController, _i2.Advised {
   _$StockControllerProxy(this._target, this._invoker);
 
-  final _i56.StockController _target;
+  final _i33.StockController _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -3491,26 +1656,26 @@ class _$StockControllerProxy implements _i56.StockController, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i57.EventStream<_i7.StockChanged> events(String? lastEventId) =>
+  _i34.EventStream<_i7.StockChanged> events(String? lastEventId) =>
       (this._invoker.invoke(
         this,
         this._target,
         0,
         [lastEventId],
         (args) => this._target.events((args[0] as String?)),
-      ) as _i57.EventStream<_i7.StockChanged>);
+      ) as _i34.EventStream<_i7.StockChanged>);
 
   @override
-  _i58.StockFeed get feed => (this._invoker.invoke(
+  _i35.StockFeed get feed => (this._invoker.invoke(
     this,
     this._target,
     1,
     const [],
     (_) => this._target.feed,
-  ) as _i58.StockFeed);
+  ) as _i35.StockFeed);
 }
 
-class _$StockFeedProxy extends _i58.StockFeed implements _i2.Advised {
+class _$StockFeedProxy extends _i35.StockFeed implements _i2.Advised {
   _$StockFeedProxy(super.p0);
 
   _i2.ProxyInvoker? _$invoker;
@@ -3586,7 +1751,7 @@ class _$StockFeedProxy extends _i58.StockFeed implements _i2.Advised {
   }
 
   @override
-  _i57.EventStream<_i7.StockChanged> subscribe({String? lastEventId}) {
+  _i34.EventStream<_i7.StockChanged> subscribe({String? lastEventId}) {
     final _$i = this._$invoker;
     return _$i == null
         ? super.subscribe(lastEventId: lastEventId)
@@ -3596,7 +1761,7 @@ class _$StockFeedProxy extends _i58.StockFeed implements _i2.Advised {
             3,
             [lastEventId],
             (args) => super.subscribe(lastEventId: (args[0] as String?)),
-          ) as _i57.EventStream<_i7.StockChanged>);
+          ) as _i34.EventStream<_i7.StockChanged>);
   }
 
   @override
@@ -3655,7 +1820,7 @@ class _$StockFeedProxy extends _i58.StockFeed implements _i2.Advised {
   }
 }
 
-class _$StockServiceProxy extends _i59.StockService implements _i2.Advised {
+class _$StockServiceProxy extends _i36.StockService implements _i2.Advised {
   _$StockServiceProxy(super.p0, {super.lowThreshold});
 
   _i2.ProxyInvoker? _$invoker;
@@ -3738,10 +1903,10 @@ class _$StockServiceProxy extends _i59.StockService implements _i2.Advised {
   }
 }
 
-class _$SupplierOffersProxy implements _i60.SupplierOffers, _i2.Advised {
+class _$SupplierOffersProxy implements _i37.SupplierOffers, _i2.Advised {
   _$SupplierOffersProxy(this._target, this._invoker);
 
-  final _i60.SupplierOffers _target;
+  final _i37.SupplierOffers _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -3771,18 +1936,18 @@ class _$SupplierOffersProxy implements _i60.SupplierOffers, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i16.Future<_i61.Offer> offer(String isbn, int copies) =>
-      this._invoker.invokeAsync<_i61.Offer>(this, this._target, 0, [
+  _i14.Future<_i38.Offer> offer(String isbn, int copies) =>
+      this._invoker.invokeAsync<_i38.Offer>(this, this._target, 0, [
         isbn,
         copies,
       ], (args) => this._target.offer((args[0] as String), (args[1] as int)));
 }
 
 class _$SupplierDeliveriesProxy
-    implements _i60.SupplierDeliveries, _i2.Advised {
+    implements _i37.SupplierDeliveries, _i2.Advised {
   _$SupplierDeliveriesProxy(this._target, this._invoker);
 
-  final _i60.SupplierDeliveries _target;
+  final _i37.SupplierDeliveries _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -3812,247 +1977,18 @@ class _$SupplierDeliveriesProxy
   String toString() => _target.toString();
 
   @override
-  _i16.Future<_i15.ResponseEntity<_i61.Delivery>> order(
-    _i61.DeliveryRequest request,
-  ) => this._invoker.invokeAsync<_i15.ResponseEntity<_i61.Delivery>>(
+  _i14.Future<_i13.ResponseEntity<_i38.Delivery>> order(
+    _i38.DeliveryRequest request,
+  ) => this._invoker.invokeAsync<_i13.ResponseEntity<_i38.Delivery>>(
     this,
     this._target,
     0,
     [request],
-    (args) => this._target.order((args[0] as _i61.DeliveryRequest)),
+    (args) => this._target.order((args[0] as _i38.DeliveryRequest)),
   );
 }
 
-class _$NoDeliveriesProxy
-    implements _i60.NoDeliveries, _i60.SupplierDeliveries, _i2.Advised {
-  _$NoDeliveriesProxy(this._target, this._invoker);
-
-  final _i60.NoDeliveries _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i16.Future<_i15.ResponseEntity<_i61.Delivery>> order(
-    _i61.DeliveryRequest request,
-  ) => this._invoker.invokeAsync<_i15.ResponseEntity<_i61.Delivery>>(
-    this,
-    this._target,
-    0,
-    [request],
-    (args) => this._target.order((args[0] as _i61.DeliveryRequest)),
-  );
-}
-
-class _$SupplierPropertiesProxy
-    implements _i62.SupplierProperties, _i2.Advised {
-  _$SupplierPropertiesProxy(this._target, this._invoker);
-
-  final _i62.SupplierProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String get url => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.url,
-  ) as String);
-
-  @override
-  String get apiKey => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.apiKey,
-  ) as String);
-
-  @override
-  set url(String value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.url = (args[0] as String);
-      return null;
-    });
-  }
-
-  @override
-  set apiKey(String value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.apiKey = (args[0] as String);
-      return null;
-    });
-  }
-}
-
-class _$SupplierClientConfig$SupplierHeadersProxy
-    implements _i63.RequestInterceptor, _i2.Advised {
-  _$SupplierClientConfig$SupplierHeadersProxy(this._target, this._invoker);
-
-  final _i62.SupplierHeaders _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void apply(_i63.RequestTemplate template) {
-    this._invoker.invoke(this, this._target, 0, [template], (args) {
-      this._target.apply((args[0] as _i63.RequestTemplate));
-      return null;
-    });
-  }
-}
-
-class _$SupplierClientConfig$SupplierRetryerProxy
-    implements _i64.DefaultRetryer, _i64.Retryer, _i2.Advised {
-  _$SupplierClientConfig$SupplierRetryerProxy(this._target, this._invoker);
-
-  final _i64.DefaultRetryer _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  Duration? nextDelay(int attempt, _i65.RetryableException error) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        0,
-        [attempt, error],
-        (args) => this._target.nextDelay(
-          (args[0] as int),
-          (args[1] as _i65.RetryableException),
-        ),
-      ) as Duration?);
-
-  @override
-  Duration get period => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.period,
-  ) as Duration);
-
-  @override
-  Duration get maxPeriod => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.maxPeriod,
-  ) as Duration);
-
-  @override
-  int get maxAttempts => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.maxAttempts,
-  ) as int);
-}
-
-class _$SupplierStubProxy extends _i66.SupplierStub implements _i2.Advised {
+class _$SupplierStubProxy extends _i39.SupplierStub implements _i2.Advised {
   _$SupplierStubProxy(super.p0);
 
   _i2.ProxyInvoker? _$invoker;
@@ -4089,7 +2025,7 @@ class _$SupplierStubProxy extends _i66.SupplierStub implements _i2.Advised {
       );
 
   @override
-  _i61.Offer offer(String isbn, String key, {int copies = 1}) {
+  _i38.Offer offer(String isbn, String key, {int copies = 1}) {
     final _$i = this._$invoker;
     return _$i == null
         ? super.offer(isbn, key, copies: copies)
@@ -4103,12 +2039,12 @@ class _$SupplierStubProxy extends _i66.SupplierStub implements _i2.Advised {
               (args[1] as String),
               copies: (args[2] as int),
             ),
-          ) as _i61.Offer);
+          ) as _i38.Offer);
   }
 
   @override
-  _i15.ResponseEntity<_i61.Delivery> deliver(
-    _i61.DeliveryRequest request,
+  _i13.ResponseEntity<_i38.Delivery> deliver(
+    _i38.DeliveryRequest request,
     String key,
   ) {
     final _$i = this._$invoker;
@@ -4120,10 +2056,10 @@ class _$SupplierStubProxy extends _i66.SupplierStub implements _i2.Advised {
             1,
             [request, key],
             (args) => super.deliver(
-              (args[0] as _i61.DeliveryRequest),
+              (args[0] as _i38.DeliveryRequest),
               (args[1] as String),
             ),
-          ) as _i15.ResponseEntity<_i61.Delivery>);
+          ) as _i13.ResponseEntity<_i38.Delivery>);
   }
 
   @override
@@ -4135,7 +2071,7 @@ class _$SupplierStubProxy extends _i66.SupplierStub implements _i2.Advised {
   }
 }
 
-class _$SupportBotProxy extends _i67.SupportBot implements _i2.Advised {
+class _$SupportBotProxy extends _i40.SupportBot implements _i2.Advised {
   _$SupportBotProxy(super.p0, super.p1, super.p2);
 
   _i2.ProxyInvoker? _$invoker;
@@ -4205,7 +2141,7 @@ class _$SupportBotProxy extends _i67.SupportBot implements _i2.Advised {
   }
 }
 
-class _$SupportEndpointProxy extends _i68.SupportEndpoint
+class _$SupportEndpointProxy extends _i41.SupportEndpoint
     implements _i2.Advised {
   _$SupportEndpointProxy(super.p0, super.p1, super.p2, [super.p3]);
 
@@ -4243,14 +2179,14 @@ class _$SupportEndpointProxy extends _i68.SupportEndpoint
       );
 
   @override
-  void open(_i69.ServerWebSocketSession session, _i2.Principal? user) {
+  void open(_i42.ServerWebSocketSession session, _i2.Principal? user) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.open(session, user);
     } else {
       _$i.invoke(this, this, 0, [session, user], (args) {
         super.open(
-          (args[0] as _i69.ServerWebSocketSession),
+          (args[0] as _i42.ServerWebSocketSession),
           (args[1] as _i2.Principal?),
         );
         return null;
@@ -4259,10 +2195,10 @@ class _$SupportEndpointProxy extends _i68.SupportEndpoint
   }
 
   @override
-  _i70.ChatMessage? message(
-    _i69.ServerWebSocketSession session,
+  _i43.ChatMessage? message(
+    _i42.ServerWebSocketSession session,
     _i2.Principal? user,
-    _i70.ChatMessage message,
+    _i43.ChatMessage message,
   ) {
     final _$i = this._$invoker;
     return _$i == null
@@ -4273,23 +2209,23 @@ class _$SupportEndpointProxy extends _i68.SupportEndpoint
             1,
             [session, user, message],
             (args) => super.message(
-              (args[0] as _i69.ServerWebSocketSession),
+              (args[0] as _i42.ServerWebSocketSession),
               (args[1] as _i2.Principal?),
-              (args[2] as _i70.ChatMessage),
+              (args[2] as _i43.ChatMessage),
             ),
-          ) as _i70.ChatMessage?);
+          ) as _i43.ChatMessage?);
   }
 
   @override
-  void close(_i69.ServerWebSocketSession session, _i71.CloseStatus status) {
+  void close(_i42.ServerWebSocketSession session, _i44.CloseStatus status) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.close(session, status);
     } else {
       _$i.invoke(this, this, 2, [session, status], (args) {
         super.close(
-          (args[0] as _i69.ServerWebSocketSession),
-          (args[1] as _i71.CloseStatus),
+          (args[0] as _i42.ServerWebSocketSession),
+          (args[1] as _i44.CloseStatus),
         );
         return null;
       });
@@ -4297,14 +2233,14 @@ class _$SupportEndpointProxy extends _i68.SupportEndpoint
   }
 
   @override
-  void error(_i69.ServerWebSocketSession session, Object error) {
+  void error(_i42.ServerWebSocketSession session, Object error) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.error(session, error);
     } else {
       _$i.invoke(this, this, 3, [session, error], (args) {
         super.error(
-          (args[0] as _i69.ServerWebSocketSession),
+          (args[0] as _i42.ServerWebSocketSession),
           (args[1] as Object),
         );
         return null;
@@ -4313,7 +2249,7 @@ class _$SupportEndpointProxy extends _i68.SupportEndpoint
   }
 }
 
-class _$SupportSessionsProxy extends _i31.SupportSessions
+class _$SupportSessionsProxy extends _i45.SupportSessions
     implements _i2.Advised {
   _$SupportSessionsProxy(super.p0);
 
@@ -4351,13 +2287,13 @@ class _$SupportSessionsProxy extends _i31.SupportSessions
       );
 
   @override
-  void sendTo(String user, _i70.ChatMessage message) {
+  void sendTo(String user, _i43.ChatMessage message) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.sendTo(user, message);
     } else {
       _$i.invoke(this, this, 0, [user, message], (args) {
-        super.sendTo((args[0] as String), (args[1] as _i70.ChatMessage));
+        super.sendTo((args[0] as String), (args[1] as _i43.ChatMessage));
         return null;
       });
     }
@@ -4365,8 +2301,8 @@ class _$SupportSessionsProxy extends _i31.SupportSessions
 
   @override
   void sendToAdmins(
-    _i70.ChatMessage message, {
-    _i69.ServerWebSocketSession? except,
+    _i43.ChatMessage message, {
+    _i42.ServerWebSocketSession? except,
   }) {
     final _$i = this._$invoker;
     if (_$i == null) {
@@ -4374,8 +2310,8 @@ class _$SupportSessionsProxy extends _i31.SupportSessions
     } else {
       _$i.invoke(this, this, 1, [message, except], (args) {
         super.sendToAdmins(
-          (args[0] as _i70.ChatMessage),
-          except: (args[1] as _i69.ServerWebSocketSession?),
+          (args[0] as _i43.ChatMessage),
+          except: (args[1] as _i42.ServerWebSocketSession?),
         );
         return null;
       });
@@ -4383,119 +2319,20 @@ class _$SupportSessionsProxy extends _i31.SupportSessions
   }
 
   @override
-  void broadcast(_i70.ChatMessage message) {
+  void broadcast(_i43.ChatMessage message) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.broadcast(message);
     } else {
       _$i.invoke(this, this, 2, [message], (args) {
-        super.broadcast((args[0] as _i70.ChatMessage));
+        super.broadcast((args[0] as _i43.ChatMessage));
         return null;
       });
     }
   }
 }
 
-class _$ApiErrorsProxy implements _i72.ApiErrors, _i2.Advised {
-  _$ApiErrorsProxy(this._target, this._invoker);
-
-  final _i72.ApiErrors _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i73.ProblemDetail bookNotFound(_i9.BookNotFoundException error) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        0,
-        [error],
-        (args) =>
-            this._target.bookNotFound((args[0] as _i9.BookNotFoundException)),
-      ) as _i73.ProblemDetail);
-
-  @override
-  _i73.ProblemDetail emptyBasket(_i6.EmptyBasketException error) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        1,
-        [error],
-        (args) =>
-            this._target.emptyBasket((args[0] as _i6.EmptyBasketException)),
-      ) as _i73.ProblemDetail);
-
-  @override
-  _i15.ResponseEntity<_i73.ProblemDetail> conflict(StateError error) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        2,
-        [error],
-        (args) => this._target.conflict((args[0] as StateError)),
-      ) as _i15.ResponseEntity<_i73.ProblemDetail>);
-
-  @override
-  _i73.ProblemDetail supplierFailed(_i65.FeignException error) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        3,
-        [error],
-        (args) => this._target.supplierFailed((args[0] as _i65.FeignException)),
-      ) as _i73.ProblemDetail);
-
-  @override
-  _i73.ProblemDetail invalid(
-    _i74.MethodArgumentNotValidException error,
-    _i13.ServerHttpRequest request,
-  ) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [error, request],
-    (args) => this._target.invalid(
-      (args[0] as _i74.MethodArgumentNotValidException),
-      (args[1] as _i13.ServerHttpRequest),
-    ),
-  ) as _i73.ProblemDetail);
-
-  @override
-  _i2.MessageSource get messages => (this._invoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.messages,
-  ) as _i2.MessageSource);
-}
-
-class _$RequestIdFilterProxy extends _i75.RequestIdFilter
+class _$RequestIdFilterProxy extends _i46.RequestIdFilter
     implements _i2.Advised {
   _$RequestIdFilterProxy();
 
@@ -4533,10 +2370,10 @@ class _$RequestIdFilterProxy extends _i75.RequestIdFilter
       );
 
   @override
-  _i16.Future<void> doFilterInternal(
-    _i13.ServerHttpRequest request,
-    _i14.ServerHttpResponse response,
-    _i40.WebFilterChain chain,
+  _i14.Future<void> doFilterInternal(
+    _i11.ServerHttpRequest request,
+    _i12.ServerHttpResponse response,
+    _i47.WebFilterChain chain,
   ) {
     final _$i = this._$invoker;
     return _$i == null
@@ -4547,15 +2384,15 @@ class _$RequestIdFilterProxy extends _i75.RequestIdFilter
             0,
             [request, response, chain],
             (args) => super.doFilterInternal(
-              (args[0] as _i13.ServerHttpRequest),
-              (args[1] as _i14.ServerHttpResponse),
-              (args[2] as _i40.WebFilterChain),
+              (args[0] as _i11.ServerHttpRequest),
+              (args[1] as _i12.ServerHttpResponse),
+              (args[2] as _i47.WebFilterChain),
             ),
           );
   }
 
   @override
-  bool shouldNotFilter(_i13.ServerHttpRequest request) {
+  bool shouldNotFilter(_i11.ServerHttpRequest request) {
     final _$i = this._$invoker;
     return _$i == null
         ? super.shouldNotFilter(request)
@@ -4565,15 +2402,15 @@ class _$RequestIdFilterProxy extends _i75.RequestIdFilter
             1,
             [request],
             (args) =>
-                super.shouldNotFilter((args[0] as _i13.ServerHttpRequest)),
+                super.shouldNotFilter((args[0] as _i11.ServerHttpRequest)),
           ) as bool);
   }
 
   @override
-  _i16.Future<void> doFilter(
-    _i13.ServerHttpRequest request,
-    _i14.ServerHttpResponse response,
-    _i40.WebFilterChain chain,
+  _i14.Future<void> doFilter(
+    _i11.ServerHttpRequest request,
+    _i12.ServerHttpResponse response,
+    _i47.WebFilterChain chain,
   ) {
     final _$i = this._$invoker;
     return _$i == null
@@ -4584,70 +2421,19 @@ class _$RequestIdFilterProxy extends _i75.RequestIdFilter
             2,
             [request, response, chain],
             (args) => super.doFilter(
-              (args[0] as _i13.ServerHttpRequest),
-              (args[1] as _i14.ServerHttpResponse),
-              (args[2] as _i40.WebFilterChain),
+              (args[0] as _i11.ServerHttpRequest),
+              (args[1] as _i12.ServerHttpResponse),
+              (args[2] as _i47.WebFilterChain),
             ),
           );
   }
 }
 
-class _$AccessLogFilterProxy
-    implements _i75.AccessLogFilter, _i40.WebFilter, _i2.Advised {
-  _$AccessLogFilterProxy(this._target, this._invoker);
-
-  final _i75.AccessLogFilter _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i16.Future<void> doFilter(
-    _i13.ServerHttpRequest request,
-    _i14.ServerHttpResponse response,
-    _i40.WebFilterChain chain,
-  ) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    0,
-    [request, response, chain],
-    (args) => this._target.doFilter(
-      (args[0] as _i13.ServerHttpRequest),
-      (args[1] as _i14.ServerHttpResponse),
-      (args[2] as _i40.WebFilterChain),
-    ),
-  );
-}
-
 /// Resolves `Catalog` on every call (`@Lazy` injection).
-class _$CatalogLazy implements _i18.Catalog {
+class _$CatalogLazy implements _i16.Catalog {
   _$CatalogLazy(this._resolve);
 
-  final _i18.Catalog Function() _resolve;
+  final _i16.Catalog Function() _resolve;
 
   @override
   String toString() => this._resolve().toString();
@@ -4681,18 +2467,18 @@ class _$CatalogLazy implements _i18.Catalog {
 }
 
 /// Implements `SupplierOffers` through an `InvocationHandler`.
-class _$SupplierOffersImpl implements _i60.SupplierOffers {
+class _$SupplierOffersImpl implements _i37.SupplierOffers {
   _$SupplierOffersImpl(this._handler, this._metadata);
 
   final _i2.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i60.SupplierOffers> _metadata;
+  final _i2.InterfaceMetadata<_i37.SupplierOffers> _metadata;
 
   static _$SupplierOffersImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i60.SupplierOffers>(
+    final metadata = _i2.InterfaceMetadata<_i37.SupplierOffers>(
       typeName: r'SupplierOffers',
       annotations: const [
-        _i76.FeignClient(r'supplier-offers', url: r'${neon.supplier.url}'),
+        _i48.FeignClient(r'supplier-offers', url: r'${neon.supplier.url}'),
       ],
       methods: [
         _i2.ProxyMethod(
@@ -4702,22 +2488,22 @@ class _$SupplierOffersImpl implements _i60.SupplierOffers {
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
             _i2.BeanParameter(
               r'copies',
               type: const _i2.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i77.RequestParam(r'copies')],
+              annotations: const [_i49.RequestParam(r'copies')],
             ),
           ],
-          returnType: const _i2.ClassType<_i61.Offer>(),
+          returnType: const _i2.ClassType<_i38.Offer>(),
           isFuture: true,
           annotations: const [
-            _i77.GetMapping(r'/offers/{isbn}'),
-            _i78.Cacheable(r'supplier-offers', key: "#isbn + '*' + #copies"),
+            _i49.GetMapping(r'/offers/{isbn}'),
+            _i50.Cacheable(r'supplier-offers', key: "#isbn + '*' + #copies"),
           ],
-          call: (target, arguments) => (target as _i60.SupplierOffers).offer(
+          call: (target, arguments) => (target as _i37.SupplierOffers).offer(
             (arguments[0] as String),
             (arguments[1] as int),
           ),
@@ -4731,28 +2517,28 @@ class _$SupplierOffersImpl implements _i60.SupplierOffers {
   }
 
   @override
-  _i16.Future<_i61.Offer> offer(String isbn, int copies) =>
-      _i2.retypeFuture<_i61.Offer>(
+  _i14.Future<_i38.Offer> offer(String isbn, int copies) =>
+      _i2.retypeFuture<_i38.Offer>(
         this._handler.invoke(this._metadata.methods[0], [isbn, copies]),
       );
 }
 
 /// Implements `SupplierDeliveries` through an `InvocationHandler`.
-class _$SupplierDeliveriesImpl implements _i60.SupplierDeliveries {
+class _$SupplierDeliveriesImpl implements _i37.SupplierDeliveries {
   _$SupplierDeliveriesImpl(this._handler, this._metadata);
 
   final _i2.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i60.SupplierDeliveries> _metadata;
+  final _i2.InterfaceMetadata<_i37.SupplierDeliveries> _metadata;
 
   static _$SupplierDeliveriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i60.SupplierDeliveries>(
+    final metadata = _i2.InterfaceMetadata<_i37.SupplierDeliveries>(
       typeName: r'SupplierDeliveries',
       annotations: const [
-        _i76.FeignClient(
+        _i48.FeignClient(
           r'supplier-deliveries',
           url: r'${neon.supplier.url}',
-          fallback: _i60.NoDeliveries,
+          fallback: _i37.NoDeliveries,
         ),
       ],
       methods: [
@@ -4761,23 +2547,23 @@ class _$SupplierDeliveriesImpl implements _i60.SupplierDeliveries {
           parameters: [
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i61.DeliveryRequest>(),
+              type: const _i2.ClassType<_i38.DeliveryRequest>(),
               isRequired: true,
-              annotations: const [_i77.RequestBody()],
+              annotations: const [_i49.RequestBody()],
             ),
           ],
-          returnType: const _i2.GenericType<_i15.ResponseEntity<_i61.Delivery>>(
-            [_i2.ClassType<_i61.Delivery>()],
+          returnType: const _i2.GenericType<_i13.ResponseEntity<_i38.Delivery>>(
+            [_i2.ClassType<_i38.Delivery>()],
           ),
           isFuture: true,
           annotations: const [
-            _i77.PostMapping.of(
+            _i49.PostMapping.of(
               path: r'/deliveries',
               headers: [r'X-Shop=${neon.shop.name}'],
             ),
           ],
-          call: (target, arguments) => (target as _i60.SupplierDeliveries)
-              .order((arguments[0] as _i61.DeliveryRequest)),
+          call: (target, arguments) => (target as _i37.SupplierDeliveries)
+              .order((arguments[0] as _i38.DeliveryRequest)),
         ),
       ],
     );
@@ -4788,32 +2574,32 @@ class _$SupplierDeliveriesImpl implements _i60.SupplierDeliveries {
   }
 
   @override
-  _i16.Future<_i15.ResponseEntity<_i61.Delivery>> order(
-    _i61.DeliveryRequest request,
-  ) => _i2.retypeFuture<_i15.ResponseEntity<_i61.Delivery>>(
+  _i14.Future<_i13.ResponseEntity<_i38.Delivery>> order(
+    _i38.DeliveryRequest request,
+  ) => _i2.retypeFuture<_i13.ResponseEntity<_i38.Delivery>>(
     this._handler.invoke(this._metadata.methods[0], [request]),
   );
 }
 
 /// `LifecycleConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$LifecycleConfigConfiguration extends _i10.LifecycleConfig {
+class _$LifecycleConfigConfiguration extends _i51.LifecycleConfig {
   _$LifecycleConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
 
   @override
-  _i10.LifecycleProbe lifecycleProbe() =>
+  _i51.LifecycleProbe lifecycleProbe() =>
       (this._$beanFactory.getBeanByName(r'lifecycleProbe')
-          as _i10.LifecycleProbe);
+          as _i51.LifecycleProbe);
 
-  _i10.LifecycleProbe _$lifecycleProbe(_i2.DependencyResolver r) =>
+  _i51.LifecycleProbe _$lifecycleProbe(_i2.DependencyResolver r) =>
       super.lifecycleProbe();
 }
 
 /// `MetricsConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$MetricsConfigConfiguration extends _i11.MetricsConfig {
+class _$MetricsConfigConfiguration extends _i52.MetricsConfig {
   _$MetricsConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
@@ -4821,7 +2607,7 @@ class _$MetricsConfigConfiguration extends _i11.MetricsConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i2.PointcutAdvisor handlerMetricsAdvisor(_i11.HandlerMetrics metrics) {
+  _i2.PointcutAdvisor handlerMetricsAdvisor(_i52.HandlerMetrics metrics) {
     final _$args = <Object?>[metrics];
     this._$arguments[r'handlerMetricsAdvisor'] = _$args;
     try {
@@ -4835,31 +2621,31 @@ class _$MetricsConfigConfiguration extends _i11.MetricsConfig {
   _i2.PointcutAdvisor _$handlerMetricsAdvisor(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'handlerMetricsAdvisor');
     if (_$args != null) {
-      return super.handlerMetricsAdvisor((_$args[0] as _i11.HandlerMetrics));
+      return super.handlerMetricsAdvisor((_$args[0] as _i52.HandlerMetrics));
     }
     return super.handlerMetricsAdvisor(
-      r.dependency<_i11.HandlerMetrics>(name: r'metrics'),
+      r.dependency<_i52.HandlerMetrics>(name: r'metrics'),
     );
   }
 }
 
 /// `DevMailConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$DevMailConfigConfiguration extends _i25.DevMailConfig {
+class _$DevMailConfigConfiguration extends _i53.DevMailConfig {
   _$DevMailConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
 
   @override
-  _i25.MailSender mailSender() =>
-      (this._$beanFactory.getBeanByName(r'mailSender') as _i25.MailSender);
+  _i53.MailSender mailSender() =>
+      (this._$beanFactory.getBeanByName(r'mailSender') as _i53.MailSender);
 
-  _i25.MailSender _$mailSender(_i2.DependencyResolver r) => super.mailSender();
+  _i53.MailSender _$mailSender(_i2.DependencyResolver r) => super.mailSender();
 }
 
 /// `ProdMailConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$ProdMailConfigConfiguration extends _i25.ProdMailConfig {
+class _$ProdMailConfigConfiguration extends _i53.ProdMailConfig {
   _$ProdMailConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
@@ -4867,18 +2653,18 @@ class _$ProdMailConfigConfiguration extends _i25.ProdMailConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i25.MailSender mailSender(String host) {
+  _i53.MailSender mailSender(String host) {
     final _$args = <Object?>[host];
     this._$arguments[r'mailSender'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'mailSender')
-          as _i25.MailSender);
+          as _i53.MailSender);
     } finally {
       this._$arguments.remove(r'mailSender');
     }
   }
 
-  _i25.MailSender _$mailSender(_i2.DependencyResolver r) {
+  _i53.MailSender _$mailSender(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'mailSender');
     if (_$args != null) {
       return super.mailSender((_$args[0] as String));
@@ -4891,7 +2677,7 @@ class _$ProdMailConfigConfiguration extends _i25.ProdMailConfig {
 
 /// `SecurityConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$SecurityConfigConfiguration extends _i38.SecurityConfig {
+class _$SecurityConfigConfiguration extends _i54.SecurityConfig {
   _$SecurityConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
@@ -4899,125 +2685,125 @@ class _$SecurityConfigConfiguration extends _i38.SecurityConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i39.SecurityFilterChain supplierStubChain(_i79.HttpSecurity http) {
+  _i55.SecurityFilterChain supplierStubChain(_i56.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'supplierStubChain'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'supplierStubChain')
-          as _i39.SecurityFilterChain);
+          as _i55.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'supplierStubChain');
     }
   }
 
-  _i39.SecurityFilterChain _$supplierStubChain(_i2.DependencyResolver r) {
+  _i55.SecurityFilterChain _$supplierStubChain(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'supplierStubChain');
     if (_$args != null) {
-      return super.supplierStubChain((_$args[0] as _i79.HttpSecurity));
+      return super.supplierStubChain((_$args[0] as _i56.HttpSecurity));
     }
     return super.supplierStubChain(
-      r.dependency<_i79.HttpSecurity>(name: r'http'),
+      r.dependency<_i56.HttpSecurity>(name: r'http'),
     );
   }
 
   @override
-  _i39.SecurityFilterChain apiChain(_i79.HttpSecurity http) {
+  _i55.SecurityFilterChain apiChain(_i56.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'apiChain'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'apiChain')
-          as _i39.SecurityFilterChain);
+          as _i55.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'apiChain');
     }
   }
 
-  _i39.SecurityFilterChain _$apiChain(_i2.DependencyResolver r) {
+  _i55.SecurityFilterChain _$apiChain(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'apiChain');
     if (_$args != null) {
-      return super.apiChain((_$args[0] as _i79.HttpSecurity));
+      return super.apiChain((_$args[0] as _i56.HttpSecurity));
     }
-    return super.apiChain(r.dependency<_i79.HttpSecurity>(name: r'http'));
+    return super.apiChain(r.dependency<_i56.HttpSecurity>(name: r'http'));
   }
 
   @override
-  _i39.SecurityFilterChain ssoChain(
-    _i79.HttpSecurity http,
-    _i80.ClientRegistrationRepository registrations,
-    _i45.AppProperties app,
+  _i55.SecurityFilterChain ssoChain(
+    _i56.HttpSecurity http,
+    _i57.ClientRegistrationRepository registrations,
+    _i58.AppProperties app,
   ) {
     final _$args = <Object?>[http, registrations, app];
     this._$arguments[r'ssoChain'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'ssoChain')
-          as _i39.SecurityFilterChain);
+          as _i55.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'ssoChain');
     }
   }
 
-  _i39.SecurityFilterChain _$ssoChain(_i2.DependencyResolver r) {
+  _i55.SecurityFilterChain _$ssoChain(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'ssoChain');
     if (_$args != null) {
       return super.ssoChain(
-        (_$args[0] as _i79.HttpSecurity),
-        (_$args[1] as _i80.ClientRegistrationRepository),
-        (_$args[2] as _i45.AppProperties),
+        (_$args[0] as _i56.HttpSecurity),
+        (_$args[1] as _i57.ClientRegistrationRepository),
+        (_$args[2] as _i58.AppProperties),
       );
     }
     return super.ssoChain(
-      r.dependency<_i79.HttpSecurity>(name: r'http'),
-      r.dependency<_i80.ClientRegistrationRepository>(name: r'registrations'),
-      r.dependency<_i45.AppProperties>(name: r'app'),
+      r.dependency<_i56.HttpSecurity>(name: r'http'),
+      r.dependency<_i57.ClientRegistrationRepository>(name: r'registrations'),
+      r.dependency<_i58.AppProperties>(name: r'app'),
     );
   }
 
   @override
-  _i43.CorsConfigurationSource corsConfigurationSource(
-    _i38.CorsProperties cors,
+  _i59.CorsConfigurationSource corsConfigurationSource(
+    _i54.CorsProperties cors,
   ) {
     final _$args = <Object?>[cors];
     this._$arguments[r'corsConfigurationSource'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'corsConfigurationSource')
-          as _i43.CorsConfigurationSource);
+          as _i59.CorsConfigurationSource);
     } finally {
       this._$arguments.remove(r'corsConfigurationSource');
     }
   }
 
-  _i43.CorsConfigurationSource _$corsConfigurationSource(
+  _i59.CorsConfigurationSource _$corsConfigurationSource(
     _i2.DependencyResolver r,
   ) {
     final _$args = this._$arguments.remove(r'corsConfigurationSource');
     if (_$args != null) {
-      return super.corsConfigurationSource((_$args[0] as _i38.CorsProperties));
+      return super.corsConfigurationSource((_$args[0] as _i54.CorsProperties));
     }
     return super.corsConfigurationSource(
-      r.dependency<_i38.CorsProperties>(name: r'cors'),
+      r.dependency<_i54.CorsProperties>(name: r'cors'),
     );
   }
 }
 
 /// `SsoConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$SsoConfigConfiguration extends _i45.SsoConfig {
+class _$SsoConfigConfiguration extends _i58.SsoConfig {
   _$SsoConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
 
   @override
-  _i42.GrantedAuthoritiesMapper keycloakRoles() =>
+  _i60.GrantedAuthoritiesMapper keycloakRoles() =>
       (this._$beanFactory.getBeanByName(r'keycloakRoles')
-          as _i42.GrantedAuthoritiesMapper);
+          as _i60.GrantedAuthoritiesMapper);
 
-  _i42.GrantedAuthoritiesMapper _$keycloakRoles(_i2.DependencyResolver r) =>
+  _i60.GrantedAuthoritiesMapper _$keycloakRoles(_i2.DependencyResolver r) =>
       super.keycloakRoles();
 }
 
 /// `UsersConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$UsersConfigConfiguration extends _i46.UsersConfig {
+class _$UsersConfigConfiguration extends _i61.UsersConfig {
   _$UsersConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
@@ -5025,39 +2811,39 @@ class _$UsersConfigConfiguration extends _i46.UsersConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i47.PasswordEncoder passwordEncoder() =>
+  _i62.PasswordEncoder passwordEncoder() =>
       (this._$beanFactory.getBeanByName(r'passwordEncoder')
-          as _i47.PasswordEncoder);
+          as _i62.PasswordEncoder);
 
-  _i47.PasswordEncoder _$passwordEncoder(_i2.DependencyResolver r) =>
+  _i62.PasswordEncoder _$passwordEncoder(_i2.DependencyResolver r) =>
       super.passwordEncoder();
 
   @override
-  _i48.UserDetailsService userDetailsService(_i46.UsersProperties properties) {
+  _i63.UserDetailsService userDetailsService(_i61.UsersProperties properties) {
     final _$args = <Object?>[properties];
     this._$arguments[r'userDetailsService'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'userDetailsService')
-          as _i48.UserDetailsService);
+          as _i63.UserDetailsService);
     } finally {
       this._$arguments.remove(r'userDetailsService');
     }
   }
 
-  _i48.UserDetailsService _$userDetailsService(_i2.DependencyResolver r) {
+  _i63.UserDetailsService _$userDetailsService(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'userDetailsService');
     if (_$args != null) {
-      return super.userDetailsService((_$args[0] as _i46.UsersProperties));
+      return super.userDetailsService((_$args[0] as _i61.UsersProperties));
     }
     return super.userDetailsService(
-      r.dependency<_i46.UsersProperties>(name: r'properties'),
+      r.dependency<_i61.UsersProperties>(name: r'properties'),
     );
   }
 }
 
 /// `ShopConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$ShopConfigConfiguration extends _i81.ShopConfig {
+class _$ShopConfigConfiguration extends _i64.ShopConfig {
   _$ShopConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
@@ -5065,24 +2851,24 @@ class _$ShopConfigConfiguration extends _i81.ShopConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i34.Clock clock() =>
-      (this._$beanFactory.getBeanByName(r'clock') as _i34.Clock);
+  _i28.Clock clock() =>
+      (this._$beanFactory.getBeanByName(r'clock') as _i28.Clock);
 
-  _i34.Clock _$clock(_i2.DependencyResolver r) => super.clock();
+  _i28.Clock _$clock(_i2.DependencyResolver r) => super.clock();
 
   @override
-  _i19.CoverStore coverStore(String directory, _i2.ResourceLoader resources) {
+  _i17.CoverStore coverStore(String directory, _i2.ResourceLoader resources) {
     final _$args = <Object?>[directory, resources];
     this._$arguments[r'coverStore'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'coverStore')
-          as _i19.CoverStore);
+          as _i17.CoverStore);
     } finally {
       this._$arguments.remove(r'coverStore');
     }
   }
 
-  _i19.CoverStore _$coverStore(_i2.DependencyResolver r) {
+  _i17.CoverStore _$coverStore(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'coverStore');
     if (_$args != null) {
       return super.coverStore(
@@ -5097,31 +2883,31 @@ class _$ShopConfigConfiguration extends _i81.ShopConfig {
   }
 
   @override
-  _i30.ReceiptBuilder receiptBuilder(_i20.ShopProperties shop) {
+  _i65.ReceiptBuilder receiptBuilder(_i18.ShopProperties shop) {
     final _$args = <Object?>[shop];
     this._$arguments[r'receiptBuilder'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'receiptBuilder')
-          as _i30.ReceiptBuilder);
+          as _i65.ReceiptBuilder);
     } finally {
       this._$arguments.remove(r'receiptBuilder');
     }
   }
 
-  _i30.ReceiptBuilder _$receiptBuilder(_i2.DependencyResolver r) {
+  _i65.ReceiptBuilder _$receiptBuilder(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'receiptBuilder');
     if (_$args != null) {
-      return super.receiptBuilder((_$args[0] as _i20.ShopProperties));
+      return super.receiptBuilder((_$args[0] as _i18.ShopProperties));
     }
     return super.receiptBuilder(
-      r.dependency<_i20.ShopProperties>(name: r'shop'),
+      r.dependency<_i18.ShopProperties>(name: r'shop'),
     );
   }
 }
 
 /// `SupplierClientConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$SupplierClientConfigConfiguration extends _i62.SupplierClientConfig {
+class _$SupplierClientConfigConfiguration extends _i66.SupplierClientConfig {
   _$SupplierClientConfigConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
@@ -5129,44 +2915,44 @@ class _$SupplierClientConfigConfiguration extends _i62.SupplierClientConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i63.RequestInterceptor supplierHeaders(
-    _i62.SupplierProperties supplier,
+  _i67.RequestInterceptor supplierHeaders(
+    _i66.SupplierProperties supplier,
     String application,
   ) {
     final _$args = <Object?>[supplier, application];
     this._$arguments[r'supplierHeaders'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'supplierHeaders')
-          as _i63.RequestInterceptor);
+          as _i67.RequestInterceptor);
     } finally {
       this._$arguments.remove(r'supplierHeaders');
     }
   }
 
-  _i63.RequestInterceptor _$supplierHeaders(_i2.DependencyResolver r) {
+  _i67.RequestInterceptor _$supplierHeaders(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'supplierHeaders');
     if (_$args != null) {
       return super.supplierHeaders(
-        (_$args[0] as _i62.SupplierProperties),
+        (_$args[0] as _i66.SupplierProperties),
         (_$args[1] as String),
       );
     }
     return super.supplierHeaders(
-      r.dependency<_i62.SupplierProperties>(name: r'supplier'),
+      r.dependency<_i66.SupplierProperties>(name: r'supplier'),
       r.value<String>(r'${spring.application.name}'),
     );
   }
 
   @override
-  _i64.Retryer supplierRetryer() =>
-      (this._$beanFactory.getBeanByName(r'supplierRetryer') as _i64.Retryer);
+  _i68.Retryer supplierRetryer() =>
+      (this._$beanFactory.getBeanByName(r'supplierRetryer') as _i68.Retryer);
 
-  _i64.Retryer _$supplierRetryer(_i2.DependencyResolver r) =>
+  _i68.Retryer _$supplierRetryer(_i2.DependencyResolver r) =>
       super.supplierRetryer();
 }
 
 /// `OrderMailer` whose `@Lookup` methods return beans of the container.
-class _$OrderMailerLookup extends _i29.OrderMailer {
+class _$OrderMailerLookup extends _i69.OrderMailer {
   _$OrderMailerLookup(
     this._$beanFactory,
     super.p0,
@@ -5178,8 +2964,8 @@ class _$OrderMailerLookup extends _i29.OrderMailer {
   final _i2.BeanFactory _$beanFactory;
 
   @override
-  _i30.ReceiptBuilder newReceipt() =>
-      this._$beanFactory.getBean<_i30.ReceiptBuilder>();
+  _i65.ReceiptBuilder newReceipt() =>
+      this._$beanFactory.getBean<_i65.ReceiptBuilder>();
 }
 
 /// Beans found by `@ComponentScan` in `lib/src`.
@@ -5206,25 +2992,25 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'level',
               type: const _i2.ClassType<String>(),
               symbol: #level,
-              annotations: const [_i77.RequestParam(r'level')],
+              annotations: const [_i49.RequestParam(r'level')],
             ),
             _i2.BeanParameter(
               r'logger',
               type: const _i2.ClassType<String>(),
               symbol: #logger,
-              annotations: const [_i77.RequestParam(r'logger')],
+              annotations: const [_i49.RequestParam(r'logger')],
             ),
             _i2.BeanParameter(
               r'text',
               type: const _i2.ClassType<String>(),
               symbol: #text,
-              annotations: const [_i77.RequestParam(r'q')],
+              annotations: const [_i49.RequestParam(r'q')],
             ),
             _i2.BeanParameter(
               r'limit',
               type: const _i2.ClassType<int>(),
               symbol: #limit,
-              annotations: const [_i77.RequestParam(r'limit')],
+              annotations: const [_i49.RequestParam(r'limit')],
             ),
           ],
           returnTypeInfo: const _i2.ListType<_i3.LogLine>(
@@ -5234,19 +3020,19 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               Function.apply(bean.recentLogs, arguments),
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.recentLogs, positional, named),
-          annotations: const [_i77.GetMapping(r'/logs')],
+          annotations: const [_i49.GetMapping(r'/logs')],
         ),
         _i2.BeanMethod<_i1.AdminController>(
           r'liveOrders',
           returnTypeInfo: const _i2.ClassType<_i4.SseEmitter>(),
           invoke: (bean, arguments) =>
               Function.apply(bean.liveOrders, arguments),
-          annotations: const [_i77.GetMapping(r'/orders/live')],
+          annotations: const [_i49.GetMapping(r'/orders/live')],
         ),
       ],
       annotations: const [
-        _i82.RestController(),
-        _i77.RequestMapping(r'/api/admin'),
+        _i70.RestController(),
+        _i49.RequestMapping(r'/api/admin'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -5259,17 +3045,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'String', r'String', r'int'],
             parameterNames: [r'level', r'logger', r'text', r'limit'],
             parameterAnnotations: [
-              [_i77.RequestParam(r'level')],
-              [_i77.RequestParam(r'logger')],
-              [_i77.RequestParam(r'q')],
-              [_i77.RequestParam(r'limit')],
+              [_i49.RequestParam(r'level')],
+              [_i49.RequestParam(r'logger')],
+              [_i49.RequestParam(r'q')],
+              [_i49.RequestParam(r'limit')],
             ],
-            annotations: [_i77.GetMapping(r'/logs')],
+            annotations: [_i49.GetMapping(r'/logs')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'AdminController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/admin'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/admin'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -5279,12 +3065,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             targetType: r'AdminController',
             declaringTypes: [r'AdminController'],
             returnType: r'SseEmitter',
-            annotations: [_i77.GetMapping(r'/orders/live')],
+            annotations: [_i49.GetMapping(r'/orders/live')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'AdminController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/admin'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/admin'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -5297,8 +3083,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'LogService',
             targetTypes: [r'AdminController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/admin'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/admin'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -5311,8 +3097,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'AdminOrderFeed',
             targetTypes: [r'AdminController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/admin'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/admin'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -5326,9 +3112,9 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       source:
           r'package:neon_books_server/src/admin/log_service.dart#LogService',
       types: const [_i3.LogService],
-      dependencies: const [_i2.Dependency(_i83.LogBuffer, name: r'_buffer')],
+      dependencies: const [_i2.Dependency(_i71.LogBuffer, name: r'_buffer')],
       create: (r) =>
-          _$LogServiceProxy(r.dependency<_i83.LogBuffer>(name: r'_buffer')),
+          _$LogServiceProxy(r.dependency<_i71.LogBuffer>(name: r'_buffer')),
       annotatedMethods: [
         _i2.BeanMethod<_i3.LogService>(
           r'recent',
@@ -5364,7 +3150,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.recent, positional, named),
           annotations: const [
-            _i84.Secured([r'ROLE_ADMIN']),
+            _i72.Secured([r'ROLE_ADMIN']),
           ],
         ),
       ],
@@ -5380,7 +3166,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'SpringLogLevel', r'String', r'String', r'int'],
             parameterNames: [r'minLevel', r'logger', r'text', r'limit'],
             annotations: [
-              _i84.Secured([r'ROLE_ADMIN']),
+              _i72.Secured([r'ROLE_ADMIN']),
             ],
             annotationTypes: [r'Secured'],
             targetTypes: [r'LogService'],
@@ -5475,11 +3261,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$AdminOrderFeedProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i85.AlarmRegistrar>(
+    _i2.BeanDefinition<_i73.AlarmRegistrar>(
       name: r'alarmRegistrar',
       source: r'package:neon_books_server/src/advanced/alarm_registrar.dart#AlarmRegistrar',
       types: const [
-        _i85.AlarmRegistrar,
+        _i73.AlarmRegistrar,
         _i2.BeanDefinitionRegistryPostProcessor,
         _i2.BeanFactoryPostProcessor,
       ],
@@ -5491,13 +3277,13 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
         ),
       ],
-      create: (r) => _i85.AlarmRegistrar(),
-      annotations: const [_i2.Component(), _i86.AdvancedTour()],
+      create: (r) => _i73.AlarmRegistrar(),
+      annotations: const [_i2.Component(), _i74.AdvancedTour()],
     ),
-    _i2.BeanDefinition<_i87.BeanInitTimer>(
+    _i2.BeanDefinition<_i75.BeanInitTimer>(
       name: r'beanInitTimer',
       source: r'package:neon_books_server/src/advanced/bean_init_timer.dart#BeanInitTimer',
-      types: const [_i87.BeanInitTimer, _i2.BeanPostProcessor],
+      types: const [_i75.BeanInitTimer, _i2.BeanPostProcessor],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/advanced/bean_init_timer.dart#BeanInitTimer',
@@ -5506,8 +3292,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
         ),
       ],
-      create: (r) => _i87.BeanInitTimer(),
-      annotations: const [_i2.Component(), _i86.AdvancedTour()],
+      create: (r) => _i75.BeanInitTimer(),
+      annotations: const [_i2.Component(), _i74.AdvancedTour()],
     ),
     _i2.BeanDefinition<_i8.ImportBatchScope>(
       name: r'importBatchScope',
@@ -5522,7 +3308,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _i8.ImportBatchScope(),
-      annotations: const [_i2.Component(), _i86.AdvancedTour()],
+      annotations: const [_i2.Component(), _i74.AdvancedTour()],
     ),
     _i2.BeanDefinition<_i8.ImportBatch>(
       name: r'importBatch',
@@ -5541,35 +3327,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       annotations: const [
         _i2.Component(),
         _i2.Scope(r'import-batch'),
-        _i86.AdvancedTour(),
+        _i74.AdvancedTour(),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'isbns',
-            declaringType: r'ImportBatch',
-            targetType: r'ImportBatch',
-            declaringTypes: [r'ImportBatch'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            targetTypes: [r'ImportBatch'],
-            targetAnnotations: [_i2.Component(), _i86.AdvancedTour()],
-            targetAnnotationTypes: [r'Component', r'AdvancedTour'],
-          ),
-          _i2.MethodSignature(
-            name: r'rejected',
-            declaringType: r'ImportBatch',
-            targetType: r'ImportBatch',
-            declaringTypes: [r'ImportBatch'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            targetTypes: [r'ImportBatch'],
-            targetAnnotations: [_i2.Component(), _i86.AdvancedTour()],
-            targetAnnotationTypes: [r'Component', r'AdvancedTour'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ImportBatchProxy((target as _i8.ImportBatch), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ImportBatch, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
     _i2.BeanDefinition<_i8.CatalogImporter>(
@@ -5585,18 +3346,18 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i21.BookRepository, name: r'_books'),
+        _i2.Dependency(_i19.BookRepository, name: r'_books'),
         _i2.Dependency.provider(_i8.ImportBatch, name: r'_batch'),
         _i2.Dependency(_i8.ImportBatchScope, name: r'_scope'),
         _i2.Dependency(_i2.BeanValidator, name: r'_validator'),
       ],
       create: (r) => _$CatalogImporterProxy(
-        r.dependency<_i21.BookRepository>(name: r'_books'),
+        r.dependency<_i19.BookRepository>(name: r'_books'),
         r.provider<_i8.ImportBatch>(name: r'_batch'),
         r.dependency<_i8.ImportBatchScope>(name: r'_scope'),
         r.dependency<_i2.BeanValidator>(name: r'_validator'),
       ),
-      annotations: const [_i2.Service(), _i86.AdvancedTour()],
+      annotations: const [_i2.Service(), _i74.AdvancedTour()],
       aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
           _i2.MethodSignature(
@@ -5608,7 +3369,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'books'],
             targetTypes: [r'CatalogImporter'],
-            targetAnnotations: [_i2.Service(), _i86.AdvancedTour()],
+            targetAnnotations: [_i2.Service(), _i74.AdvancedTour()],
             targetAnnotationTypes: [r'Service', r'AdvancedTour'],
           ),
         ],
@@ -5616,10 +3377,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$CatalogImporterProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i10.LifecycleConfig>(
+    _i2.BeanDefinition<_i51.LifecycleConfig>(
       name: r'lifecycleConfig',
       source: r'package:neon_books_server/src/advanced/lifecycle_probe.dart#LifecycleConfig',
-      types: const [_i10.LifecycleConfig],
+      types: const [_i51.LifecycleConfig],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/advanced/lifecycle_probe.dart#LifecycleConfig',
@@ -5629,13 +3390,13 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _$LifecycleConfigConfiguration(r),
-      annotations: const [_i2.Configuration(), _i86.AdvancedTour()],
+      annotations: const [_i2.Configuration(), _i74.AdvancedTour()],
     ),
-    _i2.BeanDefinition<_i10.LifecycleProbe>(
+    _i2.BeanDefinition<_i51.LifecycleProbe>(
       name: r'lifecycleProbe',
       source: r'package:neon_books_server/src/advanced/lifecycle_probe.dart#LifecycleConfig.lifecycleProbe',
       types: const [
-        _i10.LifecycleProbe,
+        _i51.LifecycleProbe,
         _i2.BeanNameAware,
         _i2.Aware,
         _i2.BeanFactoryAware,
@@ -5655,10 +3416,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i10.LifecycleConfig, qualifier: r'lifecycleConfig'),
+        _i2.Dependency(_i51.LifecycleConfig, qualifier: r'lifecycleConfig'),
         _i2.Dependency(_i2.Environment, name: r'environment'),
       ],
-      create: (r) => (r.dependency<_i10.LifecycleConfig>(
+      create: (r) => (r.dependency<_i51.LifecycleConfig>(
         qualifier: r'lifecycleConfig',
       ) as _$LifecycleConfigConfiguration)._$lifecycleProbe(r),
       inject: (bean, r) {
@@ -5681,217 +3442,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       annotations: const [
         _i2.Bean(initMethod: r'customInit', destroyMethod: r'customDestroy'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'inject',
-            declaringType: r'LifecycleProbe',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe'],
-            returnType: r'void',
-            parameterTypes: [r'Environment'],
-            parameterNames: [r'environment'],
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'setBeanName',
-            declaringType: r'BeanNameAware',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe', r'BeanNameAware'],
-            returnType: r'void',
-            parameterTypes: [r'String'],
-            parameterNames: [r'name'],
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'setBeanFactory',
-            declaringType: r'BeanFactoryAware',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe', r'BeanFactoryAware'],
-            returnType: r'void',
-            parameterTypes: [r'BeanFactory'],
-            parameterNames: [r'beanFactory'],
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'setEnvironment',
-            declaringType: r'EnvironmentAware',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe', r'EnvironmentAware'],
-            returnType: r'void',
-            parameterTypes: [r'Environment'],
-            parameterNames: [r'environment'],
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'setApplicationContext',
-            declaringType: r'ApplicationContextAware',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe', r'ApplicationContextAware'],
-            returnType: r'void',
-            parameterTypes: [r'ApplicationContext'],
-            parameterNames: [r'context'],
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'postConstruct',
-            declaringType: r'LifecycleProbe',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe'],
-            returnType: r'void',
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'afterPropertiesSet',
-            declaringType: r'InitializingBean',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe', r'InitializingBean'],
-            returnType: r'void',
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'customInit',
-            declaringType: r'LifecycleProbe',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe'],
-            returnType: r'void',
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'preDestroy',
-            declaringType: r'LifecycleProbe',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe'],
-            returnType: r'void',
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'destroy',
-            declaringType: r'DisposableBean',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe', r'DisposableBean'],
-            returnType: r'void',
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'customDestroy',
-            declaringType: r'LifecycleProbe',
-            targetType: r'LifecycleProbe',
-            declaringTypes: [r'LifecycleProbe'],
-            returnType: r'void',
-            targetTypes: [
-              r'LifecycleProbe',
-              r'BeanNameAware',
-              r'Aware',
-              r'BeanFactoryAware',
-              r'EnvironmentAware',
-              r'ApplicationContextAware',
-              r'InitializingBean',
-              r'DisposableBean',
-            ],
-          ),
-        ],
-        create: (target, invoker) => _$LifecycleConfig$LifecycleProbeProxy(
-          (target as _i10.LifecycleProbe),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches LifecycleProbe, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i10.ShutdownWatcher>(
+    _i2.BeanDefinition<_i51.ShutdownWatcher>(
       name: r'shutdownWatcher',
       source: r'package:neon_books_server/src/advanced/lifecycle_probe.dart#ShutdownWatcher',
       types: const [
-        _i10.ShutdownWatcher,
+        _i51.ShutdownWatcher,
         _i2.DestructionAwareBeanPostProcessor,
         _i2.BeanPostProcessor,
       ],
@@ -5903,24 +3462,24 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
         ),
       ],
-      create: (r) => _i10.ShutdownWatcher(),
-      annotations: const [_i2.Component(), _i86.AdvancedTour()],
+      create: (r) => _i51.ShutdownWatcher(),
+      annotations: const [_i2.Component(), _i74.AdvancedTour()],
     ),
-    _i2.BeanDefinition<_i88.AuditAspect>(
+    _i2.BeanDefinition<_i76.AuditAspect>(
       name: r'auditAspect',
       source: r'package:neon_books_server/src/aop/aspects.dart#AuditAspect',
-      types: const [_i88.AuditAspect],
+      types: const [_i76.AuditAspect],
       order: 1,
-      create: (r) => _i88.AuditAspect(),
+      create: (r) => _i76.AuditAspect(),
       annotations: const [
         _i2.Aspect(),
         _i2.Component(),
         _i2.Order(1),
         _i2.Log(topic: r'neon.audit'),
       ],
-      aspect: _i2.AspectMetadata<_i88.AuditAspect>(
+      aspect: _i2.AspectMetadata<_i76.AuditAspect>(
         advice: [
-          _i2.AspectAdvice<_i88.AuditAspect>(
+          _i2.AspectAdvice<_i76.AuditAspect>(
             kind: _i2.AdviceKind.before,
             pointcut:
                 r'shopServices() && execution(* remove(..)) && args(isbn)',
@@ -5931,7 +3490,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'isbn': _i2.AdviceBinding(r'String', (value) => value is String),
             },
           ),
-          _i2.AspectAdvice<_i88.AuditAspect>(
+          _i2.AspectAdvice<_i76.AuditAspect>(
             kind: _i2.AdviceKind.afterReturning,
             pointcut: r'shopServices() && execution(* place(..))',
             methodName: r'placed',
@@ -5939,7 +3498,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
                 aspect.placed((value as _i6.CustomerOrder)),
             accepts: (value) => value is _i6.CustomerOrder,
           ),
-          _i2.AspectAdvice<_i88.AuditAspect>(
+          _i2.AspectAdvice<_i76.AuditAspect>(
             kind: _i2.AdviceKind.afterThrowing,
             pointcut: r'shopServices()',
             methodName: r'failed',
@@ -5947,7 +3506,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
                 aspect.failed(joinPoint, (value as Exception)),
             accepts: (value) => value is Exception,
           ),
-          _i2.AspectAdvice<_i88.AuditAspect>(
+          _i2.AspectAdvice<_i76.AuditAspect>(
             kind: _i2.AdviceKind.after,
             pointcut: r'bean(supplierOffers) || bean(supplierDeliveries)',
             methodName: r'afterSupplierCall',
@@ -5960,66 +3519,52 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         },
       ),
     ),
-    _i2.BeanDefinition<_i88.TimingAspect>(
+    _i2.BeanDefinition<_i76.TimingAspect>(
       name: r'timingAspect',
       source: r'package:neon_books_server/src/aop/aspects.dart#TimingAspect',
-      types: const [_i88.TimingAspect],
+      types: const [_i76.TimingAspect],
       order: 2,
-      create: (r) => _i88.TimingAspect(),
+      create: (r) => _i76.TimingAspect(),
       annotations: const [
         _i2.Aspect(),
         _i2.Component(),
         _i2.Order(2),
         _i2.Log(topic: r'neon.timing'),
       ],
-      aspect: _i2.AspectMetadata<_i88.TimingAspect>(
+      aspect: _i2.AspectMetadata<_i76.TimingAspect>(
         advice: [
-          _i2.AspectAdvice<_i88.TimingAspect>(
+          _i2.AspectAdvice<_i76.TimingAspect>(
             kind: _i2.AdviceKind.around,
             pointcut: r'@annotation(timed)',
             methodName: r'time',
             invoke: (aspect, joinPoint, value, bindings) => aspect.time(
               (joinPoint as _i2.ProceedingJoinPoint),
-              (bindings[r'timed'] as _i89.Timed),
+              (bindings[r'timed'] as _i77.Timed),
             ),
             bindings: {
               r'timed': _i2.AdviceBinding(
                 r'Timed',
-                (value) => value is _i89.Timed,
+                (value) => value is _i77.Timed,
               ),
             },
           ),
         ],
       ),
     ),
-    _i2.BeanDefinition<_i11.HandlerMetrics>(
+    _i2.BeanDefinition<_i52.HandlerMetrics>(
       name: r'handlerMetrics',
       source: r'package:neon_books_server/src/aop/handler_metrics.dart#HandlerMetrics',
-      types: const [_i11.HandlerMetrics],
-      create: (r) => _i11.HandlerMetrics(),
+      types: const [_i52.HandlerMetrics],
+      create: (r) => _i52.HandlerMetrics(),
       annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'calls',
-            declaringType: r'HandlerMetrics',
-            targetType: r'HandlerMetrics',
-            declaringTypes: [r'HandlerMetrics'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Map',
-            targetTypes: [r'HandlerMetrics'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$HandlerMetricsProxy((target as _i11.HandlerMetrics), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches HandlerMetrics, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i11.MetricsConfig>(
+    _i2.BeanDefinition<_i52.MetricsConfig>(
       name: r'metricsConfig',
       source: r'package:neon_books_server/src/aop/handler_metrics.dart#MetricsConfig',
-      types: const [_i11.MetricsConfig],
+      types: const [_i52.MetricsConfig],
       create: (r) => _$MetricsConfigConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
@@ -6035,63 +3580,63 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       factoryBeanName: r'metricsConfig',
       factoryMethodName: r'handlerMetricsAdvisor',
       dependencies: const [
-        _i2.Dependency(_i11.MetricsConfig, qualifier: r'metricsConfig'),
-        _i2.Dependency(_i11.HandlerMetrics, name: r'metrics'),
+        _i2.Dependency(_i52.MetricsConfig, qualifier: r'metricsConfig'),
+        _i2.Dependency(_i52.HandlerMetrics, name: r'metrics'),
       ],
       create: (r) =>
-          ((r.dependency<_i11.MetricsConfig>(
+          ((r.dependency<_i52.MetricsConfig>(
                 qualifier: r'metricsConfig',
               ) as _$MetricsConfigConfiguration)._$handlerMetricsAdvisor(r)
               as _i2.DefaultPointcutAdvisor),
       annotations: const [_i2.Bean()],
     ),
-    _i2.BeanDefinition<_i12.BookController>(
+    _i2.BeanDefinition<_i10.BookController>(
       name: r'bookController',
       source: r'package:neon_books_server/src/catalog/book_controller.dart#BookController',
-      types: const [_i12.BookController],
+      types: const [_i10.BookController],
       dependencies: const [
-        _i2.Dependency(_i18.Catalog, name: r'catalog'),
-        _i2.Dependency.provider(_i19.CoverStore, name: r'covers'),
-        _i2.Dependency(_i20.ShopProperties, name: r'shop'),
+        _i2.Dependency(_i16.Catalog, name: r'catalog'),
+        _i2.Dependency.provider(_i17.CoverStore, name: r'covers'),
+        _i2.Dependency(_i18.ShopProperties, name: r'shop'),
         _i2.Dependency(int, optional: true, name: r'recentLimit'),
       ],
-      create: (r) => _i12.BookController(
-        r.dependency<_i18.Catalog>(name: r'catalog'),
-        r.provider<_i19.CoverStore>(name: r'covers'),
-        r.dependency<_i20.ShopProperties>(name: r'shop'),
+      create: (r) => _i10.BookController(
+        r.dependency<_i16.Catalog>(name: r'catalog'),
+        r.provider<_i17.CoverStore>(name: r'covers'),
+        r.dependency<_i18.ShopProperties>(name: r'shop'),
         recentLimit: r.optionalDependency<int>(name: r'recentLimit') ?? 5,
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i12.BookController>(
+        _i2.BeanMethod<_i10.BookController>(
           r'search',
           parameters: [
             _i2.BeanParameter(
               r'query',
               type: const _i2.ClassType<String>(),
               symbol: #query,
-              annotations: const [_i77.RequestParam(r'q')],
+              annotations: const [_i49.RequestParam(r'q')],
             ),
             _i2.BeanParameter(
               r'page',
               type: const _i2.ClassType<int>(),
               symbol: #page,
-              annotations: const [_i77.RequestParam(r'page')],
+              annotations: const [_i49.RequestParam(r'page')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i9.BookPage>(),
           invoke: (bean, arguments) => Function.apply(bean.search, arguments),
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.search, positional, named),
-          annotations: const [_i77.GetMapping()],
+          annotations: const [_i49.GetMapping()],
         ),
-        _i2.BeanMethod<_i12.BookController>(
+        _i2.BeanMethod<_i10.BookController>(
           r'recent',
           parameters: [
             _i2.BeanParameter(
               r'recent',
               type: const _i2.ClassType<String>(),
               symbol: #recent,
-              annotations: const [_i77.CookieValue(r'neon-recent')],
+              annotations: const [_i49.CookieValue(r'neon-recent')],
             ),
           ],
           returnTypeInfo: const _i2.ListType<_i9.Book>(
@@ -6100,38 +3645,38 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           invoke: (bean, arguments) => Function.apply(bean.recent, arguments),
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.recent, positional, named),
-          annotations: const [_i77.GetMapping(r'/recent')],
+          annotations: const [_i49.GetMapping(r'/recent')],
         ),
-        _i2.BeanMethod<_i12.BookController>(
+        _i2.BeanMethod<_i10.BookController>(
           r'find',
           parameterTypes: const [
             String,
-            _i13.ServerHttpRequest,
-            _i14.ServerHttpResponse,
+            _i11.ServerHttpRequest,
+            _i12.ServerHttpResponse,
           ],
           parameters: [
             _i2.BeanParameter(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i13.ServerHttpRequest>(),
+              type: const _i2.ClassType<_i11.ServerHttpRequest>(),
               isRequired: true,
             ),
             _i2.BeanParameter(
               r'response',
-              type: const _i2.ClassType<_i14.ServerHttpResponse>(),
+              type: const _i2.ClassType<_i12.ServerHttpResponse>(),
               isRequired: true,
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i9.Book>(),
           invoke: (bean, arguments) => Function.apply(bean.find, arguments),
-          annotations: const [_i77.GetMapping(r'/{isbn}')],
+          annotations: const [_i49.GetMapping(r'/{isbn}')],
         ),
-        _i2.BeanMethod<_i12.BookController>(
+        _i2.BeanMethod<_i10.BookController>(
           r'cover',
           parameterTypes: const [String],
           parameters: [
@@ -6139,17 +3684,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
           ],
           returnTypeInfo:
-              const _i2.GenericType<_i15.ResponseEntity<_i2.Resource>>([
+              const _i2.GenericType<_i13.ResponseEntity<_i2.Resource>>([
                 _i2.ClassType<_i2.Resource>(),
               ]),
           invoke: (bean, arguments) => Function.apply(bean.cover, arguments),
-          annotations: const [_i77.GetMapping(r'/{isbn}/cover')],
+          annotations: const [_i49.GetMapping(r'/{isbn}/cover')],
         ),
-        _i2.BeanMethod<_i12.BookController>(
+        _i2.BeanMethod<_i10.BookController>(
           r'add',
           parameterTypes: const [_i9.NewBook],
           parameters: [
@@ -6157,30 +3702,30 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'newBook',
               type: const _i2.ClassType<_i9.NewBook>(),
               isRequired: true,
-              annotations: const [_i77.RequestBody(), _i2.Valid()],
+              annotations: const [_i49.RequestBody(), _i2.Valid()],
             ),
           ],
-          returnTypeInfo: const _i2.GenericType<_i15.ResponseEntity<_i9.Book>>([
+          returnTypeInfo: const _i2.GenericType<_i13.ResponseEntity<_i9.Book>>([
             _i2.ClassType<_i9.Book>(),
           ]),
           invoke: (bean, arguments) => Function.apply(bean.add, arguments),
-          annotations: const [_i77.PostMapping()],
+          annotations: const [_i49.PostMapping()],
         ),
-        _i2.BeanMethod<_i12.BookController>(
+        _i2.BeanMethod<_i10.BookController>(
           r'uploadCover',
-          parameterTypes: const [String, _i17.MultipartFile],
+          parameterTypes: const [String, _i15.MultipartFile],
           parameters: [
             _i2.BeanParameter(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
             _i2.BeanParameter(
               r'cover',
-              type: const _i2.ClassType<_i17.MultipartFile>(),
+              type: const _i2.ClassType<_i15.MultipartFile>(),
               isRequired: true,
-              annotations: const [_i77.RequestPart(r'file')],
+              annotations: const [_i49.RequestPart(r'file')],
             ),
           ],
           isFuture: true,
@@ -6188,11 +3733,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           invoke: (bean, arguments) =>
               Function.apply(bean.uploadCover, arguments),
           annotations: const [
-            _i77.PutMapping(r'/{isbn}/cover'),
-            _i82.ResponseStatus(204),
+            _i49.PutMapping(r'/{isbn}/cover'),
+            _i70.ResponseStatus(204),
           ],
         ),
-        _i2.BeanMethod<_i12.BookController>(
+        _i2.BeanMethod<_i10.BookController>(
           r'remove',
           parameterTypes: const [String],
           parameters: [
@@ -6200,20 +3745,20 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
           ],
           isVoid: true,
           invoke: (bean, arguments) => Function.apply(bean.remove, arguments),
           annotations: const [
-            _i77.DeleteMapping(r'/{isbn}'),
-            _i82.ResponseStatus(204),
+            _i49.DeleteMapping(r'/{isbn}'),
+            _i70.ResponseStatus(204),
           ],
         ),
       ],
       annotations: const [
-        _i82.RestController(),
-        _i77.RequestMapping(r'/api/books'),
+        _i70.RestController(),
+        _i49.RequestMapping(r'/api/books'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -6226,15 +3771,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'query', r'page'],
             parameterAnnotations: [
-              [_i77.RequestParam(r'q')],
-              [_i77.RequestParam(r'page')],
+              [_i49.RequestParam(r'q')],
+              [_i49.RequestParam(r'page')],
             ],
-            annotations: [_i77.GetMapping()],
+            annotations: [_i49.GetMapping()],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6247,14 +3792,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'recent'],
             parameterAnnotations: [
-              [_i77.CookieValue(r'neon-recent')],
+              [_i49.CookieValue(r'neon-recent')],
             ],
-            annotations: [_i77.GetMapping(r'/recent')],
+            annotations: [_i49.GetMapping(r'/recent')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6271,16 +3816,16 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             ],
             parameterNames: [r'isbn', r'request', r'response'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
+              [_i49.PathVariable()],
               [],
               [],
             ],
-            annotations: [_i77.GetMapping(r'/{isbn}')],
+            annotations: [_i49.GetMapping(r'/{isbn}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6293,14 +3838,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
+              [_i49.PathVariable()],
             ],
-            annotations: [_i77.GetMapping(r'/{isbn}/cover')],
+            annotations: [_i49.GetMapping(r'/{isbn}/cover')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6313,14 +3858,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'NewBook'],
             parameterNames: [r'newBook'],
             parameterAnnotations: [
-              [_i77.RequestBody(), _i2.Valid()],
+              [_i49.RequestBody(), _i2.Valid()],
             ],
-            annotations: [_i77.PostMapping()],
+            annotations: [_i49.PostMapping()],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6333,18 +3878,18 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'MultipartFile'],
             parameterNames: [r'isbn', r'cover'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
-              [_i77.RequestPart(r'file')],
+              [_i49.PathVariable()],
+              [_i49.RequestPart(r'file')],
             ],
             annotations: [
-              _i77.PutMapping(r'/{isbn}/cover'),
-              _i82.ResponseStatus(204),
+              _i49.PutMapping(r'/{isbn}/cover'),
+              _i70.ResponseStatus(204),
             ],
             annotationTypes: [r'PutMapping', r'ResponseStatus'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6357,17 +3902,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
+              [_i49.PathVariable()],
             ],
             annotations: [
-              _i77.DeleteMapping(r'/{isbn}'),
-              _i82.ResponseStatus(204),
+              _i49.DeleteMapping(r'/{isbn}'),
+              _i70.ResponseStatus(204),
             ],
             annotationTypes: [r'DeleteMapping', r'ResponseStatus'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6380,8 +3925,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'Catalog',
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6394,8 +3939,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'ObjectProvider',
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6408,8 +3953,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'ShopProperties',
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6422,20 +3967,20 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'int',
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/books'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$BookControllerProxy((target as _i12.BookController), invoker),
+            _$BookControllerProxy((target as _i10.BookController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i21.InMemoryBookRepository>(
+    _i2.BeanDefinition<_i19.InMemoryBookRepository>(
       name: r'inMemoryBookRepository',
       source: r'package:neon_books_server/src/catalog/book_repository.dart#InMemoryBookRepository',
-      types: const [_i21.InMemoryBookRepository, _i21.BookRepository],
+      types: const [_i19.InMemoryBookRepository, _i19.BookRepository],
       create: (r) => _$InMemoryBookRepositoryProxy(),
       postConstruct: (bean) {
         bean.ready();
@@ -6515,26 +4060,26 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             : null,
       ),
     ),
-    _i2.BeanDefinition<_i18.CatalogService>(
+    _i2.BeanDefinition<_i16.CatalogService>(
       name: r'catalogService',
       source: r'package:neon_books_server/src/catalog/catalog_service.dart#CatalogService',
-      types: const [_i18.CatalogService, _i18.Catalog],
+      types: const [_i16.CatalogService, _i16.Catalog],
       dependencies: const [
-        _i2.Dependency(_i21.BookRepository, name: r'_books'),
+        _i2.Dependency(_i19.BookRepository, name: r'_books'),
         _i2.Dependency(_i2.ApplicationEventPublisher, name: r'_events'),
-        _i2.Dependency.lazy(_i18.Catalog, name: r'_self'),
+        _i2.Dependency.lazy(_i16.Catalog, name: r'_self'),
         _i2.Dependency.value(r'${neon.catalog.page-size:10}'),
       ],
       create: (r) => _$CatalogServiceProxy(
-        r.dependency<_i21.BookRepository>(name: r'_books'),
+        r.dependency<_i19.BookRepository>(name: r'_books'),
         r.dependency<_i2.ApplicationEventPublisher>(name: r'_events'),
-        _$CatalogLazy(r.lazyDependency<_i18.Catalog>(name: r'_self')),
+        _$CatalogLazy(r.lazyDependency<_i16.Catalog>(name: r'_self')),
       ),
       inject: (bean, r) {
         bean.pageSize = r.value<int>(r'${neon.catalog.page-size:10}');
       },
       annotatedMethods: [
-        _i2.BeanMethod<_i18.CatalogService>(
+        _i2.BeanMethod<_i16.CatalogService>(
           r'add',
           parameterTypes: const [_i9.NewBook],
           parameters: [
@@ -6547,14 +4092,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           returnTypeInfo: const _i2.ClassType<_i9.Book>(),
           invoke: (bean, arguments) => Function.apply(bean.add, arguments),
           annotations: const [
-            _i84.PreAuthorize("hasRole('ADMIN')"),
-            _i78.Caching(
-              put: [_i78.CachePut(r'books', key: r'#result.isbn')],
-              evict: [_i78.CacheEvict(r'catalog', allEntries: true)],
+            _i72.PreAuthorize("hasRole('ADMIN')"),
+            _i50.Caching(
+              put: [_i50.CachePut(r'books', key: r'#result.isbn')],
+              evict: [_i50.CacheEvict(r'catalog', allEntries: true)],
             ),
           ],
         ),
-        _i2.BeanMethod<_i18.CatalogService>(
+        _i2.BeanMethod<_i16.CatalogService>(
           r'remove',
           parameterTypes: const [String],
           parameters: [
@@ -6567,11 +4112,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           isVoid: true,
           invoke: (bean, arguments) => Function.apply(bean.remove, arguments),
           annotations: const [
-            _i84.PreAuthorize("hasRole('ADMIN')"),
-            _i78.Caching(
+            _i72.PreAuthorize("hasRole('ADMIN')"),
+            _i50.Caching(
               evict: [
-                _i78.CacheEvict(r'books', key: r'#isbn'),
-                _i78.CacheEvict(r'catalog', allEntries: true),
+                _i50.CacheEvict(r'books', key: r'#isbn'),
+                _i50.CacheEvict(r'catalog', allEntries: true),
               ],
             ),
           ],
@@ -6589,8 +4134,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'query', r'page'],
             annotations: [
-              _i78.Cacheable(r'catalog', key: "#query + '|' + #page"),
-              _i89.Timed(),
+              _i50.Cacheable(r'catalog', key: "#query + '|' + #page"),
+              _i77.Timed(),
             ],
             annotationTypes: [r'Cacheable', r'Timed'],
             targetTypes: [r'CatalogService', r'Catalog'],
@@ -6606,7 +4151,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             annotations: [
-              _i78.Cacheable(
+              _i50.Cacheable(
                 r'books',
                 key: r'#isbn',
                 unless: r'#result == null',
@@ -6660,10 +4205,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
             annotations: [
-              _i84.PreAuthorize("hasRole('ADMIN')"),
-              _i78.Caching(
-                put: [_i78.CachePut(r'books', key: r'#result.isbn')],
-                evict: [_i78.CacheEvict(r'catalog', allEntries: true)],
+              _i72.PreAuthorize("hasRole('ADMIN')"),
+              _i50.Caching(
+                put: [_i50.CachePut(r'books', key: r'#result.isbn')],
+                evict: [_i50.CacheEvict(r'catalog', allEntries: true)],
               ),
             ],
             annotationTypes: [r'PreAuthorize', r'Caching'],
@@ -6680,14 +4225,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             annotations: [
-              _i84.PreAuthorize("hasRole('ADMIN')"),
-              _i78.Caching(
+              _i72.PreAuthorize("hasRole('ADMIN')"),
+              _i50.Caching(
                 evict: [
-                  _i78.CacheEvict(r'books', key: r'#isbn'),
-                  _i78.CacheEvict(r'catalog', allEntries: true),
+                  _i50.CacheEvict(r'books', key: r'#isbn'),
+                  _i50.CacheEvict(r'catalog', allEntries: true),
                 ],
               ),
-              _i89.Timed(),
+              _i77.Timed(),
             ],
             annotationTypes: [r'PreAuthorize', r'Caching', r'Timed'],
             targetTypes: [r'CatalogService', r'Catalog'],
@@ -6703,10 +4248,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'isbn', r'delta'],
             annotations: [
-              _i78.Caching(
+              _i50.Caching(
                 evict: [
-                  _i78.CacheEvict(r'books', key: r'#isbn'),
-                  _i78.CacheEvict(r'catalog', allEntries: true),
+                  _i50.CacheEvict(r'books', key: r'#isbn'),
+                  _i50.CacheEvict(r'catalog', allEntries: true),
                 ],
               ),
             ],
@@ -6742,66 +4287,66 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$CatalogServiceProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i22.BasketController>(
+    _i2.BeanDefinition<_i20.BasketController>(
       name: r'basketController',
       source: r'package:neon_books_server/src/orders/basket_controller.dart#BasketController',
-      types: const [_i22.BasketController],
+      types: const [_i20.BasketController],
       dependencies: const [
-        _i2.Dependency(_i23.BasketService, name: r'baskets'),
+        _i2.Dependency(_i21.BasketService, name: r'baskets'),
       ],
-      create: (r) => _i22.BasketController(
-        r.dependency<_i23.BasketService>(name: r'baskets'),
+      create: (r) => _i20.BasketController(
+        r.dependency<_i21.BasketService>(name: r'baskets'),
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i22.BasketController>(
+        _i2.BeanMethod<_i20.BasketController>(
           r'basket',
-          parameterTypes: const [_i13.ServerHttpRequest],
+          parameterTypes: const [_i11.ServerHttpRequest],
           parameters: [
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i13.ServerHttpRequest>(),
+              type: const _i2.ClassType<_i11.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i6.Basket>(),
           invoke: (bean, arguments) => Function.apply(bean.basket, arguments),
-          annotations: const [_i77.GetMapping()],
+          annotations: const [_i49.GetMapping()],
         ),
-        _i2.BeanMethod<_i22.BasketController>(
+        _i2.BeanMethod<_i20.BasketController>(
           r'setQuantity',
           parameterTypes: const [
             String,
             _i6.QuantityRequest,
-            _i13.ServerHttpRequest,
+            _i11.ServerHttpRequest,
           ],
           parameters: [
             _i2.BeanParameter(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
             _i2.BeanParameter(
               r'quantityRequest',
               type: const _i2.ClassType<_i6.QuantityRequest>(),
               isRequired: true,
-              annotations: const [_i77.RequestBody(), _i2.Valid()],
+              annotations: const [_i49.RequestBody(), _i2.Valid()],
             ),
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i13.ServerHttpRequest>(),
+              type: const _i2.ClassType<_i11.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i6.Basket>(),
           invoke: (bean, arguments) =>
               Function.apply(bean.setQuantity, arguments),
-          annotations: const [_i77.PutMapping(r'/items/{isbn}')],
+          annotations: const [_i49.PutMapping(r'/items/{isbn}')],
         ),
       ],
       annotations: const [
-        _i82.RestController(),
-        _i77.RequestMapping(r'/api/basket'),
+        _i70.RestController(),
+        _i49.RequestMapping(r'/api/basket'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -6813,12 +4358,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'Basket',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i77.GetMapping()],
+            annotations: [_i49.GetMapping()],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BasketController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/basket'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/basket'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6835,16 +4380,16 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             ],
             parameterNames: [r'isbn', r'quantityRequest', r'request'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
-              [_i77.RequestBody(), _i2.Valid()],
+              [_i49.PathVariable()],
+              [_i49.RequestBody(), _i2.Valid()],
               [],
             ],
-            annotations: [_i77.PutMapping(r'/items/{isbn}')],
+            annotations: [_i49.PutMapping(r'/items/{isbn}')],
             annotationTypes: [r'PutMapping'],
             targetTypes: [r'BasketController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/basket'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/basket'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -6857,29 +4402,29 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'BasketService',
             targetTypes: [r'BasketController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/basket'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/basket'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$BasketControllerProxy((target as _i22.BasketController), invoker),
+            _$BasketControllerProxy((target as _i20.BasketController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i23.BasketService>(
+    _i2.BeanDefinition<_i21.BasketService>(
       name: r'basketService',
       source: r'package:neon_books_server/src/orders/basket_service.dart#BasketService',
-      types: const [_i23.BasketService],
+      types: const [_i21.BasketService],
       dependencies: const [
-        _i2.Dependency(_i18.Catalog, name: r'_catalog'),
-        _i2.Dependency(_i50.PriceRule, name: r'_pricing'),
-        _i2.Dependency(_i20.ShopProperties, name: r'_shop'),
+        _i2.Dependency(_i16.Catalog, name: r'_catalog'),
+        _i2.Dependency(_i78.PriceRule, name: r'_pricing'),
+        _i2.Dependency(_i18.ShopProperties, name: r'_shop'),
       ],
       create: (r) => _$BasketServiceProxy(
-        r.dependency<_i18.Catalog>(name: r'_catalog'),
-        r.dependency<_i50.PriceRule>(name: r'_pricing'),
-        r.dependency<_i20.ShopProperties>(name: r'_shop'),
+        r.dependency<_i16.Catalog>(name: r'_catalog'),
+        r.dependency<_i78.PriceRule>(name: r'_pricing'),
+        r.dependency<_i18.ShopProperties>(name: r'_shop'),
       ),
       annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory.subclass(
@@ -6937,10 +4482,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$BasketServiceProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i25.DevMailConfig>(
+    _i2.BeanDefinition<_i53.DevMailConfig>(
       name: r'devMailConfig',
       source: r'package:neon_books_server/src/orders/mail.dart#DevMailConfig',
-      types: const [_i25.DevMailConfig],
+      types: const [_i53.DevMailConfig],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/orders/mail.dart#DevMailConfig',
@@ -6955,10 +4500,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.Profile([r'!prod']),
       ],
     ),
-    _i2.BeanDefinition<_i25.LogMailSender>(
+    _i2.BeanDefinition<_i53.LogMailSender>(
       name: r'mailSender',
       source: r'package:neon_books_server/src/orders/mail.dart#DevMailConfig.mailSender',
-      types: const [_i25.LogMailSender, _i25.MailSender],
+      types: const [_i53.LogMailSender, _i53.MailSender],
       factoryBeanName: r'devMailConfig',
       factoryMethodName: r'mailSender',
       conditions: [
@@ -6970,40 +4515,23 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i25.DevMailConfig, qualifier: r'devMailConfig'),
+        _i2.Dependency(_i53.DevMailConfig, qualifier: r'devMailConfig'),
       ],
-      create: (r) => ((r.dependency<_i25.DevMailConfig>(
+      create: (r) => ((r.dependency<_i53.DevMailConfig>(
         qualifier: r'devMailConfig',
-      ) as _$DevMailConfigConfiguration)._$mailSender(r) as _i25.LogMailSender),
+      ) as _$DevMailConfigConfiguration)._$mailSender(r) as _i53.LogMailSender),
       annotations: const [
         _i2.Bean(),
         _i2.Log(topic: r'neon.mail'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'send',
-            declaringType: r'MailSender',
-            targetType: r'LogMailSender',
-            declaringTypes: [r'LogMailSender', r'MailSender'],
-            returnType: r'void',
-            parameterTypes: [r'String', r'String', r'String'],
-            parameterNames: [r'to', r'subject', r'body'],
-            targetTypes: [r'LogMailSender', r'MailSender'],
-            targetAnnotations: [_i2.Log(topic: r'neon.mail')],
-            targetAnnotationTypes: [r'Log'],
-          ),
-        ],
-        create: (target, invoker) => _$DevMailConfig$MailSenderProxy(
-          (target as _i25.LogMailSender),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches LogMailSender, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i25.ProdMailConfig>(
+    _i2.BeanDefinition<_i53.ProdMailConfig>(
       name: r'prodMailConfig',
       source: r'package:neon_books_server/src/orders/mail.dart#ProdMailConfig',
-      types: const [_i25.ProdMailConfig],
+      types: const [_i53.ProdMailConfig],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/orders/mail.dart#ProdMailConfig',
@@ -7018,10 +4546,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.Profile([r'prod']),
       ],
     ),
-    _i2.BeanDefinition<_i25.SmtpMailSender>(
+    _i2.BeanDefinition<_i53.SmtpMailSender>(
       name: r'mailSender',
       source: r'package:neon_books_server/src/orders/mail.dart#ProdMailConfig.mailSender',
-      types: const [_i25.SmtpMailSender, _i25.MailSender],
+      types: const [_i53.SmtpMailSender, _i53.MailSender],
       factoryBeanName: r'prodMailConfig',
       factoryMethodName: r'mailSender',
       conditions: [
@@ -7033,94 +4561,66 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i25.ProdMailConfig, qualifier: r'prodMailConfig'),
+        _i2.Dependency(_i53.ProdMailConfig, qualifier: r'prodMailConfig'),
         _i2.Dependency.value(r'${neon.mail.host:smtp.neon.books}'),
       ],
       create: (r) =>
-          ((r.dependency<_i25.ProdMailConfig>(
+          ((r.dependency<_i53.ProdMailConfig>(
                 qualifier: r'prodMailConfig',
               ) as _$ProdMailConfigConfiguration)._$mailSender(r)
-              as _i25.SmtpMailSender),
+              as _i53.SmtpMailSender),
       annotations: const [
         _i2.Bean(),
         _i2.Log(topic: r'neon.mail'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'send',
-            declaringType: r'MailSender',
-            targetType: r'SmtpMailSender',
-            declaringTypes: [r'SmtpMailSender', r'MailSender'],
-            returnType: r'void',
-            parameterTypes: [r'String', r'String', r'String'],
-            parameterNames: [r'to', r'subject', r'body'],
-            targetTypes: [r'SmtpMailSender', r'MailSender'],
-            targetAnnotations: [_i2.Log(topic: r'neon.mail')],
-            targetAnnotationTypes: [r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'host',
-            declaringType: r'SmtpMailSender',
-            targetType: r'SmtpMailSender',
-            declaringTypes: [r'SmtpMailSender'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            targetTypes: [r'SmtpMailSender', r'MailSender'],
-            targetAnnotations: [_i2.Log(topic: r'neon.mail')],
-            targetAnnotationTypes: [r'Log'],
-          ),
-        ],
-        create: (target, invoker) => _$ProdMailConfig$MailSenderProxy(
-          (target as _i25.SmtpMailSender),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SmtpMailSender, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i26.OrderController>(
+    _i2.BeanDefinition<_i23.OrderController>(
       name: r'orderController',
       source: r'package:neon_books_server/src/orders/order_controller.dart#OrderController',
-      types: const [_i26.OrderController],
+      types: const [_i23.OrderController],
       dependencies: const [
-        _i2.Dependency(_i28.OrderService, name: r'orders'),
-        _i2.Dependency(_i23.BasketService, name: r'baskets'),
+        _i2.Dependency(_i25.OrderService, name: r'orders'),
+        _i2.Dependency(_i21.BasketService, name: r'baskets'),
       ],
-      create: (r) => _i26.OrderController(
-        r.dependency<_i28.OrderService>(name: r'orders'),
-        r.dependency<_i23.BasketService>(name: r'baskets'),
+      create: (r) => _i23.OrderController(
+        r.dependency<_i25.OrderService>(name: r'orders'),
+        r.dependency<_i21.BasketService>(name: r'baskets'),
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i26.OrderController>(
+        _i2.BeanMethod<_i23.OrderController>(
           r'place',
-          parameterTypes: const [_i27.Authentication, _i13.ServerHttpRequest],
+          parameterTypes: const [_i24.Authentication, _i11.ServerHttpRequest],
           parameters: [
             _i2.BeanParameter(
               r'authentication',
-              type: const _i2.ClassType<_i27.Authentication>(),
+              type: const _i2.ClassType<_i24.Authentication>(),
               isRequired: true,
             ),
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i13.ServerHttpRequest>(),
+              type: const _i2.ClassType<_i11.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
           returnTypeInfo:
-              const _i2.GenericType<_i15.ResponseEntity<_i6.CustomerOrder>>([
+              const _i2.GenericType<_i13.ResponseEntity<_i6.CustomerOrder>>([
                 _i2.ClassType<_i6.CustomerOrder>(),
               ]),
           invoke: (bean, arguments) => Function.apply(bean.place, arguments),
-          annotations: const [_i77.PostMapping()],
+          annotations: const [_i49.PostMapping()],
         ),
-        _i2.BeanMethod<_i26.OrderController>(
+        _i2.BeanMethod<_i23.OrderController>(
           r'all',
           returnTypeInfo: const _i2.ListType<_i6.CustomerOrder>(
             _i2.ClassType<_i6.CustomerOrder>(),
           ),
           invoke: (bean, arguments) => Function.apply(bean.all, arguments),
-          annotations: const [_i77.GetMapping()],
+          annotations: const [_i49.GetMapping()],
         ),
-        _i2.BeanMethod<_i26.OrderController>(
+        _i2.BeanMethod<_i23.OrderController>(
           r'find',
           parameterTypes: const [int],
           parameters: [
@@ -7128,17 +4628,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'id',
               type: const _i2.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i6.CustomerOrder>(),
           invoke: (bean, arguments) => Function.apply(bean.find, arguments),
-          annotations: const [_i77.GetMapping(r'/{id}')],
+          annotations: const [_i49.GetMapping(r'/{id}')],
         ),
       ],
       annotations: const [
-        _i82.RestController(),
-        _i77.RequestMapping(r'/api/orders'),
+        _i70.RestController(),
+        _i49.RequestMapping(r'/api/orders'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -7150,12 +4650,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'ResponseEntity',
             parameterTypes: [r'Authentication', r'ServerHttpRequest'],
             parameterNames: [r'authentication', r'request'],
-            annotations: [_i77.PostMapping()],
+            annotations: [_i49.PostMapping()],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'OrderController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/orders'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/orders'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -7165,12 +4665,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             targetType: r'OrderController',
             declaringTypes: [r'OrderController'],
             returnType: r'List',
-            annotations: [_i77.GetMapping()],
+            annotations: [_i49.GetMapping()],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'OrderController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/orders'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/orders'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -7183,14 +4683,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
+              [_i49.PathVariable()],
             ],
-            annotations: [_i77.GetMapping(r'/{id}')],
+            annotations: [_i49.GetMapping(r'/{id}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'OrderController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/orders'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/orders'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -7203,8 +4703,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'OrderService',
             targetTypes: [r'OrderController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/orders'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/orders'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -7217,78 +4717,60 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'BasketService',
             targetTypes: [r'OrderController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/orders'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/orders'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$OrderControllerProxy((target as _i26.OrderController), invoker),
+            _$OrderControllerProxy((target as _i23.OrderController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i29.VipDesk>(
+    _i2.BeanDefinition<_i69.VipDesk>(
       name: r'vipDesk',
       source:
           r'package:neon_books_server/src/orders/order_listeners.dart#VipDesk',
-      types: const [_i29.VipDesk],
-      create: (r) => _i29.VipDesk(),
+      types: const [_i69.VipDesk],
+      create: (r) => _i69.VipDesk(),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i29.VipDesk, _i6.OrderPlaced>(
+        _i2.EventListenerMethod.of<_i69.VipDesk, _i6.OrderPlaced>(
           r'VipDesk.onVipOrder',
           (bean, event) {
             bean.onVipOrder(event);
             return null;
           },
           order: 2,
-          condition: _i29.isVipOrder,
+          condition: _i69.isVipOrder,
         ),
       ],
       annotations: const [
         _i2.Component(),
         _i2.Log(topic: r'neon.vip'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'onVipOrder',
-            declaringType: r'VipDesk',
-            targetType: r'VipDesk',
-            declaringTypes: [r'VipDesk'],
-            returnType: r'void',
-            parameterTypes: [r'OrderPlaced'],
-            parameterNames: [r'placed'],
-            targetTypes: [r'VipDesk'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.vip'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$VipDeskProxy((target as _i29.VipDesk), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches VipDesk, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i29.OrderMailer>(
+    _i2.BeanDefinition<_i69.OrderMailer>(
       name: r'orderMailer',
       source: r'package:neon_books_server/src/orders/order_listeners.dart#OrderMailer',
-      types: const [_i29.OrderMailer],
+      types: const [_i69.OrderMailer],
       dependencies: const [
         _i2.Dependency.value(r'classpath:templates/order-confirmation.txt'),
         _i2.Dependency(_i2.MessageSource, name: r'messages'),
-        _i2.Dependency(_i25.MailSender, name: r'mail'),
-        _i2.Dependency(_i20.ShopProperties, name: r'shop'),
+        _i2.Dependency(_i53.MailSender, name: r'mail'),
+        _i2.Dependency(_i18.ShopProperties, name: r'shop'),
       ],
       create: (r) => _$OrderMailerLookup(
         r,
         r.value<_i2.Resource>(r'classpath:templates/order-confirmation.txt'),
         r.dependency<_i2.MessageSource>(name: r'messages'),
-        r.dependency<_i25.MailSender>(name: r'mail'),
-        r.dependency<_i20.ShopProperties>(name: r'shop'),
+        r.dependency<_i53.MailSender>(name: r'mail'),
+        r.dependency<_i18.ShopProperties>(name: r'shop'),
       ),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i29.OrderMailer, _i6.OrderPlaced>(
+        _i2.EventListenerMethod.of<_i69.OrderMailer, _i6.OrderPlaced>(
           r'OrderMailer.onOrderPlaced',
           (bean, event) {
             bean.onOrderPlaced(event);
@@ -7298,99 +4780,26 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'newReceipt',
-            declaringType: r'OrderMailer',
-            targetType: r'OrderMailer',
-            declaringTypes: [r'OrderMailer'],
-            returnType: r'ReceiptBuilder',
-            annotations: [_i2.Lookup()],
-            annotationTypes: [r'Lookup'],
-            targetTypes: [r'OrderMailer'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'onOrderPlaced',
-            declaringType: r'OrderMailer',
-            targetType: r'OrderMailer',
-            declaringTypes: [r'OrderMailer'],
-            returnType: r'Future',
-            parameterTypes: [r'OrderPlaced'],
-            parameterNames: [r'placed'],
-            annotations: [_i2.Async()],
-            annotationTypes: [r'Async'],
-            targetTypes: [r'OrderMailer'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'template',
-            declaringType: r'OrderMailer',
-            targetType: r'OrderMailer',
-            declaringTypes: [r'OrderMailer'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Resource',
-            targetTypes: [r'OrderMailer'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'messages',
-            declaringType: r'OrderMailer',
-            targetType: r'OrderMailer',
-            declaringTypes: [r'OrderMailer'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'MessageSource',
-            targetTypes: [r'OrderMailer'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'mail',
-            declaringType: r'OrderMailer',
-            targetType: r'OrderMailer',
-            declaringTypes: [r'OrderMailer'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'MailSender',
-            targetTypes: [r'OrderMailer'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'shop',
-            declaringType: r'OrderMailer',
-            targetType: r'OrderMailer',
-            declaringTypes: [r'OrderMailer'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'ShopProperties',
-            targetTypes: [r'OrderMailer'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$OrderMailerProxy((target as _i29.OrderMailer), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches OrderMailer, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i29.ShippingNotifier>(
+    _i2.BeanDefinition<_i69.ShippingNotifier>(
       name: r'shippingNotifier',
       source: r'package:neon_books_server/src/orders/order_listeners.dart#ShippingNotifier',
       types: const [
-        _i29.ShippingNotifier,
+        _i69.ShippingNotifier,
         _i2.ApplicationListener<_i6.OrderShipped>,
         _i2.ApplicationListener<Object>,
       ],
       dependencies: const [
-        _i2.Dependency(_i31.SupportSessions, name: r'support'),
+        _i2.Dependency(_i45.SupportSessions, name: r'support'),
       ],
-      create: (r) => _i29.ShippingNotifier(
-        r.dependency<_i31.SupportSessions>(name: r'support'),
+      create: (r) => _i69.ShippingNotifier(
+        r.dependency<_i45.SupportSessions>(name: r'support'),
       ),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i29.ShippingNotifier, _i6.OrderShipped>(
+        _i2.EventListenerMethod.of<_i69.ShippingNotifier, _i6.OrderShipped>(
           r'ShippingNotifier.onApplicationEvent',
           (bean, event) {
             bean.onApplicationEvent(event);
@@ -7399,40 +4808,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'onApplicationEvent',
-            declaringType: r'ApplicationListener',
-            targetType: r'ShippingNotifier',
-            declaringTypes: [r'ShippingNotifier', r'ApplicationListener'],
-            returnType: r'void',
-            parameterTypes: [r'OrderShipped'],
-            parameterNames: [r'event'],
-            targetTypes: [r'ShippingNotifier', r'ApplicationListener'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'support',
-            declaringType: r'ShippingNotifier',
-            targetType: r'ShippingNotifier',
-            declaringTypes: [r'ShippingNotifier'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'SupportSessions',
-            targetTypes: [r'ShippingNotifier', r'ApplicationListener'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ShippingNotifierProxy((target as _i29.ShippingNotifier), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ShippingNotifier, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i32.OrderRepository>(
+    _i2.BeanDefinition<_i26.OrderRepository>(
       name: r'orderRepository',
       source: r'package:neon_books_server/src/orders/order_repository.dart#OrderRepository',
-      types: const [_i32.OrderRepository],
+      types: const [_i26.OrderRepository],
       create: (r) => _$OrderRepositoryProxy(),
       preDestroy: (bean) {
         bean.shutdown();
@@ -7499,37 +4882,37 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$OrderRepositoryProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i28.OrderService>(
+    _i2.BeanDefinition<_i25.OrderService>(
       name: r'orderService',
       source: r'package:neon_books_server/src/orders/order_service.dart#OrderService',
-      types: const [_i28.OrderService],
+      types: const [_i25.OrderService],
       dependencies: const [
-        _i2.Dependency(_i32.OrderRepository, name: r'_orders'),
-        _i2.Dependency(_i23.BasketService, name: r'_baskets'),
+        _i2.Dependency(_i26.OrderRepository, name: r'_orders'),
+        _i2.Dependency(_i21.BasketService, name: r'_baskets'),
         _i2.Dependency(_i2.ApplicationEventPublisher, name: r'_events'),
-        _i2.Dependency(_i90.TaskScheduler, name: r'_scheduler'),
+        _i2.Dependency(_i79.TaskScheduler, name: r'_scheduler'),
         _i2.Dependency.value(
           r'${neon.orders.shipping-delay:5s}',
           optional: true,
         ),
-        _i2.Dependency(_i33.Checkout, name: r'checkout'),
-        _i2.Dependency(_i34.Clock, name: r'clock'),
+        _i2.Dependency(_i27.Checkout, name: r'checkout'),
+        _i2.Dependency(_i28.Clock, name: r'clock'),
       ],
       create: (r) => _$OrderServiceProxy(
-        r.dependency<_i32.OrderRepository>(name: r'_orders'),
-        r.dependency<_i23.BasketService>(name: r'_baskets'),
+        r.dependency<_i26.OrderRepository>(name: r'_orders'),
+        r.dependency<_i21.BasketService>(name: r'_baskets'),
         r.dependency<_i2.ApplicationEventPublisher>(name: r'_events'),
-        r.dependency<_i90.TaskScheduler>(name: r'_scheduler'),
+        r.dependency<_i79.TaskScheduler>(name: r'_scheduler'),
         shippingDelay:
             r.optionalValue<Duration>(r'${neon.orders.shipping-delay:5s}') ??
             const Duration(seconds: 5),
       ),
       inject: (bean, r) {
-        bean.checkout = r.dependency<_i33.Checkout>(name: r'checkout');
-        bean.clock = r.dependency<_i34.Clock>(name: r'clock');
+        bean.checkout = r.dependency<_i27.Checkout>(name: r'checkout');
+        bean.clock = r.dependency<_i28.Clock>(name: r'clock');
       },
       annotatedMethods: [
-        _i2.BeanMethod<_i28.OrderService>(
+        _i2.BeanMethod<_i25.OrderService>(
           r'place',
           parameterTypes: const [String, Map<String, int>],
           parameters: [
@@ -7549,9 +4932,9 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
           returnTypeInfo: const _i2.ClassType<_i6.CustomerOrder>(),
           invoke: (bean, arguments) => Function.apply(bean.place, arguments),
-          annotations: const [_i84.PreAuthorize("hasRole('USER')")],
+          annotations: const [_i72.PreAuthorize("hasRole('USER')")],
         ),
-        _i2.BeanMethod<_i28.OrderService>(
+        _i2.BeanMethod<_i25.OrderService>(
           r'find',
           parameterTypes: const [int],
           parameters: [
@@ -7564,17 +4947,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           returnTypeInfo: const _i2.ClassType<_i6.CustomerOrder>(),
           invoke: (bean, arguments) => Function.apply(bean.find, arguments),
           annotations: const [
-            _i84.PostAuthorize("hasPermission(returnObject, 'read')"),
+            _i72.PostAuthorize("hasPermission(returnObject, 'read')"),
           ],
         ),
-        _i2.BeanMethod<_i28.OrderService>(
+        _i2.BeanMethod<_i25.OrderService>(
           r'all',
           returnTypeInfo: const _i2.ListType<_i6.CustomerOrder>(
             _i2.ClassType<_i6.CustomerOrder>(),
           ),
           invoke: (bean, arguments) => Function.apply(bean.all, arguments),
           annotations: const [
-            _i84.PostFilter(
+            _i72.PostFilter(
               "filterObject.customer == authentication.name or hasRole('ADMIN')",
             ),
           ],
@@ -7591,7 +4974,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'CustomerOrder',
             parameterTypes: [r'String', r'Map'],
             parameterNames: [r'customer', r'basket'],
-            annotations: [_i84.PreAuthorize("hasRole('USER')")],
+            annotations: [_i72.PreAuthorize("hasRole('USER')")],
             annotationTypes: [r'PreAuthorize'],
             targetTypes: [r'OrderService'],
             targetAnnotations: [_i2.Service(), _i2.Log()],
@@ -7606,7 +4989,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
             annotations: [
-              _i84.PostAuthorize("hasPermission(returnObject, 'read')"),
+              _i72.PostAuthorize("hasPermission(returnObject, 'read')"),
             ],
             annotationTypes: [r'PostAuthorize'],
             targetTypes: [r'OrderService'],
@@ -7620,7 +5003,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             declaringTypes: [r'OrderService'],
             returnType: r'List',
             annotations: [
-              _i84.PostFilter(
+              _i72.PostFilter(
                 "filterObject.customer == authentication.name or hasRole('ADMIN')",
               ),
             ],
@@ -7690,28 +5073,28 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$OrderServiceProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i35.LoginAudit>(
+    _i2.BeanDefinition<_i80.LoginAudit>(
       name: r'loginAudit',
       source:
           r'package:neon_books_server/src/security/login_audit.dart#LoginAudit',
-      types: const [_i35.LoginAudit],
-      create: (r) => _i35.LoginAudit(),
+      types: const [_i80.LoginAudit],
+      create: (r) => _i80.LoginAudit(),
       eventListeners: [
         _i2.EventListenerMethod.of<
-          _i35.LoginAudit,
-          _i36.AuthenticationSuccessEvent
+          _i80.LoginAudit,
+          _i81.AuthenticationSuccessEvent
         >(r'LoginAudit.onSuccess', (bean, event) {
           bean.onSuccess(event);
           return null;
         }),
         _i2.EventListenerMethod.of<
-          _i35.LoginAudit,
-          _i36.AuthenticationFailureBadCredentialsEvent
+          _i80.LoginAudit,
+          _i81.AuthenticationFailureBadCredentialsEvent
         >(r'LoginAudit.onBadCredentials', (bean, event) {
           bean.onBadCredentials(event);
           return null;
         }),
-        _i2.EventListenerMethod.of<_i35.LoginAudit, _i36.LogoutSuccessEvent>(
+        _i2.EventListenerMethod.of<_i80.LoginAudit, _i81.LogoutSuccessEvent>(
           r'LoginAudit.onLogout',
           (bean, event) {
             bean.onLogout(event);
@@ -7723,96 +5106,34 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'neon.security'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'onSuccess',
-            declaringType: r'LoginAudit',
-            targetType: r'LoginAudit',
-            declaringTypes: [r'LoginAudit'],
-            returnType: r'void',
-            parameterTypes: [r'AuthenticationSuccessEvent'],
-            parameterNames: [r'event'],
-            targetTypes: [r'LoginAudit'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.security'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'onBadCredentials',
-            declaringType: r'LoginAudit',
-            targetType: r'LoginAudit',
-            declaringTypes: [r'LoginAudit'],
-            returnType: r'void',
-            parameterTypes: [r'AuthenticationFailureBadCredentialsEvent'],
-            parameterNames: [r'event'],
-            targetTypes: [r'LoginAudit'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.security'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'onLogout',
-            declaringType: r'LoginAudit',
-            targetType: r'LoginAudit',
-            declaringTypes: [r'LoginAudit'],
-            returnType: r'void',
-            parameterTypes: [r'LogoutSuccessEvent'],
-            parameterNames: [r'event'],
-            targetTypes: [r'LoginAudit'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.security'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'failures',
-            declaringType: r'LoginAudit',
-            targetType: r'LoginAudit',
-            declaringTypes: [r'LoginAudit'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Map',
-            targetTypes: [r'LoginAudit'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.security'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$LoginAuditProxy((target as _i35.LoginAudit), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches LoginAudit, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i37.MeController>(
+    _i2.BeanDefinition<_i29.MeController>(
       name: r'meController',
       source: r'package:neon_books_server/src/security/me_controller.dart#MeController',
-      types: const [_i37.MeController],
-      create: (r) => _i37.MeController(),
+      types: const [_i29.MeController],
+      create: (r) => _i29.MeController(),
       annotatedMethods: [
-        _i2.BeanMethod<_i37.MeController>(
+        _i2.BeanMethod<_i29.MeController>(
           r'me',
-          parameterTypes: const [_i27.Authentication],
+          parameterTypes: const [_i24.Authentication],
           parameters: [
             _i2.BeanParameter(
               r'authentication',
-              type: const _i2.ClassType<_i27.Authentication>(),
+              type: const _i2.ClassType<_i24.Authentication>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i37.Me>(),
+          returnTypeInfo: const _i2.ClassType<_i29.Me>(),
           invoke: (bean, arguments) => Function.apply(bean.me, arguments),
-          annotations: const [_i77.GetMapping()],
+          annotations: const [_i49.GetMapping()],
         ),
       ],
       annotations: const [
-        _i82.RestController(),
-        _i77.RequestMapping(r'/api/me'),
+        _i70.RestController(),
+        _i49.RequestMapping(r'/api/me'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -7824,66 +5145,41 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'Me',
             parameterTypes: [r'Authentication'],
             parameterNames: [r'authentication'],
-            annotations: [_i77.GetMapping()],
+            annotations: [_i49.GetMapping()],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MeController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/me'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/me'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$MeControllerProxy((target as _i37.MeController), invoker),
+            _$MeControllerProxy((target as _i29.MeController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i38.CorsProperties>(
+    _i2.BeanDefinition<_i54.CorsProperties>(
       name: r'corsProperties',
       source: r'package:neon_books_server/src/security/security_config.dart#CorsProperties',
-      types: const [_i38.CorsProperties],
-      create: (r) => _i38.CorsProperties(),
-      annotations: const [_i91.ConfigurationProperties(r'neon.cors')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'allowedOriginPatterns',
-            declaringType: r'CorsProperties',
-            targetType: r'CorsProperties',
-            declaringTypes: [r'CorsProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            targetTypes: [r'CorsProperties'],
-            targetAnnotations: [_i91.ConfigurationProperties(r'neon.cors')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-          _i2.MethodSignature(
-            name: r'allowedOriginPatterns',
-            declaringType: r'CorsProperties',
-            targetType: r'CorsProperties',
-            declaringTypes: [r'CorsProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'List',
-            targetTypes: [r'CorsProperties'],
-            targetAnnotations: [_i91.ConfigurationProperties(r'neon.cors')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$CorsPropertiesProxy((target as _i38.CorsProperties), invoker),
+      types: const [_i54.CorsProperties],
+      create: (r) => _i54.CorsProperties(),
+      annotations: const [_i82.ConfigurationProperties(r'neon.cors')],
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches CorsProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i38.SecurityConfig>(
+    _i2.BeanDefinition<_i54.SecurityConfig>(
       name: r'securityConfig',
       source: r'package:neon_books_server/src/security/security_config.dart#SecurityConfig',
-      types: const [_i38.SecurityConfig],
+      types: const [_i54.SecurityConfig],
       create: (r) => _$SecurityConfigConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
-    _i2.BeanDefinition<_i39.SecurityFilterChain>(
+    _i2.BeanDefinition<_i55.SecurityFilterChain>(
       name: r'supplierStubChain',
       source: r'package:neon_books_server/src/security/security_config.dart#SecurityConfig.supplierStubChain',
-      types: const [_i39.SecurityFilterChain],
+      types: const [_i55.SecurityFilterChain],
       factoryBeanName: r'securityConfig',
       factoryMethodName: r'supplierStubChain',
       order: 1,
@@ -7891,10 +5187,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         const _i2.ProfileCondition([r'supplier-stub & !prod']),
       ],
       dependencies: const [
-        _i2.Dependency(_i38.SecurityConfig, qualifier: r'securityConfig'),
-        _i2.Dependency(_i79.HttpSecurity, name: r'http'),
+        _i2.Dependency(_i54.SecurityConfig, qualifier: r'securityConfig'),
+        _i2.Dependency(_i56.HttpSecurity, name: r'http'),
       ],
-      create: (r) => (r.dependency<_i38.SecurityConfig>(
+      create: (r) => (r.dependency<_i54.SecurityConfig>(
         qualifier: r'securityConfig',
       ) as _$SecurityConfigConfiguration)._$supplierStubChain(r),
       annotations: const [
@@ -7902,38 +5198,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.Order(1),
         _i2.Profile([r'supplier-stub & !prod']),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'matches',
-            declaringType: r'SecurityFilterChain',
-            targetType: r'SecurityFilterChain',
-            declaringTypes: [r'SecurityFilterChain'],
-            returnType: r'bool',
-            parameterTypes: [r'ServerHttpRequest'],
-            parameterNames: [r'request'],
-            targetTypes: [r'SecurityFilterChain'],
-          ),
-          _i2.MethodSignature(
-            name: r'filters',
-            declaringType: r'SecurityFilterChain',
-            targetType: r'SecurityFilterChain',
-            declaringTypes: [r'SecurityFilterChain'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            targetTypes: [r'SecurityFilterChain'],
-          ),
-        ],
-        create: (target, invoker) => _$SecurityConfig$SupplierStubChainProxy(
-          (target as _i39.SecurityFilterChain),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SecurityFilterChain, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i39.SecurityFilterChain>(
+    _i2.BeanDefinition<_i55.SecurityFilterChain>(
       name: r'apiChain',
       source: r'package:neon_books_server/src/security/security_config.dart#SecurityConfig.apiChain',
-      types: const [_i39.SecurityFilterChain],
+      types: const [_i55.SecurityFilterChain],
       factoryBeanName: r'securityConfig',
       factoryMethodName: r'apiChain',
       order: 2,
@@ -7941,10 +5213,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         const _i2.ProfileCondition([r'!sso']),
       ],
       dependencies: const [
-        _i2.Dependency(_i38.SecurityConfig, qualifier: r'securityConfig'),
-        _i2.Dependency(_i79.HttpSecurity, name: r'http'),
+        _i2.Dependency(_i54.SecurityConfig, qualifier: r'securityConfig'),
+        _i2.Dependency(_i56.HttpSecurity, name: r'http'),
       ],
-      create: (r) => (r.dependency<_i38.SecurityConfig>(
+      create: (r) => (r.dependency<_i54.SecurityConfig>(
         qualifier: r'securityConfig',
       ) as _$SecurityConfigConfiguration)._$apiChain(r),
       annotations: const [
@@ -7952,38 +5224,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.Order(2),
         _i2.Profile([r'!sso']),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'matches',
-            declaringType: r'SecurityFilterChain',
-            targetType: r'SecurityFilterChain',
-            declaringTypes: [r'SecurityFilterChain'],
-            returnType: r'bool',
-            parameterTypes: [r'ServerHttpRequest'],
-            parameterNames: [r'request'],
-            targetTypes: [r'SecurityFilterChain'],
-          ),
-          _i2.MethodSignature(
-            name: r'filters',
-            declaringType: r'SecurityFilterChain',
-            targetType: r'SecurityFilterChain',
-            declaringTypes: [r'SecurityFilterChain'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            targetTypes: [r'SecurityFilterChain'],
-          ),
-        ],
-        create: (target, invoker) => _$SecurityConfig$ApiChainProxy(
-          (target as _i39.SecurityFilterChain),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SecurityFilterChain, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i39.SecurityFilterChain>(
+    _i2.BeanDefinition<_i55.SecurityFilterChain>(
       name: r'ssoChain',
       source: r'package:neon_books_server/src/security/security_config.dart#SecurityConfig.ssoChain',
-      types: const [_i39.SecurityFilterChain],
+      types: const [_i55.SecurityFilterChain],
       factoryBeanName: r'securityConfig',
       factoryMethodName: r'ssoChain',
       order: 2,
@@ -7991,15 +5239,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         const _i2.ProfileCondition([r'sso']),
       ],
       dependencies: const [
-        _i2.Dependency(_i38.SecurityConfig, qualifier: r'securityConfig'),
-        _i2.Dependency(_i79.HttpSecurity, name: r'http'),
+        _i2.Dependency(_i54.SecurityConfig, qualifier: r'securityConfig'),
+        _i2.Dependency(_i56.HttpSecurity, name: r'http'),
         _i2.Dependency(
-          _i80.ClientRegistrationRepository,
+          _i57.ClientRegistrationRepository,
           name: r'registrations',
         ),
-        _i2.Dependency(_i45.AppProperties, name: r'app'),
+        _i2.Dependency(_i58.AppProperties, name: r'app'),
       ],
-      create: (r) => (r.dependency<_i38.SecurityConfig>(
+      create: (r) => (r.dependency<_i54.SecurityConfig>(
         qualifier: r'securityConfig',
       ) as _$SecurityConfigConfiguration)._$ssoChain(r),
       annotations: const [
@@ -8007,211 +5255,73 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.Order(2),
         _i2.Profile([r'sso']),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'matches',
-            declaringType: r'SecurityFilterChain',
-            targetType: r'SecurityFilterChain',
-            declaringTypes: [r'SecurityFilterChain'],
-            returnType: r'bool',
-            parameterTypes: [r'ServerHttpRequest'],
-            parameterNames: [r'request'],
-            targetTypes: [r'SecurityFilterChain'],
-          ),
-          _i2.MethodSignature(
-            name: r'filters',
-            declaringType: r'SecurityFilterChain',
-            targetType: r'SecurityFilterChain',
-            declaringTypes: [r'SecurityFilterChain'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            targetTypes: [r'SecurityFilterChain'],
-          ),
-        ],
-        create: (target, invoker) => _$SecurityConfig$SsoChainProxy(
-          (target as _i39.SecurityFilterChain),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SecurityFilterChain, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i41.RoleHierarchyImpl>(
+    _i2.BeanDefinition<_i83.RoleHierarchyImpl>(
       name: r'roleHierarchy',
       source: r'package:neon_books_server/src/security/security_config.dart#SecurityConfig.roleHierarchy',
-      types: const [_i41.RoleHierarchyImpl, _i41.RoleHierarchy],
+      types: const [_i83.RoleHierarchyImpl, _i83.RoleHierarchy],
       factoryMethodName: r'roleHierarchy',
       create: (r) =>
-          (_i38.SecurityConfig.roleHierarchy() as _i41.RoleHierarchyImpl),
+          (_i54.SecurityConfig.roleHierarchy() as _i83.RoleHierarchyImpl),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'getReachableGrantedAuthorities',
-            declaringType: r'RoleHierarchy',
-            targetType: r'RoleHierarchyImpl',
-            declaringTypes: [r'RoleHierarchy'],
-            returnType: r'List',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'authorities'],
-            targetTypes: [r'RoleHierarchyImpl', r'RoleHierarchy'],
-          ),
-        ],
-        create: (target, invoker) => _$SecurityConfig$RoleHierarchyProxy(
-          (target as _i41.RoleHierarchyImpl),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches RoleHierarchyImpl, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i43.UrlBasedCorsConfigurationSource>(
+    _i2.BeanDefinition<_i59.UrlBasedCorsConfigurationSource>(
       name: r'corsConfigurationSource',
       source: r'package:neon_books_server/src/security/security_config.dart#SecurityConfig.corsConfigurationSource',
       types: const [
-        _i43.UrlBasedCorsConfigurationSource,
-        _i43.CorsConfigurationSource,
+        _i59.UrlBasedCorsConfigurationSource,
+        _i59.CorsConfigurationSource,
       ],
       factoryBeanName: r'securityConfig',
       factoryMethodName: r'corsConfigurationSource',
       dependencies: const [
-        _i2.Dependency(_i38.SecurityConfig, qualifier: r'securityConfig'),
-        _i2.Dependency(_i38.CorsProperties, name: r'cors'),
+        _i2.Dependency(_i54.SecurityConfig, qualifier: r'securityConfig'),
+        _i2.Dependency(_i54.CorsProperties, name: r'cors'),
       ],
       create: (r) =>
-          ((r.dependency<_i38.SecurityConfig>(
+          ((r.dependency<_i54.SecurityConfig>(
                 qualifier: r'securityConfig',
               ) as _$SecurityConfigConfiguration)._$corsConfigurationSource(r)
-              as _i43.UrlBasedCorsConfigurationSource),
+              as _i59.UrlBasedCorsConfigurationSource),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'getCorsConfiguration',
-            declaringType: r'CorsConfigurationSource',
-            targetType: r'UrlBasedCorsConfigurationSource',
-            declaringTypes: [r'CorsConfigurationSource'],
-            returnType: r'CorsConfiguration',
-            parameterTypes: [r'ServerHttpRequest'],
-            parameterNames: [r'request'],
-            targetTypes: [
-              r'UrlBasedCorsConfigurationSource',
-              r'CorsConfigurationSource',
-            ],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$SecurityConfig$CorsConfigurationSourceProxy(
-              (target as _i43.UrlBasedCorsConfigurationSource),
-              invoker,
-            ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches UrlBasedCorsConfigurationSource, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i38.OrderPermissionEvaluator>(
+    _i2.BeanDefinition<_i54.OrderPermissionEvaluator>(
       name: r'orderPermissionEvaluator',
       source: r'package:neon_books_server/src/security/security_config.dart#OrderPermissionEvaluator',
-      types: const [_i38.OrderPermissionEvaluator, _i44.PermissionEvaluator],
-      create: (r) => _i38.OrderPermissionEvaluator(),
+      types: const [_i54.OrderPermissionEvaluator, _i84.PermissionEvaluator],
+      create: (r) => _i54.OrderPermissionEvaluator(),
       annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'hasPermission',
-            declaringType: r'PermissionEvaluator',
-            targetType: r'OrderPermissionEvaluator',
-            declaringTypes: [
-              r'OrderPermissionEvaluator',
-              r'PermissionEvaluator',
-            ],
-            returnType: r'bool',
-            parameterTypes: [r'Authentication', r'Object', r'Object'],
-            parameterNames: [
-              r'authentication',
-              r'targetDomainObject',
-              r'permission',
-            ],
-            targetTypes: [r'OrderPermissionEvaluator', r'PermissionEvaluator'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'hasPermissionById',
-            declaringType: r'PermissionEvaluator',
-            targetType: r'OrderPermissionEvaluator',
-            declaringTypes: [
-              r'OrderPermissionEvaluator',
-              r'PermissionEvaluator',
-            ],
-            returnType: r'bool',
-            parameterTypes: [
-              r'Authentication',
-              r'Object',
-              r'String',
-              r'Object',
-            ],
-            parameterNames: [
-              r'authentication',
-              r'targetId',
-              r'targetType',
-              r'permission',
-            ],
-            targetTypes: [r'OrderPermissionEvaluator', r'PermissionEvaluator'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) => _$OrderPermissionEvaluatorProxy(
-          (target as _i38.OrderPermissionEvaluator),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches OrderPermissionEvaluator, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i45.AppProperties>(
+    _i2.BeanDefinition<_i58.AppProperties>(
       name: r'appProperties',
       source: r'package:neon_books_server/src/security/sso_config.dart#AppProperties',
-      types: const [_i45.AppProperties],
-      create: (r) => _i45.AppProperties(),
+      types: const [_i58.AppProperties],
+      create: (r) => _i58.AppProperties(),
       annotations: const [
-        _i91.ConfigurationProperties(r'neon.app'),
+        _i82.ConfigurationProperties(r'neon.app'),
         _i2.Validated(),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'webUrl',
-            declaringType: r'AppProperties',
-            targetType: r'AppProperties',
-            declaringTypes: [r'AppProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            targetTypes: [r'AppProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.app'),
-              _i2.Validated(),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
-          ),
-          _i2.MethodSignature(
-            name: r'webUrl',
-            declaringType: r'AppProperties',
-            targetType: r'AppProperties',
-            declaringTypes: [r'AppProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            targetTypes: [r'AppProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.app'),
-              _i2.Validated(),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$AppPropertiesProxy((target as _i45.AppProperties), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches AppProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i45.SsoConfig>(
+    _i2.BeanDefinition<_i58.SsoConfig>(
       name: r'ssoConfig',
       source:
           r'package:neon_books_server/src/security/sso_config.dart#SsoConfig',
-      types: const [_i45.SsoConfig],
+      types: const [_i58.SsoConfig],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/security/sso_config.dart#SsoConfig',
@@ -8226,10 +5336,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.Profile([r'sso']),
       ],
     ),
-    _i2.BeanDefinition<_i45.KeycloakRolesMapper>(
+    _i2.BeanDefinition<_i58.KeycloakRolesMapper>(
       name: r'keycloakRoles',
       source: r'package:neon_books_server/src/security/sso_config.dart#SsoConfig.keycloakRoles',
-      types: const [_i45.KeycloakRolesMapper, _i42.GrantedAuthoritiesMapper],
+      types: const [_i58.KeycloakRolesMapper, _i60.GrantedAuthoritiesMapper],
       factoryBeanName: r'ssoConfig',
       factoryMethodName: r'keycloakRoles',
       conditions: [
@@ -8241,262 +5351,86 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i45.SsoConfig, qualifier: r'ssoConfig'),
+        _i2.Dependency(_i58.SsoConfig, qualifier: r'ssoConfig'),
       ],
       create: (r) =>
-          ((r.dependency<_i45.SsoConfig>(
+          ((r.dependency<_i58.SsoConfig>(
                 qualifier: r'ssoConfig',
               ) as _$SsoConfigConfiguration)._$keycloakRoles(r)
-              as _i45.KeycloakRolesMapper),
+              as _i58.KeycloakRolesMapper),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'mapAuthorities',
-            declaringType: r'GrantedAuthoritiesMapper',
-            targetType: r'KeycloakRolesMapper',
-            declaringTypes: [r'GrantedAuthoritiesMapper'],
-            returnType: r'List',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'authorities'],
-            targetTypes: [r'KeycloakRolesMapper', r'GrantedAuthoritiesMapper'],
-          ),
-        ],
-        create: (target, invoker) => _$SsoConfig$KeycloakRolesProxy(
-          (target as _i45.KeycloakRolesMapper),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches KeycloakRolesMapper, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i46.UsersProperties>(
+    _i2.BeanDefinition<_i61.UsersProperties>(
       name: r'usersProperties',
       source:
           r'package:neon_books_server/src/security/users.dart#UsersProperties',
-      types: const [_i46.UsersProperties],
-      create: (r) => _i46.UsersProperties(),
+      types: const [_i61.UsersProperties],
+      create: (r) => _i61.UsersProperties(),
       annotations: const [
-        _i91.ConfigurationProperties(r'neon.security'),
+        _i82.ConfigurationProperties(r'neon.security'),
         _i2.Validated(),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'users',
-            declaringType: r'UsersProperties',
-            targetType: r'UsersProperties',
-            declaringTypes: [r'UsersProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Map',
-            targetTypes: [r'UsersProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.security'),
-              _i2.Validated(),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
-          ),
-          _i2.MethodSignature(
-            name: r'users',
-            declaringType: r'UsersProperties',
-            targetType: r'UsersProperties',
-            declaringTypes: [r'UsersProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'Map',
-            targetTypes: [r'UsersProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.security'),
-              _i2.Validated(),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$UsersPropertiesProxy((target as _i46.UsersProperties), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches UsersProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i46.UsersConfig>(
+    _i2.BeanDefinition<_i61.UsersConfig>(
       name: r'usersConfig',
       source: r'package:neon_books_server/src/security/users.dart#UsersConfig',
-      types: const [_i46.UsersConfig],
+      types: const [_i61.UsersConfig],
       create: (r) => _$UsersConfigConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
-    _i2.BeanDefinition<_i47.PasswordEncoder>(
+    _i2.BeanDefinition<_i62.PasswordEncoder>(
       name: r'passwordEncoder',
       source: r'package:neon_books_server/src/security/users.dart#UsersConfig.passwordEncoder',
-      types: const [_i47.PasswordEncoder],
+      types: const [_i62.PasswordEncoder],
       factoryBeanName: r'usersConfig',
       factoryMethodName: r'passwordEncoder',
       dependencies: const [
-        _i2.Dependency(_i46.UsersConfig, qualifier: r'usersConfig'),
+        _i2.Dependency(_i61.UsersConfig, qualifier: r'usersConfig'),
       ],
-      create: (r) => (r.dependency<_i46.UsersConfig>(
+      create: (r) => (r.dependency<_i61.UsersConfig>(
         qualifier: r'usersConfig',
       ) as _$UsersConfigConfiguration)._$passwordEncoder(r),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'encode',
-            declaringType: r'PasswordEncoder',
-            targetType: r'PasswordEncoder',
-            declaringTypes: [r'PasswordEncoder'],
-            returnType: r'String',
-            parameterTypes: [r'String'],
-            parameterNames: [r'rawPassword'],
-            targetTypes: [r'PasswordEncoder'],
-          ),
-          _i2.MethodSignature(
-            name: r'matches',
-            declaringType: r'PasswordEncoder',
-            targetType: r'PasswordEncoder',
-            declaringTypes: [r'PasswordEncoder'],
-            returnType: r'bool',
-            parameterTypes: [r'String', r'String'],
-            parameterNames: [r'rawPassword', r'encodedPassword'],
-            targetTypes: [r'PasswordEncoder'],
-          ),
-          _i2.MethodSignature(
-            name: r'upgradeEncoding',
-            declaringType: r'PasswordEncoder',
-            targetType: r'PasswordEncoder',
-            declaringTypes: [r'PasswordEncoder'],
-            returnType: r'bool',
-            parameterTypes: [r'String'],
-            parameterNames: [r'encodedPassword'],
-            targetTypes: [r'PasswordEncoder'],
-          ),
-        ],
-        create: (target, invoker) => _$UsersConfig$PasswordEncoderProxy(
-          (target as _i47.PasswordEncoder),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches PasswordEncoder, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i48.InMemoryUserDetailsManager>(
+    _i2.BeanDefinition<_i63.InMemoryUserDetailsManager>(
       name: r'userDetailsService',
       source: r'package:neon_books_server/src/security/users.dart#UsersConfig.userDetailsService',
       types: const [
-        _i48.InMemoryUserDetailsManager,
-        _i48.UserDetailsManager,
-        _i48.UserDetailsService,
-        _i48.UserDetailsPasswordService,
+        _i63.InMemoryUserDetailsManager,
+        _i63.UserDetailsManager,
+        _i63.UserDetailsService,
+        _i63.UserDetailsPasswordService,
       ],
       factoryBeanName: r'usersConfig',
       factoryMethodName: r'userDetailsService',
       dependencies: const [
-        _i2.Dependency(_i46.UsersConfig, qualifier: r'usersConfig'),
-        _i2.Dependency(_i46.UsersProperties, name: r'properties'),
+        _i2.Dependency(_i61.UsersConfig, qualifier: r'usersConfig'),
+        _i2.Dependency(_i61.UsersProperties, name: r'properties'),
       ],
       create: (r) =>
-          ((r.dependency<_i46.UsersConfig>(
+          ((r.dependency<_i61.UsersConfig>(
                 qualifier: r'usersConfig',
               ) as _$UsersConfigConfiguration)._$userDetailsService(r)
-              as _i48.InMemoryUserDetailsManager),
+              as _i63.InMemoryUserDetailsManager),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'createUser',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'void',
-            parameterTypes: [r'UserDetails'],
-            parameterNames: [r'user'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'updateUser',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'void',
-            parameterTypes: [r'UserDetails'],
-            parameterNames: [r'user'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'deleteUser',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'void',
-            parameterTypes: [r'String'],
-            parameterNames: [r'username'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'userExists',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'bool',
-            parameterTypes: [r'String'],
-            parameterNames: [r'username'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'loadUserByUsername',
-            declaringType: r'UserDetailsService',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsService'],
-            returnType: r'UserDetails',
-            parameterTypes: [r'String'],
-            parameterNames: [r'username'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'updatePassword',
-            declaringType: r'UserDetailsPasswordService',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsPasswordService'],
-            returnType: r'UserDetails',
-            parameterTypes: [r'UserDetails', r'String'],
-            parameterNames: [r'user', r'newPassword'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-        ],
-        create: (target, invoker) => _$UsersConfig$UserDetailsServiceProxy(
-          (target as _i48.InMemoryUserDetailsManager),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches InMemoryUserDetailsManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i33.SandboxGateway>(
+    _i2.BeanDefinition<_i27.SandboxGateway>(
       name: r'sandbox',
       source:
           r'package:neon_books_server/src/shop/payments.dart#SandboxGateway',
-      types: const [_i33.SandboxGateway, _i33.PaymentGateway],
+      types: const [_i27.SandboxGateway, _i27.PaymentGateway],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/shop/payments.dart#SandboxGateway',
@@ -8505,37 +5439,19 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
         ),
       ],
-      create: (r) => _i33.SandboxGateway(),
+      create: (r) => _i27.SandboxGateway(),
       annotations: const [
         _i2.Component(r'sandbox'),
         _i2.Profile([r'dev']),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'charge',
-            declaringType: r'PaymentGateway',
-            targetType: r'SandboxGateway',
-            declaringTypes: [r'SandboxGateway', r'PaymentGateway'],
-            returnType: r'String',
-            parameterTypes: [r'CustomerOrder'],
-            parameterNames: [r'order'],
-            targetTypes: [r'SandboxGateway', r'PaymentGateway'],
-            targetAnnotations: [
-              _i2.Component(r'sandbox'),
-              _i2.Profile([r'dev']),
-            ],
-            targetAnnotationTypes: [r'Component', r'Profile'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$SandboxGatewayProxy((target as _i33.SandboxGateway), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SandboxGateway, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i33.LiveGateway>(
+    _i2.BeanDefinition<_i27.LiveGateway>(
       name: r'live',
       source: r'package:neon_books_server/src/shop/payments.dart#LiveGateway',
-      types: const [_i33.LiveGateway, _i33.PaymentGateway],
+      types: const [_i27.LiveGateway, _i27.PaymentGateway],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/shop/payments.dart#LiveGateway',
@@ -8544,294 +5460,136 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
         ),
       ],
-      create: (r) => _i33.LiveGateway(),
+      create: (r) => _i27.LiveGateway(),
       annotations: const [
         _i2.Component(r'live'),
         _i2.Profile([r'prod']),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'charge',
-            declaringType: r'PaymentGateway',
-            targetType: r'LiveGateway',
-            declaringTypes: [r'LiveGateway', r'PaymentGateway'],
-            returnType: r'String',
-            parameterTypes: [r'CustomerOrder'],
-            parameterNames: [r'order'],
-            targetTypes: [r'LiveGateway', r'PaymentGateway'],
-            targetAnnotations: [
-              _i2.Component(r'live'),
-              _i2.Profile([r'prod']),
-            ],
-            targetAnnotationTypes: [r'Component', r'Profile'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$LiveGatewayProxy((target as _i33.LiveGateway), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches LiveGateway, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i33.OfflineGateway>(
+    _i2.BeanDefinition<_i27.OfflineGateway>(
       name: r'offline',
       source:
           r'package:neon_books_server/src/shop/payments.dart#OfflineGateway',
-      types: const [_i33.OfflineGateway, _i33.PaymentGateway],
+      types: const [_i27.OfflineGateway, _i27.PaymentGateway],
       fallback: true,
-      create: (r) => _i33.OfflineGateway(),
+      create: (r) => _i27.OfflineGateway(),
       annotations: const [_i2.Component(r'offline'), _i2.Fallback()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'charge',
-            declaringType: r'PaymentGateway',
-            targetType: r'OfflineGateway',
-            declaringTypes: [r'OfflineGateway', r'PaymentGateway'],
-            returnType: r'String',
-            parameterTypes: [r'CustomerOrder'],
-            parameterNames: [r'order'],
-            targetTypes: [r'OfflineGateway', r'PaymentGateway'],
-            targetAnnotations: [_i2.Component(r'offline')],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$OfflineGatewayProxy((target as _i33.OfflineGateway), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches OfflineGateway, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i33.Checkout>(
+    _i2.BeanDefinition<_i27.Checkout>(
       name: r'checkout',
       source: r'package:neon_books_server/src/shop/payments.dart#Checkout',
-      types: const [_i33.Checkout],
+      types: const [_i27.Checkout],
       dependencies: const [
-        _i2.Dependency(_i33.PaymentGateway, name: r'gateway'),
+        _i2.Dependency(_i27.PaymentGateway, name: r'gateway'),
         _i2.Dependency(
-          _i33.PaymentGateway,
+          _i27.PaymentGateway,
           qualifier: r'offline',
           name: r'backup',
         ),
       ],
-      create: (r) => _i33.Checkout(
-        r.dependency<_i33.PaymentGateway>(name: r'gateway'),
-        r.dependency<_i33.PaymentGateway>(
+      create: (r) => _i27.Checkout(
+        r.dependency<_i27.PaymentGateway>(name: r'gateway'),
+        r.dependency<_i27.PaymentGateway>(
           qualifier: r'offline',
           name: r'backup',
         ),
       ),
       annotations: const [_i2.Service(), _i2.Log()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'pay',
-            declaringType: r'Checkout',
-            targetType: r'Checkout',
-            declaringTypes: [r'Checkout'],
-            returnType: r'String',
-            parameterTypes: [r'CustomerOrder'],
-            parameterNames: [r'order'],
-            targetTypes: [r'Checkout'],
-            targetAnnotations: [_i2.Service(), _i2.Log()],
-            targetAnnotationTypes: [r'Service', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'gateway',
-            declaringType: r'Checkout',
-            targetType: r'Checkout',
-            declaringTypes: [r'Checkout'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'PaymentGateway',
-            targetTypes: [r'Checkout'],
-            targetAnnotations: [_i2.Service(), _i2.Log()],
-            targetAnnotationTypes: [r'Service', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'backup',
-            declaringType: r'Checkout',
-            targetType: r'Checkout',
-            declaringTypes: [r'Checkout'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'PaymentGateway',
-            targetTypes: [r'Checkout'],
-            targetAnnotations: [_i2.Service(), _i2.Log()],
-            targetAnnotationTypes: [r'Service', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$CheckoutProxy((target as _i33.Checkout), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches Checkout, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i50.BulkDiscount>(
+    _i2.BeanDefinition<_i78.BulkDiscount>(
       name: r'bulkDiscount',
       source: r'package:neon_books_server/src/shop/pricing.dart#BulkDiscount',
-      types: const [_i50.BulkDiscount, _i50.PriceRule],
+      types: const [_i78.BulkDiscount, _i78.PriceRule],
       order: 1,
-      create: (r) => _i50.BulkDiscount(),
+      create: (r) => _i78.BulkDiscount(),
       annotations: const [_i2.Component(), _i2.Order(1)],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'discountPercent',
-            declaringType: r'PriceRule',
-            targetType: r'BulkDiscount',
-            declaringTypes: [r'BulkDiscount', r'PriceRule'],
-            returnType: r'int',
-            parameterTypes: [r'Book', r'int'],
-            parameterNames: [r'book', r'quantity'],
-            targetTypes: [r'BulkDiscount', r'PriceRule'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$BulkDiscountProxy((target as _i50.BulkDiscount), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches BulkDiscount, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i50.PoetryDiscount>(
+    _i2.BeanDefinition<_i78.PoetryDiscount>(
       name: r'poetryDiscount',
       source: r'package:neon_books_server/src/shop/pricing.dart#PoetryDiscount',
-      types: const [_i50.PoetryDiscount, _i50.PriceRule],
+      types: const [_i78.PoetryDiscount, _i78.PriceRule],
       order: 2,
-      create: (r) => _i50.PoetryDiscount(),
+      create: (r) => _i78.PoetryDiscount(),
       annotations: const [_i2.Component(), _i2.Order(2)],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'discountPercent',
-            declaringType: r'PriceRule',
-            targetType: r'PoetryDiscount',
-            declaringTypes: [r'PoetryDiscount', r'PriceRule'],
-            returnType: r'int',
-            parameterTypes: [r'Book', r'int'],
-            parameterNames: [r'book', r'quantity'],
-            targetTypes: [r'PoetryDiscount', r'PriceRule'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$PoetryDiscountProxy((target as _i50.PoetryDiscount), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches PoetryDiscount, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i50.BestDiscount>(
+    _i2.BeanDefinition<_i78.BestDiscount>(
       name: r'bestDiscount',
       source: r'package:neon_books_server/src/shop/pricing.dart#BestDiscount',
-      types: const [_i50.BestDiscount, _i50.PriceRule],
+      types: const [_i78.BestDiscount, _i78.PriceRule],
       primary: true,
       dependencies: const [
-        _i2.Dependency.collection(_i50.PriceRule, optional: true),
-        _i2.Dependency.map(_i50.PriceRule, optional: true),
+        _i2.Dependency.collection(_i78.PriceRule, optional: true),
+        _i2.Dependency.map(_i78.PriceRule, optional: true),
       ],
-      create: (r) => _i50.BestDiscount(
-        r.optionalDependencyList<_i50.PriceRule>() ?? <_i50.PriceRule>[],
-        r.optionalDependencyMap<_i50.PriceRule>() ?? <String, _i50.PriceRule>{},
+      create: (r) => _i78.BestDiscount(
+        r.optionalDependencyList<_i78.PriceRule>() ?? <_i78.PriceRule>[],
+        r.optionalDependencyMap<_i78.PriceRule>() ?? <String, _i78.PriceRule>{},
       ),
       postConstruct: (bean) {
         bean.report();
       },
       annotations: const [_i2.Component(), _i2.Primary(), _i2.Log()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'report',
-            declaringType: r'BestDiscount',
-            targetType: r'BestDiscount',
-            declaringTypes: [r'BestDiscount'],
-            returnType: r'void',
-            targetTypes: [r'BestDiscount', r'PriceRule'],
-            targetAnnotations: [_i2.Component(), _i2.Log()],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'discountPercent',
-            declaringType: r'PriceRule',
-            targetType: r'BestDiscount',
-            declaringTypes: [r'BestDiscount', r'PriceRule'],
-            returnType: r'int',
-            parameterTypes: [r'Book', r'int'],
-            parameterNames: [r'book', r'quantity'],
-            targetTypes: [r'BestDiscount', r'PriceRule'],
-            targetAnnotations: [_i2.Component(), _i2.Log()],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'rules',
-            declaringType: r'BestDiscount',
-            targetType: r'BestDiscount',
-            declaringTypes: [r'BestDiscount'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            targetTypes: [r'BestDiscount', r'PriceRule'],
-            targetAnnotations: [_i2.Component(), _i2.Log()],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'rulesByName',
-            declaringType: r'BestDiscount',
-            targetType: r'BestDiscount',
-            declaringTypes: [r'BestDiscount'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Map',
-            targetTypes: [r'BestDiscount', r'PriceRule'],
-            targetAnnotations: [_i2.Component(), _i2.Log()],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$BestDiscountProxy((target as _i50.BestDiscount), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches BestDiscount, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i81.ShopConfig>(
+    _i2.BeanDefinition<_i64.ShopConfig>(
       name: r'shopConfig',
       source: r'package:neon_books_server/src/shop/shop_config.dart#ShopConfig',
-      types: const [_i81.ShopConfig],
+      types: const [_i64.ShopConfig],
       create: (r) => _$ShopConfigConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
-    _i2.BeanDefinition<_i34.SystemClock>(
+    _i2.BeanDefinition<_i28.SystemClock>(
       name: r'clock',
       source: r'package:neon_books_server/src/shop/shop_config.dart#ShopConfig.clock',
-      types: const [_i34.SystemClock, _i34.Clock],
+      types: const [_i28.SystemClock, _i28.Clock],
       factoryBeanName: r'shopConfig',
       factoryMethodName: r'clock',
-      conditions: [const _i92.ConditionalOnMissingBean(_i34.Clock)],
+      conditions: [const _i85.ConditionalOnMissingBean(_i28.Clock)],
       dependencies: const [
-        _i2.Dependency(_i81.ShopConfig, qualifier: r'shopConfig'),
+        _i2.Dependency(_i64.ShopConfig, qualifier: r'shopConfig'),
       ],
-      create: (r) => ((r.dependency<_i81.ShopConfig>(
+      create: (r) => ((r.dependency<_i64.ShopConfig>(
         qualifier: r'shopConfig',
-      ) as _$ShopConfigConfiguration)._$clock(r) as _i34.SystemClock),
+      ) as _$ShopConfigConfiguration)._$clock(r) as _i28.SystemClock),
       annotations: const [
         _i2.Bean(),
-        _i92.ConditionalOnMissingBean(_i34.Clock),
+        _i85.ConditionalOnMissingBean(_i28.Clock),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'now',
-            declaringType: r'Clock',
-            targetType: r'SystemClock',
-            declaringTypes: [r'SystemClock', r'Clock'],
-            returnType: r'DateTime',
-            targetTypes: [r'SystemClock', r'Clock'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ShopConfig$ClockProxy((target as _i34.SystemClock), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SystemClock, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i19.CoverStore>(
+    _i2.BeanDefinition<_i17.CoverStore>(
       name: r'coverStore',
       source: r'package:neon_books_server/src/shop/shop_config.dart#ShopConfig.coverStore',
-      types: const [_i19.CoverStore],
+      types: const [_i17.CoverStore],
       aliases: const [r'covers'],
       lazy: true,
       factoryBeanName: r'shopConfig',
       factoryMethodName: r'coverStore',
       dependencies: const [
-        _i2.Dependency(_i81.ShopConfig, qualifier: r'shopConfig'),
+        _i2.Dependency(_i64.ShopConfig, qualifier: r'shopConfig'),
         _i2.Dependency.value(r'${neon.covers.directory:build/covers}'),
         _i2.Dependency(_i2.ResourceLoader, name: r'resources'),
       ],
-      create: (r) => (r.dependency<_i81.ShopConfig>(
+      create: (r) => (r.dependency<_i64.ShopConfig>(
         qualifier: r'shopConfig',
       ) as _$ShopConfigConfiguration)._$coverStore(r),
       initMethod: (bean) {
@@ -8904,18 +5662,18 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         reason: r'CoverStore cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
       ),
     ),
-    _i2.BeanDefinition<_i30.ReceiptBuilder>(
+    _i2.BeanDefinition<_i65.ReceiptBuilder>(
       name: r'receiptBuilder',
       source: r'package:neon_books_server/src/shop/shop_config.dart#ShopConfig.receiptBuilder',
-      types: const [_i30.ReceiptBuilder],
+      types: const [_i65.ReceiptBuilder],
       scope: r'prototype',
       factoryBeanName: r'shopConfig',
       factoryMethodName: r'receiptBuilder',
       dependencies: const [
-        _i2.Dependency(_i81.ShopConfig, qualifier: r'shopConfig'),
-        _i2.Dependency(_i20.ShopProperties, name: r'shop'),
+        _i2.Dependency(_i64.ShopConfig, qualifier: r'shopConfig'),
+        _i2.Dependency(_i18.ShopProperties, name: r'shop'),
       ],
-      create: (r) => (r.dependency<_i81.ShopConfig>(
+      create: (r) => (r.dependency<_i64.ShopConfig>(
         qualifier: r'shopConfig',
       ) as _$ShopConfigConfiguration)._$receiptBuilder(r),
       annotations: const [_i2.Bean(), _i2.Scope(r'prototype')],
@@ -8957,275 +5715,24 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         reason: r'ReceiptBuilder cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
       ),
     ),
-    _i2.BeanDefinition<_i20.ShopProperties>(
+    _i2.BeanDefinition<_i18.ShopProperties>(
       name: r'shopProperties',
       source: r'package:neon_books_server/src/shop/shop_properties.dart#ShopProperties',
-      types: const [_i20.ShopProperties],
-      create: (r) => _i20.ShopProperties(),
+      types: const [_i18.ShopProperties],
+      create: (r) => _i18.ShopProperties(),
       annotations: const [
-        _i91.ConfigurationProperties(r'neon.shop'),
+        _i82.ConfigurationProperties(r'neon.shop'),
         _i2.Validated(),
-        _i20.ValidOpeningHours(),
+        _i18.ValidOpeningHours(),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'isOpenAt',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            returnType: r'bool',
-            parameterTypes: [r'DateTime'],
-            parameterNames: [r'time'],
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'name',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'opensAt',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'closesAt',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'maxBasketSize',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'deliveryTime',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Duration',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'maxCoverSize',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'DataSize',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'name',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'opensAt',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'closesAt',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'maxBasketSize',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'deliveryTime',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'Duration',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'maxCoverSize',
-            declaringType: r'ShopProperties',
-            targetType: r'ShopProperties',
-            declaringTypes: [r'ShopProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'DataSize',
-            targetTypes: [r'ShopProperties'],
-            targetAnnotations: [
-              _i91.ConfigurationProperties(r'neon.shop'),
-              _i2.Validated(),
-              _i20.ValidOpeningHours(),
-            ],
-            targetAnnotationTypes: [
-              r'ConfigurationProperties',
-              r'Validated',
-              r'ValidOpeningHours',
-            ],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ShopPropertiesProxy((target as _i20.ShopProperties), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ShopProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i51.SampleData>(
+    _i2.BeanDefinition<_i30.SampleData>(
       name: r'sampleData',
       source: r'package:neon_books_server/src/shop/startup.dart#SampleData',
-      types: const [_i51.SampleData, _i52.ApplicationRunner],
+      types: const [_i30.SampleData, _i31.ApplicationRunner],
       order: 1,
       conditions: [
         _i2.ConditionGroup(
@@ -9236,12 +5743,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i21.BookRepository, name: r'_books'),
+        _i2.Dependency(_i19.BookRepository, name: r'_books'),
         _i2.Dependency(_i2.ObjectMapper, name: r'_mapper'),
         _i2.Dependency.value(r'${neon.catalog.sample-data}'),
       ],
       create: (r) => _$SampleDataProxy(
-        r.dependency<_i21.BookRepository>(name: r'_books'),
+        r.dependency<_i19.BookRepository>(name: r'_books'),
         r.dependency<_i2.ObjectMapper>(name: r'_mapper'),
         r.value<_i2.Resource>(r'${neon.catalog.sample-data}'),
       ),
@@ -9274,20 +5781,20 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$SampleDataProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i51.StartupAnnouncement>(
+    _i2.BeanDefinition<_i30.StartupAnnouncement>(
       name: r'startupAnnouncement',
       source: r'package:neon_books_server/src/shop/startup.dart#StartupAnnouncement',
-      types: const [_i51.StartupAnnouncement, _i52.CommandLineRunner],
+      types: const [_i30.StartupAnnouncement, _i31.CommandLineRunner],
       order: 2,
       dependencies: const [
-        _i2.Dependency(_i21.BookRepository, name: r'_books'),
+        _i2.Dependency(_i19.BookRepository, name: r'_books'),
         _i2.Dependency(_i2.MessageSource, name: r'_messages'),
         _i2.Dependency.value(r'#{shopProperties.name.toUpperCase()}'),
         _i2.Dependency(_i2.Environment, name: r'environment'),
         _i2.Dependency(_i2.ApplicationContext, name: r'context'),
       ],
       create: (r) => _$StartupAnnouncementProxy(
-        r.dependency<_i21.BookRepository>(name: r'_books'),
+        r.dependency<_i19.BookRepository>(name: r'_books'),
         r.dependency<_i2.MessageSource>(name: r'_messages'),
       ),
       inject: (bean, r) {
@@ -9351,14 +5858,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$StartupAnnouncementProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i51.CatalogStatistics>(
+    _i2.BeanDefinition<_i30.CatalogStatistics>(
       name: r'catalogStatistics',
       source:
           r'package:neon_books_server/src/shop/startup.dart#CatalogStatistics',
-      types: const [_i51.CatalogStatistics, _i2.SmartInitializingSingleton],
-      dependencies: const [_i2.Dependency(_i20.ShopProperties, name: r'_shop')],
+      types: const [_i30.CatalogStatistics, _i2.SmartInitializingSingleton],
+      dependencies: const [_i2.Dependency(_i18.ShopProperties, name: r'_shop')],
       create: (r) => _$CatalogStatisticsProxy(
-        r.dependency<_i20.ShopProperties>(name: r'_shop'),
+        r.dependency<_i18.ShopProperties>(name: r'_shop'),
       ),
       annotations: const [_i2.Component(), _i2.Log()],
       aopProxy: _i2.AopProxyFactory.subclass(
@@ -9381,21 +5888,21 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$CatalogStatisticsProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i51.ServerAnnouncer>(
+    _i2.BeanDefinition<_i30.ServerAnnouncer>(
       name: r'serverAnnouncer',
       source:
           r'package:neon_books_server/src/shop/startup.dart#ServerAnnouncer',
-      types: const [_i51.ServerAnnouncer],
-      create: (r) => _i51.ServerAnnouncer(),
+      types: const [_i30.ServerAnnouncer],
+      create: (r) => _i30.ServerAnnouncer(),
       eventListeners: [
         _i2.EventListenerMethod.of<
-          _i51.ServerAnnouncer,
-          _i53.ApplicationReadyEvent
+          _i30.ServerAnnouncer,
+          _i86.ApplicationReadyEvent
         >(r'ServerAnnouncer.onReady', (bean, event) {
           bean.onReady(event);
           return null;
         }),
-        _i2.EventListenerMethod<_i51.ServerAnnouncer>.matching(
+        _i2.EventListenerMethod<_i30.ServerAnnouncer>.matching(
           id: r'ServerAnnouncer.onContext',
           accepts: (candidate) =>
               candidate is _i2.ContextRefreshedEvent ||
@@ -9413,87 +5920,48 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           },
         ),
         _i2.EventListenerMethod.of<
-          _i51.ServerAnnouncer,
-          _i54.WebServerInitializedEvent
+          _i30.ServerAnnouncer,
+          _i87.WebServerInitializedEvent
         >(r'ServerAnnouncer.onServerStarted', (bean, event) {
           bean.onServerStarted(event);
           return null;
         }),
       ],
       annotations: const [_i2.Component(), _i2.Log()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'onReady',
-            declaringType: r'ServerAnnouncer',
-            targetType: r'ServerAnnouncer',
-            declaringTypes: [r'ServerAnnouncer'],
-            returnType: r'void',
-            parameterTypes: [r'ApplicationReadyEvent'],
-            parameterNames: [r'event'],
-            targetTypes: [r'ServerAnnouncer'],
-            targetAnnotations: [_i2.Component(), _i2.Log()],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'onContext',
-            declaringType: r'ServerAnnouncer',
-            targetType: r'ServerAnnouncer',
-            declaringTypes: [r'ServerAnnouncer'],
-            returnType: r'void',
-            parameterTypes: [r'ApplicationEvent'],
-            parameterNames: [r'event'],
-            targetTypes: [r'ServerAnnouncer'],
-            targetAnnotations: [_i2.Component(), _i2.Log()],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'onServerStarted',
-            declaringType: r'ServerAnnouncer',
-            targetType: r'ServerAnnouncer',
-            declaringTypes: [r'ServerAnnouncer'],
-            returnType: r'void',
-            parameterTypes: [r'WebServerInitializedEvent'],
-            parameterNames: [r'event'],
-            targetTypes: [r'ServerAnnouncer'],
-            targetAnnotations: [_i2.Component(), _i2.Log()],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ServerAnnouncerProxy((target as _i51.ServerAnnouncer), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ServerAnnouncer, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i55.RestockJob>(
+    _i2.BeanDefinition<_i32.RestockJob>(
       name: r'restockJob',
       source:
           r'package:neon_books_server/src/stock/restock_job.dart#RestockJob',
-      types: const [_i55.RestockJob],
+      types: const [_i32.RestockJob],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/stock/restock_job.dart#RestockJob',
-          [_i93.SupplierConfigured()],
+          [_i88.SupplierConfigured()],
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i59.StockService, name: r'_stock'),
-        _i2.Dependency(_i60.SupplierOffers, name: r'_offers'),
-        _i2.Dependency(_i60.SupplierDeliveries, name: r'_deliveries'),
+        _i2.Dependency(_i36.StockService, name: r'_stock'),
+        _i2.Dependency(_i37.SupplierOffers, name: r'_offers'),
+        _i2.Dependency(_i37.SupplierDeliveries, name: r'_deliveries'),
       ],
       create: (r) => _$RestockJobProxy(
-        r.dependency<_i59.StockService>(name: r'_stock'),
-        r.dependency<_i60.SupplierOffers>(name: r'_offers'),
-        r.dependency<_i60.SupplierDeliveries>(name: r'_deliveries'),
+        r.dependency<_i36.StockService>(name: r'_stock'),
+        r.dependency<_i37.SupplierOffers>(name: r'_offers'),
+        r.dependency<_i37.SupplierDeliveries>(name: r'_deliveries'),
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i55.RestockJob>(
+        _i2.BeanMethod<_i32.RestockJob>(
           r'restockLowStock',
           isFuture: true,
           isVoid: true,
           invoke: (bean, arguments) =>
               Function.apply(bean.restockLowStock, arguments),
           annotations: const [
-            _i94.Scheduled(
+            _i89.Scheduled(
               fixedDelayString: r'${neon.stock.restock-interval:30s}',
               initialDelayString: r'${neon.stock.restock-initial-delay:10s}',
             ),
@@ -9502,7 +5970,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       ],
       annotations: const [
         _i2.Component(),
-        _i2.Conditional([_i93.SupplierConfigured]),
+        _i2.Conditional([_i88.SupplierConfigured]),
         _i2.Log(),
       ],
       aopProxy: _i2.AopProxyFactory.subclass(
@@ -9514,7 +5982,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             declaringTypes: [r'RestockJob'],
             returnType: r'Future',
             annotations: [
-              _i94.Scheduled(
+              _i89.Scheduled(
                 fixedDelayString: r'${neon.stock.restock-interval:30s}',
                 initialDelayString: r'${neon.stock.restock-initial-delay:10s}',
               ),
@@ -9523,7 +5991,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             targetTypes: [r'RestockJob'],
             targetAnnotations: [
               _i2.Component(),
-              _i2.Conditional([_i93.SupplierConfigured]),
+              _i2.Conditional([_i88.SupplierConfigured]),
               _i2.Log(),
             ],
             targetAnnotationTypes: [r'Component', r'Conditional', r'Log'],
@@ -9538,7 +6006,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             targetTypes: [r'RestockJob'],
             targetAnnotations: [
               _i2.Component(),
-              _i2.Conditional([_i93.SupplierConfigured]),
+              _i2.Conditional([_i88.SupplierConfigured]),
               _i2.Log(),
             ],
             targetAnnotationTypes: [r'Component', r'Conditional', r'Log'],
@@ -9553,7 +6021,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             targetTypes: [r'RestockJob'],
             targetAnnotations: [
               _i2.Component(),
-              _i2.Conditional([_i93.SupplierConfigured]),
+              _i2.Conditional([_i88.SupplierConfigured]),
               _i2.Log(),
             ],
             targetAnnotationTypes: [r'Component', r'Conditional', r'Log'],
@@ -9563,22 +6031,22 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$RestockJobProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i55.StockReport>(
+    _i2.BeanDefinition<_i32.StockReport>(
       name: r'stockReport',
       source:
           r'package:neon_books_server/src/stock/restock_job.dart#StockReport',
-      types: const [_i55.StockReport],
-      dependencies: const [_i2.Dependency(_i59.StockService, name: r'_stock')],
+      types: const [_i32.StockReport],
+      dependencies: const [_i2.Dependency(_i36.StockService, name: r'_stock')],
       create: (r) =>
-          _$StockReportProxy(r.dependency<_i59.StockService>(name: r'_stock')),
+          _$StockReportProxy(r.dependency<_i36.StockService>(name: r'_stock')),
       annotatedMethods: [
-        _i2.BeanMethod<_i55.StockReport>(
+        _i2.BeanMethod<_i32.StockReport>(
           r'dailyReport',
           isVoid: true,
           invoke: (bean, arguments) =>
               Function.apply(bean.dailyReport, arguments),
           annotations: const [
-            _i94.Scheduled(cron: r'${neon.stock.report-cron:0 0 6 * * *}'),
+            _i89.Scheduled(cron: r'${neon.stock.report-cron:0 0 6 * * *}'),
           ],
         ),
       ],
@@ -9592,7 +6060,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             declaringTypes: [r'StockReport'],
             returnType: r'void',
             annotations: [
-              _i94.Scheduled(cron: r'${neon.stock.report-cron:0 0 6 * * *}'),
+              _i89.Scheduled(cron: r'${neon.stock.report-cron:0 0 6 * * *}'),
             ],
             annotationTypes: [r'Scheduled'],
             targetTypes: [r'StockReport'],
@@ -9604,15 +6072,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$StockReportProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i56.StockController>(
+    _i2.BeanDefinition<_i33.StockController>(
       name: r'stockController',
       source: r'package:neon_books_server/src/stock/stock_controller.dart#StockController',
-      types: const [_i56.StockController],
-      dependencies: const [_i2.Dependency(_i58.StockFeed, name: r'feed')],
+      types: const [_i33.StockController],
+      dependencies: const [_i2.Dependency(_i35.StockFeed, name: r'feed')],
       create: (r) =>
-          _i56.StockController(r.dependency<_i58.StockFeed>(name: r'feed')),
+          _i33.StockController(r.dependency<_i35.StockFeed>(name: r'feed')),
       annotatedMethods: [
-        _i2.BeanMethod<_i56.StockController>(
+        _i2.BeanMethod<_i33.StockController>(
           r'events',
           parameterTypes: const [String],
           parameters: [
@@ -9620,20 +6088,20 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'lastEventId',
               type: const _i2.ClassType<String>(nullable: true),
               isRequired: true,
-              annotations: const [_i77.RequestHeader(r'Last-Event-ID')],
+              annotations: const [_i49.RequestHeader(r'Last-Event-ID')],
             ),
           ],
           returnTypeInfo:
-              const _i2.GenericType<_i57.EventStream<_i7.StockChanged>>([
+              const _i2.GenericType<_i34.EventStream<_i7.StockChanged>>([
                 _i2.ClassType<_i7.StockChanged>(),
               ]),
           invoke: (bean, arguments) => Function.apply(bean.events, arguments),
-          annotations: const [_i77.GetMapping(r'/events')],
+          annotations: const [_i49.GetMapping(r'/events')],
         ),
       ],
       annotations: const [
-        _i82.RestController(),
-        _i77.RequestMapping(r'/api/stock'),
+        _i70.RestController(),
+        _i49.RequestMapping(r'/api/stock'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -9646,14 +6114,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'lastEventId'],
             parameterAnnotations: [
-              [_i77.RequestHeader(r'Last-Event-ID')],
+              [_i49.RequestHeader(r'Last-Event-ID')],
             ],
-            annotations: [_i77.GetMapping(r'/events')],
+            annotations: [_i49.GetMapping(r'/events')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'StockController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/stock'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/stock'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -9666,27 +6134,27 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'StockFeed',
             targetTypes: [r'StockController'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/api/stock'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/api/stock'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$StockControllerProxy((target as _i56.StockController), invoker),
+            _$StockControllerProxy((target as _i33.StockController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i58.StockFeed>(
+    _i2.BeanDefinition<_i35.StockFeed>(
       name: r'stockFeed',
       source: r'package:neon_books_server/src/stock/stock_feed.dart#StockFeed',
-      types: const [_i58.StockFeed, _i2.SmartLifecycle, _i2.Lifecycle],
+      types: const [_i35.StockFeed, _i2.SmartLifecycle, _i2.Lifecycle],
       dependencies: const [
         _i2.Dependency.value(r'${neon.stock.replay-size:100}'),
       ],
       create: (r) =>
           _$StockFeedProxy(r.value<int>(r'${neon.stock.replay-size:100}')),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i58.StockFeed, _i7.StockChanged>(
+        _i2.EventListenerMethod.of<_i35.StockFeed, _i7.StockChanged>(
           r'StockFeed.onStockChanged',
           (bean, event) {
             bean.onStockChanged(event);
@@ -9825,21 +6293,21 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$StockFeedProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i59.StockService>(
+    _i2.BeanDefinition<_i36.StockService>(
       name: r'stockService',
       source: r'package:neon_books_server/src/stock/stock_service.dart#StockService',
-      types: const [_i59.StockService],
+      types: const [_i36.StockService],
       dependencies: const [
-        _i2.Dependency(_i18.Catalog, name: r'_catalog'),
+        _i2.Dependency(_i16.Catalog, name: r'_catalog'),
         _i2.Dependency.value(r'${neon.stock.low-threshold:2}', optional: true),
       ],
       create: (r) => _$StockServiceProxy(
-        r.dependency<_i18.Catalog>(name: r'_catalog'),
+        r.dependency<_i16.Catalog>(name: r'_catalog'),
         lowThreshold:
             r.optionalValue<int>(r'${neon.stock.low-threshold:2}') ?? 2,
       ),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i59.StockService, _i6.OrderPlaced>(
+        _i2.EventListenerMethod.of<_i36.StockService, _i6.OrderPlaced>(
           r'StockService.onOrderPlaced',
           (bean, event) => bean.onOrderPlaced(event),
           order: 1,
@@ -9899,14 +6367,14 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$StockServiceProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i60.SupplierOffers>(
+    _i2.BeanDefinition<_i37.SupplierOffers>(
       name: r'supplierOffers',
       source: r'package:neon_books_server/src/supplier/supplier_clients.dart#SupplierOffers',
-      types: const [_i60.SupplierOffers],
+      types: const [_i37.SupplierOffers],
       primary: true,
       create: (r) => _$SupplierOffersImpl.$create(r),
       annotations: const [
-        _i76.FeignClient(r'supplier-offers', url: r'${neon.supplier.url}'),
+        _i48.FeignClient(r'supplier-offers', url: r'${neon.supplier.url}'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -9919,17 +6387,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'isbn', r'copies'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
-              [_i77.RequestParam(r'copies')],
+              [_i49.PathVariable()],
+              [_i49.RequestParam(r'copies')],
             ],
             annotations: [
-              _i77.GetMapping(r'/offers/{isbn}'),
-              _i78.Cacheable(r'supplier-offers', key: "#isbn + '*' + #copies"),
+              _i49.GetMapping(r'/offers/{isbn}'),
+              _i50.Cacheable(r'supplier-offers', key: "#isbn + '*' + #copies"),
             ],
             annotationTypes: [r'GetMapping', r'Cacheable'],
             targetTypes: [r'SupplierOffers'],
             targetAnnotations: [
-              _i76.FeignClient(
+              _i48.FeignClient(
                 r'supplier-offers',
                 url: r'${neon.supplier.url}',
               ),
@@ -9938,20 +6406,20 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ),
         ],
         create: (target, invoker) =>
-            _$SupplierOffersProxy((target as _i60.SupplierOffers), invoker),
+            _$SupplierOffersProxy((target as _i37.SupplierOffers), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i60.SupplierDeliveries>(
+    _i2.BeanDefinition<_i37.SupplierDeliveries>(
       name: r'supplierDeliveries',
       source: r'package:neon_books_server/src/supplier/supplier_clients.dart#SupplierDeliveries',
-      types: const [_i60.SupplierDeliveries],
+      types: const [_i37.SupplierDeliveries],
       primary: true,
       create: (r) => _$SupplierDeliveriesImpl.$create(r),
       annotations: const [
-        _i76.FeignClient(
+        _i48.FeignClient(
           r'supplier-deliveries',
           url: r'${neon.supplier.url}',
-          fallback: _i60.NoDeliveries,
+          fallback: _i37.NoDeliveries,
         ),
       ],
       aopProxy: _i2.AopProxyFactory(
@@ -9965,10 +6433,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'DeliveryRequest'],
             parameterNames: [r'request'],
             parameterAnnotations: [
-              [_i77.RequestBody()],
+              [_i49.RequestBody()],
             ],
             annotations: [
-              _i77.PostMapping.of(
+              _i49.PostMapping.of(
                 path: r'/deliveries',
                 headers: [r'X-Shop=${neon.shop.name}'],
               ),
@@ -9976,46 +6444,46 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'SupplierDeliveries'],
             targetAnnotations: [
-              _i76.FeignClient(
+              _i48.FeignClient(
                 r'supplier-deliveries',
                 url: r'${neon.supplier.url}',
-                fallback: _i60.NoDeliveries,
+                fallback: _i37.NoDeliveries,
               ),
             ],
             targetAnnotationTypes: [r'FeignClient'],
           ),
         ],
         create: (target, invoker) => _$SupplierDeliveriesProxy(
-          (target as _i60.SupplierDeliveries),
+          (target as _i37.SupplierDeliveries),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i60.NoDeliveries>(
+    _i2.BeanDefinition<_i37.NoDeliveries>(
       name: r'noDeliveries',
       source: r'package:neon_books_server/src/supplier/supplier_clients.dart#NoDeliveries',
-      types: const [_i60.NoDeliveries, _i60.SupplierDeliveries],
-      create: (r) => _i60.NoDeliveries(),
+      types: const [_i37.NoDeliveries, _i37.SupplierDeliveries],
+      create: (r) => _i37.NoDeliveries(),
       annotatedMethods: [
-        _i2.BeanMethod<_i60.NoDeliveries>(
+        _i2.BeanMethod<_i37.NoDeliveries>(
           r'order',
-          parameterTypes: const [_i61.DeliveryRequest],
+          parameterTypes: const [_i38.DeliveryRequest],
           parameters: [
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i61.DeliveryRequest>(),
+              type: const _i2.ClassType<_i38.DeliveryRequest>(),
               isRequired: true,
-              annotations: const [_i77.RequestBody()],
+              annotations: const [_i49.RequestBody()],
             ),
           ],
           returnTypeInfo:
-              const _i2.GenericType<_i15.ResponseEntity<_i61.Delivery>>([
-                _i2.ClassType<_i61.Delivery>(),
+              const _i2.GenericType<_i13.ResponseEntity<_i38.Delivery>>([
+                _i2.ClassType<_i38.Delivery>(),
               ]),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.order, arguments),
           annotations: const [
-            _i77.PostMapping.of(
+            _i49.PostMapping.of(
               path: r'/deliveries',
               headers: [r'X-Shop=${neon.shop.name}'],
             ),
@@ -10023,210 +6491,77 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'order',
-            declaringType: r'SupplierDeliveries',
-            targetType: r'NoDeliveries',
-            declaringTypes: [r'NoDeliveries', r'SupplierDeliveries'],
-            returnType: r'Future',
-            parameterTypes: [r'DeliveryRequest'],
-            parameterNames: [r'request'],
-            parameterAnnotations: [
-              [_i77.RequestBody()],
-            ],
-            annotations: [
-              _i77.PostMapping.of(
-                path: r'/deliveries',
-                headers: [r'X-Shop=${neon.shop.name}'],
-              ),
-            ],
-            annotationTypes: [r'PostMapping'],
-            targetTypes: [r'NoDeliveries', r'SupplierDeliveries'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$NoDeliveriesProxy((target as _i60.NoDeliveries), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches NoDeliveries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i62.SupplierProperties>(
+    _i2.BeanDefinition<_i66.SupplierProperties>(
       name: r'supplierProperties',
       source: r'package:neon_books_server/src/supplier/supplier_config.dart#SupplierProperties',
-      types: const [_i62.SupplierProperties],
-      create: (r) => _i62.SupplierProperties(),
-      annotations: const [_i91.ConfigurationProperties(r'neon.supplier')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'url',
-            declaringType: r'SupplierProperties',
-            targetType: r'SupplierProperties',
-            declaringTypes: [r'SupplierProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            targetTypes: [r'SupplierProperties'],
-            targetAnnotations: [_i91.ConfigurationProperties(r'neon.supplier')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-          _i2.MethodSignature(
-            name: r'apiKey',
-            declaringType: r'SupplierProperties',
-            targetType: r'SupplierProperties',
-            declaringTypes: [r'SupplierProperties'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            targetTypes: [r'SupplierProperties'],
-            targetAnnotations: [_i91.ConfigurationProperties(r'neon.supplier')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-          _i2.MethodSignature(
-            name: r'url',
-            declaringType: r'SupplierProperties',
-            targetType: r'SupplierProperties',
-            declaringTypes: [r'SupplierProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            targetTypes: [r'SupplierProperties'],
-            targetAnnotations: [_i91.ConfigurationProperties(r'neon.supplier')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-          _i2.MethodSignature(
-            name: r'apiKey',
-            declaringType: r'SupplierProperties',
-            targetType: r'SupplierProperties',
-            declaringTypes: [r'SupplierProperties'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            targetTypes: [r'SupplierProperties'],
-            targetAnnotations: [_i91.ConfigurationProperties(r'neon.supplier')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
-          ),
-        ],
-        create: (target, invoker) => _$SupplierPropertiesProxy(
-          (target as _i62.SupplierProperties),
-          invoker,
-        ),
+      types: const [_i66.SupplierProperties],
+      create: (r) => _i66.SupplierProperties(),
+      annotations: const [_i82.ConfigurationProperties(r'neon.supplier')],
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SupplierProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i62.SupplierClientConfig>(
+    _i2.BeanDefinition<_i66.SupplierClientConfig>(
       name: r'supplierClientConfig',
       source: r'package:neon_books_server/src/supplier/supplier_config.dart#SupplierClientConfig',
-      types: const [_i62.SupplierClientConfig],
+      types: const [_i66.SupplierClientConfig],
       create: (r) => _$SupplierClientConfigConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
-    _i2.BeanDefinition<_i62.SupplierHeaders>(
+    _i2.BeanDefinition<_i66.SupplierHeaders>(
       name: r'supplierHeaders',
       source: r'package:neon_books_server/src/supplier/supplier_config.dart#SupplierClientConfig.supplierHeaders',
-      types: const [_i62.SupplierHeaders, _i63.RequestInterceptor],
+      types: const [_i66.SupplierHeaders, _i67.RequestInterceptor],
       factoryBeanName: r'supplierClientConfig',
       factoryMethodName: r'supplierHeaders',
       dependencies: const [
         _i2.Dependency(
-          _i62.SupplierClientConfig,
+          _i66.SupplierClientConfig,
           qualifier: r'supplierClientConfig',
         ),
-        _i2.Dependency(_i62.SupplierProperties, name: r'supplier'),
+        _i2.Dependency(_i66.SupplierProperties, name: r'supplier'),
         _i2.Dependency.value(r'${spring.application.name}'),
       ],
       create: (r) =>
-          ((r.dependency<_i62.SupplierClientConfig>(
+          ((r.dependency<_i66.SupplierClientConfig>(
                 qualifier: r'supplierClientConfig',
               ) as _$SupplierClientConfigConfiguration)._$supplierHeaders(r)
-              as _i62.SupplierHeaders),
+              as _i66.SupplierHeaders),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'apply',
-            declaringType: r'RequestInterceptor',
-            targetType: r'SupplierHeaders',
-            declaringTypes: [r'RequestInterceptor'],
-            returnType: r'void',
-            parameterTypes: [r'RequestTemplate'],
-            parameterNames: [r'template'],
-            targetTypes: [r'SupplierHeaders', r'RequestInterceptor'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$SupplierClientConfig$SupplierHeadersProxy(
-              (target as _i62.SupplierHeaders),
-              invoker,
-            ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SupplierHeaders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i64.DefaultRetryer>(
+    _i2.BeanDefinition<_i68.DefaultRetryer>(
       name: r'supplierRetryer',
       source: r'package:neon_books_server/src/supplier/supplier_config.dart#SupplierClientConfig.supplierRetryer',
-      types: const [_i64.DefaultRetryer, _i64.Retryer],
+      types: const [_i68.DefaultRetryer, _i68.Retryer],
       factoryBeanName: r'supplierClientConfig',
       factoryMethodName: r'supplierRetryer',
       dependencies: const [
         _i2.Dependency(
-          _i62.SupplierClientConfig,
+          _i66.SupplierClientConfig,
           qualifier: r'supplierClientConfig',
         ),
       ],
       create: (r) =>
-          ((r.dependency<_i62.SupplierClientConfig>(
+          ((r.dependency<_i66.SupplierClientConfig>(
                 qualifier: r'supplierClientConfig',
               ) as _$SupplierClientConfigConfiguration)._$supplierRetryer(r)
-              as _i64.DefaultRetryer),
+              as _i68.DefaultRetryer),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'nextDelay',
-            declaringType: r'Retryer',
-            targetType: r'DefaultRetryer',
-            declaringTypes: [r'DefaultRetryer', r'Retryer'],
-            returnType: r'Duration',
-            parameterTypes: [r'int', r'RetryableException'],
-            parameterNames: [r'attempt', r'error'],
-            targetTypes: [r'DefaultRetryer', r'Retryer'],
-          ),
-          _i2.MethodSignature(
-            name: r'period',
-            declaringType: r'DefaultRetryer',
-            targetType: r'DefaultRetryer',
-            declaringTypes: [r'DefaultRetryer'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Duration',
-            targetTypes: [r'DefaultRetryer', r'Retryer'],
-          ),
-          _i2.MethodSignature(
-            name: r'maxPeriod',
-            declaringType: r'DefaultRetryer',
-            targetType: r'DefaultRetryer',
-            declaringTypes: [r'DefaultRetryer'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Duration',
-            targetTypes: [r'DefaultRetryer', r'Retryer'],
-          ),
-          _i2.MethodSignature(
-            name: r'maxAttempts',
-            declaringType: r'DefaultRetryer',
-            targetType: r'DefaultRetryer',
-            declaringTypes: [r'DefaultRetryer'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            targetTypes: [r'DefaultRetryer', r'Retryer'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$SupplierClientConfig$SupplierRetryerProxy(
-              (target as _i64.DefaultRetryer),
-              invoker,
-            ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches DefaultRetryer, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i66.SupplierStub>(
+    _i2.BeanDefinition<_i39.SupplierStub>(
       name: r'supplierStub',
       source: r'package:neon_books_server/src/supplier/supplier_stub.dart#SupplierStub',
-      types: const [_i66.SupplierStub],
+      types: const [_i39.SupplierStub],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/supplier/supplier_stub.dart#SupplierStub',
@@ -10239,7 +6574,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       create: (r) =>
           _$SupplierStubProxy(r.value<String>(r'${neon.supplier.api-key}')),
       annotatedMethods: [
-        _i2.BeanMethod<_i66.SupplierStub>(
+        _i2.BeanMethod<_i39.SupplierStub>(
           r'offer',
           parameterTypes: const [String, String],
           parameters: [
@@ -10247,55 +6582,55 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.PathVariable()],
+              annotations: const [_i49.PathVariable()],
             ),
             _i2.BeanParameter(
               r'key',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.RequestHeader(r'X-Api-Key')],
+              annotations: const [_i49.RequestHeader(r'X-Api-Key')],
             ),
             _i2.BeanParameter(
               r'copies',
               type: const _i2.ClassType<int>(),
               symbol: #copies,
-              annotations: const [_i77.RequestParam(r'copies')],
+              annotations: const [_i49.RequestParam(r'copies')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i61.Offer>(),
+          returnTypeInfo: const _i2.ClassType<_i38.Offer>(),
           invoke: (bean, arguments) => Function.apply(bean.offer, arguments),
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.offer, positional, named),
-          annotations: const [_i77.GetMapping(r'/offers/{isbn}')],
+          annotations: const [_i49.GetMapping(r'/offers/{isbn}')],
         ),
-        _i2.BeanMethod<_i66.SupplierStub>(
+        _i2.BeanMethod<_i39.SupplierStub>(
           r'deliver',
-          parameterTypes: const [_i61.DeliveryRequest, String],
+          parameterTypes: const [_i38.DeliveryRequest, String],
           parameters: [
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i61.DeliveryRequest>(),
+              type: const _i2.ClassType<_i38.DeliveryRequest>(),
               isRequired: true,
-              annotations: const [_i77.RequestBody()],
+              annotations: const [_i49.RequestBody()],
             ),
             _i2.BeanParameter(
               r'key',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i77.RequestHeader(r'X-Api-Key')],
+              annotations: const [_i49.RequestHeader(r'X-Api-Key')],
             ),
           ],
           returnTypeInfo:
-              const _i2.GenericType<_i15.ResponseEntity<_i61.Delivery>>([
-                _i2.ClassType<_i61.Delivery>(),
+              const _i2.GenericType<_i13.ResponseEntity<_i38.Delivery>>([
+                _i2.ClassType<_i38.Delivery>(),
               ]),
           invoke: (bean, arguments) => Function.apply(bean.deliver, arguments),
-          annotations: const [_i77.PostMapping(r'/deliveries')],
+          annotations: const [_i49.PostMapping(r'/deliveries')],
         ),
       ],
       annotations: const [
-        _i82.RestController(),
-        _i77.RequestMapping(r'/supplier'),
+        _i70.RestController(),
+        _i49.RequestMapping(r'/supplier'),
         _i2.Profile([r'supplier-stub & !prod']),
       ],
       aopProxy: _i2.AopProxyFactory.subclass(
@@ -10309,16 +6644,16 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'String', r'int'],
             parameterNames: [r'isbn', r'key', r'copies'],
             parameterAnnotations: [
-              [_i77.PathVariable()],
-              [_i77.RequestHeader(r'X-Api-Key')],
-              [_i77.RequestParam(r'copies')],
+              [_i49.PathVariable()],
+              [_i49.RequestHeader(r'X-Api-Key')],
+              [_i49.RequestParam(r'copies')],
             ],
-            annotations: [_i77.GetMapping(r'/offers/{isbn}')],
+            annotations: [_i49.GetMapping(r'/offers/{isbn}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'SupplierStub'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/supplier'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/supplier'),
               _i2.Profile([r'supplier-stub & !prod']),
             ],
             targetAnnotationTypes: [
@@ -10336,15 +6671,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'DeliveryRequest', r'String'],
             parameterNames: [r'request', r'key'],
             parameterAnnotations: [
-              [_i77.RequestBody()],
-              [_i77.RequestHeader(r'X-Api-Key')],
+              [_i49.RequestBody()],
+              [_i49.RequestHeader(r'X-Api-Key')],
             ],
-            annotations: [_i77.PostMapping(r'/deliveries')],
+            annotations: [_i49.PostMapping(r'/deliveries')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'SupplierStub'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/supplier'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/supplier'),
               _i2.Profile([r'supplier-stub & !prod']),
             ],
             targetAnnotationTypes: [
@@ -10362,8 +6697,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'String',
             targetTypes: [r'SupplierStub'],
             targetAnnotations: [
-              _i82.RestController(),
-              _i77.RequestMapping(r'/supplier'),
+              _i70.RestController(),
+              _i49.RequestMapping(r'/supplier'),
               _i2.Profile([r'supplier-stub & !prod']),
             ],
             targetAnnotationTypes: [
@@ -10377,16 +6712,16 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$SupplierStubProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i67.SupportBot>(
+    _i2.BeanDefinition<_i40.SupportBot>(
       name: r'supportBot',
       source:
           r'package:neon_books_server/src/support/support_bot.dart#SupportBot',
-      types: const [_i67.SupportBot],
+      types: const [_i40.SupportBot],
       conditions: [
         _i2.ConditionGroup(
           r'package:neon_books_server/src/support/support_bot.dart#SupportBot',
           [
-            const _i92.ConditionalOnProperty(
+            const _i85.ConditionalOnProperty(
               r'neon.support.bot.enabled',
               havingValue: r'true',
             ),
@@ -10396,16 +6731,16 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       dependencies: const [
         _i2.Dependency(_i2.Environment, name: r'_environment'),
         _i2.Dependency(_i2.MessageSource, name: r'_messages'),
-        _i2.Dependency(_i20.ShopProperties, name: r'_shop'),
+        _i2.Dependency(_i18.ShopProperties, name: r'_shop'),
       ],
       create: (r) => _$SupportBotProxy(
         r.dependency<_i2.Environment>(name: r'_environment'),
         r.dependency<_i2.MessageSource>(name: r'_messages'),
-        r.dependency<_i20.ShopProperties>(name: r'_shop'),
+        r.dependency<_i18.ShopProperties>(name: r'_shop'),
       ),
       annotations: const [
         _i2.Component(),
-        _i92.ConditionalOnProperty(
+        _i85.ConditionalOnProperty(
           r'neon.support.bot.enabled',
           havingValue: r'true',
         ),
@@ -10424,7 +6759,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             targetTypes: [r'SupportBot'],
             targetAnnotations: [
               _i2.Component(),
-              _i92.ConditionalOnProperty(
+              _i85.ConditionalOnProperty(
                 r'neon.support.bot.enabled',
                 havingValue: r'true',
               ),
@@ -10447,7 +6782,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             targetTypes: [r'SupportBot'],
             targetAnnotations: [
               _i2.Component(),
-              _i92.ConditionalOnProperty(
+              _i85.ConditionalOnProperty(
                 r'neon.support.bot.enabled',
                 havingValue: r'true',
               ),
@@ -10464,30 +6799,30 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$SupportBotProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i68.SupportEndpoint>(
+    _i2.BeanDefinition<_i41.SupportEndpoint>(
       name: r'supportEndpoint',
       source: r'package:neon_books_server/src/support/support_endpoint.dart#SupportEndpoint',
-      types: const [_i68.SupportEndpoint],
+      types: const [_i41.SupportEndpoint],
       dependencies: const [
-        _i2.Dependency(_i31.SupportSessions, name: r'_support'),
-        _i2.Dependency(_i34.Clock, name: r'_clock'),
-        _i2.Dependency.collection(_i68.ChatFilter, optional: true),
-        _i2.Dependency(_i67.SupportBot, optional: true, name: r'_bot'),
+        _i2.Dependency(_i45.SupportSessions, name: r'_support'),
+        _i2.Dependency(_i28.Clock, name: r'_clock'),
+        _i2.Dependency.collection(_i41.ChatFilter, optional: true),
+        _i2.Dependency(_i40.SupportBot, optional: true, name: r'_bot'),
       ],
       create: (r) => _$SupportEndpointProxy(
-        r.dependency<_i31.SupportSessions>(name: r'_support'),
-        r.dependency<_i34.Clock>(name: r'_clock'),
-        r.optionalDependencyList<_i68.ChatFilter>() ?? <_i68.ChatFilter>[],
-        r.optionalDependency<_i67.SupportBot>(name: r'_bot'),
+        r.dependency<_i45.SupportSessions>(name: r'_support'),
+        r.dependency<_i28.Clock>(name: r'_clock'),
+        r.optionalDependencyList<_i41.ChatFilter>() ?? <_i41.ChatFilter>[],
+        r.optionalDependency<_i40.SupportBot>(name: r'_bot'),
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i68.SupportEndpoint>(
+        _i2.BeanMethod<_i41.SupportEndpoint>(
           r'open',
-          parameterTypes: const [_i69.ServerWebSocketSession, _i2.Principal],
+          parameterTypes: const [_i42.ServerWebSocketSession, _i2.Principal],
           parameters: [
             _i2.BeanParameter(
               r'session',
-              type: const _i2.ClassType<_i69.ServerWebSocketSession>(),
+              type: const _i2.ClassType<_i42.ServerWebSocketSession>(),
               isRequired: true,
             ),
             _i2.BeanParameter(
@@ -10498,19 +6833,19 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
           isVoid: true,
           invoke: (bean, arguments) => Function.apply(bean.open, arguments),
-          annotations: const [_i95.OnOpen()],
+          annotations: const [_i90.OnOpen()],
         ),
-        _i2.BeanMethod<_i68.SupportEndpoint>(
+        _i2.BeanMethod<_i41.SupportEndpoint>(
           r'message',
           parameterTypes: const [
-            _i69.ServerWebSocketSession,
+            _i42.ServerWebSocketSession,
             _i2.Principal,
-            _i70.ChatMessage,
+            _i43.ChatMessage,
           ],
           parameters: [
             _i2.BeanParameter(
               r'session',
-              type: const _i2.ClassType<_i69.ServerWebSocketSession>(),
+              type: const _i2.ClassType<_i42.ServerWebSocketSession>(),
               isRequired: true,
             ),
             _i2.BeanParameter(
@@ -10520,40 +6855,40 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             ),
             _i2.BeanParameter(
               r'message',
-              type: const _i2.ClassType<_i70.ChatMessage>(),
+              type: const _i2.ClassType<_i43.ChatMessage>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i70.ChatMessage>(nullable: true),
+          returnTypeInfo: const _i2.ClassType<_i43.ChatMessage>(nullable: true),
           invoke: (bean, arguments) => Function.apply(bean.message, arguments),
-          annotations: const [_i96.OnMessage()],
+          annotations: const [_i91.OnMessage()],
         ),
-        _i2.BeanMethod<_i68.SupportEndpoint>(
+        _i2.BeanMethod<_i41.SupportEndpoint>(
           r'close',
-          parameterTypes: const [_i69.ServerWebSocketSession, _i71.CloseStatus],
+          parameterTypes: const [_i42.ServerWebSocketSession, _i44.CloseStatus],
           parameters: [
             _i2.BeanParameter(
               r'session',
-              type: const _i2.ClassType<_i69.ServerWebSocketSession>(),
+              type: const _i2.ClassType<_i42.ServerWebSocketSession>(),
               isRequired: true,
             ),
             _i2.BeanParameter(
               r'status',
-              type: const _i2.ClassType<_i71.CloseStatus>(),
+              type: const _i2.ClassType<_i44.CloseStatus>(),
               isRequired: true,
             ),
           ],
           isVoid: true,
           invoke: (bean, arguments) => Function.apply(bean.close, arguments),
-          annotations: const [_i95.OnClose()],
+          annotations: const [_i90.OnClose()],
         ),
-        _i2.BeanMethod<_i68.SupportEndpoint>(
+        _i2.BeanMethod<_i41.SupportEndpoint>(
           r'error',
-          parameterTypes: const [_i69.ServerWebSocketSession, Object],
+          parameterTypes: const [_i42.ServerWebSocketSession, Object],
           parameters: [
             _i2.BeanParameter(
               r'session',
-              type: const _i2.ClassType<_i69.ServerWebSocketSession>(),
+              type: const _i2.ClassType<_i42.ServerWebSocketSession>(),
               isRequired: true,
             ),
             _i2.BeanParameter(
@@ -10564,11 +6899,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ],
           isVoid: true,
           invoke: (bean, arguments) => Function.apply(bean.error, arguments),
-          annotations: const [_i95.OnError()],
+          annotations: const [_i90.OnError()],
         ),
       ],
       annotations: const [
-        _i95.WebSocketEndpoint(
+        _i90.WebSocketEndpoint(
           r'/ws/support',
           allowedOriginPatterns: [
             r'http://localhost:[*]',
@@ -10587,11 +6922,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'void',
             parameterTypes: [r'ServerWebSocketSession', r'Principal'],
             parameterNames: [r'session', r'user'],
-            annotations: [_i95.OnOpen()],
+            annotations: [_i90.OnOpen()],
             annotationTypes: [r'OnOpen'],
             targetTypes: [r'SupportEndpoint'],
             targetAnnotations: [
-              _i95.WebSocketEndpoint(
+              _i90.WebSocketEndpoint(
                 r'/ws/support',
                 allowedOriginPatterns: [
                   r'http://localhost:[*]',
@@ -10614,11 +6949,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'ChatMessage',
             ],
             parameterNames: [r'session', r'user', r'message'],
-            annotations: [_i96.OnMessage()],
+            annotations: [_i91.OnMessage()],
             annotationTypes: [r'OnMessage'],
             targetTypes: [r'SupportEndpoint'],
             targetAnnotations: [
-              _i95.WebSocketEndpoint(
+              _i90.WebSocketEndpoint(
                 r'/ws/support',
                 allowedOriginPatterns: [
                   r'http://localhost:[*]',
@@ -10637,11 +6972,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'void',
             parameterTypes: [r'ServerWebSocketSession', r'CloseStatus'],
             parameterNames: [r'session', r'status'],
-            annotations: [_i95.OnClose()],
+            annotations: [_i90.OnClose()],
             annotationTypes: [r'OnClose'],
             targetTypes: [r'SupportEndpoint'],
             targetAnnotations: [
-              _i95.WebSocketEndpoint(
+              _i90.WebSocketEndpoint(
                 r'/ws/support',
                 allowedOriginPatterns: [
                   r'http://localhost:[*]',
@@ -10660,11 +6995,11 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             returnType: r'void',
             parameterTypes: [r'ServerWebSocketSession', r'Object'],
             parameterNames: [r'session', r'error'],
-            annotations: [_i95.OnError()],
+            annotations: [_i90.OnError()],
             annotationTypes: [r'OnError'],
             targetTypes: [r'SupportEndpoint'],
             targetAnnotations: [
-              _i95.WebSocketEndpoint(
+              _i90.WebSocketEndpoint(
                 r'/ws/support',
                 allowedOriginPatterns: [
                   r'http://localhost:[*]',
@@ -10680,15 +7015,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$SupportEndpointProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i31.SupportSessions>(
+    _i2.BeanDefinition<_i45.SupportSessions>(
       name: r'supportSessions',
       source: r'package:neon_books_server/src/support/support_sessions.dart#SupportSessions',
-      types: const [_i31.SupportSessions],
+      types: const [_i45.SupportSessions],
       dependencies: const [
-        _i2.Dependency(_i69.WebSocketSessionRegistry, name: r'_registry'),
+        _i2.Dependency(_i42.WebSocketSessionRegistry, name: r'_registry'),
       ],
       create: (r) => _$SupportSessionsProxy(
-        r.dependency<_i69.WebSocketSessionRegistry>(name: r'_registry'),
+        r.dependency<_i42.WebSocketSessionRegistry>(name: r'_registry'),
       ),
       annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory.subclass(
@@ -10734,17 +7069,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$SupportSessionsProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i72.ApiErrors>(
+    _i2.BeanDefinition<_i92.ApiErrors>(
       name: r'apiErrors',
       source: r'package:neon_books_server/src/web/api_errors.dart#ApiErrors',
-      types: const [_i72.ApiErrors],
+      types: const [_i92.ApiErrors],
       dependencies: const [
         _i2.Dependency(_i2.MessageSource, name: r'messages'),
       ],
       create: (r) =>
-          _i72.ApiErrors(r.dependency<_i2.MessageSource>(name: r'messages')),
+          _i92.ApiErrors(r.dependency<_i2.MessageSource>(name: r'messages')),
       annotatedMethods: [
-        _i2.BeanMethod<_i72.ApiErrors>(
+        _i2.BeanMethod<_i92.ApiErrors>(
           r'bookNotFound',
           parameterTypes: const [_i9.BookNotFoundException],
           parameters: [
@@ -10754,15 +7089,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i73.ProblemDetail>(),
+          returnTypeInfo: const _i2.ClassType<_i93.ProblemDetail>(),
           invoke: (bean, arguments) =>
               Function.apply(bean.bookNotFound, arguments),
           annotations: const [
-            _i82.ExceptionHandler(),
-            _i82.ResponseStatus(404),
+            _i70.ExceptionHandler(),
+            _i70.ResponseStatus(404),
           ],
         ),
-        _i2.BeanMethod<_i72.ApiErrors>(
+        _i2.BeanMethod<_i92.ApiErrors>(
           r'emptyBasket',
           parameterTypes: const [_i6.EmptyBasketException],
           parameters: [
@@ -10772,15 +7107,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i73.ProblemDetail>(),
+          returnTypeInfo: const _i2.ClassType<_i93.ProblemDetail>(),
           invoke: (bean, arguments) =>
               Function.apply(bean.emptyBasket, arguments),
           annotations: const [
-            _i82.ExceptionHandler(),
-            _i82.ResponseStatus(409),
+            _i70.ExceptionHandler(),
+            _i70.ResponseStatus(409),
           ],
         ),
-        _i2.BeanMethod<_i72.ApiErrors>(
+        _i2.BeanMethod<_i92.ApiErrors>(
           r'conflict',
           parameterTypes: const [StateError],
           parameters: [
@@ -10791,152 +7126,65 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             ),
           ],
           returnTypeInfo:
-              const _i2.GenericType<_i15.ResponseEntity<_i73.ProblemDetail>>([
-                _i2.ClassType<_i73.ProblemDetail>(),
+              const _i2.GenericType<_i13.ResponseEntity<_i93.ProblemDetail>>([
+                _i2.ClassType<_i93.ProblemDetail>(),
               ]),
           invoke: (bean, arguments) => Function.apply(bean.conflict, arguments),
-          annotations: const [_i82.ExceptionHandler()],
+          annotations: const [_i70.ExceptionHandler()],
         ),
-        _i2.BeanMethod<_i72.ApiErrors>(
+        _i2.BeanMethod<_i92.ApiErrors>(
           r'supplierFailed',
-          parameterTypes: const [_i65.FeignException],
+          parameterTypes: const [_i94.FeignException],
           parameters: [
             _i2.BeanParameter(
               r'error',
-              type: const _i2.ClassType<_i65.FeignException>(),
+              type: const _i2.ClassType<_i94.FeignException>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i73.ProblemDetail>(),
+          returnTypeInfo: const _i2.ClassType<_i93.ProblemDetail>(),
           invoke: (bean, arguments) =>
               Function.apply(bean.supplierFailed, arguments),
           annotations: const [
-            _i82.ExceptionHandler(),
-            _i82.ResponseStatus(502),
+            _i70.ExceptionHandler(),
+            _i70.ResponseStatus(502),
           ],
         ),
-        _i2.BeanMethod<_i72.ApiErrors>(
+        _i2.BeanMethod<_i92.ApiErrors>(
           r'invalid',
           parameterTypes: const [
-            _i74.MethodArgumentNotValidException,
-            _i13.ServerHttpRequest,
+            _i95.MethodArgumentNotValidException,
+            _i11.ServerHttpRequest,
           ],
           parameters: [
             _i2.BeanParameter(
               r'error',
-              type: const _i2.ClassType<_i74.MethodArgumentNotValidException>(),
+              type: const _i2.ClassType<_i95.MethodArgumentNotValidException>(),
               isRequired: true,
             ),
             _i2.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i13.ServerHttpRequest>(),
+              type: const _i2.ClassType<_i11.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i73.ProblemDetail>(),
+          returnTypeInfo: const _i2.ClassType<_i93.ProblemDetail>(),
           invoke: (bean, arguments) => Function.apply(bean.invalid, arguments),
-          annotations: const [_i82.ExceptionHandler()],
+          annotations: const [_i70.ExceptionHandler()],
         ),
       ],
-      annotations: const [_i82.RestControllerAdvice(), _i2.Log()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'bookNotFound',
-            declaringType: r'ApiErrors',
-            targetType: r'ApiErrors',
-            declaringTypes: [r'ApiErrors'],
-            returnType: r'ProblemDetail',
-            parameterTypes: [r'BookNotFoundException'],
-            parameterNames: [r'error'],
-            annotations: [_i82.ExceptionHandler(), _i82.ResponseStatus(404)],
-            annotationTypes: [r'ExceptionHandler', r'ResponseStatus'],
-            targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i82.RestControllerAdvice(), _i2.Log()],
-            targetAnnotationTypes: [r'RestControllerAdvice', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'emptyBasket',
-            declaringType: r'ApiErrors',
-            targetType: r'ApiErrors',
-            declaringTypes: [r'ApiErrors'],
-            returnType: r'ProblemDetail',
-            parameterTypes: [r'EmptyBasketException'],
-            parameterNames: [r'error'],
-            annotations: [_i82.ExceptionHandler(), _i82.ResponseStatus(409)],
-            annotationTypes: [r'ExceptionHandler', r'ResponseStatus'],
-            targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i82.RestControllerAdvice(), _i2.Log()],
-            targetAnnotationTypes: [r'RestControllerAdvice', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'conflict',
-            declaringType: r'ApiErrors',
-            targetType: r'ApiErrors',
-            declaringTypes: [r'ApiErrors'],
-            returnType: r'ResponseEntity',
-            parameterTypes: [r'StateError'],
-            parameterNames: [r'error'],
-            annotations: [_i82.ExceptionHandler()],
-            annotationTypes: [r'ExceptionHandler'],
-            targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i82.RestControllerAdvice(), _i2.Log()],
-            targetAnnotationTypes: [r'RestControllerAdvice', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'supplierFailed',
-            declaringType: r'ApiErrors',
-            targetType: r'ApiErrors',
-            declaringTypes: [r'ApiErrors'],
-            returnType: r'ProblemDetail',
-            parameterTypes: [r'FeignException'],
-            parameterNames: [r'error'],
-            annotations: [_i82.ExceptionHandler(), _i82.ResponseStatus(502)],
-            annotationTypes: [r'ExceptionHandler', r'ResponseStatus'],
-            targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i82.RestControllerAdvice(), _i2.Log()],
-            targetAnnotationTypes: [r'RestControllerAdvice', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'invalid',
-            declaringType: r'ApiErrors',
-            targetType: r'ApiErrors',
-            declaringTypes: [r'ApiErrors'],
-            returnType: r'ProblemDetail',
-            parameterTypes: [
-              r'MethodArgumentNotValidException',
-              r'ServerHttpRequest',
-            ],
-            parameterNames: [r'error', r'request'],
-            annotations: [_i82.ExceptionHandler()],
-            annotationTypes: [r'ExceptionHandler'],
-            targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i82.RestControllerAdvice(), _i2.Log()],
-            targetAnnotationTypes: [r'RestControllerAdvice', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'messages',
-            declaringType: r'ApiErrors',
-            targetType: r'ApiErrors',
-            declaringTypes: [r'ApiErrors'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'MessageSource',
-            targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i82.RestControllerAdvice(), _i2.Log()],
-            targetAnnotationTypes: [r'RestControllerAdvice', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ApiErrorsProxy((target as _i72.ApiErrors), invoker),
+      annotations: const [_i70.RestControllerAdvice(), _i2.Log()],
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ApiErrors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i75.RequestIdFilter>(
+    _i2.BeanDefinition<_i46.RequestIdFilter>(
       name: r'requestIdFilter',
       source: r'package:neon_books_server/src/web/request_id_filter.dart#RequestIdFilter',
       types: const [
-        _i75.RequestIdFilter,
-        _i40.OncePerRequestFilter,
-        _i40.WebFilter,
+        _i46.RequestIdFilter,
+        _i47.OncePerRequestFilter,
+        _i47.WebFilter,
       ],
       order: -2147483648,
       create: (r) => _$RequestIdFilterProxy(),
@@ -11010,48 +7258,26 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             bean is _$RequestIdFilterProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i75.AccessLogFilter>(
+    _i2.BeanDefinition<_i46.AccessLogFilter>(
       name: r'accessLogFilter',
       source: r'package:neon_books_server/src/web/request_id_filter.dart#AccessLogFilter',
-      types: const [_i75.AccessLogFilter, _i40.WebFilter],
+      types: const [_i46.AccessLogFilter, _i47.WebFilter],
       order: -2147483647,
-      create: (r) => _i75.AccessLogFilter(),
+      create: (r) => _i46.AccessLogFilter(),
       annotations: const [
         _i2.Component(),
         _i2.Order(-2147483647),
         _i2.Log(topic: r'neon.access', fieldName: r'accessLog'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'doFilter',
-            declaringType: r'WebFilter',
-            targetType: r'AccessLogFilter',
-            declaringTypes: [r'AccessLogFilter', r'WebFilter'],
-            returnType: r'Future',
-            parameterTypes: [
-              r'ServerHttpRequest',
-              r'ServerHttpResponse',
-              r'WebFilterChain',
-            ],
-            parameterNames: [r'request', r'response', r'chain'],
-            targetTypes: [r'AccessLogFilter', r'WebFilter'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.access', fieldName: r'accessLog'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$AccessLogFilterProxy((target as _i75.AccessLogFilter), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches AccessLogFilter, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i97.WebConfig>(
+    _i2.BeanDefinition<_i96.WebConfig>(
       name: r'webConfig',
       source: r'package:neon_books_server/src/web/web_config.dart#WebConfig',
-      types: const [_i97.WebConfig, _i98.WebMvcConfigurer],
-      create: (r) => _i97.WebConfig(),
+      types: const [_i96.WebConfig, _i97.WebMvcConfigurer],
+      create: (r) => _i96.WebConfig(),
       annotations: const [_i2.Configuration()],
     ),
   ],
@@ -11060,13 +7286,13 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       '# The dev profile (the default): sample data, a local supplier stub, more\n# logging. Profile files are read on top of application.properties.\n\n# Loaded into the empty catalog at startup (SampleData, @Profile dev).\nneon.catalog.sample-data=classpath:data/books.json\n# Faster restocking to watch the live stock in the app.\nneon.stock.restock-interval=20s\nlogging.level.spring.web.mvc=info\n',
     ),
     r'application-prod.yml': _i2.EmbeddedResource.text(
-      "# The prod profile, in YAML (application.properties and YAML files mix;\n# a .properties file wins over a YAML file in the same place). No sample\n# data, logs to a file, secrets from the environment.\nserver:\n  address: 0.0.0.0\n  servlet:\n    session:\n      cookie:\n        secure: true\n\nneon:\n  stock:\n    restock-interval: 5m\n  # The Flutter web build is served from the shop's own site.\n  cors:\n    allowed-origin-patterns: https://*.neon.books\n\nlogging:\n  level:\n    shop: info\n    feign: info\n  file:\n    name: build/logs/neon-books.log\n  logback:\n    rollingpolicy:\n      max-file-size: 10MB\n      max-history: 5\n",
+      "# The prod profile, in YAML (application.properties and YAML files mix;\n# a .properties file wins over a YAML file in the same place). No sample\n# data, logs to a file, secrets from the environment.\nserver:\n  address: 0.0.0.0\n  session:\n    cookie:\n      secure: true\n\nneon:\n  stock:\n    restock-interval: 5m\n  # The Flutter web build is served from the shop's own site.\n  cors:\n    allowed-origin-patterns: https://*.neon.books\n\nlogging:\n  level:\n    shop: info\n    feign: info\n  file:\n    name: build/logs/neon-books.log\n    rolling-policy:\n      max-file-size: 10MB\n      max-history: 5\n",
     ),
     r'application-sso.properties': _i2.EmbeddedResource.text(
       '# The sso profile: single sign-on with Keycloak (example/keycloak, the\n# realm `neon` on port 8180) instead of the form login. Chapter 4.\n#   dart run bin/main.dart --spring.profiles.active=dev,sso\n\n# Where the browser goes after a Keycloak login or logout: the Flutter web\n# app (`flutter run -d chrome --web-port 5050` in example/flutter_guide).\nneon.app.web-url=http://localhost:5050/\n\n# --- oauth2Login(): this server logs browsers in (Flutter web) -----------\n# A confidential client: the server has a secret, the browser never sees\n# the tokens. Keycloak sends the browser back to the default redirect URI,\n# {baseUrl}/login/oauth2/code/{registrationId}\n# (http://localhost:8080/login/oauth2/code/keycloak).\nspring.security.oauth2.client.registration.keycloak.client-id=neon-server\n# A development value, public in example/keycloak/neon-realm.json. Any\n# real Keycloak gets its own secret, from the environment:\n# NEON_KEYCLOAK_SECRET=... dart run bin/main.dart ...\nspring.security.oauth2.client.registration.keycloak.client-secret=\${NEON_KEYCLOAK_SECRET:neon-server-dev-secret}\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# Everything else (endpoints, keys) comes from the issuer\'s metadata.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# The user\'s name is `ada` or `root`, as with the form login (orders\n# belong to a name), not Keycloak\'s id (`sub`).\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n# --- Bearer tokens: the native apps log in themselves ---------------------\n# Their access tokens are checked against the realm\'s keys, issuer and\n# audience (Keycloak adds `neon-api` to the tokens of neon-app).\nspring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8180/realms/neon\nspring.security.oauth2.resourceserver.jwt.audiences=neon-api\nspring.security.oauth2.resourceserver.jwt.principal-claim-name=preferred_username\n# The realm roles, in the token\'s `roles` claim: USER -> ROLE_USER.\nspring.security.oauth2.resourceserver.jwt.authorities-claim-name=roles\nspring.security.oauth2.resourceserver.jwt.authority-prefix=ROLE_\n',
     ),
     r'application.properties': _i2.EmbeddedResource.text(
-      '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `classpath:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:classpath:config/supplier.properties\n# MessageSource: classpath:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.servlet.session.timeout=30m\nspring.servlet.multipart.max-file-size=2MB\nspring.servlet.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.jackson.default-property-inclusion=non_null\nspring.jackson.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.cloud.openfeign.client.config.default.connect-timeout=2s\nspring.cloud.openfeign.client.config.default.read-timeout=5s\nspring.cloud.openfeign.client.config.supplier-offers.logger-level=basic\nspring.cloud.openfeign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\n# Shorter than Spring Boot\'s, aligned the same way: the level padded to 5,\n# the logger abbreviated and padded to 30. Coloured like Spring Boot\'s\n# (spring.output.ansi.enabled=never for plain text).\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p %-30.30logger{29} : %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\nspring.config.activate.on-profile=!prod\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
+      '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `classpath:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:classpath:config/supplier.properties\n# MessageSource: classpath:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.session.timeout=30m\nspring.web.multipart.max-file-size=2MB\nspring.web.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.json.default-property-inclusion=non_null\nspring.json.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.feign.client.config.default.connect-timeout=2s\nspring.feign.client.config.default.read-timeout=5s\nspring.feign.client.config.supplier-offers.logger-level=basic\nspring.feign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\n# Shorter than Spring Boot\'s, aligned the same way: the level padded to 5,\n# the logger abbreviated and padded to 30. Coloured like Spring Boot\'s\n# (spring.output.ansi.enabled=never for plain text).\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p %-30.30logger{29} : %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\nspring.config.activate.on-profile=!prod\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
     ),
     r'banner.txt': _i2.EmbeddedResource.text(
       ' _  _ ___ ___  _  _   ___           _\n| \\| | __/ _ \\| \\| | | _ ) ___  ___| |__ ___\n| .` | _| (_) | .` | | _ \\/ _ \\/ _ \\ / /(_-<\n|_|\\_|___\\___/|_|\\_| |___/\\___/\\___/_\\_\\/__/\n',
@@ -11112,7 +7338,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i2.ConditionGroup(
           r'package:neon_books_server/src/support/support_bot.dart#SupportBot',
           [
-            const _i92.ConditionalOnProperty(
+            const _i85.ConditionalOnProperty(
               r'neon.support.bot.enabled',
               havingValue: r'true',
             ),
@@ -11159,6 +7385,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.fields,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i3.LogLine>(
         parameters: [
           _i2.BeanParameter(
@@ -11192,6 +7419,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               _i2.ClassType<String>(),
             ),
             symbol: #fields,
+            hasDefaultValue: true,
+            defaultValue: const {},
           ),
         ],
         create: (positional, named) =>
@@ -11303,6 +7532,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             r'tags',
             type: const _i2.ListType<String>(_i2.ClassType<String>()),
             symbol: #tags,
+            hasDefaultValue: true,
+            defaultValue: const [],
           ),
           _i2.BeanParameter(
             r'format',
@@ -11311,11 +7542,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               jsonValue: (value) => value.json,
             ),
             symbol: #format,
+            hasDefaultValue: true,
+            defaultValue: _i9.BookFormat.paperback,
           ),
           _i2.BeanParameter(
             r'available',
             type: const _i2.ClassType<int>(),
             symbol: #available,
+            hasDefaultValue: true,
+            defaultValue: 0,
           ),
         ],
         create: (positional, named) =>
@@ -11464,21 +7699,29 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             r'isbn',
             type: const _i2.ClassType<String>(),
             symbol: #isbn,
+            hasDefaultValue: true,
+            defaultValue: r'',
           ),
           _i2.BeanParameter(
             r'title',
             type: const _i2.ClassType<String>(),
             symbol: #title,
+            hasDefaultValue: true,
+            defaultValue: r'',
           ),
           _i2.BeanParameter(
             r'author',
             type: const _i2.ClassType<String>(),
             symbol: #author,
+            hasDefaultValue: true,
+            defaultValue: r'',
           ),
           _i2.BeanParameter(
             r'price',
             type: const _i2.ClassType<double>(),
             symbol: #price,
+            hasDefaultValue: true,
+            defaultValue: 0.0,
           ),
           _i2.BeanParameter(
             r'year',
@@ -11489,6 +7732,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             r'tags',
             type: const _i2.ListType<String>(_i2.ClassType<String>()),
             symbol: #tags,
+            hasDefaultValue: true,
+            defaultValue: const [],
           ),
           _i2.BeanParameter(
             r'format',
@@ -11497,11 +7742,15 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               jsonValue: (value) => value.json,
             ),
             symbol: #format,
+            hasDefaultValue: true,
+            defaultValue: _i9.BookFormat.paperback,
           ),
           _i2.BeanParameter(
             r'stock',
             type: const _i2.ClassType<int>(),
             symbol: #stock,
+            hasDefaultValue: true,
+            defaultValue: 0,
           ),
         ],
         create: (positional, named) =>
@@ -11635,6 +7884,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             r'discount',
             type: const _i2.ClassType<int>(),
             symbol: #discount,
+            hasDefaultValue: true,
+            defaultValue: 0,
           ),
         ],
         create: (positional, named) =>
@@ -11660,6 +7911,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             r'quantity',
             type: const _i2.ClassType<int>(),
             symbol: #quantity,
+            hasDefaultValue: true,
+            defaultValue: 1,
           ),
         ],
         create: (positional, named) =>
@@ -11770,6 +8023,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               jsonValue: (value) => value.json,
             ),
             symbol: #status,
+            hasDefaultValue: true,
+            defaultValue: _i6.OrderStatus.placed,
           ),
           _i2.BeanParameter(
             r'payment',
@@ -11782,28 +8037,28 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
                 as _i6.CustomerOrder),
       ),
     ),
-    _i2.BeanIntrospection<_i37.Me>(
+    _i2.BeanIntrospection<_i29.Me>(
       className: r'Me',
       properties: [
-        _i2.BeanProperty<_i37.Me>(
+        _i2.BeanProperty<_i29.Me>(
           r'name',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.name,
         ),
-        _i2.BeanProperty<_i37.Me>(
+        _i2.BeanProperty<_i29.Me>(
           r'roles',
           type: List<String>,
           typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
           get: (bean) => bean.roles,
         ),
-        _i2.BeanProperty<_i37.Me>(
+        _i2.BeanProperty<_i29.Me>(
           r'authorities',
           type: List<String>,
           typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
           get: (bean) => bean.authorities,
         ),
-        _i2.BeanProperty<_i37.Me>(
+        _i2.BeanProperty<_i29.Me>(
           r'registrationId',
           type: String,
           nullable: true,
@@ -11811,7 +8066,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.registrationId,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i37.Me>(
+      constructor: _i2.BeanConstructor<_i29.Me>(
         parameters: [
           _i2.BeanParameter(
             r'name',
@@ -11838,13 +8093,13 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i37.Me.new, positional, named) as _i37.Me),
+            (Function.apply(_i29.Me.new, positional, named) as _i29.Me),
       ),
     ),
-    _i2.BeanIntrospection<_i38.CorsProperties>(
+    _i2.BeanIntrospection<_i54.CorsProperties>(
       className: r'CorsProperties',
       properties: [
-        _i2.BeanProperty<_i38.CorsProperties>(
+        _i2.BeanProperty<_i54.CorsProperties>(
           r'allowedOriginPatterns',
           type: List<String>,
           typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
@@ -11853,22 +8108,25 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               bean.allowedOriginPatterns = (value as List<String>),
         ),
       ],
-      annotations: const [_i91.ConfigurationProperties(r'neon.cors')],
-      instantiate: () => _i38.CorsProperties(),
-      constructor: _i2.BeanConstructor<_i38.CorsProperties>(
+      annotations: const [_i82.ConfigurationProperties(r'neon.cors')],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      instantiate: () => _i54.CorsProperties(),
+      constructor: _i2.BeanConstructor<_i54.CorsProperties>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i38.CorsProperties.new, positional, named)
-                as _i38.CorsProperties),
+            (Function.apply(_i54.CorsProperties.new, positional, named)
+                as _i54.CorsProperties),
       ),
     ),
-    _i2.BeanIntrospection<_i45.AppProperties>(
+    _i2.BeanIntrospection<_i58.AppProperties>(
       className: r'AppProperties',
       properties: [
-        _i2.BeanProperty<_i45.AppProperties>(
+        _i2.BeanProperty<_i58.AppProperties>(
           r'webUrl',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'http://localhost:5050/',
           get: (bean) => bean.webUrl,
           set: (bean, value) => bean.webUrl = (value as String),
           annotations: const [
@@ -11880,52 +8138,56 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       annotations: const [
-        _i91.ConfigurationProperties(r'neon.app'),
+        _i82.ConfigurationProperties(r'neon.app'),
         _i2.Validated(),
       ],
-      instantiate: () => _i45.AppProperties(),
-      constructor: _i2.BeanConstructor<_i45.AppProperties>(
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      instantiate: () => _i58.AppProperties(),
+      constructor: _i2.BeanConstructor<_i58.AppProperties>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i45.AppProperties.new, positional, named)
-                as _i45.AppProperties),
+            (Function.apply(_i58.AppProperties.new, positional, named)
+                as _i58.AppProperties),
       ),
     ),
-    _i2.BeanIntrospection<_i46.UsersProperties>(
+    _i2.BeanIntrospection<_i61.UsersProperties>(
       className: r'UsersProperties',
       properties: [
-        _i2.BeanProperty<_i46.UsersProperties>(
+        _i2.BeanProperty<_i61.UsersProperties>(
           r'users',
-          type: Map<String, _i46.UserEntry>,
-          typeInfo: const _i2.MapType<String, _i46.UserEntry>(
+          type: Map<String, _i61.UserEntry>,
+          typeInfo: const _i2.MapType<String, _i61.UserEntry>(
             _i2.ClassType<String>(),
-            _i2.ClassType<_i46.UserEntry>(),
+            _i2.ClassType<_i61.UserEntry>(),
           ),
           get: (bean) => bean.users,
           set: (bean, value) =>
-              bean.users = (value as Map<String, _i46.UserEntry>),
+              bean.users = (value as Map<String, _i61.UserEntry>),
           annotations: const [_i2.Valid()],
         ),
       ],
       annotations: const [
-        _i91.ConfigurationProperties(r'neon.security'),
+        _i82.ConfigurationProperties(r'neon.security'),
         _i2.Validated(),
       ],
-      instantiate: () => _i46.UsersProperties(),
-      constructor: _i2.BeanConstructor<_i46.UsersProperties>(
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      instantiate: () => _i61.UsersProperties(),
+      constructor: _i2.BeanConstructor<_i61.UsersProperties>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i46.UsersProperties.new, positional, named)
-                as _i46.UsersProperties),
+            (Function.apply(_i61.UsersProperties.new, positional, named)
+                as _i61.UsersProperties),
       ),
     ),
-    _i2.BeanIntrospection<_i46.UserEntry>(
+    _i2.BeanIntrospection<_i61.UserEntry>(
       className: r'UserEntry',
       properties: [
-        _i2.BeanProperty<_i46.UserEntry>(
+        _i2.BeanProperty<_i61.UserEntry>(
           r'password',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'',
           get: (bean) => bean.password,
           set: (bean, value) => bean.password = (value as String),
           annotations: const [
@@ -11935,7 +8197,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             ),
           ],
         ),
-        _i2.BeanProperty<_i46.UserEntry>(
+        _i2.BeanProperty<_i61.UserEntry>(
           r'roles',
           type: List<String>,
           typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
@@ -11944,57 +8206,66 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           annotations: const [_i2.NotEmpty()],
         ),
       ],
-      instantiate: () => _i46.UserEntry(),
-      constructor: _i2.BeanConstructor<_i46.UserEntry>(
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      instantiate: () => _i61.UserEntry(),
+      constructor: _i2.BeanConstructor<_i61.UserEntry>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i46.UserEntry.new, positional, named)
-                as _i46.UserEntry),
+            (Function.apply(_i61.UserEntry.new, positional, named)
+                as _i61.UserEntry),
       ),
     ),
-    _i2.BeanIntrospection<_i20.ShopProperties>(
+    _i2.BeanIntrospection<_i18.ShopProperties>(
       className: r'ShopProperties',
       properties: [
-        _i2.BeanProperty<_i20.ShopProperties>(
+        _i2.BeanProperty<_i18.ShopProperties>(
           r'name',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'NEON Books',
           get: (bean) => bean.name,
           set: (bean, value) => bean.name = (value as String),
           annotations: const [_i2.NotBlank()],
         ),
-        _i2.BeanProperty<_i20.ShopProperties>(
+        _i2.BeanProperty<_i18.ShopProperties>(
           r'opensAt',
           type: int,
           typeInfo: const _i2.ClassType<int>(),
+          hasInitialValue: true,
+          initialValue: 9,
           get: (bean) => bean.opensAt,
           set: (bean, value) => bean.opensAt = (value as int),
           annotations: const [_i2.Min(0), _i2.Max(24)],
         ),
-        _i2.BeanProperty<_i20.ShopProperties>(
+        _i2.BeanProperty<_i18.ShopProperties>(
           r'closesAt',
           type: int,
           typeInfo: const _i2.ClassType<int>(),
+          hasInitialValue: true,
+          initialValue: 21,
           get: (bean) => bean.closesAt,
           set: (bean, value) => bean.closesAt = (value as int),
           annotations: const [_i2.Min(0), _i2.Max(24)],
         ),
-        _i2.BeanProperty<_i20.ShopProperties>(
+        _i2.BeanProperty<_i18.ShopProperties>(
           r'maxBasketSize',
           type: int,
           typeInfo: const _i2.ClassType<int>(),
+          hasInitialValue: true,
+          initialValue: 10,
           get: (bean) => bean.maxBasketSize,
           set: (bean, value) => bean.maxBasketSize = (value as int),
           annotations: const [_i2.Min(1)],
         ),
-        _i2.BeanProperty<_i20.ShopProperties>(
+        _i2.BeanProperty<_i18.ShopProperties>(
           r'deliveryTime',
           type: Duration,
           typeInfo: const _i2.ClassType<Duration>(),
           get: (bean) => bean.deliveryTime,
           set: (bean, value) => bean.deliveryTime = (value as Duration),
         ),
-        _i2.BeanProperty<_i20.ShopProperties>(
+        _i2.BeanProperty<_i18.ShopProperties>(
           r'maxCoverSize',
           type: _i2.DataSize,
           typeInfo: const _i2.ClassType<_i2.DataSize>(),
@@ -12002,25 +8273,18 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           set: (bean, value) => bean.maxCoverSize = (value as _i2.DataSize),
         ),
       ],
-      methods: [
-        _i2.BeanMethod<_i20.ShopProperties>(
-          r'isOpenAt',
-          returnType: bool,
-          parameterTypes: const [DateTime],
-          invoke: (bean, arguments) => Function.apply(bean.isOpenAt, arguments),
-        ),
-      ],
       annotations: const [
-        _i91.ConfigurationProperties(r'neon.shop'),
+        _i82.ConfigurationProperties(r'neon.shop'),
         _i2.Validated(),
-        _i20.ValidOpeningHours(),
+        _i18.ValidOpeningHours(),
       ],
-      instantiate: () => _i20.ShopProperties(),
-      constructor: _i2.BeanConstructor<_i20.ShopProperties>(
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      instantiate: () => _i18.ShopProperties(),
+      constructor: _i2.BeanConstructor<_i18.ShopProperties>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i20.ShopProperties.new, positional, named)
-                as _i20.ShopProperties),
+            (Function.apply(_i18.ShopProperties.new, positional, named)
+                as _i18.ShopProperties),
       ),
     ),
     _i2.BeanIntrospection<_i7.LowStock>(
@@ -12073,13 +8337,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.available,
         ),
       ],
-      methods: [
-        _i2.BeanMethod<_i7.StockChanged>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i7.StockChanged>(
         parameters: [
           _i2.BeanParameter(
@@ -12100,29 +8358,30 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
                 as _i7.StockChanged),
       ),
     ),
-    _i2.BeanIntrospection<_i61.Offer>(
+    _i2.BeanIntrospection<_i38.Offer>(
       className: r'Offer',
       properties: [
-        _i2.BeanProperty<_i61.Offer>(
+        _i2.BeanProperty<_i38.Offer>(
           r'isbn',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.isbn,
         ),
-        _i2.BeanProperty<_i61.Offer>(
+        _i2.BeanProperty<_i38.Offer>(
           r'price',
           type: double,
           typeInfo: const _i2.ClassType<double>(),
           get: (bean) => bean.price,
         ),
-        _i2.BeanProperty<_i61.Offer>(
+        _i2.BeanProperty<_i38.Offer>(
           r'copies',
           type: int,
           typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.copies,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i61.Offer>(
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      constructor: _i2.BeanConstructor<_i38.Offer>(
         parameters: [
           _i2.BeanParameter(
             r'isbn',
@@ -12144,25 +8403,25 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i61.Offer.new, positional, named) as _i61.Offer),
+            (Function.apply(_i38.Offer.new, positional, named) as _i38.Offer),
       ),
     ),
-    _i2.BeanIntrospection<_i61.Delivery>(
+    _i2.BeanIntrospection<_i38.Delivery>(
       className: r'Delivery',
       properties: [
-        _i2.BeanProperty<_i61.Delivery>(
+        _i2.BeanProperty<_i38.Delivery>(
           r'isbn',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.isbn,
         ),
-        _i2.BeanProperty<_i61.Delivery>(
+        _i2.BeanProperty<_i38.Delivery>(
           r'copies',
           type: int,
           typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.copies,
         ),
-        _i2.BeanProperty<_i61.Delivery>(
+        _i2.BeanProperty<_i38.Delivery>(
           r'reference',
           type: String,
           nullable: true,
@@ -12170,7 +8429,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.reference,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i61.Delivery>(
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      constructor: _i2.BeanConstructor<_i38.Delivery>(
         parameters: [
           _i2.BeanParameter(
             r'isbn',
@@ -12191,34 +8451,28 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i61.Delivery.new, positional, named)
-                as _i61.Delivery),
+            (Function.apply(_i38.Delivery.new, positional, named)
+                as _i38.Delivery),
       ),
     ),
-    _i2.BeanIntrospection<_i61.DeliveryRequest>(
+    _i2.BeanIntrospection<_i38.DeliveryRequest>(
       className: r'DeliveryRequest',
       properties: [
-        _i2.BeanProperty<_i61.DeliveryRequest>(
+        _i2.BeanProperty<_i38.DeliveryRequest>(
           r'isbn',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.isbn,
         ),
-        _i2.BeanProperty<_i61.DeliveryRequest>(
+        _i2.BeanProperty<_i38.DeliveryRequest>(
           r'copies',
           type: int,
           typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.copies,
         ),
       ],
-      methods: [
-        _i2.BeanMethod<_i61.DeliveryRequest>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i61.DeliveryRequest>(
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      constructor: _i2.BeanConstructor<_i38.DeliveryRequest>(
         parameters: [
           _i2.BeanParameter(
             r'isbn',
@@ -12234,53 +8488,58 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i61.DeliveryRequest.new, positional, named)
-                as _i61.DeliveryRequest),
+            (Function.apply(_i38.DeliveryRequest.new, positional, named)
+                as _i38.DeliveryRequest),
       ),
     ),
-    _i2.BeanIntrospection<_i62.SupplierProperties>(
+    _i2.BeanIntrospection<_i66.SupplierProperties>(
       className: r'SupplierProperties',
       properties: [
-        _i2.BeanProperty<_i62.SupplierProperties>(
+        _i2.BeanProperty<_i66.SupplierProperties>(
           r'url',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'',
           get: (bean) => bean.url,
           set: (bean, value) => bean.url = (value as String),
         ),
-        _i2.BeanProperty<_i62.SupplierProperties>(
+        _i2.BeanProperty<_i66.SupplierProperties>(
           r'apiKey',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'',
           get: (bean) => bean.apiKey,
           set: (bean, value) => bean.apiKey = (value as String),
         ),
       ],
-      annotations: const [_i91.ConfigurationProperties(r'neon.supplier')],
-      instantiate: () => _i62.SupplierProperties(),
-      constructor: _i2.BeanConstructor<_i62.SupplierProperties>(
+      annotations: const [_i82.ConfigurationProperties(r'neon.supplier')],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      instantiate: () => _i66.SupplierProperties(),
+      constructor: _i2.BeanConstructor<_i66.SupplierProperties>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i62.SupplierProperties.new, positional, named)
-                as _i62.SupplierProperties),
+            (Function.apply(_i66.SupplierProperties.new, positional, named)
+                as _i66.SupplierProperties),
       ),
     ),
-    _i2.BeanIntrospection<_i70.ChatMessage>(
+    _i2.BeanIntrospection<_i43.ChatMessage>(
       className: r'ChatMessage',
       properties: [
-        _i2.BeanProperty<_i70.ChatMessage>(
+        _i2.BeanProperty<_i43.ChatMessage>(
           r'from',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.from,
         ),
-        _i2.BeanProperty<_i70.ChatMessage>(
+        _i2.BeanProperty<_i43.ChatMessage>(
           r'text',
           type: String,
           typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.text,
         ),
-        _i2.BeanProperty<_i70.ChatMessage>(
+        _i2.BeanProperty<_i43.ChatMessage>(
           r'at',
           type: DateTime,
           nullable: true,
@@ -12288,7 +8547,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.at,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i70.ChatMessage>(
+      constructor: _i2.BeanConstructor<_i43.ChatMessage>(
         parameters: [
           _i2.BeanParameter(
             r'text',
@@ -12300,6 +8559,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             r'from',
             type: const _i2.ClassType<String>(),
             symbol: #from,
+            hasDefaultValue: true,
+            defaultValue: r'',
           ),
           _i2.BeanParameter(
             r'at',
@@ -12308,190 +8569,148 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i70.ChatMessage.new, positional, named)
-                as _i70.ChatMessage),
-      ),
-    ),
-    _i2.BeanIntrospection<_i9.BookNotFoundException>(
-      className: r'BookNotFoundException',
-      properties: [
-        _i2.BeanProperty<_i9.BookNotFoundException>(
-          r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i9.BookNotFoundException>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i9.BookNotFoundException>(
-        parameters: [
-          _i2.BeanParameter(
-            r'isbn',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i9.BookNotFoundException.new, positional, named)
-                as _i9.BookNotFoundException),
-      ),
-    ),
-    _i2.BeanIntrospection<_i6.EmptyBasketException>(
-      className: r'EmptyBasketException',
-      properties: [],
-      methods: [
-        _i2.BeanMethod<_i6.EmptyBasketException>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      instantiate: () => _i6.EmptyBasketException(),
-      constructor: _i2.BeanConstructor<_i6.EmptyBasketException>(
-        parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i6.EmptyBasketException.new, positional, named)
-                as _i6.EmptyBasketException),
+            (Function.apply(_i43.ChatMessage.new, positional, named)
+                as _i43.ChatMessage),
       ),
     ),
   ],
   configurers: {
-    _i99.StockReportPrinter: (bean, r) {
-      final target = (bean as _i99.StockReportPrinter);
-      target.stock = r.dependency<_i59.StockService>(name: r'stock');
+    _i98.StockReportPrinter: (bean, r) {
+      final target = (bean as _i98.StockReportPrinter);
+      target.stock = r.dependency<_i36.StockService>(name: r'stock');
       target.shopName = r.value<String>(r'${neon.shop.name}');
     },
+  },
+  typeTests: {
+    _i37.NoDeliveries: (value) => value is _i37.NoDeliveries,
+    _i28.Clock: (value) => value is _i28.Clock,
+    _i88.SupplierConfigured: (value) => value is _i88.SupplierConfigured,
+    _i9.Catalogued: (value) => value is _i9.Catalogued,
   },
 );
 
 /// `@Log` of [AuditAspect]: the logger 'neon.audit'.
-extension $AuditAspectLog on _i88.AuditAspect {
+extension $AuditAspectLog on _i76.AuditAspect {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon.audit');
 }
 
 /// `@Log` of [TimingAspect]: the logger 'neon.timing'.
-extension $TimingAspectLog on _i88.TimingAspect {
+extension $TimingAspectLog on _i76.TimingAspect {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon.timing');
 }
 
 /// `@Log` of [InMemoryBookRepository]: the logger 'neon_books_server.InMemoryBookRepository'.
-extension $InMemoryBookRepositoryLog on _i21.InMemoryBookRepository {
+extension $InMemoryBookRepositoryLog on _i19.InMemoryBookRepository {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.InMemoryBookRepository');
 }
 
 /// `@Log` of [CatalogService]: the logger 'neon_books_server.CatalogService'.
-extension $CatalogServiceLog on _i18.CatalogService {
+extension $CatalogServiceLog on _i16.CatalogService {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.CatalogService');
 }
 
 /// `@Log` of [LogMailSender]: the logger 'neon.mail'.
-extension $LogMailSenderLog on _i25.LogMailSender {
+extension $LogMailSenderLog on _i53.LogMailSender {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon.mail');
 }
 
 /// `@Log` of [SmtpMailSender]: the logger 'neon.mail'.
-extension $SmtpMailSenderLog on _i25.SmtpMailSender {
+extension $SmtpMailSenderLog on _i53.SmtpMailSender {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon.mail');
 }
 
 /// `@Log` of [VipDesk]: the logger 'neon.vip'.
-extension $VipDeskLog on _i29.VipDesk {
+extension $VipDeskLog on _i69.VipDesk {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon.vip');
 }
 
 /// `@Log` of [OrderRepository]: the logger 'neon_books_server.OrderRepository'.
-extension $OrderRepositoryLog on _i32.OrderRepository {
+extension $OrderRepositoryLog on _i26.OrderRepository {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.OrderRepository');
 }
 
 /// `@Log` of [OrderService]: the logger 'neon_books_server.OrderService'.
-extension $OrderServiceLog on _i28.OrderService {
+extension $OrderServiceLog on _i25.OrderService {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.OrderService');
 }
 
 /// `@Log` of [LoginAudit]: the logger 'neon.security'.
-extension $LoginAuditLog on _i35.LoginAudit {
+extension $LoginAuditLog on _i80.LoginAudit {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon.security');
 }
 
 /// `@Log` of [Checkout]: the logger 'neon_books_server.Checkout'.
-extension $CheckoutLog on _i33.Checkout {
+extension $CheckoutLog on _i27.Checkout {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon_books_server.Checkout');
 }
 
 /// `@Log` of [BestDiscount]: the logger 'neon_books_server.BestDiscount'.
-extension $BestDiscountLog on _i50.BestDiscount {
+extension $BestDiscountLog on _i78.BestDiscount {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.BestDiscount');
 }
 
 /// `@Log` of [SampleData]: the logger 'neon_books_server.SampleData'.
-extension $SampleDataLog on _i51.SampleData {
+extension $SampleDataLog on _i30.SampleData {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon_books_server.SampleData');
 }
 
 /// `@Log` of [StartupAnnouncement]: the logger 'neon_books_server.StartupAnnouncement'.
-extension $StartupAnnouncementLog on _i51.StartupAnnouncement {
+extension $StartupAnnouncementLog on _i30.StartupAnnouncement {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.StartupAnnouncement');
 }
 
 /// `@Log` of [CatalogStatistics]: the logger 'neon_books_server.CatalogStatistics'.
-extension $CatalogStatisticsLog on _i51.CatalogStatistics {
+extension $CatalogStatisticsLog on _i30.CatalogStatistics {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.CatalogStatistics');
 }
 
 /// `@Log` of [ServerAnnouncer]: the logger 'neon_books_server.ServerAnnouncer'.
-extension $ServerAnnouncerLog on _i51.ServerAnnouncer {
+extension $ServerAnnouncerLog on _i30.ServerAnnouncer {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.ServerAnnouncer');
 }
 
 /// `@Log` of [RestockJob]: the logger 'neon_books_server.RestockJob'.
-extension $RestockJobLog on _i55.RestockJob {
+extension $RestockJobLog on _i32.RestockJob {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon_books_server.RestockJob');
 }
 
 /// `@Log` of [StockReport]: the logger 'neon_books_server.StockReport'.
-extension $StockReportLog on _i55.StockReport {
+extension $StockReportLog on _i32.StockReport {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.StockReport');
 }
 
 /// `@Log` of [StockFeed]: the logger 'neon_books_server.StockFeed'.
-extension $StockFeedLog on _i58.StockFeed {
+extension $StockFeedLog on _i35.StockFeed {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon_books_server.StockFeed');
 }
 
 /// `@Log` of [StockService]: the logger 'neon_books_server.StockService'.
-extension $StockServiceLog on _i59.StockService {
+extension $StockServiceLog on _i36.StockService {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.StockService');
 }
 
 /// `@Log` of [SupportEndpoint]: the logger 'neon_books_server.SupportEndpoint'.
-extension $SupportEndpointLog on _i68.SupportEndpoint {
+extension $SupportEndpointLog on _i41.SupportEndpoint {
   _i2.SpringLog get log =>
       const _i2.SpringLog(r'neon_books_server.SupportEndpoint');
 }
 
 /// `@Log` of [ApiErrors]: the logger 'neon_books_server.ApiErrors'.
-extension $ApiErrorsLog on _i72.ApiErrors {
+extension $ApiErrorsLog on _i92.ApiErrors {
   _i2.SpringLog get log => const _i2.SpringLog(r'neon_books_server.ApiErrors');
 }
 
 /// `@Log` of [AccessLogFilter]: the logger 'neon.access'.
-extension $AccessLogFilterLog on _i75.AccessLogFilter {
+extension $AccessLogFilterLog on _i46.AccessLogFilter {
   _i2.SpringLog get accessLog => const _i2.SpringLog(r'neon.access');
 }

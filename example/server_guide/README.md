@@ -112,7 +112,7 @@ applications share no Dart package.
 ### The JSON, as this server writes it
 
 Properties are written sorted by name, and `null`s are left out
-(`spring.jackson.default-property-inclusion=non_null`). Unknown
+(`spring.json.default-property-inclusion=non_null`). Unknown
 properties in requests are ignored.
 
 | What | JSON |
@@ -222,14 +222,14 @@ Tests: `test/configuration_test.dart`. More: [configuration reference](../../doc
 | path variables, request parameters with defaults, a header (`Last-Event-ID`), a cookie (`neon-recent`) | `BookController`, `StockController` |
 | `@RequestBody @Valid`, `ResponseEntity` (201 with `Location`), `@ResponseStatus` | `BookController.add`, `OrderController.place` |
 | `ProblemDetail`, `@ExceptionHandler`, `@RestControllerAdvice`, `ResponseStatusException`; validation messages in the request's language | `lib/src/web/api_errors.dart` |
-| JSON through the `ObjectMapper`: `spring.jackson.*`, `@JsonProperty` (`user`), enums with `@JsonValue`, nested immutable classes | `lib/src/catalog/book.dart`, `lib/src/orders/order.dart` |
+| JSON through the `ObjectMapper`: `spring.json.*`, `@JsonProperty` (`user`), enums with `@JsonValue`, nested immutable classes | `lib/src/catalog/book.dart`, `lib/src/orders/order.dart` |
 | files: a `Resource` download with `Range` and `Cache-Control`, a multipart upload (`@RequestPart MultipartFile`) | `BookController.cover`, `BookController.uploadCover` |
 | server-sent events: an `EventStream` that replays after `Last-Event-ID`; an `SseEmitter` fed by event listeners | `lib/src/stock/stock_feed.dart`, `lib/src/admin/order_feed.dart` |
 | a `OncePerRequestFilter` (a request id, log fields), a `WebFilter` (the access log) | `lib/src/web/request_id_filter.dart` |
 | a `HandlerInterceptor` registered by a `WebMvcConfigurer` (`Server-Timing`) | `lib/src/web/web_config.dart` |
 | CORS from properties (`neon.cors.*`) | `SecurityConfig.corsConfigurationSource` |
 | `HttpSession` (the basket) | `lib/src/orders/basket_service.dart` |
-| `server.*`, `spring.servlet.multipart.*`, graceful shutdown, `spring.mvc.sse.heartbeat-interval` | `application.properties` |
+| `server.*`, `spring.web.multipart.*`, graceful shutdown, `spring.mvc.sse.heartbeat-interval` | `application.properties` |
 
 Try:
 
@@ -421,7 +421,7 @@ The supplier is another service, called through two `@FeignClient`s:
   placeholder, and a fallback when the supplier is down.
 
 A `RequestInterceptor` adds the API key, a `Retryer` retries failed
-connections, and `spring.cloud.openfeign.client.config.*` sets the
+connections, and `spring.feign.client.config.*` sets the
 timeouts and the request log. In dev the supplier is a stub controller of
 this same server, under `/supplier/**`, so everything runs without
 internet.

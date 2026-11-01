@@ -24,7 +24,9 @@
 /// - the client transports that send HTTP and WebSocket traffic
 ///   (`HttpTransport`, `WebSocketTransport`; `platformHttpTransport()`
 ///   picks the right one for the VM, Flutter or the browser);
-/// - server-sent events (`EventStream<T>`, `ServerSentEvent<T>`).
+/// - server-sent events (`EventStream<T>`, `ServerSentEvent<T>`);
+/// - the `RequestDeadline` that limits the total time of a request and
+///   the calls it makes (an extension; Spring has no counterpart).
 ///
 /// ```dart
 /// // The server side: GET /books/978-0 answers with the book as JSON.
@@ -73,6 +75,7 @@ export 'package:spring_web_dart/src/media_type.dart';
 export 'package:spring_web_dart/src/multipart/multipart.dart';
 export 'package:spring_web_dart/src/path_pattern.dart';
 export 'package:spring_web_dart/src/problem_detail.dart';
+export 'package:spring_web_dart/src/request_deadline.dart';
 export 'package:spring_web_dart/src/response_entity.dart';
 export 'package:spring_web_dart/src/server/allowed_origins.dart'
     hide matchesOriginPattern;

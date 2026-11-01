@@ -75,11 +75,12 @@ class InterfaceProxy {
 /// `InvocationHandler.invoke`.
 final class ProxyMethod {
   /// Describes the method [name]; `call` invokes it on any implementation
-  /// of the interface (e.g. a fallback bean).
+  /// of the interface (e.g. a fallback bean). The generator leaves `call`
+  /// out where there is no other implementation to call.
   ProxyMethod(
     this.name, {
     required this.returnType,
-    required this._call,
+    this._call,
     List<BeanParameter> parameters = const [],
     this.isFuture = false,
     this.isVoid = false,
@@ -106,12 +107,20 @@ final class ProxyMethod {
   /// The const annotations on the method.
   final List<Object> annotations;
 
-  final Object? Function(Object target, List<Object?> arguments) _call;
+  final Object? Function(Object target, List<Object?> arguments)? _call;
 
   /// Calls this method on [target], an implementation of the interface,
-  /// with [arguments] in the order of [parameters].
-  Object? callOn(Object target, List<Object?> arguments) =>
-      _call(target, arguments);
+  /// with [arguments] in the order of [parameters]. Throws a [StateError]
+  /// when the method was described without a `call`.
+  Object? callOn(Object target, List<Object?> arguments) {
+    final call =
+        _call ??
+        (throw StateError(
+          '$name was generated without a call: its interface has no '
+          'implementation to call',
+        ));
+    return call(target, arguments);
+  }
 
   /// The first annotation of type [A], or `null`.
   A? annotation<A>() => annotations.whereType<A>().firstOrNull;

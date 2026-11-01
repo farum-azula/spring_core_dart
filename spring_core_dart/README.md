@@ -1494,7 +1494,11 @@ In Spring: `@Validated` with `MethodValidationPostProcessor`.
 generator writes, so there is no reflection and no `fromJson` / `toJson`
 code to write. One `@Introspected()` on a model is enough: the classes of
 the same package that it uses (property and constructor types) are
-introspected automatically. In Spring this is Jackson's `ObjectMapper`.
+introspected automatically. The generator writes only what it sees used:
+a class that only a controller returns has getters, one that is only a
+request body has a constructor and setters; `@Introspected()` keeps
+everything, and a class used some other way fails with a message that says
+to add it. In Spring this is Jackson's `ObjectMapper`.
 
 ```dart
 enum Availability {
@@ -1577,7 +1581,8 @@ properties are written sorted by JSON name
 the other properties (`SORT_CREATOR_PROPERTIES_FIRST`), each group sorted.
 Earlier versions wrote the declaration order (superclass first);
 `ObjectMapper(sortPropertiesAlphabetically: false)` brings it back (in
-Spring Boot: `spring.jackson.mapper.sort-properties-alphabetically=false`).
+Spring Boot: `spring.jackson.mapper.sort-properties-alphabetically=false`;
+here `spring.json.mapper.sort-properties-alphabetically=false`).
 `@JsonPropertyOrder` wins either way: the listed names (JSON or Dart
 names) come first, the others follow in the mapper's order. Reading does
 not depend on the order.
@@ -1611,7 +1616,8 @@ deserializer and `JsonModule` bean to its mapper, as it does with
 `upperCamelCase`, ...), `inclusion`, `failOnUnknownProperties` (off, as in
 Spring Boot), `writeDatesAsTimestamps`, `timeZone` (`UTC` or a fixed
 offset such as `+02:00`), `indentOutput`, and `sortPropertiesAlphabetically`
-(on). Spring Boot sets them from `spring.jackson.*` (see
+(on). The application sets them from `spring.json.*` (Spring Boot's
+`spring.jackson.*`; see
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)).
 
 **Errors name the place:** `items[2].price: expected a number, got "abc"`,
@@ -2251,8 +2257,8 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Jackson writes Java enums by name (`IN_STOCK`) | Enums go over the wire by their Dart name (`inStock`); use `@JsonValue` to talk to Java peers | Dart naming conventions |
 | Jackson writes `BigInteger` as a JSON number | `BigInt` as a string | `jsonEncode` has no arbitrary-precision numbers |
 | Jackson sets a JSON `null` or a missing creator value of a reference type (`String`, a class) to `null`; a primitive one fails with `FAIL_ON_NULL_FOR_PRIMITIVES` (Jackson 3's default) | A JSON `null` or a missing constructor value for any non-nullable type is an error. `int`, `double`, `num` and `bool` follow `DeserializationFeature.failOnNullForPrimitives` (on; off reads `0` / `false`, as in Jackson) | Dart null safety |
-| `spring.jackson.time-zone` with any zone ID | `UTC` / `Z` or a fixed offset (`+02:00`, `GMT+2`); a named zone (`Europe/Berlin`) fails at startup with a message saying so | Dart has no time zone database |
-| Boot binds every `spring.jackson.*` key (Jackson features, `date-format`, `locale`, ...) | Only the keys of the `spring_boot_dart` table are read; any other `spring.jackson.*` key is logged as a warning and ignored | The mapper has only the feature enums `JsonMapper.builder()` lists |
+| `spring.jackson.time-zone` with any zone ID (here `spring.json.time-zone`) | `UTC` / `Z` or a fixed offset (`+02:00`, `GMT+2`); a named zone (`Europe/Berlin`) fails at startup with a message saying so | Dart has no time zone database |
+| Boot binds every `spring.jackson.*` key (Jackson features, `date-format`, `locale`, ...) | Only the keys of the `spring_boot_dart` table are read; any other `spring.json.*` key is logged as a warning and ignored | The mapper has only the feature enums `JsonMapper.builder()` lists |
 | SpEL `matches` and String methods are Java's | Dart's `RegExp` syntax and Dart's String methods (`replaceAll` with a string is literal) | Dart runtime |
 | SpEL `T(java.lang.Math)` finds any class | `T()` needs registered types and takes Dart type names (`T(int)`) and the common `java.lang` / `java.util` ones (`Math`, `Integer`, `Objects`, `System`, `StringBuilder`, ...); `T(System).getProperty(name, default)` gives the default | No reflection; Dart has no system properties |
 | SpEL on the JVM knows `7.0` from `7` | On the web, an integral double that comes from outside SpEL (a variable, a property not declared `double` on an `@Introspected` class, an element of a collection SpEL did not build) counts as an `int` | JavaScript has one number type |

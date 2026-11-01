@@ -24,6 +24,11 @@
 /// - Fake remote services: `MockHttpTransport` and `MockWebSocketTransport`
 ///   (from `spring_web_dart`) give prepared answers to Feign and WebSocket
 ///   clients, like Spring's `MockRestServiceServer`.
+/// - Containers (Docker) for the tests, with `@Container()` and
+///   `@ServiceConnection()`, `GenericContainer`, `PostgresContainer` and
+///   `KeycloakContainer`: `import
+///   'package:spring_boot_starter_test/containers.dart'`, a library of its
+///   own (it needs `dart:io`).
 ///
 /// It is built on `test_api` and `matcher`, not on `package:test`, so it
 /// works with both `package:test` and `flutter_test`.

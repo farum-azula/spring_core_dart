@@ -18,6 +18,12 @@ Tests come in two forms, and both work the same way:
   (sections 3 to 11). `spring_core_dart_generator` turns each class into
   the same functions ([section 15](#15-what-the-generator-writes)).
 
+A test of repositories alone does not need the whole application: a
+`@DataTest()` class starts its data beans on an in-memory database and
+rolls every test back ([section 19](#19-data-tests-datatest)). A test that
+needs a database, a Keycloak or any other service can start it in Docker
+for the duration of the tests ([section 20](#20-containers-in-tests)).
+
 **Flutter** apps have their own starter, `spring_boot_starter_flutter_test`
 ([Flutter testing](flutter-testing.md)). It is built on this one, so
 everything on this page works there too; it adds widget tests that pump
@@ -37,6 +43,9 @@ widgets with the test's beans, themes and platforms.
 | `@SpringBootTest(webEnvironment = RANDOM_PORT)`, `@LocalServerPort` | `@SpringBootTest(webEnvironment: WebEnvironment.randomPort)`, `@LocalServerPort()` field, or `webEnvironment:` and `app.localServerPort` |
 | `@AutoConfigureMockMvc`, `MockMvc` | `@Autowired() late MockMvc mvc;`, or `app.mockMvc` |
 | `src/test/resources` | `test/resources/` |
+| `@DataJdbcTest`, `@AutoConfigureTestDatabase` | `@DataTest()` ([section 19](#19-data-tests-datatest)) |
+| `@Rollback`, `@Commit` | the same annotations (`@DataTest` classes) |
+| Testcontainers: `@Testcontainers`, `@Container`, `GenericContainer`, `PostgreSQLContainer`; Spring Boot's `@ServiceConnection` | the same annotations and `GenericContainer`; `PostgresContainer` for `PostgreSQLContainer`; all from `package:spring_boot_starter_test/containers.dart` ([section 20](#20-containers-in-tests)) |
 
 ## Contents
 
@@ -58,6 +67,8 @@ widgets with the test's beans, themes and platforms.
 16. [Build errors](#16-build-errors)
 17. [Web tests: `MockMvc`](#17-web-tests-mockmvc)
 18. [Differences from Spring](#18-differences-from-spring)
+19. [Data tests: `@DataTest`](#19-data-tests-datatest)
+20. [Containers in tests](#20-containers-in-tests)
 
 ## 1. Setup
 
@@ -72,7 +83,7 @@ dev_dependencies:
 Configuration and data for the tests go to `test/resources/`. During the
 tests it comes first on the classpath, before `lib/resources/`, and it is
 never shipped with the application (see
-[Configuration, section 20](configuration.md#20-tests)):
+[Configuration, section 21](configuration.md#21-tests)):
 
 ```
 test/
@@ -248,7 +259,11 @@ Spring names the application's class (`@SpringBootTest(classes =
 AdminApplication.class)`). Here it is a path, because an annotation's
 arguments must be constants and the generated `springApplication` is not
 one. The generator checks that the path is an entry point with
-`@SpringBootApplication` ([section 16](#16-build-errors)).
+`@SpringBootApplication` ([section 16](#16-build-errors)). The path may
+point anywhere in the package, not only to `bin/` or `lib/`: a starter's
+tests start an application of their own under `test/`
+(`@SpringBootTest(application: 'test/app/shop_app.dart')`). Only an entry
+point of `bin/` or `lib/` is chosen without a name.
 
 ## 5. Injecting beans
 
@@ -882,6 +897,14 @@ starts with the place (`test/checkout_test.dart:12:3: ...`):
 | `No application in this package` | a `@SpringBootApplication` entry point in `bin/` or `lib/` |
 | `Several applications in this package (...)` | `@SpringBootTest(application: 'bin/shop.dart')` |
 | `'bin/x.dart' is not an entry point with @SpringBootApplication` | the path of an entry point |
+| `@DataTest and @SpringBootTest on one class` | keep one: the slice or the whole application (a second class for the other) |
+| `@Commit needs a @DataTest class` | `@Commit` and `@Rollback` belong to `@DataTest` classes ([section 19](#19-data-tests-datatest)) |
+| `@Commit on helper, which is not a @Test method` | add `@Test()` (also `@Rollback`); on a field they go on `@Nested` ones |
+| `@Commit and @Rollback on the same element` | keep one of them |
+| `@Container field 'db' must be static` | `@Container() static final db = ...;` (the containers start before the class is created) |
+| `@Container field 'db' in a @Nested class` | move it to the test class (one context) |
+| `@ServiceConnection on 'db' needs @Container` | put both on the field |
+| `@Container field 'db' needs a value` | `static final db = PostgresContainer();` (or `static late`, assigned in `@BeforeAll`) |
 | `test/checkout_test.dart does not import 'spring/checkout.test.spring.dart'` (a warning) | add the import and `void main() => runSpringTests();` |
 
 A missing bean is not a build error: the test fails when the context
@@ -1018,7 +1041,7 @@ test('a missing part, a file too large', () async {
 ```
 
 `MockMultipartFile` comes with `spring_boot_starter_test`. Set the limits
-for a test with `properties: {'spring.servlet.multipart.max-file-size':
+for a test with `properties: {'spring.web.multipart.max-file-size':
 '64KB'}`.
 
 A download (a `Resource`, a byte stream, a `StreamingResponseBody`) is
@@ -1188,5 +1211,517 @@ application never open a port. For a real server in a runner, add
   parameters with matchers instead of `status().isOk()` and
   `jsonPath(...)`. There is no `WebTestClient` or `TestRestTemplate`: use
   a Feign client or `HttpClient` against `localServerPort`.
-- **No test slices** (`@WebMvcTest`, `@DataJpaTest`) yet; use
-  `ApplicationContextRunner` for a part of the configuration.
+- **One test slice**, `@DataTest` ([section 19](#19-data-tests-datatest)).
+  There is no `@WebMvcTest` yet; use `ApplicationContextRunner` for a part
+  of the configuration.
+
+## 19. Data tests: `@DataTest`
+
+A repository test needs the repositories, a database and a clean slate for
+every test, not the services, controllers and runners above them.
+`@DataTest()` (from `spring_boot_starter_data`) starts exactly that, the
+way Spring's `@DataJdbcTest` does:
+
+```dart
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
+import 'package:test/test.dart';
+
+import 'spring/book_repository.test.spring.dart'; // generated
+
+@DataTest()
+class BookRepositoryTest {
+  @Autowired()
+  late BookRepository books;
+
+  @BeforeEach()
+  Future<void> seed() async {                 // in the test's transaction
+    await books.save(Book(title: 'Dune', year: 1965));
+  }
+
+  @Test()
+  Future<void> findsABookByItsTitle() async {
+    await books.save(Book(title: 'Emma', year: 1815));
+    expect(await books.findByTitle('Emma'), hasLength(1));
+  }                                           // rolled back
+
+  @Test()
+  Future<void> startsWithTheSeedOnly() async {
+    expect(await books.count(), 1);           // no 'Emma' from the test before
+  }
+}
+
+void main() => runSpringTests();
+```
+
+Spring (Java):
+
+```java
+@DataJdbcTest
+class BookRepositoryTest {
+  @Autowired BookRepository books;
+
+  @BeforeEach void seed() { books.save(new Book("Dune", 1965)); }
+
+  @Test void findsABookByItsTitle() { ... }   // @DataJdbcTest is @Transactional
+}
+```
+
+The class is written like a `@SpringBootTest` one: `@Autowired()` fields,
+`@Test()` methods, `@BeforeEach`, `@Nested`, `@ActiveProfiles`,
+`@TestPropertySource`, `@TestBean` and the rest of sections 3 to 12 work
+the same. A class has `@SpringBootTest()` or `@DataTest()`, not both.
+
+The application needs `spring_boot_starter_data` and, for the in-memory
+database, `sqlite3` among its dependencies; `spring_boot_starter_test` and
+`build_runner` are dev dependencies as before.
+
+### What the context holds
+
+- **The data beans of the application**: its repositories, the
+  `EntityIntrospections` bean that describes its entities, the driver bean
+  the generator writes for `sqlite3`, the beans of the types the starter
+  looks up or replaces (`DataSource`, `PlatformTransactionManager`,
+  `TransactionTemplate`, `JdbcTemplate`, `NamedParameterJdbcTemplate`,
+  `JdbcClient`, `DataStore`, `NamingStrategy`, `AuditorAware`,
+  `DateTimeProvider`, `RepositoryFactory`...), and the class that carries
+  `@EnableDataAuditing`. For a `@Bean` method that makes one of those
+  beans, its configuration class comes along (the other `@Bean` methods of
+  it do not).
+- **The auto-configuration of the starter**, plus the core one and logging.
+  That of other starters (web, cache, security, scheduling...) is left out.
+  The starter's own is added when the application does not have it (the
+  application of a starter's own tests).
+- **Nothing else of the application**: services, controllers, runners,
+  listeners, aspects and other components are not in the context. As in
+  Spring, a bean that is left out is simply absent: an `@Autowired() late
+  Library? library;` field stays `null`, and a kept bean that needs one
+  fails the start with the usual report (`No bean of type ...`).
+- **`include`** adds beans of the application by the type of their class:
+  `@DataTest(include: [Library, ShopConfig])`. A configuration class
+  brings all its `@Bean` methods. A type no bean has fails the start.
+
+The generator writes the slice as calls, and the context decides what to
+keep when it starts, from the types each bean is registered under (the
+generator wrote them at build time). The beans are removed after the
+modules are read, so their conditions (`@ConditionalOnProperty`...) were
+decided with the whole application. What `@Import` registrars or other
+code add at start, and what `@TestBean` adds, is not judged.
+
+### The database
+
+When the application configures a SQL database, `@DataTest` replaces it
+with an **in-memory SQLite database** before the context starts
+(Spring's `@AutoConfigureTestDatabase`, which replaces by default):
+
+| Property | Set to | Why |
+|---|---|---|
+| `spring.datasource.url` | `sqlite::memory:` | the database lives as long as its connection |
+| `spring.datasource.driver` | `sqlite3` | whatever the configuration named |
+| `spring.datasource.pool.max-size` | `1` | each SQLite connection has an in-memory database of its own, and the SQLite that the `sqlite3` package bundles has no shared cache, so a second connection would see none of the tables |
+| `spring.datasource.pool.min-idle`, `idle-timeout`, `max-lifetime` | `0`, `0`, `0` | the pool never closes the one connection and loses the data |
+
+Every other setting stays. The same happens to each
+`spring.datasources.<name>.url`. Without a configured database nothing is
+replaced: the repositories use the in-memory store, as in the application.
+
+- **`@DataTest(replaceDatabase: false)`** keeps the configured database,
+  for one a container started, say. The tests still roll back.
+- **The `sqlite3` driver is required** to replace a database: without it
+  the start fails and says so (Spring fails the same way without an
+  embedded database).
+- **The application's own `DataSource` bean** (one the properties do not
+  describe) is not replaced.
+- **One connection means one task at a time.** A test runs in one
+  transaction on that connection, which is all it needs. Code that starts a
+  transaction of its own (`Propagation.requiresNew`) waits for a second
+  connection and fails after `spring.datasource.pool.connection-timeout`
+  (30 seconds). Test such code with `replaceDatabase: false` on a database
+  with several connections.
+
+### The schema
+
+The schema comes from where it comes from in the application:
+
+- **migrations** (`lib/resources/db/migration/`) are applied to the
+  in-memory database, and the entities are validated against the result;
+- **SQL scripts** (`schema.sql`, `data.sql`) run, as Spring Boot runs them on
+  an embedded database;
+- **without either**, the tables are created from the entities
+  (`spring.data.jdbc.schema=create`), unless the property is set.
+
+### The transaction
+
+Each test runs in a transaction of **every** `PlatformTransactionManager` its
+repositories write through, which are rolled back at its end: the primary
+database's (a JDBC manager), the in-memory store's (a repository with
+`@UseStore('memory')`, or all of them without a database) and those of the
+named databases (`@UseDataSource`). The repositories, `TransactionTemplate`
+and `@Transactional` methods join the one of their store, so tests never see
+each other's data, whichever store it is in.
+
+- `@BeforeEach` and `@AfterEach` methods (those of `@Nested` classes too)
+  run **inside** the transaction, as in Spring: what a `@BeforeEach` seeds
+  is rolled back with the test. `@BeforeAll` and `@AfterAll` run outside.
+- **`@Commit()`** (or `@Rollback(false)`) on a test, a class or a `@Nested`
+  group commits instead; the innermost one wins, and `@Rollback()` on a test
+  of a committing class rolls it back. The data stays for the tests after
+  it, so clean up in `@AfterEach` or in a later test. A **failing test is
+  rolled back** even then, so a failure leaves nothing behind (Spring would
+  commit).
+- **`@DataTest(transactionManager: 'archive')`** runs the tests in the
+  transaction of that one manager (its bean name or qualifier, as in
+  `@Transactional(transactionManager: ...)`) and no other: the repositories
+  of the other databases write for real, so clean up after them. A name no
+  manager has fails the test with a `StateError` that says so.
+- Callbacks that wait for a commit (`afterCommit`) run only for tests that
+  commit.
+- Work the test starts and does not await cannot use the transaction after
+  it ended; it fails with an `IllegalTransactionStateException`.
+
+### Options
+
+| Option | Default | Spring |
+|---|---|---|
+| `application` | the package's only application ([section 4](#4-which-application)) | `classes` |
+| `args` | `[]` | |
+| `properties` | `{}` | `properties` |
+| `resourceDirectories` | `['test/resources']` | the test classpath |
+| `include` | `[]` | `@Import`, `includeFilters` |
+| `replaceDatabase` | `true` | `@AutoConfigureTestDatabase(replace = ...)` |
+| `transactionManager` | `''` (every manager the repositories use) | `@Transactional(transactionManager = ...)` |
+
+### As functions
+
+`DataTestSetup` and `runInTestTransaction`, from
+`package:spring_boot_starter_data/testing.dart`, are what the generated
+code calls:
+
+```dart
+import 'package:spring_boot_starter_data/testing.dart';
+
+void main() {
+  final data = DataTestSetup(springApplication);
+  final app = springBootTest(
+    springApplication,
+    properties: data.properties,        // other starters' auto-configuration out
+    initializers: [data.initializer],   // database replaced, beans left out
+  );
+
+  test('finds a book', () => runInTestTransaction(app.context, () async {
+    final books = app.getBean<BookRepository>();
+    await books.save(Book(title: 'Dune', year: 1965));
+    expect(await books.findByTitle('Dune'), hasLength(1));
+  }));                                  // rollback: false commits
+}
+```
+
+Call `data.properties` first in the map, so your own properties can still
+replace it. The generated file holds, for the class above (shortened):
+
+```dart
+_sbt.group('BookRepositoryTest', () {
+  final $instance = BookRepositoryTest();
+  final $slice = _data.DataTestSetup(_app0.springApplication);
+  final $app = _sbt.springBootTest(
+    _app0.springApplication,
+    properties: $slice.properties,
+    initializers: [$slice.initializer],
+  );
+  _sbt.setUp(() { $instance.books = $app.getBean(); });
+  _sbt.test(
+    'finds a book by its title',
+    () => _data.runInTestTransaction(
+      $app.context,
+      () => $instance.findsABookByItsTitle(),
+      before: [() => $instance.seed()],
+    ),
+  );
+  ...
+});
+```
+
+`package:test` runs `setUp`, the test and `tearDown` as separate steps, so
+they cannot share a transaction: `runInTestTransaction` calls the
+`@BeforeEach` and `@AfterEach` methods itself, inside it. The generated file
+imports the data starter's library by its URL (`as _data`), so the starters
+never depend on each other.
+
+### Differences from Spring
+
+- **Not `@Transactional`**: a `@DataTest` class is transactional by itself,
+  and `@Commit` and `@Rollback` are the only controls. There is no
+  `@Transactional` on a test class or method; the transaction manager is
+  chosen with `@DataTest(transactionManager:)` (all the managers of the
+  repositories are used without it), for the whole class, not per test.
+- **The slice is decided from the bean's types**, not by a component scan
+  with filters: the beans of the starter's extension points are in, the
+  rest is out, and `include` adds. Spring excludes `@Configuration` classes
+  from a slice; here the configuration class of a data bean stays.
+- **Replacement is by property**: the database the properties describe
+  becomes an in-memory SQLite one. An embedded H2 or Derby does not exist
+  here, and `sqlite3` is the only database it can use.
+- **A failing test is rolled back** even with `@Commit`.
+
+## 20. Containers in tests
+
+A test of a repository wants the database the application will use, not a
+fake of it; a test of the security wants a Keycloak. Docker has both. With
+the containers of `package:spring_boot_starter_test/containers.dart` a test
+starts what it needs, the application is wired to it by itself, and the
+containers are removed afterwards, on any image, as with Spring Boot's
+Testcontainers support:
+
+```dart
+import 'package:spring_boot_starter_test/containers.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
+
+@SpringBootTest()
+@Testcontainers()
+class BookRepositoryTest {
+  // Started once for the class, before its context, and removed after it:
+  // its URL, user and password become spring.datasource.* of the context.
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer('postgres:17-alpine');
+
+  // Any image: wait for a log line, an HTTP answer or a port, copy files in.
+  @Container()
+  static final keycloak = GenericContainer('quay.io/keycloak/keycloak:26.8')
+      .withCommand(['start-dev', '--import-realm'])
+      .withCopyFile('../example/keycloak/neon-realm.json',
+          '/opt/keycloak/data/import/neon-realm.json')
+      .withExposedPorts([8080])
+      .waitingFor(Wait.forHttp('/realms/neon').forStatusCode(200));
+
+  // Runs when the context starts, after the containers did.
+  @DynamicPropertySource()
+  static void properties(DynamicPropertyRegistry registry) => registry.add(
+    'spring.security.oauth2.client.provider.keycloak.issuer-uri',
+    () => '${keycloak.baseUrl(8080)}/realms/neon',
+  );
+
+  @Autowired()
+  late BookRepository books;
+
+  @Test()
+  Future<void> savesAndFinds() async { /* ... */ }
+}
+
+void main() => runSpringTests();
+```
+
+Spring (Java), the same test with Testcontainers:
+
+```java
+@SpringBootTest
+@Testcontainers
+class BookRepositoryTest {
+  @Container @ServiceConnection
+  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
+
+  @Container
+  static GenericContainer<?> keycloak = new GenericContainer<>("quay.io/keycloak/keycloak:26.8")
+      .withCommand("start-dev", "--import-realm")
+      .withCopyFileToContainer(MountableFile.forHostPath("../example/keycloak/neon-realm.json"),
+          "/opt/keycloak/data/import/neon-realm.json")
+      .withExposedPorts(8080)
+      .waitingFor(Wait.forHttp("/realms/neon").forStatusCode(200));
+
+  @DynamicPropertySource
+  static void properties(DynamicPropertyRegistry registry) {
+    registry.add("spring.security.oauth2.client.provider.keycloak.issuer-uri",
+        () -> "http://" + keycloak.getHost() + ":" + keycloak.getMappedPort(8080) + "/realms/neon");
+  }
+  ...
+}
+```
+
+The library is `containers.dart`, a library of its own: it needs `dart:io`
+(there is nothing for the web), and its `Container` annotation would clash
+with Flutter's widget of that name in widget tests. Flutter apps have no
+Docker.
+
+### Containers of a test class
+
+- **`@Container()`** marks a `static` field holding a `GenericContainer` or
+  a module. The containers start in the order of the fields, before the
+  `@BeforeAll` methods and the context, and are removed after the context
+  closed and the `@AfterAll` methods ran. One container serves all the
+  tests of the class. A container per test (an instance field) is not
+  supported: the context needs the containers before the first test.
+- **`@ServiceConnection()`** on a `@Container` field puts the container's
+  connection properties into the context's *dynamic properties*, the
+  property source that wins over `properties:`, the config files and the
+  environment (a `@DynamicPropertySource` method runs after them and can
+  change one). `PostgresContainer` sets `spring.datasource.url`,
+  `username` and `password`; `KeycloakContainer` sets
+  `spring.security.oauth2.resourceserver.jwt.issuer-uri` and
+  `spring.security.oauth2.client.provider.<id>.issuer-uri`. A container of
+  your own does it by implementing `ServiceConnectionProperties` (a
+  `Map<String, String> get connectionProperties`). This package does not
+  depend on the data or security starters: the properties are strings.
+- **`@DynamicPropertySource`** methods run each time the context starts, so
+  after the containers: `keycloak.baseUrl(8080)`, `host` and
+  `mappedPort(...)` are known there.
+- **`@Testcontainers()`** is optional, as in Spring. It only sets what
+  happens without Docker.
+- **Without Docker** the whole class is skipped, with the reason (no
+  Docker socket found). With the environment variable
+  `CONTAINERS_REQUIRED=true` it fails instead (CI sets it, so a missing
+  Docker never goes unnoticed), and so does
+  `@Testcontainers(disabledWithoutDocker: false)`. The check looks for the
+  daemon's socket when the tests are declared, so a daemon that is down
+  behind a stale socket fails the start of the containers rather than
+  skipping.
+- **`@DataTest` works the same**: `@DataTest(replaceDatabase: false)` with a
+  `@ServiceConnection` `PostgresContainer` runs the repositories on that
+  PostgreSQL, with the migrations applied and every test rolled back:
+
+  ```dart
+  @DataTest(replaceDatabase: false)
+  class BookRepositoryTest {
+    @Container()
+    @ServiceConnection()
+    static final postgres = PostgresContainer('postgres:17-alpine');
+    // ...
+  }
+  ```
+
+In a test written as functions, `TestContainers` does what the generated
+code does:
+
+```dart
+void main() {
+  final postgres = PostgresContainer();
+  final containers = TestContainers({'postgres': postgres},
+      serviceConnections: {'postgres'});
+  setUpAll(containers.start);
+  tearDownAll(containers.stop);
+  final app = springBootTest(
+    springApplication,
+    dynamicProperties: containers.registerConnections,
+  );
+  // ...
+}
+```
+
+and `skip: TestContainers.skipReason()` skips a `group` or `test`.
+
+### `GenericContainer`
+
+Any image. The methods return the container, so they chain (on a module
+use cascades, `..withReuse(true)`, to keep its type):
+
+| Method | Does |
+|---|---|
+| `withEnv(name, value)`, `withEnvironment(map)` | environment variables |
+| `withCommand(list)`, `withEntrypoint(list)` | replace the image's command or entry point |
+| `withExposedPorts([5432])` | publish the ports on random free ports of the host (the loopback interface only, so a test database is not open to the network) |
+| `withCopyFile(hostPath, containerPath)`, `withCopyContent(text, containerPath)` | files copied in before the start (a tar archive, written by hand, so nothing is mounted) |
+| `withLabel(name, value)` | a label |
+| `withHealthCheck(['CMD-SHELL', 'pg_isready'])` | a health check of the container's own, for images without one |
+| `waitingFor(strategy)` | when it counts as ready |
+| `withStartupTimeout(duration)` | 60 s by default; the image pull is not counted |
+| `withReuse(true)` | keep it for the next run |
+
+`start()` pulls the image when it is missing, creates the container, copies
+the files, starts it and waits; `stop()` removes it. `host` (`127.0.0.1`
+for a local daemon), `mappedPort(5432)`, `baseUrl(8080)`, `getLogs()` and
+`execInContainer([...])` are there once it started. When it does not become
+ready the container is removed and a `ContainerLaunchException` says why,
+with the last lines it printed.
+
+**Wait strategies** (`Wait`): `forListeningPort()` (the default: every
+published port accepts a connection and keeps it, which tells a listening
+server from Docker Desktop's port forwarder that accepts and drops),
+`forLogMessage(regex, times)` (a line of standard output or error),
+`forHttp(path)` with `.forStatusCode(200)`, `.forPort(8080)`,
+`.forStatusCodeMatching(...)`, `.usingTls()`, `forHealthcheck()` and
+`forAll([...])`. A container that exits while the strategy waits fails the
+start at once, with its exit code.
+
+**Modules**: `PostgresContainer([image])` (database, user and password
+`test`; `withDatabaseName`, `withUsername`, `withPassword`,
+`withInitScript`; `jdbcUrl` is `postgresql://host:port/db` and `url` has the
+credentials in it, both in the form `spring_boot_starter_data` reads) and
+`KeycloakContainer([image])` (admin `admin`/`admin`, `withAdminCredentials`,
+`withRealmImport(hostPath)` for a realm export, `issuerUri`, `authServerUrl`,
+`withProviderId`). There is no `RedisContainer`: `GenericContainer` covers
+it.
+
+### The Docker client
+
+There is no package behind it, in line with the dependency rule
+([dependencies](dependencies.md)): `DockerClient` speaks the Docker Engine
+API over the daemon's Unix socket (or `tcp://`) with `dart:io`'s
+`HttpClient`: `ping`, `version`, `imageExists`, `pullImage`,
+`createContainer`, `putFiles`, `startContainer`, `containerLogs` (the
+daemon's multiplexed frames split into lines), `inspectContainer`, `exec`,
+`listContainers`, `stopContainer` and `removeContainer`. An error carries
+the daemon's message (`DockerException`); no daemon is a
+`DockerUnavailableException`. The daemon is found as the `docker` command
+finds it: `DOCKER_HOST` (`unix:///path`, `tcp://host:2375`), else the first
+of `/var/run/docker.sock`, Docker Desktop's `~/.docker/run/docker.sock`,
+Colima's `~/.colima/default/docker.sock`, Rancher Desktop's
+`~/.rd/docker.sock` and `$XDG_RUNTIME_DIR/docker.sock`. Windows' named
+pipe is not supported yet (`DOCKER_HOST=tcp://localhost:2375` works), nor
+is TLS to a remote daemon, nor private registries (pull the image
+beforehand: `docker login`, `docker pull`).
+
+### Cleanup that survives a crash
+
+Every container carries the labels `org.testcontainers=true`,
+`org.testcontainers.lang=dart` and `org.testcontainers.sessionId=<run id>`,
+and is removed by `stop()` when its class is done. If the process dies
+before that (`kill -9`, a crash, Ctrl+C), the reaper does it: Testcontainers'
+own `testcontainers/ryuk` image, started before the first container of a
+run. The run connects to its TCP port, sends `label=org.testcontainers.sessionId=<id>`,
+and keeps the connection open; when it drops, Ryuk removes every container
+with the label ten seconds later, and exits. A run is one isolate, which is
+one test file under `dart test`, so each file with containers has its own
+Ryuk. The connection closes when the last container is stopped, and a later
+start reconnects.
+
+- `TESTCONTAINERS_RYUK_DISABLED=true` switches the reaper off (the containers
+  are still labelled and removed by `stop()`); if Ryuk cannot start (a daemon
+  that cannot bind-mount its socket), the error says so.
+- `TESTCONTAINERS_RYUK_CONTAINER_IMAGE` names another image than
+  `testcontainers/ryuk:0.14.0`.
+
+### Reuse between runs
+
+`withReuse(true)` keeps a container alive after the tests, to be found again
+by the next run: for fast iterations on a laptop. It is found by a hash of
+its configuration (image, environment, command, entrypoint, ports, health
+check, files and labels), carries no run id (so the reaper leaves it), and `stop()` does
+not remove it. It is off when the `CI` environment variable is set. Remove
+what was kept with
+`docker rm -f $(docker ps -aq --filter label=org.testcontainers.reuse.hash)`.
+The data in it survives, so tests must clean up after themselves.
+
+### Differences from Testcontainers and Spring
+
+- **`containers.dart` is its own import**, not part of
+  `spring_boot_starter_test.dart` (the `Container` name, `dart:io`).
+- **Static fields only** for `@Container`; no per-test containers.
+- **Skipped without Docker by default**; Spring's `@Testcontainers` fails
+  unless `disabledWithoutDocker = true`. `CONTAINERS_REQUIRED=true` is the
+  switch for CI.
+- **No `withCreateContainerCmdModifier`**: the settings above are what there
+  is, plus `DockerClient` for the rest. No networks between containers, no
+  Docker Compose module, no `RedisContainer`, `MongoContainer`... yet.
+- **Ports are published on the loopback interface** of a local daemon.
+- **The fluent methods return `GenericContainer`**, not the module's own
+  type: Dart has no self type. Use cascades on a module.
+- **Not yet**: Windows' named pipe, Docker Compose support for development
+  (`spring-boot-docker-compose`), and the Keycloak end-to-end tests of the
+  security starters, which still expect a Keycloak started by hand.
+
+### Running the tests of the containers
+
+The tests that start containers are tagged `docker`: `dart test -t docker`
+runs them, and without Docker they are skipped. CI runs them in their own
+job with `CONTAINERS_REQUIRED=true`. The data starter's tests tagged
+`postgres` run on `SPRING_TEST_POSTGRES_URL` when it is set (CI's service
+container) and otherwise on a `PostgresContainer` each test file starts.

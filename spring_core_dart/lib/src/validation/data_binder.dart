@@ -284,7 +284,8 @@ class DataBinder {
   ///
   /// Binding errors get Spring's arguments: `{0}` is the field name, which
   /// a message source may translate too. Throws a [StateError] when there
-  /// is no target yet.
+  /// is no target yet, an [IntrospectionPartError] when the class of the
+  /// target is described without its setters.
   ///
   /// ```dart
   /// // `age` is an int: the text is kept as a typeMismatch error.
@@ -295,6 +296,14 @@ class DataBinder {
   void bind(Map<String, Object?> values) {
     final target =
         _target ?? (throw StateError('No target to bind to: call construct'));
+    // Without the setters every field would count as unknown and be
+    // skipped: an empty object without a word is worse than an error.
+    introspector
+        .findIntrospection(target)
+        ?.requirePart(
+          IntrospectionPart.write,
+          'its fields are bound from the input',
+        );
     final accepted = <String, Object?>{};
     for (final MapEntry(key: raw, :value) in values.entries) {
       // Matched and bound under one canonical name, so `roles['admin']`,
@@ -434,6 +443,10 @@ class DataBinder {
       if (constructor != null) {
         return constructor.newInstance(const []);
       }
+      introspection.requirePart(
+        IntrospectionPart.write,
+        'the form is bound to an instance of it',
+      );
       throw StateError(
         '${introspection.beanType} has no public constructor to bind',
       );

@@ -1,3 +1,13 @@
+## Unreleased
+
+### Breaking
+
+- Properties renamed: `spring.cloud.openfeign.*` is `spring.feign.*` (`spring.feign.client.config.<name>.*`, `spring.feign.client.decode-slash`; Spring Cloud means nothing in Dart). An old name stops the start, naming the new one.
+
+### Changes
+
+- `spring.feign.client.config.<name>.call-timeout` (also under `default`; no limit by default, `0` or less: none), the total time of one call: every attempt, the pauses of the `Retryer` and the wait for the answer (an extension: Spring Cloud OpenFeign has only the connect and read timeouts of each attempt). A call that runs out of time throws `FeignCallTimeoutException`, which is not a `RetryableException` and is never retried; a pause that would end past the limit ends the call at once. The call is also limited by the `RequestDeadline` of the code that makes it (a web request with `server.request-timeout`, or `RequestDeadline.run`): the earlier of the two wins, and the connect and read timeouts of each attempt are capped by what remains, so a call never outlives its request. For `EventStream<T>` methods it limits establishing each connection, not the stream's life.
+
 ## 0.5.0
 
 ### Changes

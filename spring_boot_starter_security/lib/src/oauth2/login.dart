@@ -381,7 +381,7 @@ final class OidcAuthorizationCodeAuthenticationProvider
 /// `SameSite=None; Secure` cookies, which the default
 /// [CookieOAuth2AuthorizationRequestRepository] sets for a form post
 /// login over HTTPS (a session repository needs
-/// `server.servlet.session.cookie.same-site=none`). Without the cookie
+/// `server.session.cookie.same-site=none`). Without the cookie
 /// no saved request is found and the login fails (closed), with a
 /// warning in the log. The CSRF filter lets these posts through
 /// (`oauth2Login()` exempts the callback's `POST`): the `state`, bound
@@ -640,7 +640,7 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
       "the provider's cross-site POST carries only SameSite=None; Secure "
       'cookies, so response_mode=form_post works over HTTPS only (with '
       'the session repository of the authorization requests: '
-      'server.servlet.session.cookie.same-site=none)',
+      'server.session.cookie.same-site=none)',
     );
   }
 }

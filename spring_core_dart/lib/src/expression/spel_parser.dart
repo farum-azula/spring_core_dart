@@ -35,7 +35,8 @@ import 'package:spring_core_dart/src/expression/tokenizer.dart';
 ///     ParserContext.TEMPLATE_EXPRESSION).getValue(context);
 /// ```
 ///
-/// Differences from Spring: no compiler mode (`SpelCompilerMode`); types
+/// Differences from Spring: no compiler mode (`SpelCompilerMode`), though the
+/// generator compiles expressions to Dart (see `SpelOperations`); types
 /// in `T(...)` / `new` must be registered in a `StandardTypeLocator`;
 /// properties and methods of your classes need `@Introspected` or an
 /// accessor; `matches` and the String methods are Dart's. Integer and

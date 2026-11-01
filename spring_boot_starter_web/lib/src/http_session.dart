@@ -55,7 +55,7 @@ abstract interface class HttpSession {
   DateTime get lastAccessedTime;
 
   /// How long the session lives without a request
-  /// (`server.servlet.session.timeout`, 30 minutes by default). Set it
+  /// (`server.session.timeout`, 30 minutes by default). Set it
   /// to change the timeout of this session only; zero or negative means
   /// it never expires.
   Duration get maxInactiveInterval;
@@ -118,7 +118,7 @@ abstract interface class HttpSession {
 /// ```
 abstract interface class HttpSessionRepository {
   /// A new, empty session with a fresh random id. The starter then sets
-  /// its timeout from `server.servlet.session.timeout`.
+  /// its timeout from `server.session.timeout`.
   FutureOr<StoredHttpSession> createSession();
 
   /// The live session with [id], or `null` when it is unknown,
@@ -157,19 +157,19 @@ abstract class StoredHttpSession implements HttpSession {
 /// The session settings: how long a session lives, how many are kept, and
 /// how the session cookie is written.
 ///
-/// Applications set the `server.servlet.session.*` properties; the
+/// Applications set the `server.session.*` properties; the
 /// starter reads them with [HttpSessionProperties.of].
 ///
 /// | Property | Default |
 /// |---|---|
-/// | `server.servlet.session.timeout` | `30m` |
-/// | `server.servlet.session.cookie.name` | `JSESSIONID` |
-/// | `server.servlet.session.cookie.path` | the context path, or `/` |
-/// | `server.servlet.session.cookie.domain` | — |
-/// | `server.servlet.session.cookie.http-only` | `true` |
-/// | `server.servlet.session.cookie.secure` | — (secure when the request was) |
-/// | `server.servlet.session.cookie.same-site` | `lax` |
-/// | `server.servlet.session.max-sessions` | `10000` (`-1`: no limit) |
+/// | `server.session.timeout` | `30m` |
+/// | `server.session.cookie.name` | `JSESSIONID` |
+/// | `server.session.cookie.path` | the context path, or `/` |
+/// | `server.session.cookie.domain` | — |
+/// | `server.session.cookie.http-only` | `true` |
+/// | `server.session.cookie.secure` | — (secure when the request was) |
+/// | `server.session.cookie.same-site` | `lax` |
+/// | `server.session.max-sessions` | `10000` (`-1`: no limit) |
 ///
 /// A timeout without a unit is in seconds (`1800`), as in Spring Boot;
 /// `same-site` takes `lax`, `strict`, `none` or `unset` (no `SameSite`
@@ -177,8 +177,8 @@ abstract class StoredHttpSession implements HttpSession {
 ///
 /// ```properties
 /// # Sessions end after 15 minutes without a request.
-/// server.servlet.session.timeout=15m
-/// server.servlet.session.cookie.name=SHOPSESSION
+/// server.session.timeout=15m
+/// server.session.cookie.name=SHOPSESSION
 /// ```
 ///
 /// Spring Boot leaves `same-site` unset and has no session limit (the
@@ -201,8 +201,8 @@ final class HttpSessionProperties {
     this.maxSessions = 10000,
   });
 
-  /// Reads `server.servlet.session.*` from [environment]. The cookie path
-  /// defaults to [contextPath] (`server.servlet.context-path`), else `/`.
+  /// Reads `server.session.*` from [environment]. The cookie path
+  /// defaults to [contextPath] (`server.context-path`), else `/`.
   /// Throws an [ArgumentError] for an unknown `same-site` value; an
   /// unreadable `max-sessions` keeps the default.
   factory HttpSessionProperties.of(
@@ -210,9 +210,7 @@ final class HttpSessionProperties {
     String contextPath = '',
   }) {
     String? text(String key) {
-      final value = environment
-          .getProperty('server.servlet.session.$key')
-          ?.trim();
+      final value = environment.getProperty('server.session.$key')?.trim();
       return value == null || value.isEmpty ? null : value;
     }
 
@@ -239,7 +237,7 @@ final class HttpSessionProperties {
         'none' => 'None',
         'unset' => null,
         final other => throw ArgumentError(
-          'server.servlet.session.cookie.same-site: unknown value $other',
+          'server.session.cookie.same-site: unknown value $other',
         ),
       },
       maxSessions: int.tryParse(text('max-sessions') ?? '') ?? 10000,
@@ -356,7 +354,7 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
         _warn(
           now,
           'Session limit $maxSessions reached: refused a new session '
-          '(raise server.servlet.session.max-sessions)',
+          '(raise server.session.max-sessions)',
         );
         throw TooManyActiveSessionsException(maxSessions);
       }
@@ -432,7 +430,7 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
 }
 
 /// Thrown when a new session is refused: the session limit
-/// (`server.servlet.session.max-sessions`) is reached and no session
+/// (`server.session.max-sessions`) is reached and no session
 /// kept has expired (see [InMemoryHttpSessionRepository]).
 ///
 /// The request gets a 503 Service Unavailable. Raise the limit when

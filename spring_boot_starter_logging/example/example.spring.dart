@@ -13,209 +13,44 @@ import 'package:spring_boot_dart/src/runners.dart' as _i3;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i7;
 import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i4;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
-import 'example.dart' as _i1;
-
-class _$CheckoutProxy implements _i1.Checkout, _i2.Advised {
-  _$CheckoutProxy(this._target, this._invoker);
-
-  final _i1.Checkout _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void pay(int order, double amount) {
-    this._invoker.invoke(this, this._target, 0, [order, amount], (args) {
-      this._target.pay((args[0] as int), (args[1] as double));
-      return null;
-    });
-  }
-}
-
-class _$PayOnStartupProxy
-    implements _i1.PayOnStartup, _i3.CommandLineRunner, _i2.Advised {
-  _$PayOnStartupProxy(this._target, this._invoker);
-
-  final _i1.PayOnStartup _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void run(List<String> args) {
-    this._invoker.invoke(this, this._target, 0, [args], (args) {
-      this._target.run((args[0] as List<String>));
-      return null;
-    });
-  }
-
-  @override
-  _i1.Checkout get checkout => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.checkout,
-  ) as _i1.Checkout);
-
-  @override
-  _i4.LogBuffer get logs => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.logs,
-  ) as _i4.LogBuffer);
-}
+import 'example.dart' as _i2;
 
 /// Beans found by `@ComponentScan` in `example/`.
-_i2.BeanModule get $application => _i2.BeanModule(r'application', [
-  _i2.BeanDefinition<_i1.Checkout>(
+_i1.BeanModule get $application => _i1.BeanModule(r'application', [
+  _i1.BeanDefinition<_i2.Checkout>(
     name: r'checkout',
     source: r'asset:spring_boot_starter_logging/example/example.dart#Checkout',
-    types: const [_i1.Checkout],
-    create: (r) => _i1.Checkout(),
+    types: const [_i2.Checkout],
+    create: (r) => _i2.Checkout(),
     annotations: const [
-      _i2.Service(),
-      _i2.Log(topic: r'shop.checkout'),
+      _i1.Service(),
+      _i1.Log(topic: r'shop.checkout'),
     ],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'pay',
-          declaringType: r'Checkout',
-          targetType: r'Checkout',
-          declaringTypes: [r'Checkout'],
-          returnType: r'void',
-          parameterTypes: [r'int', r'double'],
-          parameterNames: [r'order', r'amount'],
-          targetTypes: [r'Checkout'],
-          targetAnnotations: [
-            _i2.Service(),
-            _i2.Log(topic: r'shop.checkout'),
-          ],
-          targetAnnotationTypes: [r'Service', r'Log'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$CheckoutProxy((target as _i1.Checkout), invoker),
+    aopProxy: _i1.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches Checkout, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
-  _i2.BeanDefinition<_i1.PayOnStartup>(
+  _i1.BeanDefinition<_i2.PayOnStartup>(
     name: r'payOnStartup',
     source:
         r'asset:spring_boot_starter_logging/example/example.dart#PayOnStartup',
-    types: const [_i1.PayOnStartup, _i3.CommandLineRunner],
+    types: const [_i2.PayOnStartup, _i3.CommandLineRunner],
     dependencies: const [
-      _i2.Dependency(_i1.Checkout, name: r'checkout'),
-      _i2.Dependency(_i4.LogBuffer, name: r'logs'),
+      _i1.Dependency(_i2.Checkout, name: r'checkout'),
+      _i1.Dependency(_i4.LogBuffer, name: r'logs'),
     ],
-    create: (r) => _i1.PayOnStartup(
-      r.dependency<_i1.Checkout>(name: r'checkout'),
+    create: (r) => _i2.PayOnStartup(
+      r.dependency<_i2.Checkout>(name: r'checkout'),
       r.dependency<_i4.LogBuffer>(name: r'logs'),
     ),
     annotations: const [
-      _i2.Component(),
-      _i2.Log(topic: r'shop.startup'),
+      _i1.Component(),
+      _i1.Log(topic: r'shop.startup'),
     ],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'run',
-          declaringType: r'CommandLineRunner',
-          targetType: r'PayOnStartup',
-          declaringTypes: [r'PayOnStartup', r'CommandLineRunner'],
-          returnType: r'void',
-          parameterTypes: [r'List'],
-          parameterNames: [r'args'],
-          targetTypes: [r'PayOnStartup', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'shop.startup'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-        _i2.MethodSignature(
-          name: r'checkout',
-          declaringType: r'PayOnStartup',
-          targetType: r'PayOnStartup',
-          declaringTypes: [r'PayOnStartup'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'Checkout',
-          targetTypes: [r'PayOnStartup', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'shop.startup'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-        _i2.MethodSignature(
-          name: r'logs',
-          declaringType: r'PayOnStartup',
-          targetType: r'PayOnStartup',
-          declaringTypes: [r'PayOnStartup'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'LogBuffer',
-          targetTypes: [r'PayOnStartup', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'shop.startup'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$PayOnStartupProxy((target as _i1.PayOnStartup), invoker),
+    aopProxy: _i1.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches PayOnStartup, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
 ]);
@@ -274,7 +109,7 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '944af02e',
+  fingerprint: 'dec12c45',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -304,11 +139,11 @@ Future<_i5.ConfigurableApplicationContext> reloadApplicationAsync(
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// `@Log` of [Checkout]: the logger 'shop.checkout'.
-extension $CheckoutLog on _i1.Checkout {
-  _i2.SpringLog get log => const _i2.SpringLog(r'shop.checkout');
+extension $CheckoutLog on _i2.Checkout {
+  _i1.SpringLog get log => const _i1.SpringLog(r'shop.checkout');
 }
 
 /// `@Log` of [PayOnStartup]: the logger 'shop.startup'.
-extension $PayOnStartupLog on _i1.PayOnStartup {
-  _i2.SpringLog get log => const _i2.SpringLog(r'shop.startup');
+extension $PayOnStartupLog on _i2.PayOnStartup {
+  _i1.SpringLog get log => const _i1.SpringLog(r'shop.startup');
 }

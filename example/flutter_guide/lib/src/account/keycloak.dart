@@ -64,7 +64,7 @@ final class KeycloakRolesMapper implements GrantedAuthoritiesMapper {
 /// The starter's [OAuth2AccessTokenInterceptor], while a Keycloak user is
 /// logged in.
 ///
-/// `spring.cloud.openfeign.oauth2.enabled=true` would put the starter's
+/// `spring.feign.oauth2.enabled=true` would put the starter's
 /// interceptor on every call, and as in Spring Cloud OpenFeign it fails a
 /// call made while nobody is logged in: right for an API that is all
 /// private, wrong here, where the catalog and the live stock are public.
