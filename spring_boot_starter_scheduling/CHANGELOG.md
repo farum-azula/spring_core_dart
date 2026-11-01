@@ -1,4 +1,4 @@
-## Unreleased
+## 0.6.0
 
 - No changes of its own; released with the family version 0.6.0 (its generated example was regenerated with the generator's smaller output).
 

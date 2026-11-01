@@ -1,4 +1,4 @@
-## Unreleased
+## 0.6.0
 
 First release: Spring Data for Dart, on Spring Data JDBC's model (an aggregate is loaded and saved whole; other aggregates are referenced by id; no persistence context, no lazy loading, no proxies of entities). The package has no database driver inside: the application lists `sqlite3` or `postgres` and the generator writes the glue.
 

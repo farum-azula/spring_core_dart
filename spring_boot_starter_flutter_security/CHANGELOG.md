@@ -1,3 +1,7 @@
+## 0.6.0
+
+- Data starter (#17)
+
 ## 0.5.0
 
 ### Breaking
