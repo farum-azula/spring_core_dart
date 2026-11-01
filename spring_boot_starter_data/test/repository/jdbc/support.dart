@@ -217,9 +217,14 @@ Future<void> withJdbc(
   JdbcLogSettings logSettings = const JdbcLogSettings(),
   Map<String, String> driverProperties = const {},
   bool postgres = false,
+  ConnectionSettings? postgresSettings,
 }) async {
   final holder = _Holder();
-  final schemaName = postgres ? await pg.newSchema() : null;
+  // [postgresSettings]: a database of the caller's (the transaction matrix
+  // has one of its own), instead of a schema in the shared one.
+  final schemaName = postgres && postgresSettings == null
+      ? await pg.newSchema()
+      : null;
   final wiring = BeanModule('jdbcWiring', [
     BeanDefinition<RepositoryFactory>(
       name: 'repositoryFactory',
@@ -229,14 +234,16 @@ Future<void> withJdbc(
           driver: r.dependency<JdbcDriver>(
             name: postgres ? 'postgresJdbcDriver' : 'sqlite3JdbcDriver',
           ),
-          settings: schemaName != null
-              ? pg.schemaSettings(schemaName, properties: driverProperties)
-              : ConnectionSettings(
-                  url: Uri.parse(
-                    file == null ? 'sqlite::memory:' : 'sqlite:file:$file',
-                  ),
-                  properties: driverProperties,
-                ),
+          settings:
+              postgresSettings ??
+              (schemaName != null
+                  ? pg.schemaSettings(schemaName, properties: driverProperties)
+                  : ConnectionSettings(
+                      url: Uri.parse(
+                        file == null ? 'sqlite::memory:' : 'sqlite:file:$file',
+                      ),
+                      properties: driverProperties,
+                    )),
           pool: PoolSettings(
             maxSize: connections,
             connectionTimeout: const Duration(seconds: 5),

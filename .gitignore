@@ -20,3 +20,8 @@ coverage/
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Eclipse / Buildship metadata the Java tooling writes (Android, Maven references).
+.project
+.classpath
+.settings/

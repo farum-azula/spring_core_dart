@@ -2,9 +2,9 @@
 library;
 
 // What the starter does to a PostgreSQL schema, against a real server
-// (SPRING_TEST_POSTGRES_URL): creating the tables of the entities, checking
-// them (types, foreign keys, unique keys), SQL scripts and migrations, whose
-// DDL is transactional there.
+// (SPRING_TEST_POSTGRES_URL, or a container): creating the tables of the
+// entities, checking them (types, foreign keys, unique keys), SQL scripts and
+// migrations, whose DDL is transactional there.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
@@ -46,7 +46,10 @@ Future<List<String>> _history(DataSource source) => _using(
   ],
 );
 
-void main() => group('PostgreSQL', _tests, skip: postgresSkip);
+void main() => group('PostgreSQL', () {
+  usePostgresServer();
+  _tests();
+}, skip: postgresServerSkip);
 
 void _tests() {
   late RelationalMappingContext context;

@@ -203,7 +203,7 @@ abstract final class DataSourceUtils {
       final info = TransactionSynchronizationManager.currentTransactionFor(
         dataSource,
       );
-      info?.checkDeadline();
+      info?.checkDeadline(markRollbackOnly: () => holder.rollbackOnly = true);
       if (info?.timeLeft case final left?
           when timeout == null || left < timeout) {
         timeout = left;

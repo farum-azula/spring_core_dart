@@ -1,15 +1,15 @@
 // The semantics of references, foreign keys and unique keys, on the stores:
 // the same calls and the same assertions run on the in-memory store, on
 // SQLite (whose tables the starter creates from the annotations, with
-// `PRAGMA foreign_keys = ON`) and, when SPRING_TEST_POSTGRES_URL names a
-// server, on PostgreSQL, so a test that passes in memory does not fail in
-// production. Same approach as semantics_test.dart.
+// `PRAGMA foreign_keys = ON`) and, when a PostgreSQL is there
+// (SPRING_TEST_POSTGRES_URL, or Docker), on PostgreSQL, so a test that passes
+// in memory does not fail in production. Same approach as semantics_test.dart.
 import 'dart:async';
 
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
-import '../../postgres/support.dart' show postgresSkip;
+import '../../postgres/support.dart' show postgresServerSkip, usePostgresServer;
 import 'support.dart';
 
 /// The repositories of the store under test.
@@ -92,8 +92,13 @@ void main() {
   for (final store in const ['memory', 'sqlite', 'postgres']) {
     group(
       store,
-      () => _suite(store),
-      skip: store == 'postgres' ? postgresSkip : null,
+      () {
+        if (store == 'postgres') {
+          usePostgresServer();
+        }
+        _suite(store);
+      },
+      skip: store == 'postgres' ? postgresServerSkip : null,
       tags: store == 'postgres' ? 'postgres' : null,
     );
   }

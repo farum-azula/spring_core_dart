@@ -1,13 +1,14 @@
 // One suite, three stores: the same calls and the same assertions run on the
-// in-memory store, on SQLite and, when SPRING_TEST_POSTGRES_URL names a
-// server, on PostgreSQL (through the JDBC store), so they behave
-// identically. Where a database cannot match the in-memory store, the test
-// says so and asserts the difference explicitly (`if (sqlite)`); what only
-// reads the tables of a SQL store is under `if (sql)`.
+// in-memory store, on SQLite and, when a PostgreSQL is there
+// (SPRING_TEST_POSTGRES_URL, or Docker), on PostgreSQL (through the JDBC
+// store), so they behave identically. Where a database cannot match the
+// in-memory store, the test says so and asserts the difference explicitly
+// (`if (sqlite)`); what only reads the tables of a SQL store is under
+// `if (sql)`.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
-import '../../postgres/support.dart' show postgresSkip;
+import '../../postgres/support.dart' show postgresServerSkip, usePostgresServer;
 import 'support.dart';
 
 // The stores' repositories the suite works with.
@@ -37,8 +38,13 @@ void main() {
   for (final store in const ['memory', 'sqlite', 'postgres']) {
     group(
       store,
-      () => _suite(store),
-      skip: store == 'postgres' ? postgresSkip : null,
+      () {
+        if (store == 'postgres') {
+          usePostgresServer();
+        }
+        _suite(store);
+      },
+      skip: store == 'postgres' ? postgresServerSkip : null,
       tags: store == 'postgres' ? 'postgres' : null,
     );
   }

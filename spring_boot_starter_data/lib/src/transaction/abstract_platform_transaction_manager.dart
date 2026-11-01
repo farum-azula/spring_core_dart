@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
@@ -40,7 +41,9 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_synchroniza
 /// does it), no `validateExistingTransaction`, no
 /// `failEarlyOnGlobalRollbackOnly` and no `rollbackOnCommitFailure` (their
 /// Spring defaults apply), and a block without a transaction (`supports`,
-/// `notSupported`, `never`) has no synchronizations.
+/// `notSupported`, `never`) has no synchronizations. A failed commit throws
+/// the store's `DataAccessException` as it is (Spring's `RuntimeException`
+/// rule); any other error is wrapped in a [TransactionSystemException].
 abstract class AbstractPlatformTransactionManager
     implements PlatformTransactionManager, TransactionManagerHooks {
   /// A manager; the logger is named after the concrete class.
@@ -274,6 +277,13 @@ abstract class AbstractPlatformTransactionManager
         }
       } on TransactionException {
         await _afterCompletion(s, TransactionCompletion.unknown);
+        rethrow;
+      } on DataAccessException {
+        // The store's own translation (a serialization failure at commit is
+        // a CannotSerializeTransactionException) is thrown as it is, after
+        // the rollback, as Spring does with a RuntimeException from
+        // doCommit.
+        await _rollbackOnCommitException(s);
         rethrow;
       } on Object catch (error) {
         await _afterCompletion(s, TransactionCompletion.unknown);

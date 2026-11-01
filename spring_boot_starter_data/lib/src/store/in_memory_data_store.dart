@@ -371,7 +371,14 @@ final class InMemoryDataStore implements DataStore {
   InMemoryTransaction? _enter(String operation, {bool write = false}) {
     TransactionSynchronizationManager.currentTransactionFor(
       this,
-    )?.checkDeadline();
+    )?.checkDeadline(
+      markRollbackOnly: () {
+        if (TransactionSynchronizationManager.getResource(this)
+            case final InMemoryTransaction timedOut) {
+          timedOut.setRollbackOnly();
+        }
+      },
+    );
     final bound = TransactionSynchronizationManager.getResource(this);
     if (bound == null) {
       return null;

@@ -252,7 +252,7 @@ jobs:
         env:
           PACKAGES: ${{ needs.changes.outputs.packages }}
           PART: ${{ matrix.part }}
-        run: dart run tool/test_all.dart --only "$PACKAGES" --exclude-tags "integration || differential" --job "$PART/4"
+        run: dart run tool/test_all.dart --only "$PACKAGES" --exclude-tags "integration || differential || docker || postgres" --job "$PART/4"
 
   # The tests tagged `integration` (@Tags(['integration'])): real HTTP and
   # WebSocket servers on sockets, started processes, the fetch transport on
@@ -318,6 +318,90 @@ jobs:
         env:
           SPRING_TEST_POSTGRES_URL: postgresql://postgres:test@localhost:5432/postgres
         run: dart test -t postgres --reporter expanded
+
+  # The tests that start containers (tagged `docker`: the test starter's
+  # Docker client, GenericContainer, the wait strategies, the reaper that
+  # removes the containers of a killed process, Keycloak and PostgreSQL
+  # modules, and the data starter's @DataTest on a PostgreSQL container).
+  # GitHub's runners have Docker; with CONTAINERS_REQUIRED a missing Docker
+  # fails the tests instead of skipping them. The tests tagged `postgres`
+  # also start containers when SPRING_TEST_POSTGRES_URL is not set, so the
+  # jobs above exclude them and the `postgres` job runs them on its service
+  # container.
+  docker:
+    name: Containers (Docker)
+    needs: changes
+    if: >-
+      contains(needs.changes.outputs.packages, 'spring_boot_starter_test') ||
+      contains(needs.changes.outputs.packages, 'spring_boot_starter_data')
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Tests tagged docker of the affected packages
+        env:
+          PACKAGES: ${{ needs.changes.outputs.packages }}
+          CONTAINERS_REQUIRED: 'true'
+        run: dart run tool/test_all.dart --only "$PACKAGES" --tags docker
+
+  # The data starter's transactions against Spring itself
+  # (spring_boot_starter_data.md, step 4): the propagation x isolation matrix
+  # with races, locks, versions and timeouts, run by the Spring Boot twin
+  # (tool/data_reference: Spring Data JDBC, real @Transactional services) and
+  # by the starter on the same PostgreSQL server, each on a database of its
+  # own; the normalized outcomes must be equal, or listed as deliberate in
+  # test/transaction_matrix/comparison.dart.
+  data-differential:
+    name: Data compared with Spring Data
+    needs: changes
+    if: contains(needs.changes.outputs.packages, 'spring_boot_starter_data')
+    runs-on: ubuntu-26.04
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+          cache-dependency-path: tool/data_reference/pom.xml
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Build the Spring application
+        working-directory: tool/data_reference
+        run: mvn -B -q -DskipTests package
+
+      - name: The same scenarios in both
+        working-directory: spring_boot_starter_data
+        env:
+          SPRING_TEST_POSTGRES_URL: postgresql://postgres:test@localhost:5432/postgres
+          DATA_REFERENCE_REQUIRED: 'true' # no skipping without the jar
+        run: dart test --tags differential --reporter expanded
 
   # The security starter against Spring Security itself
   # (roadmap/security_verification.md, section 3): the same raw requests to

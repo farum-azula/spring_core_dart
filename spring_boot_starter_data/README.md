@@ -5,7 +5,7 @@
 > in each package's CHANGELOG.
 
 > **In development.** Repositories run in memory (with transactions and
-> locks) or on SQLite and PostgreSQL from properties; Redis comes next (see
+> locks) or on SQLite and PostgreSQL from properties (see
 > [the roadmap](https://github.com/farum-azula/spring_core_dart/blob/main/roadmap/spring_boot_starter_data.md)).
 
 Spring Data for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
@@ -237,6 +237,68 @@ The transaction lives in a `Zone`: it follows `await`, and work started
 in it without `await` that outlives it fails instead of running outside
 it.
 
+### Compared with Spring
+
+The transactions are checked against Spring itself, on PostgreSQL:
+`tool/data_reference` is a Spring Boot 4.1 application (Spring Data JDBC,
+real `@Transactional` services) and `test/transaction_matrix` runs the same
+304 scenarios in both, each giving a normalized outcome (the rows that
+committed, the values read, the kind of each exception with its SQL state).
+The CI job "Data compared with Spring Data" compares them outcome by outcome;
+the suite alone (`dart test -t postgres`) checks the starter's side against a
+model of Spring's rules. Two transactions run side by side, step by step, with
+no sleeps: the test waits until PostgreSQL reports a backend waiting for a
+lock.
+
+| Scenarios | Count | What is shown |
+|---|---|---|
+| Propagation | 224 + 7 | every outer (none or the seven) against every inner (the seven), four ways each: nothing fails, the inner throws and the outer catches it, the inner throws through the outer, the outer throws after the inner returned; and the inner waiting for a row the outer holds (`requiresNew` and `notSupported` use another connection and wait for the outer to end: a statement timeout shows the wait) |
+| Rollback rules, templates, read only | 22 | `rollbackFor`, `noRollbackFor` (with subtypes), errors, `TransactionTemplate`, `setRollbackOnly`, read-only refusing writes (and a joined method keeping the outer's mode) |
+| Isolation | 31 | dirty read, non-repeatable read, phantom, lost update (read-modify-write and atomic) and write skew at five levels, and a deadlock |
+| Locks, versions, timeouts | 20 | `FOR UPDATE`, `FOR SHARE`, `NOWAIT`, `SKIP LOCKED` (with a limit), a lock timeout, `@Version` lost updates, `@Transactional(timeout:)` |
+
+What the propagation matrix shows, as Spring has it: a method that joins
+runs in the outer transaction and, when it fails, marks it rollback-only
+(the outer commit then throws `UnexpectedRollbackException`, even when the
+outer caught the error); `nested` rolls back to its savepoint and the outer
+goes on; `requiresNew` commits or rolls back alone and does not see the
+outer's uncommitted rows; `notSupported` runs in autocommit; `mandatory`
+without a transaction and `never` within one are
+`IllegalTransactionStateException`.
+
+PostgreSQL's isolation (the level is really set: the scenarios read
+`transaction_isolation`):
+
+| | read uncommitted, read committed (default) | repeatable read | serializable |
+|---|---|---|---|
+| dirty read | no (read uncommitted runs as read committed) | no | no |
+| non-repeatable read | yes | no | no |
+| phantom | yes | no (a snapshot) | no |
+| lost update, read-modify-write | the second overwrites | the second fails: `CannotSerializeTransactionException` (`40001`) | the same |
+| lost update, `balance = balance + n` | none (the second waits, then adds) | the second fails (`40001`) | the same |
+| write skew | yes | yes | the second commit fails (`40001`) |
+| deadlock | `DeadlockLoserDataAccessException` (`40P01`) for one of the two | | |
+
+What the comparison found in the starter, now fixed (each with a regression
+test): a transaction that timed out was not rollback-only (Spring marks it:
+its commit is an `UnexpectedRollbackException`); a commit that PostgreSQL
+refused (a serialization failure under `serializable`) came wrapped in a
+`TransactionSystemException` (Spring throws the translated
+`DataAccessException` as it is); the exceptions had no
+`ConcurrencyFailureException` root (the type retry code catches: the
+version conflict, lock, deadlock and serialization failures extend it).
+
+Where the starter deliberately differs (the differential test pins both
+sides of each):
+
+| Difference | Why |
+|---|---|
+| Every exception rolls back (Spring commits after a checked one: `rules/checked-exception`) | Dart has no checked exceptions; list the ones to commit in `noRollbackFor` |
+| An exception that matches both `rollbackFor` and `noRollbackFor` rolls back (Spring: the entry closest to the exception's class wins; `rollbackFor: Exception, noRollbackFor: Soft` commits there, not here) | Dart cannot rank two types without reflection; leave out `rollbackFor`, which is the default |
+| A `@Lock` query outside a transaction fails with `IllegalTransactionStateException` (Spring runs it in autocommit: the lock is gone at once) | an unlocked "locking" read is a bug |
+| `40001` is a `CannotSerializeTransactionException`, `40P01` a `DeadlockLoserDataAccessException`, `55P03` a `CannotAcquireLockException`, `25006` an `InvalidDataAccessResourceUsageException` | Spring 7's `JdbcTemplate` translates by SQL state and gives `CannotAcquireLockException`, `PessimisticLockingFailureException`, `UncategorizedSQLException` and `UncategorizedSQLException`; the starter keeps the finer classes of Spring's PostgreSQL error-code table, with the same supertypes for code that retries (the comparison treats them as equal: `equivalentKinds`) |
+| One transaction is not tied to a thread: it follows `await` through a `Zone`, and work started without `await` that outlives it fails | Dart has no thread-bound transactions |
+
 ## SQL databases
 
 The starter has no driver inside: list the one you want in `pubspec.yaml`
@@ -344,8 +406,10 @@ generator writes a `PostgresBinding` over the package and the
 The [configuration reference](../docs/configuration.md#postgresql) has the
 URL parameters and every detail. The tests of the driver, the schema, the
 locks and the suites memory, SQLite and PostgreSQL share run against a real
-server when `SPRING_TEST_POSTGRES_URL` is set, and are skipped without it
-(tag `postgres`):
+server when `SPRING_TEST_POSTGRES_URL` is set; without it each test file
+starts a PostgreSQL container of its own when Docker is there (the
+containers of `spring_boot_starter_test`, `dart test -t postgres`), and
+they are skipped when it is not (tag `postgres`):
 
 ```text
 docker run --rm -d --name spring-pg-test -e POSTGRES_PASSWORD=test -p 55432:5432 postgres:17

@@ -1,12 +1,14 @@
 // The stores work through the entity descriptions the generator writes (here
 // by hand, in ../mapping/support.dart): the same entities, in memory, in
-// SQLite and, with SPRING_TEST_POSTGRES_URL set, in PostgreSQL, with mutable,
+// SQLite and, when a PostgreSQL is there (SPRING_TEST_POSTGRES_URL, or Docker),
+// in PostgreSQL, with mutable,
 // immutable and mixed classes.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
 import '../mapping/support.dart';
-import '../postgres/support.dart' show newPostgresSource, postgresSkip;
+import '../postgres/support.dart'
+    show newPostgresSource, postgresServerSkip, usePostgresServer;
 import '../schema/support.dart' show memorySource;
 
 void main() {
@@ -41,9 +43,12 @@ void main() {
   for (final name in ['memory', 'sqlite', 'postgres']) {
     group(
       name,
-      skip: name == 'postgres' ? postgresSkip : null,
+      skip: name == 'postgres' ? postgresServerSkip : null,
       tags: name == 'postgres' ? 'postgres' : null,
       () {
+        if (name == 'postgres') {
+          usePostgresServer();
+        }
         late DataStore store;
         setUp(() async => store = await storeNamed(name));
 

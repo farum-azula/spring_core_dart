@@ -6,9 +6,24 @@ tags:
   integration:
     timeout: 2x
 
-  # Tests that need a PostgreSQL server: they run when SPRING_TEST_POSTGRES_URL
-  # (postgresql://user:password@host:port/database) is set, and are skipped
-  # without it. CI runs them against a service container:
+  # Tests that need a PostgreSQL server: they run on SPRING_TEST_POSTGRES_URL
+  # (postgresql://user:password@host:port/database) when it is set, else on a
+  # PostgresContainer each test file starts, and are skipped without either.
+  # CI runs them against a service container:
   #   dart test -t postgres
   postgres:
     timeout: 2x
+
+  # Tests that start containers (@Tags at the top of the file): skipped
+  # without Docker, a failure with CONTAINERS_REQUIRED=true (CI sets it).
+  #   dart test -t docker
+  docker:
+    timeout: 4x
+
+  # The starter against Spring itself (tool/data_reference, a Spring Boot
+  # application): the same transaction scenarios on the same PostgreSQL,
+  # outcome by outcome. Needs SPRING_TEST_POSTGRES_URL and the built jar:
+  #   (cd tool/data_reference && mvn -q -DskipTests package)
+  #   dart test -t differential
+  differential:
+    timeout: 4x

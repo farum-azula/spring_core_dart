@@ -20,7 +20,9 @@ Tests come in two forms, and both work the same way:
 
 A test of repositories alone does not need the whole application: a
 `@DataTest()` class starts its data beans on an in-memory database and
-rolls every test back ([section 19](#19-data-tests-datatest)).
+rolls every test back ([section 19](#19-data-tests-datatest)). A test that
+needs a database, a Keycloak or any other service can start it in Docker
+for the duration of the tests ([section 20](#20-containers-in-tests)).
 
 **Flutter** apps have their own starter, `spring_boot_starter_flutter_test`
 ([Flutter testing](flutter-testing.md)). It is built on this one, so
@@ -43,6 +45,7 @@ widgets with the test's beans, themes and platforms.
 | `src/test/resources` | `test/resources/` |
 | `@DataJdbcTest`, `@AutoConfigureTestDatabase` | `@DataTest()` ([section 19](#19-data-tests-datatest)) |
 | `@Rollback`, `@Commit` | the same annotations (`@DataTest` classes) |
+| Testcontainers: `@Testcontainers`, `@Container`, `GenericContainer`, `PostgreSQLContainer`; Spring Boot's `@ServiceConnection` | the same annotations and classes, from `package:spring_boot_starter_test/containers.dart` ([section 20](#20-containers-in-tests)) |
 
 ## Contents
 
@@ -65,6 +68,7 @@ widgets with the test's beans, themes and platforms.
 17. [Web tests: `MockMvc`](#17-web-tests-mockmvc)
 18. [Differences from Spring](#18-differences-from-spring)
 19. [Data tests: `@DataTest`](#19-data-tests-datatest)
+20. [Containers in tests](#20-containers-in-tests)
 
 ## 1. Setup
 
@@ -897,6 +901,10 @@ starts with the place (`test/checkout_test.dart:12:3: ...`):
 | `@Commit needs a @DataTest class` | `@Commit` and `@Rollback` belong to `@DataTest` classes ([section 19](#19-data-tests-datatest)) |
 | `@Commit on helper, which is not a @Test method` | add `@Test()` (also `@Rollback`); on a field they go on `@Nested` ones |
 | `@Commit and @Rollback on the same element` | keep one of them |
+| `@Container field 'db' must be static` | `@Container() static final db = ...;` (the containers start before the class is created) |
+| `@Container field 'db' in a @Nested class` | move it to the test class (one context) |
+| `@ServiceConnection on 'db' needs @Container` | put both on the field |
+| `@Container field 'db' needs a value` | `static final db = PostgresContainer();` (or `static late`, assigned in `@BeforeAll`) |
 | `test/checkout_test.dart does not import 'spring/checkout.test.spring.dart'` (a warning) | add the import and `void main() => runSpringTests();` |
 
 A missing bean is not a build error: the test fails when the context
@@ -1454,3 +1462,266 @@ never depend on each other.
   becomes an in-memory SQLite one. An embedded H2 or Derby does not exist
   here, and `sqlite3` is the only database it can use.
 - **A failing test is rolled back** even with `@Commit`.
+
+## 20. Containers in tests
+
+A test of a repository wants the database the application will use, not a
+fake of it; a test of the security wants a Keycloak. Docker has both. With
+the containers of `package:spring_boot_starter_test/containers.dart` a test
+starts what it needs, the application is wired to it by itself, and the
+containers are removed afterwards, on any image, as with Spring Boot's
+Testcontainers support:
+
+```dart
+import 'package:spring_boot_starter_test/containers.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
+
+@SpringBootTest()
+@Testcontainers()
+class BookRepositoryTest {
+  // Started once for the class, before its context, and removed after it:
+  // its URL, user and password become spring.datasource.* of the context.
+  @Container()
+  @ServiceConnection()
+  static final postgres = PostgresContainer('postgres:17-alpine');
+
+  // Any image: wait for a log line, an HTTP answer or a port, copy files in.
+  @Container()
+  static final keycloak = GenericContainer('quay.io/keycloak/keycloak:26.8')
+      .withCommand(['start-dev', '--import-realm'])
+      .withCopyFile('../example/keycloak/neon-realm.json',
+          '/opt/keycloak/data/import/neon-realm.json')
+      .withExposedPorts([8080])
+      .waitingFor(Wait.forHttp('/realms/neon').forStatusCode(200));
+
+  // Runs when the context starts, after the containers did.
+  @DynamicPropertySource()
+  static void properties(DynamicPropertyRegistry registry) => registry.add(
+    'spring.security.oauth2.client.provider.keycloak.issuer-uri',
+    () => '${keycloak.baseUrl(8080)}/realms/neon',
+  );
+
+  @Autowired()
+  late BookRepository books;
+
+  @Test()
+  Future<void> savesAndFinds() async { /* ... */ }
+}
+
+void main() => runSpringTests();
+```
+
+Spring (Java), the same test with Testcontainers:
+
+```java
+@SpringBootTest
+@Testcontainers
+class BookRepositoryTest {
+  @Container @ServiceConnection
+  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
+
+  @Container
+  static GenericContainer<?> keycloak = new GenericContainer<>("quay.io/keycloak/keycloak:26.8")
+      .withCommand("start-dev", "--import-realm")
+      .withCopyFileToContainer(MountableFile.forHostPath("../example/keycloak/neon-realm.json"),
+          "/opt/keycloak/data/import/neon-realm.json")
+      .withExposedPorts(8080)
+      .waitingFor(Wait.forHttp("/realms/neon").forStatusCode(200));
+
+  @DynamicPropertySource
+  static void properties(DynamicPropertyRegistry registry) {
+    registry.add("spring.security.oauth2.client.provider.keycloak.issuer-uri",
+        () -> "http://" + keycloak.getHost() + ":" + keycloak.getMappedPort(8080) + "/realms/neon");
+  }
+  ...
+}
+```
+
+The library is `containers.dart`, a library of its own: it needs `dart:io`
+(there is nothing for the web), and its `Container` annotation would clash
+with Flutter's widget of that name in widget tests. Flutter apps have no
+Docker.
+
+### Containers of a test class
+
+- **`@Container()`** marks a `static` field holding a `GenericContainer` or
+  a module. The containers start in the order of the fields, before the
+  `@BeforeAll` methods and the context, and are removed after the context
+  closed and the `@AfterAll` methods ran. One container serves all the
+  tests of the class. A container per test (an instance field) is not
+  supported: the context needs the containers before the first test.
+- **`@ServiceConnection()`** on a `@Container` field puts the container's
+  connection properties into the context's *dynamic properties*, the
+  property source that wins over `properties:`, the config files and the
+  environment (a `@DynamicPropertySource` method runs after them and can
+  change one). `PostgresContainer` sets `spring.datasource.url`,
+  `username` and `password`; `KeycloakContainer` sets
+  `spring.security.oauth2.resourceserver.jwt.issuer-uri` and
+  `spring.security.oauth2.client.provider.<id>.issuer-uri`. A container of
+  your own does it by implementing `ServiceConnectionProperties` (a
+  `Map<String, String> get connectionProperties`). This package does not
+  depend on the data or security starters: the properties are strings.
+- **`@DynamicPropertySource`** methods run each time the context starts, so
+  after the containers: `keycloak.baseUrl(8080)`, `host` and
+  `mappedPort(...)` are known there.
+- **`@Testcontainers()`** is optional, as in Spring. It only sets what
+  happens without Docker.
+- **Without Docker** the whole class is skipped, with the reason (no
+  Docker socket found). With the environment variable
+  `CONTAINERS_REQUIRED=true` it fails instead (CI sets it, so a missing
+  Docker never goes unnoticed), and so does
+  `@Testcontainers(disabledWithoutDocker: false)`. The check looks for the
+  daemon's socket when the tests are declared, so a daemon that is down
+  behind a stale socket fails the start of the containers rather than
+  skipping.
+- **`@DataTest` works the same**: `@DataTest(replaceDatabase: false)` with a
+  `@ServiceConnection` `PostgresContainer` runs the repositories on that
+  PostgreSQL, with the migrations applied and every test rolled back:
+
+  ```dart
+  @DataTest(replaceDatabase: false)
+  class BookRepositoryTest {
+    @Container()
+    @ServiceConnection()
+    static final postgres = PostgresContainer('postgres:17-alpine');
+    // ...
+  }
+  ```
+
+In a test written as functions, `TestContainers` does what the generated
+code does:
+
+```dart
+void main() {
+  final postgres = PostgresContainer();
+  final containers = TestContainers({'postgres': postgres},
+      serviceConnections: {'postgres'});
+  setUpAll(containers.start);
+  tearDownAll(containers.stop);
+  final app = springBootTest(
+    springApplication,
+    dynamicProperties: containers.registerConnections,
+  );
+  // ...
+}
+```
+
+and `skip: TestContainers.skipReason()` skips a `group` or `test`.
+
+### `GenericContainer`
+
+Any image. The methods return the container, so they chain (on a module
+use cascades, `..withReuse(true)`, to keep its type):
+
+| Method | Does |
+|---|---|
+| `withEnv(name, value)`, `withEnvironment(map)` | environment variables |
+| `withCommand(list)`, `withEntrypoint(list)` | replace the image's command or entry point |
+| `withExposedPorts([5432])` | publish the ports on random free ports of the host (the loopback interface only, so a test database is not open to the network) |
+| `withCopyFile(hostPath, containerPath)`, `withCopyContent(text, containerPath)` | files copied in before the start (a tar archive, written by hand, so nothing is mounted) |
+| `withLabel(name, value)` | a label |
+| `withHealthCheck(['CMD-SHELL', 'pg_isready'])` | a health check of the container's own, for images without one |
+| `waitingFor(strategy)` | when it counts as ready |
+| `withStartupTimeout(duration)` | 60 s by default; the image pull is not counted |
+| `withReuse(true)` | keep it for the next run |
+
+`start()` pulls the image when it is missing, creates the container, copies
+the files, starts it and waits; `stop()` removes it. `host` (`127.0.0.1`
+for a local daemon), `mappedPort(5432)`, `baseUrl(8080)`, `getLogs()` and
+`execInContainer([...])` are there once it started. When it does not become
+ready the container is removed and a `ContainerLaunchException` says why,
+with the last lines it printed.
+
+**Wait strategies** (`Wait`): `forListeningPort()` (the default: every
+published port accepts a connection and keeps it, which tells a listening
+server from Docker Desktop's port forwarder that accepts and drops),
+`forLogMessage(regex, times)` (a line of standard output or error),
+`forHttp(path)` with `.forStatusCode(200)`, `.forPort(8080)`,
+`.forStatusCodeMatching(...)`, `.usingTls()`, `forHealthcheck()` and
+`forAll([...])`. A container that exits while the strategy waits fails the
+start at once, with its exit code.
+
+**Modules**: `PostgresContainer([image])` (database, user and password
+`test`; `withDatabaseName`, `withUsername`, `withPassword`,
+`withInitScript`; `jdbcUrl` is `postgresql://host:port/db` and `url` has the
+credentials in it, both in the form `spring_boot_starter_data` reads) and
+`KeycloakContainer([image])` (admin `admin`/`admin`, `withAdminCredentials`,
+`withRealmImport(hostPath)` for a realm export, `issuerUri`, `authServerUrl`,
+`withProviderId`). There is no `RedisContainer`: `GenericContainer` covers
+it.
+
+### The Docker client
+
+There is no package behind it, in line with the dependency rule
+([dependencies](dependencies.md)): `DockerClient` speaks the Docker Engine
+API over the daemon's Unix socket (or `tcp://`) with `dart:io`'s
+`HttpClient`: `ping`, `version`, `imageExists`, `pullImage`,
+`createContainer`, `putFiles`, `startContainer`, `containerLogs` (the
+daemon's multiplexed frames split into lines), `inspectContainer`, `exec`,
+`listContainers`, `stopContainer` and `removeContainer`. An error carries
+the daemon's message (`DockerException`); no daemon is a
+`DockerUnavailableException`. The daemon is found as the `docker` command
+finds it: `DOCKER_HOST` (`unix:///path`, `tcp://host:2375`), else the first
+of `/var/run/docker.sock`, Docker Desktop's `~/.docker/run/docker.sock`,
+Colima's `~/.colima/default/docker.sock`, Rancher Desktop's
+`~/.rd/docker.sock` and `$XDG_RUNTIME_DIR/docker.sock`. Windows' named
+pipe is not supported yet (`DOCKER_HOST=tcp://localhost:2375` works), nor
+is TLS to a remote daemon, nor private registries (pull the image
+beforehand: `docker login`, `docker pull`).
+
+### Cleanup that survives a crash
+
+Every container carries the labels `org.testcontainers=true`,
+`org.testcontainers.lang=dart` and `org.testcontainers.sessionId=<run id>`,
+and is removed by `stop()` when its class is done. If the process dies
+before that (`kill -9`, a crash, Ctrl+C), the reaper does it: Testcontainers'
+own `testcontainers/ryuk` image, started before the first container of a
+run. The run connects to its TCP port, sends `label=org.testcontainers.sessionId=<id>`,
+and keeps the connection open; when it drops, Ryuk removes every container
+with the label ten seconds later, and exits. A run is one isolate, which is
+one test file under `dart test`, so each file with containers has its own
+Ryuk. The connection closes when the last container is stopped, and a later
+start reconnects.
+
+- `TESTCONTAINERS_RYUK_DISABLED=true` switches the reaper off (the containers
+  are still labelled and removed by `stop()`); if Ryuk cannot start (a daemon
+  that cannot bind-mount its socket), the error says so.
+- `TESTCONTAINERS_RYUK_CONTAINER_IMAGE` names another image than
+  `testcontainers/ryuk:0.14.0`.
+
+### Reuse between runs
+
+`withReuse(true)` keeps a container alive after the tests, to be found again
+by the next run: for fast iterations on a laptop. It is found by a hash of
+its configuration (image, environment, command, ports, health check, files
+and labels), carries no run id (so the reaper leaves it), and `stop()` does
+not remove it. It is off when the `CI` environment variable is set. Remove
+what was kept with
+`docker rm -f $(docker ps -aq --filter label=org.testcontainers.reuse.hash)`.
+The data in it survives, so tests must clean up after themselves.
+
+### Differences from Testcontainers and Spring
+
+- **`containers.dart` is its own import**, not part of
+  `spring_boot_starter_test.dart` (the `Container` name, `dart:io`).
+- **Static fields only** for `@Container`; no per-test containers.
+- **Skipped without Docker by default**; Spring's `@Testcontainers` fails
+  unless `disabledWithoutDocker = true`. `CONTAINERS_REQUIRED=true` is the
+  switch for CI.
+- **No `withCreateContainerCmdModifier`**: the settings above are what there
+  is, plus `DockerClient` for the rest. No networks between containers, no
+  Docker Compose module, no `RedisContainer`, `MongoContainer`... yet.
+- **Ports are published on the loopback interface** of a local daemon.
+- **The fluent methods return `GenericContainer`**, not the module's own
+  type: Dart has no self type. Use cascades on a module.
+- **Not yet**: Windows' named pipe, Docker Compose support for development
+  (`spring-boot-docker-compose`), and the Keycloak end-to-end tests of the
+  security starters, which still expect a Keycloak started by hand.
+
+### Running the tests of the containers
+
+The tests that start containers are tagged `docker`: `dart test -t docker`
+runs them, and without Docker they are skipped. CI runs them in their own
+job with `CONTAINERS_REQUIRED=true`. The data starter's tests tagged
+`postgres` run on `SPRING_TEST_POSTGRES_URL` when it is set (CI's service
+container) and otherwise on a `PostgresContainer` each test file starts.

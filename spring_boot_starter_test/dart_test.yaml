@@ -1,0 +1,7 @@
+tags:
+  # Tests that need a Docker daemon (@Tags at the top of the file): they are
+  # skipped without one, and fail instead when CONTAINERS_REQUIRED=true is
+  # set (CI sets it). Run only them with:
+  #   dart test -t docker
+  docker:
+    timeout: 4x

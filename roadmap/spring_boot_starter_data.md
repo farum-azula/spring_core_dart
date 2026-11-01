@@ -212,8 +212,9 @@ the application adds the driver it wants, the generator sees it.
      `runInTestTransaction` of `spring_boot_starter_data/testing.dart`);
      `@DataTest(transactionManager: 'name')` (Spring's
      `@Transactional(transactionManager:)`) runs the tests in that one
-     manager's transaction; left: the database of a container
-     (`replaceDatabase: false` takes it, untested against a container) and a
+     manager's transaction; the database of a container
+     (`replaceDatabase: false` with a `@ServiceConnection` `PostgresContainer`,
+     tested in `test/data_test/container_postgres_test.dart`); left: a
      per-test choice of the manager.
 4. PostgreSQL (the `postgres` package): a connection pool
    (`spring.datasource.pool.*`), `FOR UPDATE` / `FOR SHARE`, `NOWAIT`,
@@ -268,17 +269,55 @@ the application adds the driver it wants, the generator sees it.
      through repositories, and the shared suites (entity stores, derived
      queries, references, injection, `@Query`) beside the in-memory store
      and SQLite. CI runs them on a `postgres:17` service container.
-   Left: containers in tests (`@Container`, `@ServiceConnection`, our own
-   Docker client: the tests above need a server started by hand or by CI);
-   the transaction race matrix of "Transactions: the test matrix" on
-   PostgreSQL (the pieces above cover locks, optimistic locking, read
-   committed against repeatable read, serialization failures and deadlocks,
-   but not the propagation matrix across two services); the comparison with
-   Spring Data JDBC on the same database (a Spring twin application, as the
-   security starter has one); `@DataTest` against a PostgreSQL container;
-   `COPY` and other bulk paths; a `LISTEN` / `NOTIFY` bridge; Unix sockets
+   - done (November 2026): the transaction matrix on PostgreSQL, compared
+     with Spring. `spring_boot_starter_data/test/transaction_matrix` (tag
+     `postgres`) has 304 scenarios, each giving a normalized outcome (the rows
+     committed, the values read, the exception kinds with their SQL states):
+     every outer propagation (and none) against every inner one in four
+     variants (nothing fails, the inner throws and the outer catches it, the
+     inner throws through the outer, the outer throws after it), the lock wait
+     of a second connection (a statement timeout shows it), rollback rules,
+     `TransactionTemplate`, read only, dirty read, non-repeatable read,
+     phantom, lost update (read-modify-write and atomic) and write skew at
+     five isolation levels, a deadlock, `FOR UPDATE` / `FOR SHARE` /
+     `NOWAIT` / `SKIP LOCKED` / lock timeouts, `@Version` races and
+     `@Transactional(timeout:)`; two transactions run side by side with no
+     sleeps (the test waits until `pg_stat_activity` shows a backend waiting
+     for a lock). The propagation outcomes also come from a model of Spring's
+     rules, the others from the reviewed outcomes of Spring itself.
+     `tool/data_reference` is the Spring twin (Spring Boot 4.1, Spring Data
+     JDBC, real `@Transactional` services, `@Version`, `@Lock`) and
+     `test/transaction_matrix/differential_test.dart` (tag `differential`)
+     compares both outcome by outcome; the CI job "Data compared with Spring
+     Data" runs it. What it found in the starter, fixed with regression
+     tests: a timed-out transaction was not rollback-only; a failed commit
+     was wrapped in a `TransactionSystemException` instead of Spring's
+     translated `DataAccessException`; no `ConcurrencyFailureException` root.
+     Deliberate differences (README, "Compared with Spring"): no checked
+     exceptions, `rollbackFor` beats a closer `noRollbackFor` (Dart cannot
+     rank two types: the generator could write the subtype relation of the
+     types of one annotation to fix it), a `@Lock` query outside a
+     transaction fails, the finer exception classes by SQL state (Spring 7's
+     `JdbcTemplate` translates by SQL state alone).
+   - done (November 2026): containers in tests (`@Container`,
+     `@ServiceConnection`, our own Docker client:
+     [spring_boot_starter_test.md](spring_boot_starter_test.md)). The tests
+     tagged `postgres` run on `SPRING_TEST_POSTGRES_URL` when it is set (CI
+     keeps its service container for them) and otherwise on a
+     `PostgresContainer` each test file starts; `@DataTest(replaceDatabase:
+     false)` with a `@Container() @ServiceConnection()` `PostgresContainer`
+     runs the repositories on it with the migrations and the rollback per
+     test (`test/data_test/container_postgres_test.dart`, tag `docker`), and
+     a `@SpringBootTest` class does too. The transaction matrix still needs
+     `SPRING_TEST_POSTGRES_URL` (it can switch to `usePostgresServer()` and
+     `postgresServerSkip` of `test/postgres/support.dart`).
+   Left: `COPY` and other bulk paths; a `LISTEN` / `NOTIFY` bridge; Unix sockets
    and several hosts in one URL; client certificates (`sslcert`, `sslkey`).
-5. Redis, with this project's own client (RESP over `dart:io`: a few
+5. **Postponed indefinitely, not in 0.6.0** (the owner, November 2026).
+   Until it comes, an application that needs Redis wires a client of its
+   choice by hand, e.g. as its own `CacheManager` bean for the cache
+   starter. The plan, kept for when it comes back:
+   Redis, with this project's own client (RESP over `dart:io`: a few
    hundred lines, a pool, TLS, `AUTH`, the database index, Pub/Sub; no
    third-party package), switched on by `spring.data.redis.*` (Spring
    Boot's names: `url`, `host`, `port`, `password`, `database`, `ssl`):

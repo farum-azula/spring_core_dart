@@ -501,6 +501,7 @@ const _classOnly = {
   'ActiveProfiles',
   'TestPropertySource',
   'TestEnvironment',
+  'Testcontainers',
 };
 
 /// The expression of [annotation]'s positional argument [index], or `null`.
@@ -528,6 +529,7 @@ const _instance = r'$instance';
 const _app = r'$app';
 const _logs = r'$logs';
 const _slice = r'$slice';
+const _containers = r'$containers';
 
 /// Generates the source of `<name>.test.spring.dart` for a [TestFile]: the
 /// copied imports and a `runSpringTests()` function that registers one
@@ -904,6 +906,28 @@ final class TestEmitter {
     }
 
     _body.writeln('_sbt.group(${_literal(name)}, () {');
+    if (members.containers.isNotEmpty) {
+      // First, so @BeforeAll methods and the context find them running; the
+      // tearDownAll declared here runs last, after the context closed and
+      // the @AfterAll methods ran.
+      final entries = [
+        for (final field in members.containers)
+          '${_literal(_qualified(field))}: ${_qualified(field)}',
+      ];
+      final connections = [
+        for (final field in members.containers)
+          if (annotation(field.metadata, 'ServiceConnection') != null)
+            _literal(_qualified(field)),
+      ];
+      _body
+        ..writeln(
+          'final $_containers = _sbt.TestContainers({${entries.join(', ')}}'
+          '${connections.isEmpty ? '' : ', serviceConnections: '
+                    '{${connections.join(', ')}}'});',
+        )
+        ..writeln('_sbt.setUpAll($_containers.start);')
+        ..writeln('_sbt.tearDownAll($_containers.stop);');
+    }
     for (final method in members.beforeAll) {
       _body.writeln('_sbt.setUpAll(() => $method());');
     }
@@ -948,8 +972,27 @@ final class TestEmitter {
       testClass.metadata,
       outer: dataTest == null ? null : const [],
     );
-    _body.writeln('}${_groupOptions(testClass.metadata)});');
+    var options = _groupOptions(testClass.metadata);
+    if (members.containers.isNotEmpty &&
+        annotation(testClass.metadata, 'Disabled') == null) {
+      // Without Docker the class is skipped with the reason, unless
+      // @Testcontainers(disabledWithoutDocker: false) or
+      // CONTAINERS_REQUIRED=true make it fail.
+      final testcontainers = annotation(testClass.metadata, 'Testcontainers');
+      final skipWithout = testcontainers == null
+          ? null
+          : _code(namedNode(testcontainers, 'disabledWithoutDocker'));
+      options =
+          ', skip: _sbt.TestContainers.skipReason('
+          '${skipWithout == null ? '' : 'skipWithoutDocker: $skipWithout'})'
+          '$options';
+    }
+    _body.writeln('}$options);');
   }
+
+  // `Owner.field` of a static member, as the generated code reaches it.
+  String _qualified(_Field field) =>
+      '${field.owner.namePart.typeName.lexeme}.${field.name}';
 
   // Whether the class or one of its @Nested classes has a @CapturedOutput
   // field.
@@ -1015,12 +1058,20 @@ final class TestEmitter {
         'systemEnvironment: ${_code(positionalNode(environment, 0))},',
       );
     }
+    // The containers' connection properties first, so that a
+    // @DynamicPropertySource method can still change one.
+    final hasConnections = members.containers.any(
+      (f) => annotation(f.metadata, 'ServiceConnection') != null,
+    );
     switch (members.dynamicProperties) {
-      case [final method]:
+      case [final method] when !hasConnections:
         _body.writeln('dynamicProperties: $method,');
-      case [_, _, ...] && final methods:
+      case final methods when methods.isNotEmpty || hasConnections:
+        final connections = hasConnections
+            ? '$_containers.registerConnections(registry);'
+            : '';
         _body.writeln(
-          'dynamicProperties: (registry) {'
+          'dynamicProperties: (registry) {$connections'
           '${methods.map((m) => '$m(registry);').join()}},',
         );
     }
@@ -1778,6 +1829,9 @@ final class _Members {
   final List<_Field> testBeans = [];
   final List<_Field> capturedOutput = [];
 
+  /// The static `@Container` fields, in order.
+  final List<_Field> containers = [];
+
   /// The tests and `@Nested` groups, in declaration order with the
   /// superclass's first; they are registered in this order.
   final List<_Member> ordered = [];
@@ -1937,6 +1991,42 @@ final class _Members {
       }
       _public(file, node, field.name);
       (captured ? capturedOutput : autowired).add(field);
+    }
+    final container = annotation(metadata, 'Container') != null;
+    if (annotation(metadata, 'ServiceConnection') != null && !container) {
+      throw file.error(
+        node,
+        "@ServiceConnection on '${field.name}' needs @Container on the same "
+        'field: it wires the application to that container.',
+      );
+    }
+    if (container) {
+      if (!outer) {
+        throw file.error(
+          node,
+          "@Container field '${field.name}' in a @Nested class: containers "
+          'belong to the test class (one context).',
+        );
+      }
+      if (!node.isStatic) {
+        throw file.error(
+          node,
+          "@Container field '${field.name}' must be static: the containers "
+          'start once for the class, before its context and before the '
+          'class is created. Write: @Container() static final '
+          '${field.name} = ...;',
+        );
+      }
+      if (field.variable.initializer == null && !field.declarations.isLate) {
+        throw file.error(
+          node,
+          "@Container field '${field.name}' needs a value: static final "
+          '${field.name} = GenericContainer(...);',
+        );
+      }
+      _public(file, node, field.name);
+      _public(file, node, field.owner.namePart.typeName.lexeme);
+      containers.add(field);
     }
     if (annotation(metadata, 'TestBean') != null) {
       if (!outer) {

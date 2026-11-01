@@ -3493,6 +3493,13 @@ spring.datasource.password=s3cret
   (a `QueryTimeoutException`; the connection stays usable). DDL is
   transactional, so a failing migration leaves nothing of itself, and the
   migrations of several instances queue on an advisory lock.
+- **Compared with Spring.** The propagation × isolation matrix, the locks,
+  `@Version` and the timeouts run on PostgreSQL in the starter and in a Spring
+  Boot application (`tool/data_reference`, Spring Data JDBC), 304 scenarios
+  each, and the outcomes (rows committed, values read, exception kinds) are
+  compared by the CI job "Data compared with Spring Data"; the differences
+  that remain are deliberate and listed, with the isolation table, in the
+  starter's README (section "Compared with Spring").
 - **Locks.** `@Lock` is a row lock: `FOR UPDATE` for `pessimisticWrite`, `FOR
   SHARE` for `pessimisticRead`; a zero `timeout` is `NOWAIT`, a longer one is
   `SET LOCAL lock_timeout` before the query, `skipLocked` is `SKIP LOCKED`
@@ -3526,8 +3533,9 @@ spring.datasource.password=s3cret
   `String`, `date` and both timestamps a `DateTime`; foreign keys (with their
   `ON DELETE`) and unique keys are compared too.
 
-The tests that need a server run when `SPRING_TEST_POSTGRES_URL` is set (see
-the data starter's README).
+The tests that need a server run on `SPRING_TEST_POSTGRES_URL` when it is
+set, else on a PostgreSQL container they start when Docker is there (see the
+data starter's README).
 
 **The build reads the schema too.** The SQL of each `@Query` is checked when
 the application is built (see the starter's README): a misspelled table or

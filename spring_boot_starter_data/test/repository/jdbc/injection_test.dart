@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
-import '../../postgres/support.dart' show postgresSkip;
+import '../../postgres/support.dart' show postgresServerSkip, usePostgresServer;
 import 'support.dart';
 
 // Hostile text in every operator of the derived queries and in the
@@ -42,8 +42,13 @@ void main() {
   for (final db in const ['sqlite', 'postgres']) {
     group(
       db,
-      () => _suite(db),
-      skip: db == 'postgres' ? postgresSkip : null,
+      () {
+        if (db == 'postgres') {
+          usePostgresServer();
+        }
+        _suite(db);
+      },
+      skip: db == 'postgres' ? postgresServerSkip : null,
       tags: db == 'postgres' ? 'postgres' : null,
     );
   }

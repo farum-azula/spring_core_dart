@@ -18,6 +18,7 @@ targets:
           - test/data_test/create_app/**
           - test/data_test/memory_app/**
           - test/data_test/mixed_app/**
+          - test/data_test/postgres_app/**
       spring_core_dart_generator:spring_test:
         generate_for:
           - test/data_test/**

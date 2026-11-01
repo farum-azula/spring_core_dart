@@ -486,6 +486,26 @@ void main() {
       });
     });
 
+    test('a timed-out transaction whose error was caught only rolls back', () {
+      return run(() async {
+        await addAuthors(1);
+        final result = await settle(
+          inTx(timeout: const Duration(milliseconds: 20), (_) async {
+            await Future<void>.delayed(const Duration(milliseconds: 60));
+            try {
+              return await store.count(authors);
+            } on TransactionTimedOutException {
+              // Caught: the commit still must not happen.
+              return -1;
+            }
+          }),
+        );
+        // The store refuses the commit of a rollback-only transaction (the
+        // transaction manager turns that into an UnexpectedRollbackException).
+        expect(result, isA<IllegalTransactionStateException>());
+      });
+    });
+
     test('an operation after the deadline: TransactionTimedOutException', () {
       return run(() async {
         await addAuthors(1);

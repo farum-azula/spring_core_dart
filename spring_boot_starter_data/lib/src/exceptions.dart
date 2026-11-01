@@ -189,13 +189,24 @@ class DataAccessResourceFailureException
   DataAccessResourceFailureException(super.message, {super.cause, super.sql});
 }
 
+/// The root of the failures of concurrent access that may succeed when
+/// tried again: a version conflict ([OptimisticLockingFailureException]), a
+/// lock, a deadlock or a serialization failure
+/// ([PessimisticLockingFailureException]). Retry code catches this type.
+///
+/// Spring (Java): `org.springframework.dao.ConcurrencyFailureException`.
+class ConcurrencyFailureException extends TransientDataAccessException {
+  /// A concurrency failure described by [message].
+  ConcurrencyFailureException(super.message, {super.cause, super.sql});
+}
+
 /// A save or delete found the row changed or gone since it was loaded: its
 /// `@Version` no longer matches. Worth a retry on fresh data
 /// (`@Retryable`); the web starter answers it with 409.
 ///
 /// Spring (Java):
 /// `org.springframework.dao.OptimisticLockingFailureException`.
-class OptimisticLockingFailureException extends TransientDataAccessException {
+class OptimisticLockingFailureException extends ConcurrencyFailureException {
   /// A version conflict described by [message].
   OptimisticLockingFailureException(super.message, {super.cause, super.sql});
 }
@@ -204,7 +215,7 @@ class OptimisticLockingFailureException extends TransientDataAccessException {
 ///
 /// Spring (Java):
 /// `org.springframework.dao.PessimisticLockingFailureException`.
-class PessimisticLockingFailureException extends TransientDataAccessException {
+class PessimisticLockingFailureException extends ConcurrencyFailureException {
   /// A lock failure described by [message].
   PessimisticLockingFailureException(super.message, {super.cause, super.sql});
 }

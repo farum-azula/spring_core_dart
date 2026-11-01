@@ -14,7 +14,10 @@ import 'package:test/test.dart';
 import '../repository/jdbc/support.dart';
 import 'support.dart';
 
-void main() => group('PostgreSQL', _tests, skip: postgresSkip);
+void main() => group('PostgreSQL', () {
+  usePostgresServer();
+  _tests();
+}, skip: postgresServerSkip);
 
 Future<void> _run(Future<void> Function(Jdbc jdbc) body) =>
     withJdbc(postgres: true, connections: 4, (j) async {

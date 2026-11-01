@@ -131,9 +131,12 @@ with `package:test`; the test's `main` calls it. A `@DataTest` class (of
 beans on an in-memory database, and runs each test in a transaction that is
 rolled back: the generated file calls the data starter's
 `package:spring_boot_starter_data/testing.dart` for it, so the starters stay
-independent. See
+independent. `@Container()` and `@ServiceConnection()` fields start Docker
+containers before the class's context and remove them after it. See
 [`spring_boot_starter_test`](https://pub.dev/packages/spring_boot_starter_test)
-and the [testing guide](../docs/testing.md#19-data-tests-datatest).
+and the testing guide
+([data tests](../docs/testing.md#19-data-tests-datatest),
+[containers](../docs/testing.md#20-containers-in-tests)).
 
 **`spring_flutter_web`** writes `web_dev_config.yaml`, the file
 `flutter run` reads on the web (Flutter 3.38 and later), from the

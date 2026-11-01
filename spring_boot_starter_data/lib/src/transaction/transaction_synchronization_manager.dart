@@ -305,9 +305,12 @@ final class TransactionInfo {
   }
 
   /// Throws a [TransactionTimedOutException] when its timeout has passed;
-  /// stores call it before each statement.
-  void checkDeadline() {
+  /// stores call it before each statement. [markRollbackOnly] runs first:
+  /// as in Spring, a transaction that timed out can only roll back (its
+  /// commit ends with an `UnexpectedRollbackException`).
+  void checkDeadline({void Function()? markRollbackOnly}) {
     if (timeLeft == Duration.zero) {
+      markRollbackOnly?.call();
       throw TransactionTimedOutException(
         'Transaction ${name ?? ''} timed out after '
         '${timeout!.inMilliseconds} ms',

@@ -235,15 +235,34 @@ void main() {
       'a failing commit is translated, and its connection is closed',
       () async {
         driver.onConnect = (c) => c.failCommit = const SqlError('disk full');
+        // The translated DataAccessException itself, as Spring's
+        // JdbcTransactionManager throws it (not a TransactionSystemException).
         await expectLater(
           template.execute((_) => jdbc.update('x')),
-          throwsA(isA<TransactionSystemException>()),
+          throwsA(isA<UncategorizedSqlException>()),
         );
         expect(driver.connections.single.isClosed, isTrue);
         expect(ds.totalCount, 0);
         driver.onConnect = null;
         await jdbc.update('again');
         expect(driver.connections, hasLength(2));
+      },
+    );
+
+    test(
+      'a serialization failure at commit is a '
+      'CannotSerializeTransactionException, not wrapped',
+      () async {
+        build(dialect: const PostgresDialect());
+        driver.onConnect = (c) => c.failCommit = const SqlError(
+          'could not serialize access',
+          sqlState: '40001',
+        );
+        await expectLater(
+          template.execute((_) => jdbc.update('x')),
+          throwsA(isA<CannotSerializeTransactionException>()),
+        );
+        expect(driver.connections.single.isClosed, isTrue);
       },
     );
 
@@ -353,6 +372,29 @@ void main() {
           await jdbc.update('never');
         }),
         throwsA(isA<TransactionTimedOutException>()),
+      );
+      final connection = driver.connections.single;
+      expect(connection.statements, ['a']);
+      expect(connection.calls.last, 'rollback');
+    });
+
+    test('a timed-out transaction can only roll back, even when the error '
+        'was caught (Spring marks it rollback-only)', () async {
+      final timed = TransactionTemplate(
+        manager,
+        const TransactionDefinition(timeout: Duration(milliseconds: 30)),
+      );
+      await expectLater(
+        timed.execute((_) async {
+          await jdbc.update('a');
+          await Future<void>.delayed(const Duration(milliseconds: 60));
+          try {
+            await jdbc.update('never');
+          } on TransactionTimedOutException {
+            // Caught: the commit still must not happen.
+          }
+        }),
+        throwsA(isA<UnexpectedRollbackException>()),
       );
       final connection = driver.connections.single;
       expect(connection.statements, ['a']);

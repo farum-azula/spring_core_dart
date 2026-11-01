@@ -1,9 +1,10 @@
 @Tags(['postgres'])
 library;
 
-// The PostgreSQL driver against a real server (SPRING_TEST_POSTGRES_URL):
-// values of every type, parameters, streams, generated keys, transactions,
-// isolation levels, savepoints, timeouts, TLS and what each error becomes.
+// The PostgreSQL driver against a real server (SPRING_TEST_POSTGRES_URL, or a
+// container): values of every type, parameters, streams, generated keys,
+// transactions, isolation levels, savepoints, timeouts, TLS and what each
+// error becomes.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -12,7 +13,10 @@ import 'package:test/test.dart';
 
 import 'support.dart';
 
-void main() => group('PostgreSQL', _tests, skip: postgresSkip);
+void main() => group('PostgreSQL', () {
+  usePostgresServer();
+  _tests();
+}, skip: postgresServerSkip);
 
 void _tests() {
   const dialect = PostgresDialect();
