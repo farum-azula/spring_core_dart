@@ -7,7 +7,8 @@ import 'package:spring_boot_starter_data/src/mapping/auditing.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
-import 'package:spring_boot_starter_data/src/repository/repository_invocation_handler.dart';
+import 'package:spring_boot_starter_data/src/repository/query/query_method.dart';
+import 'package:spring_boot_starter_data/src/repository/repository_operations.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_sources.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_store.dart';
@@ -15,18 +16,20 @@ import 'package:spring_boot_starter_data/src/store/in_memory_transaction_manager
 import 'package:spring_boot_starter_data/src/store/jdbc/jdbc_data_store.dart';
 import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
 
-/// Builds the working handler behind each repository interface: it finds
-/// the entity and the store of the repository and creates its
-/// [RepositoryInvocationHandler].
+/// Builds the working [RepositoryOperations] behind each repository
+/// interface: it finds the entity and the store of the repository and
+/// creates the operations the generated class calls.
 ///
 /// The starter declares it as the `repositoryFactory` bean; when the
 /// container creates a repository bean (any non-generic interface that
-/// extends `DataRepository`), the generated class asks this factory for
-/// its handler. Applications do not use it directly.
+/// extends `DataRepository`), the generated class (which extends
+/// `SimpleRepository`) asks this factory for its [operations]. Applications
+/// do not use it directly.
 ///
 /// The entity comes from the interface's type arguments (`Book` in
 /// `ListCrudRepository<Book, int>`), through the [mappingContext]. The
-/// store is chosen by the interface's annotations:
+/// store is chosen by the interface's annotations (`UseStore`,
+/// `UseDataSource`):
 ///
 /// - no annotation, or `@UseStore('memory')`: the store named `memory`
 ///   (the in-memory store of the application);
@@ -49,19 +52,21 @@ import 'package:spring_boot_starter_data/src/transaction/platform_transaction_ma
 /// the factory under the name `jdbc` takes the place of the primary one.
 ///
 /// The repository runs its writes in transactions of its store: for a memory
-/// store the factory gives the handler an `InMemoryTransactionManager` of
+/// store the factory gives the operations an `InMemoryTransactionManager` of
 /// its own over that store; for a SQL store the `DataSourceTransactionManager`
 /// of its data source. It joins the transaction of a `@Transactional`
 /// service because both look for the same resource, the store (the data
 /// source).
 ///
-/// Every mistake of the repository (the store, the entity, each method) is
-/// collected and reported together by the handler, so the application stops
-/// at startup with the reasons.
+/// What the build cannot know is checked here, when the repository is
+/// created: the store and the data source, the entity, the `@Query`
+/// methods. Every mistake is collected and reported together, so the
+/// application stops at startup with the reasons. The method names are
+/// checked by the build.
 ///
 /// Spring (Java): `JdbcRepositoryFactoryBean` and its
 /// `JdbcRepositoryFactory` (`RepositoryFactorySupport`).
-final class RepositoryFactory implements InvocationHandlerFactory {
+final class RepositoryFactory {
   /// A factory whose repositories use [mappingContext] and [converter] and
   /// the [stores] there are (each under its `name`); [auditing] fills the
   /// audit properties when given.
@@ -138,66 +143,74 @@ final class RepositoryFactory implements InvocationHandlerFactory {
   // The transaction managers of the repositories, one per store.
   final _managers = Map<DataStore, PlatformTransactionManager>.identity();
 
-  @override
-  bool supports(InterfaceMetadata<Object> metadata) =>
-      metadata.typeArgumentsOf('DataRepository') != null;
+  // The managers handed to the repositories made so far.
+  final _used = Set<PlatformTransactionManager>.identity();
 
-  @override
-  InvocationHandler create(InterfaceMetadata<Object> metadata) {
+  /// The transaction managers of the repositories made so far: one for each
+  /// store they use, the in-memory ones and those of the SQL data sources
+  /// (the primary one and the named ones). A `@DataTest` begins a
+  /// transaction in each, so that everything a test writes is undone.
+  List<PlatformTransactionManager> get transactionManagers =>
+      List.unmodifiable(_used);
+
+  /// The operations of the repository [typeName] for aggregates of type [T]
+  /// with ids of type [ID]: the interface's [annotations] choose the store,
+  /// and its `@Query` methods ([queries]) are compiled and checked.
+  ///
+  /// Throws a [StateError] listing every mistake of the repository: the
+  /// entity, the store, the data source, the queries.
+  RepositoryOperations<T, ID> operations<T extends Object, ID extends Object>(
+    String typeName, {
+    List<Object> annotations = const [],
+    List<QueryMethod> queries = const [],
+  }) {
     final problems = <String>[];
-    final arguments = metadata.typeArgumentsOf('DataRepository')!;
-    final entityType = arguments.first;
-    final PersistentEntity<Object> entity;
+    final PersistentEntity<T> entity;
     try {
-      entity = _entityOf(entityType);
+      entity = mappingContext.getRequiredPersistentEntity<T>();
     } on MappingException catch (e) {
-      throw StateError(
-        'Invalid repository ${metadata.typeName}:\n  - ${e.message}',
-      );
+      throw StateError('Invalid repository $typeName:\n  - ${e.message}');
     }
-    final store = _storeOf(metadata, problems) ?? stores['memory']!;
-    return RepositoryInvocationHandler(
-      metadata: metadata,
+    final store =
+        _storeOf(typeName, annotations, problems) ?? stores['memory']!;
+    final manager = switch (store) {
+      final InMemoryDataStore memory => _managers.putIfAbsent(
+        memory,
+        () => InMemoryTransactionManager(memory),
+      ),
+      final JdbcDataStore jdbc => jdbc.transactionManager,
+      _ => null,
+    };
+    if (manager != null) {
+      _used.add(manager);
+    }
+    return RepositoryOperations<T, ID>(
+      typeName: typeName,
       entity: entity,
-      entityType: entityType,
       converter: converter,
       store: store,
-      transactionManager: switch (store) {
-        final InMemoryDataStore memory => _managers.putIfAbsent(
-          memory,
-          () => InMemoryTransactionManager(memory),
-        ),
-        final JdbcDataStore jdbc => jdbc.transactionManager,
-        _ => null,
-      },
+      transactionManager: manager,
       auditing: auditing,
       isNewStrategy: isNewStrategy,
       environment: environment,
       beanFactory: beanFactory,
-      introspector: mappingContext.introspector,
+      introspector: converter.introspector,
+      mappingContext: mappingContext,
+      queries: queries,
       problems: problems,
     );
   }
 
-  // The entity by the typed lookup, with the entity's type as the type
-  // argument: the by-Type lookup would cache a second, Object-typed
-  // PersistentEntity next to the typed one.
-  PersistentEntity<Object> _entityOf(TypeInfo<Object?> type) =>
-      type.capture<PersistentEntity<Object>>(
-        <E>() =>
-            // The type argument of a capture has no bound, the lookup's
-            // is `extends Object`: the call is checked when it is made.
-            (mappingContext as dynamic).getRequiredPersistentEntity<E>()
-                as PersistentEntity<Object>,
-      );
-
   DataStore? _storeOf(
-    InterfaceMetadata<Object> metadata,
+    String typeName,
+    List<Object> annotations,
     List<String> problems,
   ) {
-    final useStore = metadata.annotation<UseStore>()?.value;
-    final dataSource = metadata.annotation<UseDataSource>()?.value;
-    final typeName = metadata.typeName;
+    final useStore = annotations.whereType<UseStore>().firstOrNull?.value;
+    final dataSource = annotations
+        .whereType<UseDataSource>()
+        .firstOrNull
+        ?.value;
     if (useStore == 'jdbc') {
       if (dataSource == null && stores.containsKey('jdbc')) {
         return stores['jdbc'];

@@ -17,6 +17,10 @@
 //
 // The generator makes the bean `sqlite3JdbcDriver` from the function
 // `_$sqlite3JdbcDriver` below (the name is in the generator's table).
+//
+// With `spring.datasource.sqlite.isolate` the binding is sent to a worker
+// isolate, which opens the database there: `_$Sqlite3Binding` must stay
+// without fields, never holding a database, a port or another native resource.
 
 final class _$Sqlite3Binding
     implements {{package:spring_boot_starter_data/spring_boot_starter_data.dart#SqliteBinding}} {

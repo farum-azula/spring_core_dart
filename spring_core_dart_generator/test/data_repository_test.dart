@@ -1,33 +1,14 @@
 // spring_boot_starter_data's repositories: an interface extending its
-// DataRepository gets a generated implementation (the @InterfaceProxy
-// machinery), with the type arguments of its supertypes in the metadata.
-// The starter is matched by URL; a small copy of its marker stands in.
+// DataRepository gets a generated class extending SimpleRepository, written
+// by the generator itself (not through the @InterfaceProxy machinery) and
+// registered as a bean. The sources use the real starter; what the class
+// holds method by method is in compiled_repository_test.dart.
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
-
-const _dataLibrary =
-    'spring_boot_starter_data|lib/src/repository/repository.dart';
-
-const _data = '''
-abstract interface class DataRepository<T, ID> {}
-
-abstract interface class CrudRepository<T, ID>
-    implements DataRepository<T, ID> {
-  Future<T> save(T entity);
-  Future<T?> findById(ID id);
-  Future<Iterable<T>> findAll();
-}
-
-abstract interface class ListCrudRepository<T, ID>
-    implements CrudRepository<T, ID> {
-  @override
-  Future<List<T>> findAll();
-}
-''';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -38,8 +19,7 @@ final BeanModule pkgBeans = $pkgBeans;
 ''';
 
 const _repositories = '''
-import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:spring_boot_starter_data/src/repository/repository.dart';
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
 class Book {
   Book({this.id, required this.title});
@@ -92,7 +72,6 @@ class AuditLog {
 ''';
 
 Map<String, Object> get _sources => {
-  _dataLibrary: _data,
   'pkg|lib/src/beans.dart': _scan,
   'pkg|lib/src/repositories.dart': _repositories,
 };
@@ -132,20 +111,48 @@ void main() {
     output = _normalize(raw);
   });
 
-  test('an interface extending DataRepository gets an implementation', () {
+  test('an interface extending DataRepository gets a class of its own', () {
     expect(
       output,
-      _has(r'class _$BookRepositoryImpl implements BookRepository'),
+      _has(r'''
+class _$BookRepositoryImpl extends SimpleRepository<Book, int>
+    implements BookRepository'''),
     );
     expect(
       output,
-      _has(r'class _$AuthorRepositoryImpl implements AuthorRepository'),
+      _has(r'''
+class _$AuthorRepositoryImpl extends SimpleRepository<Author, String>
+    implements AuthorRepository'''),
     );
-    // Inherited methods are implemented with the type arguments applied.
-    expect(output, _has('Future<Book?> findById(int id)'));
-    expect(output, _has('Future<List<Book>> findAll()'));
-    expect(output, _has('Future<Book> save(Book entity)'));
-    expect(output, _has('Future<List<Book>> findByTitle(String title)'));
+    expect(output, _has(r'_$BookRepositoryImpl(super.operations)'));
+  });
+
+  test(
+    'only the declared methods are written, the CRUD ones are inherited',
+    () {
+      expect(
+        output,
+        _has(
+          'Future<List<Book>> findByTitle(String title) => '
+          'this.operations.list(',
+        ),
+      );
+      expect(
+        output,
+        _has('Future<Author?> findByName(String name) => this.operations.one('),
+      );
+      for (final inherited in ['findById', 'findAll', 'save']) {
+        expect(output, isNot(contains(' $inherited(')));
+      }
+    },
+  );
+
+  test('it is not an interface proxy: no handler, no metadata, no call', () {
+    expect(output, isNot(contains('InterfaceMetadata')));
+    expect(output, isNot(contains('InvocationHandler')));
+    expect(output, isNot(contains('supertypeArguments')));
+    expect(output, isNot(contains('call:')));
+    expect(output, isNot(contains('ProxyMethod')));
   });
 
   test('the types of repository signatures are not introspected', () {
@@ -154,33 +161,20 @@ void main() {
     expect(output, isNot(contains('BeanIntrospection<Book>')));
   });
 
-  test('a repository method has no call (no implementation to call)', () {
-    final impl = raw.substring(
-      raw.indexOf(r'class _$BookRepositoryImpl'),
-      raw.indexOf(r'class _$AuthorRepositoryImpl'),
-    );
-    expect(impl, isNot(contains('call:')));
-  });
-
-  test('the metadata carries the type arguments of the supertypes', () {
+  test('the starter makes the operations, with the entity and id types', () {
     expect(
       output,
       _has(
-        "r'DataRepository': [const ClassType<Book>(), const ClassType<int>()]",
+        'r.dependency<RepositoryFactory>()'
+        ".operations<Book, int>(r'BookRepository')",
       ),
     );
     expect(
       output,
       _has(
-        "r'ListCrudRepository': [const ClassType<Book>(), "
-        'const ClassType<int>()]',
-      ),
-    );
-    expect(
-      output,
-      _has(
-        "r'DataRepository': [const ClassType<Author>(), "
-        'const ClassType<String>()]',
+        'r.dependency<RepositoryFactory>()'
+        ".operations<Author, String>(r'AuthorRepository', "
+        "annotations: const [Repository(r'authors')])",
       ),
     );
   });

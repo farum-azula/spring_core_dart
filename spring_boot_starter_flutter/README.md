@@ -112,6 +112,7 @@ explained chapter by chapter.
 - [The app lifecycle](#the-app-lifecycle)
 - [Platform profiles](#platform-profiles)
 - [Assets](#assets)
+- [SQLite databases](#sqlite-databases)
 - [Configuration at build time](#configuration-at-build-time)
 - [The web version's port](#the-web-versions-port)
 - [Hot reload](#hot-reload)
@@ -969,6 +970,46 @@ directory, but not those of its subdirectories (as in Flutter). Keys
 with placeholders (`asset:${sound.file}`) and other packages' assets
 (`asset:packages/...`) are only known at run time and are not checked.
 
+## SQLite databases
+
+With [`spring_boot_starter_data`](https://pub.dev/packages/spring_boot_starter_data)
+and a SQL database in the properties (`spring.datasource.url`, or
+`spring.datasources.<name>.url`), a relative `sqlite:file:books.db` is a
+file in the app's own directory, and SQLite's synchronous calls run on an
+isolate of their own, so a long query never holds the UI. Nothing to
+write: before the application starts, the starter reads the app's
+directories from
+[`path_provider`](https://pub.dev/packages/path_provider) and, once the
+configuration files are read, sets `spring.datasource.sqlite.base-directory`
+and `spring.datasource.sqlite.isolate=true` with the lowest precedence of
+all (a property of your own wins). `spring.datasource.sqlite.location`
+chooses the directory: `support` (the default), `cache` (the system may
+delete it) or `documents` (the user's folder); any other value stops the
+start. The starters do not depend on each other: this one only sets the
+properties the other reads. When the directory cannot be read and none was
+asked for, only `isolate` is set, and a warning says that relative file
+names stay relative to the working directory.
+
+A loader override of the `sqlite3` package (`open.overrideFor(...)`) is per
+isolate: the one you make in `main` does not reach the worker isolate, which
+opens the database with the package's default loader, and the data starter
+has no hook to run code there. If your platform needs an override, set
+`spring.datasource.sqlite.isolate=false` (a property of your own wins) to
+keep the calls on the UI isolate.
+
+| Platform | `support` |
+|---|---|
+| Android | the app's `databases/` directory, as `Context.getDatabasePath` |
+| iOS | `Library/Application Support` |
+| macOS | the container's `Application Support/<bundle id>` |
+| Windows | `%LOCALAPPDATA%\<company>\<product>` (not the roaming directory) |
+| Linux | `$XDG_DATA_HOME/<app id>` |
+
+The directory is created when it is missing. Nothing is set on the web
+(that version comes later), nor in a widget test, which has no
+`path_provider` plugin (install a `PathProviderPlatform` fake to test the
+directories). [Every key](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#sqlite-databases).
+
 ## Configuration at build time
 
 A Flutter app has no command line, and on a phone the OS environment
@@ -1229,8 +1270,9 @@ More, and the planned Flutter test starter:
 Android, iOS, macOS, Windows, Linux and the web. On Fuchsia the only
 platform profile is `fuchsia`.
 
-The starter is pure Dart and Flutter: no platform code of its own, no
-plugin. Logins and secrets (the Keychain, the Android Keystore, the
+The starter is pure Dart and Flutter: no platform code of its own. The
+one plugin it brings is `path_provider` (flutter.dev), for the directory of
+[SQLite databases](#sqlite-databases). Logins and secrets (the Keychain, the Android Keystore, the
 system's login window, widgets that follow the logged-in user) are
 [`spring_boot_starter_flutter_security`](https://pub.dev/packages/spring_boot_starter_flutter_security),
 which brings this package; an app without a login carries none of it.

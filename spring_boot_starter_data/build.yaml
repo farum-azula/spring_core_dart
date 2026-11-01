@@ -1,6 +1,7 @@
-# The generator writes the example's application (example/example.spring.dart)
-# and the applications of the transaction tests; the package itself is written
-# by hand.
+# The generator writes the example's application (example/example.spring.dart),
+# the applications of the tests, and the bootstrap of the @DataTest classes
+# (test/spring/data_test/*.test.spring.dart); the package itself is written by
+# hand.
 targets:
   $default:
     builders:
@@ -12,5 +13,10 @@ targets:
           - test/sqlite/app/**
           - test/autoconfig/app/**
           - test/repository/jdbc/app/**
+          - test/data_test/app/**
+          - test/data_test/create_app/**
+          - test/data_test/memory_app/**
+          - test/data_test/mixed_app/**
       spring_core_dart_generator:spring_test:
-        enabled: false
+        generate_for:
+          - test/data_test/**

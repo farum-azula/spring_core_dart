@@ -67,6 +67,16 @@ const repositoryOnlyExceptions = {
       'The fakeable current time (tools.dart.dev, no dependencies): the '
       "scheduling starter's TaskScheduler reads clock.now(), which "
       'fake_async and Flutter widget tests move with their fake timers.',
+  'path_provider':
+      "Where an app's files live (flutter.dev): the Flutter starter points "
+      "the data starter's SQLite database at the app's support directory "
+      '(spring_boot_starter_flutter; the owner allowed it). Its own '
+      "dependencies are the Flutter and Dart teams' too.",
+  'path_provider_platform_interface':
+      "path_provider's platform interface (flutter.dev, the same plugin): "
+      'the Flutter starter asks whether a platform implementation is '
+      'registered before it reads a directory, as a widget test has none '
+      'and the call would wait for ever.',
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
       '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '

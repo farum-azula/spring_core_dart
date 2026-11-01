@@ -5,10 +5,12 @@ import 'dart:typed_data';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/form_parameters.dart';
+import 'package:spring_boot_starter_web/src/handler_exception_resolver.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
+import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.mvc');
@@ -29,7 +31,8 @@ const _log = SpringLog('spring.web.mvc');
 /// (400); it answers `HEAD` with the `GET` mapping, `OPTIONS` with an
 /// `Allow` header, and CORS pre-flights from the CORS rules. It also
 /// holds the `@ExceptionHandler` methods of the controllers and of the
-/// `@ControllerAdvice` beans, which the dispatcher uses for errors.
+/// `@ControllerAdvice` beans and the `HandlerExceptionResolver` beans,
+/// which the dispatcher uses for errors.
 ///
 /// The starter declares it as the `requestMappingHandlerMapping` bean at
 /// order 0, so it is the first handler mapping asked. Applications do not
@@ -51,6 +54,7 @@ final class RequestMappingHandlerMapping
     this.corsSource,
     this.corsConfigurationSource,
     this.validator,
+    this.exceptionResolvers = const [],
     MultipartResolver? multipartResolver,
   }) : multipartResolver = multipartResolver ?? MultipartResolver();
 
@@ -93,6 +97,10 @@ final class RequestMappingHandlerMapping
   /// Checks `@Valid()` arguments; `null` when the application has no
   /// unique `Validator`, and then `@Valid()` checks nothing.
   final Validator? validator;
+
+  /// The `HandlerExceptionResolver` beans, in `@Order`; asked for an error
+  /// no `@ExceptionHandler` method answers (see [handleException]).
+  final List<HandlerExceptionResolver> exceptionResolvers;
 
   /// Reads `multipart/form-data` requests for `@RequestPart` parameters,
   /// uploaded files and multipart form fields.
@@ -1114,8 +1122,11 @@ final class RequestMappingHandlerMapping
 
   /// Answers [error] with its `@ExceptionHandler` method (see
   /// [exceptionHandlerFor]) and writes the method's result; returns
-  /// `true` when it did. Returns `false` when no method handles the
-  /// error, when the response is already committed, or when the
+  /// `true` when it did. When no method handles the error, the
+  /// [exceptionResolvers] are asked in order (an error that is already an
+  /// `ErrorResponse` is not offered to them), and the first answer is
+  /// written as an `ErrorResponse`. Returns `false` when nothing answers
+  /// the error, when the response is already committed, or when the
   /// exception handler itself throws (that is logged); the caller then
   /// writes the default error answer.
   Future<bool> handleException(
@@ -1125,8 +1136,11 @@ final class RequestMappingHandlerMapping
     HandlerMethod? handler,
   }) async {
     final exceptionHandler = exceptionHandlerFor(error, handler: handler);
-    if (exceptionHandler == null || response.isCommitted) {
+    if (response.isCommitted) {
       return false;
+    }
+    if (exceptionHandler == null) {
+      return await _resolveException(error, request, response, handler);
     }
     final call = _Call(request, response, const {}, error: error);
     try {
@@ -1147,6 +1161,55 @@ final class RequestMappingHandlerMapping
       );
       return false;
     }
+  }
+
+  // The first answer of the exceptionResolvers (Spring's
+  // HandlerExceptionResolverComposite), written like the answer of an
+  // ErrorResponse. A resolver that throws, or whose answer cannot be
+  // written, is logged and passed over. An error that comes back (the
+  // dispatcher asks again for what its handler could not answer) is not
+  // offered a second time.
+  Future<bool> _resolveException(
+    Object error,
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+    HandlerMethod? handler,
+  ) async {
+    if (error is ErrorResponse ||
+        identical(request.attributes[_resolvedErrorAttribute], error)) {
+      return false;
+    }
+    request.attributes[_resolvedErrorAttribute] = error;
+    for (final resolver in exceptionResolvers) {
+      try {
+        final resolved = await resolver.resolveException(
+          request,
+          error,
+          handler: handler,
+        );
+        if (resolved == null) {
+          continue;
+        }
+        _log.debug(
+          () =>
+              'Resolved [${logSafe(error)}] as ${resolved.statusCode} by '
+              '${resolver.runtimeType}',
+        );
+        await writer.writeErrorResponse(resolved, request, response);
+        return true;
+      } on Object catch (resolverError, stackTrace) {
+        _log.warning(
+          'The HandlerExceptionResolver ${resolver.runtimeType} failed '
+          'handling ${logSafe(error)}',
+          error: resolverError,
+          stackTrace: stackTrace,
+        );
+        if (response.isCommitted) {
+          return false;
+        }
+      }
+    }
+    return false;
   }
 
   // ---------------------------------------------------------------------
@@ -1882,6 +1945,9 @@ final class _Execution implements HttpHandler {
     }
   }
 }
+
+// The error the exception resolvers were asked about last.
+const _resolvedErrorAttribute = 'spring.web.exceptionResolved';
 
 /// The name of the request attribute that holds the [HandlerMethod]
 /// chosen for the request, once the router has found it. A filter that

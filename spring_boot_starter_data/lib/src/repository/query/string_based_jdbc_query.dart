@@ -3,11 +3,15 @@ import 'dart:async';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
+import 'package:spring_boot_starter_data/src/jdbc/entity_row_mapper.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
 import 'package:spring_boot_starter_data/src/jdbc/named_parameter_utils.dart';
 import 'package:spring_boot_starter_data/src/jdbc/row_mapper.dart';
+import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
+import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
+import 'package:spring_boot_starter_data/src/repository/query/query_method.dart';
 import 'package:spring_boot_starter_data/src/repository/query/query_text.dart';
 import 'package:spring_boot_starter_data/src/repository/query/result_shaper.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
@@ -16,20 +20,25 @@ import 'package:spring_boot_starter_data/src/store/jdbc/jdbc_data_store.dart';
 /// Runs a repository method's `@Query`: the SQL of the annotation, with
 /// its parameters bound by name, on the JDBC store.
 ///
-/// Everything that can be checked is checked when the repository is
-/// created ([compile]), and every problem of the method is reported
-/// together with the other problems of the repository:
+/// The build has checked the method and the text (see the generator's
+/// `QueryTextChecker`): each `:name` is a parameter, a plain `?` and a
+/// `#{...}` other than `#{#entityName}` are refused, the result type can be
+/// read from rows, a `Page` has its `Pageable`, a misspelled table or column
+/// is found. What depends on the run time is done when the repository is
+/// created ([compile]), and every problem of the method is reported with
+/// the other problems of the repository:
 ///
 /// - the text is prepared once: `${property:default}` placeholders are
 ///   resolved from the environment (configuration, not user input),
-///   `#{#entityName}` becomes the quoted table, `:#{expression}` becomes a
-///   marker bound to the value of a SpEL expression at each call (the
-///   method's parameters are its variables `#name`, `#p0`, `#a0`, and
-///   `#root` is the list of the arguments; `@bean` names a bean, and the
-///   `environment` bean answers `@environment.getProperty('x')`);
-/// - each `:name` must be a parameter of the method (or an expression), a
-///   plain `?` is refused, a method must be asynchronous, and the return
-///   type must be one of those below.
+///   `#{#entityName}` becomes the quoted table, `{Book}` and
+///   `{Book.authorId}` the quoted table of the entity and the quoted column
+///   of its property (as its mapping names them), `:#{expression}` becomes a
+///   marker bound to the value of an expression at each call: the one the
+///   build compiled, else SpEL, which reads the method's parameters as its
+///   variables `#name`, `#p0`, `#a0` (`#root` is the list of the arguments),
+///   `@bean` names a bean, and the `environment` bean answers
+///   `@environment.getProperty('x')`;
+/// - a DTO result must be described (its module registered).
 ///
 /// **Values are always bound**, never written into the SQL text: a list
 /// becomes `in (?, ?, ...)` (an empty one is refused with a clear message,
@@ -46,10 +55,12 @@ import 'package:spring_boot_starter_data/src/store/jdbc/jdbc_data_store.dart';
 ///   is whole. This deviates from Spring Data JDBC, which maps only what
 ///   the query returns; a query returning an entity with children must
 ///   select its id;
-/// - a class of the application (a DTO, `@Introspected`): columns by name
-///   through the `DataClassRowMapper` (`author_name` into `authorName`),
-///   a column the constructor needs and the result lacks is a
-///   `MappingException` naming the columns there are;
+/// - a class of the application (a DTO, which the build describes as a
+///   projection, or an `@Introspected` class): columns by name through the
+///   `EntityRowMapper` (or the `DataClassRowMapper` of an `@Introspected`
+///   class: `author_name` into `authorName`), a column the constructor needs
+///   and the result lacks is a `MappingException` naming the columns there
+///   are;
 /// - one column: `int`, `String`, `bool`, `double`, `DateTime`, an enum...
 ///   (a `Map<String, Object?>` is a row as a map);
 /// - with `rowMapper` of the annotation: what the function returns for each
@@ -75,20 +86,15 @@ final class StringBasedJdbcQuery {
     required this._store,
     required this._entity,
     required this._method,
-    required this._query,
     required this._main,
     required this._countStatement,
     required this._kind,
-    required this._shape,
     required this._element,
     required this._shaper,
-    required this._nullable,
-    required this._parameterNames,
-    required this._pageable,
-    required this._sort,
-    required this._modifying,
     required this._table,
     required this._introspector,
+    required this._described,
+    required this._expressionContext,
     required this._beanFactory,
     required this._inTransaction,
     required this._translateError,
@@ -97,29 +103,36 @@ final class StringBasedJdbcQuery {
   final String _where;
   final JdbcDataStore _store;
   final PersistentEntity<Object> _entity;
-  final ProxyMethod _method;
-  final Query _query;
+  final QueryMethod _method;
   final _Statement _main;
   final _Statement? _countStatement;
   final _Kind _kind;
-  final _Shape _shape;
+
+  // What one row becomes (dynamic for a change, which has no rows).
   final TypeInfo<Object?> _element;
   final ResultShaper _shaper;
-  final bool _nullable;
 
-  // The method's parameters (by position) that are bound by name: all but
-  // the Pageable and the Sort.
-  final Map<String, int> _parameterNames;
-  final int? _pageable;
-  final int? _sort;
-  final bool _modifying;
   final String _table;
   final BeanIntrospector _introspector;
+
+  // The description of the DTO the method returns, when the build wrote one.
+  final EntityIntrospection<Object>? _described;
+  final QueryExpressionContext _expressionContext;
   final BeanFactory? _beanFactory;
 
   final Future<Object?> Function(Future<Object?> Function() body)
   _inTransaction;
   final DataAccessException Function(Object error) _translateError;
+
+  Query get _query => _method.query;
+  QueryShape get _shape => _method.shape;
+  int? get _pageable => _method.pageable;
+  int? get _sort => _method.sort;
+  bool get _modifying => _method.change != null;
+
+  // The method's parameters (by position) that are bound by name: all but
+  // the Pageable and the Sort.
+  late final Map<String, int> _parameterNames = _method.boundParameters;
 
   // One column as the property type of the method wants it: converted as a
   // column of an entity is (the type's own description, so a nullable type
@@ -157,11 +170,11 @@ final class StringBasedJdbcQuery {
   /// `DataAccessException`. [environment] resolves `${...}` and answers
   /// SpEL's `@environment`; [beanFactory] gives SpEL its `@bean`s;
   /// [introspector] lets SpEL read the properties of `@Introspected`
-  /// arguments and maps DTOs.
+  /// arguments and maps `@Introspected` DTOs; [mappingContext] describes
+  /// the other DTOs and the entities of `{Entity}` placeholders.
   static StringBasedJdbcQuery? compile({
     required String typeName,
-    required ProxyMethod method,
-    required Query query,
+    required QueryMethod method,
     required PersistentEntity<Object> entity,
     required JdbcDataStore store,
     required Future<Object?> Function(Future<Object?> Function() body)
@@ -171,223 +184,131 @@ final class StringBasedJdbcQuery {
     Environment? environment,
     BeanFactory? beanFactory,
     BeanIntrospector? introspector,
+    RelationalMappingContext? mappingContext,
   }) {
     final where = '$typeName.${method.name}';
     final before = problems.length;
-    void problem(String text) => problems.add('$where: $text');
     final intro = introspector ?? store.converter.introspector;
+    final query = method.query;
+    final element = method.element;
+    final described = element == null
+        ? null
+        : mappingContext?.introspectionOf(element.type);
 
-    // ---- the annotation
-    if (query.value.trim().isEmpty) {
-      problem(
-        query.name != null
-            ? 'named queries (@Query(name: ...)) are not supported yet; '
-                  'give the SQL as the value'
-            : '@Query has no SQL',
-      );
-    }
-    final rowMapper = query.rowMapper;
-    final extractor = query.resultSetExtractor;
-    if (rowMapper != null && extractor != null) {
-      problem('@Query has both rowMapper and resultSetExtractor: use one');
-    }
-    if (rowMapper != null && rowMapper is! Object? Function(JdbcRow)) {
-      problem(
-        'the rowMapper is a ${rowMapper.runtimeType}: it must be a function '
-        'that takes a JdbcRow (a static method or a top-level function)',
-      );
-    }
-    if (extractor != null && extractor is! Object? Function(JdbcResult)) {
-      problem(
-        'the resultSetExtractor is a ${extractor.runtimeType}: it must be '
-        'a function that takes a JdbcResult (a static method or a '
-        'top-level function)',
-      );
-    }
-
-    // ---- the method
-    final isStream = _isStream(method.returnType);
-    if (!method.isFuture && !isStream) {
-      problem(
-        'a repository method is asynchronous: return a Future '
-        '(Future<${method.returnType}>) or a Stream',
-      );
-    }
-    if (method.annotation<Lock>() != null) {
-      problem(
-        '@Lock is for the derived find methods and findById; in a @Query '
-        'write the lock in the SQL (select ... for update) and call it '
-        'in a transaction',
-      );
-    }
-    int? pageableIndex;
-    int? sortIndex;
-    final names = <String, int>{};
-    for (final (index, parameter) in method.parameters.indexed) {
-      final type = parameter.type.type;
-      if (type == Pageable || type == PageRequest) {
-        if (pageableIndex != null) {
-          problem('more than one Pageable parameter');
-        }
-        pageableIndex = index;
-      } else if (type == Sort) {
-        sortIndex = index;
-      } else {
-        names[parameter.name] = index;
-      }
-    }
-
-    final returnType = method.returnType;
-    final modifying = method.annotation<Modifying>() != null;
-    var shape = _Shape.single;
+    // ---- the result
     var kind = _Kind.custom;
-    var element = returnType;
-    if (modifying) {
-      final type = returnType.type;
-      if (!method.isVoid && type != int && type != bool) {
-        problem(
-          '@Modifying returns the rows changed (Future<int>), whether any '
-          'changed (Future<bool>) or nothing (Future<void>), not '
-          '$returnType',
-        );
-      }
-      if (rowMapper != null || extractor != null) {
-        problem('@Modifying has no result to map: drop the rowMapper');
-      }
-      if (pageableIndex != null) {
-        problem('@Modifying cannot take a Pageable');
-      }
-    } else {
-      if (method.isVoid) {
-        problem(
-          'the method returns nothing: a change needs @Modifying, a read a '
-          'result type',
-        );
-      }
-      (shape, element) = _shapeOf(returnType);
-      if ((shape == _Shape.page || shape == _Shape.slice) &&
-          pageableIndex == null) {
-        problem(
-          'a ${shape.name} needs a Pageable parameter (the window to read)',
-        );
-      }
-      if (extractor != null) {
-        if (shape != _Shape.single &&
-            shape != _Shape.list &&
-            shape != _Shape.set) {
-          problem(
-            'a resultSetExtractor gives the whole result: return what it '
-            'returns, or a List or Set of it, not a ${shape.name}',
-          );
-        }
-        if (pageableIndex != null) {
-          problem(
-            'a resultSetExtractor reads the whole result: it cannot be '
-            'paged',
-          );
-        }
-      }
-      if (rowMapper != null || extractor != null) {
-        kind = _Kind.custom;
-      } else {
-        kind = _kindOf(element, entity, intro, where, problems);
-      }
+    if (element != null &&
+        query.rowMapper == null &&
+        query.resultSetExtractor == null) {
+      kind = _kindOf(element, entity, described, intro, where, problems);
     }
 
     // ---- the text
     final table = store.sql.table(entity);
-    _Statement? count;
     final mainText = QueryTextPreparer.prepare(
       query.value,
       quotedTable: table,
       environment: environment,
       where: where,
       problems: problems,
+      entityName: _entityNames(method, mappingContext, store),
     );
+    final countText = query.countQuery == null
+        ? null
+        : QueryTextPreparer.prepare(
+            query.countQuery!,
+            quotedTable: table,
+            environment: environment,
+            where: '$where (countQuery)',
+            problems: problems,
+            entityName: _entityNames(method, mappingContext, store),
+          );
+    final markers =
+        mainText.expressions.length + (countText?.expressions.length ?? 0);
+    if (method.expressions.isNotEmpty && method.expressions.length != markers) {
+      problems.add(
+        '$where: the method has ${method.expressions.length} compiled '
+        'expression(s) for $markers `:#{...}` marker(s)',
+      );
+    }
     final main = _Statement.compile(
       mainText,
       where: where,
-      names: names.keys.toSet(),
+      compiled: method.expressions.take(mainText.expressions.length).toList(),
       problems: problems,
     );
-    if (query.countQuery != null) {
-      if (shape != _Shape.page) {
-        problem('countQuery is for a method that returns a Page');
-      }
-      final countText = QueryTextPreparer.prepare(
-        query.countQuery!,
-        quotedTable: table,
-        environment: environment,
-        where: '$where (countQuery)',
-        problems: problems,
-      );
-      count = _Statement.compile(
-        countText,
-        where: '$where (countQuery)',
-        names: names.keys.toSet(),
-        problems: problems,
-      );
-    }
+    final count = countText == null
+        ? null
+        : _Statement.compile(
+            countText,
+            where: '$where (countQuery)',
+            compiled: method.expressions
+                .skip(mainText.expressions.length)
+                .toList(),
+            problems: problems,
+          );
     if (problems.length > before) {
       return null;
     }
+    final type = element ?? const DynamicType();
     return StringBasedJdbcQuery._(
       where: where,
       store: store,
       entity: entity,
       method: method,
-      query: query,
       main: main,
       countStatement: count,
       kind: kind,
-      shape: modifying ? _Shape.single : shape,
-      element: element,
-      shaper: element.capture<ResultShaper>(<E>() => TypedResultShaper<E>()),
-      nullable: returnType.nullable,
-      parameterNames: names,
-      pageable: pageableIndex,
-      sort: sortIndex,
-      modifying: modifying,
+      element: type,
+      shaper: type.capture<ResultShaper>(<E>() => TypedResultShaper<E>()),
       table: table,
       introspector: intro,
+      described: described,
+      expressionContext: QueryExpressionContext(
+        entityName: table,
+        methodName: method.name,
+        beanFactory: beanFactory,
+        environment: environment,
+      ),
       beanFactory: beanFactory,
       inTransaction: inTransaction,
       translateError: translateError,
     );
   }
 
-  static bool _isStream(TypeInfo<Object?> type) =>
-      type is GenericType<Object?> && type.isSubtypeOf<Stream<Object?>>();
-
-  static (_Shape, TypeInfo<Object?>) _shapeOf(TypeInfo<Object?> type) {
-    switch (type) {
-      case ListType(:final element):
-        return (_Shape.list, element);
-      case SetType(:final element):
-        return (_Shape.set, element);
-      case final GenericType<Object?> generic
-          when generic.arguments.length == 1:
-        if (generic.isSubtypeOf<Page<Object?>>()) {
-          return (_Shape.page, generic.arguments.single);
-        }
-        if (generic.isSubtypeOf<Slice<Object?>>()) {
-          return (_Shape.slice, generic.arguments.single);
-        }
-        if (generic.isSubtypeOf<Stream<Object?>>()) {
-          return (_Shape.stream, generic.arguments.single);
-        }
-        if (generic.isSubtypeOf<Iterable<Object?>>()) {
-          return (_Shape.list, generic.arguments.single);
-        }
-      case _:
-        break;
+  // Names the table or the column of an `{Entity}` placeholder as the
+  // mapping does.
+  static String Function(String, String?) _entityNames(
+    QueryMethod method,
+    RelationalMappingContext? mappingContext,
+    JdbcDataStore store,
+  ) => (name, property) {
+    final type = method.entities[name];
+    final entity = type == null
+        ? null
+        : mappingContext?.getPersistentEntity(type);
+    if (entity == null) {
+      throw MappingException(
+        '{$name} names an entity that is not described: register the '
+        'module of $name',
+      );
     }
-    return (_Shape.single, type);
-  }
+    if (property == null) {
+      return store.sql.table(entity);
+    }
+    final stored = entity.property(property);
+    if (stored == null || stored.isMappedCollection) {
+      throw MappingException(
+        '{$name.$property}: $name has no column for $property',
+      );
+    }
+    return store.dialect.quote(stored.columnName);
+  };
 
   static _Kind _kindOf(
     TypeInfo<Object?> element,
     PersistentEntity<Object> entity,
+    EntityIntrospection<Object>? described,
     BeanIntrospector introspector,
     String where,
     List<String> problems,
@@ -402,18 +323,11 @@ final class StringBasedJdbcQuery {
         element.capture<bool>(<X>() => isSimpleType<X>())) {
       return _Kind.scalar;
     }
-    if (element is DynamicType) {
+    if (described == null && introspector.forType(element.type) == null) {
       problems.add(
-        '$where: the result type is not known (dynamic): return the '
-        'entity, a class of yours, a column type or a Map, or give a '
-        'rowMapper',
-      );
-      return _Kind.custom;
-    }
-    if (introspector.forType(element.type) == null) {
-      problems.add(
-        '$where: ${element.type} cannot be built from rows: mark the class '
-        '@Introspected (and register its module), or give a rowMapper',
+        '$where: ${element.type} cannot be built from rows: it is not '
+        'described (register its module, or mark the class @Introspected), '
+        'or give a rowMapper',
       );
     }
     return _Kind.dto;
@@ -423,13 +337,13 @@ final class StringBasedJdbcQuery {
 
   /// Whether the method returns a `Stream` (its [call] returns the stream
   /// itself, not a `Future`).
-  bool get isStream => _shape == _Shape.stream;
+  bool get isStream => _shape == QueryShape.stream;
 
   /// Runs the query with the method's [arguments]: a `Future` of the
   /// result, or for a `Stream` method the stream (which runs the query
   /// when listened to).
   Object? call(List<Object?> arguments) {
-    if (_shape == _Shape.stream) {
+    if (_shape == QueryShape.stream) {
       return _shaper.streamOf(_stream(arguments));
     }
     return _run(arguments);
@@ -456,13 +370,13 @@ final class StringBasedJdbcQuery {
     }
     final window = _windowOf(arguments);
     switch (_shape) {
-      case _Shape.page:
+      case QueryShape.page:
         return await _page(arguments, window!);
-      case _Shape.slice:
+      case QueryShape.slice:
         return await _slice(arguments, window!);
-      case _Shape.stream:
+      case QueryShape.stream:
         throw StateError('a stream is not run as a future');
-      case _Shape.list || _Shape.set || _Shape.single:
+      case QueryShape.list || QueryShape.set || QueryShape.single:
         break;
     }
     final (sql, source) = _prepare(
@@ -481,15 +395,15 @@ final class StringBasedJdbcQuery {
     }
     final rows = await _fetch(sql, source);
     return switch (_shape) {
-      _Shape.list => _shaper.list(rows),
-      _Shape.set => _shaper.set(rows),
+      QueryShape.list => _shaper.list(rows),
+      QueryShape.set => _shaper.set(rows),
       _ => _single(rows),
     };
   }
 
   Object? _extracted(Object? result) {
     if (result == null) {
-      if (_shape == _Shape.single && !_nullable) {
+      if (_shape == QueryShape.single && !_element.nullable) {
         throw EmptyResultDataAccessException(
           1,
           message:
@@ -500,15 +414,15 @@ final class StringBasedJdbcQuery {
       return null;
     }
     return switch ((_shape, result)) {
-      (_Shape.list, final Iterable<Object?> items) => _shaper.list(items),
-      (_Shape.set, final Iterable<Object?> items) => _shaper.set(items),
+      (QueryShape.list, final Iterable<Object?> items) => _shaper.list(items),
+      (QueryShape.set, final Iterable<Object?> items) => _shaper.set(items),
       _ => result,
     };
   }
 
   Object? _single(List<Object?> rows) {
     if (rows.isEmpty) {
-      if (_nullable) {
+      if (_element.nullable) {
         return null;
       }
       throw EmptyResultDataAccessException(
@@ -534,10 +448,11 @@ final class StringBasedJdbcQuery {
     final (sql, source) = _prepare(arguments, null, windowed: false);
     final changed =
         (await _inTransaction(() => _store.named.update(sql, source)))! as int;
-    if (_method.isVoid) {
-      return null;
-    }
-    return _method.returnType.type == bool ? changed > 0 : changed;
+    return switch (_method.change!) {
+      QueryChange.rows => changed,
+      QueryChange.any => changed > 0,
+      QueryChange.nothing => null,
+    };
   }
 
   Future<Object?> _page(List<Object?> arguments, Pageable window) async {
@@ -666,12 +581,21 @@ final class StringBasedJdbcQuery {
     };
   }
 
-  RowMapper<Object?> _dtoMapper() => DataClassRowMapper<Object>(
-    dialect: _store.dialect,
-    converter: _store.converter,
-    introspector: _introspector,
-    introspection: _introspector.forType(_element.type),
-  ).call;
+  RowMapper<Object?> _dtoMapper() {
+    if (_described case final described?) {
+      return EntityRowMapper<Object>(
+        described,
+        dialect: _store.dialect,
+        converter: _store.converter,
+      ).call;
+    }
+    return DataClassRowMapper<Object>(
+      dialect: _store.dialect,
+      converter: _store.converter,
+      introspector: _introspector,
+      introspection: _introspector.forType(_element.type),
+    ).call;
+  }
 
   Future<List<Object?>> _fetch(String sql, SqlParameterSource source) async {
     final result = await _store.named.queryWithExtractor<JdbcResult>(
@@ -693,17 +617,19 @@ final class StringBasedJdbcQuery {
       for (final MapEntry(:key, :value) in _parameterNames.entries)
         key: arguments[value],
     };
-    if (statement.expressions.isNotEmpty) {
-      final context = _context(arguments);
-      for (final MapEntry(:key, :value) in statement.expressions.entries) {
-        try {
-          values[key] = value.getValue(context);
-        } on Object catch (error) {
-          throw InvalidDataAccessApiUsageException(
-            '$_where: the expression :#{${statement.sources[key]}} failed: '
-            '$error',
-          );
-        }
+    EvaluationContext? interpreted;
+    for (final MapEntry(:key, :value) in statement.sources.entries) {
+      try {
+        values[key] = switch (statement.compiled[key]) {
+          final compiled? => compiled(arguments, _expressionContext),
+          _ => statement.parsed[key]!.getValue(
+            interpreted ??= _context(arguments),
+          ),
+        };
+      } on Object catch (error) {
+        throw InvalidDataAccessApiUsageException(
+          '$_where: the expression :#{$value} failed: $error',
+        );
       }
     }
     return MapSqlParameterSource(values);
@@ -723,7 +649,7 @@ final class StringBasedJdbcQuery {
         ..setVariable('p$i', arguments[i])
         ..setVariable('a$i', arguments[i]);
       if (i < _method.parameters.length) {
-        context.setVariable(_method.parameters[i].name, arguments[i]);
+        context.setVariable(_method.parameters[i], arguments[i]);
       }
     }
     context
@@ -736,60 +662,48 @@ final class StringBasedJdbcQuery {
   String toString() => 'StringBasedJdbcQuery($_where)';
 }
 
-enum _Shape { list, set, page, slice, stream, single }
-
 enum _Kind { entity, dto, scalar, map, custom }
 
-// One SQL text of a method: its markers checked and its expressions
-// parsed.
+// One SQL text of a method: its expressions, each compiled by the build or
+// parsed here.
 final class _Statement {
-  _Statement(this.sql, this.expressions, this.sources);
+  _Statement(this.sql, this.sources, this.compiled, this.parsed);
 
+  // [compiled] has an entry for each marker of [text], in order: the
+  // expression compiled by the build, or null to interpret its text.
   factory _Statement.compile(
     QueryText text, {
     required String where,
-    required Set<String> names,
+    required List<QueryExpression?> compiled,
     required List<String> problems,
   }) {
-    final expressions = <String, Expression>{};
-    for (final MapEntry(:key, :value) in text.expressions.entries) {
+    final ready = <String, QueryExpression>{};
+    final parsed = <String, Expression>{};
+    for (final (index, MapEntry(:key, :value))
+        in text.expressions.entries.indexed) {
+      if (index < compiled.length && compiled[index] != null) {
+        ready[key] = compiled[index]!;
+        continue;
+      }
       try {
-        expressions[key] = _parser.parseExpression(value);
+        parsed[key] = _parser.parseExpression(value);
       } on Object catch (error) {
         problems.add('$where: the expression :#{$value} is invalid: $error');
       }
     }
-    try {
-      final parsed = NamedParameterUtils.parse(text.sql);
-      if (parsed.unnamedCount > 0) {
-        problems.add(
-          '$where: the query has a plain ? marker: write :name and bind '
-          'it by the name of a parameter of the method',
-        );
-      }
-      final known = {...names, ...text.expressions.keys};
-      for (final name in parsed.names.toSet()) {
-        if (!known.contains(name)) {
-          final hint = name.contains('.')
-              ? ' (to read a property write :#{#$name})'
-              : '';
-          problems.add(
-            '$where: :$name matches no parameter of the method (it has '
-            '${names.isEmpty ? 'none' : names.join(', ')})$hint',
-          );
-        }
-      }
-    } on DataAccessException catch (error) {
-      problems.add('$where: ${error.message}');
-    }
-    return _Statement(text.sql, expressions, text.expressions);
+    return _Statement(text.sql, text.expressions, ready, parsed);
   }
 
   static final _parser = SpelExpressionParser();
 
   final String sql;
-  final Map<String, Expression> expressions;
 
-  // The text of each expression, by marker, for messages.
+  // The text of each expression, by marker.
   final Map<String, String> sources;
+
+  // The expressions the build compiled, by marker.
+  final Map<String, QueryExpression> compiled;
+
+  // The others, parsed, by marker.
+  final Map<String, Expression> parsed;
 }

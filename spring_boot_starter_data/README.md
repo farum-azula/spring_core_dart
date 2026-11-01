@@ -43,9 +43,111 @@ abstract interface class BookRepository
 }
 ```
 
-A method name the entity does not support (`findByTitel`) stops the
-application at startup: `No property 'titel' found for type 'Book'; did
-you mean 'title'?`.
+The build parses the method names and checks them against the entity: a
+name the entity does not support (`findByTitel`) is a build error, not a
+startup one (`No property 'titel' found for type 'Book'; did you mean
+'title'?`). The generated class extends `SimpleRepository` (the CRUD,
+sorting and paging methods) and writes only what the interface declares:
+a constant `PartTree` and one call for each derived query, a constant
+`QueryMethod` for each `@Query` method. At startup the repository checks what
+the build cannot know: its store and data source, its entity, the
+`${property}` placeholders and the expressions of its `@Query` texts.
+
+## `@Query`, checked by the build
+
+```dart
+abstract interface class BookRepository
+    implements ListCrudRepository<Book, int> {
+  @Query('select {Book.title} from {Book} where {Book.authorId} = :authorId')
+  Future<List<String>> titlesOf(int authorId);
+
+  @Query('select b.title, a.name as author_name from books b '
+      'join authors a on a.id = b.author_id where b.year > :year')
+  Future<Page<BookCard>> cards(int year, Pageable page);
+
+  @Modifying()
+  @Query('update books set year = year + 1 where year > :year')
+  Future<int> shift(int year);
+}
+```
+
+What can be checked without running is checked by the build, and every
+problem of the interface is one build error:
+
+- the method against its annotation: it returns a `Future` or a `Stream`; a
+  `Page` or `Slice` has a `Pageable`; `@Modifying` returns `int`, `bool` or
+  nothing and has no `rowMapper` or `Pageable`; `void` needs `@Modifying`;
+  `countQuery` is for a `Page`; a `rowMapper` or `resultSetExtractor` is a
+  function of a `JdbcRow` or a `JdbcResult`; no `@Lock`; the rows can become
+  the result: the entity, a class of yours (the generator describes it), a
+  column type or a `Map<String, Object?>`;
+- the text: each `:name` is a parameter of the method, a plain `?` and a
+  `#{...}` other than `#{#entityName}` are refused;
+- the `:#{expression}` values (SpEL). The build compiles each one it can to
+  Dart, a function of the arguments, so a mistake is a build error with a
+  suggestion and nothing is interpreted at run time:
+
+  ```dart
+  @Query('select * from books where title = :#{#book.title}')
+  Future<List<Book>> sameTitle(Book book);
+  // generated: expressions: [(arguments, context) => (arguments[0] as Book).title]
+
+  @Query('select * from books where title = :#{#book.titel}')
+  // BookRepository.sameTitle: the expression :#{#book.titel} is invalid:
+  //   No property 'titel' on type 'Book'; did you mean 'title'?
+  ```
+
+  The variables are `#name` of each parameter, `#p0` and `#a0`, `#root` (the
+  list of the arguments), `#entityName` and `#methodName`; `@bean` is a bean
+  of the application and `@environment.getProperty(key, default)` the
+  environment. An unknown `#variable`, a wrong call, a member of a value
+  that can be null without `?.` and a syntax error are build errors too.
+  What the compiler leaves alone (`T(...)`, `new`, selection, `matches`,
+  `instanceof`, Java-style `size()`, a member of `Object`) is interpreted at
+  run time, and only the arguments of such a method are described for it
+  (`@Introspected()` on their classes always does);
+- the entity placeholders: `{Book}` is the quoted table of the entity `Book`
+  and `{Book.authorId}` the quoted column of its property (`author_id`;
+  the naming strategy, `@Table` and `@Column` decide, at run time, through
+  the mapping). `Book` must be a `@Table` class of the application and
+  `authorId` a stored property (not `@Transient`, not a `@MappedCollection`).
+  The column is not qualified: write `b.{Book.authorId}` in a join;
+- misspelled names. The build knows the tables and columns of the entities
+  and of the migrations and init scripts in `lib/resources/`
+  (`db/migration/V*__*.sql`, `R__*.sql`, `schema.sql`: `create table`,
+  `alter table` to add, rename or drop a column or rename the table, `drop
+  table`, `create view` with its select list, in the order they run). A
+  table after `from`, `join`, `update`, `into` or `delete from`, a qualified
+  `alias.column` and an unqualified column that it does not know, when it
+  knows a close name, is an error:
+
+  ```text
+  Invalid repository BookRepository:
+    - BookRepository.cards: b.titel: no column titel in books, did you mean 'title'?
+  ```
+
+  The rule is made to say nothing when unsure: a name nothing is close to is
+  left alone (another schema's table, a function, a word of your database),
+  as are the columns of a table or view the build only partly understands, of
+  a `select *` and of a `${placeholder}` table; keywords, functions, aliases
+  (of tables, columns and CTEs), casts and quoted text are never names. When
+  the application declares its own `NamingStrategy` bean, the names derived
+  from entities are not known to the build. It reads
+  `spring.sql.migration.locations` and `spring.sql.init.schema-locations`
+  from `application.properties`, `application.yml` and `application.yaml`
+  (`classpath:` only; any other location turns the check off, and so does a
+  profile file or a profile-specific YAML document that sets them, a
+  `spring.config.import` or the settings of a named data source). With
+  `{vendor}` in a location, the migrations of each database are an
+  alternative: a column of any of them is known. A name of one or two
+  characters is never taken for a typo. A `{Entity}` that is no `@Table`
+  class of the application, and close to none, is left to the start up (an
+  entity of another package the repository's library can see is written
+  through it).
+
+At startup the repository still resolves `${property:default}` from the
+environment, writes the names of `{Entity}` placeholders through the mapping,
+and runs the `:#{expression}` values the build did not compile (SpEL).
 
 ## References, foreign keys and unique keys
 
@@ -203,11 +305,46 @@ startup, but does not hold back early queries.
 | `spring.datasource.pool.validation` | `true` | check a connection that waited, before handing it out |
 | `spring.datasource.sqlite.busy-timeout` | `5000` | milliseconds a connection waits for a lock |
 | `spring.datasource.sqlite.base-directory` | working directory | where relative `sqlite:file:` names are looked for; beats `SqliteJdbcDriver.baseDirectory` |
+| `spring.datasource.sqlite.isolate` | `false` | `true` opens each connection inside an isolate of its own; beats `SqliteJdbcDriver(isolate:)` |
 | `spring.datasources.<name>.*` | | the same keys for a named database, also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
 | `spring.sql.init.*`, `spring.sql.migration.*`, `spring.data.jdbc.schema` | see the roadmap | scripts, migrations, `none` / `validate` (default) / `create` / `create-drop` |
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
 | `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info |
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
+
+**SQLite on an isolate of its own.** SQLite's calls are synchronous: on
+Flutter's UI isolate or a server's event loop, a long query or a wait for a
+lock holds everything else. With `spring.datasource.sqlite.isolate=true`
+each connection opens its database inside a worker isolate, and every
+statement is a message to it. Nothing else changes: transactions,
+savepoints, read-only mode, streams (rows come in batches, the cursor is
+closed when the stream is cancelled) and errors, with their types, work as
+before. Values are copied between the isolates, so a very large result costs
+a copy; a connection must be closed (the pool does it when the application
+closes), which ends its isolate; if the isolate dies, the pending and the
+later statements fail with a `SqlError` whose `connectionLost` is true.
+The generated `SqliteBinding` is sent to the isolate, so a binding of your
+own must hold no native resource. A loader override of the `sqlite3` package
+(`open.overrideFor(...)`) belongs to the isolate that runs it: the one made
+in `main` does not reach the worker, which opens the database with the
+package's default loader, and the starter has no hook to run code in the
+worker. When a platform needs an override, keep the databases on the
+caller's isolate with `spring.datasource.sqlite.isolate=false`. In a Flutter
+app,
+[`spring_boot_starter_flutter`](https://pub.dev/packages/spring_boot_starter_flutter)
+turns it on and points `spring.datasource.sqlite.base-directory` at the
+app's own directory (`spring.datasource.sqlite.location`: `support`,
+`cache` or `documents`): it only sets these properties, the starters do not
+depend on each other.
+
+**In a web application.** With
+[`spring_boot_starter_web`](https://pub.dev/packages/spring_boot_starter_web)
+among the application's dependencies, the generator adds a
+`HandlerExceptionResolver` (the bean `dataAccessExceptionResolver`) that
+answers an `OptimisticLockingFailureException` or a `DuplicateKeyException`
+with a 409 and an `EmptyResultDataAccessException` with a 404, with a fixed
+detail that never shows the exception's message; the starters do not
+depend on each other.
 
 Durations are written `500ms`, `30s`, `10m`, `PT30S`, or as milliseconds.
 The names of `spring.datasources` are found in property sources that list
@@ -215,6 +352,43 @@ their keys (files, the command line), not in an environment variable
 alone. The context must be refreshed with `refreshAsync()` (what
 `SpringApplication.runAsync` and `ApplicationContextRunner.runAsync` do):
 the schema is set up asynchronously.
+
+## Testing: `@DataTest`
+
+A test class marked `@DataTest()` runs on the repositories of the
+application only: its data beans, an in-memory SQLite database (the
+migrations applied, or the tables made from the entities) and a transaction
+around every test that is rolled back afterwards. The services, controllers
+and runners of the application are not in the context, and
+[`spring_boot_starter_test`](https://pub.dev/packages/spring_boot_starter_test)
+runs it (a dev dependency; the starters do not depend on each other, the
+generator joins them in `test/spring/<name>.test.spring.dart`).
+
+```dart
+@DataTest()
+class BookRepositoryTest {
+  @Autowired()
+  late BookRepository books;
+
+  @Test()
+  Future<void> findsABookByItsTitle() async {
+    await books.save(Book(title: 'Dune', year: 1965));
+    expect(await books.findByTitle('Dune'), hasLength(1));
+  } // rolled back: the next test starts with no books
+}
+
+void main() => runSpringTests();
+```
+
+`@Commit()` (or `@Rollback(false)`) on a test, a class or a `@Nested` group
+commits instead; `@BeforeEach` and `@AfterEach` run inside the transaction;
+`@DataTest(include: [Library])` adds beans of the application, and
+`replaceDatabase: false` keeps the configured database. The in-memory
+database is one connection, so a test cannot start a `requiresNew`
+transaction on it. [Testing, section 19](../docs/testing.md#19-data-tests-datatest)
+has the details; `DataTestSetup` and `runInTestTransaction`
+(`package:spring_boot_starter_data/testing.dart`) do the same for tests
+written as functions.
 
 ## Differences from Spring
 
@@ -233,3 +407,6 @@ the schema is set up asynchronously.
 - `@Transactional(transactionManager: 'x')` instead of a positional value;
   every exception rolls back unless listed in `noRollbackFor` (Dart has
   no checked exceptions).
+- `@DataTest` replaces `@DataJdbcTest` with `@AutoConfigureTestDatabase`: it
+  is transactional by itself, and the database is always an in-memory SQLite
+  one (`replaceDatabase: false` keeps yours).

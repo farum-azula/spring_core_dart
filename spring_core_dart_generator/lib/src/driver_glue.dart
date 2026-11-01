@@ -7,6 +7,7 @@ const _starterPackage = 'spring_boot_starter_data';
 const _starterUrl =
     'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 const _springUrl = 'package:spring_core_dart/spring_core_dart.dart';
+const _webUrl = 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// A database driver package that `spring_boot_starter_data` has glue for.
 ///
@@ -17,17 +18,25 @@ const _springUrl = 'package:spring_core_dart/spring_core_dart.dart';
 /// module, and registers a `JdbcDriver` bean made by it. Spring Boot does
 /// the same with `@ConditionalOnClass` on the JDBC driver.
 ///
+/// The same table holds the glue between the data starter and another
+/// starter it must not depend on: the web starter's, which answers data
+/// errors with their HTTP status (`spring_boot_starter_web`). The bean is
+/// then of a type of that starter ([type] in [typeUrl]).
+///
 /// Spring (Java): the driver jar on the classpath that
 /// `DataSourceAutoConfiguration` finds by its class.
 final class DriverGlue {
   /// The glue for the package [package]: [template] is its asset in the
   /// starter, [beanName] the bean it makes and [factory] the function of
-  /// the template that creates the driver.
+  /// the template that creates it, a [type] (`JdbcDriver` of the starter's
+  /// library unless said otherwise).
   const DriverGlue({
     required this.package,
     required this.template,
     required this.beanName,
     required this.factory,
+    this.type = 'JdbcDriver',
+    this.typeUrl = _starterUrl,
   });
 
   /// The dependency that switches it on (`sqlite3`).
@@ -37,13 +46,19 @@ final class DriverGlue {
   /// sqlite3.dart.tmpl`).
   final String template;
 
-  /// The name of the `JdbcDriver` bean; a module registers it only when no
-  /// bean of this name exists yet, so several modules of one application
-  /// may all carry the glue.
+  /// The name of the bean (`sqlite3JdbcDriver`); a module registers it only
+  /// when no bean of this name exists yet, so several modules of one
+  /// application may all carry the glue.
   final String beanName;
 
-  /// The top-level function of the template returning the `JdbcDriver`.
+  /// The top-level function of the template returning the bean.
   final String factory;
+
+  /// The type the bean is registered under (`JdbcDriver`).
+  final String type;
+
+  /// The library [type] is imported from.
+  final String typeUrl;
 }
 
 /// The drivers the starter has glue for. `postgres` is added here.
@@ -53,6 +68,16 @@ const driverGlues = [
     template: 'lib/src/jdbc/drivers/sqlite3.dart.tmpl',
     beanName: 'sqlite3JdbcDriver',
     factory: r'_$sqlite3JdbcDriver',
+  ),
+  // The web starter's HandlerExceptionResolver for data errors (409, 404);
+  // the template, with the exceptions' names, is the data starter's.
+  DriverGlue(
+    package: 'spring_boot_starter_web',
+    template: 'lib/src/web/data_access_exception_resolver.dart.tmpl',
+    beanName: 'dataAccessExceptionResolver',
+    factory: r'_$dataAccessExceptionResolver',
+    type: 'HandlerExceptionResolver',
+    typeUrl: _webUrl,
   ),
 ];
 
@@ -123,7 +148,7 @@ Code _resolve(String template) {
 }
 
 Expression _definition(DriverGlue glue) {
-  final driver = refer('JdbcDriver', _starterUrl);
+  final driver = refer(glue.type, glue.typeUrl);
   return refer('BeanDefinition', _springUrl).newInstance(
     [],
     {

@@ -1,7 +1,7 @@
-// Entities and their BeanIntrospections written by hand, as the generator
+// Entities and their EntityIntrospections written by hand, as the generator
 // writes them for `@Table` classes (see any `*.spring.dart`): one
-// BeanProperty per field, with its annotations and TypeInfo, and the
-// constructor called with Function.apply.
+// EntityProperty per field, with its annotations and TypeInfo, and `read`,
+// `create` and `write` functions.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
 enum Genre { fiction, science }
@@ -20,68 +20,38 @@ class Author {
   String name;
 }
 
-BeanIntrospection<Author> authorIntrospection() => BeanIntrospection<Author>(
-  className: 'Author',
-  annotations: const [Table('authors')],
-  properties: [
-    prop<Author>(
-      'id',
-      int,
-      _intN,
-      (a) => a.id,
-      set: (a, v) => a.id = v as int?,
-      annotations: const [Id()],
-    ),
-    prop<Author>(
-      'name',
-      String,
-      _string,
-      (a) => a.name,
-      set: (a, v) => a.name = v! as String,
-    ),
-  ],
-  constructor: BeanConstructor<Author>(
-    parameters: [
-      param('id', _intN, named: true),
-      param('name', _string, named: true),
-    ],
-    create: (positional, named) =>
-        Function.apply(Author.new, positional, named) as Author,
-  ),
-);
-
-BeanProperty<T> prop<T extends Object>(
-  String name,
-  Type type,
-  TypeInfo<Object?> info,
-  Object? Function(T) get, {
-  void Function(T, Object?)? set,
-  List<Object> annotations = const [],
-  bool hasInitialValue = false,
-  Object? initialValue,
-}) => BeanProperty<T>(
-  name,
-  type: type,
-  typeInfo: info,
-  nullable: info.nullable,
-  get: get,
-  set: set,
-  annotations: annotations,
-  hasInitialValue: hasInitialValue,
-  initialValue: initialValue,
-);
-
-BeanParameter param(
-  String name,
-  TypeInfo<Object?> info, {
-  bool named = false,
-  bool isRequired = false,
-}) => BeanParameter(
-  name,
-  type: info,
-  symbol: named ? Symbol(name) : null,
-  isRequired: isRequired,
-);
+EntityIntrospection<Author> authorIntrospection() =>
+    EntityIntrospection<Author>(
+      'Author',
+      const [
+        EntityProperty(
+          'id',
+          _intN,
+          annotations: [Id()],
+          parameter: true,
+          writable: true,
+        ),
+        EntityProperty(
+          'name',
+          _string,
+          parameter: true,
+          writable: true,
+          hasDefaultValue: true,
+          defaultValue: '',
+        ),
+      ],
+      annotations: const [Table('authors')],
+      get: (a, i) => switch (i) {
+        0 => a.id,
+        _ => a.name,
+      },
+      create: (v) => Author(id: v[0] as int?, name: v[1]! as String),
+      write: (a, i, v) => switch (i) {
+        0 => a.id = v as int?,
+        1 => a.name = v! as String,
+        _ => null,
+      },
+    );
 
 // ---------------------------------------------------------------- Book
 
@@ -137,129 +107,135 @@ const _authorRef = GenericType<AggregateReference<Author, int>>([
   ClassType<int>(),
 ], nullable: true);
 
-BeanIntrospection<Book> bookIntrospection() => BeanIntrospection<Book>(
-  className: 'Book',
-  annotations: const [Table('books')],
-  properties: [
-    prop<Book>(
+EntityIntrospection<Book> bookIntrospection() => EntityIntrospection<Book>(
+  'Book',
+  const [
+    EntityProperty(
       'id',
-      int,
       _intN,
-      (b) => b.id,
-      set: (b, v) => b.id = v as int?,
-      annotations: const [Id()],
+      annotations: [Id()],
+      parameter: true,
+      writable: true,
     ),
-    prop<Book>(
-      'title',
-      String,
-      _string,
-      (b) => b.title,
-      set: (b, v) => b.title = v! as String,
-    ),
-    prop<Book>(
-      'year',
-      int,
-      _intN,
-      (b) => b.year,
-      set: (b, v) => b.year = v as int?,
-    ),
-    prop<Book>(
-      'genre',
-      Genre,
-      _genre,
-      (b) => b.genre,
-      set: (b, v) => b.genre = v as Genre?,
-    ),
-    prop<Book>(
+    EntityProperty('title', _string, parameter: true, writable: true),
+    EntityProperty('year', _intN, parameter: true, writable: true),
+    EntityProperty('genre', _genre, parameter: true, writable: true),
+    // The constant is the int `0` of `this.price = 0`: the converter widens it.
+    EntityProperty(
       'price',
-      double,
-      const ClassType<double>(),
-      (b) => b.price,
-      set: (b, v) => b.price = v! as double,
+      ClassType<double>(),
+      parameter: true,
+      writable: true,
+      hasDefaultValue: true,
+      defaultValue: 0,
     ),
-    prop<Book>(
+    EntityProperty(
       'available',
-      bool,
-      const ClassType<bool>(),
-      (b) => b.available,
-      set: (b, v) => b.available = v! as bool,
+      ClassType<bool>(),
+      parameter: true,
+      writable: true,
+      hasDefaultValue: true,
+      defaultValue: false,
     ),
-    prop<Book>(
+    EntityProperty(
       'author',
-      AggregateReference<Author, int>,
       _authorRef,
-      (b) => b.author,
-      set: (b, v) => b.author = v as AggregateReference<Author, int>?,
-      annotations: const [Column('writer_id')],
+      annotations: [Column('writer_id')],
+      parameter: true,
+      writable: true,
     ),
-    prop<Book>(
+    EntityProperty(
       'version',
-      int,
       _int,
-      (b) => b.version,
-      set: (b, v) => b.version = v! as int,
-      annotations: const [Version()],
+      annotations: [Version()],
+      parameter: true,
+      writable: true,
+      hasDefaultValue: true,
+      defaultValue: 0,
     ),
-    prop<Book>(
+    EntityProperty(
       'createdAt',
-      DateTime,
       _date,
-      (b) => b.createdAt,
-      set: (b, v) => b.createdAt = v as DateTime?,
-      annotations: const [CreatedDate()],
+      annotations: [CreatedDate()],
+      parameter: true,
+      writable: true,
     ),
-    prop<Book>(
+    EntityProperty(
       'modifiedAt',
-      DateTime,
       _date,
-      (b) => b.modifiedAt,
-      set: (b, v) => b.modifiedAt = v as DateTime?,
-      annotations: const [LastModifiedDate()],
+      annotations: [LastModifiedDate()],
+      parameter: true,
+      writable: true,
     ),
-    prop<Book>(
+    EntityProperty(
       'createdBy',
-      String,
       _stringN,
-      (b) => b.createdBy,
-      set: (b, v) => b.createdBy = v as String?,
-      annotations: const [CreatedBy()],
+      annotations: [CreatedBy()],
+      parameter: true,
+      writable: true,
     ),
-    prop<Book>(
+    EntityProperty(
       'modifiedBy',
-      String,
       _stringN,
-      (b) => b.modifiedBy,
-      set: (b, v) => b.modifiedBy = v as String?,
-      annotations: const [LastModifiedBy()],
+      annotations: [LastModifiedBy()],
+      parameter: true,
+      writable: true,
     ),
-    prop<Book>(
+    EntityProperty(
       'note',
-      String,
       _stringN,
-      (b) => b.note,
-      set: (b, v) => b.note = v as String?,
-      annotations: const [Transient()],
+      annotations: [Transient()],
+      parameter: true,
+      writable: true,
     ),
   ],
-  constructor: BeanConstructor<Book>(
-    parameters: [
-      param('id', _intN, named: true),
-      param('title', _string, named: true, isRequired: true),
-      param('year', _intN, named: true),
-      param('genre', _genre, named: true),
-      param('price', const ClassType<double>(), named: true),
-      param('available', const ClassType<bool>(), named: true),
-      param('author', _authorRef, named: true),
-      param('version', _int, named: true),
-      param('createdAt', _date, named: true),
-      param('modifiedAt', _date, named: true),
-      param('createdBy', _stringN, named: true),
-      param('modifiedBy', _stringN, named: true),
-      param('note', _stringN, named: true),
-    ],
-    create: (positional, named) =>
-        Function.apply(Book.new, positional, named) as Book,
+  annotations: const [Table('books')],
+  get: (b, i) => switch (i) {
+    0 => b.id,
+    1 => b.title,
+    2 => b.year,
+    3 => b.genre,
+    4 => b.price,
+    5 => b.available,
+    6 => b.author,
+    7 => b.version,
+    8 => b.createdAt,
+    9 => b.modifiedAt,
+    10 => b.createdBy,
+    11 => b.modifiedBy,
+    _ => b.note,
+  },
+  create: (v) => Book(
+    id: v[0] as int?,
+    title: v[1]! as String,
+    year: v[2] as int?,
+    genre: v[3] as Genre?,
+    price: v[4]! as double,
+    available: v[5]! as bool,
+    author: v[6] as AggregateReference<Author, int>?,
+    version: v[7]! as int,
+    createdAt: v[8] as DateTime?,
+    modifiedAt: v[9] as DateTime?,
+    createdBy: v[10] as String?,
+    modifiedBy: v[11] as String?,
+    note: v[12] as String?,
   ),
+  write: (b, i, v) => switch (i) {
+    0 => b.id = v as int?,
+    1 => b.title = v! as String,
+    2 => b.year = v as int?,
+    3 => b.genre = v as Genre?,
+    4 => b.price = v! as double,
+    5 => b.available = v! as bool,
+    6 => b.author = v as AggregateReference<Author, int>?,
+    7 => b.version = v! as int,
+    8 => b.createdAt = v as DateTime?,
+    9 => b.modifiedAt = v as DateTime?,
+    10 => b.createdBy = v as String?,
+    11 => b.modifiedBy = v as String?,
+    12 => b.note = v as String?,
+    _ => null,
+  },
 );
 
 // ---------------------------------------------------------- the children
@@ -288,80 +264,58 @@ class Note {
   String text;
 }
 
-BeanIntrospection<Item> itemIntrospection() => BeanIntrospection<Item>(
-  className: 'Item',
-  annotations: const [Table()],
-  properties: [
-    prop<Item>(
+EntityIntrospection<Item> itemIntrospection() => EntityIntrospection<Item>(
+  'Item',
+  const [
+    EntityProperty(
       'id',
-      int,
       _intN,
-      (i) => i.id,
-      set: (i, v) => i.id = v as int?,
-      annotations: const [Id()],
+      annotations: [Id()],
+      parameter: true,
+      writable: true,
     ),
-    prop<Item>(
-      'sku',
-      String,
-      _string,
-      (i) => i.sku,
-      set: (i, v) => i.sku = v! as String,
-    ),
-    prop<Item>(
+    EntityProperty('sku', _string, parameter: true, writable: true),
+    EntityProperty(
       'qty',
-      int,
       _int,
-      (i) => i.qty,
-      set: (i, v) => i.qty = v! as int,
+      parameter: true,
+      writable: true,
+      hasDefaultValue: true,
+      defaultValue: 1,
     ),
   ],
-  constructor: BeanConstructor<Item>(
-    parameters: [
-      param('id', _intN, named: true),
-      param('sku', _string, named: true, isRequired: true),
-      param('qty', _int, named: true),
-    ],
-    create: (positional, named) =>
-        Function.apply(Item.new, positional, named) as Item,
-  ),
-);
-
-BeanIntrospection<Tag> tagIntrospection() => BeanIntrospection<Tag>(
-  className: 'Tag',
-  annotations: const [Table('tags')],
-  properties: [
-    prop<Tag>(
-      'label',
-      String,
-      _string,
-      (t) => t.label,
-      set: (t, v) => t.label = v! as String,
-    ),
-  ],
-  constructor: BeanConstructor<Tag>(
-    parameters: [param('label', _string, isRequired: true)],
-    create: (positional, named) =>
-        Function.apply(Tag.new, positional, named) as Tag,
-  ),
-);
-
-BeanIntrospection<Note> noteIntrospection() => BeanIntrospection<Note>(
-  className: 'Note',
   annotations: const [Table()],
-  properties: [
-    prop<Note>(
-      'text',
-      String,
-      _string,
-      (n) => n.text,
-      set: (n, v) => n.text = v! as String,
-    ),
-  ],
-  constructor: BeanConstructor<Note>(
-    parameters: [param('text', _string, named: true, isRequired: true)],
-    create: (positional, named) =>
-        Function.apply(Note.new, positional, named) as Note,
-  ),
+  get: (item, i) => switch (i) {
+    0 => item.id,
+    1 => item.sku,
+    _ => item.qty,
+  },
+  create: (v) =>
+      Item(id: v[0] as int?, sku: v[1]! as String, qty: v[2]! as int),
+  write: (i, n, v) => switch (n) {
+    0 => i.id = v as int?,
+    1 => i.sku = v! as String,
+    2 => i.qty = v! as int,
+    _ => null,
+  },
+);
+
+EntityIntrospection<Tag> tagIntrospection() => EntityIntrospection<Tag>(
+  'Tag',
+  const [EntityProperty('label', _string, parameter: true, writable: true)],
+  annotations: const [Table('tags')],
+  get: (t, _) => t.label,
+  create: (v) => Tag(v[0]! as String),
+  write: (t, i, v) => t.label = v! as String,
+);
+
+EntityIntrospection<Note> noteIntrospection() => EntityIntrospection<Note>(
+  'Note',
+  const [EntityProperty('text', _string, parameter: true, writable: true)],
+  annotations: const [Table()],
+  get: (n, _) => n.text,
+  create: (v) => Note(text: v[0]! as String),
+  write: (n, i, v) => n.text = v! as String,
 );
 
 // ------------------------------------------------------------ OrderLine
@@ -388,84 +342,71 @@ class OrderLine {
   List<Item>? extras;
 }
 
-BeanIntrospection<OrderLine> orderLineIntrospection() =>
-    BeanIntrospection<OrderLine>(
-      className: 'OrderLine',
-      annotations: const [Table()],
-      properties: [
-        prop<OrderLine>(
+EntityIntrospection<OrderLine> orderLineIntrospection() =>
+    EntityIntrospection<OrderLine>(
+      'OrderLine',
+      const [
+        EntityProperty(
           'id',
-          int,
           _intN,
-          (o) => o.id,
-          set: (o, v) => o.id = v as int?,
-          annotations: const [Id()],
+          annotations: [Id()],
+          parameter: true,
+          writable: true,
         ),
-        prop<OrderLine>(
+        EntityProperty(
           'items',
-          List<Item>,
-          const ListType<Item>(ClassType<Item>()),
-          (o) => o.items,
-          set: (o, v) => o.items = v! as List<Item>,
-          annotations: const [
+          ListType<Item>(ClassType<Item>()),
+          annotations: [
             MappedCollection(idColumn: 'line_ref', keyColumn: 'position'),
           ],
+          parameter: true,
+          writable: true,
         ),
-        prop<OrderLine>(
+        EntityProperty(
           'tags',
-          Set<Tag>,
-          const SetType<Tag>(ClassType<Tag>()),
-          (o) => o.tags,
-          set: (o, v) => o.tags = v! as Set<Tag>,
-          annotations: const [MappedCollection()],
+          SetType<Tag>(ClassType<Tag>()),
+          annotations: [MappedCollection()],
+          parameter: true,
+          writable: true,
         ),
-        prop<OrderLine>(
+        EntityProperty(
           'notes',
-          Map<String, Note>,
-          const MapType<String, Note>(ClassType<String>(), ClassType<Note>()),
-          (o) => o.notes,
-          set: (o, v) => o.notes = v! as Map<String, Note>,
-          annotations: const [MappedCollection()],
+          MapType<String, Note>(ClassType<String>(), ClassType<Note>()),
+          annotations: [MappedCollection()],
+          parameter: true,
+          writable: true,
         ),
-        prop<OrderLine>(
+        EntityProperty(
           'extras',
-          List<Item>,
-          const ListType<Item>(ClassType<Item>(), nullable: true),
-          (o) => o.extras,
-          set: (o, v) => o.extras = v as List<Item>?,
-          annotations: const [MappedCollection()],
+          ListType<Item>(ClassType<Item>(), nullable: true),
+          annotations: [MappedCollection()],
+          parameter: true,
+          writable: true,
         ),
       ],
-      constructor: BeanConstructor<OrderLine>(
-        parameters: [
-          param('id', _intN, named: true),
-          param(
-            'items',
-            const ListType<Item>(ClassType<Item>()),
-            named: true,
-            isRequired: true,
-          ),
-          param(
-            'tags',
-            const SetType<Tag>(ClassType<Tag>()),
-            named: true,
-            isRequired: true,
-          ),
-          param(
-            'notes',
-            const MapType<String, Note>(ClassType<String>(), ClassType<Note>()),
-            named: true,
-            isRequired: true,
-          ),
-          param(
-            'extras',
-            const ListType<Item>(ClassType<Item>(), nullable: true),
-            named: true,
-          ),
-        ],
-        create: (positional, named) =>
-            Function.apply(OrderLine.new, positional, named) as OrderLine,
+      annotations: const [Table()],
+      get: (o, i) => switch (i) {
+        0 => o.id,
+        1 => o.items,
+        2 => o.tags,
+        3 => o.notes,
+        _ => o.extras,
+      },
+      create: (v) => OrderLine(
+        id: v[0] as int?,
+        items: v[1]! as List<Item>,
+        tags: v[2]! as Set<Tag>,
+        notes: v[3]! as Map<String, Note>,
+        extras: v[4] as List<Item>?,
       ),
+      write: (o, i, v) => switch (i) {
+        0 => o.id = v as int?,
+        1 => o.items = v! as List<Item>,
+        2 => o.tags = v! as Set<Tag>,
+        3 => o.notes = v! as Map<String, Note>,
+        4 => o.extras = v as List<Item>?,
+        _ => null,
+      },
     );
 
 // -------------------------------------------- an entity with final fields
@@ -493,52 +434,198 @@ Reading makeReading(
   DateTime? created,
 }) => Reading(id, text, score, version, created);
 
-BeanIntrospection<Reading> readingIntrospection() => BeanIntrospection<Reading>(
-  className: 'Reading',
-  annotations: const [Table()],
-  properties: [
-    prop<Reading>(
-      'id',
-      int,
-      _intN,
-      (r) => r.id,
-      annotations: const [Id()],
-    ),
-    prop<Reading>('text', String, _string, (r) => r.text),
-    prop<Reading>(
-      'score',
-      double,
-      const ClassType<double>(nullable: true),
-      (r) => r.score,
-    ),
-    prop<Reading>(
-      'version',
-      int,
+EntityIntrospection<Reading> readingIntrospection() =>
+    EntityIntrospection<Reading>(
+      'Reading',
+      const [
+        EntityProperty('id', _intN, annotations: [Id()], parameter: true),
+        EntityProperty('text', _string, parameter: true),
+        EntityProperty(
+          'score',
+          ClassType<double>(nullable: true),
+          parameter: true,
+        ),
+        EntityProperty(
+          'version',
+          _int,
+          annotations: [Version()],
+          parameter: true,
+          hasDefaultValue: true,
+          defaultValue: 0,
+        ),
+        EntityProperty(
+          'created',
+          _date,
+          annotations: [CreatedDate()],
+          parameter: true,
+        ),
+        // Final, with an initializer and no parameter: never stored.
+        EntityProperty(
+          'kind',
+          _string,
+          hasDefaultValue: true,
+          defaultValue: 'reading',
+        ),
+      ],
+      annotations: const [Table()],
+      get: (r, i) => switch (i) {
+        0 => r.id,
+        1 => r.text,
+        2 => r.score,
+        3 => r.version,
+        4 => r.created,
+        _ => r.kind,
+      },
+      create: (v) => Reading(
+        v[0] as int?,
+        v[1]! as String,
+        v[2] as double?,
+        v[3]! as int,
+        v[4] as DateTime?,
+      ),
+    );
+
+// --------- final fields the constructor takes; settable ones it does not
+
+@Table()
+class Gauge {
+  Gauge(this.id, this.name);
+
+  @Id()
+  final int? id;
+  final String name;
+
+  /// Settable, not a constructor parameter, with an initializer.
+  int level = 5;
+
+  /// Settable, not a constructor parameter, nullable.
+  String? label;
+
+  /// Not stored, settable: a copy must carry it over.
+  @Transient()
+  String? scratch;
+}
+
+EntityIntrospection<Gauge> gaugeIntrospection() => EntityIntrospection<Gauge>(
+  'Gauge',
+  const [
+    EntityProperty('id', _intN, annotations: [Id()], parameter: true),
+    EntityProperty('name', _string, parameter: true),
+    EntityProperty(
+      'level',
       _int,
-      (r) => r.version,
-      annotations: const [Version()],
+      writable: true,
+      hasDefaultValue: true,
+      defaultValue: 5,
     ),
-    prop<Reading>(
-      'created',
-      DateTime,
-      _date,
-      (r) => r.created,
-      annotations: const [CreatedDate()],
+    EntityProperty('label', _stringN, writable: true),
+    EntityProperty(
+      'scratch',
+      _stringN,
+      annotations: [Transient()],
+      writable: true,
     ),
-    prop<Reading>('kind', String, _string, (r) => r.kind),
   ],
-  constructor: BeanConstructor<Reading>(
-    parameters: [
-      param('id', _intN, isRequired: true),
-      param('text', _string, isRequired: true),
-      param('score', const ClassType<double>(nullable: true)),
-      param('version', _int),
-      param('created', _date),
-    ],
-    create: (positional, named) =>
-        Function.apply(Reading.new, positional, named) as Reading,
-  ),
+  annotations: const [Table()],
+  get: (g, i) => switch (i) {
+    0 => g.id,
+    1 => g.name,
+    2 => g.level,
+    3 => g.label,
+    _ => g.scratch,
+  },
+  create: (v) => Gauge(v[0] as int?, v[1]! as String),
+  write: (g, i, v) => switch (i) {
+    2 => g.level = v! as int,
+    3 => g.label = v as String?,
+    4 => g.scratch = v as String?,
+    _ => null,
+  },
 );
+
+/// A `late` field that is not stored and that nobody set: reading it
+/// throws, so a save must never read it.
+@Table()
+class Draft {
+  Draft({required this.title, this.id});
+
+  @Id()
+  int? id;
+  String title;
+
+  @Transient()
+  late String display;
+}
+
+EntityIntrospection<Draft> draftIntrospection() => EntityIntrospection<Draft>(
+  'Draft',
+  const [
+    EntityProperty(
+      'id',
+      _intN,
+      annotations: [Id()],
+      parameter: true,
+      writable: true,
+    ),
+    EntityProperty('title', _string, parameter: true, writable: true),
+    EntityProperty(
+      'display',
+      _string,
+      annotations: [Transient()],
+      writable: true,
+    ),
+  ],
+  annotations: const [Table()],
+  get: (d, i) => switch (i) {
+    0 => d.id,
+    1 => d.title,
+    _ => d.display,
+  },
+  create: (v) => Draft(title: v[1]! as String, id: v[0] as int?),
+  write: (d, i, v) => switch (i) {
+    0 => d.id = v as int?,
+    1 => d.title = v! as String,
+    _ => d.display = v! as String,
+  },
+);
+
+/// A required constructor parameter that is not stored.
+@Table()
+class Locked {
+  Locked(this.id, this.pin);
+
+  @Id()
+  int? id;
+  @Transient()
+  final String pin;
+}
+
+EntityIntrospection<Locked> lockedIntrospection() =>
+    EntityIntrospection<Locked>(
+      'Locked',
+      const [
+        EntityProperty(
+          'id',
+          _intN,
+          annotations: [Id()],
+          parameter: true,
+          writable: true,
+        ),
+        EntityProperty(
+          'pin',
+          _string,
+          annotations: [Transient()],
+          parameter: true,
+        ),
+      ],
+      annotations: const [Table()],
+      get: (l, i) => switch (i) {
+        0 => l.id,
+        _ => l.pin,
+      },
+      create: (v) => Locked(v[0] as int?, v[1]! as String),
+      write: (l, i, v) => l.id = v as int?,
+    );
 
 // -------------------------------------------------- wrong mappings
 
@@ -590,191 +677,179 @@ class Loop {
   List<Loop> next = [];
 }
 
-BeanIntrospection<TwoIds> twoIdsIntrospection() => BeanIntrospection<TwoIds>(
-  className: 'TwoIds',
-  properties: [
-    prop<TwoIds>(
-      'a',
-      int,
-      _intN,
-      (o) => o.a,
-      set: (o, v) => o.a = v as int?,
-      annotations: const [Id()],
-    ),
-    prop<TwoIds>(
-      'b',
-      int,
-      _intN,
-      (o) => o.b,
-      set: (o, v) => o.b = v as int?,
-      annotations: const [Id()],
-    ),
-  ],
-);
-
-BeanIntrospection<TwoVersions> twoVersionsIntrospection() =>
-    BeanIntrospection<TwoVersions>(
-      className: 'TwoVersions',
-      properties: [
-        for (final n in ['a', 'b'])
-          prop<TwoVersions>(
-            n,
-            int,
-            _int,
-            (o) => n == 'a' ? o.a : o.b,
-            set: (o, v) => n == 'a' ? o.a = v! as int : o.b = v! as int,
-            annotations: const [Version()],
-          ),
+EntityIntrospection<TwoIds> twoIdsIntrospection() =>
+    EntityIntrospection<TwoIds>(
+      'TwoIds',
+      const [
+        EntityProperty('a', _intN, annotations: [Id()], writable: true),
+        EntityProperty('b', _intN, annotations: [Id()], writable: true),
       ],
+      get: (o, i) => switch (i) {
+        0 => o.a,
+        _ => o.b,
+      },
+      create: (v) => TwoIds(),
+      write: (o, i, v) => i == 0 ? o.a = v as int? : o.b = v as int?,
     );
 
-BeanIntrospection<BadVersion> badVersionIntrospection() =>
-    BeanIntrospection<BadVersion>(
-      className: 'BadVersion',
-      properties: [
-        prop<BadVersion>(
-          'v',
-          String,
+EntityIntrospection<TwoVersions> twoVersionsIntrospection() =>
+    EntityIntrospection<TwoVersions>(
+      'TwoVersions',
+      const [
+        EntityProperty('a', _int, annotations: [Version()], writable: true),
+        EntityProperty('b', _int, annotations: [Version()], writable: true),
+      ],
+      get: (o, i) => switch (i) {
+        0 => o.a,
+        _ => o.b,
+      },
+      create: (v) => TwoVersions(),
+      write: (o, i, v) => i == 0 ? o.a = v! as int : o.b = v! as int,
+    );
+
+EntityIntrospection<BadVersion> badVersionIntrospection() =>
+    EntityIntrospection<BadVersion>(
+      'BadVersion',
+      const [
+        EntityProperty('v', _string, annotations: [Version()], writable: true),
+      ],
+      get: (o, _) => o.v,
+      create: (v) => BadVersion(),
+      write: (o, i, v) => o.v = v! as String,
+    );
+
+EntityIntrospection<BadDate> badDateIntrospection() =>
+    EntityIntrospection<BadDate>(
+      'BadDate',
+      const [
+        EntityProperty(
+          'created',
           _string,
-          (o) => o.v,
-          set: (o, v) => o.v = v! as String,
-          annotations: const [Version()],
+          annotations: [CreatedDate()],
+          writable: true,
         ),
       ],
+      get: (o, _) => o.created,
+      create: (v) => BadDate(),
+      write: (o, i, v) => o.created = v! as String,
     );
 
-BeanIntrospection<BadDate> badDateIntrospection() => BeanIntrospection<BadDate>(
-  className: 'BadDate',
-  properties: [
-    prop<BadDate>(
-      'created',
-      String,
-      _string,
-      (o) => o.created,
-      set: (o, v) => o.created = v! as String,
-      annotations: const [CreatedDate()],
-    ),
-  ],
-);
-
-BeanIntrospection<BadAudit> badAuditIntrospection() =>
-    BeanIntrospection<BadAudit>(
-      className: 'BadAudit',
-      properties: [
-        prop<BadAudit>(
+EntityIntrospection<BadAudit> badAuditIntrospection() =>
+    EntityIntrospection<BadAudit>(
+      'BadAudit',
+      const [
+        EntityProperty(
           'd',
-          DateTime,
           _date,
-          (o) => o.d,
-          set: (o, v) => o.d = v as DateTime?,
-          annotations: const [CreatedDate(), LastModifiedDate()],
+          annotations: [CreatedDate(), LastModifiedDate()],
+          writable: true,
         ),
       ],
+      get: (o, _) => o.d,
+      create: (v) => BadAudit(),
+      write: (o, i, v) => o.d = v as DateTime?,
     );
 
-BeanIntrospection<VersionedChild> versionedChildIntrospection() =>
-    BeanIntrospection<VersionedChild>(
-      className: 'VersionedChild',
+EntityIntrospection<VersionedChild> versionedChildIntrospection() =>
+    EntityIntrospection<VersionedChild>(
+      'VersionedChild',
+      const [
+        EntityProperty('v', _int, annotations: [Version()], writable: true),
+      ],
       annotations: const [Table()],
-      properties: [
-        prop<VersionedChild>(
-          'v',
-          int,
-          _int,
-          (o) => o.v,
-          set: (o, v) => o.v = v! as int,
-          annotations: const [Version()],
-        ),
-      ],
+      get: (o, _) => o.v,
+      create: (v) => VersionedChild(),
+      write: (o, i, v) => o.v = v! as int,
     );
 
-BeanIntrospection<WithVersionedChild> withVersionedChildIntrospection() =>
+EntityIntrospection<WithVersionedChild> withVersionedChildIntrospection() =>
     _holder<WithVersionedChild, VersionedChild>(
       'WithVersionedChild',
+      WithVersionedChild.new,
       (o) => o.children,
       (o, v) => o.children = v,
     );
 
-BeanIntrospection<PlainChild> plainChildIntrospection() =>
-    BeanIntrospection<PlainChild>(
-      className: 'PlainChild',
-      properties: [
-        prop<PlainChild>(
-          'x',
-          int,
-          _int,
-          (o) => o.x,
-          set: (o, v) => o.x = v! as int,
-        ),
-      ],
+EntityIntrospection<PlainChild> plainChildIntrospection() =>
+    EntityIntrospection<PlainChild>(
+      'PlainChild',
+      const [EntityProperty('x', _int, writable: true)],
+      get: (o, _) => o.x,
+      create: (v) => PlainChild(),
+      write: (o, i, v) => o.x = v! as int,
     );
 
-BeanIntrospection<WithPlainChild> withPlainChildIntrospection() =>
+EntityIntrospection<WithPlainChild> withPlainChildIntrospection() =>
     _holder<WithPlainChild, PlainChild>(
       'WithPlainChild',
+      WithPlainChild.new,
       (o) => o.children,
       (o, v) => o.children = v,
     );
 
-BeanIntrospection<WithUnknownChild> withUnknownChildIntrospection() =>
+EntityIntrospection<WithUnknownChild> withUnknownChildIntrospection() =>
     _holder<WithUnknownChild, Unknown>(
       'WithUnknownChild',
+      WithUnknownChild.new,
       (o) => o.children,
       (o, v) => o.children = v,
     );
 
-BeanIntrospection<Loop> loopIntrospection() => BeanIntrospection<Loop>(
-  className: 'Loop',
-  annotations: const [Table()],
-  properties: [
-    prop<Loop>(
+EntityIntrospection<Loop> loopIntrospection() => EntityIntrospection<Loop>(
+  'Loop',
+  const [
+    EntityProperty(
       'next',
-      List<Loop>,
-      const ListType<Loop>(ClassType<Loop>()),
-      (o) => o.next,
-      set: (o, v) => o.next = v! as List<Loop>,
-      annotations: const [MappedCollection()],
+      ListType<Loop>(ClassType<Loop>()),
+      annotations: [MappedCollection()],
+      writable: true,
     ),
   ],
+  annotations: const [Table()],
+  get: (o, _) => o.next,
+  create: (v) => Loop(),
+  write: (o, i, v) => o.next = v! as List<Loop>,
 );
 
-BeanIntrospection<H> _holder<H extends Object, C extends Object>(
+// A @Table class whose only property is a list of children of type C.
+EntityIntrospection<H> _holder<H extends Object, C extends Object>(
   String name,
+  H Function() create,
   List<C> Function(H) get,
   void Function(H, List<C>) set,
-) => BeanIntrospection<H>(
-  className: name,
-  annotations: const [Table()],
-  properties: [
-    prop<H>(
+) => EntityIntrospection<H>(
+  name,
+  [
+    EntityProperty(
       'children',
-      List<C>,
       ListType<C>(ClassType<C>()),
-      get,
-      set: (o, v) => set(o, v! as List<C>),
       annotations: const [MappedCollection()],
+      writable: true,
     ),
   ],
+  annotations: const [Table()],
+  get: (o, _) => get(o),
+  create: (v) => create(),
+  write: (o, i, v) => set(o, v! as List<C>),
 );
 
 /// A context over every description above.
-RelationalMappingContext testContext({NamingStrategy? naming}) {
-  final introspector = BeanIntrospector(
-    introspections: [
-      authorIntrospection(),
-      bookIntrospection(),
-      itemIntrospection(),
-      tagIntrospection(),
-      noteIntrospection(),
-      orderLineIntrospection(),
-      readingIntrospection(),
-      versionedChildIntrospection(),
-      plainChildIntrospection(),
-      loopIntrospection(),
-    ],
-  );
-  return RelationalMappingContext(
-    introspector: introspector,
-    namingStrategy: naming ?? const NamingStrategy(),
-  );
-}
+RelationalMappingContext testContext({NamingStrategy? naming}) =>
+    RelationalMappingContext(
+      introspections: [
+        authorIntrospection(),
+        bookIntrospection(),
+        itemIntrospection(),
+        tagIntrospection(),
+        noteIntrospection(),
+        orderLineIntrospection(),
+        readingIntrospection(),
+        gaugeIntrospection(),
+        draftIntrospection(),
+        lockedIntrospection(),
+        versionedChildIntrospection(),
+        plainChildIntrospection(),
+        loopIntrospection(),
+      ],
+      namingStrategy: naming ?? const NamingStrategy(),
+    );

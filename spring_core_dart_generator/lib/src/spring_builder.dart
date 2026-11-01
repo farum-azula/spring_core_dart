@@ -320,6 +320,7 @@ class SpringBuilder implements Builder {
       scanRoot: directory,
     );
 
+    final resources = await SpringBuilder.resources(buildStep);
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
@@ -327,6 +328,7 @@ class SpringBuilder implements Builder {
         componentScanChecker.firstAnnotationOf(scan)!,
         scan,
       ),
+      sqlResources: _texts(resources),
     );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
@@ -366,9 +368,17 @@ class SpringBuilder implements Builder {
       module: module,
       extra: [for (final output in glue) output.code],
       extraDefinitions: [for (final output in glue) output.definition],
-      resources: await SpringBuilder.resources(buildStep),
+      resources: resources,
     );
   }
+
+  // The text files among [resources], by path.
+  static Map<String, String> _texts(
+    Map<String, ({String? text, String? base64})> resources,
+  ) => {
+    for (final MapEntry(:key, :value) in resources.entries)
+      if (value.text != null) key: value.text!,
+  };
 
   /// The files under `lib/resources/`, keyed by their path below that
   /// directory, to embed in the generated module.
@@ -513,7 +523,15 @@ class SpringBuilder implements Builder {
       nestedAssets: nested,
     );
 
-    final scanner = BeanScanner(module, proxyMode: proxyMode);
+    final resources = await SpringBuilder.resources(
+      buildStep,
+      entryDirectory: directory,
+    );
+    final scanner = BeanScanner(
+      module,
+      proxyMode: proxyMode,
+      sqlResources: _texts(resources),
+    );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
     scanBuildContextAccess(module, scanner.collectErrors);
@@ -549,10 +567,6 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
-    final resources = await SpringBuilder.resources(
-      buildStep,
-      entryDirectory: directory,
-    );
     final defines = await _dartDefineKeys(buildStep, assets, resources);
     final source = emitter.emit(
       moduleName: 'application',
@@ -1328,6 +1342,10 @@ class SpringBuilder implements Builder {
           (fragment) => resolver.astNodeFor(fragment, resolve: true),
         );
         await scanner.resolveFieldInitializers(
+          library,
+          (fragment) => resolver.astNodeFor(fragment, resolve: true),
+        );
+        await scanner.resolveMapperCalls(
           library,
           (fragment) => resolver.astNodeFor(fragment, resolve: true),
         );

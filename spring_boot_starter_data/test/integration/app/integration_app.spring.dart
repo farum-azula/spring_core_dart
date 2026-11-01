@@ -13,13 +13,13 @@ import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i12;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i11;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i13;
-import 'package:spring_boot_starter_cache/src/annotations.dart' as _i8;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i9;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i5;
+import 'package:spring_boot_starter_cache/src/annotations.dart' as _i9;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i5;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i6;
 import 'package:spring_boot_starter_data/src/repository/page.dart' as _i4;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i6;
+import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i7;
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
-    as _i7;
+    as _i8;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i14;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
@@ -516,1708 +516,153 @@ class _$CatalogProxy implements _i1.Catalog, _i2.Advised {
   }
 }
 
-/// Implements `ItemRepository` through an `InvocationHandler`.
-class _$ItemRepositoryImpl implements _i1.ItemRepository {
-  _$ItemRepositoryImpl(this._handler, this._metadata);
+/// Implements `ItemRepository`: `SimpleRepository` has the CRUD methods.
+class _$ItemRepositoryImpl extends _i5.SimpleRepository<_i1.Item, int>
+    implements _i1.ItemRepository {
+  _$ItemRepositoryImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _findByCountGreaterThan = _i5.PartTree(
+    r'findByCountGreaterThan',
+    [
+      _i5.OrPart([_i5.Part(r'count', _i5.PartType.greaterThan)]),
+    ],
+  );
 
-  final _i2.InterfaceMetadata<_i1.ItemRepository> _metadata;
-
-  static _$ItemRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.ItemRepository>(
-      typeName: r'ItemRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'findByCountGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'count',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i4.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i4.Page<_i1.Item>>([
-            _i2.ClassType<_i1.Item>(),
-          ]),
-          isFuture: true,
+  static _$ItemRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$ItemRepositoryImpl(
+        r.dependency<_i5.RepositoryFactory>().operations<_i1.Item, int>(
+          r'ItemRepository',
         ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Item>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Item>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Item>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Item>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Item>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Item>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Item>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$ItemRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+      );
 
   @override
   _i3.Future<_i4.Page<_i1.Item>> findByCountGreaterThan(
     int count,
     _i4.Pageable pageable,
-  ) => _i2.retypeFuture<_i4.Page<_i1.Item>>(
-    this._handler.invoke(this._metadata.methods[0], [count, pageable]),
-  );
+  ) => this.operations.page(_findByCountGreaterThan, [count], pageable);
+}
 
-  @override
-  _i3.Future<List<_i1.Item>> saveAll(Iterable<_i1.Item> entities) =>
-      _i2.retypeFuture<List<_i1.Item>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
+/// Implements `StockRepository`: `SimpleRepository` has the CRUD methods.
+class _$StockRepositoryImpl extends _i5.SimpleRepository<_i1.Stock, int>
+    implements _i1.StockRepository {
+  _$StockRepositoryImpl(super.operations);
+
+  static const _findBySku = _i5.PartTree(r'findBySku', [
+    _i5.OrPart([_i5.Part(r'sku')]),
+  ]);
+
+  static const _findOneBySku = _i5.PartTree(r'findOneBySku', [
+    _i5.OrPart([_i5.Part(r'sku')]),
+  ]);
+
+  static _$StockRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$StockRepositoryImpl(
+        r.dependency<_i5.RepositoryFactory>().operations<_i1.Stock, int>(
+          r'StockRepository',
+        ),
       );
 
   @override
-  _i3.Future<List<_i1.Item>> findAll() => _i2.retypeFuture<List<_i1.Item>>(
-    this._handler.invoke(this._metadata.methods[2], const []),
+  _i3.Future<_i1.Stock?> findBySku(String sku) => this.operations.one(
+    _findBySku,
+    [sku],
+    lock: const _i6.Lock(_i6.LockMode.pessimisticWrite),
   );
 
   @override
-  _i3.Future<List<_i1.Item>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Item>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Item> save(_i1.Item entity) => _i2.retypeFuture<_i1.Item>(
-    this._handler.invoke(this._metadata.methods[4], [entity]),
-  );
-
-  @override
-  _i3.Future<_i1.Item?> findById(int id) => _i2.retypeFuture<_i1.Item?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Item entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Item> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
+  _i3.Future<_i1.Stock?> findOneBySku(String sku) => this.operations.one(
+    _findOneBySku,
+    [sku],
+    lock: const _i6.Lock(
+      _i6.LockMode.pessimisticWrite,
+      timeout: Duration(milliseconds: 50),
+    ),
   );
 }
 
-/// Implements `StockRepository` through an `InvocationHandler`.
-class _$StockRepositoryImpl implements _i1.StockRepository {
-  _$StockRepositoryImpl(this._handler, this._metadata);
+/// Implements `JobRepository`: `SimpleRepository` has the CRUD methods.
+class _$JobRepositoryImpl extends _i5.SimpleRepository<_i1.Job, int>
+    implements _i1.JobRepository {
+  _$JobRepositoryImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _findFirstByDoneFalseOrderById = _i5.PartTree(
+    r'findFirstByDoneFalseOrderById',
+    [
+      _i5.OrPart([_i5.Part(r'done', _i5.PartType.isFalse)]),
+    ],
+    subject: _i5.Subject(_i5.SubjectKind.find, maxResults: 1),
+    sort: _i5.Sort([_i5.SortOrder.asc(r'id')]),
+  );
 
-  final _i2.InterfaceMetadata<_i1.StockRepository> _metadata;
-
-  static _$StockRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.StockRepository>(
-      typeName: r'StockRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'findBySku',
-          parameters: [
-            _i2.BeanParameter(
-              r'sku',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
-          isFuture: true,
-          annotations: const [_i5.Lock(_i5.LockMode.pessimisticWrite)],
+  static _$JobRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$JobRepositoryImpl(
+        r.dependency<_i5.RepositoryFactory>().operations<_i1.Job, int>(
+          r'JobRepository',
         ),
-        _i2.ProxyMethod(
-          r'findOneBySku',
-          parameters: [
-            _i2.BeanParameter(
-              r'sku',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
-          isFuture: true,
+      );
+
+  @override
+  _i3.Future<_i1.Job?> findFirstByDoneFalseOrderById() => this.operations.one(
+    _findFirstByDoneFalseOrderById,
+    const [],
+    lock: const _i6.Lock(_i6.LockMode.pessimisticWrite, skipLocked: true),
+  );
+}
+
+/// Implements `AuditRepository`: `SimpleRepository` has the CRUD methods.
+class _$AuditRepositoryImpl extends _i5.SimpleRepository<_i1.AuditLine, int>
+    implements _i1.AuditRepository {
+  _$AuditRepositoryImpl(super.operations);
+
+  static _$AuditRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$AuditRepositoryImpl(
+        r.dependency<_i5.RepositoryFactory>().operations<_i1.AuditLine, int>(
+          r'AuditRepository',
+        ),
+      );
+}
+
+/// Implements `LabelRepository`: `SimpleRepository` has the CRUD methods.
+class _$LabelRepositoryImpl extends _i5.SimpleRepository<_i1.Label, String>
+    implements _i1.LabelRepository {
+  _$LabelRepositoryImpl(super.operations);
+
+  static _$LabelRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$LabelRepositoryImpl(
+        r.dependency<_i5.RepositoryFactory>().operations<_i1.Label, String>(
+          r'LabelRepository',
+        ),
+      );
+}
+
+/// Implements `ShipmentRepository`: `SimpleRepository` has the CRUD methods.
+class _$ShipmentRepositoryImpl extends _i5.SimpleRepository<_i1.Shipment, int>
+    implements _i1.ShipmentRepository {
+  _$ShipmentRepositoryImpl(super.operations);
+
+  static _$ShipmentRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$ShipmentRepositoryImpl(
+        r.dependency<_i5.RepositoryFactory>().operations<_i1.Shipment, int>(
+          r'ShipmentRepository',
+        ),
+      );
+}
+
+/// Implements `ArchiveRepository`: `SimpleRepository` has the CRUD methods.
+class _$ArchiveRepositoryImpl extends _i5.SimpleRepository<_i1.Archived, int>
+    implements _i1.ArchiveRepository {
+  _$ArchiveRepositoryImpl(super.operations);
+
+  static _$ArchiveRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$ArchiveRepositoryImpl(
+        r.dependency<_i5.RepositoryFactory>().operations<_i1.Archived, int>(
+          r'ArchiveRepository',
           annotations: const [
-            _i5.Lock(
-              _i5.LockMode.pessimisticWrite,
-              timeout: Duration(milliseconds: 50),
-            ),
+            _i6.UseStore(r'memory'),
+            _i6.UseDataSource(r'archive'),
           ],
         ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Stock>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Stock>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Stock>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Stock>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Stock>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$StockRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<_i1.Stock?> findBySku(String sku) => _i2.retypeFuture<_i1.Stock?>(
-    this._handler.invoke(this._metadata.methods[0], [sku]),
-  );
-
-  @override
-  _i3.Future<_i1.Stock?> findOneBySku(String sku) =>
-      _i2.retypeFuture<_i1.Stock?>(
-        this._handler.invoke(this._metadata.methods[1], [sku]),
       );
-
-  @override
-  _i3.Future<List<_i1.Stock>> saveAll(Iterable<_i1.Stock> entities) =>
-      _i2.retypeFuture<List<_i1.Stock>>(
-        this._handler.invoke(this._metadata.methods[2], [entities]),
-      );
-
-  @override
-  _i3.Future<List<_i1.Stock>> findAll() => _i2.retypeFuture<List<_i1.Stock>>(
-    this._handler.invoke(this._metadata.methods[3], const []),
-  );
-
-  @override
-  _i3.Future<List<_i1.Stock>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Stock>>(
-        this._handler.invoke(this._metadata.methods[4], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Stock> save(_i1.Stock entity) => _i2.retypeFuture<_i1.Stock>(
-    this._handler.invoke(this._metadata.methods[5], [entity]),
-  );
-
-  @override
-  _i3.Future<_i1.Stock?> findById(int id) => _i2.retypeFuture<_i1.Stock?>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[8], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Stock entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Stock> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[12], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[13], const []),
-  );
-}
-
-/// Implements `JobRepository` through an `InvocationHandler`.
-class _$JobRepositoryImpl implements _i1.JobRepository {
-  _$JobRepositoryImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.JobRepository> _metadata;
-
-  static _$JobRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.JobRepository>(
-      typeName: r'JobRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'findFirstByDoneFalseOrderById',
-          returnType: const _i2.ClassType<_i1.Job>(nullable: true),
-          isFuture: true,
-          annotations: const [
-            _i5.Lock(_i5.LockMode.pessimisticWrite, skipLocked: true),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Job>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Job>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Job>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Job>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Job>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Job>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Job>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$JobRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<_i1.Job?> findFirstByDoneFalseOrderById() =>
-      _i2.retypeFuture<_i1.Job?>(
-        this._handler.invoke(this._metadata.methods[0], const []),
-      );
-
-  @override
-  _i3.Future<List<_i1.Job>> saveAll(Iterable<_i1.Job> entities) =>
-      _i2.retypeFuture<List<_i1.Job>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i3.Future<List<_i1.Job>> findAll() => _i2.retypeFuture<List<_i1.Job>>(
-    this._handler.invoke(this._metadata.methods[2], const []),
-  );
-
-  @override
-  _i3.Future<List<_i1.Job>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Job>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Job> save(_i1.Job entity) => _i2.retypeFuture<_i1.Job>(
-    this._handler.invoke(this._metadata.methods[4], [entity]),
-  );
-
-  @override
-  _i3.Future<_i1.Job?> findById(int id) => _i2.retypeFuture<_i1.Job?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Job entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Job> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `AuditRepository` through an `InvocationHandler`.
-class _$AuditRepositoryImpl implements _i1.AuditRepository {
-  _$AuditRepositoryImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.AuditRepository> _metadata;
-
-  static _$AuditRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.AuditRepository>(
-      typeName: r'AuditRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.AuditLine>(
-                _i2.ClassType<_i1.AuditLine>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.AuditLine>(
-            _i2.ClassType<_i1.AuditLine>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.AuditLine>(
-            _i2.ClassType<_i1.AuditLine>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.AuditLine>(
-            _i2.ClassType<_i1.AuditLine>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.AuditLine>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.AuditLine>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.AuditLine>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.AuditLine>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.AuditLine>(
-                _i2.ClassType<_i1.AuditLine>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.AuditLine>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.AuditLine>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.AuditLine>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$AuditRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<List<_i1.AuditLine>> saveAll(Iterable<_i1.AuditLine> entities) =>
-      _i2.retypeFuture<List<_i1.AuditLine>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i3.Future<List<_i1.AuditLine>> findAll() =>
-      _i2.retypeFuture<List<_i1.AuditLine>>(
-        this._handler.invoke(this._metadata.methods[1], const []),
-      );
-
-  @override
-  _i3.Future<List<_i1.AuditLine>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.AuditLine>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.AuditLine> save(_i1.AuditLine entity) =>
-      _i2.retypeFuture<_i1.AuditLine>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i3.Future<_i1.AuditLine?> findById(int id) =>
-      _i2.retypeFuture<_i1.AuditLine?>(
-        this._handler.invoke(this._metadata.methods[4], [id]),
-      );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.AuditLine entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.AuditLine> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `LabelRepository` through an `InvocationHandler`.
-class _$LabelRepositoryImpl implements _i1.LabelRepository {
-  _$LabelRepositoryImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.LabelRepository> _metadata;
-
-  static _$LabelRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.LabelRepository>(
-      typeName: r'LabelRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Label>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Label>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Label>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Label>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Label>(),
-          const _i2.ClassType<String>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Label>(),
-          const _i2.ClassType<String>(),
-        ],
-      },
-    );
-    return _$LabelRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<_i1.Label> save(_i1.Label entity) => _i2.retypeFuture<_i1.Label>(
-    this._handler.invoke(this._metadata.methods[0], [entity]),
-  );
-
-  @override
-  _i3.Future<Iterable<_i1.Label>> saveAll(Iterable<_i1.Label> entities) =>
-      _i2.retypeFuture<Iterable<_i1.Label>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i3.Future<_i1.Label?> findById(String id) => _i2.retypeFuture<_i1.Label?>(
-    this._handler.invoke(this._metadata.methods[2], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(String id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[3], [id]),
-  );
-
-  @override
-  _i3.Future<Iterable<_i1.Label>> findAll() =>
-      _i2.retypeFuture<Iterable<_i1.Label>>(
-        this._handler.invoke(this._metadata.methods[4], const []),
-      );
-
-  @override
-  _i3.Future<Iterable<_i1.Label>> findAllById(Iterable<String> ids) =>
-      _i2.retypeFuture<Iterable<_i1.Label>>(
-        this._handler.invoke(this._metadata.methods[5], [ids]),
-      );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(String id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Label entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<String> ids) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[9], [ids]),
-      );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Label> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `ShipmentRepository` through an `InvocationHandler`.
-class _$ShipmentRepositoryImpl implements _i1.ShipmentRepository {
-  _$ShipmentRepositoryImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.ShipmentRepository> _metadata;
-
-  static _$ShipmentRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.ShipmentRepository>(
-      typeName: r'ShipmentRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Shipment>(
-                _i2.ClassType<_i1.Shipment>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Shipment>(
-            _i2.ClassType<_i1.Shipment>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Shipment>(
-            _i2.ClassType<_i1.Shipment>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Shipment>(
-            _i2.ClassType<_i1.Shipment>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Shipment>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Shipment>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Shipment>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Shipment>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Shipment>(
-                _i2.ClassType<_i1.Shipment>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Shipment>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Shipment>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Shipment>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$ShipmentRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<List<_i1.Shipment>> saveAll(Iterable<_i1.Shipment> entities) =>
-      _i2.retypeFuture<List<_i1.Shipment>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i3.Future<List<_i1.Shipment>> findAll() =>
-      _i2.retypeFuture<List<_i1.Shipment>>(
-        this._handler.invoke(this._metadata.methods[1], const []),
-      );
-
-  @override
-  _i3.Future<List<_i1.Shipment>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Shipment>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Shipment> save(_i1.Shipment entity) =>
-      _i2.retypeFuture<_i1.Shipment>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i3.Future<_i1.Shipment?> findById(int id) => _i2.retypeFuture<_i1.Shipment?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Shipment entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Shipment> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `ArchiveRepository` through an `InvocationHandler`.
-class _$ArchiveRepositoryImpl implements _i1.ArchiveRepository {
-  _$ArchiveRepositoryImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.ArchiveRepository> _metadata;
-
-  static _$ArchiveRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.ArchiveRepository>(
-      typeName: r'ArchiveRepository',
-      annotations: const [
-        _i5.UseStore(r'memory'),
-        _i5.UseDataSource(r'archive'),
-      ],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Archived>(
-                _i2.ClassType<_i1.Archived>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Archived>(
-            _i2.ClassType<_i1.Archived>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Archived>(
-            _i2.ClassType<_i1.Archived>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Archived>(
-            _i2.ClassType<_i1.Archived>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Archived>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Archived>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Archived>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Archived>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Archived>(
-                _i2.ClassType<_i1.Archived>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Archived>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Archived>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Archived>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$ArchiveRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<List<_i1.Archived>> saveAll(Iterable<_i1.Archived> entities) =>
-      _i2.retypeFuture<List<_i1.Archived>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i3.Future<List<_i1.Archived>> findAll() =>
-      _i2.retypeFuture<List<_i1.Archived>>(
-        this._handler.invoke(this._metadata.methods[1], const []),
-      );
-
-  @override
-  _i3.Future<List<_i1.Archived>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Archived>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Archived> save(_i1.Archived entity) =>
-      _i2.retypeFuture<_i1.Archived>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i3.Future<_i1.Archived?> findById(int id) => _i2.retypeFuture<_i1.Archived?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Archived entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Archived> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
 }
 
 /// Beans found by `@ComponentScan` in `lib/ and test/integration/app/`.
@@ -2229,12 +674,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ItemRepository',
       types: const [
         _i1.ItemRepository,
-        _i6.ListCrudRepository<_i1.Item, int>,
-        _i6.CrudRepository<_i1.Item, int>,
-        _i6.DataRepository<_i1.Item, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i1.Item, int>,
+        _i7.CrudRepository<_i1.Item, int>,
+        _i7.DataRepository<_i1.Item, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ItemRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -2246,12 +691,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#StockRepository',
       types: const [
         _i1.StockRepository,
-        _i6.ListCrudRepository<_i1.Stock, int>,
-        _i6.CrudRepository<_i1.Stock, int>,
-        _i6.DataRepository<_i1.Stock, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i1.Stock, int>,
+        _i7.CrudRepository<_i1.Stock, int>,
+        _i7.DataRepository<_i1.Stock, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$StockRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -2263,12 +708,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#JobRepository',
       types: const [
         _i1.JobRepository,
-        _i6.ListCrudRepository<_i1.Job, int>,
-        _i6.CrudRepository<_i1.Job, int>,
-        _i6.DataRepository<_i1.Job, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i1.Job, int>,
+        _i7.CrudRepository<_i1.Job, int>,
+        _i7.DataRepository<_i1.Job, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$JobRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -2280,12 +725,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#AuditRepository',
       types: const [
         _i1.AuditRepository,
-        _i6.ListCrudRepository<_i1.AuditLine, int>,
-        _i6.CrudRepository<_i1.AuditLine, int>,
-        _i6.DataRepository<_i1.AuditLine, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i1.AuditLine, int>,
+        _i7.CrudRepository<_i1.AuditLine, int>,
+        _i7.DataRepository<_i1.AuditLine, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuditRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -2297,10 +742,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#LabelRepository',
       types: const [
         _i1.LabelRepository,
-        _i6.CrudRepository<_i1.Label, String>,
-        _i6.DataRepository<_i1.Label, String>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.CrudRepository<_i1.Label, String>,
+        _i7.DataRepository<_i1.Label, String>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$LabelRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -2312,12 +757,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ShipmentRepository',
       types: const [
         _i1.ShipmentRepository,
-        _i6.ListCrudRepository<_i1.Shipment, int>,
-        _i6.CrudRepository<_i1.Shipment, int>,
-        _i6.DataRepository<_i1.Shipment, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i1.Shipment, int>,
+        _i7.CrudRepository<_i1.Shipment, int>,
+        _i7.DataRepository<_i1.Shipment, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ShipmentRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -2329,17 +774,17 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ArchiveRepository',
       types: const [
         _i1.ArchiveRepository,
-        _i6.ListCrudRepository<_i1.Archived, int>,
-        _i6.CrudRepository<_i1.Archived, int>,
-        _i6.DataRepository<_i1.Archived, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i1.Archived, int>,
+        _i7.CrudRepository<_i1.Archived, int>,
+        _i7.DataRepository<_i1.Archived, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ArchiveRepositoryImpl.$create(r),
       annotations: const [
-        _i5.UseStore(r'memory'),
-        _i5.UseDataSource(r'archive'),
+        _i6.UseStore(r'memory'),
+        _i6.UseDataSource(r'archive'),
       ],
       aopProxy: _i2.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches ArchiveRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
@@ -2409,7 +854,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
             annotations: [
-              _i7.Transactional(propagation: _i7.Propagation.requiresNew),
+              _i8.Transactional(propagation: _i8.Propagation.requiresNew),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
@@ -2425,7 +870,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'text', r'fail'],
             annotations: [
-              _i7.Transactional(propagation: _i7.Propagation.nested),
+              _i8.Transactional(propagation: _i8.Propagation.nested),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
@@ -2441,7 +886,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
             annotations: [
-              _i7.Transactional(propagation: _i7.Propagation.mandatory),
+              _i8.Transactional(propagation: _i8.Propagation.mandatory),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
@@ -2455,7 +900,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Auditor'],
             returnType: r'Future',
             annotations: [
-              _i7.Transactional(propagation: _i7.Propagation.never),
+              _i8.Transactional(propagation: _i8.Propagation.never),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
@@ -2515,7 +960,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'Object'],
             parameterNames: [r'name', r'error'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2530,7 +975,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String', r'Object'],
             parameterNames: [r'name', r'error'],
             annotations: [
-              _i7.Transactional(noRollbackFor: [_i1.Soft]),
+              _i8.Transactional(noRollbackFor: [_i1.Soft]),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
@@ -2545,7 +990,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'name', r'fail'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2559,7 +1004,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'failNested'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2571,7 +1016,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
             returnType: r'Future',
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2583,7 +1028,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
             returnType: r'Future',
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2595,7 +1040,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
             returnType: r'Future',
-            annotations: [_i7.Transactional(readOnly: true)],
+            annotations: [_i8.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2607,7 +1052,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
             returnType: r'Future',
-            annotations: [_i7.Transactional(readOnly: true)],
+            annotations: [_i8.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2621,7 +1066,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'fail'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2635,7 +1080,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'sku', r'amount'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2649,7 +1094,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'sku'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2661,7 +1106,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
             returnType: r'Future',
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2675,7 +1120,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int', r'String'],
             parameterNames: [r'id', r'name'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2689,7 +1134,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'sku'],
-            annotations: [_i7.Transactional(transactionManager: r'archive')],
+            annotations: [_i8.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2703,7 +1148,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'Future'],
             parameterNames: [r'release'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2717,7 +1162,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'List', r'bool'],
             parameterNames: [r'titles', r'fail'],
-            annotations: [_i7.Transactional(transactionManager: r'archive')],
+            annotations: [_i8.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2731,7 +1176,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'name', r'fail'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
             targetAnnotations: [_i2.Service()],
@@ -2859,7 +1304,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int', r'Pageable'],
             parameterNames: [r'count', r'pageable'],
-            annotations: [_i8.Cacheable(r'items')],
+            annotations: [_i9.Cacheable(r'items')],
             annotationTypes: [r'Cacheable'],
             targetTypes: [r'Catalog'],
             targetAnnotations: [_i2.Service()],
@@ -2903,403 +1348,313 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$CatalogProxy((target as _i1.Catalog), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i9.JdbcDriver>(
+    _i2.BeanDefinition<_i5.EntityIntrospections>(
+      name: r'entityIntrospections#application',
+      source: r'package:spring_boot_starter_data#EntityIntrospections',
+      types: const [_i5.EntityIntrospections],
+      create: (r) => _i5.EntityIntrospections([
+        _i5.EntityIntrospection<_i1.Item>(
+          r'Item',
+          const [
+            _i5.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'name',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'count',
+              _i2.ClassType<int>(),
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: 0,
+            ),
+            _i5.EntityProperty(
+              r'version',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i6.Version()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'items')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            2 => e.count,
+            _ => e.version,
+          },
+          create: (v) => _i1.Item(
+            name: v[1] as String,
+            count: v[2] as int,
+            id: v[0] as int?,
+            version: v[3] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.count = v as int,
+            3 => e.version = v as int?,
+            _ => null,
+          },
+        ),
+        _i5.EntityIntrospection<_i1.Stock>(
+          r'Stock',
+          const [
+            _i5.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'sku',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'quantity',
+              _i2.ClassType<int>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'stock')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.sku,
+            _ => e.quantity,
+          },
+          create: (v) => _i1.Stock(
+            sku: v[1] as String,
+            quantity: v[2] as int,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.sku = v as String,
+            2 => e.quantity = v as int,
+            _ => null,
+          },
+        ),
+        _i5.EntityIntrospection<_i1.Job>(
+          r'Job',
+          const [
+            _i5.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'name',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'done',
+              _i2.ClassType<bool>(),
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: false,
+            ),
+          ],
+          annotations: const [_i6.Table(r'jobs')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.done,
+          },
+          create: (v) => _i1.Job(
+            name: v[1] as String,
+            done: v[2] as bool,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.done = v as bool,
+            _ => null,
+          },
+        ),
+        _i5.EntityIntrospection<_i1.AuditLine>(
+          r'AuditLine',
+          const [
+            _i5.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'text',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'audit_lines')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.text,
+          },
+          create: (v) => _i1.AuditLine(text: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.text = v as String,
+            _ => null,
+          },
+        ),
+        _i5.EntityIntrospection<_i1.Label>(
+          r'Label',
+          const [
+            _i5.EntityProperty(
+              r'name',
+              _i2.ClassType<String>(),
+              annotations: [_i6.Id()],
+              parameter: true,
+            ),
+            _i5.EntityProperty(
+              r'version',
+              _i2.ClassType<int>(),
+              annotations: [_i6.Version()],
+              parameter: true,
+              hasDefaultValue: true,
+              defaultValue: 0,
+            ),
+          ],
+          annotations: const [_i6.Table(r'labels')],
+          get: (e, i) => switch (i) {
+            0 => e.name,
+            _ => e.version,
+          },
+          create: (v) => _i1.Label(v[0] as String, version: v[1] as int),
+        ),
+        _i5.EntityIntrospection<_i1.Shipment>(
+          r'Shipment',
+          const [
+            _i5.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'destination',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'parcels',
+              _i2.ListType<_i1.Parcel>(_i2.ClassType<_i1.Parcel>()),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+          ],
+          annotations: const [_i6.Table(r'shipments')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.destination,
+            _ => e.parcels,
+          },
+          create: (v) => _i1.Shipment(
+            destination: v[1] as String,
+            parcels: v[2] as List<_i1.Parcel>,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.destination = v as String,
+            2 => e.parcels = v as List<_i1.Parcel>,
+            _ => null,
+          },
+        ),
+        _i5.EntityIntrospection<_i1.Parcel>(
+          r'Parcel',
+          const [
+            _i5.EntityProperty(
+              r'label',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'parcels')],
+          get: (e, i) => e.label,
+          create: (v) => _i1.Parcel(label: v[0] as String),
+          write: (e, i, v) => switch (i) {
+            0 => e.label = v as String,
+            _ => null,
+          },
+        ),
+        _i5.EntityIntrospection<_i1.Archived>(
+          r'Archived',
+          const [
+            _i5.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i5.EntityProperty(
+              r'title',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'archived')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.title,
+          },
+          create: (v) => _i1.Archived(title: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.title = v as String,
+            _ => null,
+          },
+        ),
+      ]),
+    ),
+    _i2.BeanDefinition<_i5.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i9.JdbcDriver],
-      conditions: [_i9.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i5.JdbcDriver],
+      conditions: [_i5.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
-    ),
-  ],
-  introspections: [
-    _i2.BeanIntrospection<_i1.Item>(
-      className: r'Item',
-      properties: [
-        _i2.BeanProperty<_i1.Item>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i5.Id()],
-        ),
-        _i2.BeanProperty<_i1.Item>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Item>(
-          r'count',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.count,
-          set: (bean, value) => bean.count = (value as int),
-        ),
-        _i2.BeanProperty<_i1.Item>(
-          r'version',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.version,
-          set: (bean, value) => bean.version = (value as int?),
-          annotations: const [_i5.Version()],
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i1.Item>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      annotations: const [_i5.Table(r'items')],
-      constructor: _i2.BeanConstructor<_i1.Item>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'count',
-            type: const _i2.ClassType<int>(),
-            symbol: #count,
-            hasDefaultValue: true,
-            defaultValue: 0,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'version',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #version,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Item.new, positional, named) as _i1.Item),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Stock>(
-      className: r'Stock',
-      properties: [
-        _i2.BeanProperty<_i1.Stock>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i5.Id()],
-        ),
-        _i2.BeanProperty<_i1.Stock>(
-          r'sku',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.sku,
-          set: (bean, value) => bean.sku = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Stock>(
-          r'quantity',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.quantity,
-          set: (bean, value) => bean.quantity = (value as int),
-        ),
-      ],
-      annotations: const [_i5.Table(r'stock')],
-      constructor: _i2.BeanConstructor<_i1.Stock>(
-        parameters: [
-          _i2.BeanParameter(
-            r'sku',
-            type: const _i2.ClassType<String>(),
-            symbol: #sku,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'quantity',
-            type: const _i2.ClassType<int>(),
-            symbol: #quantity,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Stock.new, positional, named) as _i1.Stock),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Job>(
-      className: r'Job',
-      properties: [
-        _i2.BeanProperty<_i1.Job>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i5.Id()],
-        ),
-        _i2.BeanProperty<_i1.Job>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Job>(
-          r'done',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
-          get: (bean) => bean.done,
-          set: (bean, value) => bean.done = (value as bool),
-        ),
-      ],
-      annotations: const [_i5.Table(r'jobs')],
-      constructor: _i2.BeanConstructor<_i1.Job>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'done',
-            type: const _i2.ClassType<bool>(),
-            symbol: #done,
-            hasDefaultValue: true,
-            defaultValue: false,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Job.new, positional, named) as _i1.Job),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.AuditLine>(
-      className: r'AuditLine',
-      properties: [
-        _i2.BeanProperty<_i1.AuditLine>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i5.Id()],
-        ),
-        _i2.BeanProperty<_i1.AuditLine>(
-          r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
-          set: (bean, value) => bean.text = (value as String),
-        ),
-      ],
-      annotations: const [_i5.Table(r'audit_lines')],
-      constructor: _i2.BeanConstructor<_i1.AuditLine>(
-        parameters: [
-          _i2.BeanParameter(
-            r'text',
-            type: const _i2.ClassType<String>(),
-            symbol: #text,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.AuditLine.new, positional, named)
-                as _i1.AuditLine),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Label>(
-      className: r'Label',
-      properties: [
-        _i2.BeanProperty<_i1.Label>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          annotations: const [_i5.Id()],
-        ),
-        _i2.BeanProperty<_i1.Label>(
-          r'version',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.version,
-          annotations: const [_i5.Version()],
-        ),
-      ],
-      annotations: const [_i5.Table(r'labels')],
-      constructor: _i2.BeanConstructor<_i1.Label>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'version',
-            type: const _i2.ClassType<int>(),
-            symbol: #version,
-            hasDefaultValue: true,
-            defaultValue: 0,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Label.new, positional, named) as _i1.Label),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Shipment>(
-      className: r'Shipment',
-      properties: [
-        _i2.BeanProperty<_i1.Shipment>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i5.Id()],
-        ),
-        _i2.BeanProperty<_i1.Shipment>(
-          r'destination',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.destination,
-          set: (bean, value) => bean.destination = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Shipment>(
-          r'parcels',
-          type: List<_i1.Parcel>,
-          typeInfo: const _i2.ListType<_i1.Parcel>(_i2.ClassType<_i1.Parcel>()),
-          get: (bean) => bean.parcels,
-          set: (bean, value) => bean.parcels = (value as List<_i1.Parcel>),
-          annotations: const [_i5.MappedCollection()],
-        ),
-      ],
-      annotations: const [_i5.Table(r'shipments')],
-      constructor: _i2.BeanConstructor<_i1.Shipment>(
-        parameters: [
-          _i2.BeanParameter(
-            r'destination',
-            type: const _i2.ClassType<String>(),
-            symbol: #destination,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'parcels',
-            type: const _i2.ListType<_i1.Parcel>(_i2.ClassType<_i1.Parcel>()),
-            symbol: #parcels,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Shipment.new, positional, named)
-                as _i1.Shipment),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Parcel>(
-      className: r'Parcel',
-      properties: [
-        _i2.BeanProperty<_i1.Parcel>(
-          r'label',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.label,
-          set: (bean, value) => bean.label = (value as String),
-        ),
-      ],
-      annotations: const [_i5.Table(r'parcels')],
-      constructor: _i2.BeanConstructor<_i1.Parcel>(
-        parameters: [
-          _i2.BeanParameter(
-            r'label',
-            type: const _i2.ClassType<String>(),
-            symbol: #label,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Parcel.new, positional, named) as _i1.Parcel),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Archived>(
-      className: r'Archived',
-      properties: [
-        _i2.BeanProperty<_i1.Archived>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i5.Id()],
-        ),
-        _i2.BeanProperty<_i1.Archived>(
-          r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-          set: (bean, value) => bean.title = (value as String),
-        ),
-      ],
-      annotations: const [_i5.Table(r'archived')],
-      constructor: _i2.BeanConstructor<_i1.Archived>(
-        parameters: [
-          _i2.BeanParameter(
-            r'title',
-            type: const _i2.ClassType<String>(),
-            symbol: #title,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Archived.new, positional, named)
-                as _i1.Archived),
-      ),
     ),
   ],
   typeTests: {_i1.Soft: (value) => value is _i1.Soft},
 );
 
-final class _$Sqlite3Binding implements _i9.SqliteBinding {
+final class _$Sqlite3Binding implements _i5.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i9.SqliteDatabase open(
+  _i5.SqliteDatabase open(
     String filename, {
-    _i9.SqliteOpenMode mode = _i9.SqliteOpenMode.readWriteCreate,
+    _i5.SqliteOpenMode mode = _i5.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
@@ -3312,7 +1667,7 @@ final class _$Sqlite3Binding implements _i9.SqliteBinding {
   );
 }
 
-final class _$Sqlite3Database implements _i9.SqliteDatabase {
+final class _$Sqlite3Database implements _i5.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
   final _i10.Database _database;
@@ -3331,7 +1686,7 @@ final class _$Sqlite3Database implements _i9.SqliteDatabase {
   });
 
   @override
-  _i9.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i5.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -3369,7 +1724,7 @@ final class _$Sqlite3Database implements _i9.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i9.SqliteCursor {
+final class _$Sqlite3Cursor implements _i5.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
   final _i10.PreparedStatement _statement;
@@ -3398,7 +1753,7 @@ T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
   } on _i10.SqliteException catch (e) {
-    throw _i9.SqlError(
+    throw _i5.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -3406,8 +1761,8 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i9.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i9.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i5.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i5.SqliteJdbcDriver(const _$Sqlite3Binding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
@@ -3464,7 +1819,7 @@ _i11.SpringApplication get springApplication => _i11.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '25633dbb',
+  fingerprint: 'b9b83443',
 );
 
 /// Starts the application: config files, environment, context, runners

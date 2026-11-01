@@ -7385,6 +7385,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.fields,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i3.LogLine>(
         parameters: [
           _i2.BeanParameter(
@@ -8108,6 +8109,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       annotations: const [_i82.ConfigurationProperties(r'neon.cors')],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i54.CorsProperties(),
       constructor: _i2.BeanConstructor<_i54.CorsProperties>(
         parameters: [],
@@ -8139,6 +8141,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i82.ConfigurationProperties(r'neon.app'),
         _i2.Validated(),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i58.AppProperties(),
       constructor: _i2.BeanConstructor<_i58.AppProperties>(
         parameters: [],
@@ -8167,6 +8170,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         _i82.ConfigurationProperties(r'neon.security'),
         _i2.Validated(),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i61.UsersProperties(),
       constructor: _i2.BeanConstructor<_i61.UsersProperties>(
         parameters: [],
@@ -8202,6 +8206,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           annotations: const [_i2.NotEmpty()],
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i61.UserEntry(),
       constructor: _i2.BeanConstructor<_i61.UserEntry>(
         parameters: [],
@@ -8268,19 +8273,12 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           set: (bean, value) => bean.maxCoverSize = (value as _i2.DataSize),
         ),
       ],
-      methods: [
-        _i2.BeanMethod<_i18.ShopProperties>(
-          r'isOpenAt',
-          returnType: bool,
-          parameterTypes: const [DateTime],
-          invoke: (bean, arguments) => Function.apply(bean.isOpenAt, arguments),
-        ),
-      ],
       annotations: const [
         _i82.ConfigurationProperties(r'neon.shop'),
         _i2.Validated(),
         _i18.ValidOpeningHours(),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i18.ShopProperties(),
       constructor: _i2.BeanConstructor<_i18.ShopProperties>(
         parameters: [],
@@ -8339,13 +8337,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.available,
         ),
       ],
-      methods: [
-        _i2.BeanMethod<_i7.StockChanged>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i7.StockChanged>(
         parameters: [
           _i2.BeanParameter(
@@ -8388,6 +8380,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.copies,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i38.Offer>(
         parameters: [
           _i2.BeanParameter(
@@ -8436,6 +8429,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.reference,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i38.Delivery>(
         parameters: [
           _i2.BeanParameter(
@@ -8477,13 +8471,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           get: (bean) => bean.copies,
         ),
       ],
-      methods: [
-        _i2.BeanMethod<_i38.DeliveryRequest>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i38.DeliveryRequest>(
         parameters: [
           _i2.BeanParameter(
@@ -8527,6 +8515,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         ),
       ],
       annotations: const [_i82.ConfigurationProperties(r'neon.supplier')],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i66.SupplierProperties(),
       constructor: _i2.BeanConstructor<_i66.SupplierProperties>(
         parameters: [],
@@ -8582,54 +8571,6 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
         create: (positional, named) =>
             (Function.apply(_i43.ChatMessage.new, positional, named)
                 as _i43.ChatMessage),
-      ),
-    ),
-    _i2.BeanIntrospection<_i9.BookNotFoundException>(
-      className: r'BookNotFoundException',
-      properties: [
-        _i2.BeanProperty<_i9.BookNotFoundException>(
-          r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i9.BookNotFoundException>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i9.BookNotFoundException>(
-        parameters: [
-          _i2.BeanParameter(
-            r'isbn',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i9.BookNotFoundException.new, positional, named)
-                as _i9.BookNotFoundException),
-      ),
-    ),
-    _i2.BeanIntrospection<_i6.EmptyBasketException>(
-      className: r'EmptyBasketException',
-      properties: [],
-      methods: [
-        _i2.BeanMethod<_i6.EmptyBasketException>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      instantiate: () => _i6.EmptyBasketException(),
-      constructor: _i2.BeanConstructor<_i6.EmptyBasketException>(
-        parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i6.EmptyBasketException.new, positional, named)
-                as _i6.EmptyBasketException),
       ),
     ),
   ],

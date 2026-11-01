@@ -54,19 +54,31 @@ void main() {
       expect(context, hasSingleBean<RepositoryFactory>());
       expect(context, hasSingleBean<AuditingHandler>());
       expect(context, hasBean<DataStore>());
-      expect(context, hasBean<InvocationHandlerFactory>());
       expect(context, hasBeanNamed('bookRepository'));
     });
   });
 
-  test("the mapping context uses the context's introspector", () {
-    exampleRunner.run((context) {
-      final mapping = context.getBean<RelationalMappingContext>();
-      expect(mapping.introspector, same(context.getBean<BeanIntrospector>()));
-      // Described by the generated module, found through it.
-      expect(mapping.getRequiredPersistentEntity<Book>().tableName, 'books');
-    });
-  });
+  test(
+    "the mapping context is built from the modules' entity descriptions",
+    () {
+      exampleRunner.run((context) {
+        final mapping = context.getBean<RelationalMappingContext>();
+        final modules = [
+          for (final name
+              in context.getBeanNamesForType<EntityIntrospections>())
+            context.getBeanByName(name) as EntityIntrospections,
+        ];
+        expect(modules, isNotEmpty);
+        for (final module in modules) {
+          for (final described in module.introspections) {
+            expect(mapping.introspectionOf(described.type), isNotNull);
+          }
+        }
+        // Described by the generated module, found through it.
+        expect(mapping.getRequiredPersistentEntity<Book>().tableName, 'books');
+      });
+    },
+  );
 
   test('without @EnableDataAuditing there is no auditing', () {
     runner.withAutoConfiguration(springBootStarterDataAutoConfiguration).run((

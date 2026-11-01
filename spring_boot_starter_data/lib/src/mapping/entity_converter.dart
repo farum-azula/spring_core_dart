@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'package:spring_boot_starter_data/src/annotations.dart';
+import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 
@@ -21,10 +22,12 @@ import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 /// property, an `int` 0/1 (SQLite) to a `bool`, an ISO-8601 `String` (or
 /// epoch milliseconds) to a `DateTime`, a `List<int>` to `Uint8List`.
 ///
-/// An instance is created through the class's constructor: each parameter
-/// takes the column of the property of the same name (a missing optional
-/// parameter is left out, so its default applies; a missing required one is
-/// a [MappingException]); the other writable properties are set after.
+/// An instance is created through the class's constructor, with the values
+/// of all the properties given to its `EntityIntrospection.create`: a
+/// property takes the column of its name, else its default value (a
+/// constant initializer or a constant default of its constructor
+/// parameter), else null, which a parameter that cannot be null refuses
+/// with a [MappingException]. The other writable properties are set after.
 ///
 /// An entity with `final` properties cannot be changed in place: [withId],
 /// [withVersion] and [withValues] return a copy made through the
@@ -42,12 +45,13 @@ import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 /// the id and version).
 class EntityConverter {
   /// A converter looking enums up in [introspector] (by default
-  /// `BeanIntrospector.shared`) when a property's description does not
-  /// carry them.
+  /// `BeanIntrospector.shared`) when the type given does not carry them (a
+  /// `ClassType` of the JDBC-level mappers; an entity's enum property is an
+  /// `EnumType`).
   EntityConverter({BeanIntrospector? introspector})
     : introspector = introspector ?? BeanIntrospector.shared;
 
-  /// Where enums not described by their property are looked up.
+  /// Where enums not described by their type are looked up.
   final BeanIntrospector introspector;
 
   // ---------------------------------------------------------------- write
@@ -55,13 +59,12 @@ class EntityConverter {
   /// The row of [instance]: every column of [entity] (so the id and
   /// version too, and nulls included) with its value as [toColumnValue]
   /// gives it.
-  Map<String, Object?> write(
-    PersistentEntity<Object> entity,
-    Object instance,
-  ) => {
-    for (final p in entity.columns)
-      p.columnName: toColumnValue(p.getValue(instance)),
-  };
+  Map<String, Object?> write(PersistentEntity<Object> entity, Object instance) {
+    return {
+      for (final p in entity.columns)
+        p.columnName: toColumnValue(p.getValue(instance)),
+    };
+  }
 
   /// [value] as a column holds it: an `AggregateReference` as its id, an
   /// enum as its `name`, anything else unchanged.
@@ -80,41 +83,76 @@ class EntityConverter {
   /// non-null mapped collection absent from [children] is empty.
   ///
   /// A column missing from [row], or null for a property that cannot be
-  /// null, leaves the property to the constructor's default (a null a
-  /// required parameter cannot take is refused). An unconvertible value, or
-  /// a required constructor parameter without a column, is a
+  /// null, leaves the property its default value (when it has one; else a
+  /// parameter that cannot be null is refused, and any other property is
+  /// left as the constructor makes it). An unconvertible value, or a
+  /// non-null parameter without a column or a default, is a
   /// [MappingException].
   T read<T extends Object>(
     PersistentEntity<T> entity,
     Map<String, Object?> row, {
     Map<String, Object?> children = const {},
   }) {
-    final values = <String, Object?>{};
-    final settable = <String>{};
-    for (final p in entity.properties) {
-      settable.add(p.name);
-      if (p.isMappedCollection) {
+    final introspection = entity.introspection;
+    final properties = introspection.properties;
+    final values = List<Object?>.filled(properties.length, null);
+    final usable = List<bool>.filled(properties.length, false);
+    for (final (i, described) in properties.indexed) {
+      final p = entity.propertyAt(i);
+      var inRow = false;
+      if (p != null && p.isMappedCollection) {
         if (children.containsKey(p.name)) {
-          values[p.name] = _collection(entity, p, children[p.name]);
+          values[i] = _collection(entity, p, children[p.name]);
+          usable[i] = true;
         } else if (!p.isNullable) {
-          values[p.name] = _collection(
+          values[i] = _collection(
             entity,
             p,
             p.type is MapType<Object?, Object?>
                 ? const <Object?, Object?>{}
                 : const <Object?>[],
           );
+          usable[i] = true;
         }
-      } else if (row.containsKey(p.columnName)) {
+      } else if (p != null && row.containsKey(p.columnName)) {
+        inRow = true;
         final value = row[p.columnName];
-        // A null for a property that cannot be null is left to the
-        // constructor: its default applies, or (required) it is refused.
-        values[p.name] = value == null
-            ? null
-            : fromColumnValue(value, p.type, where: _where(entity, p));
+        if (value != null) {
+          values[i] = fromColumnValue(value, p.type, where: _where(entity, p));
+          usable[i] = true;
+        } else if (described.type.nullable) {
+          usable[i] = true;
+        }
+      }
+      if (!usable[i] && described.hasDefaultValue) {
+        values[i] = _defaultOf(introspection.className, described);
+        usable[i] = true;
+      }
+      if (!usable[i] && described.parameter && !described.type.nullable) {
+        throw MappingException(
+          inRow
+              ? '${introspection.className}.${described.name} is null but '
+                    'the constructor requires a ${described.type}'
+              : '${introspection.className}: the constructor requires '
+                    '${described.name} but there is no column for it '
+                    '(a @Transient property, or a missing column)',
+        );
       }
     }
-    return _create(entity, values, settable);
+    return _create(introspection, values, usable);
+  }
+
+  // The default of [described] as the property holds it (a constant of the
+  // description, such as the `0` of a `double`, widened).
+  Object? _defaultOf(String className, EntityProperty described) {
+    final value = described.defaultValue;
+    return value == null
+        ? null
+        : fromColumnValue(
+            value,
+            described.type,
+            where: '$className.${described.name} (default)',
+          );
   }
 
   /// [value], as read from a column, converted to what a property of type
@@ -295,7 +333,8 @@ class EntityConverter {
   /// value, as a property holds it, not as a column does) set: the same
   /// instance when every one is writable, else a copy made through the
   /// constructor, with every property of the original (a `@Transient`
-  /// one too) carried over.
+  /// one too) carried over: the writable ones the constructor does not take
+  /// are set on the copy.
   T withValues<T extends Object>(
     PersistentEntity<T> entity,
     T instance,
@@ -317,22 +356,18 @@ class EntityConverter {
           where: _where(entity, properties[key]!),
         ),
     };
-    if (changes.keys.every((n) => properties[n]!.accessor.isWritable)) {
+    final introspection = entity.introspection;
+    if (changes.keys.every((n) => properties[n]!.isWritable)) {
       for (final MapEntry(:key, :value) in converted.entries) {
-        properties[key]!.setValue(instance, value);
+        introspection.write(instance, properties[key]!.index, value);
       }
       return instance;
     }
-    final values = <String, Object?>{};
-    final settable = <String>{};
-    for (final bean in entity.introspection.properties) {
-      values[bean.name] = bean.getValue(instance);
-      if (bean.isWritable) {
-        settable.add(bean.name);
-      }
+    final values = introspection.values(instance);
+    for (final MapEntry(:key, :value) in converted.entries) {
+      values[properties[key]!.index] = value;
     }
-    values.addAll(converted);
-    return _create(entity, values, settable);
+    return _create(introspection, values);
   }
 
   // ------------------------------------------------------------- internals
@@ -355,7 +390,7 @@ class EntityConverter {
     PersistentProperty property,
     Object? value,
   ) {
-    if (!property.accessor.isWritable) {
+    if (!property.isWritable) {
       throw MappingException(
         '${_where(entity, property)} is final: create a copy with '
         'withValues (withId, withVersion) instead of setting it',
@@ -370,72 +405,24 @@ class EntityConverter {
   String _where(PersistentEntity<Object> entity, PersistentProperty p) =>
       '${entity.introspection.className}.${p.name}';
 
-  static const _missing = Object();
-
-  /// Creates the instance: the constructor's parameters from [values] (by
-  /// property name), then the properties of [settable] still unused.
+  /// Creates the instance from [values] (one for each property of the
+  /// description, in its order), then sets the writable properties the
+  /// constructor does not take: those [usable] says have a value (all, when
+  /// it is null) except a null a non-nullable property refuses.
   T _create<T extends Object>(
-    PersistentEntity<T> entity,
-    Map<String, Object?> values,
-    Set<String> settable,
-  ) {
-    final introspection = entity.introspection;
-    final className = introspection.className;
-    final used = <String>{};
-    final T instance;
-    final constructor = introspection.constructor;
-    if (constructor != null) {
-      final positional = <Object?>[];
-      final named = <Symbol, Object?>{};
-      for (final parameter in constructor.parameters) {
-        final has = values.containsKey(parameter.name);
-        final value = values[parameter.name];
-        final usable = has && (value != null || parameter.type.nullable);
-        if (!usable && parameter.isRequired) {
-          throw MappingException(
-            has
-                ? '$className.${parameter.name} is null but the '
-                      'constructor requires a ${parameter.type}'
-                : '$className: the constructor requires '
-                      '${parameter.name} but there is no column for it '
-                      '(a @Transient property, or a missing column)',
-          );
-        }
-        if (usable) {
-          used.add(parameter.name);
-        }
-        if (parameter.symbol case final symbol?) {
-          if (usable) {
-            named[symbol] = value;
-          }
-        } else {
-          positional.add(usable ? value : _missing);
-        }
-      }
-      while (positional.isNotEmpty && identical(positional.last, _missing)) {
-        positional.removeLast();
-      }
-      instance = constructor.newInstance([
-        for (final v in positional)
-          if (identical(v, _missing)) null else v,
-      ], named);
-    } else if (introspection.isInstantiable) {
-      instance = introspection.instantiate();
-    } else {
-      throw MappingException(
-        '$className has neither a constructor nor a no-argument '
-        'constructor in its description',
-      );
-    }
-    for (final bean in introspection.properties) {
-      if (used.contains(bean.name) ||
-          !settable.contains(bean.name) ||
-          !values.containsKey(bean.name) ||
-          !bean.isWritable ||
-          (values[bean.name] == null && !bean.nullable)) {
+    EntityIntrospection<T> introspection,
+    List<Object?> values, [
+    List<bool>? usable,
+  ]) {
+    final instance = introspection.create(values);
+    for (final (i, described) in introspection.properties.indexed) {
+      if (described.parameter ||
+          !described.writable ||
+          !(usable?[i] ?? true) ||
+          (values[i] == null && !described.type.nullable)) {
         continue;
       }
-      bean.setValue(instance, values[bean.name]);
+      introspection.write(instance, i, values[i]);
     }
     return instance;
   }

@@ -76,8 +76,7 @@ class InterfaceProxy {
 final class ProxyMethod {
   /// Describes the method [name]; `call` invokes it on any implementation
   /// of the interface (e.g. a fallback bean). The generator leaves `call`
-  /// out where no implementation can exist (the repositories of
-  /// `spring_boot_starter_data`, whose only implementation is the handler).
+  /// out where there is no other implementation to call.
   ProxyMethod(
     this.name, {
     required this.returnType,
@@ -110,12 +109,9 @@ final class ProxyMethod {
 
   final Object? Function(Object target, List<Object?> arguments)? _call;
 
-  /// Whether [callOn] works (the generator wrote a `call`).
-  bool get isCallable => _call != null;
-
   /// Calls this method on [target], an implementation of the interface,
   /// with [arguments] in the order of [parameters]. Throws a [StateError]
-  /// when the method was described without a `call` ([isCallable]).
+  /// when the method was described without a `call`.
   Object? callOn(Object target, List<Object?> arguments) {
     final call =
         _call ??
@@ -156,10 +152,8 @@ final class InterfaceMetadata<T extends Object> {
     required this.typeName,
     required List<ProxyMethod> methods,
     List<Object> annotations = const [],
-    Map<String, List<TypeInfo<Object?>>> supertypeArguments = const {},
   }) : methods = List.unmodifiable(methods),
-       annotations = List.unmodifiable(annotations),
-       supertypeArguments = Map.unmodifiable(supertypeArguments);
+       annotations = List.unmodifiable(annotations);
 
   /// The interface name, e.g. `CatalogClient`.
   final String typeName;
@@ -169,18 +163,6 @@ final class InterfaceMetadata<T extends Object> {
 
   /// The const annotations on the interface.
   final List<Object> annotations;
-
-  /// The type arguments of each generic supertype of the interface, by the
-  /// supertype's name: for `BookRepository extends CrudRepository<Book,
-  /// int>`, `{'CrudRepository': [Book, int], 'DataRepository': [Book,
-  /// int]}`. A handler reads the types it works with here (each
-  /// [TypeInfo.capture]s its type), since there is no reflection.
-  final Map<String, List<TypeInfo<Object?>>> supertypeArguments;
-
-  /// The type arguments of the supertype named [supertype], or `null` when
-  /// the interface does not implement it.
-  List<TypeInfo<Object?>>? typeArgumentsOf(String supertype) =>
-      supertypeArguments[supertype];
 
   /// The interface type.
   Type get type => T;

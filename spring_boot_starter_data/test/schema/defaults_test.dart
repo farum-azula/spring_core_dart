@@ -4,7 +4,6 @@
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
-import '../mapping/support.dart' show prop;
 import 'support.dart';
 
 class Row {
@@ -22,112 +21,104 @@ enum Status { draft, published }
 const _int = ClassType<int>();
 const _intN = ClassType<int>(nullable: true);
 
-BeanProperty<T> col<T extends Row>(
+EntityProperty col(
   String name,
-  Type type,
   TypeInfo<Object?> info, {
   List<Object> annotations = const [],
-  bool hasInitialValue = false,
-  Object? initialValue,
-}) => prop<T>(
+  bool hasDefaultValue = false,
+  Object? defaultValue,
+  bool parameter = false,
+}) => EntityProperty(
   name,
-  type,
   info,
-  (r) => r.values[name],
-  set: (r, v) => r.values[name] = v,
   annotations: annotations,
-  hasInitialValue: hasInitialValue,
-  initialValue: initialValue,
+  parameter: parameter,
+  writable: true,
+  hasDefaultValue: hasDefaultValue,
+  defaultValue: defaultValue,
 );
 
-BeanIntrospection<T> describe<T extends Row>(
+EntityIntrospection<T> describe<T extends Row>(
   String name,
   T Function() create,
-  List<BeanProperty<T>> properties, {
+  List<EntityProperty> properties, {
   List<Object> annotations = const [Table()],
-  BeanConstructor<T>? constructor,
-}) => BeanIntrospection<T>(
-  className: name,
+}) => EntityIntrospection<T>(
+  name,
+  properties,
   annotations: annotations,
-  properties: properties,
-  instantiate: create,
-  constructor: constructor,
+  get: (r, i) => r.values[properties[i].name],
+  create: (v) => create(),
+  write: (r, i, v) => r.values[properties[i].name] = v,
 );
 
-final BeanIntrospection<Gadget> gadget = describe<Gadget>(
+final EntityIntrospection<Gadget> gadget = describe<Gadget>(
   'Gadget',
   Gadget.new,
   [
-    col<Gadget>('id', int, _intN, annotations: const [Id()]),
-    col<Gadget>(
+    col('id', _intN, annotations: const [Id()]),
+    col(
       'inStock',
-      bool,
       const ClassType<bool>(),
-      hasInitialValue: true,
-      initialValue: true,
+      hasDefaultValue: true,
+      defaultValue: true,
     ),
-    col<Gadget>('stock', int, _int, hasInitialValue: true, initialValue: 0),
-    col<Gadget>(
+    col('stock', _int, hasDefaultValue: true, defaultValue: 0),
+    col(
       'label',
-      String,
       const ClassType<String>(),
-      hasInitialValue: true,
-      initialValue: "it's new",
+      hasDefaultValue: true,
+      defaultValue: "it's new",
     ),
-    col<Gadget>(
+    col(
       'status',
-      Status,
       const EnumType<Status>(Status.values),
-      hasInitialValue: true,
-      initialValue: Status.draft,
+      hasDefaultValue: true,
+      defaultValue: Status.draft,
     ),
-    col<Gadget>(
+    col(
       'rate',
-      double,
       const ClassType<double>(),
-      hasInitialValue: true,
-      initialValue: 1.5,
+      hasDefaultValue: true,
+      defaultValue: 1.5,
     ),
-    col<Gadget>('note', String, const ClassType<String>(nullable: true)),
+    col('note', const ClassType<String>(nullable: true)),
   ],
   annotations: const [Table('gadgets')],
 );
 
-final BeanIntrospection<Publisher> publisher = describe<Publisher>(
+final EntityIntrospection<Publisher> publisher = describe<Publisher>(
   'Publisher',
   Publisher.new,
   [
-    col<Publisher>('id', int, _int, annotations: const [Id()]),
-    col<Publisher>('version', int, _int, annotations: const [Version()]),
+    col('id', _int, annotations: const [Id()]),
+    col('version', _int, annotations: const [Version()]),
   ],
   annotations: const [Table('publishers')],
 );
 
-BeanIntrospection<Item> item({bool withDefault = true}) => describe<Item>(
+EntityIntrospection<Item> item({bool withDefault = true}) => describe<Item>(
   'Item',
   Item.new,
   [
-    col<Item>('id', int, _intN, annotations: const [Id()]),
-    col<Item>(
+    col('id', _intN, annotations: const [Id()]),
+    col(
       'publisherId',
-      int,
       _intN,
       annotations: const [
         Reference(Publisher),
         OnDelete(OnDeleteAction.setDefault),
       ],
-      hasInitialValue: withDefault,
-      initialValue: withDefault ? 1 : null,
+      hasDefaultValue: withDefault,
+      defaultValue: withDefault ? 1 : null,
     ),
   ],
   annotations: const [Table('items')],
 );
 
 RelationalMappingContext contextOf(
-  List<BeanIntrospection<Object>> introspections,
-) => RelationalMappingContext(
-  introspector: BeanIntrospector(introspections: introspections),
-);
+  List<EntityIntrospection<Object>> introspections,
+) => RelationalMappingContext(introspections: introspections);
 
 void main() {
   group('the mapping', () {
@@ -138,30 +129,25 @@ void main() {
       expect(entity.property('note')!.hasDefaultValue, isFalse);
     });
 
-    test('a constructor default counts when the field has none', () {
-      final withConstructor = describe<Gadget>(
+    test('a constructor default counts as the default value', () {
+      // The build gives the property the constant default of the constructor
+      // parameter `this.stock = 7` when the field has no initializer.
+      final withParameter = describe<Gadget>(
         'Gadget',
         Gadget.new,
         [
-          col<Gadget>('id', int, _intN, annotations: const [Id()]),
-          col<Gadget>('stock', int, _int),
+          col('id', _intN, annotations: const [Id()]),
+          col(
+            'stock',
+            _int,
+            parameter: true,
+            hasDefaultValue: true,
+            defaultValue: 7,
+          ),
         ],
-        constructor: BeanConstructor<Gadget>(
-          parameters: const [
-            BeanParameter(
-              'stock',
-              type: ClassType<int>(),
-              symbol: #stock,
-              hasDefaultValue: true,
-              defaultValue: 7,
-            ),
-          ],
-          create: (positional, named) =>
-              Gadget()..values['stock'] = named[#stock] ?? 7,
-        ),
       );
       final entity = contextOf([
-        withConstructor,
+        withParameter,
       ]).getRequiredPersistentEntity<Gadget>();
       expect(entity.property('stock')!.defaultValue, 7);
     });
@@ -217,7 +203,7 @@ void main() {
     });
 
     Future<Map<String, DataStore>> stores() async {
-      final converter = EntityConverter(introspector: mapping.introspector);
+      final converter = EntityConverter();
       final db = await memorySource();
       await SchemaCreator(db).create([publishers, items]);
       return {

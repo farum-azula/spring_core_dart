@@ -54,15 +54,55 @@ the application adds the driver it wants, the generator sees it.
   `@Repository`).
 - **No overloading in Dart:** `findAll()`, `findAllSorted(Sort)` and
   `findAllPaged(Pageable)` instead of Spring's three `findAll`.
-- **How it works:** the generator reuses the `@InterfaceProxy` machinery
-  (Feign's): `_$BookRepositoryImpl` forwards each call to the starter's
-  handler; `InterfaceMetadata.supertypeArguments` gives it `Book` and
-  `int` as `TypeInfo`s. `@Table` extends `@Introspected`, so the entity's
-  properties and constructor are described at build time. Derived queries
-  are parsed and checked when the repository is created: a wrong property
-  stops the application at startup with the reason and a suggestion
-  (`did you mean 'title'?`). Checking them in the build itself is a later
-  step.
+- **How it works:** the generator writes `_$BookRepositoryImpl`, a small
+  class that extends the starter's `SimpleRepository<Book, int>` (the CRUD,
+  sorting and paging methods, which call `RepositoryOperations`) and adds
+  only what the interface declares: for each derived query a constant
+  `PartTree` and one call (`operations.list`, `page`, `countBy`...), for
+  each `@Query` method a small constant `QueryMethod` (the annotation, the
+  parameter names, the shape of the result, the element type, and for each
+  `:#{...}` expression the function the build compiled from it, or `null`
+  for one it leaves to the SpEL interpreter). The build
+  parses the method names and checks them against the entity: a wrong
+  property (`findByTitel`) is a build error with the reason and a
+  suggestion (`did you mean 'title'?`), never a startup error. At startup
+  the repository checks what the build cannot know: its store and data
+  source, its entity, the `${property}` placeholders and the expressions of
+  its `@Query` texts that the build left to the interpreter.
+- **`@Query` is checked by the build.** Everything in a `@Query` that does
+  not depend on the run time is an error of the build, listed with the
+  other problems of the repository: the method against its annotation (the
+  return type and `Future`/`Stream`, `Page` and `Slice` need a `Pageable`,
+  `@Modifying` returns `int`, `bool` or nothing, `rowMapper` and
+  `resultSetExtractor` are functions of the right shape, no `@Lock`), the
+  text (each `:name` is a parameter, no plain `?`, only `#{#entityName}`
+  outside a parameter) and the result type (the entity, a class of yours, a
+  column type, a `Map<String, Object?>`). In the text, `{Book}` is the
+  quoted table of the entity and `{Book.authorId}` the quoted column of its
+  property (`author_id`, or what the naming strategy, `@Table` and
+  `@Column` say; the names are written at run time through the mapping, the
+  build checks that the class is a `@Table` of the application and the
+  property is stored). The build also knows a schema: the tables and columns
+  of the entities, and what `lib/resources/db/migration` and the init
+  scripts create (`create table`, `alter table` add, rename and drop column,
+  rename to, `drop table`, `create view` with its select list, in file
+  order; what it does not understand leaves a table "incomplete" and is
+  never an error). A table after `from`, `join`, `update`, `into` or
+  `delete from`, a qualified `alias.column` and an unqualified column that
+  is unknown, with a known name close to it, is a build error (`books.titel:
+  no column titel in books, did you mean 'title'?`); a name nothing is
+  close to is left alone (external tables, functions, dialect words). A
+  `NamingStrategy` bean of the application hides the names derived from the
+  entities. The SpEL of a `:#{...}` is compiled to Dart (`#book.title` is
+  `(arguments[0] as Book).title`): a typo in a property (`#book.titel`), an
+  unknown variable, a wrong call or a syntax error is a build error with a
+  suggestion; an expression the compiler does not support is interpreted at
+  run time.
+  For each `@Table` class (and each class a `@Query` returns) the
+  generator writes a compact `EntityIntrospection`: its properties with
+  their types and annotations, and `get`, `create` and `write` functions,
+  so entities are stored and loaded with no reflection and the build
+  writes no more than the class itself says.
 
 ## Order of work
 
@@ -140,10 +180,38 @@ the application adds the driver it wants, the generator sees it.
      sqlite3), and the shared suite runs it on both. `validate` checks
      them: an explicit annotation missing in the database is an error, a
      plain reference without a foreign key a warning;
-   - left for Flutter: the app's directory for relative file names
-     (`SqliteJdbcDriver.baseDirectory`, set by the Flutter starter), the
-     web build (WASM), a background isolate for the synchronous calls;
-     `@DataTest`.
+   - data errors in a web application: the web starter has a
+     `HandlerExceptionResolver` extension point (Spring's name; beans
+     asked in `@Order` after the `@ExceptionHandler` methods of the
+     controller and of the advice beans, before the default 500, answering
+     with an `ErrorResponse`), and the generator writes the data starter's
+     resolver (`lib/src/web/data_access_exception_resolver.dart.tmpl`, the
+     bean `dataAccessExceptionResolver`, replaceable by name) into the
+     modules of an application that depends on both starters, as it does
+     for a driver (one more row of the same table; neither starter imports
+     the other): `OptimisticLockingFailureException` and
+     `DuplicateKeyException` → 409, `EmptyResultDataAccessException` →
+     404, with a fixed detail (never the exception's message: it may hold
+     SQL or values). The template is the data starter's because it owns the
+     exceptions, as it owns the driver templates; the web starter only
+     defines the plug. The end-to-end test (a real application over HTTP)
+     belongs to the integration step;
+   - done for Flutter: the app's directory for relative file names (the
+     Flutter starter sets `spring.datasource.sqlite.base-directory` from
+     `spring.datasource.sqlite.location`: `support`, `cache` or
+     `documents`) and a background isolate for the synchronous calls
+     (`spring.datasource.sqlite.isolate`, which the Flutter starter turns
+     on); left: the web build (WASM);
+   - done: `@DataTest` (Spring's `@DataJdbcTest`): the application's data
+     beans and the starter's auto-configuration on an in-memory SQLite
+     database (one pooled connection, the migrations applied or the tables
+     created from the entities), each test in a transaction rolled back at
+     its end, `@Commit` / `@Rollback(false)` to keep it, `include:` and
+     `replaceDatabase:`. The generator joins the data starter and the test
+     starter in the generated test file (`DataTestSetup`,
+     `runInTestTransaction` of `spring_boot_starter_data/testing.dart`);
+     left: a `@Transactional`-style choice of the transaction manager, and
+     the database of a container (`replaceDatabase: false` takes it).
 4. PostgreSQL (the `postgres` package): a connection pool
    (`spring.datasource.pool.*`), `FOR UPDATE` / `FOR SHARE`, `NOWAIT`,
    `SKIP LOCKED`.

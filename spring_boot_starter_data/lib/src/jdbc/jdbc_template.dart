@@ -119,7 +119,7 @@ class JdbcTemplate {
     final introspection = introspector.forTypeArgument<T>();
     if (introspection == null) {
       throw InvalidDataAccessApiUsageException(
-        '$T is not introspected: mark it @Introspected (or @Table), or '
+        '$T is not introspected: mark it @Introspected, or '
         'pass a RowMapper',
       );
     }

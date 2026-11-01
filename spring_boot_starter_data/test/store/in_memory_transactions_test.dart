@@ -25,7 +25,7 @@ Future<Object?> settle(Future<Object?> future) =>
 Criteria where(PartType type, String property, List<Object?> arguments) =>
     Criteria([
       OrPart([
-        Part([property], type),
+        Part(property, type),
       ]),
     ], arguments);
 

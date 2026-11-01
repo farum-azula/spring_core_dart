@@ -421,8 +421,8 @@ class Citizen {
 
 // --- Results of @Query methods ----------------------------------------------
 
-/// A join, mapped by column name (`author_name` into `authorName`).
-@Introspected()
+/// A join, mapped by column name (`author_name` into `authorName`): a
+/// class a `@Query` returns, which the generator describes.
 class BookWithAuthor {
   const BookWithAuthor({
     required this.id,
@@ -624,6 +624,16 @@ abstract interface class SqlBooks implements BookQueries {
 
   @Query(r'select * from books order by id limit ${books.page-size:3}')
   Future<List<Book>> firstPage();
+
+  // Entity placeholders: the tables and columns as the mapping names them
+  // (`inStock` is stored in `in_stock`).
+  @Query(
+    'select b.* from {Book} b '
+    'join {Author} a on a.{Author.id} = b.{Book.author} '
+    'where a.{Author.name} like :name and b.{Book.inStock} = :inStock '
+    'order by b.{Book.id}',
+  )
+  Future<List<Book>> byAuthorName(String name, bool inStock);
 
   // Results: DTO, scalar, single, nullable.
   @Query(

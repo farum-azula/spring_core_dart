@@ -14,8 +14,8 @@ import 'package:spring_core_dart_generator/src/bean_model.dart'
     show exposedBeanTypes, publicSdkLibrary;
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 
-/// The builder that turns the `@SpringBootTest` classes of a test file into
-/// `package:test` tests.
+/// The builder that turns the `@SpringBootTest` and `@DataTest` classes of
+/// a test file into `package:test` tests.
 ///
 /// A `@SpringBootTest` class describes an integration test: the
 /// application to start, the beans to inject into fields, and the `@Test`
@@ -28,10 +28,20 @@ import 'package:spring_core_dart_generator/src/package_directory.dart';
 /// `spring_boot_starter_test`. `springTestBuilder` creates it for
 /// `build_runner`.
 ///
+/// A `@DataTest` class (from `spring_boot_starter_data`) is the same with
+/// a slice of the application: the generated group starts the application
+/// through `DataTestSetup` (its data beans only, an in-memory database) and
+/// runs each test, with its `@BeforeEach` and `@AfterEach` methods, inside
+/// `runInTestTransaction` of `package:spring_boot_starter_data/testing.dart`,
+/// which rolls the transaction back (`@Commit` and `@Rollback(false)`
+/// commit). The generated file imports that library by its URL, so the two
+/// starters never depend on each other.
+///
 /// The application is the package's only `main` with
 /// `@SpringBootApplication` in `bin/` or `lib/`, or the one named by
-/// `@SpringBootTest(application: ...)` when there are several. A test class
-/// that cannot be generated (no application, an unknown one, a private
+/// `@SpringBootTest(application: ...)` (or `@DataTest(application: ...)`),
+/// which may be anywhere in the package, when there are several. A test
+/// class that cannot be generated (no application, an unknown one, a private
 /// name in an annotation argument...) throws a [TestClassException] that
 /// points at the member. When the test file does not import its generated
 /// file, a warning says which import to add.
@@ -106,7 +116,7 @@ class SpringTestBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final input = buildStep.inputId;
     final text = await buildStep.readAsString(input);
-    if (!text.contains('SpringBootTest')) {
+    if (!text.contains('SpringBootTest') && !text.contains('DataTest')) {
       return;
     }
     final parsed = parseString(
@@ -157,6 +167,11 @@ class SpringTestBuilder implements Builder {
         'void main() => runSpringTests();',
       );
     }
+    final extraApplications = await _namedApplications(
+      buildStep,
+      file,
+      applications,
+    );
     final fakes = TestEmitter.fakesToResolve(file);
     final fields = TestEmitter.nullabilityToResolve(file);
     final resolved = fakes.isEmpty && fields.isEmpty
@@ -167,10 +182,42 @@ class SpringTestBuilder implements Builder {
       output: output,
       package: input.package,
       applications: applications,
+      namedApplications: extraApplications,
       fakeTypes: resolved?.fakeTypes ?? const {},
       nullableFields: resolved?.nullable ?? const {},
     ).emit();
     await buildStep.writeAsString(output, source);
+  }
+
+  // The entry points the test classes name with `application:` that are
+  // not in [found] (`bin/` and `lib/`): any file of the package that
+  // declares one counts, so an application of an example or a test
+  // directory can be started.
+  static Future<Set<String>> _namedApplications(
+    BuildStep buildStep,
+    TestFile file,
+    List<String> found,
+  ) async {
+    final extra = <String>{};
+    for (final testClass in file.testClasses) {
+      final context = testContext(testClass.metadata);
+      final path = context == null
+          ? null
+          : _stringValue(named(context, 'application') ?? '');
+      if (path == null || found.contains(path) || extra.contains(path)) {
+        continue;
+      }
+      final id = AssetId(buildStep.inputId.package, path);
+      if (!await buildStep.canRead(id)) {
+        continue;
+      }
+      final source = await buildStep.readAsString(id);
+      if (source.contains('SpringBootApplication') &&
+          _isEntryPoint(path, source)) {
+        extra.add(path);
+      }
+    }
+    return extra;
   }
 
   // What only the resolved test file tells, by `Class.field`:
@@ -308,7 +355,8 @@ final class TestClassException implements Exception {
 }
 
 /// A parsed test file, with the queries the test builder needs: its
-/// imports, its `@SpringBootTest` classes, and error locations.
+/// imports, its `@SpringBootTest` and `@DataTest` classes, and error
+/// locations.
 final class TestFile {
   /// Wraps [unit], the parsed syntax of the file at [path].
   ///
@@ -334,12 +382,12 @@ final class TestFile {
   /// Turns offsets into the line and column numbers of [error].
   final LineInfo lineInfo;
 
-  /// The classes annotated with `@SpringBootTest`, in file order. The
-  /// builder writes nothing when there are none.
+  /// The classes annotated with `@SpringBootTest` or `@DataTest`, in file
+  /// order. The builder writes nothing when there are none.
   late final List<ClassDeclaration> testClasses = [
     for (final declaration in unit.declarations)
       if (declaration is ClassDeclaration &&
-          annotation(declaration.metadata, 'SpringBootTest') != null)
+          testContext(declaration.metadata) != null)
         declaration,
   ];
 
@@ -397,6 +445,12 @@ final class TestFile {
   }
 }
 
+/// The annotation that makes a class a test class, `@SpringBootTest` or
+/// `@DataTest`, in [metadata]; `null` for neither. A class with both is
+/// reported when it is generated.
+Annotation? testContext(List<Annotation> metadata) =>
+    annotation(metadata, 'SpringBootTest') ?? annotation(metadata, 'DataTest');
+
 /// The annotation called [name] in [metadata] (with or without an import
 /// prefix: `@Test()`, `@spring.Test()`), or `null`.
 Annotation? annotation(List<Annotation> metadata, String name) {
@@ -443,6 +497,7 @@ String? named(Annotation annotation, String name) {
 // The annotations of a test class, of its members and where they belong.
 const _classOnly = {
   'SpringBootTest',
+  'DataTest',
   'ActiveProfiles',
   'TestPropertySource',
   'TestEnvironment',
@@ -472,10 +527,11 @@ Expression? namedNode(Annotation annotation, String name) {
 const _instance = r'$instance';
 const _app = r'$app';
 const _logs = r'$logs';
+const _slice = r'$slice';
 
 /// Generates the source of `<name>.test.spring.dart` for a [TestFile]: the
 /// copied imports and a `runSpringTests()` function that registers one
-/// group per `@SpringBootTest` class.
+/// group per `@SpringBootTest` or `@DataTest` class.
 final class TestEmitter {
   /// An emitter for [file], written to [output] in [package], whose
   /// `@SpringBootApplication` entry points are [applications] (paths in
@@ -490,11 +546,16 @@ final class TestEmitter {
   /// [nullableFields] tells, by `Class.field`, whether the type of a
   /// `@TestBean` field of [nullabilityToResolve] is nullable; a field
   /// without an entry is nullable when its declared type ends with `?`.
+  ///
+  /// [namedApplications] are entry points outside `bin/` and `lib/` (any
+  /// file of the package) that a test class may name with `application:`
+  /// but that are never chosen without it.
   TestEmitter({
     required this.file,
     required this.output,
     required this.package,
     required this.applications,
+    this.namedApplications = const {},
     this.fakeTypes = const {},
     this.nullableFields = const {},
   });
@@ -565,9 +626,13 @@ final class TestEmitter {
   /// `lib/`.
   final String package;
 
-  /// The paths of the package's `@SpringBootApplication` entry points,
-  /// sorted. A test class without `application:` needs exactly one.
+  /// The paths of the package's `@SpringBootApplication` entry points in
+  /// `bin/` and `lib/`, sorted. A test class without `application:` needs
+  /// exactly one.
   final List<String> applications;
+
+  /// More entry points, which a test class may name with `application:`.
+  final Set<String> namedApplications;
 
   // Entry point → its import prefix in the generated file.
   final Map<String, String> _applicationPrefixes = {};
@@ -587,6 +652,10 @@ final class TestEmitter {
   // Whether the generated file needs [_named].
   bool _usesNamed = false;
 
+  // Whether a `@DataTest` class was generated: the file imports the data
+  // starter's testing library.
+  bool _usesData = false;
+
   /// Generates every test class of [file] and returns the formatted
   /// source of the generated library.
   ///
@@ -597,7 +666,7 @@ final class TestEmitter {
     final out = StringBuffer()
       ..writeln('// GENERATED CODE - DO NOT MODIFY BY HAND')
       ..writeln(
-        '// Generated by spring_core_dart_generator from the @SpringBootTest '
+        '// Generated by spring_core_dart_generator from the ${_kinds(code: false)} '
         'classes of ${p.url.basename(file.path)}.',
       )
       ..writeln()
@@ -620,6 +689,11 @@ final class TestEmitter {
       ..writeln(
         "import 'package:spring_boot_starter_test/generated.dart' as _sbt;",
       );
+    if (_usesData) {
+      out.writeln(
+        "import 'package:spring_boot_starter_data/testing.dart' as _data;",
+      );
+    }
     for (final MapEntry(key: entry, value: prefix)
         in _applicationPrefixes.entries) {
       out.writeln("import '${_applicationImport(entry)}' as $prefix;");
@@ -635,7 +709,7 @@ final class TestEmitter {
     out
       ..writeln()
       ..writeln(
-        '/// Declares the tests of the `@SpringBootTest` classes of '
+        '/// Declares the tests of the ${_kinds(code: true)} classes of '
         '`${p.url.basename(file.path)}`.',
       )
       ..writeln('void runSpringTests() {')
@@ -656,6 +730,22 @@ final class TestEmitter {
     }
     return DartFormatter(languageVersion: DartFormatter.latestLanguageVersion)
         .format(out.toString());
+  }
+
+  // The annotations of the file's test classes, as `@SpringBootTest` and
+  // `@DataTest`, for the comments of the generated file.
+  String _kinds({required bool code}) {
+    final kinds = [
+      if (file.testClasses.any(
+        (c) => annotation(c.metadata, 'SpringBootTest') != null,
+      ))
+        '@SpringBootTest',
+      if (file.testClasses.any(
+        (c) => annotation(c.metadata, 'SpringBootTest') == null,
+      ))
+        '@DataTest',
+    ];
+    return kinds.map((kind) => code ? '`$kind`' : kind).join(' and ');
   }
 
   String _repointed(ImportDirective directive) {
@@ -749,17 +839,20 @@ final class TestEmitter {
     return source;
   }
 
-  String _application(ClassDeclaration testClass, Annotation springBootTest) {
-    final given = named(springBootTest, 'application');
+  // [context] is the class's `@SpringBootTest` or `@DataTest`.
+  String _application(ClassDeclaration testClass, Annotation context) {
+    final given = named(context, 'application');
+    final kind = _simpleName(context);
     final String entry;
     if (given != null) {
       final path = _stringValue(given);
-      if (path == null || !applications.contains(path)) {
+      if (path == null ||
+          !(applications.contains(path) || namedApplications.contains(path))) {
         final found = applications.isEmpty
             ? 'none found'
             : applications.join(', ');
         throw file.error(
-          springBootTest,
+          context,
           '$given is not an entry point with @SpringBootApplication of this '
           'package ($found).',
         );
@@ -769,15 +862,15 @@ final class TestEmitter {
       entry = applications.single;
     } else if (applications.isEmpty) {
       throw file.error(
-        springBootTest,
-        'No application in this package: @SpringBootTest needs a '
+        context,
+        'No application in this package: @$kind needs a '
         '@SpringBootApplication entry point in bin/ or lib/.',
       );
     } else {
       throw file.error(
-        springBootTest,
+        context,
         'Several applications in this package (${applications.join(', ')}): '
-        "name one, @SpringBootTest(application: '${applications.first}').",
+        "name one, @$kind(application: '${applications.first}').",
       );
     }
     final prefix = _applicationPrefixes.putIfAbsent(
@@ -789,9 +882,22 @@ final class TestEmitter {
 
   void _testClass(ClassDeclaration testClass) {
     final name = testClass.namePart.typeName.lexeme;
-    final springBootTest = annotation(testClass.metadata, 'SpringBootTest')!;
+    final springBootTest = annotation(testClass.metadata, 'SpringBootTest');
+    final dataTest = annotation(testClass.metadata, 'DataTest');
+    if (springBootTest != null && dataTest != null) {
+      throw file.error(
+        dataTest,
+        '@DataTest and @SpringBootTest on one class: @DataTest starts a '
+        'slice of the application (the data beans, an in-memory database) '
+        'and @SpringBootTest all of it; keep one, or write a second class.',
+      );
+    }
+    final context = (springBootTest ?? dataTest)!;
     _checkCreatable(testClass, testClass);
     final members = _Members.of(file, testClass, outer: true);
+    if (dataTest == null) {
+      _noTransactionAnnotations(testClass.metadata);
+    }
 
     _body.writeln('_sbt.group(${_literal(name)}, () {');
     for (final method in members.beforeAll) {
@@ -806,11 +912,33 @@ final class TestEmitter {
     if (_capturesOutput(testClass, members)) {
       _body.writeln('final $_logs = _sbt.captureLogs();');
     }
-    final application = _application(testClass, springBootTest);
+    final application = _application(testClass, context);
+    if (dataTest != null) {
+      _usesData = true;
+      final scope = _Scope.of(file, testClass);
+      final arguments = [
+        application,
+        if (_code(namedNode(dataTest, 'include'), scope: scope)
+            case final include?)
+          'include: $include',
+        if (_code(namedNode(dataTest, 'replaceDatabase'), scope: scope)
+            case final replace?)
+          'replaceDatabase: $replace',
+      ];
+      _body.writeln(
+        'final $_slice = _data.DataTestSetup(${arguments.join(', ')});',
+      );
+    }
     _body.writeln('final $_app = _sbt.springBootTest($application,');
-    _startOptions(testClass, springBootTest, members);
+    _startOptions(testClass, context, members, slice: dataTest != null);
     _body.writeln(');');
-    _classBody(testClass, members, _instance, testClass.metadata);
+    _classBody(
+      testClass,
+      members,
+      _instance,
+      testClass.metadata,
+      outer: dataTest == null ? null : const [],
+    );
     _body.writeln('}${_groupOptions(testClass.metadata)});');
   }
 
@@ -831,37 +959,43 @@ final class TestEmitter {
     return false;
   }
 
+  // [context] is the class's `@SpringBootTest` or `@DataTest`; with
+  // [slice], the properties and the initializer of the data slice come
+  // first.
   void _startOptions(
     ClassDeclaration testClass,
-    Annotation springBootTest,
-    _Members members,
-  ) {
+    Annotation context,
+    _Members members, {
+    bool slice = false,
+  }) {
     final metadata = testClass.metadata;
-    if (_code(namedNode(springBootTest, 'args')) case final args?) {
+    if (_code(namedNode(context, 'args')) case final args?) {
       _body.writeln('args: $args,');
     }
     final propertySource = annotation(metadata, 'TestPropertySource');
     final properties = [
-      ?_code(namedNode(springBootTest, 'properties')),
+      if (slice) '$_slice.properties',
+      ?_code(namedNode(context, 'properties')),
       if (propertySource != null)
         ?_code(namedNode(propertySource, 'properties')),
     ];
     if (properties.length == 1) {
       _body.writeln('properties: ${properties.single},');
-    } else if (properties.length == 2) {
-      _body.writeln('properties: {...${properties[0]}, ...${properties[1]}},');
+    } else if (properties.length > 1) {
+      _body.writeln(
+        'properties: {${properties.map((p) => '...$p').join(', ')}},',
+      );
     }
     if (propertySource != null) {
       if (_code(namedNode(propertySource, 'locations')) case final locations?) {
         _body.writeln('propertyFiles: $locations,');
       }
     }
-    if (_code(namedNode(springBootTest, 'resourceDirectories'))
+    if (_code(namedNode(context, 'resourceDirectories'))
         case final directories?) {
       _body.writeln('resourceDirectories: $directories,');
     }
-    if (_code(namedNode(springBootTest, 'webEnvironment'))
-        case final environment?) {
+    if (_code(namedNode(context, 'webEnvironment')) case final environment?) {
       _body.writeln('webEnvironment: $environment,');
     }
     if (annotation(metadata, 'ActiveProfiles') case final profiles?) {
@@ -881,11 +1015,13 @@ final class TestEmitter {
           '${methods.map((m) => '$m(registry);').join()}},',
         );
     }
-    if (members.initializers.isNotEmpty) {
-      final initializers = members.initializers
-          .map((m) => '_sbt.ApplicationContextInitializer.of($m)')
-          .join(', ');
-      _body.writeln('initializers: [$initializers],');
+    final initializers = [
+      if (slice) '$_slice.initializer',
+      for (final method in members.initializers)
+        '_sbt.ApplicationContextInitializer.of($method)',
+    ];
+    if (initializers.isNotEmpty) {
+      _body.writeln('initializers: [${initializers.join(', ')}],');
     }
     if (members.testBeans.isNotEmpty) {
       _body.writeln('overrides: [');
@@ -1071,12 +1207,33 @@ final class TestEmitter {
   // @Nested one) whose instance is [instance]; [metadata]: the
   // annotations that apply to the whole group (the class's, and for a
   // @Nested class also its field's).
+  //
+  // [outer] is `null` for a class that does not run in a transaction. For a
+  // @DataTest class it holds the levels around this one (none for the test
+  // class itself): its tests run in a transaction with the `@BeforeEach` and
+  // `@AfterEach` methods of every level in it, so they are not registered
+  // with `setUp` and `tearDown`, which cannot run inside one.
   void _classBody(
     ClassDeclaration declaration,
     _Members members,
     String instance,
-    List<Annotation> metadata,
-  ) {
+    List<Annotation> metadata, {
+    List<_Level>? outer,
+    List<(List<Annotation>, ClassDeclaration)> annotated = const [],
+  }) {
+    final levels = outer == null
+        ? null
+        : [
+            ...outer,
+            _Level(
+              instance,
+              members.beforeEach,
+              members.afterEach,
+              annotated.isEmpty
+                  ? [(declaration.metadata, declaration)]
+                  : annotated,
+            ),
+          ];
     final inject = <String>[
       for (final field in members.autowired)
         '$instance.${field.name} = ${_injection(field)};',
@@ -1095,18 +1252,20 @@ final class TestEmitter {
       // closed after its tests anyway (no context cache across classes).
       _body.writeln('_sbt.setUp($_app.markDirty);');
     }
-    for (final method in members.beforeEach) {
-      _body.writeln('_sbt.setUp(() => $instance.$method());');
-    }
-    for (final method in members.afterEach) {
-      _body.writeln('_sbt.tearDown(() => $instance.$method());');
+    if (levels == null) {
+      for (final method in members.beforeEach) {
+        _body.writeln('_sbt.setUp(() => $instance.$method());');
+      }
+      for (final method in members.afterEach) {
+        _body.writeln('_sbt.tearDown(() => $instance.$method());');
+      }
     }
     for (final member in members.ordered) {
       switch (member) {
         case _Method():
-          _test(member, instance);
+          _test(member, instance, levels);
         case _Field():
-          _nested(member, instance);
+          _nested(member, instance, levels);
       }
     }
   }
@@ -1152,7 +1311,9 @@ final class TestEmitter {
         : '$_app.getBean($qualifier)';
   }
 
-  void _test(_Method method, String instance) {
+  // [levels]: for a test in a transaction, the classes around it (see
+  // [_classBody]); `null` otherwise.
+  void _test(_Method method, String instance, List<_Level>? levels) {
     final metadata = method.metadata;
     final scope = _Scope.of(file, method.owner);
     final display = annotation(metadata, 'DisplayName');
@@ -1163,10 +1324,15 @@ final class TestEmitter {
         _code(positionalNode(annotation(metadata, 'Test')!, 0), scope: scope) ??
         _literal(_words(method.name));
     final dirties = annotation(metadata, 'DirtiesContext') != null;
-    final call = '$instance.${method.name}()';
+    final call = levels == null
+        ? '$instance.${method.name}()'
+        : _inTransaction(method, instance, levels);
     final body = dirties
         ? '() {$_app.markDirty(); return $call;}'
         : '() => $call';
+    if (levels == null) {
+      _noTransactionAnnotations(metadata);
+    }
     _body.writeln(
       '_sbt.test($name, $body${_groupOptions(metadata, scope: scope)});',
     );
@@ -1185,10 +1351,14 @@ final class TestEmitter {
     return declaration;
   }
 
-  void _nested(_Field field, String instance) {
+  void _nested(_Field field, String instance, List<_Level>? levels) {
     final nested = annotation(field.metadata, 'Nested')!;
     final declaration = _nestedClass(field);
     _checkCreatable(declaration, field.node);
+    if (levels == null) {
+      _noTransactionAnnotations(field.metadata);
+      _noTransactionAnnotations(declaration.metadata);
+    }
     final members = _Members.of(file, declaration, outer: false);
     final scope = _Scope.of(file, field.owner);
     final name =
@@ -1199,13 +1369,95 @@ final class TestEmitter {
     // to the group as the class's do.
     final metadata = [...declaration.metadata, ...field.metadata];
     _body.writeln('_sbt.group($name, () {');
-    _classBody(declaration, members, inner, metadata);
+    _classBody(
+      declaration,
+      members,
+      inner,
+      metadata,
+      outer: levels,
+      // The field's annotations win over the class's.
+      annotated: [
+        (field.metadata, field.owner),
+        (declaration.metadata, declaration),
+      ],
+    );
     final options = _groupOptions(
       declaration.metadata,
       also: field.metadata,
       scope: scope,
     );
     _body.writeln('}$options);');
+  }
+
+  // The call that runs the test [method] of [instance] in a transaction, with
+  // the lifecycle methods of the [levels] around it: the `@BeforeEach`
+  // methods from the outside in, the `@AfterEach` ones in the opposite
+  // order (`tearDown`'s order: the last registered runs first).
+  String _inTransaction(_Method method, String instance, List<_Level> levels) {
+    final before = [
+      for (final level in levels)
+        for (final name in level.beforeEach) '() => ${level.instance}.$name()',
+    ];
+    final after = [
+      for (final level in levels)
+        for (final name in level.afterEach) '() => ${level.instance}.$name()',
+    ].reversed.toList();
+    final rollback = _rollback(method, levels);
+    final arguments = [
+      '$_app.context',
+      '() => $instance.${method.name}()',
+      if (rollback != 'true') 'rollback: $rollback',
+      if (before.isNotEmpty) 'before: [${before.join(', ')}]',
+      if (after.isNotEmpty) 'after: [${after.join(', ')}]',
+    ];
+    _usesData = true;
+    return '_data.runInTestTransaction(${arguments.join(', ')})';
+  }
+
+  // Whether the test's transaction rolls back, as the source of a `bool`:
+  // the innermost `@Commit` or `@Rollback`, the method's first, then the
+  // `@Nested` group's (its field's before its class's) and the test
+  // class's; `true` without any.
+  String _rollback(_Method method, List<_Level> levels) {
+    final places = [
+      (method.metadata, method.owner),
+      for (final level in levels.reversed) ...level.annotated,
+    ];
+    for (final (metadata, owner) in places) {
+      final commit = annotation(metadata, 'Commit');
+      final rollback = annotation(metadata, 'Rollback');
+      if (commit != null && rollback != null) {
+        throw file.error(
+          rollback,
+          '@Commit and @Rollback on the same element: keep one of them.',
+        );
+      }
+      if (commit != null) {
+        return 'false';
+      }
+      if (rollback != null) {
+        return _code(
+              positionalNode(rollback, 0),
+              scope: _Scope.of(file, owner),
+            ) ??
+            'true';
+      }
+    }
+    return 'true';
+  }
+
+  // `@Commit` and `@Rollback` only mean something in a `@DataTest` class,
+  // whose tests run in a transaction.
+  void _noTransactionAnnotations(List<Annotation> metadata) {
+    for (final name in ['Commit', 'Rollback']) {
+      if (annotation(metadata, name) case final found?) {
+        throw file.error(
+          found,
+          '@$name needs a @DataTest class: only its tests run in a '
+          'transaction.',
+        );
+      }
+    }
   }
 
   // `, skip: ..., tags: [...], timeout: ...` from @Disabled, @Tag and
@@ -1289,6 +1541,19 @@ final class TestEmitter {
       );
     }
   }
+}
+
+// A class around a test of a @DataTest class: the test class and each
+// @Nested group. [instance] is how the generated code reaches the object,
+// [annotated] the annotations that can carry `@Commit` or `@Rollback`,
+// innermost first, each with the class whose statics they may name.
+final class _Level {
+  _Level(this.instance, this.beforeEach, this.afterEach, this.annotated);
+
+  final String instance;
+  final List<String> beforeEach;
+  final List<String> afterEach;
+  final List<(List<Annotation>, ClassDeclaration)> annotated;
 }
 
 /// A single-quoted Dart string literal of [value], with backslashes,
@@ -1609,7 +1874,14 @@ final class _Members {
       instanceMethod('Test');
       ordered.add(method);
     } else {
-      for (final name in ['DisplayName', 'Disabled', 'Tag', 'TestOptions']) {
+      for (final name in [
+        'DisplayName',
+        'Disabled',
+        'Tag',
+        'TestOptions',
+        'Commit',
+        'Rollback',
+      ]) {
         if (annotation(metadata, name) != null) {
           throw file.error(
             node,
@@ -1673,7 +1945,14 @@ final class _Members {
       _public(file, node, field.name);
       testBeans.add(field);
     } else if (annotation(metadata, 'Nested') == null) {
-      for (final name in ['Disabled', 'Tag', 'TestOptions', 'DirtiesContext']) {
+      for (final name in [
+        'Disabled',
+        'Tag',
+        'TestOptions',
+        'DirtiesContext',
+        'Commit',
+        'Rollback',
+      ]) {
         if (annotation(metadata, name) != null) {
           throw file.error(
             node,

@@ -18,6 +18,10 @@ Tests come in two forms, and both work the same way:
   (sections 3 to 11). `spring_core_dart_generator` turns each class into
   the same functions ([section 15](#15-what-the-generator-writes)).
 
+A test of repositories alone does not need the whole application: a
+`@DataTest()` class starts its data beans on an in-memory database and
+rolls every test back ([section 19](#19-data-tests-datatest)).
+
 **Flutter** apps have their own starter, `spring_boot_starter_flutter_test`
 ([Flutter testing](flutter-testing.md)). It is built on this one, so
 everything on this page works there too; it adds widget tests that pump
@@ -37,6 +41,8 @@ widgets with the test's beans, themes and platforms.
 | `@SpringBootTest(webEnvironment = RANDOM_PORT)`, `@LocalServerPort` | `@SpringBootTest(webEnvironment: WebEnvironment.randomPort)`, `@LocalServerPort()` field, or `webEnvironment:` and `app.localServerPort` |
 | `@AutoConfigureMockMvc`, `MockMvc` | `@Autowired() late MockMvc mvc;`, or `app.mockMvc` |
 | `src/test/resources` | `test/resources/` |
+| `@DataJdbcTest`, `@AutoConfigureTestDatabase` | `@DataTest()` ([section 19](#19-data-tests-datatest)) |
+| `@Rollback`, `@Commit` | the same annotations (`@DataTest` classes) |
 
 ## Contents
 
@@ -58,6 +64,7 @@ widgets with the test's beans, themes and platforms.
 16. [Build errors](#16-build-errors)
 17. [Web tests: `MockMvc`](#17-web-tests-mockmvc)
 18. [Differences from Spring](#18-differences-from-spring)
+19. [Data tests: `@DataTest`](#19-data-tests-datatest)
 
 ## 1. Setup
 
@@ -248,7 +255,11 @@ Spring names the application's class (`@SpringBootTest(classes =
 AdminApplication.class)`). Here it is a path, because an annotation's
 arguments must be constants and the generated `springApplication` is not
 one. The generator checks that the path is an entry point with
-`@SpringBootApplication` ([section 16](#16-build-errors)).
+`@SpringBootApplication` ([section 16](#16-build-errors)). The path may
+point anywhere in the package, not only to `bin/` or `lib/`: a starter's
+tests start an application of their own under `test/`
+(`@SpringBootTest(application: 'test/app/shop_app.dart')`). Only an entry
+point of `bin/` or `lib/` is chosen without a name.
 
 ## 5. Injecting beans
 
@@ -882,6 +893,10 @@ starts with the place (`test/checkout_test.dart:12:3: ...`):
 | `No application in this package` | a `@SpringBootApplication` entry point in `bin/` or `lib/` |
 | `Several applications in this package (...)` | `@SpringBootTest(application: 'bin/shop.dart')` |
 | `'bin/x.dart' is not an entry point with @SpringBootApplication` | the path of an entry point |
+| `@DataTest and @SpringBootTest on one class` | keep one: the slice or the whole application (a second class for the other) |
+| `@Commit needs a @DataTest class` | `@Commit` and `@Rollback` belong to `@DataTest` classes ([section 19](#19-data-tests-datatest)) |
+| `@Commit on helper, which is not a @Test method` | add `@Test()` (also `@Rollback`); on a field they go on `@Nested` ones |
+| `@Commit and @Rollback on the same element` | keep one of them |
 | `test/checkout_test.dart does not import 'spring/checkout.test.spring.dart'` (a warning) | add the import and `void main() => runSpringTests();` |
 
 A missing bean is not a build error: the test fails when the context
@@ -1188,5 +1203,247 @@ application never open a port. For a real server in a runner, add
   parameters with matchers instead of `status().isOk()` and
   `jsonPath(...)`. There is no `WebTestClient` or `TestRestTemplate`: use
   a Feign client or `HttpClient` against `localServerPort`.
-- **No test slices** (`@WebMvcTest`, `@DataJpaTest`) yet; use
-  `ApplicationContextRunner` for a part of the configuration.
+- **One test slice**, `@DataTest` ([section 19](#19-data-tests-datatest)).
+  There is no `@WebMvcTest` yet; use `ApplicationContextRunner` for a part
+  of the configuration.
+
+## 19. Data tests: `@DataTest`
+
+A repository test needs the repositories, a database and a clean slate for
+every test, not the services, controllers and runners above them.
+`@DataTest()` (from `spring_boot_starter_data`) starts exactly that, the
+way Spring's `@DataJdbcTest` does:
+
+```dart
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
+import 'package:test/test.dart';
+
+import 'spring/book_repository.test.spring.dart'; // generated
+
+@DataTest()
+class BookRepositoryTest {
+  @Autowired()
+  late BookRepository books;
+
+  @BeforeEach()
+  Future<void> seed() async {                 // in the test's transaction
+    await books.save(Book(title: 'Dune', year: 1965));
+  }
+
+  @Test()
+  Future<void> findsABookByItsTitle() async {
+    await books.save(Book(title: 'Emma', year: 1815));
+    expect(await books.findByTitle('Emma'), hasLength(1));
+  }                                           // rolled back
+
+  @Test()
+  Future<void> startsWithTheSeedOnly() async {
+    expect(await books.count(), 1);           // no 'Emma' from the test before
+  }
+}
+
+void main() => runSpringTests();
+```
+
+Spring (Java):
+
+```java
+@DataJdbcTest
+class BookRepositoryTest {
+  @Autowired BookRepository books;
+
+  @BeforeEach void seed() { books.save(new Book("Dune", 1965)); }
+
+  @Test void findsABookByItsTitle() { ... }   // @DataJdbcTest is @Transactional
+}
+```
+
+The class is written like a `@SpringBootTest` one: `@Autowired()` fields,
+`@Test()` methods, `@BeforeEach`, `@Nested`, `@ActiveProfiles`,
+`@TestPropertySource`, `@TestBean` and the rest of sections 3 to 12 work
+the same. A class has `@SpringBootTest()` or `@DataTest()`, not both.
+
+The application needs `spring_boot_starter_data` and, for the in-memory
+database, `sqlite3` among its dependencies; `spring_boot_starter_test` and
+`build_runner` are dev dependencies as before.
+
+### What the context holds
+
+- **The data beans of the application**: its repositories, the
+  `EntityIntrospections` bean that describes its entities, the driver bean
+  the generator writes for `sqlite3`, the beans of the types the starter
+  looks up or replaces (`DataSource`, `PlatformTransactionManager`,
+  `TransactionTemplate`, `JdbcTemplate`, `NamedParameterJdbcTemplate`,
+  `JdbcClient`, `DataStore`, `NamingStrategy`, `AuditorAware`,
+  `DateTimeProvider`, `RepositoryFactory`...), and the class that carries
+  `@EnableDataAuditing`. For a `@Bean` method that makes one of those
+  beans, its configuration class comes along (the other `@Bean` methods of
+  it do not).
+- **The auto-configuration of the starter**, plus the core one and logging.
+  That of other starters (web, cache, security, scheduling...) is left out.
+  The starter's own is added when the application does not have it (the
+  application of a starter's own tests).
+- **Nothing else of the application**: services, controllers, runners,
+  listeners, aspects and other components are not in the context. As in
+  Spring, a bean that is left out is simply absent: an `@Autowired() late
+  Library? library;` field stays `null`, and a kept bean that needs one
+  fails the start with the usual report (`No bean of type ...`).
+- **`include`** adds beans of the application by the type of their class:
+  `@DataTest(include: [Library, ShopConfig])`. A configuration class
+  brings all its `@Bean` methods. A type no bean has fails the start.
+
+The generator writes the slice as calls, and the context decides what to
+keep when it starts, from the types each bean is registered under (the
+generator wrote them at build time). The beans are removed after the
+modules are read, so their conditions (`@ConditionalOnProperty`...) were
+decided with the whole application. What `@Import` registrars or other
+code add at start, and what `@TestBean` adds, is not judged.
+
+### The database
+
+When the application configures a SQL database, `@DataTest` replaces it
+with an **in-memory SQLite database** before the context starts
+(Spring's `@AutoConfigureTestDatabase`, which replaces by default):
+
+| Property | Set to | Why |
+|---|---|---|
+| `spring.datasource.url` | `sqlite::memory:` | the database lives as long as its connection |
+| `spring.datasource.driver` | `sqlite3` | whatever the configuration named |
+| `spring.datasource.pool.max-size` | `1` | each SQLite connection has an in-memory database of its own, and the SQLite that the `sqlite3` package bundles has no shared cache, so a second connection would see none of the tables |
+| `spring.datasource.pool.min-idle`, `idle-timeout`, `max-lifetime` | `0`, `0`, `0` | the pool never closes the one connection and loses the data |
+
+Every other setting stays. The same happens to each
+`spring.datasources.<name>.url`. Without a configured database nothing is
+replaced: the repositories use the in-memory store, as in the application.
+
+- **`@DataTest(replaceDatabase: false)`** keeps the configured database,
+  for one a container started, say. The tests still roll back.
+- **The `sqlite3` driver is required** to replace a database: without it
+  the start fails and says so (Spring fails the same way without an
+  embedded database).
+- **The application's own `DataSource` bean** (one the properties do not
+  describe) is not replaced.
+- **One connection means one task at a time.** A test runs in one
+  transaction on that connection, which is all it needs. Code that starts a
+  transaction of its own (`Propagation.requiresNew`) waits for a second
+  connection and fails after `spring.datasource.pool.connection-timeout`
+  (30 seconds). Test such code with `replaceDatabase: false` on a database
+  with several connections.
+
+### The schema
+
+The schema comes from where it comes from in the application:
+
+- **migrations** (`lib/resources/db/migration/`) are applied to the
+  in-memory database, and the entities are validated against the result;
+- **SQL scripts** (`schema.sql`, `data.sql`) run, as Spring Boot runs them on
+  an embedded database;
+- **without either**, the tables are created from the entities
+  (`spring.data.jdbc.schema=create`), unless the property is set.
+
+### The transaction
+
+Each test runs in a transaction of **every** `PlatformTransactionManager` its
+repositories write through, which are rolled back at its end: the primary
+database's (a JDBC manager), the in-memory store's (a repository with
+`@UseStore('memory')`, or all of them without a database) and those of the
+named databases (`@UseDataSource`). The repositories, `TransactionTemplate`
+and `@Transactional` methods join the one of their store, so tests never see
+each other's data, whichever store it is in.
+
+- `@BeforeEach` and `@AfterEach` methods (those of `@Nested` classes too)
+  run **inside** the transaction, as in Spring: what a `@BeforeEach` seeds
+  is rolled back with the test. `@BeforeAll` and `@AfterAll` run outside.
+- **`@Commit()`** (or `@Rollback(false)`) on a test, a class or a `@Nested`
+  group commits instead; the innermost one wins, and `@Rollback()` on a test
+  of a committing class rolls it back. The data stays for the tests after
+  it, so clean up in `@AfterEach` or in a later test. A **failing test is
+  rolled back** even then, so a failure leaves nothing behind (Spring would
+  commit).
+- Callbacks that wait for a commit (`afterCommit`) run only for tests that
+  commit.
+- Work the test starts and does not await cannot use the transaction after
+  it ended; it fails with an `IllegalTransactionStateException`.
+
+### Options
+
+| Option | Default | Spring |
+|---|---|---|
+| `application` | the package's only application ([section 4](#4-which-application)) | `classes` |
+| `args` | `[]` | |
+| `properties` | `{}` | `properties` |
+| `resourceDirectories` | `['test/resources']` | the test classpath |
+| `include` | `[]` | `@Import`, `includeFilters` |
+| `replaceDatabase` | `true` | `@AutoConfigureTestDatabase(replace = ...)` |
+
+### As functions
+
+`DataTestSetup` and `runInTestTransaction`, from
+`package:spring_boot_starter_data/testing.dart`, are what the generated
+code calls:
+
+```dart
+import 'package:spring_boot_starter_data/testing.dart';
+
+void main() {
+  final data = DataTestSetup(springApplication);
+  final app = springBootTest(
+    springApplication,
+    properties: data.properties,        // other starters' auto-configuration out
+    initializers: [data.initializer],   // database replaced, beans left out
+  );
+
+  test('finds a book', () => runInTestTransaction(app.context, () async {
+    final books = app.getBean<BookRepository>();
+    await books.save(Book(title: 'Dune', year: 1965));
+    expect(await books.findByTitle('Dune'), hasLength(1));
+  }));                                  // rollback: false commits
+}
+```
+
+Call `data.properties` first in the map, so your own properties can still
+replace it. The generated file holds, for the class above (shortened):
+
+```dart
+_sbt.group('BookRepositoryTest', () {
+  final $instance = BookRepositoryTest();
+  final $slice = _data.DataTestSetup(_app0.springApplication);
+  final $app = _sbt.springBootTest(
+    _app0.springApplication,
+    properties: $slice.properties,
+    initializers: [$slice.initializer],
+  );
+  _sbt.setUp(() { $instance.books = $app.getBean(); });
+  _sbt.test(
+    'finds a book by its title',
+    () => _data.runInTestTransaction(
+      $app.context,
+      () => $instance.findsABookByItsTitle(),
+      before: [() => $instance.seed()],
+    ),
+  );
+  ...
+});
+```
+
+`package:test` runs `setUp`, the test and `tearDown` as separate steps, so
+they cannot share a transaction: `runInTestTransaction` calls the
+`@BeforeEach` and `@AfterEach` methods itself, inside it. The generated file
+imports the data starter's library by its URL (`as _data`), so the starters
+never depend on each other.
+
+### Differences from Spring
+
+- **Not `@Transactional`**: a `@DataTest` class is transactional by itself,
+  and `@Commit` and `@Rollback` are the only controls. There is no
+  `@Transactional` on a test class or method, and no choice of the
+  transaction manager: all the managers of the repositories are used.
+- **The slice is decided from the bean's types**, not by a component scan
+  with filters: the beans of the starter's extension points are in, the
+  rest is out, and `include` adds. Spring excludes `@Configuration` classes
+  from a slice; here the configuration class of a data bean stays.
+- **Replacement is by property**: the database the properties describe
+  becomes an in-memory SQLite one. An embedded H2 or Derby does not exist
+  here, and `sqlite3` is the only database it can use.
+- **A failing test is rolled back** even with `@Commit`.

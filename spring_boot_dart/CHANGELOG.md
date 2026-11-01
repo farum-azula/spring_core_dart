@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `@ConfigurationProperties` binding works on a description that has no methods (the generator describes these classes with getters and setters only) and reads a property's current value only when it has a getter; a class described without its constructor and setters fails with an `IntrospectionPartError`.
 ### Changes
 
 - The predefined log groups `web` (`spring.web`, `spring.websocket`) and `sql` (`spring.jdbc.core.JdbcTemplate`, `spring.jdbc.core.StatementCreatorUtils`) work in `logging.level.*` as in Boot (`logging.level.web=debug`); a `logging.group.web` of the application replaces the list. They are `SpringApplication.predefinedLoggerGroups`.

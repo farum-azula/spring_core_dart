@@ -1,62 +1,35 @@
-import 'dart:async';
-
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../support/app.dart';
+import '../mapping/support.dart';
 
-// Repositories as the generator describes them, written by hand to make
-// mistakes the generated code could not compile: the factory has to refuse
-// them at startup, with every reason.
-ProxyMethod method(
-  String name, {
-  List<BeanParameter> parameters = const [],
-  TypeInfo<Object?> returnType = const DynamicType(),
-  bool isFuture = true,
-  bool isVoid = false,
-  List<Object> annotations = const [],
-}) => ProxyMethod(
-  name,
-  parameters: parameters,
-  returnType: returnType,
-  isFuture: isFuture,
-  isVoid: isVoid,
-  annotations: annotations,
-  call: (target, arguments) => null,
-);
-
-BeanParameter parameter(String name, TypeInfo<Object?> type) =>
-    BeanParameter(name, type: type, isRequired: true);
-
-const book = ClassType<Book>();
-const bookList = ListType<Book>(book);
-const text = ClassType<String>();
-
-InterfaceMetadata<Object> repository(
-  List<ProxyMethod> methods, {
-  List<Object> annotations = const [],
-  String name = 'BrokenRepository',
-  TypeInfo<Object?> entity = book,
-}) => InterfaceMetadata<Object>(
-  typeName: name,
-  methods: methods,
-  annotations: annotations,
-  supertypeArguments: {
-    'DataRepository': [entity, const ClassType<int>()],
-  },
-);
+// What the build cannot know stays a startup check: the store and the data
+// source of a repository, its entity, its @Query methods. The names of the
+// derived queries, the CRUD signatures and the @Query methods themselves are
+// checked by the build. The mistakes are made by hand, as the generated class
+// could not make them.
+QueryMethod query(String name, {String sql = 'select * from books'}) =>
+    QueryMethod(name, Query(sql), element: const ClassType<Book>());
 
 void main() {
-  late Example app;
   late RepositoryFactory factory;
 
-  Future<void> run(FutureOr<void> Function() body) =>
-      withExample((example) async {
-        app = example;
-        factory = example.context.getBean<RepositoryFactory>();
-        await body();
-      });
+  setUp(
+    () => factory = RepositoryFactory(
+      mappingContext: testContext(),
+      converter: EntityConverter(),
+    ),
+  );
+
+  RepositoryOperations<Book, int> operations({
+    List<Object> annotations = const [],
+    List<QueryMethod> queries = const [],
+  }) => factory.operations<Book, int>(
+    'BrokenRepository',
+    annotations: annotations,
+    queries: queries,
+  );
 
   Matcher invalid(List<String> reasons) => throwsA(
     isA<StateError>().having(
@@ -69,320 +42,132 @@ void main() {
     ),
   );
 
-  test(
-    'the factory supports interfaces extending DataRepository',
-    () => run(() async {
-      expect(factory.supports(repository(const [])), isTrue);
-      expect(
-        factory.supports(
-          InterfaceMetadata<Object>(typeName: 'Other', methods: const []),
-        ),
-        isFalse,
-      );
-      expect(app.context, hasBean<InvocationHandlerFactory>());
-    }),
-  );
+  test('a valid repository is created, on the memory store by default', () {
+    final created = operations();
+    expect(created.typeName, 'BrokenRepository');
+    expect(created.entity.type, Book);
+    expect(created.store.name, 'memory');
+    expect(created.transactionManager, isA<InMemoryTransactionManager>());
+  });
 
-  test(
-    'a valid repository is created',
-    () => run(() async {
-      final handler = factory.create(
-        repository([
-          method(
-            'findByTitle',
-            parameters: [parameter('title', text)],
-            returnType: bookList,
-          ),
-        ]),
-      );
-      expect(handler, isA<RepositoryInvocationHandler>());
-    }),
-  );
+  test('@Query needs a SQL store', () {
+    expect(
+      () => operations(queries: [query('search')]),
+      invalid(['BrokenRepository.search', '@Query', 'SQL store']),
+    );
+    expect(
+      () => operations(queries: [query('search', sql: 'select 1')]),
+      invalid(['@Query', 'spring.datasource.url']),
+    );
+  });
 
-  test(
-    'an unknown property names the properties there are',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository([
-            method(
-              'findByTitel',
-              parameters: [parameter('title', text)],
-              returnType: bookList,
-            ),
-          ]),
-        ),
-        invalid(['BrokenRepository.findByTitel', "did you mean 'title'"]),
-      );
-    }),
-  );
+  test('an unknown store names the known ones', () {
+    expect(
+      () => operations(annotations: const [UseStore('cassandra')]),
+      invalid(["@UseStore('cassandra')", 'memory']),
+    );
+    expect(
+      () => operations(annotations: const [UseStore('jdbc')]),
+      invalid(["@UseStore('jdbc')", 'not configured']),
+    );
+  });
 
-  test(
-    'a parameter that does not fit is refused',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository([
-            method(
-              'findByYear',
-              parameters: [parameter('year', text)],
-              returnType: bookList,
-            ),
-          ]),
-        ),
-        invalid(['findByYear', 'does not fit']),
-      );
-    }),
-  );
+  test('@UseDataSource needs a SQL store unless the store is memory', () {
+    expect(
+      () => operations(annotations: const [UseDataSource('reports')]),
+      invalid(["@UseDataSource('reports')", 'SQL']),
+    );
+    expect(
+      operations(
+        annotations: const [UseStore('memory'), UseDataSource('reports')],
+      ),
+      isA<RepositoryOperations<Book, int>>(),
+    );
+  });
 
-  test(
-    '@Query needs a SQL store',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository([
-            method(
-              'search',
-              returnType: bookList,
-              annotations: const [Query('select * from books')],
-            ),
-          ]),
-        ),
-        invalid(['BrokenRepository.search', '@Query', 'SQL store']),
-      );
-      // Also for a method whose name would be a derived query.
-      expect(
-        () => factory.create(
-          repository([
-            method(
-              'findByTitle',
-              parameters: [parameter('title', text)],
-              returnType: bookList,
-              annotations: const [Query('select 1')],
-            ),
-          ]),
-        ),
-        invalid(['@Query', 'spring.datasource.url']),
-      );
-    }),
-  );
+  test('store problems come with the query problems', () {
+    expect(
+      () => operations(
+        queries: [query('search')],
+        annotations: const [UseStore('cassandra')],
+      ),
+      invalid(['cassandra', 'BrokenRepository.search']),
+    );
+  });
 
-  test(
-    '@Lock is accepted on a derived find method and on findById',
-    () => run(() async {
-      expect(
-        factory.create(
-          repository([
-            method(
-              'findByTitle',
-              parameters: [parameter('title', text)],
-              returnType: bookList,
-              annotations: const [Lock(LockMode.pessimisticWrite)],
-            ),
-            method(
-              'findById',
-              parameters: [parameter('id', const ClassType<int>())],
-              returnType: const ClassType<Book>(),
-              annotations: const [Lock(LockMode.pessimisticRead)],
-            ),
-          ]),
-        ),
-        isA<RepositoryInvocationHandler>(),
-      );
-    }),
-  );
+  test('every problem is reported, not only the first', () {
+    expect(
+      () => operations(
+        queries: [query('search'), query('lookup')],
+        annotations: const [UseStore('cassandra')],
+      ),
+      invalid([
+        'cassandra',
+        'BrokenRepository.search',
+        'BrokenRepository.lookup',
+      ]),
+    );
+  });
 
-  test(
-    '@Lock is refused where no row is read: count, delete, other CRUD',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository([
-            method(
-              'countByTitle',
-              parameters: [parameter('title', text)],
-              returnType: const ClassType<int>(),
-              annotations: const [Lock(LockMode.pessimisticWrite)],
-            ),
-            method(
-              'deleteByTitle',
-              parameters: [parameter('title', text)],
-              annotations: const [Lock(LockMode.pessimisticWrite)],
-            ),
-            method(
-              'findAll',
-              returnType: bookList,
-              annotations: const [Lock(LockMode.pessimisticWrite)],
-            ),
-          ]),
-        ),
-        invalid([
-          'BrokenRepository.countByTitle',
-          'BrokenRepository.deleteByTitle',
-          'BrokenRepository.findAll',
-          '@Lock is for the derived find methods',
-        ]),
-      );
-    }),
-  );
-
-  test(
-    'a synchronous method is refused',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository([
-            method(
-              'findByTitle',
-              parameters: [parameter('title', text)],
-              returnType: bookList,
-              isFuture: false,
-            ),
-          ]),
-        ),
-        invalid(['findByTitle', 'asynchronous']),
-      );
-    }),
-  );
-
-  test(
-    'a method that is neither CRUD nor derived is refused',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository([method('doSomething', returnType: bookList)]),
-        ),
-        invalid(['BrokenRepository.doSomething', 'derived query']),
-      );
-      // A CRUD name with another arity is not CRUD.
-      expect(
-        () => factory.create(
-          repository([
-            method(
-              'findAll',
-              parameters: [parameter('x', text)],
-              returnType: bookList,
-            ),
-          ]),
-        ),
-        invalid(['findAll']),
-      );
-    }),
-  );
-
-  test(
-    'every problem is reported, not only the first',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository([
-            method('findByNope', returnType: bookList),
-            method(
-              'search',
-              returnType: bookList,
-              annotations: const [Query('x')],
-            ),
-            method('whatever', returnType: bookList),
-          ]),
-        ),
-        invalid(['findByNope', 'BrokenRepository.search', 'whatever']),
-      );
-    }),
-  );
-
-  test(
-    'an unknown store names the known ones',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository(const [], annotations: const [UseStore('cassandra')]),
-        ),
-        invalid(["@UseStore('cassandra')", 'memory']),
-      );
-      expect(
-        () => factory.create(
-          repository(const [], annotations: const [UseStore('jdbc')]),
-        ),
-        invalid(["@UseStore('jdbc')", 'not configured']),
-      );
-    }),
-  );
-
-  test(
-    '@UseDataSource needs a SQL store unless the store is memory',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository(const [], annotations: const [UseDataSource('reports')]),
-        ),
-        invalid(["@UseDataSource('reports')", 'SQL']),
-      );
-      expect(
-        factory.create(
-          repository(
-            const [],
-            annotations: const [UseStore('memory'), UseDataSource('reports')],
-          ),
-        ),
-        isA<RepositoryInvocationHandler>(),
-      );
-    }),
-  );
-
-  test(
-    'store problems come with the method problems',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository(
-            [
-              method('findByNope', returnType: bookList),
-            ],
-            annotations: const [UseStore('cassandra')],
-          ),
-        ),
-        invalid(['cassandra', 'findByNope']),
-      );
-    }),
-  );
-
-  test(
-    'an entity that is not described is refused',
-    () => run(() async {
-      expect(
-        () => factory.create(
-          repository(const [], entity: const ClassType<Uri>()),
-        ),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
+  test('an entity that is not described is refused', () {
+    expect(
+      () => factory.operations<Uri, int>('BrokenRepository'),
+      throwsA(
+        isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          allOf(
+            startsWith('Invalid repository BrokenRepository:'),
             contains('Uri'),
           ),
         ),
-      );
-    }),
-  );
+      ),
+    );
+  });
+
+  test('an entity without an @Id is refused', () {
+    expect(
+      () => factory.operations<Note, int>('BrokenRepository'),
+      throwsA(
+        isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          allOf(
+            startsWith('Invalid repository BrokenRepository:'),
+            contains('no @Id'),
+          ),
+        ),
+      ),
+    );
+  });
 
   test('the application fails to start with a broken repository', () async {
     final broken = BeanModule('broken', [
+      BeanDefinition<RepositoryFactory>(
+        name: 'repositoryFactory',
+        create: (_) => factory,
+      ),
       BeanDefinition<Object>(
         name: 'brokenRepository',
-        create: (r) => InterfaceProxies.handlerFor(
-          r,
-          repository([method('findByNope', returnType: bookList)]),
+        create: (r) => r.dependency<RepositoryFactory>().operations<Book, int>(
+          'BrokenRepository',
+          queries: [query('search')],
         ),
       ),
     ]);
-    await exampleRunner.withUserConfiguration(broken).runAsync((context) {
-      expect(
-        context.startupFailure,
-        isA<BeanCreationException>().having(
-          (e) => '$e',
-          'message',
-          contains('findByNope'),
-        ),
-      );
-    });
+    await const ApplicationContextRunner()
+        .withUserConfiguration(broken)
+        .runAsync(
+          (context) {
+            expect(
+              context.startupFailure,
+              isA<BeanCreationException>().having(
+                (e) => '$e',
+                'message',
+                contains('BrokenRepository.search'),
+              ),
+            );
+          },
+        );
   });
 }

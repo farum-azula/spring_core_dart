@@ -9,11 +9,17 @@ import 'package:test/test.dart';
 import 'support.dart';
 
 void main() {
+  connectionModes.forEach(
+    (mode, isolate) => group(mode, () => errorsSuite(isolate: isolate)),
+  );
+}
+
+void errorsSuite({required bool isolate}) {
   late SqliteJdbcDriver driver;
   late Directory temp;
   late JdbcConnection c;
 
-  setUpAll(() async => driver = await startDriver());
+  setUpAll(() async => driver = await startDriver(isolate: isolate));
   setUp(() async {
     temp = newTemp();
     c = await driver.connect(memorySettings());

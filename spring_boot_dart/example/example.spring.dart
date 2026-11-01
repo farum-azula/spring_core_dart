@@ -89,6 +89,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ],
       annotations: const [_i3.ConfigurationProperties(r'greeting')],
+      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: () => _i2.GreetingProperties(),
       constructor: _i1.BeanConstructor<_i2.GreetingProperties>(
         parameters: [],
@@ -159,7 +160,7 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '7b3d71ab',
+  fingerprint: 'c239e041',
 );
 
 /// Starts the application: config files, environment, context, runners

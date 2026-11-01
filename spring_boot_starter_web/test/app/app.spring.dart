@@ -2980,6 +2980,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           get: (bean) => bean.genre,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i4.Book>(
         parameters: [
           _i2.BeanParameter(
@@ -3038,6 +3039,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           annotations: const [_i2.PositiveOrZero()],
         ),
       ],
+      parts: const {_i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i4.NewBook>(
         parameters: [
           _i2.BeanParameter(
@@ -3081,31 +3083,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           get: (bean) => bean.isComplete,
         ),
       ],
-      methods: [
-        _i2.BeanMethod<_i7.SseEmitter>(
-          r'send',
-          returnType: _i3.Future<void>,
-          parameterTypes: const [Object],
-          invoke: (bean, arguments) => Function.apply(bean.send, arguments),
-        ),
-        _i2.BeanMethod<_i7.SseEmitter>(
-          r'complete',
-          invoke: (bean, arguments) => Function.apply(bean.complete, arguments),
-        ),
-        _i2.BeanMethod<_i7.SseEmitter>(
-          r'completeWithError',
-          parameterTypes: const [Object],
-          invoke: (bean, arguments) =>
-              Function.apply(bean.completeWithError, arguments),
-        ),
-        _i2.BeanMethod<_i7.SseEmitter>(
-          r'initialize',
-          returnType: _i3.Future<void>,
-          parameterTypes: const [_i7.SseEmitterHandler],
-          invoke: (bean, arguments) =>
-              Function.apply(bean.initialize, arguments),
-        ),
-      ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i7.SseEmitter(),
       constructor: _i2.BeanConstructor<_i7.SseEmitter>(
         parameters: [
@@ -3120,29 +3098,6 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
                 as _i7.SseEmitter),
       ),
     ),
-    _i2.BeanIntrospection<_i4.BookNotFoundException>(
-      className: r'BookNotFoundException',
-      properties: [
-        _i2.BeanProperty<_i4.BookNotFoundException>(
-          r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i4.BookNotFoundException>(
-        parameters: [
-          _i2.BeanParameter(
-            r'isbn',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i4.BookNotFoundException.new, positional, named)
-                as _i4.BookNotFoundException),
-      ),
-    ),
     _i2.BeanIntrospection<_i12.Shout>(
       className: r'Shout',
       properties: [
@@ -3153,17 +3108,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           get: (bean) => bean.text,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i12.Shout>(
-        parameters: [
-          _i2.BeanParameter(
-            r'text',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i12.Shout.new, positional, named) as _i12.Shout),
-      ),
+      parts: const {_i2.IntrospectionPart.read},
     ),
     _i2.BeanIntrospection<_i13.Upload>(
       className: r'Upload',
@@ -3207,6 +3152,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           get: (bean) => bean.text,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i13.Upload>(
         parameters: [
           _i2.BeanParameter(
@@ -3273,6 +3219,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           get: (bean) => bean.cover,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i13.Stored>(
         parameters: [
           _i2.BeanParameter(
@@ -3300,6 +3247,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
     _i2.BeanIntrospection<_i15.StreamingResponseBody>(
       className: r'StreamingResponseBody',
       properties: [],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i15.StreamingResponseBody>(
         parameters: [
           _i2.BeanParameter(

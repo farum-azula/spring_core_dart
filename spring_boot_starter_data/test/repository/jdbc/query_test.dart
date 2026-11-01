@@ -147,6 +147,23 @@ void main() {
     );
 
     test(
+      '{Book} is the quoted table, {Book.inStock} the quoted column',
+      () => run(() async {
+        expect(ids(await books.byAuthorName('Gib%', true)), [4]);
+        expect(ids(await books.byAuthorName('Gib%', false)), [3, 5]);
+        final sql = await statements(() => books.byAuthorName('Gib%', true));
+        expect(
+          sql.single,
+          contains(
+            'select b.* from "books" b join "authors" a on a."id" = '
+            'b."author" where a."name" like ? and b."in_stock" = ? '
+            'order by b."id"',
+          ),
+        );
+      }),
+    );
+
+    test(
       r'${property:default} is resolved when the repository is created',
       () async {
         await run(() async {

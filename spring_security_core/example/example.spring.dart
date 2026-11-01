@@ -306,22 +306,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
         ),
       ],
-      constructor: _i2.BeanConstructor<_i1.Order>(
-        parameters: [
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'owner',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Order.new, positional, named) as _i1.Order),
-      ),
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.methods},
     ),
   ],
 );
@@ -382,7 +367,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'ae297cec',
+  fingerprint: '71fdeba1',
 );
 
 /// Starts the application: config files, environment, context, runners

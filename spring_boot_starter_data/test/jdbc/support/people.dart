@@ -85,3 +85,43 @@ BeanIntrospection<Person> personIntrospection() => BeanIntrospection<Person>(
 
 BeanIntrospector peopleIntrospector() =>
     BeanIntrospector(introspections: [personIntrospection()]);
+
+/// The same class described as the build describes a class a `@Query`
+/// returns.
+EntityIntrospection<Person> personEntityIntrospection() =>
+    EntityIntrospection<Person>(
+      'Person',
+      const [
+        EntityProperty('firstName', _s, parameter: true),
+        EntityProperty('lastName', _s, parameter: true),
+        EntityProperty('age', _in, parameter: true),
+        EntityProperty('status', _st, parameter: true),
+        EntityProperty('joined', _dn, parameter: true),
+        EntityProperty(
+          'active',
+          _b,
+          parameter: true,
+          hasDefaultValue: true,
+          defaultValue: false,
+        ),
+        EntityProperty('nickname', _sn, writable: true),
+      ],
+      get: (p, i) => switch (i) {
+        0 => p.firstName,
+        1 => p.lastName,
+        2 => p.age,
+        3 => p.status,
+        4 => p.joined,
+        5 => p.active,
+        _ => p.nickname,
+      },
+      create: (v) => Person(
+        firstName: v[0]! as String,
+        lastName: v[1]! as String,
+        age: v[2] as int?,
+        status: v[3] as Status?,
+        joined: v[4] as DateTime?,
+        active: v[5]! as bool,
+      ),
+      write: (p, i, v) => p.nickname = v as String?,
+    );

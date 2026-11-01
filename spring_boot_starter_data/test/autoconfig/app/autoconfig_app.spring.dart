@@ -11,15 +11,15 @@ import 'dart:async' as _i3;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i12;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i11;
-import 'package:spring_boot_dart/src/conditions.dart' as _i7;
-import 'package:spring_boot_dart/src/runners.dart' as _i8;
+import 'package:spring_boot_dart/src/conditions.dart' as _i8;
+import 'package:spring_boot_dart/src/runners.dart' as _i9;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i13;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i9;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i4;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i5;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i4;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i5;
+import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i6;
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
-    as _i6;
+    as _i7;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i14;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
@@ -107,1178 +107,82 @@ class _$LibraryProxy implements _i1.Library, _i2.Advised {
   ) as _i1.VisitRepository);
 }
 
-/// Implements `AuthorRepository` through an `InvocationHandler`.
-class _$AuthorRepositoryImpl implements _i1.AuthorRepository {
-  _$AuthorRepositoryImpl(this._handler, this._metadata);
+/// Implements `AuthorRepository`: `SimpleRepository` has the CRUD methods.
+class _$AuthorRepositoryImpl extends _i4.SimpleRepository<_i1.Author, int>
+    implements _i1.AuthorRepository {
+  _$AuthorRepositoryImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.AuthorRepository> _metadata;
-
-  static _$AuthorRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.AuthorRepository>(
-      typeName: r'AuthorRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Author>(_i2.ClassType<_i1.Author>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
+  static _$AuthorRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$AuthorRepositoryImpl(
+        r.dependency<_i4.RepositoryFactory>().operations<_i1.Author, int>(
+          r'AuthorRepository',
         ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Author>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Author>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Author>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Author>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Author>(_i2.ClassType<_i1.Author>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$AuthorRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<List<_i1.Author>> saveAll(Iterable<_i1.Author> entities) =>
-      _i2.retypeFuture<List<_i1.Author>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
       );
-
-  @override
-  _i3.Future<List<_i1.Author>> findAll() => _i2.retypeFuture<List<_i1.Author>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i3.Future<List<_i1.Author>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Author>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Author> save(_i1.Author entity) =>
-      _i2.retypeFuture<_i1.Author>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i3.Future<_i1.Author?> findById(int id) => _i2.retypeFuture<_i1.Author?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Author entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Author> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
 }
 
-/// Implements `BookRepository` through an `InvocationHandler`.
-class _$BookRepositoryImpl implements _i1.BookRepository {
-  _$BookRepositoryImpl(this._handler, this._metadata);
+/// Implements `BookRepository`: `SimpleRepository` has the CRUD methods.
+class _$BookRepositoryImpl extends _i4.SimpleRepository<_i1.Book, int>
+    implements _i1.BookRepository {
+  _$BookRepositoryImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _findByYearGreaterThan = _i4.PartTree(r'findByYearGreaterThan', [
+    _i4.OrPart([_i4.Part(r'year', _i4.PartType.greaterThan)]),
+  ]);
 
-  final _i2.InterfaceMetadata<_i1.BookRepository> _metadata;
-
-  static _$BookRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.BookRepository>(
-      typeName: r'BookRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'findByYearGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
+  static _$BookRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$BookRepositoryImpl(
+        r.dependency<_i4.RepositoryFactory>().operations<_i1.Book, int>(
+          r'BookRepository',
         ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$BookRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+      );
 
   @override
   _i3.Future<List<_i1.Book>> findByYearGreaterThan(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[0], [year]),
-      );
-
-  @override
-  _i3.Future<List<_i1.Book>> saveAll(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i3.Future<List<_i1.Book>> findAll() => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[2], const []),
-  );
-
-  @override
-  _i3.Future<List<_i1.Book>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Book> save(_i1.Book entity) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[4], [entity]),
-  );
-
-  @override
-  _i3.Future<_i1.Book?> findById(int id) => _i2.retypeFuture<_i1.Book?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Book entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
+      this.operations.list(_findByYearGreaterThan, [year]);
 }
 
-/// Implements `OrderRepository` through an `InvocationHandler`.
-class _$OrderRepositoryImpl implements _i1.OrderRepository {
-  _$OrderRepositoryImpl(this._handler, this._metadata);
+/// Implements `OrderRepository`: `SimpleRepository` has the CRUD methods.
+class _$OrderRepositoryImpl extends _i4.SimpleRepository<_i1.PurchaseOrder, int>
+    implements _i1.OrderRepository {
+  _$OrderRepositoryImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.OrderRepository> _metadata;
-
-  static _$OrderRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.OrderRepository>(
-      typeName: r'OrderRepository',
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$OrderRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<List<_i1.PurchaseOrder>> saveAll(
-    Iterable<_i1.PurchaseOrder> entities,
-  ) => _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-    this._handler.invoke(this._metadata.methods[0], [entities]),
-  );
-
-  @override
-  _i3.Future<List<_i1.PurchaseOrder>> findAll() =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[1], const []),
+  static _$OrderRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$OrderRepositoryImpl(
+        r
+            .dependency<_i4.RepositoryFactory>()
+            .operations<_i1.PurchaseOrder, int>(r'OrderRepository'),
       );
-
-  @override
-  _i3.Future<List<_i1.PurchaseOrder>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.PurchaseOrder> save(_i1.PurchaseOrder entity) =>
-      _i2.retypeFuture<_i1.PurchaseOrder>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i3.Future<_i1.PurchaseOrder?> findById(int id) =>
-      _i2.retypeFuture<_i1.PurchaseOrder?>(
-        this._handler.invoke(this._metadata.methods[4], [id]),
-      );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.PurchaseOrder entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.PurchaseOrder> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
 }
 
-/// Implements `VisitRepository` through an `InvocationHandler`.
-class _$VisitRepositoryImpl implements _i1.VisitRepository {
-  _$VisitRepositoryImpl(this._handler, this._metadata);
+/// Implements `VisitRepository`: `SimpleRepository` has the CRUD methods.
+class _$VisitRepositoryImpl extends _i4.SimpleRepository<_i1.Visit, int>
+    implements _i1.VisitRepository {
+  _$VisitRepositoryImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.VisitRepository> _metadata;
-
-  static _$VisitRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.VisitRepository>(
-      typeName: r'VisitRepository',
-      annotations: const [_i4.UseDataSource(r'stats')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Visit>(_i2.ClassType<_i1.Visit>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Visit>(_i2.ClassType<_i1.Visit>()),
-          isFuture: true,
+  static _$VisitRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$VisitRepositoryImpl(
+        r.dependency<_i4.RepositoryFactory>().operations<_i1.Visit, int>(
+          r'VisitRepository',
+          annotations: const [_i5.UseDataSource(r'stats')],
         ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Visit>(_i2.ClassType<_i1.Visit>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Visit>(_i2.ClassType<_i1.Visit>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Visit>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Visit>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Visit>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Visit>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Visit>(_i2.ClassType<_i1.Visit>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Visit>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Visit>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Visit>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$VisitRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<List<_i1.Visit>> saveAll(Iterable<_i1.Visit> entities) =>
-      _i2.retypeFuture<List<_i1.Visit>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
       );
-
-  @override
-  _i3.Future<List<_i1.Visit>> findAll() => _i2.retypeFuture<List<_i1.Visit>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i3.Future<List<_i1.Visit>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Visit>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Visit> save(_i1.Visit entity) => _i2.retypeFuture<_i1.Visit>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i3.Future<_i1.Visit?> findById(int id) => _i2.retypeFuture<_i1.Visit?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Visit entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Visit> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
 }
 
-/// Implements `NoteRepository` through an `InvocationHandler`.
-class _$NoteRepositoryImpl implements _i1.NoteRepository {
-  _$NoteRepositoryImpl(this._handler, this._metadata);
+/// Implements `NoteRepository`: `SimpleRepository` has the CRUD methods.
+class _$NoteRepositoryImpl extends _i4.SimpleRepository<_i1.Note, int>
+    implements _i1.NoteRepository {
+  _$NoteRepositoryImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.NoteRepository> _metadata;
-
-  static _$NoteRepositoryImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.NoteRepository>(
-      typeName: r'NoteRepository',
-      annotations: const [
-        _i4.UseStore(r'memory'),
-        _i4.UseDataSource(r'scratch'),
-      ],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-              isRequired: true,
-            ),
+  static _$NoteRepositoryImpl $create(_i2.DependencyResolver r) =>
+      _$NoteRepositoryImpl(
+        r.dependency<_i4.RepositoryFactory>().operations<_i1.Note, int>(
+          r'NoteRepository',
+          annotations: const [
+            _i5.UseStore(r'memory'),
+            _i5.UseDataSource(r'scratch'),
           ],
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
         ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Note>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Note>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Note>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Note>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$NoteRepositoryImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i3.Future<List<_i1.Note>> saveAll(Iterable<_i1.Note> entities) =>
-      _i2.retypeFuture<List<_i1.Note>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
       );
-
-  @override
-  _i3.Future<List<_i1.Note>> findAll() => _i2.retypeFuture<List<_i1.Note>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i3.Future<List<_i1.Note>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Note>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i3.Future<_i1.Note> save(_i1.Note entity) => _i2.retypeFuture<_i1.Note>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i3.Future<_i1.Note?> findById(int id) => _i2.retypeFuture<_i1.Note?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i3.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i3.Future<void> delete(_i1.Note entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i3.Future<void> deleteAllOf(Iterable<_i1.Note> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
 }
 
 /// Beans found by `@ComponentScan` in `lib/ and test/autoconfig/app/`.
@@ -1290,12 +194,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#AuthorRepository',
       types: const [
         _i1.AuthorRepository,
-        _i5.ListCrudRepository<_i1.Author, int>,
-        _i5.CrudRepository<_i1.Author, int>,
-        _i5.DataRepository<_i1.Author, int>,
-        _i5.ListCrudRepository<dynamic, dynamic>,
-        _i5.CrudRepository<dynamic, dynamic>,
-        _i5.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Author, int>,
+        _i6.CrudRepository<_i1.Author, int>,
+        _i6.DataRepository<_i1.Author, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuthorRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -1307,12 +211,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#BookRepository',
       types: const [
         _i1.BookRepository,
-        _i5.ListCrudRepository<_i1.Book, int>,
-        _i5.CrudRepository<_i1.Book, int>,
-        _i5.DataRepository<_i1.Book, int>,
-        _i5.ListCrudRepository<dynamic, dynamic>,
-        _i5.CrudRepository<dynamic, dynamic>,
-        _i5.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Book, int>,
+        _i6.CrudRepository<_i1.Book, int>,
+        _i6.DataRepository<_i1.Book, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -1324,12 +228,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#OrderRepository',
       types: const [
         _i1.OrderRepository,
-        _i5.ListCrudRepository<_i1.PurchaseOrder, int>,
-        _i5.CrudRepository<_i1.PurchaseOrder, int>,
-        _i5.DataRepository<_i1.PurchaseOrder, int>,
-        _i5.ListCrudRepository<dynamic, dynamic>,
-        _i5.CrudRepository<dynamic, dynamic>,
-        _i5.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.PurchaseOrder, int>,
+        _i6.CrudRepository<_i1.PurchaseOrder, int>,
+        _i6.DataRepository<_i1.PurchaseOrder, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$OrderRepositoryImpl.$create(r),
       aopProxy: _i2.AopProxyFactory.pruned(
@@ -1341,15 +245,15 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#VisitRepository',
       types: const [
         _i1.VisitRepository,
-        _i5.ListCrudRepository<_i1.Visit, int>,
-        _i5.CrudRepository<_i1.Visit, int>,
-        _i5.DataRepository<_i1.Visit, int>,
-        _i5.ListCrudRepository<dynamic, dynamic>,
-        _i5.CrudRepository<dynamic, dynamic>,
-        _i5.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Visit, int>,
+        _i6.CrudRepository<_i1.Visit, int>,
+        _i6.DataRepository<_i1.Visit, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$VisitRepositoryImpl.$create(r),
-      annotations: const [_i4.UseDataSource(r'stats')],
+      annotations: const [_i5.UseDataSource(r'stats')],
       aopProxy: _i2.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches VisitRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
@@ -1359,17 +263,17 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#NoteRepository',
       types: const [
         _i1.NoteRepository,
-        _i5.ListCrudRepository<_i1.Note, int>,
-        _i5.CrudRepository<_i1.Note, int>,
-        _i5.DataRepository<_i1.Note, int>,
-        _i5.ListCrudRepository<dynamic, dynamic>,
-        _i5.CrudRepository<dynamic, dynamic>,
-        _i5.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Note, int>,
+        _i6.CrudRepository<_i1.Note, int>,
+        _i6.DataRepository<_i1.Note, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$NoteRepositoryImpl.$create(r),
       annotations: const [
-        _i4.UseStore(r'memory'),
-        _i4.UseDataSource(r'scratch'),
+        _i5.UseStore(r'memory'),
+        _i5.UseDataSource(r'scratch'),
       ],
       aopProxy: _i2.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches NoteRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
@@ -1400,7 +304,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'title'],
-            annotations: [_i6.Transactional()],
+            annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Library'],
             targetAnnotations: [_i2.Service()],
@@ -1414,7 +318,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'page', r'fail'],
-            annotations: [_i6.Transactional(transactionManager: r'stats')],
+            annotations: [_i7.Transactional(transactionManager: r'stats')],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Library'],
             targetAnnotations: [_i2.Service()],
@@ -1466,7 +370,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.ConditionGroup(
           r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#EagerQuery',
           [
-            const _i7.ConditionalOnProperty(
+            const _i8.ConditionalOnProperty(
               r'app.early-queries',
               matchIfMissing: true,
             ),
@@ -1481,7 +385,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       },
       annotations: const [
         _i2.Component(),
-        _i7.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
+        _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
       aopProxy: _i2.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches EagerQuery, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
@@ -1495,7 +399,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.ConditionGroup(
           r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#AsyncQuery',
           [
-            const _i7.ConditionalOnProperty(
+            const _i8.ConditionalOnProperty(
               r'app.early-queries',
               matchIfMissing: true,
             ),
@@ -1515,7 +419,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       },
       annotations: const [
         _i2.Component(),
-        _i7.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
+        _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
       aopProxy: _i2.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches AsyncQuery, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
@@ -1524,7 +428,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i2.BeanDefinition<_i1.SeedRunner>(
       name: r'seedRunner',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#SeedRunner',
-      types: const [_i1.SeedRunner, _i8.CommandLineRunner],
+      types: const [_i1.SeedRunner, _i9.CommandLineRunner],
       dependencies: const [
         _i2.Dependency(_i1.AuthorRepository, name: r'authors'),
       ],
@@ -1538,7 +442,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i2.BeanDefinition<_i1.SeedApplicationRunner>(
       name: r'seedApplicationRunner',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#SeedApplicationRunner',
-      types: const [_i1.SeedApplicationRunner, _i8.ApplicationRunner],
+      types: const [_i1.SeedApplicationRunner, _i9.ApplicationRunner],
       dependencies: const [_i2.Dependency(_i1.BookRepository, name: r'books')],
       create: (r) => _i1.SeedApplicationRunner(
         r.dependency<_i1.BookRepository>(name: r'books'),
@@ -1548,11 +452,241 @@ _i2.BeanModule get $application => _i2.BeanModule(
         reason: r'the build found no pointcut of the application that matches SeedApplicationRunner, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i9.JdbcDriver>(
+    _i2.BeanDefinition<_i4.EntityIntrospections>(
+      name: r'entityIntrospections#application',
+      source: r'package:spring_boot_starter_data#EntityIntrospections',
+      types: const [_i4.EntityIntrospections],
+      create: (r) => _i4.EntityIntrospections([
+        _i4.EntityIntrospection<_i1.Author>(
+          r'Author',
+          const [
+            _i4.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i5.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'name',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i5.Table(r'authors')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.name,
+          },
+          create: (v) => _i1.Author(name: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            _ => null,
+          },
+        ),
+        _i4.EntityIntrospection<_i1.Book>(
+          r'Book',
+          const [
+            _i4.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i5.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'title',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'year',
+              _i2.ClassType<int>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'author',
+              _i2.GenericType<_i5.AggregateReference<_i1.Author, int>>([
+                _i2.ClassType<_i1.Author>(),
+                _i2.ClassType<int>(),
+              ], nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'version',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i5.Version()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i5.Table(r'books')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.title,
+            2 => e.year,
+            3 => e.author,
+            _ => e.version,
+          },
+          create: (v) => _i1.Book(
+            title: v[1] as String,
+            year: v[2] as int,
+            id: v[0] as int?,
+            author: v[3] as _i5.AggregateReference<_i1.Author, int>?,
+            version: v[4] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.title = v as String,
+            2 => e.year = v as int,
+            3 => e.author = v as _i5.AggregateReference<_i1.Author, int>?,
+            4 => e.version = v as int?,
+            _ => null,
+          },
+        ),
+        _i4.EntityIntrospection<_i1.PurchaseOrder>(
+          r'PurchaseOrder',
+          const [
+            _i4.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i5.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'customer',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'lines',
+              _i2.ListType<_i1.OrderLine>(_i2.ClassType<_i1.OrderLine>()),
+              annotations: [_i5.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+          ],
+          annotations: const [_i5.Table(r'orders')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.customer,
+            _ => e.lines,
+          },
+          create: (v) => _i1.PurchaseOrder(
+            customer: v[1] as String,
+            id: v[0] as int?,
+            lines: v[2] as List<_i1.OrderLine>,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.customer = v as String,
+            2 => e.lines = v as List<_i1.OrderLine>,
+            _ => null,
+          },
+        ),
+        _i4.EntityIntrospection<_i1.OrderLine>(
+          r'OrderLine',
+          const [
+            _i4.EntityProperty(
+              r'sku',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'quantity',
+              _i2.ClassType<int>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i5.Table(r'order_lines')],
+          get: (e, i) => switch (i) {
+            0 => e.sku,
+            _ => e.quantity,
+          },
+          create: (v) =>
+              _i1.OrderLine(sku: v[0] as String, quantity: v[1] as int),
+          write: (e, i, v) => switch (i) {
+            0 => e.sku = v as String,
+            1 => e.quantity = v as int,
+            _ => null,
+          },
+        ),
+        _i4.EntityIntrospection<_i1.Visit>(
+          r'Visit',
+          const [
+            _i4.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i5.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'page',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i5.Table(r'visits')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.page,
+          },
+          create: (v) => _i1.Visit(page: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.page = v as String,
+            _ => null,
+          },
+        ),
+        _i4.EntityIntrospection<_i1.Note>(
+          r'Note',
+          const [
+            _i4.EntityProperty(
+              r'id',
+              _i2.ClassType<int>(nullable: true),
+              annotations: [_i5.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i4.EntityProperty(
+              r'text',
+              _i2.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i5.Table(r'notes')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.text,
+          },
+          create: (v) => _i1.Note(text: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.text = v as String,
+            _ => null,
+          },
+        ),
+      ]),
+    ),
+    _i2.BeanDefinition<_i4.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i9.JdbcDriver],
-      conditions: [_i9.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i4.JdbcDriver],
+      conditions: [_i4.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
   ],
@@ -1573,400 +707,15 @@ _i2.BeanModule get $application => _i2.BeanModule(
       'create table visits (\n  id integer primary key,\n  page text not null\n);\n',
     ),
   },
-  introspections: [
-    _i2.BeanIntrospection<_i1.Author>(
-      className: r'Author',
-      properties: [
-        _i2.BeanProperty<_i1.Author>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Author>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'authors')],
-      constructor: _i2.BeanConstructor<_i1.Author>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Author.new, positional, named) as _i1.Author),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Book>(
-      className: r'Book',
-      properties: [
-        _i2.BeanProperty<_i1.Book>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-          set: (bean, value) => bean.title = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'year',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.year,
-          set: (bean, value) => bean.year = (value as int),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'author',
-          type: _i4.AggregateReference<_i1.Author, int>,
-          nullable: true,
-          typeInfo:
-              const _i2.GenericType<_i4.AggregateReference<_i1.Author, int>>([
-                _i2.ClassType<_i1.Author>(),
-                _i2.ClassType<int>(),
-              ], nullable: true),
-          get: (bean) => bean.author,
-          set: (bean, value) =>
-              bean.author = (value as _i4.AggregateReference<_i1.Author, int>?),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'version',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.version,
-          set: (bean, value) => bean.version = (value as int?),
-          annotations: const [_i4.Version()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'books')],
-      constructor: _i2.BeanConstructor<_i1.Book>(
-        parameters: [
-          _i2.BeanParameter(
-            r'title',
-            type: const _i2.ClassType<String>(),
-            symbol: #title,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'year',
-            type: const _i2.ClassType<int>(),
-            symbol: #year,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'author',
-            type:
-                const _i2.GenericType<_i4.AggregateReference<_i1.Author, int>>([
-                  _i2.ClassType<_i1.Author>(),
-                  _i2.ClassType<int>(),
-                ], nullable: true),
-            symbol: #author,
-          ),
-          _i2.BeanParameter(
-            r'version',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #version,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Book.new, positional, named) as _i1.Book),
-      ),
-    ),
-    _i2.BeanIntrospection<_i4.AggregateReference<dynamic, dynamic>>(
-      className: r'AggregateReference',
-      specialize: (arguments) => arguments[0].capture(
-        <T>() => arguments[1].capture(
-          <ID>() => _i2.BeanIntrospection<_i4.AggregateReference<T, ID>>(
-            className: r'AggregateReference',
-            properties: [
-              _i2.BeanProperty<_i4.AggregateReference<T, ID>>(
-                r'id',
-                type: ID,
-                nullable: true,
-                typeInfo: (arguments[1] as _i2.TypeInfo<ID>),
-                get: (bean) => bean.id,
-              ),
-              _i2.BeanProperty<_i4.AggregateReference<T, ID>>(
-                r'hashCode',
-                type: int,
-                typeInfo: const _i2.ClassType<int>(),
-                get: (bean) => bean.hashCode,
-              ),
-            ],
-            methods: [
-              _i2.BeanMethod<_i4.AggregateReference<T, ID>>(
-                r'toString',
-                returnType: String,
-                invoke: (bean, arguments) =>
-                    Function.apply(bean.toString, arguments),
-              ),
-            ],
-            constructor: _i2.BeanConstructor<_i4.AggregateReference<T, ID>>(
-              parameters: [
-                _i2.BeanParameter(
-                  r'id',
-                  type: (arguments[1] as _i2.TypeInfo<ID>),
-                  isRequired: true,
-                ),
-              ],
-              create: (positional, named) =>
-                  _i4.AggregateReference<T, ID>((positional[0] as ID)),
-            ),
-          ),
-        ),
-      ),
-      properties: [
-        _i2.BeanProperty<_i4.AggregateReference<dynamic, dynamic>>(
-          r'id',
-          type: dynamic,
-          nullable: true,
-          typeInfo: const _i2.DynamicType(),
-          get: (bean) => bean.id,
-        ),
-        _i2.BeanProperty<_i4.AggregateReference<dynamic, dynamic>>(
-          r'hashCode',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.hashCode,
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i4.AggregateReference<dynamic, dynamic>>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      constructor:
-          _i2.BeanConstructor<_i4.AggregateReference<dynamic, dynamic>>(
-            parameters: [
-              _i2.BeanParameter(
-                r'id',
-                type: const _i2.DynamicType(),
-                isRequired: true,
-              ),
-            ],
-            create: (positional, named) =>
-                _i4.AggregateReference<dynamic, dynamic>(
-                  (positional[0] as dynamic),
-                ),
-          ),
-    ),
-    _i2.BeanIntrospection<_i1.PurchaseOrder>(
-      className: r'PurchaseOrder',
-      properties: [
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'customer',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.customer,
-          set: (bean, value) => bean.customer = (value as String),
-        ),
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'lines',
-          type: List<_i1.OrderLine>,
-          typeInfo: const _i2.ListType<_i1.OrderLine>(
-            _i2.ClassType<_i1.OrderLine>(),
-          ),
-          get: (bean) => bean.lines,
-          set: (bean, value) => bean.lines = (value as List<_i1.OrderLine>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'orders')],
-      constructor: _i2.BeanConstructor<_i1.PurchaseOrder>(
-        parameters: [
-          _i2.BeanParameter(
-            r'customer',
-            type: const _i2.ClassType<String>(),
-            symbol: #customer,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'lines',
-            type: const _i2.ListType<_i1.OrderLine>(
-              _i2.ClassType<_i1.OrderLine>(),
-            ),
-            symbol: #lines,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.PurchaseOrder.new, positional, named)
-                as _i1.PurchaseOrder),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.OrderLine>(
-      className: r'OrderLine',
-      properties: [
-        _i2.BeanProperty<_i1.OrderLine>(
-          r'sku',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.sku,
-          set: (bean, value) => bean.sku = (value as String),
-        ),
-        _i2.BeanProperty<_i1.OrderLine>(
-          r'quantity',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.quantity,
-          set: (bean, value) => bean.quantity = (value as int),
-        ),
-      ],
-      annotations: const [_i4.Table(r'order_lines')],
-      constructor: _i2.BeanConstructor<_i1.OrderLine>(
-        parameters: [
-          _i2.BeanParameter(
-            r'sku',
-            type: const _i2.ClassType<String>(),
-            symbol: #sku,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'quantity',
-            type: const _i2.ClassType<int>(),
-            symbol: #quantity,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.OrderLine.new, positional, named)
-                as _i1.OrderLine),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Visit>(
-      className: r'Visit',
-      properties: [
-        _i2.BeanProperty<_i1.Visit>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Visit>(
-          r'page',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.page,
-          set: (bean, value) => bean.page = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'visits')],
-      constructor: _i2.BeanConstructor<_i1.Visit>(
-        parameters: [
-          _i2.BeanParameter(
-            r'page',
-            type: const _i2.ClassType<String>(),
-            symbol: #page,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Visit.new, positional, named) as _i1.Visit),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Note>(
-      className: r'Note',
-      properties: [
-        _i2.BeanProperty<_i1.Note>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Note>(
-          r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
-          set: (bean, value) => bean.text = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'notes')],
-      constructor: _i2.BeanConstructor<_i1.Note>(
-        parameters: [
-          _i2.BeanParameter(
-            r'text',
-            type: const _i2.ClassType<String>(),
-            symbol: #text,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Note.new, positional, named) as _i1.Note),
-      ),
-    ),
-  ],
 );
 
-final class _$Sqlite3Binding implements _i9.SqliteBinding {
+final class _$Sqlite3Binding implements _i4.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i9.SqliteDatabase open(
+  _i4.SqliteDatabase open(
     String filename, {
-    _i9.SqliteOpenMode mode = _i9.SqliteOpenMode.readWriteCreate,
+    _i4.SqliteOpenMode mode = _i4.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
@@ -1979,7 +728,7 @@ final class _$Sqlite3Binding implements _i9.SqliteBinding {
   );
 }
 
-final class _$Sqlite3Database implements _i9.SqliteDatabase {
+final class _$Sqlite3Database implements _i4.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
   final _i10.Database _database;
@@ -1998,7 +747,7 @@ final class _$Sqlite3Database implements _i9.SqliteDatabase {
   });
 
   @override
-  _i9.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i4.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -2036,7 +785,7 @@ final class _$Sqlite3Database implements _i9.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i9.SqliteCursor {
+final class _$Sqlite3Cursor implements _i4.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
   final _i10.PreparedStatement _statement;
@@ -2065,7 +814,7 @@ T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
   } on _i10.SqliteException catch (e) {
-    throw _i9.SqlError(
+    throw _i4.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -2073,8 +822,8 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i9.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i9.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i4.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i4.SqliteJdbcDriver(const _$Sqlite3Binding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
@@ -2135,7 +884,7 @@ _i11.SpringApplication get springApplication => _i11.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '5dbe9f46',
+  fingerprint: '3e5c3236',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -11,6 +11,7 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/part_tree.dart';
 
 /// What an injection point asks for: one bean, all beans of a type in some
 /// collection, a provider, a property value or a named resource.
@@ -266,7 +267,8 @@ class Argument {
 ///
 /// It is one of: a constructor call ([ConstructorCreation]), a `@Bean`
 /// method call ([BeanMethodCreation]), a generated interface
-/// implementation ([InterfaceProxyCreation]), or constructor binding of a
+/// implementation ([InterfaceProxyCreation]), a generated data repository
+/// ([RepositoryCreation]), or constructor binding of a
 /// `@ConfigurationProperties` class ([ConfigurationPropertiesCreation]).
 ///
 /// ```dart
@@ -392,6 +394,31 @@ class InterfaceProxyCreation extends Creation {
 
   /// The interface and the methods the generated class implements.
   final InterfaceProxyModel model;
+
+  @override
+  List<Argument> get arguments => const [];
+}
+
+/// A bean that is the generated implementation of a data repository of
+/// `spring_boot_starter_data`: `_$XImpl.$create(r)`.
+///
+/// Like [InterfaceProxyCreation], with no handler: the class extends the
+/// starter's `SimpleRepository` for the CRUD methods and writes the rest
+/// (derived queries, `@Query`) itself.
+///
+/// ```dart
+/// // Input:
+/// abstract interface class BookRepository
+///     implements ListCrudRepository<Book, int> { ... }
+/// // Output:
+/// create: (r) => _$BookRepositoryImpl.$create(r),
+/// ```
+class RepositoryCreation extends Creation {
+  /// Creates the repository of [model].
+  RepositoryCreation(this.model);
+
+  /// The repository and the methods the generated class writes.
+  final RepositoryModel model;
 
   @override
   List<Argument> get arguments => const [];
@@ -2189,6 +2216,90 @@ class PropertySourceModel {
   final InterfaceType? factoryType;
 }
 
+/// What a use of an introspected class asks of its description: which of
+/// its parts the runtime will touch. The scanner gives every request one,
+/// merges the requests for a class (a class reached by several routes gets
+/// the union) and the emitter writes only the parts that were asked for;
+/// the class's annotations and property list are always written.
+///
+/// ```dart
+/// // A request body that is validated: created and filled, and the
+/// // constrained properties read.
+/// IntrospectionNeed.write | IntrospectionNeed.validate
+/// // A controller's return type: written out as JSON, and read back by the
+/// // tests of the application.
+/// IntrospectionNeed.read | IntrospectionNeed.write
+/// ```
+///
+/// Spring (Java): no counterpart; reflection sees every part of any class.
+final class IntrospectionNeed {
+  const IntrospectionNeed._(this._bits);
+
+  /// Nothing: the class is only known (a `@JsonView` marker, compared with
+  /// other views).
+  static const none = IntrospectionNeed._(0);
+
+  /// The values of the properties are read from instances: the getters
+  /// (written out as JSON, a cache value an expression reads, a bound
+  /// configuration object).
+  static const read = IntrospectionNeed._(1);
+
+  /// Instances are created and filled: the constructor, `instantiate`, the
+  /// setters and `fromJson` (a request body, a Feign response, a message
+  /// read in, configuration binding).
+  static const write = IntrospectionNeed._(2);
+
+  /// The validator reads the properties that have constraints or
+  /// `@Valid()`: a getter for each of those, none for the others.
+  static const validate = IntrospectionNeed._(4);
+
+  /// Expressions may call the methods (SpEL).
+  static const methods = IntrospectionNeed._(8);
+
+  /// What an expression does with a value: reads its properties and calls
+  /// its methods.
+  static const spel = IntrospectionNeed._(1 | 8);
+
+  /// What the configuration binder does: it sets the properties and reads
+  /// their current values, to bind nested objects and maps in place.
+  static const configuration = IntrospectionNeed._(1 | 2);
+
+  /// Everything: what `@Introspected()` asks for.
+  static const all = IntrospectionNeed._(1 | 2 | 4 | 8);
+
+  final int _bits;
+
+  /// The union of this need and [other].
+  IntrospectionNeed operator |(IntrospectionNeed other) =>
+      IntrospectionNeed._(_bits | other._bits);
+
+  /// Whether every part of [other] is in this need.
+  bool includes(IntrospectionNeed other) => _bits & other._bits == other._bits;
+
+  /// Whether this need has any part of [other].
+  bool intersects(IntrospectionNeed other) => _bits & other._bits != 0;
+
+  /// Whether this is [none].
+  bool get isNone => _bits == 0;
+
+  @override
+  bool operator ==(Object other) =>
+      other is IntrospectionNeed && other._bits == _bits;
+
+  @override
+  int get hashCode => _bits;
+
+  @override
+  String toString() => isNone
+      ? 'none'
+      : [
+          if (includes(read)) 'read',
+          if (includes(write)) 'write',
+          if (includes(validate)) 'validate',
+          if (includes(methods)) 'methods',
+        ].join('+');
+}
+
 /// A property of an `@Introspected` class: a public field, or a getter
 /// with an optional setter, that runtime code can read and write by name.
 ///
@@ -2231,8 +2342,14 @@ class IntrospectedProperty {
     required this.nullable,
     required this.writable,
     required this.annotations,
+    this.validated = false,
     this.initialValue,
   });
+
+  /// Whether a rule of the validator looks at the property: it has a
+  /// constraint, `@Valid()`, `@Each()` or `@EachKey()`. A class that is
+  /// only validated gets the getters of these properties and no other.
+  final bool validated;
 
   /// The constant the field is initialized with, when the generated code
   /// can write it; `null` when there is none (no initializer, or one that
@@ -2294,6 +2411,7 @@ class IntrospectedMethod {
     required this.returnType,
     required this.parameterTypes,
     required this.annotations,
+    this.jsonNeed = IntrospectionNeed.none,
   });
 
   /// The method name.
@@ -2307,6 +2425,14 @@ class IntrospectedMethod {
 
   /// The user annotations of the method.
   final List<DartObject> annotations;
+
+  /// What `ObjectMapper` needs the method for: [IntrospectionNeed.read]
+  /// for `@JsonValue` and `@JsonAnyGetter` (writing the object out),
+  /// [IntrospectionNeed.write] for `@JsonAnySetter` (reading it in);
+  /// [IntrospectionNeed.none] for any other method. Such a method is
+  /// described whenever its need is, also without
+  /// [IntrospectionNeed.methods].
+  final IntrospectionNeed jsonNeed;
 }
 
 /// An `@Introspected` class: the metadata that lets runtime code create
@@ -2352,10 +2478,23 @@ class IntrospectionModel {
     required this.methods,
     required this.annotations,
     required this.instantiable,
+    this.need = IntrospectionNeed.none,
+    this.nonDefaultInclusion = false,
     this.constructor,
     this.fromJson,
     this.hasToJson = false,
   });
+
+  /// What the application does with the class, as far as the build saw:
+  /// the union of every use found (see [IntrospectionNeed]). It only
+  /// grows while the module is scanned; the emitter writes the parts it
+  /// names and no others.
+  IntrospectionNeed need;
+
+  /// Whether the class has `@JsonInclude(JsonInclusion.nonDefault)`, which
+  /// compares each value with that of a new instance, so writing the class
+  /// out also needs [IntrospectionNeed.write].
+  final bool nonDefaultInclusion;
 
   /// The constructor that creates instances from data, such as JSON (the
   /// `@JsonCreator` one, else the unnamed one), when it is usable.
@@ -2388,6 +2527,124 @@ class IntrospectionModel {
   /// Whether the class has a public unnamed constructor callable without
   /// arguments, so the introspection gets an `instantiate` closure.
   final bool instantiable;
+}
+
+/// A property of an [EntityModel], written as an `EntityProperty`.
+class EntityPropertyModel {
+  /// Creates an entity property.
+  EntityPropertyModel({
+    required this.name,
+    required this.type,
+    required this.annotations,
+    required this.parameter,
+    required this.writable,
+    this.defaultValue,
+  });
+
+  /// The field name.
+  final String name;
+
+  /// The declared type, with nullability and type arguments.
+  final DartType type;
+
+  /// The user annotations of the field and its getter.
+  final List<DartObject> annotations;
+
+  /// Whether the unnamed constructor has a parameter of the same name.
+  final bool parameter;
+
+  /// Whether the field has a setter.
+  final bool writable;
+
+  /// The constant the property defaults to: the initializer of the field,
+  /// else the default of the constructor parameter; `null` when there is
+  /// none or the generated code cannot write it (see
+  /// [IntrospectedProperty.initialValue] for the shapes).
+  final ({Object? value})? defaultValue;
+}
+
+/// An argument of the constructor call of an [EntityModel]: the value of
+/// the property at [property], by position or by [name].
+class EntityArgument {
+  /// Creates an argument for the property at index [property].
+  const EntityArgument(this.property, {this.name});
+
+  /// The index into [EntityModel.properties].
+  final int property;
+
+  /// The parameter name when the parameter is named; `null` when it is
+  /// positional.
+  final String? name;
+}
+
+/// A class the data layer stores or reads (`@Table`, or the DTO of a
+/// `@Query`): the properties and constructor call that let the starter
+/// read, create and set it without reflection, written as an
+/// `EntityIntrospection`. Unlike an [IntrospectionModel], it holds no
+/// methods, no JSON hooks and no constructor metadata.
+///
+/// ```dart
+/// // Input:
+/// @Table('authors')
+/// class Author {
+///   Author({this.id, required this.name});
+///   @Id() int? id;
+///   String name;
+/// }
+/// // Output (EntityIntrospections.introspections):
+/// EntityIntrospection<Author>(
+///   r'Author',
+///   const [
+///     EntityProperty(r'id', ClassType<int>(nullable: true),
+///         annotations: [Id()], parameter: true, writable: true),
+///     EntityProperty(r'name', ClassType<String>(),
+///         parameter: true, writable: true),
+///   ],
+///   annotations: const [Table(r'authors')],
+///   read: (e) => [e.id, e.name],
+///   create: (v) => Author(id: v[0] as int?, name: v[1] as String),
+///   write: (e, i, v) => switch (i) {
+///     0 => e.id = v as int?,
+///     1 => e.name = v as String,
+///     _ => null,
+///   },
+/// ),
+/// ```
+///
+/// Spring (Java):
+///
+/// ```java
+/// // Hibernate builds the metamodel (EntityType) of an @Entity class when
+/// // the session factory starts, reading its fields by reflection:
+/// metamodel.entity(Author.class).getAttributes();
+/// ```
+class EntityModel {
+  /// Creates an entity model.
+  EntityModel({
+    required this.element,
+    required this.type,
+    required this.properties,
+    required this.arguments,
+    required this.annotations,
+  });
+
+  /// The class element, for error messages and imports.
+  final ClassElement element;
+
+  /// The class.
+  final InterfaceType type;
+
+  /// The public instance fields, the class's own first, then the mixins'
+  /// and the superclasses'.
+  final List<EntityPropertyModel> properties;
+
+  /// What the unnamed constructor is called with, in parameter order:
+  /// the parameters that name a property (an optional one that names none
+  /// is left out).
+  final List<EntityArgument> arguments;
+
+  /// The user annotations of the class (`@Table`).
+  final List<DartObject> annotations;
 }
 
 /// How a [TypeFilterModel] tests a class; the build-time form of Spring's
@@ -2497,7 +2754,7 @@ class ComponentScanModel {
 }
 
 /// Everything the scan of one output file found: beans, introspections,
-/// configurables, property sources, registrars, imports, Flutter
+/// entities, configurables, property sources, registrars, imports, Flutter
 /// bindings and loggers.
 ///
 /// The `BeanScanner` fills it library by library; the
@@ -2531,6 +2788,10 @@ class ModuleModel {
 
   /// The `@Introspected` classes, explicit and automatic.
   final introspections = <IntrospectionModel>[];
+
+  /// The classes the data layer stores or reads: `@Table` classes and the
+  /// DTOs of `@Query` methods.
+  final entities = <EntityModel>[];
 
   /// The `@Configurable` classes.
   final configurables = <ConfigurableModel>[];
@@ -2885,8 +3146,6 @@ class InterfaceProxyModel {
     required this.signatures,
     required this.methods,
     required this.annotations,
-    this.supertypeArguments = const {},
-    this.callable = true,
   });
 
   /// The name of the generated class, e.g. `_$CatalogClientImpl`.
@@ -2905,15 +3164,6 @@ class InterfaceProxyModel {
   /// The user annotations on the interface, which the handler reads
   /// (`@FeignClient('catalog')`).
   final List<DartObject> annotations;
-
-  /// The type arguments of the interface's generic supertypes, by name
-  /// (`{'CrudRepository': [Book, int]}`), written into
-  /// `InterfaceMetadata.supertypeArguments`.
-  final Map<String, List<DartType>> supertypeArguments;
-
-  /// Whether each method gets a `call` invoking it on an implementation
-  /// (a Feign fallback); false where none can exist (a data repository).
-  final bool callable;
 }
 
 /// A method of an [InterfaceProxyModel], written as the metadata the
@@ -2948,4 +3198,283 @@ class InterfaceMethodModel {
   /// The user annotations of the method (`@GetMapping('/books/{isbn}')`),
   /// which the handler reads.
   final List<DartObject> annotations;
+}
+
+/// A data repository of `spring_boot_starter_data` (an interface extending
+/// `DataRepository`), and the class the generator writes for it.
+///
+/// The class extends the starter's `SimpleRepository` for the CRUD methods
+/// and implements the others itself, each a one-line call of
+/// `RepositoryOperations`: a derived query as the `PartTree` the build made
+/// from the method name, `@Query` as a description of the method. A
+/// mistake in a method name is an error of the build.
+///
+/// ```dart
+/// // Input:
+/// abstract interface class BookRepository
+///     implements ListCrudRepository<Book, int> {
+///   Future<List<Book>> findByTitleAndYear(String title, int year);
+/// }
+/// // Output:
+/// class _$BookRepositoryImpl extends SimpleRepository<Book, int>
+///     implements BookRepository {
+///   _$BookRepositoryImpl(super.operations);
+///   static _$BookRepositoryImpl $create(DependencyResolver r) =>
+///       _$BookRepositoryImpl(r
+///           .dependency<RepositoryFactory>()
+///           .operations<Book, int>(r'BookRepository'));
+///   static const _findByTitleAndYear = PartTree(r'findByTitleAndYear', [
+///     OrPart([Part(r'title'), Part(r'year')]),
+///   ]);
+///   @override
+///   Future<List<Book>> findByTitleAndYear(String title, int year) =>
+///       operations.list(_findByTitleAndYear, [title, year]);
+/// }
+/// ```
+///
+/// Spring (Java):
+///
+/// ```java
+/// // RepositoryFactorySupport creates a proxy over SimpleJdbcRepository
+/// // when the application starts, with a PartTreeJdbcQuery for each
+/// // derived method, and checks the method names then.
+/// ```
+class RepositoryModel {
+  /// Creates the model.
+  RepositoryModel({
+    required this.className,
+    required this.type,
+    required this.entityType,
+    required this.idType,
+    required this.annotations,
+    required this.methods,
+  });
+
+  /// The name of the generated class, e.g. `_$BookRepositoryImpl`.
+  final String className;
+
+  /// The repository interface.
+  final InterfaceType type;
+
+  /// The aggregate the repository stores (`T` of `DataRepository<T, ID>`).
+  final InterfaceType entityType;
+
+  /// The type of the aggregate's id (`ID`).
+  final InterfaceType idType;
+
+  /// The user annotations on the interface (`@Repository('books')`,
+  /// `@UseStore('jdbc')`), which the starter reads to pick the store.
+  final List<DartObject> annotations;
+
+  /// The methods the class writes: those `SimpleRepository` does not
+  /// implement, in declaration order.
+  final List<RepositoryMethodModel> methods;
+}
+
+/// A method of a [RepositoryModel] that the generated class writes.
+sealed class RepositoryMethodModel {
+  /// Creates the model.
+  RepositoryMethodModel(this.member);
+
+  /// The signature to repeat, with its parameter names and defaults.
+  final ProxyMember member;
+}
+
+/// A CRUD method the interface redeclares with `@Lock` (`findById`): the
+/// override passes the lock to the starter's own implementation.
+///
+/// ```dart
+/// // Input:
+/// @Lock(LockMode.pessimisticWrite)
+/// Future<Book?> findById(int id);
+/// // Output:
+/// @override
+/// Future<Book?> findById(int id) => operations.findById(id,
+///     lock: const Lock(LockMode.pessimisticWrite));
+/// ```
+class LockedMethodModel extends RepositoryMethodModel {
+  /// Creates the model.
+  LockedMethodModel(super.member, this.lock);
+
+  /// The `@Lock` annotation.
+  final DartObject lock;
+}
+
+/// What a `@Modifying` method returns: the number of rows changed
+/// (`Future<int>`), whether any changed (`Future<bool>`) or nothing
+/// (`Future<void>`); each is the value of `QueryChange` in the starter.
+enum ModifyingResult {
+  /// `Future<int>`: the rows changed.
+  rows,
+
+  /// `Future<bool>`: whether any row changed.
+  any,
+
+  /// `Future<void>`.
+  nothing,
+}
+
+/// One `:#{...}` expression of a `@Query`: the text, and whether the build
+/// compiles it to Dart (else the starter interprets the text, which needs
+/// the classes of the arguments described for SpEL).
+///
+/// ```dart
+/// // `:#{#book.title}` on `sameTitle(Book book)` is compiled:
+/// // (arguments, context) => (arguments[0] as Book).title
+/// ```
+class QueryExpressionModel {
+  /// An expression of [text], [compiled] or not.
+  const QueryExpressionModel(this.text, {required this.compiled});
+
+  /// The expression, without `:#{` and `}`.
+  final String text;
+
+  /// Whether the build writes the expression as Dart.
+  final bool compiled;
+}
+
+/// A method with `@Query`: the build checks it, and tells the starter what
+/// is left to do at run time with a `QueryMethod`, a constant that holds
+/// the annotation, the parameters and the shape of the result.
+///
+/// ```dart
+/// // Input:
+/// @Query('select title, year from books where year = :year')
+/// Future<List<BookCard>> cards(int year);
+/// // Output:
+/// static const _cards = QueryMethod(
+///   r'cards',
+///   Query(r'select title, year from books where year = :year'),
+///   parameters: [r'year'],
+///   element: ClassType<BookCard>(),
+/// );
+/// @override
+/// Future<List<BookCard>> cards(int year) =>
+///     operations.query<List<BookCard>>(_cards, [year]);
+/// ```
+class QueryMethodModel extends RepositoryMethodModel {
+  /// Creates the model of a method annotated with [query].
+  QueryMethodModel(
+    super.member, {
+    required this.query,
+    required this.shape,
+    this.element,
+    this.change,
+    this.pageable,
+    this.sort,
+  });
+
+  /// The `@Query` annotation.
+  final DartObject query;
+
+  /// How the result is shaped; `single` for a change.
+  final ResultShape shape;
+
+  /// The type of what one row becomes (the element of a `List`, the type
+  /// itself for a single result); `null` for a `@Modifying` method.
+  final DartType? element;
+
+  /// What a `@Modifying` method returns; `null` for a method that reads.
+  final ModifyingResult? change;
+
+  /// The index of the `Pageable` parameter, if any.
+  final int? pageable;
+
+  /// The index of the `Sort` parameter, if any.
+  final int? sort;
+
+  /// The `:#{...}` expressions of the texts (the SQL, then the count
+  /// query), in text order, once the build has read them.
+  List<QueryExpressionModel> expressions = const [];
+
+  /// The beans of the application by name, for the compiled expressions
+  /// that read one (`@clock`).
+  Map<String, InterfaceType> beans = const {};
+
+  /// The entities `{Entity}` placeholders name, by class name, once the
+  /// build has read the texts.
+  Map<String, InterfaceType> entities = const {};
+
+  /// Whether the method returns a `Stream` (`queryStream`) instead of a
+  /// `Future` (`query`).
+  bool get isStream => shape == ResultShape.stream;
+}
+
+/// What a derived query asks of `RepositoryOperations`; each is the method
+/// of that name.
+enum DerivedOperation {
+  /// All results as a `List`.
+  list,
+
+  /// All results as a `Set`.
+  set,
+
+  /// At most one result (`Future<T?>`).
+  one,
+
+  /// Exactly one result (`Future<T>`).
+  single,
+
+  /// The results as a `Stream`.
+  stream,
+
+  /// A window of the results and their total.
+  page,
+
+  /// A window of the results.
+  slice,
+
+  /// The number of results (`countBy`).
+  countBy,
+
+  /// Whether there is a result (`existsBy`).
+  existsBy,
+
+  /// Deletes the results, returning their number (`deleteBy`).
+  deleteBy,
+
+  /// Deletes the results, returning them (`deleteByReturning`).
+  deleteByReturning,
+}
+
+/// A derived query: a method whose name the build read as a `PartTree`.
+///
+/// ```dart
+/// // Input: Future<Page<Book>> findByYearAfter(int year, Pageable page);
+/// // Output:
+/// static const _findByYearAfter = PartTree(r'findByYearAfter',
+///     [OrPart([Part(r'year', PartType.greaterThan)])]);
+/// @override
+/// Future<Page<Book>> findByYearAfter(int year, Pageable page) =>
+///     operations.page(_findByYearAfter, [year], page);
+/// ```
+class DerivedMethodModel extends RepositoryMethodModel {
+  /// Creates the model.
+  DerivedMethodModel(
+    super.member, {
+    required this.tree,
+    required this.operation,
+    required this.arguments,
+    this.sort,
+    this.pageable,
+    this.lock,
+  });
+
+  /// The method's name read as a query.
+  final PartTreeModel tree;
+
+  /// The operation that runs it.
+  final DerivedOperation operation;
+
+  /// The parameters the predicate consumes, in order.
+  final List<String> arguments;
+
+  /// The name of the `Sort` parameter, if any.
+  final String? sort;
+
+  /// The name of the `Pageable` parameter, if any.
+  final String? pageable;
+
+  /// The `@Lock` annotation, if any.
+  final DartObject? lock;
 }

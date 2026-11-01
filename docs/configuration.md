@@ -2758,6 +2758,66 @@ The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
 `linux`, `mobile`, `desktop`) are always active; see
 [Profiles](#profile-files-and-activation).
 
+### SQLite databases
+
+A Flutter app has no working directory to keep a database in, and
+SQLite's calls are synchronous: on the UI isolate a slow query drops
+frames. When the app configures a SQL database (`spring.datasource.url`,
+or `spring.datasources.<name>.url`), the starter makes the data starter
+see two properties, for the primary data source and for each named one:
+the app's directory as `base-directory`, so `sqlite:file:books.db` is a
+file there, and `isolate=true`, so each connection runs on an isolate of
+its own. They have the lowest precedence of all: a property of your own
+(a file, `--dart-define`, `defaultProperties`) wins. Without a data
+source, nothing is set. The web has no such directory yet: nothing is set
+there.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  datasource:
+    url: sqlite:file:books.db
+    sqlite:
+      location: support
+```
+
+</td><td>
+
+```properties
+spring.datasource.url=sqlite:file:books.db
+spring.datasource.sqlite.location=support
+```
+
+</td></tr>
+</table>
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.datasource.sqlite.location` | `support` / `cache` / `documents` | `support` | Which directory of the app holds the databases; any other value stops the start, naming these three |
+| `spring.datasource.sqlite.base-directory` | path | the directory of `location` | Set by the starter; the directory is created when it is missing |
+| `spring.datasource.sqlite.isolate` | bool | `true` | Set by the starter; `false` keeps the calls on the caller's isolate |
+
+`support` is the app's private data, which the system never deletes and
+backs up with the device; `cache` can be deleted when space runs out, so
+it is for a database that can be built again; `documents` is the user's
+documents folder. `support` is, per platform:
+
+| Platform | `support` directory |
+|---|---|
+| Android | the app's `databases/` directory (where `Context.getDatabasePath` puts databases), next to the `files/` directory of `getApplicationSupportDirectory()` |
+| iOS | `Library/Application Support` (`getApplicationSupportDirectory()`) |
+| macOS | the container's `Application Support/<bundle id>` (`getApplicationSupportDirectory()`) |
+| Windows | `%LOCALAPPDATA%\<company>\<product>`, the machine's own: the roaming directory that `getApplicationSupportDirectory()` returns would copy the file between machines |
+| Linux | `$XDG_DATA_HOME/<app id>` (`getApplicationSupportDirectory()`) |
+
+The directories come from `path_provider`, read before the application
+starts. A widget test has no `path_provider` plugin: the starter then
+sets nothing, and the database stays where its URL says. A test that
+wants the directories installs a `PathProviderPlatform` of its own.
+
 ### The web dev server
 
 `flutter run -d chrome` and `-d web-server` serve the web version on a
@@ -3145,6 +3205,23 @@ locations. Mappings are logged at debug level under the logger
 `spring.web.mvc` (`logging.level.spring.web.mvc=debug`), and the server
 under `spring.web.server`.
 
+An application that also uses `spring_boot_starter_data` answers its data
+errors with the right status instead of a 500, through the bean
+`dataAccessExceptionResolver` the generator adds (no property switches
+it; declare a bean of that name to replace it, or an `@ExceptionHandler`,
+which always comes first):
+
+| Exception | Status | Detail |
+|---|---|---|
+| `OptimisticLockingFailureException` | 409 | `The resource was changed by someone else` |
+| `DuplicateKeyException` | 409 | `The resource already exists` |
+| `EmptyResultDataAccessException` | 404 | `Not found` |
+
+The answer is a `ProblemDetail` with this fixed detail, never the
+exception's message (it may hold SQL or values); the exception is logged
+at debug level under `spring.web.mvc`. Other data errors stay a 500. See
+[Resolvers](../spring_boot_starter_web/README.md#resolvers-errors-a-library-maps).
+
 Not supported:
 
 - `server.http2.*`: `dart:io` speaks HTTP/1.1;
@@ -3345,7 +3422,9 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.datasource.pool.max-lifetime` | `30m` | a connection older than this is closed when released |
 | `spring.datasource.pool.validation` | `true` | check a connection that waited, before handing it out |
 | `spring.datasource.sqlite.busy-timeout` | `5000` | milliseconds a connection waits for SQLite's lock |
-| `spring.datasource.sqlite.base-directory` | working directory | where relative `sqlite:file:` names are looked for |
+| `spring.datasource.sqlite.base-directory` | working directory | where relative `sqlite:file:` names are looked for; in a Flutter app the starter sets it ([SQLite databases](#sqlite-databases)) |
+| `spring.datasource.sqlite.isolate` | `false` | `true` opens each connection inside an isolate of its own, so a long query or a busy wait does not hold the caller's isolate (the UI's, the web server's); in a Flutter app the starter sets it to `true` |
+| `spring.datasource.sqlite.location` | `support` | read by the Flutter starter only: `support`, `cache` or `documents`, the directory it sets `base-directory` to ([SQLite databases](#sqlite-databases)) |
 | `spring.datasources.<name>.*` | | the same keys for a named database (beans qualified `<name>`, `@UseDataSource('<name>')`), also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
 | `spring.sql.init.mode` | `embedded` | `schema.sql` / `data.sql`: `embedded` (in-memory databases only), `always`, `never` |
 | `spring.sql.init.schema-locations`, `data-locations`, `platform`, `continue-on-error`, `separator`, `encoding` | Boot's | as in Spring Boot |
@@ -3367,6 +3446,43 @@ spring.data.jdbc.slow-query-threshold=500ms
 
 Spring Boot's `spring.flyway.*` names are not used: the migrations are
 this project's own runner (Flyway's file naming, `spring.sql.migration.*`).
+
+**The build reads the schema too.** The SQL of each `@Query` is checked when
+the application is built (see the starter's README): a misspelled table or
+column (`books.titel`) is a build error with a `did you mean 'title'?` when
+the build knows a close name, from the entities and from the files of
+`lib/resources/`: the migrations of `spring.sql.migration.locations` (by
+version, then the `R__` files) and the scripts of
+`spring.sql.init.schema-locations` (default `schema.sql`, `schema-all.sql`),
+`{vendor}` standing for the directory of a database (when several have
+files, each is an alternative schema and a column of any is known). The
+build reads these settings from `application.properties`, `application.yml`
+and `application.yaml` (also in `config/`), and only `classpath:` locations:
+with a `file:` location, a `${placeholder}` in one, a profile file or a
+profile-specific YAML document that sets them, a `spring.config.import` or
+the settings of a named data source, it cannot see the schema and does not
+look for misspelled names. An application that declares its own
+`NamingStrategy` bean hides the names derived from the entities.
+
+**The build compiles the SpEL of a `@Query`.** A `:#{...}` value is written
+as Dart when the build can (`(arguments, context) => (arguments[0] as
+Book).title` for `:#{#book.title}`), so a typo is a build error instead of a
+failure at the first call: `BookRepository.sameTitle: the expression
+:#{#book.titel} is invalid: No property 'titel' on type 'Book'; did you mean
+'title'?` An unknown `#variable`, a wrong number of arguments, a member of a
+value that can be null without `?.` and a SpEL syntax error are build errors
+too. The variables are `#name` of each parameter, `#p0` and `#a0`, `#root`
+(the list of the arguments), `#entityName` and `#methodName`; `@bean` and
+`@environment.getProperty(key, default)` work as in the interpreter. What the
+build leaves to the interpreter (`T(...)`, `new`, selection and projection,
+`matches`, `instanceof`, Java-style names such as `size()`, members of
+`Object` or of a bean it does not know) is evaluated at run time, and only
+the classes of the arguments of such a method are described for SpEL.
+
+In an application that also uses the web starter, a `DuplicateKeyException`
+or an `OptimisticLockingFailureException` is answered with a 409 and an
+`EmptyResultDataAccessException` with a 404 ([the table](#18-reference-web-server)),
+whatever the database.
 
 ## 21. Tests
 
@@ -3429,6 +3545,16 @@ targets:
 |---|---|---|---|
 | `aop_proxies` | `all`, `interfaces`, `none` | `all` | Which beans get AOP proxy classes: every bean that can be proxied, only beans with an abstract supertype (proxied through that type), or none |
 | `aop_prune` | bool | `true` | With `all`, the `@SpringBootApplication` output and the `@ComponentScan` modules of an application package (`publish_to: none`) leave out the proxy classes of beans that no advice can match |
+
+The generator also writes only what the application uses of each class
+(there is no option for it). A class that a controller only returns is
+described with getters, one that is only a `@RequestBody` or a client's
+answer with its constructor and setters, and methods only for the classes
+SpEL may call (`@PreAuthorize` and the other security expressions, cache
+keys and conditions); `@Introspected()` describes everything. A class used
+some other way the build cannot see fails at run time with an error that
+says to add `@Introspected()` (see the
+[generator's README](../spring_core_dart_generator/README.md#generate-only-what-runs)).
 
 Two limits of SpEL expressions are compile-time defines (`-D` or
 `--dart-define`), not properties: `spring.context.expression.maxLength`

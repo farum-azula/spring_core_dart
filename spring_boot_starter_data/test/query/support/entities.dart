@@ -9,14 +9,26 @@ class Chapter {}
 /// A stub entity class that is not the entity under test.
 class Author {}
 
-BeanProperty<Object> _bean(String name, TypeInfo<Object?> info) =>
-    BeanProperty<Object>(
-      name,
-      type: info.type,
-      nullable: info.nullable,
-      typeInfo: info,
-      get: (_) => null,
-    );
+// The parser tests never read or create instances: the description lists
+// no properties.
+EntityIntrospection<T> _stub<T extends Object>(
+  String name,
+  T Function() make,
+) => EntityIntrospection<T>(
+  name,
+  const [],
+  get: (_, i) => throw StateError('no properties'),
+  create: (_) => make(),
+);
+
+final EntityIntrospection<Book> _bookIntrospection = _stub<Book>(
+  'Book',
+  Book.new,
+);
+final EntityIntrospection<Chapter> _chapterIntrospection = _stub<Chapter>(
+  'Chapter',
+  Chapter.new,
+);
 
 PersistentProperty _property(
   String name,
@@ -29,7 +41,8 @@ PersistentProperty _property(
   name: name,
   columnName: name,
   type: type,
-  accessor: _bean(name, type),
+  owner: _bookIntrospection,
+  index: 0,
   isId: isId,
   mappedCollection: mapped,
   childEntity: child,
@@ -40,15 +53,21 @@ PersistentProperty _property(
 /// `Or`, `And`, `In`, `Is` and other keywords.
 PersistentEntity<Object> bookEntity() {
   final chapter = PersistentEntity<Object>(
-    introspection: BeanIntrospection<Chapter>(),
+    introspection: _chapterIntrospection,
     tableName: 'chapters',
-    properties: [_property('number', const ClassType<int>())],
+    properties: [
+      _property('number', const ClassType<int>()),
+    ],
   );
   return PersistentEntity<Object>(
-    introspection: BeanIntrospection<Book>(),
+    introspection: _bookIntrospection,
     tableName: 'books',
     properties: [
-      _property('id', const ClassType<int>(nullable: true), isId: true),
+      _property(
+        'id',
+        const ClassType<int>(nullable: true),
+        isId: true,
+      ),
       _property('title', const ClassType<String>()),
       _property('year', const ClassType<int>()),
       _property('price', const ClassType<double>()),
@@ -57,8 +76,14 @@ PersistentEntity<Object> bookEntity() {
       _property('origin', const ClassType<String>()),
       _property('android', const ClassType<String>()),
       _property('isbn', const ClassType<String>()),
-      _property('notes', const ClassType<String>(nullable: true)),
-      _property('between', const ClassType<int>(nullable: true)),
+      _property(
+        'notes',
+        const ClassType<String>(nullable: true),
+      ),
+      _property(
+        'between',
+        const ClassType<int>(nullable: true),
+      ),
       _property('URL', const ClassType<String>()),
       _property('address', const ClassType<String>()),
       _property('published', const ClassType<DateTime>()),

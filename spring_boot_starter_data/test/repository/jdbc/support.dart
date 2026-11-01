@@ -202,7 +202,6 @@ Future<void> withJdbc(
   final wiring = BeanModule('jdbcWiring', [
     BeanDefinition<RepositoryFactory>(
       name: 'repositoryFactory',
-      types: const [RepositoryFactory, InvocationHandlerFactory],
       create: (r) {
         final dataSource = PooledDataSource(
           name: 'test',

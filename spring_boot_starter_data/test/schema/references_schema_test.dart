@@ -15,24 +15,23 @@ class Cb extends Row {}
 
 class Tree extends Row {}
 
-BeanIntrospection<Post> post() => describe<Post>(
+EntityIntrospection<Post> post() => describe<Post>(
   'Post',
+  Post.new,
   [
-    col<Post>('id', int, intN, annotations: const [Id()]),
-    col<Post>(
+    col('id', intN, annotations: const [Id()]),
+    col(
       'writer',
-      AggregateReference<Writer, int>,
       ref<Writer, int>(),
       annotations: const [OnDelete(OnDeleteAction.cascade)],
     ),
-    col<Post>(
+    col(
       'editorId',
-      int,
       intN,
       annotations: const [Reference(Writer)],
     ),
-    col<Post>('title', String, string, annotations: const [Unique()]),
-    col<Post>('slug', String, string),
+    col('title', string, annotations: const [Unique()]),
+    col('slug', string),
   ],
   annotations: const [
     Table('posts'),
@@ -41,35 +40,37 @@ BeanIntrospection<Post> post() => describe<Post>(
 );
 
 // Two tables that reference each other.
-BeanIntrospection<Ca> ca() => describe<Ca>(
+EntityIntrospection<Ca> ca() => describe<Ca>(
   'Ca',
+  Ca.new,
   [
-    col<Ca>('id', int, intN, annotations: const [Id()]),
-    col<Ca>('bId', int, intN, annotations: const [Reference(Cb)]),
+    col('id', intN, annotations: const [Id()]),
+    col('bId', intN, annotations: const [Reference(Cb)]),
   ],
   annotations: const [Table('cas')],
 );
 
-BeanIntrospection<Cb> cb() => describe<Cb>(
+EntityIntrospection<Cb> cb() => describe<Cb>(
   'Cb',
+  Cb.new,
   [
-    col<Cb>('id', int, intN, annotations: const [Id()]),
-    col<Cb>('aId', int, intN, annotations: const [Reference(Ca)]),
+    col('id', intN, annotations: const [Id()]),
+    col('aId', intN, annotations: const [Reference(Ca)]),
   ],
   annotations: const [Table('cbs')],
 );
 
-BeanIntrospection<Tree> tree(OnDeleteAction action) => describe<Tree>(
+EntityIntrospection<Tree> tree(OnDeleteAction action) => describe<Tree>(
   'Tree',
+  Tree.new,
   [
-    col<Tree>('id', int, intN, annotations: const [Id()]),
-    col<Tree>(
+    col('id', intN, annotations: const [Id()]),
+    col(
       'parentId',
-      int,
       intN,
       annotations: [const Reference(Tree), OnDelete(action)],
       // setDefault needs a default value.
-      hasInitialValue: action == OnDeleteAction.setDefault,
+      hasDefaultValue: action == OnDeleteAction.setDefault,
     ),
   ],
   annotations: const [Table('trees')],
@@ -323,11 +324,11 @@ void main() {
       () async {
         final unique = describe<Post>(
           'Post',
+          Post.new,
           [
-            col<Post>('id', int, intN, annotations: const [Id()]),
-            col<Post>(
+            col('id', intN, annotations: const [Id()]),
+            col(
               'writerId',
-              int,
               intN,
               annotations: const [Reference(Writer), Unique()],
             ),

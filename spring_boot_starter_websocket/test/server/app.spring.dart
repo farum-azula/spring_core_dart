@@ -471,98 +471,6 @@ _i2.BeanModule get $wsServerBeans => _i2.BeanModule(
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i3.ServerWebSocketSession>(
-      className: r'ServerWebSocketSession',
-      properties: [
-        _i2.BeanProperty<_i3.ServerWebSocketSession>(
-          r'id',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.id,
-        ),
-        _i2.BeanProperty<_i3.ServerWebSocketSession>(
-          r'handshakeHeaders',
-          type: _i8.HttpHeaders,
-          typeInfo: const _i2.ClassType<_i8.HttpHeaders>(),
-          get: (bean) => bean.handshakeHeaders,
-        ),
-        _i2.BeanProperty<_i3.ServerWebSocketSession>(
-          r'attributes',
-          type: Map<String, Object?>,
-          typeInfo: const _i2.MapType<String, dynamic>(
-            _i2.ClassType<String>(),
-            _i2.DynamicType(),
-          ),
-          get: (bean) => bean.attributes,
-        ),
-        _i2.BeanProperty<_i3.ServerWebSocketSession>(
-          r'principal',
-          type: _i2.Principal,
-          nullable: true,
-          typeInfo: const _i2.ClassType<_i2.Principal>(nullable: true),
-          get: (bean) => bean.principal,
-        ),
-        _i2.BeanProperty<_i3.ServerWebSocketSession>(
-          r'pathVariables',
-          type: Map<String, String>,
-          typeInfo: const _i2.MapType<String, String>(
-            _i2.ClassType<String>(),
-            _i2.ClassType<String>(),
-          ),
-          get: (bean) => bean.pathVariables,
-        ),
-        _i2.BeanProperty<_i3.ServerWebSocketSession>(
-          r'messages',
-          type: _i9.Stream<Object>,
-          typeInfo: const _i2.GenericType<_i9.Stream<Object>>([
-            _i2.DynamicType(),
-          ]),
-          get: (bean) => bean.messages,
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i3.ServerWebSocketSession>(
-          r'sendJson',
-          parameterTypes: const [Object],
-          invoke: (bean, arguments) => Function.apply(bean.sendJson, arguments),
-        ),
-      ],
-    ),
-    _i2.BeanIntrospection<_i1.Ack>(
-      className: r'Ack',
-      properties: [
-        _i2.BeanProperty<_i1.Ack>(
-          r'room',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.room,
-        ),
-        _i2.BeanProperty<_i1.Ack>(
-          r'received',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.received,
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i1.Ack>(
-        parameters: [
-          _i2.BeanParameter(
-            r'room',
-            type: const _i2.ClassType<String>(),
-            symbol: #room,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'received',
-            type: const _i2.ClassType<String>(),
-            symbol: #received,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Ack.new, positional, named) as _i1.Ack),
-      ),
-    ),
     _i2.BeanIntrospection<_i1.ChatMessage>(
       className: r'ChatMessage',
       properties: [
@@ -579,6 +487,7 @@ _i2.BeanModule get $wsServerBeans => _i2.BeanModule(
           get: (bean) => bean.text,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i1.ChatMessage>(
         parameters: [
           _i2.BeanParameter(
@@ -598,6 +507,69 @@ _i2.BeanModule get $wsServerBeans => _i2.BeanModule(
             (Function.apply(_i1.ChatMessage.new, positional, named)
                 as _i1.ChatMessage),
       ),
+    ),
+    _i2.BeanIntrospection<_i1.Ack>(
+      className: r'Ack',
+      properties: [
+        _i2.BeanProperty<_i1.Ack>(
+          r'room',
+          type: String,
+          typeInfo: const _i2.ClassType<String>(),
+          get: (bean) => bean.room,
+        ),
+        _i2.BeanProperty<_i1.Ack>(
+          r'received',
+          type: String,
+          typeInfo: const _i2.ClassType<String>(),
+          get: (bean) => bean.received,
+        ),
+      ],
+      parts: const {_i2.IntrospectionPart.read},
+    ),
+    _i2.BeanIntrospection<_i3.ServerWebSocketSession>(
+      className: r'ServerWebSocketSession',
+      properties: [
+        _i2.BeanProperty<_i3.ServerWebSocketSession>(
+          r'id',
+          type: String,
+          typeInfo: const _i2.ClassType<String>(),
+        ),
+        _i2.BeanProperty<_i3.ServerWebSocketSession>(
+          r'handshakeHeaders',
+          type: _i8.HttpHeaders,
+          typeInfo: const _i2.ClassType<_i8.HttpHeaders>(),
+        ),
+        _i2.BeanProperty<_i3.ServerWebSocketSession>(
+          r'attributes',
+          type: Map<String, Object?>,
+          typeInfo: const _i2.MapType<String, dynamic>(
+            _i2.ClassType<String>(),
+            _i2.DynamicType(),
+          ),
+        ),
+        _i2.BeanProperty<_i3.ServerWebSocketSession>(
+          r'principal',
+          type: _i2.Principal,
+          nullable: true,
+          typeInfo: const _i2.ClassType<_i2.Principal>(nullable: true),
+        ),
+        _i2.BeanProperty<_i3.ServerWebSocketSession>(
+          r'pathVariables',
+          type: Map<String, String>,
+          typeInfo: const _i2.MapType<String, String>(
+            _i2.ClassType<String>(),
+            _i2.ClassType<String>(),
+          ),
+        ),
+        _i2.BeanProperty<_i3.ServerWebSocketSession>(
+          r'messages',
+          type: _i9.Stream<Object>,
+          typeInfo: const _i2.GenericType<_i9.Stream<Object>>([
+            _i2.DynamicType(),
+          ]),
+        ),
+      ],
+      parts: const {_i2.IntrospectionPart.write},
     ),
   ],
 );

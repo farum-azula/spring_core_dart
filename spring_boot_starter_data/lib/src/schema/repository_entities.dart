@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
+import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 
@@ -122,16 +123,12 @@ final class RepositoryEntities extends IterableBase<PersistentEntity<Object>> {
 
   List<PersistentEntity<Object>> _resolve() {
     final wanted = entityNames.toSet();
-    final byName = <String, List<BeanIntrospection<Object>>>{};
-    for (final introspection in mappingContext.introspector.introspections) {
+    final byName = <String, List<EntityIntrospection<Object>>>{};
+    for (final introspection in mappingContext.introspections) {
       if (!introspection.annotations.any((a) => a is Table)) {
         continue;
       }
-      byName
-          .putIfAbsent('${introspection.beanType}', () => [])
-          .add(
-            introspection,
-          );
+      byName.putIfAbsent('${introspection.type}', () => []).add(introspection);
     }
     final entities = <PersistentEntity<Object>>[];
     for (final name in wanted) {
@@ -143,7 +140,7 @@ final class RepositoryEntities extends IterableBase<PersistentEntity<Object>> {
       }
       try {
         final entity = mappingContext.getPersistentEntity(
-          candidates.single.beanType,
+          candidates.single.type,
         );
         if (entity != null) {
           entities.add(entity);

@@ -227,7 +227,8 @@ void main() {
           name: 'thing',
           columnName: 'thing',
           type: const ClassType<Duration>(),
-          accessor: book.properties.first.accessor,
+          owner: book.introspection,
+          index: 0,
         ),
       ],
     );

@@ -568,8 +568,11 @@ the [testing guide](../docs/testing.md).
 
 - **Functions first.** `springBootTest` is a function for the tests of a
   `main` or `group`; test classes with `@SpringBootTest()` are generated
-  into it. There are no test slices (`@WebMvcTest`, `@DataJpaTest`, ...)
-  and no `@TestConfiguration`: pass extra modules to the
+  into it. The one test slice is `@DataTest` of `spring_boot_starter_data`
+  (Spring's `@DataJdbcTest`: the repositories on an in-memory database,
+  each test rolled back; [testing guide, section
+  19](../docs/testing.md#19-data-tests-datatest)); there is no
+  `@WebMvcTest` and no `@TestConfiguration`: pass extra modules to the
   `SpringApplication`, or use `ApplicationContextRunner` for a part of the
   configuration.
 - **`MockMvc` needs no `@AutoConfigureMockMvc`.** `app.mockMvc` (or an

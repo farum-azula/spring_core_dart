@@ -15,6 +15,7 @@ import 'package:analyzer/dart/ast/ast.dart'
         ListLiteral,
         MapLiteralEntry,
         MethodDeclaration,
+        MethodInvocation,
         NamedArgument,
         NullLiteral,
         ParenthesizedExpression,
@@ -34,15 +35,27 @@ import 'package:build/build.dart' show log;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/constraint_checker.dart';
+import 'package:spring_core_dart_generator/src/data_schema.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/part_tree.dart';
+import 'package:spring_core_dart_generator/src/part_tree_parser.dart';
+import 'package:spring_core_dart_generator/src/query_expressions.dart';
+import 'package:spring_core_dart_generator/src/query_text_checker.dart';
+import 'package:spring_core_dart_generator/src/schema_sources.dart';
+import 'package:spring_core_dart_generator/src/spel_compiler.dart';
 
 part 'advisor_pointcuts.dart';
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
+part 'entity_scanning.dart';
 part 'field_initializers.dart';
+part 'introspection_needs.dart';
 part 'lookup_scanning.dart';
+part 'mapper_calls.dart';
+part 'query_scanning.dart';
+part 'repository_scanning.dart';
 
 // Annotations are matched by name in `package:spring_core_dart` (the
 // generator depends on the runtime only for its pointcut parser, see
@@ -86,6 +99,12 @@ final TypeChecker _jsonCreator = _spring('JsonCreator');
 final TypeChecker _jsonSubTypes = _spring('JsonSubTypes');
 final TypeChecker _jsonTypeInfo = _spring('JsonTypeInfo');
 final TypeChecker _jsonView = _spring('JsonView');
+final TypeChecker _jsonInclude = _spring('JsonInclude');
+final TypeChecker _jsonValue = _spring('JsonValue');
+final TypeChecker _jsonAnyGetter = _spring('JsonAnyGetter');
+final TypeChecker _jsonAnySetter = _spring('JsonAnySetter');
+final TypeChecker _each = _spring('Each');
+final TypeChecker _eachKey = _spring('EachKey');
 
 // `@ConfigurationProperties` from spring_boot_dart (matched by URL, so the
 // generator does not depend on that package): constructor binding.
@@ -488,6 +507,7 @@ class BeanScanner {
     this.module, {
     this.proxyMode = ProxyMode.all,
     this.scan = const ComponentScanModel(),
+    this.sqlResources = const {},
   });
 
   /// The model being filled; the emitter writes it once the scan is done.
@@ -500,8 +520,25 @@ class BeanScanner {
   /// decide which classes become beans and whether they start lazily.
   final ComponentScanModel scan;
 
-  // Classes introspected so far (explicitly or automatically).
-  final _introspectedClasses = <ClassElement>{};
+  /// The text of the files below `lib/resources/` by path, of which the
+  /// migrations and init scripts tell the schema the `@Query` texts of
+  /// data repositories are checked against.
+  final Map<String, String> sqlResources;
+
+  // Classes introspected so far (explicitly or automatically), with their
+  // model in `module.introspections`: each request for a class adds to its
+  // `need` (see [_scanIntrospected]).
+  final _introspections = <ClassElement, IntrospectionModel>{};
+
+  // Classes described as entities so far (`@Table` and `@Query` DTOs).
+  final _entityClasses = <ClassElement>{};
+
+  // The classes the calls of the `ObjectMapper` in each library name, found
+  // by [resolveMapperCalls] (mapper_calls.dart).
+  final _mapperUses = <LibraryElement, List<MapperUse>>{};
+
+  // Repositories whose `@Query` texts wait for the end of the scan.
+  final _repositoryChecks = <_RepositoryCheck>[];
 
   // Resolved `@Bean` method declarations by `library#Class.method`, for
   // the bean type inferred from the method body (bean_type_inference.dart).
@@ -543,6 +580,21 @@ class BeanScanner {
     Future<AstNode?> Function(Fragment fragment) astNodeFor,
   ) => resolveFieldInitializerDeclarations(library, astNodeFor);
 
+  /// Finds the calls of the `ObjectMapper` in [library] whose static types
+  /// name classes (`mapper.readValue<Book>(json)`), so that [scanLibrary]
+  /// describes those classes for what the call does with them: read in
+  /// (`readValue`, `treeToValue`, `readList`, `readMap`, `convertValue`'s
+  /// type) or written out (`writeValueAsString`, `valueToTree`,
+  /// `convertValue`'s value).
+  ///
+  /// Call it before [scanLibrary], like [resolveBeanMethods]. A library
+  /// that names none of those methods is not resolved. Without this step a
+  /// class used only through such calls needs `@Introspected()`.
+  Future<void> resolveMapperCalls(
+    LibraryElement library,
+    Future<AstNode?> Function(Fragment fragment) astNodeFor,
+  ) => resolveMapperCallDeclarations(library, astNodeFor);
+
   /// Adds to [module] everything [library] declares: beans, configurables,
   /// introspected classes, interface proxies, Flutter widgets and `@Log`
   /// classes.
@@ -579,6 +631,7 @@ class BeanScanner {
   /// [errors] and the next declaration is scanned, so one build reports
   /// every independent problem (see [throwErrors]).
   void scanLibrary(LibraryElement library) {
+    collectErrors(() => _introspectMapperUses(library));
     for (final element in library.classes) {
       if (element.isPublic) {
         module.classes.add(element);
@@ -588,7 +641,11 @@ class BeanScanner {
           _scanConfigurable(element);
         }
         if (_introspected.hasAnnotationOf(element)) {
-          _scanIntrospected(element);
+          _scanIntrospected(element, _declaredNeed(element));
+        }
+        // spring_boot_starter_data: the data layer reads and writes it.
+        if (_table.hasAnnotationOf(element)) {
+          scanEntity(element);
         }
         if (_interfaceProxyPrimary(element) case final primary?) {
           _scanInterfaceProxy(element, primary: primary);
@@ -601,7 +658,8 @@ class BeanScanner {
             _dataRepository.isAssignableFrom(element) &&
             !_dataRepository.isExactly(element)) {
           if (element.typeParameters.isEmpty) {
-            _scanInterfaceProxy(element, primary: false, callable: false);
+            scanRepository(element);
+            scanQueries(element);
           }
           return;
         }
@@ -702,7 +760,12 @@ class BeanScanner {
   /// Throws the collected [errors], once everything is scanned: the error
   /// itself when there is one, a [BuildErrors] listing them when there are
   /// several. Does nothing without errors.
+  ///
+  /// It first checks what needs the whole application, the texts of the
+  /// `@Query` methods of data repositories (their entities, tables and
+  /// columns), whose problems join those of their repository.
   void throwErrors() {
+    collectErrors(_checkQueries);
     switch (errors) {
       case []:
         return;
@@ -1107,12 +1170,36 @@ class BeanScanner {
     );
   }
 
+  // What `@Introspected` (and the annotations that extend it) ask of the
+  // class: everything, except that `@ConfigurationProperties` asks for what
+  // its binder uses (see [IntrospectionNeed.configuration]).
+  IntrospectionNeed _declaredNeed(ClassElement element) {
+    var need = IntrospectionNeed.none;
+    for (final annotation in _introspected.annotationsOf(element)) {
+      final type = annotation.type;
+      need |=
+          type != null && _configurationProperties.isAssignableFromType(type)
+          ? IntrospectionNeed.configuration
+          : IntrospectionNeed.all;
+    }
+    return need;
+  }
+
+  // Describes [element] for the use [need] says (see [IntrospectionNeed]);
+  // a class asked for again keeps one description, whose need is the union
+  // of the requests, passed on to the classes it is made of.
+  //
   // [automatic]: a class of the same package used by an introspected class
-  // (a property or constructor parameter type); skipped silently when it
-  // cannot be introspected. A generic class (`Page<T>`) is described with
-  // its type parameters erased, plus a `specialize` callback the emitter
-  // writes for `Page<Book>` (see ModuleEmitter._introspection).
-  void _scanIntrospected(ClassElement element, {bool automatic = false}) {
+  // (a property or constructor parameter type), a controller's return
+  // type, ...; skipped silently when it cannot be introspected. A generic
+  // class (`Page<T>`) is described with its type parameters erased, plus a
+  // `specialize` callback the emitter writes for `Page<Book>` (see
+  // ModuleEmitter._introspection).
+  void _scanIntrospected(
+    ClassElement element,
+    IntrospectionNeed need, {
+    bool automatic = false,
+  }) {
     final name = _requireName(element);
     if (element.isPrivate) {
       if (automatic) {
@@ -1120,69 +1207,57 @@ class BeanScanner {
       }
       _fail('@Introspected class $name must be public.', element);
     }
-    if (!_introspectedClasses.add(element)) {
+    if (_introspections[element] case final known?) {
+      _addNeed(known, need);
       return;
     }
     checkJsonAnnotations(element);
     final type = element.thisType;
-    // Subclass first, then its mixins and superclasses (with theirs), so
-    // overriding declarations win (first one kept).
     // Only fields with a getter and an interface type, and methods callable
     // with positional arguments only, can be described by BeanProperty and
     // BeanMethod; anything else is skipped silently.
-    final hierarchy = [
-      for (final current in [element, ..._superclasses(type)]) ...[
-        current,
-        // Applied mixins, the last one first (it overrides the others).
-        for (final mixin in current.mixins.reversed) mixin.element,
-      ],
-    ];
+    final hierarchy = _describedClasses(element);
     final properties = <String, IntrospectedProperty>{};
     final methods = <String, IntrospectedMethod>{};
-    for (final current in hierarchy) {
-      for (final field in current.fields) {
-        final fieldName = field.name;
-        if (field.isStatic ||
-            field.isPrivate ||
-            fieldName == null ||
-            properties.containsKey(fieldName)) {
-          continue;
-        }
-        final fieldType = field.type;
-        // A type parameter of the class itself (`T content`) too.
-        final ownTypeParameter =
-            fieldType is TypeParameterType &&
-            element.typeParameters.contains(fieldType.element);
-        if ((fieldType is! InterfaceType && !ownTypeParameter) ||
-            field.getter == null) {
-          continue;
-        }
-        properties[fieldName] = IntrospectedProperty(
-          name: fieldName,
-          type: fieldType is TypeParameterType
-              ? fieldType.element.instantiate(
-                  nullabilitySuffix: NullabilitySuffix.none,
-                )
-              : _requireInterfaceType(fieldType, field, stripNullable: true),
-          declaredType: fieldType,
-          // `T` may be nullable (`Page<Book?>`).
-          nullable:
-              ownTypeParameter ||
-              fieldType.nullabilitySuffix == NullabilitySuffix.question,
-          writable: field.setter != null,
-          initialValue: initialValueOf(field),
-          annotations: [
-            ..._userAnnotations(field),
-            if (field.getter case final getter?) ..._userAnnotations(getter),
-          ],
-        );
-        _checkConstraints(
-          properties[fieldName]!.annotations,
-          fieldType,
-          '$name.$fieldName',
-          field,
-        );
+    for (final field in _describedFields(hierarchy)) {
+      final fieldName = field.name!;
+      final fieldType = field.type;
+      // A type parameter of the class itself (`T content`) too.
+      final ownTypeParameter =
+          fieldType is TypeParameterType &&
+          element.typeParameters.contains(fieldType.element);
+      if (fieldType is! InterfaceType && !ownTypeParameter) {
+        continue;
       }
+      final annotations = [
+        ..._userAnnotations(field),
+        if (field.getter case final getter?) ..._userAnnotations(getter),
+      ];
+      properties[fieldName] = IntrospectedProperty(
+        name: fieldName,
+        type: fieldType is TypeParameterType
+            ? fieldType.element.instantiate(
+                nullabilitySuffix: NullabilitySuffix.none,
+              )
+            : _requireInterfaceType(fieldType, field, stripNullable: true),
+        declaredType: fieldType,
+        // `T` may be nullable (`Page<Book?>`).
+        nullable:
+            ownTypeParameter ||
+            fieldType.nullabilitySuffix == NullabilitySuffix.question,
+        writable: field.setter != null,
+        validated: annotations.any(_isValidation),
+        initialValue: initialValueOf(field),
+        annotations: annotations,
+      );
+      _checkConstraints(
+        properties[fieldName]!.annotations,
+        fieldType,
+        '$name.$fieldName',
+        field,
+      );
+    }
+    for (final current in hierarchy) {
       for (final method in current.methods) {
         final methodName = method.name;
         if (method.isStatic ||
@@ -1201,6 +1276,7 @@ class BeanScanner {
           continue;
         }
         final returnType = method.returnType;
+        final annotations = _userAnnotations(method);
         methods[methodName] = IntrospectedMethod(
           name: methodName,
           returnType: returnType is InterfaceType
@@ -1210,40 +1286,35 @@ class BeanScanner {
             for (final t in parameterTypes)
               _requireInterfaceType(t, method, stripNullable: true),
           ],
-          annotations: _userAnnotations(method),
+          annotations: annotations,
+          jsonNeed: _jsonMethodNeed(annotations),
         );
       }
     }
     final constructor = element.unnamedConstructor;
     final dataConstructor = _dataConstructor(element);
-    module.introspections.add(
-      IntrospectionModel(
-        element: element,
-        type: type,
-        properties: properties.values.toList(),
-        methods: methods.values.toList(),
-        annotations: _userAnnotations(element),
-        instantiable:
-            !element.isAbstract &&
-            constructor != null &&
-            constructor.isPublic &&
-            !constructor.isFactory &&
-            !constructor.formalParameters.any((p) => p.isRequired),
-        constructor: dataConstructor,
-        fromJson: _fromJson(element),
-        hasToJson: _hasToJson(type),
-      ),
+    final classAnnotations = _userAnnotations(element);
+    final model = IntrospectionModel(
+      element: element,
+      type: type,
+      properties: properties.values.toList(),
+      methods: methods.values.toList(),
+      annotations: classAnnotations,
+      instantiable:
+          !element.isAbstract &&
+          constructor != null &&
+          constructor.isPublic &&
+          !constructor.isFactory &&
+          !constructor.formalParameters.any((p) => p.isRequired),
+      nonDefaultInclusion: classAnnotations.any(_isNonDefaultInclusion),
+      constructor: dataConstructor,
+      fromJson: _fromJson(element),
+      hasToJson: _hasToJson(type),
     );
-    // Classes of the same package it is made of are introspected too, so
-    // one `@Introspected()` on the root of a model is enough.
-    for (final property in properties.values) {
-      _introspectUsed(property.declaredType, element);
-    }
-    for (final parameter
-        in dataConstructor?.parameters ?? const <ConstructorParameterModel>[]) {
-      _introspectUsed(parameter.type, element);
-    }
-    // `@Introspected(classes: [ExternalDto])`.
+    _introspections[element] = model;
+    module.introspections.add(model);
+    // `@Introspected(classes: [ExternalDto])`: described entirely, as the
+    // annotation asks.
     for (final annotation in element.metadata.annotations) {
       final value = annotation.computeConstantValue();
       if (value == null || !_introspected.isAssignableFromType(value.type!)) {
@@ -1254,28 +1325,107 @@ class BeanScanner {
               const <DartObject>[]) {
         if (listed.toTypeValue() case final InterfaceType listedType
             when listedType.element is ClassElement) {
-          _scanIntrospected(listedType.element as ClassElement);
+          _scanIntrospected(
+            listedType.element as ClassElement,
+            IntrospectionNeed.all,
+          );
         }
       }
     }
+    _addNeed(model, need);
+  }
+
+  // Adds [need] to the description of a class and passes the result on to
+  // the classes it is made of; nothing happens when the class has it
+  // already (which also ends a cycle of classes).
+  void _addNeed(IntrospectionModel model, IntrospectionNeed need) {
+    var merged = model.need | need;
+    // `nonDefault` compares with a new instance.
+    if (merged.includes(IntrospectionNeed.read) && model.nonDefaultInclusion) {
+      merged |= IntrospectionNeed.write;
+    }
+    if (merged == model.need) {
+      return;
+    }
+    model.need = merged;
+    final element = model.element as ClassElement;
+    // Classes of the same package it is made of are introspected too, so
+    // one `@Introspected()` on the root of a model is enough.
+    for (final property in model.properties) {
+      _introspectUsed(property.declaredType, element, need: merged);
+    }
+    final parameters =
+        model.constructor?.parameters ?? const <ConstructorParameterModel>[];
+    for (final parameter in parameters) {
+      _introspectUsed(parameter.type, element, need: merged);
+    }
     _introspectJsonTypes(element, [
-      ..._userAnnotations(element),
-      for (final property in properties.values) ...property.annotations,
-      for (final parameter
-          in dataConstructor?.parameters ?? const <ConstructorParameterModel>[])
-        ...parameter.annotations,
-    ]);
+      ...model.annotations,
+      for (final property in model.properties) ...property.annotations,
+      for (final parameter in parameters) ...parameter.annotations,
+    ], merged);
+  }
+
+  // Whether the validator looks at an element with [annotation]: a
+  // constraint, `@Valid()` or an element constraint.
+  static bool _isValidation(DartObject annotation) {
+    final type = annotation.type;
+    return type != null &&
+        (_constraint.isAssignableFromType(type) ||
+            _valid.isExactlyType(type) ||
+            _each.isExactlyType(type) ||
+            _eachKey.isExactlyType(type));
+  }
+
+  // `@JsonInclude(JsonInclusion.nonDefault)`.
+  static bool _isNonDefaultInclusion(DartObject annotation) {
+    final type = annotation.type;
+    return type != null &&
+        _jsonInclude.isExactlyType(type) &&
+        annotation.getField('value')?.getField('_name')?.toStringValue() ==
+            'nonDefault';
+  }
+
+  // What `ObjectMapper` needs a method for, if it carries a JSON
+  // annotation that makes it part of reading or writing an object.
+  static IntrospectionNeed _jsonMethodNeed(List<DartObject> annotations) {
+    var need = IntrospectionNeed.none;
+    for (final annotation in annotations) {
+      final type = annotation.type;
+      if (type == null) {
+        continue;
+      }
+      if (_jsonValue.isExactlyType(type) ||
+          _jsonAnyGetter.isExactlyType(type)) {
+        need |= IntrospectionNeed.read;
+      } else if (_jsonAnySetter.isExactlyType(type)) {
+        need |= IntrospectionNeed.write;
+      }
+    }
+    return need;
   }
 
   // The classes JSON annotations name are needed at runtime: the subtypes
   // of `@JsonSubTypes` and the `defaultImpl` of `@JsonTypeInfo` (to read
-  // them), and the view classes of `@JsonView` (to compare views that
-  // extend other views).
-  void _introspectJsonTypes(ClassElement user, List<DartObject> annotations) {
-    void scan(DartObject? type, {required bool automatic}) {
+  // or write them, as the base is), and the view classes of `@JsonView`
+  // (only compared, to tell views that extend other views).
+  void _introspectJsonTypes(
+    ClassElement user,
+    List<DartObject> annotations,
+    IntrospectionNeed need,
+  ) {
+    void scan(
+      DartObject? type,
+      IntrospectionNeed need, {
+      required bool automatic,
+    }) {
       if (type?.toTypeValue() case final InterfaceType listed
           when listed.element is ClassElement) {
-        _scanIntrospected(listed.element as ClassElement, automatic: automatic);
+        _scanIntrospected(
+          listed.element as ClassElement,
+          need,
+          automatic: automatic,
+        );
       }
     }
 
@@ -1283,32 +1433,48 @@ class BeanScanner {
       final reader = ConstantReader(annotation);
       if (_jsonSubTypes.isExactlyType(annotation.type!)) {
         for (final subType in reader.read('value').listValue) {
-          scan(subType.getField('value'), automatic: false);
+          scan(subType.getField('value'), need, automatic: false);
         }
       } else if (_jsonTypeInfo.isExactlyType(annotation.type!)) {
-        scan(annotation.getField('defaultImpl'), automatic: false);
+        scan(annotation.getField('defaultImpl'), need, automatic: false);
       } else if (_jsonView.isExactlyType(annotation.type!)) {
         for (final view in reader.read('value').listValue) {
-          scan(view, automatic: true);
+          scan(view, IntrospectionNeed.none, automatic: true);
         }
       }
     }
   }
 
-  void _introspectUsed(DartType type, ClassElement user) {
-    if (type is! InterfaceType) {
+  // Introspects the classes of the same package [type] is made of (its
+  // type arguments too: `Future<Page<Book>>`) for [need]. [need] is what
+  // the use asks for: everything unless the caller knows better.
+  void _introspectUsed(
+    DartType type,
+    ClassElement user, {
+    IntrospectionNeed need = IntrospectionNeed.all,
+  }) => _introspectInPackage(type, _packageOf(user), need);
+
+  // The same for the classes of the package [package] (`null` for a
+  // library that is not in a package).
+  void _introspectInPackage(
+    DartType type,
+    String? package,
+    IntrospectionNeed need,
+  ) {
+    // A use that asks for nothing describes nothing.
+    if (type is! InterfaceType || need.isNone) {
       return;
     }
     for (final argument in type.typeArguments) {
-      _introspectUsed(argument, user);
+      _introspectInPackage(argument, package, need);
     }
     final element = type.element;
     if (element is! ClassElement ||
         element.library.isInSdk ||
-        _packageOf(element) != _packageOf(user)) {
+        _packageOf(element) != package) {
       return;
     }
-    _scanIntrospected(element, automatic: true);
+    _scanIntrospected(element, need, automatic: true);
   }
 
   static String? _packageOf(Element element) {
@@ -1618,7 +1784,11 @@ class BeanScanner {
     // object (also a class of another package): it needs introspection.
     if (_configurationProperties.hasAnnotationOf(method)) {
       if (returnType.element case final ClassElement element) {
-        _scanIntrospected(element, automatic: true);
+        _scanIntrospected(
+          element,
+          IntrospectionNeed.configuration,
+          automatic: true,
+        );
       }
     }
     return BeanModel(
@@ -2279,6 +2449,26 @@ class BeanScanner {
   /// goes on, and the context fails at startup, saying what to change,
   /// only if advice matches the bean.
   ProxyModel? _proxyModel(
+    InterfaceType targetType,
+    String className, {
+    required bool implementSelf,
+    ProxyMode? mode,
+    ConstructorElement? constructor,
+  }) {
+    final model = _proxyModelOf(
+      targetType,
+      className,
+      implementSelf: implementSelf,
+      mode: mode,
+      constructor: constructor,
+    );
+    // The expressions on its methods (cache keys, security conditions)
+    // read the classes of their arguments and results.
+    _introspectSpelTypes(model);
+    return model;
+  }
+
+  ProxyModel? _proxyModelOf(
     InterfaceType targetType,
     String className, {
     required bool implementSelf,
@@ -3822,6 +4012,38 @@ class BeanScanner {
     }
   }
 
+  // The classes whose members describe [element]: itself, its mixins (the
+  // last one first, it overrides the others), then each superclass with
+  // its own, so overriding declarations come first. Interfaces are left
+  // out.
+  List<InterfaceElement> _describedClasses(ClassElement element) => [
+    for (final current in [element, ..._superclasses(element.thisType)]) ...[
+      current,
+      for (final mixin in current.mixins.reversed) mixin.element,
+    ],
+  ];
+
+  // The public instance fields with a getter of [classes] (see
+  // [_describedClasses]); the first declaration of a name wins.
+  Iterable<FieldElement> _describedFields(
+    List<InterfaceElement> classes,
+  ) sync* {
+    final names = <String>{};
+    for (final current in classes) {
+      for (final field in current.fields) {
+        final name = field.name;
+        if (field.isStatic ||
+            field.isPrivate ||
+            name == null ||
+            field.getter == null ||
+            !names.add(name)) {
+          continue;
+        }
+        yield field;
+      }
+    }
+  }
+
   /// The class of [type] first, then the classes of all its supertypes
   /// except `Object`. Callers keep the first declaration of a name, so
   /// subclass declarations win.
@@ -4625,11 +4847,7 @@ class BeanScanner {
 
   // The interface becomes a bean created by `_$XImpl.create(r)`; every
   // method forwards to the `InvocationHandler` of a factory bean.
-  void _scanInterfaceProxy(
-    ClassElement element, {
-    required bool primary,
-    bool callable = true,
-  }) {
+  void _scanInterfaceProxy(ClassElement element, {required bool primary}) {
     final name = _requireName(element);
     final source = '${element.library.uri}#$name';
     if (!module.markScanned(source)) {
@@ -4719,13 +4937,26 @@ class BeanScanner {
       );
       // Request and response classes of the same package are introspected,
       // so they can be (de)serialized without annotations of their own (a
-      // Feign client's bodies). A data repository needs none: its entities
-      // are described by their `@Table`.
-      if (callable) {
-        _introspectUsed(valueType, element);
-        for (final parameter in parameters) {
-          _introspectUsed(parameter.type, element);
-        }
+      // Feign client's bodies): the answer is read in, the arguments are
+      // written out.
+      final spel = _spelUse(member.annotations);
+      _introspectUsed(
+        valueType,
+        element,
+        need:
+            IntrospectionNeed.write |
+            (spel.result ? IntrospectionNeed.spel : IntrospectionNeed.none),
+      );
+      for (final parameter in parameters) {
+        _introspectUsed(
+          parameter.type,
+          element,
+          need:
+              IntrospectionNeed.read |
+              (spel.arguments
+                  ? IntrospectionNeed.spel
+                  : IntrospectionNeed.none),
+        );
       }
     }
     final model = InterfaceProxyModel(
@@ -4734,13 +4965,6 @@ class BeanScanner {
       signatures: signatures,
       methods: methods,
       annotations: _userAnnotations(element),
-      callable: callable,
-      supertypeArguments: {
-        for (final supertype in element.allSupertypes)
-          if (supertype.typeArguments.isNotEmpty &&
-              !supertype.element.library.isInSdk)
-            supertype.element.name!: supertype.typeArguments,
-      },
     );
     final explicitName = ConstantReader(
       _component.firstAnnotationOf(element),
@@ -4786,19 +5010,20 @@ class BeanScanner {
         if (name == null || result.containsKey(name)) {
           continue;
         }
-        final marked = [
+        final markedTypes = [
           for (final annotation in method.metadata.annotations)
             if (annotation.computeConstantValue()?.type
                 case final InterfaceType annotationType
                 when _beanMethodAnnotation.hasAnnotationOf(
                   annotationType.element,
                 ))
-              annotationType.element.name,
+              annotationType,
         ];
-        if (marked.isEmpty) {
+        if (markedTypes.isEmpty) {
           continue;
         }
-        final what = '@${marked.first} method ${element.name}.$name';
+        final what =
+            '@${markedTypes.first.element.name} method ${element.name}.$name';
         if (method.isStatic || method.isPrivate) {
           _fail('$what must be a public instance method.', method);
         }
@@ -4824,13 +5049,19 @@ class BeanScanner {
               annotations: _userAnnotations(parameter),
             ),
         ];
-        // Request and response classes of the bean's package are
-        // introspected (a controller's bodies), like an interface proxy's.
+        // The classes of the bean's package the method's types are made of
+        // are introspected for what its annotations do with them (a
+        // controller's bodies are read in, its answers written out).
         final owner = type.element;
         if (owner is ClassElement) {
-          _introspectUsed(valueType, owner);
-          for (final parameter in parameters) {
-            _introspectUsed(parameter.type, owner);
+          final needs = _annotatedMethodNeeds(method, markedTypes);
+          _introspectUsed(valueType, owner, need: needs.result);
+          for (final (index, parameter) in parameters.indexed) {
+            _introspectUsed(
+              parameter.type,
+              owner,
+              need: needs.parameters[index],
+            );
           }
         }
         result[name] = AnnotatedMethodModel(

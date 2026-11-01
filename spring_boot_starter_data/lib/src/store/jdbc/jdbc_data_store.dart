@@ -39,9 +39,9 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 /// by the template (`spring.jdbc.core.JdbcTemplate` at debug, the values
 /// at trace, masked).
 ///
-/// Derived queries reach it as a `Criteria` (the handler parses the method's
-/// name, as Spring's `PartTreeJdbcQuery` does) and `@Query` methods run on
-/// its [named] template (`StringBasedJdbcQuery`).
+/// Derived queries reach it as a `Criteria` (the build parses the method's
+/// name into a `PartTree`, as Spring's `PartTreeJdbcQuery` does) and
+/// `@Query` methods run on its [named] template (`StringBasedJdbcQuery`).
 ///
 /// It behaves as the in-memory store does, which is the reference:
 ///
@@ -250,7 +250,11 @@ final class JdbcDataStore implements DataStore {
     Object instance,
     Object? rootId,
   ) async {
-    for (final table in _children(entity)) {
+    final tables = _children(entity);
+    if (tables.isEmpty) {
+      return;
+    }
+    for (final table in tables) {
       final value = table.property.getValue(instance);
       if (value == null) {
         continue;

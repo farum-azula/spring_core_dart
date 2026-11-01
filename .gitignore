@@ -14,3 +14,9 @@ coverage/
 .DS_Store
 
 .zed/*
+
+# SQLite files the examples and tests create (sqlite:file:library.db).
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

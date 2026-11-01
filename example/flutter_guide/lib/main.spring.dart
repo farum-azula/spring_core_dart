@@ -4546,12 +4546,49 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [_i8.ConfigurationProperties(r'neon.sso')],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i35.SsoProperties(),
       constructor: _i2.BeanConstructor<_i35.SsoProperties>(
         parameters: [],
         create: (positional, named) =>
             (Function.apply(_i35.SsoProperties.new, positional, named)
                 as _i35.SsoProperties),
+      ),
+    ),
+    _i2.BeanIntrospection<_i12.Me>(
+      className: r'Me',
+      properties: [
+        _i2.BeanProperty<_i12.Me>(
+          r'name',
+          type: String,
+          typeInfo: const _i2.ClassType<String>(),
+          get: (bean) => bean.name,
+        ),
+        _i2.BeanProperty<_i12.Me>(
+          r'roles',
+          type: List<String>,
+          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
+          get: (bean) => bean.roles,
+        ),
+      ],
+      constructor: _i2.BeanConstructor<_i12.Me>(
+        parameters: [
+          _i2.BeanParameter(
+            r'name',
+            type: const _i2.ClassType<String>(),
+            symbol: #name,
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'roles',
+            type: const _i2.ListType<String>(_i2.ClassType<String>()),
+            symbol: #roles,
+            hasDefaultValue: true,
+            defaultValue: const [],
+          ),
+        ],
+        create: (positional, named) =>
+            (Function.apply(_i12.Me.new, positional, named) as _i12.Me),
       ),
     ),
     _i2.BeanIntrospection<_i12.Book>(
@@ -4672,42 +4709,6 @@ _i2.BeanModule get $application => _i2.BeanModule(
                 as _i12.NewBook),
       ),
     ),
-    _i2.BeanIntrospection<_i12.Me>(
-      className: r'Me',
-      properties: [
-        _i2.BeanProperty<_i12.Me>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-        ),
-        _i2.BeanProperty<_i12.Me>(
-          r'roles',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.roles,
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i12.Me>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'roles',
-            type: const _i2.ListType<String>(_i2.ClassType<String>()),
-            symbol: #roles,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i12.Me.new, positional, named) as _i12.Me),
-      ),
-    ),
     _i2.BeanIntrospection<_i38.ApiProperties>(
       className: r'ApiProperties',
       properties: [
@@ -4743,6 +4744,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [_i8.ConfigurationProperties(r'api'), _i2.Validated()],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i38.ApiProperties(),
       constructor: _i2.BeanConstructor<_i38.ApiProperties>(
         parameters: [],
@@ -5115,6 +5117,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [_i8.ConfigurationProperties(r'app'), _i2.Validated()],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       instantiate: () => _i43.AppProperties(),
       constructor: _i2.BeanConstructor<_i43.AppProperties>(
         parameters: [],
@@ -5851,7 +5854,7 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'd102e555',
+  fingerprint: '60582111',
 );
 
 /// Starts the application: config files, environment, context, runners

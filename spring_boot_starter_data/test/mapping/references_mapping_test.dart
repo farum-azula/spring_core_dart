@@ -3,8 +3,6 @@
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
-import 'support.dart';
-
 /// Every class of this file keeps its values in a map.
 class Row {
   final values = <String, Object?>{};
@@ -41,53 +39,56 @@ const _intN = ClassType<int>(nullable: true);
 const _string = ClassType<String>();
 const _stringN = ClassType<String>(nullable: true);
 
-BeanProperty<T> col<T extends Row>(
+EntityProperty col(
   String name,
-  Type type,
   TypeInfo<Object?> info, {
   List<Object> annotations = const [],
-  bool hasInitialValue = false,
-  Object? initialValue,
-}) => prop<T>(
+  bool hasDefaultValue = false,
+  Object? defaultValue,
+}) => EntityProperty(
   name,
-  type,
   info,
-  (r) => r.values[name],
-  set: (r, v) => r.values[name] = v,
   annotations: annotations,
-  hasInitialValue: hasInitialValue,
-  initialValue: initialValue,
+  writable: true,
+  hasDefaultValue: hasDefaultValue,
+  defaultValue: defaultValue,
 );
 
-BeanIntrospection<T> describe<T extends Row>(
+EntityIntrospection<T> describe<T extends Row>(
   String name,
-  List<BeanProperty<T>> properties, {
+  T Function() create,
+  List<EntityProperty> properties, {
   List<Object> annotations = const [Table()],
-}) => BeanIntrospection<T>(
-  className: name,
+}) => EntityIntrospection<T>(
+  name,
+  properties,
   annotations: annotations,
-  properties: properties,
+  get: (r, i) => r.values[properties[i].name],
+  create: (v) => create(),
+  write: (r, i, v) => r.values[properties[i].name] = v,
 );
 
-BeanIntrospection<Writer> writer() => describe<Writer>(
+EntityIntrospection<Writer> writer() => describe<Writer>(
   'Writer',
+  Writer.new,
   [
-    col<Writer>('id', int, _intN, annotations: const [Id()]),
-    col<Writer>('name', String, _string),
+    col('id', _intN, annotations: const [Id()]),
+    col('name', _string),
   ],
   annotations: const [Table('writers')],
 );
 
-BeanIntrospection<Slug> slug() => describe<Slug>(
+EntityIntrospection<Slug> slug() => describe<Slug>(
   'Slug',
+  Slug.new,
   [
-    col<Slug>('id', String, _string, annotations: const [Id()]),
+    col('id', _string, annotations: const [Id()]),
   ],
   annotations: const [Table('slugs')],
 );
 
-BeanIntrospection<NoId> noId() => describe<NoId>('NoId', [
-  col<NoId>('name', String, _string),
+EntityIntrospection<NoId> noId() => describe<NoId>('NoId', NoId.new, [
+  col('name', _string),
 ]);
 
 GenericType<AggregateReference<X, ID>> ref<X, ID>({bool nullable = false}) =>
@@ -97,10 +98,8 @@ GenericType<AggregateReference<X, ID>> ref<X, ID>({bool nullable = false}) =>
     );
 
 RelationalMappingContext contextOf(
-  List<BeanIntrospection<Object>> introspections,
-) => RelationalMappingContext(
-  introspector: BeanIntrospector(introspections: introspections),
-);
+  List<EntityIntrospection<Object>> introspections,
+) => RelationalMappingContext(introspections: introspections);
 
 Matcher failsWith(String text) => throwsA(
   isA<MappingException>().having((e) => e.message, 'message', contains(text)),
@@ -111,21 +110,19 @@ void main() {
     late PersistentEntity<P1> post;
 
     setUp(() {
-      final p = describe<P1>('P1', [
-        col<P1>('id', int, _intN, annotations: const [Id()]),
-        col<P1>(
+      final p = describe<P1>('P1', P1.new, [
+        col('id', _intN, annotations: const [Id()]),
+        col(
           'writer',
-          AggregateReference<Writer, int>,
           ref<Writer, int>(),
           annotations: const [OnDelete(OnDeleteAction.cascade)],
         ),
-        col<P1>(
+        col(
           'editorId',
-          int,
           _intN,
           annotations: const [Reference(Writer)],
         ),
-        col<P1>('plain', int, _int),
+        col('plain', _int),
       ]);
       post = contextOf([
         p,
@@ -166,10 +163,9 @@ void main() {
 
   group('refused', () {
     test("an id type that is not the target's: both types are named", () {
-      final p = describe<P2>('P2', [
-        col<P2>(
+      final p = describe<P2>('P2', P2.new, [
+        col(
           'writerId',
-          String,
           _string,
           annotations: const [Reference(Writer)],
         ),
@@ -184,10 +180,9 @@ void main() {
     });
 
     test('an AggregateReference with the wrong id type', () {
-      final p = describe<P3>('P3', [
-        col<P3>(
+      final p = describe<P3>('P3', P3.new, [
+        col(
           'slug',
-          AggregateReference<Slug, int>,
           ref<Slug, int>(),
         ),
       ]);
@@ -198,10 +193,9 @@ void main() {
     });
 
     test('a target that is not described, or has no @Id', () {
-      final p = describe<P4>('P4', [
-        col<P4>(
+      final p = describe<P4>('P4', P4.new, [
+        col(
           'writerId',
-          int,
           _int,
           annotations: const [Reference(Writer)],
         ),
@@ -210,8 +204,8 @@ void main() {
         () => contextOf([p]).getRequiredPersistentEntity<P4>(),
         failsWith('P4.writerId references Writer, which is not described'),
       );
-      final q = describe<P5>('P5', [
-        col<P5>('target', int, _int, annotations: const [Reference(NoId)]),
+      final q = describe<P5>('P5', P5.new, [
+        col('target', _int, annotations: const [Reference(NoId)]),
       ]);
       expect(
         () => contextOf([q, noId()]).getRequiredPersistentEntity<P5>(),
@@ -220,8 +214,8 @@ void main() {
     });
 
     test('a field of an entity type: the hint names both ways', () {
-      final p = describe<P6>('P6', [
-        col<P6>('author', Writer, const ClassType<Writer>()),
+      final p = describe<P6>('P6', P6.new, [
+        col('author', const ClassType<Writer>()),
       ]);
       expect(
         () => contextOf([p, writer()]).getRequiredPersistentEntity<P6>(),
@@ -234,10 +228,9 @@ void main() {
     });
 
     test('both an AggregateReference and @Reference', () {
-      final p = describe<P7>('P7', [
-        col<P7>(
+      final p = describe<P7>('P7', P7.new, [
+        col(
           'writer',
-          AggregateReference<Writer, int>,
           ref<Writer, int>(),
           annotations: const [Reference(Writer)],
         ),
@@ -249,17 +242,17 @@ void main() {
     });
 
     test('setNull needs a nullable property', () {
-      BeanIntrospection<P8> p({required bool nullable}) => describe<P8>('P8', [
-        col<P8>(
-          'writerId',
-          int,
-          nullable ? _intN : _int,
-          annotations: const [
-            Reference(Writer),
-            OnDelete(OnDeleteAction.setNull),
-          ],
-        ),
-      ]);
+      EntityIntrospection<P8> p({required bool nullable}) =>
+          describe<P8>('P8', P8.new, [
+            col(
+              'writerId',
+              nullable ? _intN : _int,
+              annotations: const [
+                Reference(Writer),
+                OnDelete(OnDeleteAction.setNull),
+              ],
+            ),
+          ]);
       expect(
         () => contextOf([
           p(nullable: false),
@@ -275,10 +268,9 @@ void main() {
     });
 
     test('@OnDelete on something that is no reference', () {
-      final p = describe<P9>('P9', [
-        col<P9>(
+      final p = describe<P9>('P9', P9.new, [
+        col(
           'count',
-          int,
           _int,
           annotations: const [OnDelete(OnDeleteAction.cascade)],
         ),
@@ -291,15 +283,16 @@ void main() {
   });
 
   group('unique keys', () {
-    BeanIntrospection<P1> post(
+    EntityIntrospection<P1> post(
       List<Object> classAnnotations, {
       List<Object> titleAnnotations = const [],
     }) => describe<P1>(
       'P1',
+      P1.new,
       [
-        col<P1>('id', int, _intN, annotations: const [Id()]),
-        col<P1>('title', String, _string, annotations: titleAnnotations),
-        col<P1>('writerId', int, _int, annotations: const [Column('w_id')]),
+        col('id', _intN, annotations: const [Id()]),
+        col('title', _string, annotations: titleAnnotations),
+        col('writerId', _int, annotations: const [Column('w_id')]),
       ],
       annotations: [const Table('posts'), ...classAnnotations],
     );
@@ -367,16 +360,15 @@ void main() {
     });
 
     test('a mapped collection cannot be unique', () {
-      final p = describe<P2>('P2', [
-        col<P2>(
+      final p = describe<P2>('P2', P2.new, [
+        col(
           'children',
-          List<Child>,
           const ListType<Child>(ClassType<Child>()),
           annotations: const [MappedCollection(), Unique()],
         ),
       ]);
-      final c = describe<Child>('Child', [
-        col<Child>('x', String, _stringN),
+      final c = describe<Child>('Child', Child.new, [
+        col('x', _stringN),
       ]);
       expect(
         () => contextOf([p, c]).getRequiredPersistentEntity<P2>(),

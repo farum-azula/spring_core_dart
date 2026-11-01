@@ -1,12 +1,13 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'package:spring_boot_starter_data/src/annotations.dart';
+import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 
 /// What the stores know of an aggregate's class: its table, its id and
 /// version, and each stored property with its column.
 ///
 /// Built once per class from the class's generated description
-/// ([BeanIntrospection]: `@Table` makes the class described), with no
+/// ([EntityIntrospection]: `@Table` makes the class described), with no
 /// reflection. Every store (in memory, SQL, PostgREST) reads and writes
 /// entities through it.
 ///
@@ -28,7 +29,7 @@ final class PersistentEntity<T extends Object> {
 
   /// The description of the class, to create instances and reach
   /// properties.
-  final BeanIntrospection<T> introspection;
+  final EntityIntrospection<T> introspection;
 
   /// The table's name.
   final String tableName;
@@ -46,11 +47,27 @@ final class PersistentEntity<T extends Object> {
 
   final Map<String, PersistentProperty> _byName;
 
+  // The stored properties by their index in the introspection.
+  late final List<PersistentProperty?> _byIndex = () {
+    final all = List<PersistentProperty?>.filled(
+      introspection.properties.length,
+      null,
+    );
+    for (final p in properties) {
+      all[p.index] = p;
+    }
+    return all;
+  }();
+
   /// The entity's class.
-  Type get type => introspection.beanType;
+  Type get type => introspection.type;
 
   /// The stored property named [name] (the Dart name), or null.
   PersistentProperty? property(String name) => _byName[name];
+
+  /// The stored property at [index] of the introspection's properties, or
+  /// null when that property is not stored (a [Transient] one).
+  PersistentProperty? propertyAt(int index) => _byIndex[index];
 
   /// The `@Id` property, or null when the class has none.
   PersistentProperty? get idProperty =>
@@ -88,7 +105,8 @@ final class PersistentProperty {
     required this.name,
     required this.columnName,
     required this.type,
-    required this.accessor,
+    required this.owner,
+    required this.index,
     this.isId = false,
     this.isVersion = false,
     this.audit,
@@ -115,8 +133,11 @@ final class PersistentProperty {
   /// [AggregateReference], the reference type itself.
   final TypeInfo<Object?> type;
 
-  /// Reads and writes the property on an instance.
-  final BeanProperty<Object> accessor;
+  /// The description of the class the property belongs to.
+  final EntityIntrospection<Object> owner;
+
+  /// The property's index in the [owner]'s properties.
+  final int index;
 
   /// Whether it is the `@Id`.
   final bool isId;
@@ -182,13 +203,16 @@ final class PersistentProperty {
   /// Whether the property may hold null.
   bool get isNullable => type.nullable;
 
-  /// The value of the property on [entity].
-  Object? getValue(Object entity) => accessor.getValue(entity);
+  /// Whether the property has a setter.
+  bool get isWritable => owner.properties[index].writable;
+
+  /// The value of the property on [entity]; no other property is read.
+  Object? getValue(Object entity) => owner.valueAt(entity, index);
 
   /// Sets the property on [entity] to [value]; throws a [StateError] when
   /// the property is final (set it through the constructor instead).
   void setValue(Object entity, Object? value) =>
-      accessor.setValue(entity, value);
+      owner.write(entity, index, value);
 
   @override
   String toString() => 'PersistentProperty($name -> $columnName)';

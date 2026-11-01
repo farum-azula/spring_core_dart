@@ -146,7 +146,13 @@ exports `spring_boot_dart`, `spring_web_dart` (the annotations,
 the only dependency the application needs.
 
 The classes the controllers take and return are introspected for JSON
-automatically when they are in the same package.
+automatically when they are in the same package, each for what the
+controllers do with it: a class that is only returned gets its getters, a
+`@RequestBody` its constructor and setters (and, with `@Valid()`, the
+getters of the properties that have constraints). A class used some other
+way the build cannot see, such as a value of type `Object` that is
+written as JSON, fails with a message that says to add `@Introspected()`,
+which describes everything.
 
 **Stopping with `Ctrl+C`.** For `Ctrl+C` or `SIGTERM` to stop the server
 gracefully, the application must close its context on those signals:
@@ -333,6 +339,7 @@ with `Sec-WebSocket-Version: 13`) are problems.
 | a malformed multipart request, or `@RequestPart` on a request that is not multipart | 400 (`MultipartRequestException`) |
 | `throw ResponseStatusException(HttpStatus.notFound, 'No book 9')` | its status and detail |
 | an `ErrorResponse` or `ErrorResponseException` | its status, headers and problem |
+| an error a `HandlerExceptionResolver` answers (the data starter's `DuplicateKeyException` is a 409) | its status, headers and problem |
 | any other exception | 500 `Internal Server Error`, with no detail; the exception is logged with its stack trace under `spring.web.mvc` |
 | answered by the server before any filter: a method `HttpMethod` does not know, a missing client certificate (`server.ssl.client-auth=need`), a malformed or missing `Host` (or one that is not the host of an absolute target), an encoded `/`, `\` or NUL in the path, a `.` or `..` segment behind matrix parameters, a `%` escape that is not UTF-8 | 501, 403, 400, 400, 400, 400 |
 | a handler fails after the response was committed | no error answer can follow: the connection is dropped without finishing the response, as Tomcat does |
@@ -396,6 +403,51 @@ advice does not see errors raised before a controller method was chosen
 @Order(1)
 class AdminErrors { ... }
 ```
+
+### Resolvers: errors a library maps
+
+A `HandlerExceptionResolver` bean turns an error into an answer for the
+errors no `@ExceptionHandler` method handles. It is how a library maps
+its own exceptions to HTTP without the application writing an advice for
+them. The resolvers are asked after the `@ExceptionHandler` methods of
+the controller and of the advice beans (the application's own handlers
+always win), in `@Order`, before the default 500; the first that returns
+an `ErrorResponse` (status, headers and problem) answers, `null` passes
+the error on. They are not asked for an error that is already an
+`ErrorResponse` (a `ResponseStatusException`, the router's 404, 405, 406
+and 415) nor for one a filter throws, and a resolver that throws is
+logged and skipped. The starter logs each resolved error at debug level
+under `spring.web.mvc`.
+
+```dart
+@Component()
+class RoomTakenResolver implements HandlerExceptionResolver {
+  @override
+  ErrorResponse? resolveException(
+    ServerHttpRequest request,
+    Object error, {
+    HandlerMethod? handler,
+  }) => error is RoomTakenException
+      ? ResponseStatusException(HttpStatus.conflict, 'The room is taken')
+      : null;
+}
+```
+
+An application that also depends on `spring_boot_starter_data` gets such a
+resolver without writing one: the generator adds the bean
+`dataAccessExceptionResolver` to the application's module, because
+neither starter may depend on the other (the same way it adds the
+database driver). Declare a bean of that name to replace it.
+
+| Exception | Status | Detail |
+|---|---|---|
+| `OptimisticLockingFailureException` (a `@Version` conflict) | 409 | `The resource was changed by someone else` |
+| `DuplicateKeyException` | 409 | `The resource already exists` |
+| `EmptyResultDataAccessException` | 404 | `Not found` |
+
+The detail is fixed, never the exception's message, which may hold SQL,
+table names or values. Subtypes are mapped too; every other data error
+stays a 500 without details, as any other exception.
 
 ## Server-sent events
 
@@ -1344,6 +1396,11 @@ the bean as the context holds it, so AOP advice on a controller
   Dart cannot test whether a `Type` is a subtype of another. Subtypes
   match through the type of the exception parameter
   (`@ExceptionHandler() void on(StateError e)`).
+- **A `HandlerExceptionResolver` returns an `ErrorResponse`** (or `null`)
+  instead of writing into the response and returning a `ModelAndView`;
+  Spring's built-in resolvers are the `@ExceptionHandler` methods and
+  `ResponseStatusException` handling, and a resolver bean is asked after
+  them.
 - **`@ResponseStatus` goes on handler methods** or the controller class,
   not on exception classes, whose annotations cannot be read at
   runtime: throw a `ResponseStatusException` or implement

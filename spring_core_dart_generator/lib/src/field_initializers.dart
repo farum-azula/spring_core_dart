@@ -39,7 +39,8 @@ extension _FieldInitializers on BeanScanner {
       '${field.library.uri}#${field.enclosingElement.name}.${field.name}';
 
   /// Resolves and stores the initializers of the fields of the
-  /// `@Introspected` classes of [library] and of the classes introspected
+  /// `@Introspected` and `@Table` classes of [library], of the DTOs of its
+  /// data repositories' `@Query` methods, and of the classes introspected
   /// along with them, so that [scanLibrary] can read their initial values.
   ///
   /// The classes reached are the ones [BeanScanner._scanIntrospected] may
@@ -54,8 +55,16 @@ extension _FieldInitializers on BeanScanner {
   ) async {
     final pending = <ClassElement>[];
     for (final element in library.classes) {
-      if (_introspected.hasAnnotationOf(element)) {
+      if (_introspected.hasAnnotationOf(element) ||
+          _table.hasAnnotationOf(element)) {
         pending.add(element);
+      }
+      // The DTOs of a data repository's `@Query` methods.
+      if (element.isAbstract &&
+          _dataRepository.isAssignableFrom(element) &&
+          !_dataRepository.isExactly(element) &&
+          element.typeParameters.isEmpty) {
+        pending.addAll(projectionsOf(element));
       }
       for (final method in element.methods) {
         final returned = method.returnType.element;

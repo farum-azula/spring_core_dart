@@ -2,6 +2,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
 import 'package:spring_boot_starter_web/src/forwarded_headers.dart';
+import 'package:spring_boot_starter_web/src/handler_exception_resolver.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/http_session.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
@@ -74,8 +75,8 @@ CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
 ///   (`spring.servlet.multipart.*`), unless the application declares one;
 /// - `requestMappingHandlerMapping` — the controllers, with the
 ///   `WebMvcConfigurer` beans' interceptors, CORS mappings and argument
-///   resolvers, and the `CorsConfigurationSource` bean named
-///   `corsConfigurationSource`;
+///   resolvers, the `CorsConfigurationSource` bean named
+///   `corsConfigurationSource` and the [HandlerExceptionResolver] beans;
 /// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
 ///   `request.getSession()` (`server.servlet.session.*`), sessions in
 ///   memory unless the application declares an [HttpSessionRepository];
@@ -180,6 +181,9 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
         corsSource: cors.isEmpty ? null : cors.toSource(),
         corsConfigurationSource: _corsConfigurationSource(r),
         validator: r.provider<Validator>().getIfUnique(),
+        exceptionResolvers:
+            r.optionalDependencyList<HandlerExceptionResolver>() ??
+            const <HandlerExceptionResolver>[],
         multipartResolver: r.dependency<MultipartResolver>(),
       );
     },

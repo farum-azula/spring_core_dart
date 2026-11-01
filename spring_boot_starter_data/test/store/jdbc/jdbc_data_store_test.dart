@@ -436,7 +436,7 @@ void main() {
             criteria: Criteria(
               const [
                 OrPart([
-                  Part(['quantity'], PartType.lessThan),
+                  Part('quantity', PartType.lessThan),
                 ]),
               ],
               [10],

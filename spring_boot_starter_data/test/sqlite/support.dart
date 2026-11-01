@@ -7,8 +7,9 @@ import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 import 'app/sqlite_app.spring.dart';
 
-/// The `SqliteJdbcDriver` of the started test application.
-Future<SqliteJdbcDriver> startDriver() async {
+/// The `SqliteJdbcDriver` of the started test application; with [isolate],
+/// a driver over the same binding whose connections run on worker isolates.
+Future<SqliteJdbcDriver> startDriver({bool isolate = false}) async {
   late SqliteJdbcDriver driver;
   await const ApplicationContextRunner()
       .withUserConfiguration($application)
@@ -18,8 +19,15 @@ Future<SqliteJdbcDriver> startDriver() async {
         }
         driver = context.getBean<JdbcDriver>() as SqliteJdbcDriver;
       });
-  return driver;
+  return isolate ? SqliteJdbcDriver(driver.binding, isolate: true) : driver;
 }
+
+/// The two ways a connection runs, to give a group each: the suites of the
+/// driver run in both.
+const connectionModes = {
+  'in the isolate of the caller': false,
+  'on a worker isolate': true,
+};
 
 /// A new empty directory, to delete with [deleteTemp].
 Directory newTemp() => Directory.systemTemp.createTempSync('sqlite_test');

@@ -230,7 +230,9 @@ class ColumnMapRowMapper {
 ///   given) with the parameter's `TypeInfo`, then the converter's enum,
 ///   widening and reference conversions.
 ///
-/// The class must be introspected (`@Introspected`, or `@Table`).
+/// The class must be introspected (`@Introspected`). An entity, or a class
+/// a `@Query` returns, is described by the build as an `EntityIntrospection`
+/// instead, which `EntityRowMapper` maps.
 ///
 /// Spring (Java): `org.springframework.jdbc.core.DataClassRowMapper`.
 class DataClassRowMapper<T extends Object> {
@@ -265,11 +267,12 @@ class DataClassRowMapper<T extends Object> {
       name.replaceAll('_', '').toLowerCase();
 
   BeanIntrospection<T> get _description => _introspection ??=
-      (_introspector.forTypeArgument<T>() as BeanIntrospection<T>?) ??
-      (throw InvalidDataAccessApiUsageException(
-        '$T is not introspected: mark it @Introspected (or @Table) and '
-        'register its module, or use a RowMapper function',
-      ));
+      ((_introspector.forTypeArgument<T>() as BeanIntrospection<T>?) ??
+            (throw InvalidDataAccessApiUsageException(
+              '$T is not introspected: mark it @Introspected and '
+              'register its module, or use a RowMapper function',
+            )))
+        ..requirePart(IntrospectionPart.write, 'rows are mapped to it');
 
   // Matches the columns of a result with the parameters and properties,
   // once per result.

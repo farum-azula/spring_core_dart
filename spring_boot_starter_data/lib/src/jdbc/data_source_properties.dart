@@ -48,7 +48,7 @@ class DataSourceConfigurationException extends NonTransientDataAccessException {
 ///   `pool.validation` (true): see [PoolSettings];
 /// - `<scheme>.*` and `<driver name>.*`: the driver's own settings, passed
 ///   as [ConnectionSettings.properties] (`sqlite.busy-timeout`,
-///   `sqlite.base-directory`).
+///   `sqlite.base-directory`, `sqlite.isolate`).
 ///
 /// Durations are written `500ms`, `30s`, `10m`, `PT30S`, or as a number of
 /// milliseconds.

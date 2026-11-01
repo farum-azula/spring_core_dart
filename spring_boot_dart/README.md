@@ -231,7 +231,8 @@ class ShopProperties {
 `shop.maxBasketSize`, `--shop.max-basket-size=…` or
 `SHOP_MAX_BASKET_SIZE`. With `@Validated()`, the constraints are checked
 at start-up, as in Spring Boot, and a violation stops the start. The
-class is a bean and is introspected automatically.
+class is a bean and is introspected automatically, with the getters and
+setters the binder uses.
 
 ### Lists, maps and nested objects
 

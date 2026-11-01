@@ -9,11 +9,17 @@ import 'package:test/test.dart';
 import 'support.dart';
 
 void main() {
+  connectionModes.forEach(
+    (mode, isolate) => group(mode, () => driverSuite(isolate: isolate)),
+  );
+}
+
+void driverSuite({required bool isolate}) {
   late SqliteJdbcDriver driver;
   late Directory temp;
   const dialect = SqliteDialect();
 
-  setUpAll(() async => driver = await startDriver());
+  setUpAll(() async => driver = await startDriver(isolate: isolate));
   setUp(() => temp = newTemp());
   tearDown(() => deleteTemp(temp));
 
@@ -431,7 +437,11 @@ void main() {
     });
 
     test('a relative path is resolved against the base directory', () async {
-      final own = SqliteJdbcDriver(driver.binding, baseDirectory: temp.path);
+      final own = SqliteJdbcDriver(
+        driver.binding,
+        baseDirectory: temp.path,
+        isolate: isolate,
+      );
       for (final url in ['sqlite:file:rel.db', 'sqlite:other.db']) {
         final c = await own.connect(ConnectionSettings(url: Uri.parse(url)));
         await c.execute('CREATE TABLE t (v INTEGER)');

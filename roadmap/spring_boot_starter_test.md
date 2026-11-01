@@ -164,4 +164,6 @@ part of the starter is `dart:io` only, behind a conditional import.
 - `@MockitoBean` as a name for `@TestBean`, for people coming from Spring:
   only if a mocking library is chosen (`mocktail` is a third-party package,
   so not a dependency of the starter).
-- Test slices (`@WebMvcTest`-like) once the web and data starters exist.
+- Test slices: `@DataTest` (the data starter's `@DataJdbcTest`) is done, built
+  on `springBootTest` and the generator (the starters never depend on each
+  other); a `@WebMvcTest`-like slice for the web starter is still open.

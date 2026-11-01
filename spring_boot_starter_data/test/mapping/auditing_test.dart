@@ -25,7 +25,7 @@ void main() {
   final t2 = DateTime.utc(2025);
   setUp(() {
     context = testContext();
-    converter = EntityConverter(introspector: context.introspector);
+    converter = EntityConverter();
     book = context.getRequiredPersistentEntity<Book>();
   });
 
@@ -58,31 +58,33 @@ void main() {
     });
 
     test('two versions on a class are refused', () {
-      final i = BeanIntrospection<_Versioned>(
-        className: 'Versioned',
-        properties: [
-          prop<_Versioned>(
+      final i = EntityIntrospection<_Versioned>(
+        'Versioned',
+        const [
+          EntityProperty(
             'v',
-            int,
-            const ClassType<int>(nullable: true),
-            (o) => o.v,
-            set: (o, x) => o.v = x as int?,
-            annotations: const [Version()],
+            ClassType<int>(nullable: true),
+            annotations: [Version()],
+            writable: true,
           ),
-          prop<_Versioned>(
+          EntityProperty(
             'at',
-            DateTime,
-            const ClassType<DateTime>(nullable: true),
-            (o) => o.at,
-            set: (o, x) => o.at = x as DateTime?,
-            annotations: const [Version()],
+            ClassType<DateTime>(nullable: true),
+            annotations: [Version()],
+            writable: true,
           ),
         ],
+        get: (o, i) => switch (i) {
+          0 => o.v,
+          _ => o.at,
+        },
+        create: (v) => _Versioned(),
+        write: (o, i, x) => i == 0 ? o.v = x as int? : o.at = x as DateTime?,
       );
       // Two versions are refused: test each alone.
       expect(
         () => RelationalMappingContext(
-          introspector: BeanIntrospector(introspections: [i]),
+          introspections: [i],
         ).getRequiredPersistentEntity<_Versioned>(),
         throwsA(isA<MappingException>()),
       );
@@ -243,16 +245,17 @@ class _Stamped {
   DateTime? at;
 }
 
-BeanIntrospection<_Stamped> _dateVersion() => BeanIntrospection<_Stamped>(
-  className: 'Stamped',
-  properties: [
-    prop<_Stamped>(
+EntityIntrospection<_Stamped> _dateVersion() => EntityIntrospection<_Stamped>(
+  'Stamped',
+  const [
+    EntityProperty(
       'at',
-      DateTime,
-      const ClassType<DateTime>(nullable: true),
-      (o) => o.at,
-      set: (o, x) => o.at = x as DateTime?,
-      annotations: const [Version()],
+      ClassType<DateTime>(nullable: true),
+      annotations: [Version()],
+      writable: true,
     ),
   ],
+  get: (o, _) => o.at,
+  create: (v) => _Stamped(),
+  write: (o, i, x) => o.at = x as DateTime?,
 );

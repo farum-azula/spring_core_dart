@@ -392,17 +392,25 @@ final class BindContext {
     ConfigurationPropertyName name, {
     List<BindSource>? only,
   }) {
+    introspection.requirePart(
+      IntrospectionPart.write,
+      'it is bound from configuration',
+    );
     final scope = only ?? sources;
     var bound = false;
     for (final property in introspection.properties) {
       final propertyName = name.append(
         _memberName(property.name, property.annotations),
       );
+      // The current value, for a nested object or a map to be bound in
+      // place; a property without a getter has none.
       Object? current;
-      try {
-        current = property.getValue(bean);
-      } on Object catch (_) {
-        current = null;
+      if (property.isReadable) {
+        try {
+          current = property.getValue(bean);
+        } on Object catch (_) {
+          current = null;
+        }
       }
       final typeInfo = property.typeInfo;
       final value = _withAnnotations(
@@ -497,6 +505,10 @@ final class BindContext {
           existing ??
           (introspection.isInstantiable ? introspection.instantiate() : null);
       if (target == null) {
+        introspection.requirePart(
+          IntrospectionPart.write,
+          'it is bound from configuration',
+        );
         return unbound;
       }
       final bound = bindProperties(target, introspection, name, only: scope);

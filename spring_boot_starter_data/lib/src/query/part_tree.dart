@@ -5,29 +5,39 @@ import 'package:spring_boot_starter_data/src/repository/sort.dart';
 /// is a [subject] (`find`, the first 5), a [predicate] (two parts joined by
 /// `And`) and a static [sort] (`year` descending).
 ///
-/// The parser builds it, checking every property against the entity;
-/// a store turns it into SQL, a PostgREST filter, or an in-memory filter.
+/// The build parses the name, checks every property against the entity, and
+/// writes the tree as a constant in the generated repository class, so a
+/// wrong name is a build error; nothing is parsed when the application
+/// starts. A store turns the tree into SQL or an in-memory filter.
+///
+/// ```dart
+/// // findByTitleAndYearGreaterThan
+/// const tree = PartTree(r'findByTitleAndYearGreaterThan', [
+///   OrPart([Part(r'title'), Part(r'year', PartType.greaterThan)]),
+/// ]);
+/// ```
 ///
 /// Spring (Java): `org.springframework.data.repository.query.parser.PartTree`.
 final class PartTree {
-  /// The parsed method [methodName].
-  const PartTree({
-    required this.methodName,
-    required this.subject,
-    required this.predicate,
+  /// The tree of the method [methodName]: [predicate] and [subject] as its
+  /// name says them, and the order its `OrderBy` gives.
+  const PartTree(
+    this.methodName,
+    this.predicate, {
+    this.subject = const Subject(SubjectKind.find),
     this.sort = Sort.unsorted,
   });
 
   /// The method's name, for messages.
   final String methodName;
 
-  /// What the method does with the matching aggregates.
-  final Subject subject;
-
   /// Which aggregates match: alternatives (`Or`) of conjunctions (`And`);
   /// no alternative at all matches every aggregate (`findAll...`,
   /// `countBy` with nothing after `By`).
   final List<OrPart> predicate;
+
+  /// What the method does with the matching aggregates.
+  final Subject subject;
 
   /// The order written in the name (`OrderByTitleAsc`); a `Sort` or
   /// `Pageable` parameter is applied after it.
@@ -115,17 +125,26 @@ final class OrPart {
   String toString() => parts.join(' and ');
 }
 
-/// One condition of a query method name: a property path, an operator
-/// ([type]) and whether case is ignored.
+/// One condition of a query method name: a property, an operator ([type])
+/// and whether case is ignored.
+///
+/// Dart has no optional positional and named parameters together, so
+/// [ignoreCase] is the third positional one: `Part(r'title', PartType.like,
+/// true)`.
 ///
 /// Spring (Java): `org.springframework.data.repository.query.parser.Part`.
 final class Part {
-  /// The condition [type] on the property at [path].
-  const Part(this.path, this.type, {this.ignoreCase = false});
+  /// The condition [type] (equal by default) on [property], comparing
+  /// case-insensitively when [ignoreCase].
+  const Part(
+    this.property, [
+    this.type = PartType.simpleProperty,
+    this.ignoreCase = false,
+  ]);
 
-  /// The property, by Dart property names from the entity (one name; a
-  /// path into an embedded object later, as `address.city`).
-  final List<String> path;
+  /// The property, by its Dart name in the entity (one name; a path into an
+  /// embedded object later, as `address.city`).
+  final String property;
 
   /// The operator.
   final PartType type;
@@ -134,18 +153,18 @@ final class Part {
   /// both sides lower-cased. Only for `String` properties.
   final bool ignoreCase;
 
-  /// The path as one string, `address.city`.
-  String get property => path.join('.');
+  /// The property's names, `address.city` as `[address, city]`.
+  List<String> get path => property.split('.');
 
   @override
   bool operator ==(Object other) =>
       other is Part &&
-      _listEquals(other.path, path) &&
+      other.property == property &&
       other.type == type &&
       other.ignoreCase == ignoreCase;
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(path), type, ignoreCase);
+  int get hashCode => Object.hash(property, type, ignoreCase);
 
   @override
   String toString() =>
@@ -221,9 +240,9 @@ enum PartType {
   /// How many method parameters the operator consumes.
   final int argumentCount;
 
-  /// The suffixes that write it. The parser tries the types in the order of
-  /// this enum (as Spring's `Part.Type.ALL`), so `NotIn` is found before
-  /// `In` and `IsNotNull` before `IsNull`.
+  /// The suffixes that write it. The build's parser tries the types in the
+  /// order of this enum (as Spring's `Part.Type.ALL`), so `NotIn` is found
+  /// before `In` and `IsNotNull` before `IsNull`.
   final List<String> keywords;
 }
 

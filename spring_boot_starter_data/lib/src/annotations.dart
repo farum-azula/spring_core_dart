@@ -1,9 +1,7 @@
-import 'package:spring_boot_dart/spring_boot_dart.dart';
-
 /// Marks a class as the root of an aggregate stored in table [value] (by
 /// default the class name in snake case: `OrderLine` → `order_line`).
 ///
-/// The generator describes the class (as `@Introspected` does: it is one),
+/// The generator describes the class (an `EntityIntrospection`),
 /// so the repositories can read and set its properties and call its
 /// constructor without reflection. Each property is a column, named after
 /// the property in snake case (`createdAt` → `created_at`) unless
@@ -27,7 +25,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```
 ///
 /// Spring (Java): `org.springframework.data.relational.core.mapping.Table`.
-class Table extends Introspected {
+class Table {
   /// Stores the class in table [value], or in the snake-case class name.
   const Table([this.value, this.schema]);
 
@@ -340,15 +338,27 @@ class UniqueConstraint {
 /// property. Values are always bound as parameters, never written into the
 /// SQL text.
 ///
+/// `{Book}` is the quoted table of the entity `Book` and `{Book.authorId}`
+/// the quoted column of its property `authorId` (`author_id` by default; the
+/// naming strategy, `@Table` and `@Column` decide), outside quotes and
+/// comments. The column is not qualified: write `b.{Book.authorId}` in a
+/// join.
+///
+/// ```dart
+/// @Query('select {Book.title} from {Book} where {Book.authorId} = :id')
+/// Future<List<String>> titlesOf(int id);
+/// ```
+///
 /// A method returning a `Page` gives the count's statement in
 /// [countQuery]. A change (`update`, `delete`, `insert`) needs [Modifying].
 ///
 /// The rows become what the method returns by its type: the entity (the
 /// columns of its table; its children are loaded too), a class of the
-/// application (a DTO, `@Introspected`: the columns by name, `author_name`
-/// into `authorName`), one column (`int`, `String`...), or the whole result
-/// with [rowMapper] or [resultSetExtractor], static methods (or top-level
-/// functions) given as constants:
+/// application (a DTO, which the generator describes: the columns by name,
+/// `author_name` into `authorName`), one column (`int`, `String`...), a
+/// `Map<String, Object?>`, or the whole result with [rowMapper] or
+/// [resultSetExtractor], static methods (or top-level functions) given as
+/// constants:
 ///
 /// ```dart
 /// @Query('select a.id, a.name, b.title from authors a '
@@ -357,7 +367,37 @@ class UniqueConstraint {
 /// Future<List<AuthorWithBooks>> authorsWithBooks();
 /// ```
 ///
-/// Spring (Java): `org.springframework.data.jdbc.repository.query.Query`.
+/// **The build checks the query**, so a mistake is an error of the build,
+/// listed with the others of the repository, and not of the first call:
+///
+/// - the annotation and the method: `name:` (not supported yet), a
+///   [rowMapper] and a [resultSetExtractor] together, one that is not a
+///   function of the `JdbcRow` or the `JdbcResult`, a method that is not
+///   `Future` or `Stream`, `@Lock`, more than one `Pageable` or `Sort`, a
+///   `Page` or `Slice` without a `Pageable`, `@Modifying` with a result
+///   other than `int`, `bool` or `void` (or with a mapper or a `Pageable`),
+///   `void` without `@Modifying`, a [countQuery] for anything but a `Page`,
+///   a result that rows cannot become (the entity, a class of yours, a
+///   column type, a `Map<String, Object?>`);
+/// - the text: each `:name` must be a parameter of the method, a plain `?`
+///   and a `#{...}` other than `#{#entityName}` are refused, and the entity
+///   and the property of a `{Entity.property}` must exist (a `@Table` class
+///   of the application, a stored property: not `@Transient`, not a
+///   `@MappedCollection`);
+/// - **misspelled names**: a table after `from`, `join`, `update`, `into`
+///   or `delete from`, a qualified `alias.column`, and an unqualified column
+///   are errors when the build knows no such name (from the entities and
+///   from `db/migration` and `schema.sql` of `lib/resources/`) and does
+///   know a close one: `books.titel: no column titel in books, did you
+///   mean 'title'?`. A name nothing is close to is left alone (a table of
+///   another schema, a function, a word of your database).
+///
+/// What depends on the run time stays at startup: `${...}` placeholders are
+/// resolved from the environment, the `{Entity}` names come from the
+/// entity's mapping, and a result class must be described.
+///
+/// Spring (Java): `org.springframework.data.jdbc.repository.query.Query`
+/// (whose text Spring checks only when the repository is created).
 class Query {
   /// The method runs [value].
   const Query(

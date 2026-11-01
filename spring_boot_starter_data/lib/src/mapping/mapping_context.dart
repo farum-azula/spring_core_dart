@@ -2,6 +2,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
+import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 import 'package:spring_boot_starter_data/src/mapping/naming_strategy.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 
@@ -18,7 +19,7 @@ class MappingException extends InvalidDataAccessApiUsageException {
 }
 
 /// Builds the [PersistentEntity] of each class from its generated
-/// [BeanIntrospection], and keeps it: a class is mapped once.
+/// [EntityIntrospection], and keeps it: a class is mapped once.
 ///
 /// The rules, applied to every property the class's description lists (the
 /// non-static, non-private fields of the class and its superclasses):
@@ -47,30 +48,39 @@ class MappingException extends InvalidDataAccessApiUsageException {
 ///   single `C`) holds children: `C` must be described and marked [Table];
 ///   its entity is built the same way, as a child (it takes no [Version]).
 ///
-/// The descriptions are read from a [BeanIntrospector]: the application
-/// context's (`ApplicationContext.introspector`, which the generated
-/// `*.spring.dart` modules fill and whose parent is
-/// `BeanIntrospector.shared`) or any other, such as one a test fills by hand.
+/// The descriptions are the [introspections] the context is given: those
+/// of the `EntityIntrospections` beans the generated `*.spring.dart`
+/// modules register, or any a test writes by hand.
 ///
 /// Spring (Java):
 /// `org.springframework.data.relational.core.mapping.RelationalMappingContext`.
 class RelationalMappingContext {
-  /// A context reading descriptions from [introspector] (by default
-  /// `BeanIntrospector.shared`) and naming tables and columns with
-  /// [namingStrategy].
+  /// A context over [introspections] (the first of a class counts when
+  /// several describe it) naming tables and columns with [namingStrategy].
   RelationalMappingContext({
-    BeanIntrospector? introspector,
+    required Iterable<EntityIntrospection<Object>> introspections,
     this.namingStrategy = const NamingStrategy(),
-  }) : introspector = introspector ?? BeanIntrospector.shared;
-
-  /// Where the classes' descriptions come from.
-  final BeanIntrospector introspector;
+  }) {
+    for (final introspection in introspections) {
+      _described.putIfAbsent(introspection.type, () => introspection);
+    }
+  }
 
   /// How tables and columns are named when the annotations do not say.
   final NamingStrategy namingStrategy;
 
+  final _described = <Type, EntityIntrospection<Object>>{};
+
   final _roots = <Type, PersistentEntity<Object>>{};
   final _children = <Type, PersistentEntity<Object>>{};
+
+  /// Every class described: the entities, the classes stored inside them
+  /// and the classes a `@Query` returns.
+  Iterable<EntityIntrospection<Object>> get introspections => _described.values;
+
+  /// The description of the class [type] (an entity or not), or null when
+  /// it is not described.
+  EntityIntrospection<Object>? introspectionOf(Type type) => _described[type];
 
   /// The entity of the root class [T]; throws a [MappingException] when [T]
   /// is not described or its mapping is wrong.
@@ -79,11 +89,13 @@ class RelationalMappingContext {
     if (cached is PersistentEntity<T>) {
       return cached;
     }
-    final introspection = introspector.forTypeArgument<T>();
+    final introspection = _described[T];
     if (introspection == null) {
       throw MappingException(_notDescribed(T));
     }
-    final entity = fromIntrospection<T>(introspection as BeanIntrospection<T>);
+    final entity = fromIntrospection<T>(
+      introspection as EntityIntrospection<T>,
+    );
     _roots[T] = entity;
     return entity;
   }
@@ -98,7 +110,7 @@ class RelationalMappingContext {
     if (cached != null) {
       return cached;
     }
-    final introspection = introspector.forType(type);
+    final introspection = _described[type];
     if (introspection == null) {
       return null;
     }
@@ -111,22 +123,11 @@ class RelationalMappingContext {
       getPersistentEntity(type) ??
       (throw MappingException(_notDescribed(type)));
 
-  /// The entity of the class [instance] is an instance of, for the most
-  /// specific class described; throws a [MappingException] when there is
-  /// none.
-  PersistentEntity<Object> entityOf(Object instance) {
-    final introspection = introspector.findIntrospection(instance);
-    if (introspection == null) {
-      throw MappingException(_notDescribed(instance.runtimeType));
-    }
-    return getRequiredPersistentEntityOfType(introspection.beanType);
-  }
-
   /// Builds (without caching) the entity of a root class from
   /// [introspection]; for tests that describe a class by hand. Children
-  /// are looked up in [introspector].
+  /// are looked up among the context's [introspections].
   PersistentEntity<T> fromIntrospection<T extends Object>(
-    BeanIntrospection<T> introspection,
+    EntityIntrospection<T> introspection,
   ) => _build<T>(introspection, isChild: false, path: const []);
 
   /// The column of a mapped collection's children table holding the id of
@@ -146,33 +147,28 @@ class RelationalMappingContext {
       'module) so it can be stored';
 
   PersistentEntity<T> _build<T extends Object>(
-    BeanIntrospection<T> introspection, {
+    EntityIntrospection<T> introspection, {
     required bool isChild,
     required List<Type> path,
   }) {
     final className = introspection.className;
-    final type = introspection.beanType;
+    final type = introspection.type;
     if (path.contains(type)) {
       throw MappingException(
         '$className: ${[...path, type].join(' -> ')} contains itself as '
         'a child; an aggregate is a tree',
       );
     }
-    final constructorParameters = {
-      for (final p
-          in introspection.constructor?.parameters ?? const <BeanParameter>[])
-        p.name,
-    };
     final properties = <PersistentProperty>[];
-    for (final bean in introspection.properties) {
-      if (bean.annotationsOf<Transient>().isNotEmpty) {
+    for (final (index, described) in introspection.properties.indexed) {
+      if (described.annotation<Transient>() != null) {
         continue;
       }
-      if (!bean.isWritable && !constructorParameters.contains(bean.name)) {
+      if (!described.writable && !described.parameter) {
         continue;
       }
       properties.add(
-        _property(introspection, bean, isChild, [...path, type]),
+        _property(introspection, index, isChild, [...path, type]),
       );
     }
     _checkEntity(className, properties, isChild: isChild);
@@ -195,7 +191,7 @@ class RelationalMappingContext {
   // The constraints of the [Unique] properties and of the class's
   // [UniqueConstraint]s, checked.
   List<PersistentUniqueConstraint> _uniqueConstraints(
-    BeanIntrospection<Object> introspection,
+    EntityIntrospection<Object> introspection,
     String className,
     String tableName,
     List<PersistentProperty> properties,
@@ -286,17 +282,15 @@ class RelationalMappingContext {
   }
 
   PersistentProperty _property(
-    BeanIntrospection<Object> owner,
-    BeanProperty<Object> bean,
+    EntityIntrospection<Object> owner,
+    int index,
     bool isChild,
     List<Type> path,
   ) {
-    final where = '${owner.className}.${bean.name}';
-    var type = bean.typeInfo ?? const DynamicType();
-    if (bean.nullable && !type.nullable) {
-      type = type.asNullable();
-    }
-    final annotations = bean.annotations;
+    final described = owner.properties[index];
+    final where = '${owner.className}.${described.name}';
+    final type = described.type;
+    final annotations = described.annotations;
     final isId = annotations.any((a) => a is Id);
     final isVersion = annotations.any((a) => a is Version);
     if (isVersion && type.type != int && type.type != DateTime) {
@@ -372,7 +366,7 @@ class RelationalMappingContext {
         isAggregateReference: plain == null,
       );
     } else if (mapped == null) {
-      _checkNotAnEntity(where, owner.className, bean.name, type);
+      _checkNotAnEntity(where, owner.className, described.name, type);
     }
     final onDelete = annotations.whereType<OnDelete>().firstOrNull;
     if (onDelete != null) {
@@ -390,7 +384,8 @@ class RelationalMappingContext {
         );
       }
     }
-    final (hasDefault, defaultValue) = _defaultOf(owner, bean);
+    final hasDefault = described.hasDefaultValue;
+    final defaultValue = described.defaultValue;
     if (onDelete?.action == OnDeleteAction.setDefault) {
       if (!hasDefault) {
         throw MappingException(
@@ -414,10 +409,11 @@ class RelationalMappingContext {
     }
     final column = annotations.whereType<Column>().firstOrNull;
     return PersistentProperty(
-      name: bean.name,
-      columnName: namingStrategy.columnName(bean.name, column),
+      name: described.name,
+      columnName: namingStrategy.columnName(described.name, column),
       type: type,
-      accessor: bean,
+      owner: owner,
+      index: index,
       isId: isId,
       isVersion: isVersion,
       audit: audit,
@@ -436,24 +432,6 @@ class RelationalMappingContext {
     );
   }
 
-  // The default value of [bean]: its field's constant initializer, else
-  // the constant default of the constructor parameter of the same name.
-  static (bool, Object?) _defaultOf(
-    BeanIntrospection<Object> owner,
-    BeanProperty<Object> bean,
-  ) {
-    if (bean.hasInitialValue) {
-      return (true, bean.initialValue);
-    }
-    for (final parameter
-        in owner.constructor?.parameters ?? const <BeanParameter>[]) {
-      if (parameter.name == bean.name && parameter.hasDefaultValue) {
-        return (true, parameter.defaultValue);
-      }
-    }
-    return (false, null);
-  }
-
   // A reference needs a described aggregate with an `@Id` of the type the
   // property holds.
   void _checkReference(
@@ -462,7 +440,7 @@ class RelationalMappingContext {
     TypeInfo<Object?> idType, {
     required bool isAggregateReference,
   }) {
-    final introspection = introspector.forType(target);
+    final introspection = _described[target];
     if (introspection == null ||
         !introspection.annotations.any((a) => a is Table)) {
       throw MappingException(
@@ -472,7 +450,7 @@ class RelationalMappingContext {
     }
     final ids = [
       for (final p in introspection.properties)
-        if (p.annotationsOf<Id>().isNotEmpty) p,
+        if (p.annotation<Id>() != null) p,
     ];
     if (ids.length != 1) {
       throw MappingException(
@@ -481,8 +459,8 @@ class RelationalMappingContext {
       );
     }
     final id = ids.single;
-    final actual = id.typeInfo?.type;
-    if (actual != null && idType.type != actual && idType is! DynamicType) {
+    final actual = id.type.type;
+    if (idType.type != actual && idType is! DynamicType) {
       throw MappingException(
         isAggregateReference
             ? '$where is an AggregateReference<${introspection.className}, '
@@ -503,7 +481,7 @@ class RelationalMappingContext {
     String propertyName,
     TypeInfo<Object?> type,
   ) {
-    final introspection = introspector.forType(type.type);
+    final introspection = _described[type.type];
     if (introspection == null ||
         !introspection.annotations.any((a) => a is Table)) {
       return;
@@ -511,9 +489,9 @@ class RelationalMappingContext {
     final name = introspection.className;
     final id = [
       for (final p in introspection.properties)
-        if (p.annotationsOf<Id>().isNotEmpty) p,
+        if (p.annotation<Id>() != null) p,
     ].firstOrNull;
-    final idType = id?.typeInfo?.type ?? 'int';
+    final idType = id?.type.type ?? 'int';
     throw MappingException(
       '$where is another aggregate: use AggregateReference<$name, $idType> '
       'or @Reference($name) $idType ${propertyName}Id (a field of an entity '
@@ -533,7 +511,7 @@ class RelationalMappingContext {
       MapType(:final value) => value,
       _ => type,
     };
-    final introspection = introspector.forType(element.type);
+    final introspection = _described[element.type];
     if (introspection == null) {
       throw MappingException(
         '$where: the children of type ${element.type} are not described; '
@@ -546,12 +524,12 @@ class RelationalMappingContext {
         'marked @Table',
       );
     }
-    final cached = _children[introspection.beanType];
-    if (cached != null && !path.contains(introspection.beanType)) {
+    final cached = _children[introspection.type];
+    if (cached != null && !path.contains(introspection.type)) {
       return cached;
     }
     final entity = _build<Object>(introspection, isChild: true, path: path);
-    _children[introspection.beanType] = entity;
+    _children[introspection.type] = entity;
     return entity;
   }
 }

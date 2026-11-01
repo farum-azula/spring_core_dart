@@ -1494,7 +1494,11 @@ In Spring: `@Validated` with `MethodValidationPostProcessor`.
 generator writes, so there is no reflection and no `fromJson` / `toJson`
 code to write. One `@Introspected()` on a model is enough: the classes of
 the same package that it uses (property and constructor types) are
-introspected automatically. In Spring this is Jackson's `ObjectMapper`.
+introspected automatically. The generator writes only what it sees used:
+a class that only a controller returns has getters, one that is only a
+request body has a constructor and setters; `@Introspected()` keeps
+everything, and a class used some other way fails with a message that says
+to add it. In Spring this is Jackson's `ObjectMapper`.
 
 ```dart
 enum Availability {

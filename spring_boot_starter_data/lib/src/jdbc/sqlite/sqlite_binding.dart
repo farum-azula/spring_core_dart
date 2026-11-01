@@ -29,6 +29,12 @@ enum SqliteOpenMode {
 /// `extendedCode`), never the package's own exception, and never a message
 /// holding the values of the statement.
 ///
+/// With the driver's `isolate` option the binding is sent to a worker
+/// isolate, which opens the database there and keeps it: the binding must
+/// hold no database, port or other native resource (the generated one holds
+/// nothing), and what its database returns (the lists of `select`, the
+/// columns and rows of a cursor) must be plain lists of plain values.
+///
 /// Spring (Java): the JDBC driver's `org.sqlite.JDBC` (xerial) seen through
 /// `java.sql.Driver`.
 abstract interface class SqliteBinding {

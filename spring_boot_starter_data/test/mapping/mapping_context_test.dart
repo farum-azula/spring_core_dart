@@ -72,16 +72,36 @@ void main() {
       expect(book.property('title')!.isNullable, isFalse);
     });
 
-    test('by type and by instance', () {
+    test('by type', () {
       expect(context.getPersistentEntity(Book)!.type, Book);
       expect(context.getPersistentEntity(String), isNull);
-      expect(context.entityOf(Book(title: 'x')).tableName, 'books');
+      expect(
+        context.getRequiredPersistentEntityOfType(Book).tableName,
+        'books',
+      );
     });
 
     test('values are read and written through the property', () {
       final b = Book(title: 'Dune');
       book.property('title')!.setValue(b, 'Emma');
       expect(book.property('title')!.getValue(b), 'Emma');
+    });
+
+    test('a property knows its place in the description', () {
+      final title = book.property('title')!;
+      expect(title.index, 1);
+      expect(book.introspection.properties[title.index].name, 'title');
+      expect(book.propertyAt(title.index), same(title));
+      // The @Transient note (index 12) is not stored.
+      expect(book.propertyAt(12), isNull);
+      expect(title.isWritable, isTrue);
+      expect(book.introspection.properties[title.index].parameter, isTrue);
+    });
+
+    test('by type: described classes, stored or not', () {
+      expect(context.introspectionOf(Book)!.className, 'Book');
+      expect(context.introspectionOf(String), isNull);
+      expect(context.introspections.map((i) => i.className), contains('Item'));
     });
   });
 
@@ -91,6 +111,23 @@ void main() {
       expect(reading.property('kind'), isNull);
       expect(reading.property('text'), isNotNull);
       expect(reading.tableName, 'reading');
+      expect(reading.property('text')!.isWritable, isFalse);
+      final text = reading.property('text')!;
+      expect(reading.introspection.properties[text.index].parameter, isTrue);
+    });
+
+    test('a settable property the constructor does not take is kept', () {
+      final gauge = context.getRequiredPersistentEntity<Gauge>();
+      expect(gauge.properties.map((p) => p.name), [
+        'id',
+        'name',
+        'level',
+        'label',
+      ]);
+      final level = gauge.property('level')!;
+      expect(gauge.introspection.properties[level.index].parameter, isFalse);
+      expect(gauge.property('level')!.hasDefaultValue, isTrue);
+      expect(gauge.property('level')!.defaultValue, 5);
     });
   });
 
@@ -145,16 +182,14 @@ void main() {
   });
 
   group('MappingException', () {
-    RelationalMappingContext with_(BeanIntrospection<Object> i) =>
+    RelationalMappingContext with_(EntityIntrospection<Object> i) =>
         RelationalMappingContext(
-          introspector: BeanIntrospector(
-            introspections: [
-              i,
-              versionedChildIntrospection(),
-              plainChildIntrospection(),
-              loopIntrospection(),
-            ],
-          ),
+          introspections: [
+            i,
+            versionedChildIntrospection(),
+            plainChildIntrospection(),
+            loopIntrospection(),
+          ],
         );
 
     Matcher failsWith(String text) => throwsA(
@@ -181,7 +216,6 @@ void main() {
         () => context.getRequiredPersistentEntityOfType(Unmapped),
         failsWith('Unmapped is not described'),
       );
-      expect(() => context.entityOf(Unmapped()), failsWith('Unmapped'));
     });
 
     test('more than one @Id', () {
@@ -211,18 +245,19 @@ void main() {
     });
 
     test('a DateTime @Version is accepted', () {
-      final i = BeanIntrospection<_Stamped>(
-        className: 'Stamped',
-        properties: [
-          prop<_Stamped>(
+      final i = EntityIntrospection<_Stamped>(
+        'Stamped',
+        const [
+          EntityProperty(
             'at',
-            DateTime,
-            const ClassType<DateTime>(nullable: true),
-            (o) => o.at,
-            set: (o, v) => o.at = v as DateTime?,
-            annotations: const [Version()],
+            ClassType<DateTime>(nullable: true),
+            annotations: [Version()],
+            writable: true,
           ),
         ],
+        get: (o, _) => o.at,
+        create: (v) => _Stamped(),
+        write: (o, i, v) => o.at = v as DateTime?,
       );
       expect(with_(i).getRequiredPersistentEntity<_Stamped>().hasVersion, true);
     });
@@ -280,18 +315,19 @@ void main() {
     });
 
     test('an @Id that is a mapped collection', () {
-      final i = BeanIntrospection<_Odd>(
-        className: 'Odd',
-        properties: [
-          prop<_Odd>(
+      final i = EntityIntrospection<_Odd>(
+        'Odd',
+        const [
+          EntityProperty(
             'items',
-            List<Item>,
-            const ListType<Item>(ClassType<Item>()),
-            (o) => o.items,
-            set: (o, v) => o.items = v! as List<Item>,
-            annotations: const [Id(), MappedCollection()],
+            ListType<Item>(ClassType<Item>()),
+            annotations: [Id(), MappedCollection()],
+            writable: true,
           ),
         ],
+        get: (o, _) => o.items,
+        create: (v) => _Odd(),
+        write: (o, i, v) => o.items = v! as List<Item>,
       );
       expect(
         () => with_(i).getRequiredPersistentEntity<_Odd>(),
@@ -300,19 +336,18 @@ void main() {
     });
 
     test('an AggregateReference without its arguments', () {
-      final i = BeanIntrospection<_Stamped>(
-        className: 'Stamped',
-        properties: [
-          prop<_Stamped>(
+      final i = EntityIntrospection<_Stamped>(
+        'Stamped',
+        const [
+          EntityProperty(
             'at',
-            AggregateReference<Author, int>,
-            const GenericType<AggregateReference<Author, int>>([
-              ClassType<Author>(),
-            ]),
-            (o) => o.at,
-            set: (o, v) => o.at = v as DateTime?,
+            GenericType<AggregateReference<Author, int>>([ClassType<Author>()]),
+            writable: true,
           ),
         ],
+        get: (o, _) => o.at,
+        create: (v) => _Stamped(),
+        write: (o, i, v) => o.at = v as DateTime?,
       );
       expect(
         () => with_(i).getRequiredPersistentEntity<_Stamped>(),

@@ -34,7 +34,7 @@ void main() {
   }) => Criteria(
     [
       OrPart([
-        Part([property], type, ignoreCase: ignoreCase),
+        Part(property, type, ignoreCase),
       ]),
     ],
     arguments,
@@ -479,11 +479,11 @@ void main() {
         final both = Criteria(
           [
             const OrPart([
-              Part(['title'], PartType.simpleProperty),
-              Part(['year'], PartType.greaterThan),
+              Part('title'),
+              Part('year', PartType.greaterThan),
             ]),
             const OrPart([
-              Part(['subtitle'], PartType.isNull),
+              Part('subtitle', PartType.isNull),
             ]),
           ],
           ['a', 1990],

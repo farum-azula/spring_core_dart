@@ -94,7 +94,16 @@ final class BeanPropertySqlParameterSource implements SqlParameterSource {
   bool hasValue(String name) => _property(name) != null;
 
   @override
-  Object? getValue(String name) => _property(name)!.getValue(bean);
+  Object? getValue(String name) {
+    final property = _property(name)!;
+    if (!property.isReadable) {
+      _introspection.requirePart(
+        IntrospectionPart.read,
+        "the parameter ':$name' reads the property of the object",
+      );
+    }
+    return property.getValue(bean);
+  }
 }
 
 /// A statement with `:name` parameters, parsed: its text and the names, in

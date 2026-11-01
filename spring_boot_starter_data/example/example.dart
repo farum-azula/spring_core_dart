@@ -194,7 +194,7 @@ class Ticket {
 // --- Repositories ----------------------------------------------------------
 
 /// The CRUD methods and the paging ones come from the interfaces; the
-/// others are derived from their names (and checked at startup).
+/// others are derived from their names (and checked by the build).
 abstract interface class BookRepository
     implements
         ListCrudRepository<Book, int>,
@@ -295,8 +295,8 @@ abstract interface class PurchaseOrderRepository
 // --- A SQL-only repository -------------------------------------------------
 
 /// What a join gives: the columns by name (`author_name` into
-/// `authorName`).
-@Introspected()
+/// `authorName`). The generator describes the class because a `@Query`
+/// returns it.
 class BookCard {
   const BookCard({
     required this.title,
@@ -314,13 +314,19 @@ class BookCard {
 
 /// A repository with a `@Query` join: SQL only, so it exists only when the
 /// application has a database (the in-memory store has no joins).
+///
+/// The build reads the query: a `:name` that is no parameter, a misspelled
+/// table or column (`b.titel`, `from bokks`) is an error of the build, not
+/// of the first call. `{Book}` and `{Book.author}` are the table and the
+/// column of the entity as its mapping names them, so a renamed property
+/// cannot leave the SQL behind.
 @ConditionalOnProperty('spring.datasource.url')
 abstract interface class BookReportRepository
     implements DataRepository<Book, int> {
   @Query(
-    'select b.title, a.name as author_name, b.year from books b '
-    'join authors a on a.id = b.author where b.year >= :year '
-    'order by b.year, b.title',
+    'select b.title, a.name as author_name, b.year from {Book} b '
+    'join {Author} a on a.{Author.id} = b.{Book.author} '
+    'where b.year >= :year order by b.year, b.title',
   )
   Future<List<BookCard>> cardsSince(int year);
 }

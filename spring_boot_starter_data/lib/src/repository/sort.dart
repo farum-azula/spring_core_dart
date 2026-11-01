@@ -8,11 +8,13 @@
 ///
 /// Spring (Java): `org.springframework.data.domain.Sort`.
 final class Sort {
-  const Sort._(this.orders);
+  /// Orders by [orders], in turn: the constant the build writes for a method
+  /// name's `OrderBy`. [Sort.byOrders] copies a list built at run time.
+  const Sort(this.orders);
 
   /// Orders by [orders], in turn.
   factory Sort.byOrders(List<SortOrder> orders) =>
-      orders.isEmpty ? unsorted : Sort._(List.unmodifiable(orders));
+      orders.isEmpty ? unsorted : Sort(List.unmodifiable(orders));
 
   /// Orders by each of [properties] ascending.
   factory Sort.by(List<String> properties) => Sort.byOrders([
@@ -20,7 +22,7 @@ final class Sort {
   ]);
 
   /// No ordering; the store decides the order (as in Spring: `Sort.unsorted`).
-  static const Sort unsorted = Sort._([]);
+  static const Sort unsorted = Sort([]);
 
   /// The orders applied in turn; empty when [isUnsorted].
   final List<SortOrder> orders;

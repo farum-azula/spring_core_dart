@@ -1509,6 +1509,16 @@ final class _ClassInfo {
   late final Map<String, Object?>? defaults = _defaults();
 
   Map<String, Object?>? _defaults() {
+    // The annotation asks for a new instance, so a description without the
+    // constructor is an error; the mapper-wide setting falls back to the
+    // defaults of the types.
+    if (classInclusion == JsonInclusion.nonDefault) {
+      introspection.requirePart(
+        IntrospectionPart.write,
+        'it is written with JsonInclusion.nonDefault, which compares each '
+        'value with the one of a new instance',
+      );
+    }
     try {
       final constructor = introspection.constructor;
       final Object instance;
@@ -1605,6 +1615,10 @@ final class _ClassInfo {
   // -------------------------------------------------------------------
 
   Object? write(Object bean, _Path path, Set<Object> seen) {
+    introspection.requirePart(
+      IntrospectionPart.read,
+      'it is written out as JSON',
+    );
     // `@JsonValue`: the whole object is written as that value.
     if (valueProperty case final property?) {
       return mapper._write(
@@ -1654,6 +1668,10 @@ final class _ClassInfo {
     String prefix = '',
     String suffix = '',
   }) {
+    introspection.requirePart(
+      IntrospectionPart.read,
+      'it is written out as JSON',
+    );
     final result = <String, Object?>{};
     for (final property in writeOrder) {
       final name = property.name;
@@ -1758,6 +1776,10 @@ final class _ClassInfo {
 
   // Without type ids: the class's own fromJson, or its properties.
   Object readPlain(Object json, _Path path, {bool nested = false}) {
+    introspection.requirePart(
+      IntrospectionPart.write,
+      'it is read in from JSON',
+    );
     if (introspection.hasFromJson) {
       try {
         return introspection.fromJson(json);

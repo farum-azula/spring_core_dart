@@ -50,9 +50,9 @@ void main() {
     final criteria = Criteria(
       [
         const OrPart([
-          Part(['title'], PartType.simpleProperty),
-          Part(['token'], PartType.simpleProperty),
-          Part(['year'], PartType.between),
+          Part('title'),
+          Part('token'),
+          Part('year', PartType.between),
         ]),
       ],
       ['Dune', 'abc', 1960, 1970],

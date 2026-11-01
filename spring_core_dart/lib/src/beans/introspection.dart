@@ -39,6 +39,11 @@ import 'package:spring_core_dart/src/beans/type_info.dart';
 /// by listing them: `@Introspected(classes: [ExternalDto])` on any class of
 /// the scanned package. Classes of the same package used by an introspected
 /// class (property and constructor types) are introspected automatically.
+///
+/// `@Introspected()` describes everything about a class. A class the build
+/// finds in use without it (a controller's return type, a request body, a
+/// client's answer) is described only for that use, see
+/// [IntrospectionPart]; the annotation is the way to ask for all of it.
 class Introspected {
   /// Introspects the annotated class and the [classes] listed.
   const Introspected({this.classes = const []});
@@ -48,12 +53,87 @@ class Introspected {
   final List<Type> classes;
 }
 
+/// A part of an introspected class that a [BeanIntrospection] may leave
+/// out.
+///
+/// The generator writes only what the application uses of a class, as the
+/// build can tell: a class that is only written out as JSON (a controller's
+/// return type) gets its getters, one that is only read in (a request body)
+/// its constructor and setters, and methods are described only where an
+/// expression may call them. Annotations and the property list are always
+/// there. Asking for a part that was left out throws an
+/// [IntrospectionPartError]; `@Introspected()` on the class describes all
+/// of them.
+///
+/// ```dart
+/// // A request body: created and filled, never read.
+/// introspection.describesPart(IntrospectionPart.write); // true
+/// introspection.describesPart(IntrospectionPart.read); // false
+/// ```
+///
+/// Spring (Java): no counterpart; reflection always sees everything.
+enum IntrospectionPart {
+  /// The getters: the values of the properties can be read from an object
+  /// (written as JSON, validated, read by an expression).
+  read('its getters'),
+
+  /// The constructor, `instantiate`, the setters and `fromJson`: objects
+  /// can be created and filled (read from JSON, bound from a request or
+  /// from configuration).
+  write('its constructor and setters'),
+
+  /// The methods an expression may call.
+  methods('its methods');
+
+  IntrospectionPart(this.description);
+
+  /// The part in words, as error messages name it (`its getters`).
+  final String description;
+}
+
+/// The error thrown when code needs a part of an introspected class that
+/// its description leaves out.
+///
+/// The message names the class and the part and says what to do: the
+/// build described only what it saw used, so the class is used somewhere it
+/// did not see (a value cast to `Object`, a class that only a plugin
+/// reads); `@Introspected()` on the class describes all of it.
+///
+/// ```dart
+/// // Book is only read in (a request body), then written out by hand:
+/// // Bad state: Book is described without its getters, but it is written
+/// // out as JSON. The build described only what it saw used, and did not
+/// // see that: add @Introspected() to Book.
+/// ```
+///
+/// Spring (Java): no counterpart; Java reflection always sees everything.
+final class IntrospectionPartError extends StateError {
+  /// [beanType] is described without [part]; [use] says what needs it, a
+  /// clause that follows "but" (`it is written out as JSON`).
+  IntrospectionPartError(this.beanType, this.part, String use)
+    : super(
+        '$beanType is described without ${part.description}, but $use. The '
+        'build described only what it saw used, and did not see that: add '
+        '@Introspected() to $beanType.',
+      );
+
+  /// The class whose description lacks [part].
+  final Type beanType;
+
+  /// The part that is needed.
+  final IntrospectionPart part;
+}
+
 /// The description of one property of an introspected class: its name,
 /// type, annotations, and closures that read and write it.
 ///
 /// The generator writes these for `@Introspected` classes; `BeanWrapper`,
 /// validation and SpEL use them to reach a field by name. You write one by
 /// hand only in a hand-written [BeanIntrospection].
+///
+/// Both closures are optional: the generator writes only the ones the
+/// application uses (see [IntrospectionPart]), so a property that is only
+/// read from JSON has a setter and no getter ([isReadable] is `false`).
 ///
 /// ```dart
 /// // A property of Address, written by hand.
@@ -76,11 +156,11 @@ class Introspected {
 /// ```
 final class BeanProperty<T extends Object> {
   /// Describes the property [name] of [T] with the declared [type]; omit
-  /// `set` for a read-only property.
+  /// `set` for a read-only property and `get` for a write-only one.
   BeanProperty(
     this.name, {
     required this.type,
-    required this._get,
+    this._get,
     this._set,
     this.nullable = false,
     this.typeInfo,
@@ -124,15 +204,31 @@ final class BeanProperty<T extends Object> {
   /// `int` initializer (`double rate = 1`) gives the `double`.
   final Object? initialValue;
 
-  final Object? Function(T bean) _get;
+  final Object? Function(T bean)? _get;
   final void Function(T bean, Object? value)? _set;
+
+  /// Whether the property can be read; `false` when the description has no
+  /// getter for it (the build saw nothing read the class).
+  bool get isReadable => _get != null;
 
   /// Whether the property can be written; `false` for a final field or a
   /// getter without a setter.
   bool get isWritable => _set != null;
 
-  /// The value of the property in [bean], which must be a [T].
-  Object? getValue(Object bean) => _get(bean as T);
+  /// The value of the property in [bean], which must be a [T]. Throws an
+  /// [IntrospectionPartError] when the property has no getter
+  /// ([isReadable]).
+  Object? getValue(Object bean) {
+    final getter = _get;
+    if (getter == null) {
+      throw IntrospectionPartError(
+        T,
+        IntrospectionPart.read,
+        "the value of property '$name' is read",
+      );
+    }
+    return getter(bean as T);
+  }
 
   /// Writes [value] into the property of [bean]. The value must already
   /// have the property's type (`BeanWrapper` converts first). Throws
@@ -143,6 +239,25 @@ final class BeanProperty<T extends Object> {
       throw StateError("Property '$name' of $T is read-only");
     }
     setter(bean as T, value);
+  }
+
+  // This property with what [earlier], the description of the same property
+  // registered before it, has and this one lacks: its getter or setter.
+  BeanProperty<T> _withEarlier(BeanProperty<T> earlier) {
+    if (_get != null && _set != null) {
+      return this;
+    }
+    return BeanProperty<T>(
+      name,
+      type: type,
+      get: _get ?? earlier._get,
+      set: _set ?? earlier._set,
+      nullable: nullable,
+      typeInfo: typeInfo ?? earlier.typeInfo,
+      hasInitialValue: hasInitialValue || earlier.hasInitialValue,
+      initialValue: hasInitialValue ? initialValue : earlier.initialValue,
+      annotations: annotations.isEmpty ? earlier.annotations : annotations,
+    );
   }
 
   /// The annotations of the property of type [A].
@@ -428,11 +543,18 @@ final class BeanConstructor<T extends Object> {
 final class BeanIntrospection<T extends Object> {
   /// The description of [T]. `instantiate` calls the no-argument
   /// constructor, if there is one; the other closures are written by the
-  /// generator.
+  /// generator. [parts] lists what the description holds (the generator
+  /// leaves out what the build saw nothing use); a hand-written one holds
+  /// everything.
   BeanIntrospection({
     List<BeanProperty<T>> properties = const [],
     List<BeanMethod<T>> methods = const [],
     List<Object> annotations = const [],
+    this.parts = const {
+      IntrospectionPart.read,
+      IntrospectionPart.write,
+      IntrospectionPart.methods,
+    },
     this._instantiate,
     this.constructor,
     this._fromJson,
@@ -451,6 +573,27 @@ final class BeanIntrospection<T extends Object> {
   final String? _className;
   final BeanIntrospection<Object> Function(List<TypeInfo<Object?>> arguments)?
   _specialize;
+
+  /// What this description holds of the class; the generator leaves out
+  /// the parts it saw nothing use (see [IntrospectionPart]).
+  ///
+  /// A part that is missing leaves its closures out: no getters without
+  /// [IntrospectionPart.read], no constructor, `instantiate`, setters or
+  /// `fromJson` without [IntrospectionPart.write], no methods without
+  /// [IntrospectionPart.methods] (but those that JSON annotations mark,
+  /// which `ObjectMapper` needs).
+  final Set<IntrospectionPart> parts;
+
+  /// Whether this description holds [part].
+  bool describesPart(IntrospectionPart part) => parts.contains(part);
+
+  /// Throws an [IntrospectionPartError] unless this description holds
+  /// [part]; [use] says what needs it (`it is written out as JSON`).
+  void requirePart(IntrospectionPart part, String use) {
+    if (!parts.contains(part)) {
+      throw IntrospectionPartError(T, part, use);
+    }
+  }
 
   /// The simple name of the class, without type arguments (written by the
   /// generator, so it survives minification; e.g. the default JSON type id).
@@ -523,13 +666,55 @@ final class BeanIntrospection<T extends Object> {
   bool get isInstantiable => _instantiate != null;
 
   /// Creates a new instance with the no-argument constructor; throws
-  /// `StateError` when [isInstantiable] is `false`.
+  /// `StateError` when [isInstantiable] is `false`, an
+  /// [IntrospectionPartError] when the description has no
+  /// [IntrospectionPart.write].
   T instantiate() {
     final factory = _instantiate;
     if (factory == null) {
+      requirePart(IntrospectionPart.write, 'an instance is created');
       throw StateError('$T has no no-argument constructor');
     }
     return factory();
+  }
+
+  // This description together with [earlier], another one of the same class
+  // that was registered before it: each holds what the build saw one module
+  // use of the class (a read-only DTO in one, a request body in another), and
+  // the class is used by both. Whatever this one has wins; what it leaves
+  // out is taken from [earlier]. The parts are the union.
+  BeanIntrospection<T> _withEarlier(BeanIntrospection<Object> earlier) {
+    final before = earlier as BeanIntrospection<T>;
+    final properties = <String, BeanProperty<T>>{
+      for (final MapEntry(:key, :value) in before._properties.entries)
+        key: _properties[key]?._withEarlier(value) ?? value,
+      for (final MapEntry(:key, :value) in _properties.entries)
+        if (!before._properties.containsKey(key)) key: value,
+    };
+    final specialize = _specialize;
+    final earlierSpecialize = before._specialize;
+    return BeanIntrospection<T>(
+      properties: properties.values.toList(),
+      methods: [...before._methods.values, ..._methods.values],
+      annotations: [
+        ...annotations,
+        for (final annotation in before.annotations)
+          if (!annotations.contains(annotation)) annotation,
+      ],
+      parts: {...before.parts, ...parts},
+      instantiate: _instantiate ?? before._instantiate,
+      constructor: constructor ?? before.constructor,
+      fromJson: _fromJson ?? before._fromJson,
+      toJson: _toJson ?? before._toJson,
+      className: _className ?? before._className,
+      specialize: specialize == null
+          ? earlierSpecialize
+          : earlierSpecialize == null
+          ? specialize
+          : (arguments) =>
+                specialize(arguments)
+                    ._withEarlier(earlierSpecialize(arguments)),
+    );
   }
 
   @override
@@ -581,14 +766,29 @@ class BeanIntrospector {
   /// Adds [introspection], replacing any for the same type. The enums its
   /// properties and constructor parameters use are registered too (see
   /// [registerEnum]).
+  ///
+  /// A description that holds less than the one it would replace (it lacks
+  /// a [IntrospectionPart] the other has) does not take it away: the two
+  /// are merged, so a class that two modules of one package describe for
+  /// their own uses (one writes it out, the other reads it in) can be used
+  /// for both, whichever module loads last. Where both have a getter, a
+  /// setter, a method or the constructor, the new one is kept; the parts
+  /// are the union.
   void register(BeanIntrospection<Object> introspection) {
-    _byType[introspection.beanType] = introspection;
+    final existing = _byType[introspection.beanType];
+    _byType[introspection.beanType] =
+        existing == null ||
+            identical(existing, introspection) ||
+            introspection.parts.containsAll(existing.parts)
+        ? introspection
+        : introspection._withEarlier(existing);
     _specialized.clear();
-    for (final property in introspection.properties) {
+    final registered = _byType[introspection.beanType]!;
+    for (final property in registered.properties) {
       _collectEnums(property.typeInfo);
     }
     for (final parameter
-        in introspection.constructor?.parameters ?? const <BeanParameter>[]) {
+        in registered.constructor?.parameters ?? const <BeanParameter>[]) {
       _collectEnums(parameter.type);
     }
   }

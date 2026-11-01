@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 
 /// The text of a `@Query` after its creation time processing: the SQL with
 /// `:name` markers only, and the SpEL expressions that `:#{...}` stood for.
@@ -26,25 +27,42 @@ final class QueryText {
 ///    environment, as Spring does for every annotation value; a property
 ///    with neither a value nor a default is a problem;
 /// 2. `#{#entityName}` becomes the quoted table of the entity;
-///    any other `#{...}` outside of a parameter is a problem (SQL text
-///    never comes from an expression: write `:#{...}` to bind a value);
-/// 3. `:#{expression}` becomes a named marker whose value is the
+/// 3. `{Book}` becomes the quoted table of the entity `Book` and
+///    `{Book.authorId}` the quoted column of its property, as the mapping
+///    names them (the naming strategy, `@Table` and `@Column` decide);
+/// 4. `:#{expression}` becomes a named marker whose value is the
 ///    expression's result at each call.
 ///
-/// The scan leaves quoted text (`'...'`, `"..."`, `` `...` ``) and comments
-/// as they are, and understands `::` (a cast).
+/// The scan leaves quoted text (`'...'`, `"..."`, `` `...` ``), comments
+/// and Postgres `$tag$...$tag$` literals as they are, and understands `::`
+/// (a cast) and `:{name}` (a parameter).
+///
+/// The build has already refused an expression that is not closed, a
+/// `#{...}` other than `#{#entityName}`, and an entity or property named
+/// that does not exist, but it cannot read a text with a `${property}`
+/// placeholder, whose result is known only here: the same problems are
+/// found at the start of the application for such a text (a `:#{` that is
+/// not closed, a `#{expression}` that is not `#{#entityName}`).
 ///
 /// Spring (Java): `StringBasedJdbcQuery` (with `SpelEvaluator` and the
 /// `@Value`-style placeholder resolution of the annotation).
 abstract final class QueryTextPreparer {
+  static final RegExp _entity = RegExp(
+    r'\{([A-Za-z_]\w*)(?:\.([A-Za-z_]\w*))?\}',
+  );
+  static final RegExp _dollarTag = RegExp(r'\$[A-Za-z_]*\$');
+
   /// Prepares [text]; every problem found is added to [problems] (with
-  /// [where] in front) and the text is then not usable.
+  /// [where] in front) and the text is then not usable. [entityName] gives
+  /// the quoted table of an entity (`property` is `null`) or the quoted
+  /// column of one of its properties.
   static QueryText prepare(
     String text, {
     required String quotedTable,
     required PropertyResolver? environment,
     required String where,
     required List<String> problems,
+    required String Function(String entity, String? property) entityName,
   }) {
     final resolved = _placeholders(text, environment, where, problems);
     final expressions = <String, String>{};
@@ -58,6 +76,13 @@ abstract final class QueryTextPreparer {
         final end = _endOfQuote(resolved, i);
         out.write(resolved.substring(i, end));
         i = end;
+      } else if (c == r'$' && _dollarTag.matchAsPrefix(resolved, i) != null) {
+        // A Postgres literal: its text is no marker, entity or expression.
+        final tag = _dollarTag.matchAsPrefix(resolved, i)![0]!;
+        final end = resolved.indexOf(tag, i + tag.length);
+        final stop = end < 0 ? n : end + tag.length;
+        out.write(resolved.substring(i, stop));
+        i = stop;
       } else if (c == '-' && next == '-') {
         final end = resolved.indexOf('\n', i);
         final stop = end < 0 ? n : end + 1;
@@ -71,6 +96,12 @@ abstract final class QueryTextPreparer {
       } else if (c == ':' && next == ':') {
         out.write('::');
         i += 2;
+      } else if (c == ':' && next == '{') {
+        // `:{name}`: a parameter, not an entity.
+        final end = resolved.indexOf('}', i + 2);
+        final stop = end < 0 ? n : end + 1;
+        out.write(resolved.substring(i, stop));
+        i = stop;
       } else if ((c == ':' && next == '#' && _at(resolved, i + 2, '{')) ||
           (c == '#' && next == '{')) {
         final isParameter = c == ':';
@@ -96,8 +127,18 @@ abstract final class QueryTextPreparer {
             '$where: #{$expression} is not allowed in the SQL text: only '
             '#{#entityName} is; to bind a value write :#{$expression}',
           );
+          out.write(resolved.substring(i, close + 1));
         }
         i = close + 1;
+      } else if (c == '{' && _entity.matchAsPrefix(resolved, i) != null) {
+        final match = _entity.matchAsPrefix(resolved, i)!;
+        try {
+          out.write(entityName(match[1]!, match[2]));
+        } on MappingException catch (error) {
+          problems.add('$where: ${error.message}');
+          out.write(match[0]);
+        }
+        i = match.end;
       } else {
         out.write(c);
         i++;

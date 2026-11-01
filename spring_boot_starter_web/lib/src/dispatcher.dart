@@ -23,7 +23,8 @@ const _log = SpringLog('spring.web.servlet.DispatcherServlet');
 /// a `HandlerInterceptor` fits better.
 ///
 /// An exception thrown by a filter skips the `@ExceptionHandler` methods
-/// and gets the default error answer.
+/// and the `HandlerExceptionResolver` beans, and gets the default error
+/// answer.
 ///
 /// ```dart
 /// // Every answer carries an id the logs can be searched by.
@@ -153,9 +154,9 @@ abstract class OncePerRequestFilter implements WebFilter {
 /// 4. asks each of the [handlerMappings] in turn for a handler and calls
 ///    the first one found (none: a 404);
 /// 5. turns an exception into an answer: first through the
-///    `@ExceptionHandler` methods of [requestMapping], else as a
-///    `ProblemDetail` written by [writer]. Exceptions from the filters go
-///    straight to [writer].
+///    `@ExceptionHandler` methods of [requestMapping], then through its
+///    `HandlerExceptionResolver` beans, else as a `ProblemDetail` written
+///    by [writer]. Exceptions from the filters go straight to [writer].
 ///
 /// The starter declares it as the `dispatcherHandler` bean, and both the
 /// server and `MockMvc` call it. Applications do not create one; they add
@@ -183,11 +184,13 @@ final class DispatcherHandler implements HttpHandler {
 
   /// The controllers' mapping. Its `@ExceptionHandler` methods also
   /// answer the errors of the other mappings and the 404 of a request no
-  /// mapping takes.
+  /// mapping takes; its `HandlerExceptionResolver` beans, the errors of
+  /// the other mappings.
   final RequestMappingHandlerMapping requestMapping;
 
   /// Writes the default error answer (a `ProblemDetail`) when no
-  /// `@ExceptionHandler` method handles an exception.
+  /// `@ExceptionHandler` method or `HandlerExceptionResolver` handles an
+  /// exception.
   final ResponseWriter writer;
 
   /// The prefix every request path must start with

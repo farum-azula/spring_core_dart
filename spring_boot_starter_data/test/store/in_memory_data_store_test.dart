@@ -12,7 +12,7 @@ Criteria where(
   bool ignoreCase = false,
 }) => Criteria([
   OrPart([
-    Part([property], type, ignoreCase: ignoreCase),
+    Part(property, type, ignoreCase),
   ]),
 ], arguments);
 
@@ -354,11 +354,11 @@ void main() {
         final criteria = Criteria(
           [
             const OrPart([
-              Part(['title'], PartType.simpleProperty),
-              Part(['year'], PartType.simpleProperty),
+              Part('title'),
+              Part('year'),
             ]),
             const OrPart([
-              Part(['year'], PartType.greaterThan),
+              Part('year', PartType.greaterThan),
             ]),
           ],
           ['a', 2, 2],
@@ -386,7 +386,7 @@ void main() {
         () => Criteria(
           const [
             OrPart([
-              Part(['year'], PartType.between),
+              Part('year', PartType.between),
             ]),
           ],
           [1],

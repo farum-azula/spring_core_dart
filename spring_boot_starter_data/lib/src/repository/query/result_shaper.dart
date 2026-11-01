@@ -1,11 +1,13 @@
 import 'package:spring_boot_starter_data/src/repository/page.dart';
 
-/// Creates the collections of a repository method's result with the real
-/// type argument: a `Future<List<Book>>` method must get a `List<Book>`,
+/// Creates the collections of a `@Query` method's result with the real type
+/// argument: a `Future<List<BookCard>>` method must get a `List<BookCard>`,
 /// not a `List<Object>`.
 ///
 /// Built through `TypeInfo.capture` from the element type of the method,
-/// which is the only way to name a type that is known at run time.
+/// which is the only way to name a type that is known at run time (the
+/// derived queries and the CRUD methods know theirs: `RepositoryOperations`
+/// is generic in the entity).
 ///
 /// Spring (Java): none; Java's erased generics need nothing of the sort.
 abstract interface class ResultShaper {
@@ -14,10 +16,6 @@ abstract interface class ResultShaper {
 
   /// A `Set<E>` of [items].
   Object set(Iterable<Object?> items);
-
-  /// A `Stream<E>` that, when listened to, runs [items] and emits what it
-  /// gives.
-  Object stream(Future<Object?> Function() items);
 
   /// [items] as a `Stream<E>`, lazily.
   Object streamOf(Stream<Object?> items);
@@ -45,15 +43,6 @@ final class TypedResultShaper<E> implements ResultShaper {
   Object set(Iterable<Object?> items) => <E>{
     for (final item in items) item as E,
   };
-
-  @override
-  Object stream(Future<Object?> Function() items) => _stream(items);
-
-  Stream<E> _stream(Future<Object?> Function() items) async* {
-    for (final item in (await items())! as Iterable<Object?>) {
-      yield item as E;
-    }
-  }
 
   @override
   Object streamOf(Stream<Object?> items) => items.map((item) => item as E);

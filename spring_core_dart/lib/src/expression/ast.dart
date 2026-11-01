@@ -1,10 +1,9 @@
-import 'dart:math' as math;
-
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 import 'package:spring_core_dart/src/expression/introspection_access.dart';
 import 'package:spring_core_dart/src/expression/java_format.dart';
 import 'package:spring_core_dart/src/expression/spel_numbers.dart';
+import 'package:spring_core_dart/src/expression/spel_operations.dart';
 import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 import 'package:spring_core_dart/src/expression/spel_patterns.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
@@ -228,24 +227,10 @@ final class ExpressionState {
   /// [value] as a `bool`, converting with the context's type converter
   /// (e.g. `'true'`); `null` and non-convertible values throw
   /// [SpelMessage.typeConversionError], like Spring.
-  bool asBool(Object? value, int position) {
-    if (value is bool) {
-      return value;
-    }
-    if (value != null && context.typeConverter.canConvert(value, bool)) {
-      final converted = located(
-        position,
-        () => context.typeConverter.convertValue(value, bool),
-      );
-      if (converted is bool) {
-        return converted;
-      }
-    }
-    throw error(SpelMessage.typeConversionError, position, [
-      typeName(value),
-      'bool',
-    ]);
-  }
+  bool asBool(Object? value, int position) => located(
+    position,
+    () => SpelOperations.toBool(value, context.typeConverter),
+  );
 
   /// The type name of [value] for messages (`null` for `null`).
   static String typeName(Object? value) =>
@@ -2359,13 +2344,10 @@ final class BinaryOperator extends SpelNode {
         return !equalityCheck(context, l, r);
       case BinaryKind.lt || BinaryKind.le || BinaryKind.gt || BinaryKind.ge:
         final comparator = context.typeComparator;
-        if (!comparator.canCompare(l, r)) {
-          throw state.error(SpelMessage.notComparable, start, [
-            ExpressionState.typeName(l),
-            ExpressionState.typeName(r),
-          ]);
-        }
-        final result = state.located(start, () => comparator.compare(l, r));
+        final result = state.located(
+          start,
+          () => SpelOperations.compare(l, r, comparator),
+        );
         return switch (kind) {
           BinaryKind.lt => result < 0,
           BinaryKind.le => result <= 0,
@@ -2457,59 +2439,41 @@ final class BinaryOperator extends SpelNode {
       _ => Operation.power,
     };
     if (l is num && r is num) {
-      final ints = l is int && !leftReal && r is int && !rightReal;
-      _real = !ints;
-      switch (operation) {
-        case Operation.add:
-          return l + r;
-        case Operation.subtract:
-          return l - r;
-        case Operation.multiply:
-          return l * r;
-        case Operation.divide:
-          // Java-like integer division: two ints truncate toward zero (and
-          // throw on zero, like Java's ArithmeticException); any double
-          // gives a double (1 / 0.0 = Infinity).
-          if (ints) {
-            return l ~/ _nonZero(r);
-          }
-          return l.toDouble() / r.toDouble();
-        case Operation.modulus:
-          // remainder (not Dart's %) keeps the sign of the dividend, like
-          // Java: -7 % 3 == -1.
-          return ints
-              ? l.remainder(_nonZero(r))
-              : l.toDouble().remainder(r.toDouble());
-        case Operation.power:
-          // Spring 7's OpPower: a double when an operand is real;
-          // otherwise Math.pow cast to long when above Integer.MAX_VALUE
-          // or an operand is a long (here: outside the int range), else
-          // cast to int, which saturates at Integer.MIN_VALUE.
-          final result = math.pow(l.toDouble(), r.toDouble()).toDouble();
-          if (!ints) {
-            return result;
-          }
-          return result > _maxInt || _isLong(l) || _isLong(r)
-              ? toJavaLong(result)
-              : _toJavaInt(result);
-      }
+      _real = !(l is int && !leftReal && r is int && !rightReal);
+      return SpelOperations.numeric(
+        operation,
+        l,
+        r,
+        leftReal: leftReal,
+        rightReal: rightReal,
+      );
     }
     switch (operation) {
       case Operation.add when l is String || r is String:
+        final converter = state.context.typeConverter;
         final text = l is String && r is String
             ? (l, r)
             : l is String
-            ? (l, _string(state, r, real: rightReal))
-            : (_string(state, l, real: leftReal), r! as String);
-        final length = text.$1.length + text.$2.length;
-        if (length > SpelLimits.maxConcatenatedStringLength) {
-          throw state.error(
-            SpelMessage.maxConcatenatedStringLengthExceeded,
-            start,
-            [SpelLimits.maxConcatenatedStringLength],
-          );
-        }
-        return '${text.$1}${text.$2}';
+            ? (
+                l,
+                SpelOperations.text(
+                  r,
+                  real: rightReal,
+                  typeConverter: converter,
+                ),
+              )
+            : (
+                SpelOperations.text(
+                  l,
+                  real: leftReal,
+                  typeConverter: converter,
+                ),
+                r! as String,
+              );
+        return state.located(
+          start,
+          () => SpelOperations.join(text.$1, text.$2),
+        );
       case Operation.subtract when l is String && l.length == 1 && r is int:
         // Java char arithmetic: 'd' - 3 is 'a'.
         return String.fromCharCode((l.codeUnitAt(0) - r) & 0xFFFF);
@@ -2524,26 +2488,6 @@ final class BinaryOperator extends SpelNode {
         return state.operate(operation, l, r, start);
     }
   }
-
-  static const _maxInt = 2147483647;
-  static const _minInt = -2147483648;
-
-  static bool _isLong(int value) => value > _maxInt || value < _minInt;
-
-  // Java's `(int)` cast of a double: NaN is 0, out-of-range values
-  // saturate.
-  static int _toJavaInt(double value) => value.isNaN
-      ? 0
-      : value >= _maxInt
-      ? _maxInt
-      : value <= _minInt
-      ? _minInt
-      : value.truncate();
-
-  // Java's ArithmeticException for an integer division by zero, the same
-  // on the VM and the web (where `~/ 0` fails differently).
-  static int _nonZero(int divisor) =>
-      divisor == 0 ? throw UnsupportedError('/ by zero') : divisor;
 
   // Repetition with Spring's limits, checked before the string is built
   // (`'x' * 2^62` must not overflow into a huge allocation).
@@ -2562,112 +2506,19 @@ final class BinaryOperator extends SpelNode {
     return text * count;
   }
 
-  // The other operand of a string concatenation, through the context's
-  // TypeConverter like Spring (a list becomes `1,2`); null is 'null'.
-  static String _string(
-    ExpressionState state,
-    Object? value, {
-    bool real = false,
-  }) {
-    if (value == null) {
-      return 'null';
-    }
-    // A real number that is an `int` at run time (the web): Java's `7.0`.
-    if (real && value is int) {
-      return javaRealString(value);
-    }
-    final converter = state.context.typeConverter;
-    if (converter.canConvert(value, String)) {
-      final converted = converter.convertValue(value, String);
-      if (converted is String) {
-        return converted;
-      }
-    }
-    return '$value';
-  }
-
-  /// The `==` of SpEL, also used by `!=`: numbers are equal by value
-  /// (`1 == 1.0`), collections deeply (lists in order, sets and maps by
-  /// content, with numbers inside compared like Java's `equals`, so
-  /// `{2.0} == {2}` is `false`), other values by `==` or, for comparable
-  /// values of the same type, `compareTo == 0`, like Spring.
-  static bool equalityCheck(EvaluationContext context, Object? l, Object? r) {
-    // Numbers compare by value like Spring's OpEQ (`1 == 1.0`), with
-    // Java's double semantics: NaN equals nothing, `0.0 == -0.0`.
-    if (l is num && r is num) {
-      return l == r;
-    }
-    if (_deepEquals(l, r)) {
-      return true;
-    }
-    if (l is Comparable &&
-        r is Comparable &&
-        l.runtimeType == r.runtimeType &&
-        context.typeComparator.canCompare(l, r)) {
-      return context.typeComparator.compare(l, r) == 0;
-    }
-    return false;
-  }
-
-  // Java's equals for collections: List.equals is ordered and
-  // element-wise, Set.equals and Map.equals compare contents.
-  static bool _deepEquals(Object? l, Object? r) {
-    if (identical(l, r)) {
-      return true;
-    }
-    if (l is List && r is List) {
-      if (l.length != r.length) {
-        return false;
-      }
-      for (var i = 0; i < l.length; i++) {
-        if (!_elementEquals(l, i, l[i], r, i, r[i])) {
-          return false;
-        }
-      }
-      return true;
-    }
-    if (l is Set && r is Set) {
-      return l.length == r.length &&
-          l.every((a) => r.any((b) => _elementEquals(l, null, a, r, null, b)));
-    }
-    if (l is Map && r is Map) {
-      if (l.length != r.length) {
-        return false;
-      }
-      for (final MapEntry(:key, :value) in l.entries) {
-        if (!r.containsKey(key) ||
-            !_elementEquals(l, key, value, r, key, r[key])) {
-          return false;
-        }
-      }
-      return true;
-    }
-    return l == r;
-  }
-
-  // Java's equals of two elements: numbers are equal only when of the same
-  // kind (`{2.0} == {2}` is false: Double.equals(Integer) is false), reals
-  // like Double.equals (NaN equals NaN, 0.0 does not equal -0.0). On the
-  // web an integral real is an `int`; the marks of collections SpEL built
-  // tell them apart.
-  static bool _elementEquals(
-    Object lc,
-    Object? lk,
-    Object? l,
-    Object rc,
-    Object? rk,
-    Object? r,
-  ) {
-    if (l is num && r is num) {
-      final lReal = l is double && (l is! int || _isRealElement(lc, lk, l));
-      final rReal = r is double && (r is! int || _isRealElement(rc, rk, r));
-      if (lReal != rReal) {
-        return false;
-      }
-      return lReal ? l.compareTo(r.toDouble()) == 0 : l == r;
-    }
-    return _deepEquals(l, r);
-  }
+  /// The `==` of SpEL, also used by `!=` (see `SpelOperations.equals`):
+  /// numbers are equal by value (`1 == 1.0`), collections deeply, other
+  /// values by `==` or, for comparable values of the same type,
+  /// `compareTo == 0`, like Spring. Numbers inside collections SpEL built
+  /// are told apart by the marks of real elements, so `{2.0} == {2}` is
+  /// `false` also on the web.
+  static bool equalityCheck(EvaluationContext context, Object? l, Object? r) =>
+      SpelOperations.equals(
+        l,
+        r,
+        comparator: context.typeComparator,
+        isRealElement: _isRealElement,
+      );
 
   @override
   String toString() => '($left ${_symbols[kind]} $right)';

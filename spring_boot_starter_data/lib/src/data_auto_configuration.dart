@@ -4,6 +4,7 @@ import 'package:spring_boot_starter_data/src/data_source_auto_configuration.dart
 import 'package:spring_boot_starter_data/src/jdbc/sql_logging.dart';
 import 'package:spring_boot_starter_data/src/mapping/auditing.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
+import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/naming_strategy.dart';
 import 'package:spring_boot_starter_data/src/repository/repository_factory.dart';
@@ -125,9 +126,9 @@ Duration memoryLockTimeout(Environment environment) {
 /// generator (every non-generic interface extending `DataRepository`); these
 /// are what they need:
 ///
-/// - `relationalMappingContext` — the entities (`@Table` classes) known to
-///   the application's `BeanIntrospector`, named by the application's
-///   [NamingStrategy] bean when it has one;
+/// - `relationalMappingContext` — the entities (`@Table` classes) the
+///   modules describe (their `EntityIntrospections` beans), named by the
+///   application's [NamingStrategy] bean when it has one;
 /// - `entityConverter` — turns entities into rows and back;
 /// - `inMemoryDataStore` — the store behind repositories that name none
 ///   (`@UseStore('memory')`), waiting at most
@@ -147,10 +148,10 @@ Duration memoryLockTimeout(Environment environment) {
 ///   `@CreatedBy` and `@LastModifiedBy` on save, with the application's
 ///   [AuditorAware] and [DateTimeProvider] beans (see
 ///   [auditingHandlerFromAnnotation]);
-/// - `repositoryFactory` — builds the handler of each repository with the
+/// - `repositoryFactory` — builds the operations of each repository with the
 ///   mapping context, the converter, every [DataStore] bean and the
 ///   auditing handler, and fails the startup with the reasons when a
-///   repository is wrong;
+///   repository is wrong (its store, its entity, a `@Query`);
 /// - `transactionInterceptor`, `transactionValidator` and
 ///   `transactionAdvisor` — `@Transactional` on bean methods: the
 ///   interceptor runs them in transactions, the validator fails the
@@ -181,7 +182,12 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) => RelationalMappingContext(
-      introspector: r.dependency<BeanIntrospector>(),
+      introspections: [
+        for (final module
+            in r.optionalDependencyList<EntityIntrospections>() ??
+                const <EntityIntrospections>[])
+          ...module.introspections,
+      ],
       namingStrategy:
           r.optionalDependency<NamingStrategy>() ?? const NamingStrategy(),
     ),
@@ -269,7 +275,6 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<RepositoryFactory>(
     name: 'repositoryFactory',
     factoryMethodName: 'repositoryFactory',
-    types: const [RepositoryFactory, InvocationHandlerFactory],
     source: _source,
     conditions: const [
       ConditionGroup('$_source.repositoryFactory', [

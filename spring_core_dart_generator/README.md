@@ -84,8 +84,33 @@ Into that file it writes:
   declared dependencies, the `create` and `inject` closures, lifecycle
   callbacks, event listeners and factory bean product types;
 - `@PropertySource` declarations, `@Configurable` configurers and
-  `@Introspected` metadata (properties, methods, annotations), which the
-  `ObjectMapper`, validation and SpEL read;
+  introspection metadata (properties, methods, annotations), which the
+  `ObjectMapper`, validation and SpEL read, for each class as far as the
+  build saw it used ([below](#generate-only-what-runs));
+- for `spring_boot_starter_data`, one `EntityIntrospection` for each
+  `@Table` class and each class a `@Query` method returns (a DTO), held by
+  one `EntityIntrospections` bean per module: the properties, and closures
+  that read them, call the constructor and set one, and no more. A
+  `@Table` class has no `BeanIntrospection` unless it is also
+  `@Introspected`. A class the data layer could not create or fill (a
+  required constructor parameter that names no field, a `final` field
+  nothing sets) fails the build;
+- for `spring_boot_starter_data`, a class for each repository (an
+  interface extending `DataRepository`): it extends the starter's
+  `SimpleRepository`, which has the CRUD methods, and adds one line for
+  each method of the interface, so nothing is parsed or described when the
+  application starts. A derived query (`findByTitleAndYear`) is read by the
+  build into a constant `PartTree` and checked against the entity, the
+  parameters and the return type; a wrong name, an unknown property or a
+  parameter that does not fit fails the build, with every other problem of
+  the interface (`BookRepository.findByTitel: ... did you mean 'title'?`).
+  A `@Query` method is checked as well (the method against its annotation,
+  the text's parameters and `{Entity.property}` placeholders, and tables and
+  columns misspelled against the entities and the migrations of
+  `lib/resources/`) and written as a small `QueryMethod`; its `:#{...}`
+  SpEL values are compiled to Dart when the build can (`#book.titel` is a
+  build error, `#book.title` is `(arguments[0] as Book).title`), else left
+  to the interpreter;
 - `@Aspect` advice metadata and the AOP proxy classes;
 - generated subclasses of full-mode `@Configuration` classes and of beans
   with `@Lookup` methods;
@@ -99,10 +124,16 @@ Into that file it writes:
 
 **`spring_test`** (the test builder) writes
 `test/spring/<name>.test.spring.dart` for every `test/<name>_test.dart`
-that declares `@SpringBootTest` classes. The file has a
+that declares `@SpringBootTest` or `@DataTest` classes. The file has a
 `runSpringTests()` function that registers the tests of those classes
-with `package:test`; the test's `main` calls it. See
-[`spring_boot_starter_test`](https://pub.dev/packages/spring_boot_starter_test).
+with `package:test`; the test's `main` calls it. A `@DataTest` class (of
+`spring_boot_starter_data`) starts a slice of the application, the data
+beans on an in-memory database, and runs each test in a transaction that is
+rolled back: the generated file calls the data starter's
+`package:spring_boot_starter_data/testing.dart` for it, so the starters stay
+independent. See
+[`spring_boot_starter_test`](https://pub.dev/packages/spring_boot_starter_test)
+and the [testing guide](../docs/testing.md#19-data-tests-datatest).
 
 **`spring_flutter_web`** writes `web_dev_config.yaml`, the file
 `flutter run` reads on the web (Flutter 3.38 and later), from the
@@ -144,6 +175,48 @@ BeanModule get $appBeans => BeanModule(r'appBeans', [
 
 Plain constructor calls and closures: fast, available in AOT, Flutter and
 on the web, and unaffected by minification.
+
+### Generate only what runs
+
+The build knows what reflection would know, so a class is described only
+for what the application does with it. Each use asks for some of the
+parts below; a class reached by several uses gets the union, and what it
+is made of (property types, constructor parameter types, `Page<Dto>`'s
+argument, the subtypes of `@JsonSubTypes`) takes the same. The
+annotations and the list of properties are always written.
+
+| Part | What | Written when |
+|---|---|---|
+| getters | `BeanProperty.get` | the class is written out: a controller's return type (also in `Future`, `Stream`, `ResponseEntity`, `Page`), an `@ExceptionHandler`'s answer, a WebSocket reply, a client's argument, the static type of a value given to `ObjectMapper.writeValueAsString`, `valueToTree` or `convertValue`, or to a WebSocket session's `sendJson` and the registry's `broadcast`; `@ConfigurationProperties` |
+| constructor and setters | `BeanConstructor`, `instantiate`, `set`, `fromJson` | the class is read in: `@RequestBody` and `@RequestPart`, a controller's return type and an `@ExceptionHandler`'s answer (a test reads the answer back with `mapper.readValue<BookDto>(res.body)`, and `test/` is not scanned), a WebSocket message, a client's answer (Feign, `@WebSocketClient`), the type argument of `ObjectMapper.readValue<T>`, `treeToValue`, `readList`, `readMap` or `convertValue<T>`; `@ConfigurationProperties` |
+| the getters of constrained properties | `get` of the properties with a constraint, `@Valid()` or `@Each()` | the class is validated: `@RequestBody @Valid()` |
+| methods | `BeanMethod` | a SpEL expression may call them: `@PreAuthorize`, `@PostAuthorize`, `@PreFilter`, `@PostFilter` and `@Cacheable`, `@CachePut`, `@CacheEvict` (keys and conditions) over the arguments or the result they name, a `@Query` with a `:#{...}` the build does not compile; also the methods a JSON annotation marks (`@JsonValue`, `@JsonAnyGetter` with the getters, `@JsonAnySetter` with the setters) |
+
+The calls of the mapper count where the build sees their static types and
+the class is in the package of the call (a library that names none of
+those methods is not even resolved; `sendJson` and `broadcast` count only
+in a library that imports the WebSocket starter); a value of type `Object` or
+`dynamic` names no class.
+
+`@Introspected()` keeps everything, and so does a class listed in
+`@Introspected(classes: [...])` (and what they are made of): you asked for
+it. A `@JsonView` class is only known. A class with
+`@JsonInclude(JsonInclusion.nonDefault)` that is written out is also
+described for creation, since the mapper compares each value with the one
+of a new instance. A method of a custom `@BeanMethodAnnotation()` keeps
+everything of its types; `@Scheduled`, `@Secured`, and a WebSocket
+`@OnOpen`, `@OnClose` or `@OnError` describe nothing.
+
+The description says what it holds (`BeanIntrospection.parts`). What the
+build did not see used is left out, and code that needs it anyway, such as
+a value cast to `Object` that is written as JSON, fails with a message that
+names the class, the missing part and the fix, never with an empty object:
+
+```text
+Bad state: Book is described without its getters, but it is written out as
+JSON. The build described only what it saw used, and did not see that: add
+@Introspected() to Book.
+```
 
 ### New Dart syntax
 
@@ -491,7 +564,7 @@ lib/
     flutter_scanning.dart       spring_boot_starter_flutter
     asset_check.dart            @Value('asset:...') against pubspec.yaml
     dart_define_keys.dart       --dart-define keys
-    test_builder.dart           @SpringBootTest → test/spring/*.test.spring.dart
+    test_builder.dart           @SpringBootTest, @DataTest → test/spring/*.test.spring.dart
     web_dev_config_builder.dart spring.flutter.web.* → web_dev_config.yaml
 build.yaml
 test/                           generated output and every rejected declaration

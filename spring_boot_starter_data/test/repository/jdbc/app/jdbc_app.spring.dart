@@ -7,18326 +7,5549 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i5;
+import 'dart:async' as _i4;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i10;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i12;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i8;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i4;
-import 'package:spring_boot_starter_data/src/repository/page.dart' as _i6;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i7;
-import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i3;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i1;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i6;
+import 'package:spring_boot_starter_data/src/repository/page.dart' as _i7;
+import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i8;
+import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i13;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 import 'package:sqlite3/sqlite3.dart' as _i9;
 
-import 'jdbc_app.dart' as _i1;
+import 'jdbc_app.dart' as _i2;
 
-/// Implements `BookQueries` through an `InvocationHandler`.
-class _$BookQueriesImpl implements _i1.BookQueries {
-  _$BookQueriesImpl(this._handler, this._metadata);
+/// Implements `BookQueries`: `SimpleRepository` has the CRUD methods.
+class _$BookQueriesImpl extends _i1.SimpleRepository<_i2.Book, int>
+    implements _i2.BookQueries {
+  _$BookQueriesImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _findByTitle = _i1.PartTree(r'findByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
 
-  final _i2.InterfaceMetadata<_i1.BookQueries> _metadata;
+  static const _findByTitleIgnoreCase = _i1.PartTree(r'findByTitleIgnoreCase', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.simpleProperty, true)]),
+  ]);
 
-  static _$BookQueriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.BookQueries>(
-      typeName: r'BookQueries',
-      methods: [
-        _i2.ProxyMethod(
-          r'findByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findOneByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'getByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleAndYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleOrYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'from',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'to',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearGreaterThanEqual',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThanEqual',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'years',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearNotIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'years',
-              type: const _i2.SetType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleInIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitles',
-              type: const _i2.ListType<String?>(
-                _i2.ClassType<String>(nullable: true),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleNotIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitles',
-              type: const _i2.ListType<String?>(
-                _i2.ClassType<String>(nullable: true),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleEndingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'suffix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleLikeIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleContainingIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleStartingWithIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleEndingWithIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'suffix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIsNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIsNotNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'from',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'to',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockTrue',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockFalse',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthor',
-          parameters: [
-            _i2.BeanParameter(
-              r'author',
-              type:
-                  const _i2.GenericType<
-                    _i4.AggregateReference<_i1.Author, int>
-                  >([_i2.ClassType<_i1.Author>(), _i2.ClassType<int>()]),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthorIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'authors',
-              type: const _i2.ListType<_i4.AggregateReference<_i1.Author, int>>(
-                _i2.GenericType<_i4.AggregateReference<_i1.Author, int>>([
-                  _i2.ClassType<_i1.Author>(),
-                  _i2.ClassType<int>(),
-                ]),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthorIsNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByGenre',
-          parameters: [
-            _i2.BeanParameter(
-              r'genre',
-              type: const _i2.EnumType<_i1.Genre>(_i1.Genre.values),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByGenreIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'genres',
-              type: const _i2.ListType<_i1.Genre>(
-                _i2.EnumType<_i1.Genre>(_i1.Genre.values),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByRatingBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'low',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'high',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByRatingGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'rating',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByReleasedAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'moment',
-              type: const _i2.ClassType<DateTime>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByReleased',
-          parameters: [
-            _i2.BeanParameter(
-              r'moment',
-              type: const _i2.ClassType<DateTime>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderByYearDescTitleAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderBySubtitleAscIdAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderBySubtitleDescIdAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.SetType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThanOrderByYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findDistinctByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'streamByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i5.Stream<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-        ),
-        _i2.ProxyMethod(
-          r'findByYearAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockIsTrue',
-          parameters: [
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Slice<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockEquals',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findFirstByOrderByYearAsc',
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findTop2ByOrderByYearDesc',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findTop3ByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'countByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'countByTitleContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByYearLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'removeByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByTitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllSorted',
-          parameters: [
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllPaged',
-          parameters: [
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'ListPagingAndSortingRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'PagingAndSortingRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$BookQueriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+  static const _findOneByTitle = _i1.PartTree(r'findOneByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitle(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[0], [title]),
-      );
+  static const _getByTitle = _i1.PartTree(r'getByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleIgnoreCase(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[1], [title]),
-      );
+  static const _findByTitleAndYear = _i1.PartTree(r'findByTitleAndYear', [
+    _i1.OrPart([_i1.Part(r'title'), _i1.Part(r'year')]),
+  ]);
 
-  @override
-  _i5.Future<_i1.Book?> findOneByTitle(String title) =>
-      _i2.retypeFuture<_i1.Book?>(
-        this._handler.invoke(this._metadata.methods[2], [title]),
-      );
+  static const _findByTitleOrYear = _i1.PartTree(r'findByTitleOrYear', [
+    _i1.OrPart([_i1.Part(r'title')]),
+    _i1.OrPart([_i1.Part(r'year')]),
+  ]);
 
-  @override
-  _i5.Future<_i1.Book> getByTitle(String title) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[3], [title]),
+  static const _findByYearNot = _i1.PartTree(r'findByYearNot', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findByTitleNot = _i1.PartTree(r'findByTitleNot', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findByTitleNotIgnoreCase = _i1.PartTree(
+    r'findByTitleNotIgnoreCase',
+    [
+      _i1.OrPart([
+        _i1.Part(r'title', _i1.PartType.negatingSimpleProperty, true),
+      ]),
+    ],
   );
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleAndYear(String title, int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[4], [title, year]),
-      );
+  static const _findByYearBetween = _i1.PartTree(r'findByYearBetween', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.between)]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleOrYear(String title, int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[5], [title, year]),
-      );
+  static const _findByYearGreaterThan = _i1.PartTree(r'findByYearGreaterThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThan)]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByYearNot(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[6], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNot(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[7], [title]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNotIgnoreCase(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[8], [title]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearBetween(int from, int to) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[9], [from, to]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearGreaterThan(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[10], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearGreaterThanEqual(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[11], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearLessThan(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[12], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearLessThanEqual(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[13], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearIn(List<int> years) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[14], [years]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearNotIn(Set<int> years) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[15], [years]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleIn(List<String> titles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[16], [titles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleInIgnoreCase(List<String> titles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[17], [titles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIn(List<String?> subtitles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[18], [subtitles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[19], [subtitles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleStartingWith(String prefix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[20], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleEndingWith(String suffix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[21], [suffix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleContaining(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[22], [part]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNotContaining(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[23], [part]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleLike(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[24], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNotLike(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[25], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleLikeIgnoreCase(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[26], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleContainingIgnoreCase(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[27], [part]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[28], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[29], [suffix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIsNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[30], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIsNotNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[31], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitle(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[32], [subtitle]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleNot(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[33], [subtitle]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleLessThan(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[34], [subtitle]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleBetween(String? from, String? to) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[35], [from, to]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleLike(String? pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[36], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByInStockTrue() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[37], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByInStockFalse() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[38], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByInStock(bool inStock, _i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[39], [inStock, sort]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByAuthor(
-    _i4.AggregateReference<_i1.Author, int> author,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[40], [author]),
+  static const _findByYearGreaterThanEqual = _i1.PartTree(
+    r'findByYearGreaterThanEqual',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThanEqual)]),
+    ],
   );
 
-  @override
-  _i5.Future<List<_i1.Book>> findByAuthorIn(
-    List<_i4.AggregateReference<_i1.Author, int>> authors,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[41], [authors]),
+  static const _findByYearLessThan = _i1.PartTree(r'findByYearLessThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+  ]);
+
+  static const _findByYearLessThanEqual = _i1.PartTree(
+    r'findByYearLessThanEqual',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThanEqual)]),
+    ],
   );
 
-  @override
-  _i5.Future<List<_i1.Book>> findByAuthorIsNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[42], const []),
+  static const _findByYearIn = _i1.PartTree(r'findByYearIn', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByYearNotIn = _i1.PartTree(r'findByYearNotIn', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.notIn)]),
+  ]);
+
+  static const _findByTitleIn = _i1.PartTree(r'findByTitleIn', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByTitleInIgnoreCase = _i1.PartTree(
+    r'findByTitleInIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_, true)]),
+    ],
+  );
+
+  static const _findBySubtitleIn = _i1.PartTree(r'findBySubtitleIn', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.in_)]),
+  ]);
+
+  static const _findBySubtitleNotIn = _i1.PartTree(r'findBySubtitleNotIn', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.notIn)]),
+  ]);
+
+  static const _findByTitleStartingWith = _i1.PartTree(
+    r'findByTitleStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.startingWith)]),
+    ],
+  );
+
+  static const _findByTitleEndingWith = _i1.PartTree(r'findByTitleEndingWith', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.endingWith)]),
+  ]);
+
+  static const _findByTitleContaining = _i1.PartTree(r'findByTitleContaining', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing)]),
+  ]);
+
+  static const _findByTitleNotContaining = _i1.PartTree(
+    r'findByTitleNotContaining',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.notContaining)]),
+    ],
+  );
+
+  static const _findByTitleLike = _i1.PartTree(r'findByTitleLike', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.like)]),
+  ]);
+
+  static const _findByTitleNotLike = _i1.PartTree(r'findByTitleNotLike', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.notLike)]),
+  ]);
+
+  static const _findByTitleLikeIgnoreCase = _i1.PartTree(
+    r'findByTitleLikeIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.like, true)]),
+    ],
+  );
+
+  static const _findByTitleContainingIgnoreCase = _i1.PartTree(
+    r'findByTitleContainingIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing, true)]),
+    ],
+  );
+
+  static const _findByTitleStartingWithIgnoreCase = _i1.PartTree(
+    r'findByTitleStartingWithIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.startingWith, true)]),
+    ],
+  );
+
+  static const _findByTitleEndingWithIgnoreCase = _i1.PartTree(
+    r'findByTitleEndingWithIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.endingWith, true)]),
+    ],
+  );
+
+  static const _findBySubtitleIsNull = _i1.PartTree(r'findBySubtitleIsNull', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.isNull)]),
+  ]);
+
+  static const _findBySubtitleIsNotNull = _i1.PartTree(
+    r'findBySubtitleIsNotNull',
+    [
+      _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.isNotNull)]),
+    ],
+  );
+
+  static const _findBySubtitle = _i1.PartTree(r'findBySubtitle', [
+    _i1.OrPart([_i1.Part(r'subtitle')]),
+  ]);
+
+  static const _findBySubtitleNot = _i1.PartTree(r'findBySubtitleNot', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findBySubtitleLessThan = _i1.PartTree(
+    r'findBySubtitleLessThan',
+    [
+      _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.lessThan)]),
+    ],
+  );
+
+  static const _findBySubtitleBetween = _i1.PartTree(r'findBySubtitleBetween', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.between)]),
+  ]);
+
+  static const _findBySubtitleLike = _i1.PartTree(r'findBySubtitleLike', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.like)]),
+  ]);
+
+  static const _findByInStockTrue = _i1.PartTree(r'findByInStockTrue', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isTrue)]),
+  ]);
+
+  static const _findByInStockFalse = _i1.PartTree(r'findByInStockFalse', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isFalse)]),
+  ]);
+
+  static const _findByInStock = _i1.PartTree(r'findByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findByAuthor = _i1.PartTree(r'findByAuthor', [
+    _i1.OrPart([_i1.Part(r'author')]),
+  ]);
+
+  static const _findByAuthorIn = _i1.PartTree(r'findByAuthorIn', [
+    _i1.OrPart([_i1.Part(r'author', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByAuthorIsNull = _i1.PartTree(r'findByAuthorIsNull', [
+    _i1.OrPart([_i1.Part(r'author', _i1.PartType.isNull)]),
+  ]);
+
+  static const _findByGenre = _i1.PartTree(r'findByGenre', [
+    _i1.OrPart([_i1.Part(r'genre')]),
+  ]);
+
+  static const _findByGenreIn = _i1.PartTree(r'findByGenreIn', [
+    _i1.OrPart([_i1.Part(r'genre', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByRatingBetween = _i1.PartTree(r'findByRatingBetween', [
+    _i1.OrPart([_i1.Part(r'rating', _i1.PartType.between)]),
+  ]);
+
+  static const _findByRatingGreaterThan = _i1.PartTree(
+    r'findByRatingGreaterThan',
+    [
+      _i1.OrPart([_i1.Part(r'rating', _i1.PartType.greaterThan)]),
+    ],
+  );
+
+  static const _findByReleasedAfter = _i1.PartTree(r'findByReleasedAfter', [
+    _i1.OrPart([_i1.Part(r'released', _i1.PartType.greaterThan)]),
+  ]);
+
+  static const _findByReleased = _i1.PartTree(r'findByReleased', [
+    _i1.OrPart([_i1.Part(r'released')]),
+  ]);
+
+  static const _findByInStockOrderByYearDescTitleAsc = _i1.PartTree(
+    r'findByInStockOrderByYearDescTitleAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.desc(r'year'), _i1.SortOrder.asc(r'title')]),
+  );
+
+  static const _findByInStockOrderBySubtitleAscIdAsc = _i1.PartTree(
+    r'findByInStockOrderBySubtitleAscIdAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.asc(r'subtitle'), _i1.SortOrder.asc(r'id')]),
+  );
+
+  static const _findByInStockOrderBySubtitleDescIdAsc = _i1.PartTree(
+    r'findByInStockOrderBySubtitleDescIdAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.desc(r'subtitle'), _i1.SortOrder.asc(r'id')]),
+  );
+
+  static const _findByYear = _i1.PartTree(r'findByYear', [
+    _i1.OrPart([_i1.Part(r'year')]),
+  ]);
+
+  static const _findByYearLessThanOrderByYear = _i1.PartTree(
+    r'findByYearLessThanOrderByYear',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.asc(r'year')]),
+  );
+
+  static const _findDistinctByInStock = _i1.PartTree(r'findDistinctByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.find, distinct: true));
+
+  static const _streamByInStock = _i1.PartTree(r'streamByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findByYearAfter = _i1.PartTree(r'findByYearAfter', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThan)]),
+  ]);
+
+  static const _findByInStockIsTrue = _i1.PartTree(r'findByInStockIsTrue', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isTrue)]),
+  ]);
+
+  static const _findByInStockEquals = _i1.PartTree(r'findByInStockEquals', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findFirstByOrderByYearAsc = _i1.PartTree(
+    r'findFirstByOrderByYearAsc',
+    [],
+    subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 1),
+    sort: _i1.Sort([_i1.SortOrder.asc(r'year')]),
+  );
+
+  static const _findTop2ByOrderByYearDesc = _i1.PartTree(
+    r'findTop2ByOrderByYearDesc',
+    [],
+    subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 2),
+    sort: _i1.Sort([_i1.SortOrder.desc(r'year')]),
+  );
+
+  static const _findTop3ByInStock = _i1.PartTree(r'findTop3ByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 3));
+
+  static const _countByInStock = _i1.PartTree(r'countByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.count));
+
+  static const _countByTitleContaining = _i1.PartTree(
+    r'countByTitleContaining',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.count),
+  );
+
+  static const _existsByTitle = _i1.PartTree(r'existsByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.exists));
+
+  static const _deleteByYearLessThan = _i1.PartTree(r'deleteByYearLessThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _removeByTitle = _i1.PartTree(r'removeByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByInStock = _i1.PartTree(r'deleteByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByTitleIn = _i1.PartTree(r'deleteByTitleIn', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_)]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static _$BookQueriesImpl $create(_i3.DependencyResolver r) =>
+      _$BookQueriesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Book, int>(
+          r'BookQueries',
+        ),
       );
 
   @override
-  _i5.Future<List<_i1.Book>> findByGenre(_i1.Genre genre) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[43], [genre]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitle(String title) =>
+      this.operations.list(_findByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByGenreIn(List<_i1.Genre> genres) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[44], [genres]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleIgnoreCase(String title) =>
+      this.operations.list(_findByTitleIgnoreCase, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByRatingBetween(double low, double high) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[45], [low, high]),
-      );
+  _i4.Future<_i2.Book?> findOneByTitle(String title) =>
+      this.operations.one(_findOneByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByRatingGreaterThan(double rating) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[46], [rating]),
-      );
+  _i4.Future<_i2.Book> getByTitle(String title) =>
+      this.operations.single(_getByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByReleasedAfter(DateTime moment) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[47], [moment]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleAndYear(String title, int year) =>
+      this.operations.list(_findByTitleAndYear, [title, year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByReleased(DateTime? moment) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[48], [moment]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleOrYear(String title, int year) =>
+      this.operations.list(_findByTitleOrYear, [title, year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderByYearDescTitleAsc(
+  _i4.Future<List<_i2.Book>> findByYearNot(int year) =>
+      this.operations.list(_findByYearNot, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNot(String title) =>
+      this.operations.list(_findByTitleNot, [title]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNotIgnoreCase(String title) =>
+      this.operations.list(_findByTitleNotIgnoreCase, [title]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearBetween(int from, int to) =>
+      this.operations.list(_findByYearBetween, [from, to]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearGreaterThan(int year) =>
+      this.operations.list(_findByYearGreaterThan, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearGreaterThanEqual(int year) =>
+      this.operations.list(_findByYearGreaterThanEqual, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearLessThan(int year) =>
+      this.operations.list(_findByYearLessThan, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearLessThanEqual(int year) =>
+      this.operations.list(_findByYearLessThanEqual, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearIn(List<int> years) =>
+      this.operations.list(_findByYearIn, [years]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearNotIn(Set<int> years) =>
+      this.operations.list(_findByYearNotIn, [years]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleIn(List<String> titles) =>
+      this.operations.list(_findByTitleIn, [titles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleInIgnoreCase(List<String> titles) =>
+      this.operations.list(_findByTitleInIgnoreCase, [titles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleIn(List<String?> subtitles) =>
+      this.operations.list(_findBySubtitleIn, [subtitles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
+      this.operations.list(_findBySubtitleNotIn, [subtitles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleStartingWith(String prefix) =>
+      this.operations.list(_findByTitleStartingWith, [prefix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleEndingWith(String suffix) =>
+      this.operations.list(_findByTitleEndingWith, [suffix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleContaining(String part) =>
+      this.operations.list(_findByTitleContaining, [part]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNotContaining(String part) =>
+      this.operations.list(_findByTitleNotContaining, [part]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleLike(String pattern) =>
+      this.operations.list(_findByTitleLike, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNotLike(String pattern) =>
+      this.operations.list(_findByTitleNotLike, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleLikeIgnoreCase(String pattern) =>
+      this.operations.list(_findByTitleLikeIgnoreCase, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleContainingIgnoreCase(String part) =>
+      this.operations.list(_findByTitleContainingIgnoreCase, [part]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
+      this.operations.list(_findByTitleStartingWithIgnoreCase, [prefix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
+      this.operations.list(_findByTitleEndingWithIgnoreCase, [suffix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleIsNull() =>
+      this.operations.list(_findBySubtitleIsNull, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleIsNotNull() =>
+      this.operations.list(_findBySubtitleIsNotNull, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitle(String? subtitle) =>
+      this.operations.list(_findBySubtitle, [subtitle]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleNot(String? subtitle) =>
+      this.operations.list(_findBySubtitleNot, [subtitle]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleLessThan(String? subtitle) =>
+      this.operations.list(_findBySubtitleLessThan, [subtitle]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleBetween(String? from, String? to) =>
+      this.operations.list(_findBySubtitleBetween, [from, to]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleLike(String? pattern) =>
+      this.operations.list(_findBySubtitleLike, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStockTrue() =>
+      this.operations.list(_findByInStockTrue, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStockFalse() =>
+      this.operations.list(_findByInStockFalse, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStock(bool inStock, _i5.Sort sort) =>
+      this.operations.list(_findByInStock, [inStock], sort: sort);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByAuthor(
+    _i6.AggregateReference<_i2.Author, int> author,
+  ) => this.operations.list(_findByAuthor, [author]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByAuthorIn(
+    List<_i6.AggregateReference<_i2.Author, int>> authors,
+  ) => this.operations.list(_findByAuthorIn, [authors]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByAuthorIsNull() =>
+      this.operations.list(_findByAuthorIsNull, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByGenre(_i2.Genre genre) =>
+      this.operations.list(_findByGenre, [genre]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByGenreIn(List<_i2.Genre> genres) =>
+      this.operations.list(_findByGenreIn, [genres]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByRatingBetween(double low, double high) =>
+      this.operations.list(_findByRatingBetween, [low, high]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByRatingGreaterThan(double rating) =>
+      this.operations.list(_findByRatingGreaterThan, [rating]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByReleasedAfter(DateTime moment) =>
+      this.operations.list(_findByReleasedAfter, [moment]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByReleased(DateTime? moment) =>
+      this.operations.list(_findByReleased, [moment]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStockOrderByYearDescTitleAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[49], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderByYearDescTitleAsc, [inStock]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderBySubtitleAscIdAsc(
+  _i4.Future<List<_i2.Book>> findByInStockOrderBySubtitleAscIdAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[50], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderBySubtitleAscIdAsc, [inStock]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderBySubtitleDescIdAsc(
+  _i4.Future<List<_i2.Book>> findByInStockOrderBySubtitleDescIdAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[51], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderBySubtitleDescIdAsc, [inStock]);
 
   @override
-  _i5.Future<Set<_i1.Book>> findByYear(int year) =>
-      _i2.retypeFuture<Set<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[52], [year]),
-      );
+  _i4.Future<Set<_i2.Book>> findByYear(int year) =>
+      this.operations.set(_findByYear, [year]);
 
   @override
-  _i5.Future<Iterable<_i1.Book>> findByYearLessThanOrderByYear(int year) =>
-      _i2.retypeFuture<Iterable<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[53], [year]),
-      );
+  _i4.Future<Iterable<_i2.Book>> findByYearLessThanOrderByYear(int year) =>
+      this.operations.list(_findByYearLessThanOrderByYear, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findDistinctByInStock(bool inStock) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[54], [inStock]),
-      );
+  _i4.Future<List<_i2.Book>> findDistinctByInStock(bool inStock) =>
+      this.operations.list(_findDistinctByInStock, [inStock]);
 
   @override
-  _i5.Stream<_i1.Book> streamByInStock(bool inStock) =>
-      (this._handler.invoke(this._metadata.methods[55], [inStock])
-          as _i5.Stream<_i1.Book>);
+  _i4.Stream<_i2.Book> streamByInStock(bool inStock) =>
+      this.operations.stream(_streamByInStock, [inStock]);
 
   @override
-  _i5.Future<_i6.Page<_i1.Book>> findByYearAfter(
+  _i4.Future<_i7.Page<_i2.Book>> findByYearAfter(
     int year,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<_i6.Page<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[56], [year, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) => this.operations.page(_findByYearAfter, [year], pageable);
 
   @override
-  _i5.Future<_i6.Slice<_i1.Book>> findByInStockIsTrue(_i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Slice<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[57], [pageable]),
-      );
+  _i4.Future<_i7.Slice<_i2.Book>> findByInStockIsTrue(_i7.Pageable pageable) =>
+      this.operations.slice(_findByInStockIsTrue, const [], pageable);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockEquals(
+  _i4.Future<List<_i2.Book>> findByInStockEquals(
     bool inStock,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[58], [inStock, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) =>
+      this.operations.list(_findByInStockEquals, [inStock], pageable: pageable);
 
   @override
-  _i5.Future<_i1.Book?> findFirstByOrderByYearAsc() =>
-      _i2.retypeFuture<_i1.Book?>(
-        this._handler.invoke(this._metadata.methods[59], const []),
-      );
+  _i4.Future<_i2.Book?> findFirstByOrderByYearAsc() =>
+      this.operations.one(_findFirstByOrderByYearAsc, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findTop2ByOrderByYearDesc() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[60], const []),
-      );
+  _i4.Future<List<_i2.Book>> findTop2ByOrderByYearDesc() =>
+      this.operations.list(_findTop2ByOrderByYearDesc, const []);
 
   @override
-  _i5.Future<_i6.Page<_i1.Book>> findTop3ByInStock(
+  _i4.Future<_i7.Page<_i2.Book>> findTop3ByInStock(
     bool inStock,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<_i6.Page<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[61], [inStock, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) => this.operations.page(_findTop3ByInStock, [inStock], pageable);
 
   @override
-  _i5.Future<int> countByInStock(bool inStock) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[62], [inStock]),
-  );
+  _i4.Future<int> countByInStock(bool inStock) =>
+      this.operations.countBy(_countByInStock, [inStock]);
 
   @override
-  _i5.Future<int> countByTitleContaining(String part) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[63], [part]),
-  );
+  _i4.Future<int> countByTitleContaining(String part) =>
+      this.operations.countBy(_countByTitleContaining, [part]);
 
   @override
-  _i5.Future<bool> existsByTitle(String title) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[64], [title]),
-  );
+  _i4.Future<bool> existsByTitle(String title) =>
+      this.operations.existsBy(_existsByTitle, [title]);
 
   @override
-  _i5.Future<int> deleteByYearLessThan(int year) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[65], [year]),
-  );
+  _i4.Future<int> deleteByYearLessThan(int year) =>
+      this.operations.deleteBy(_deleteByYearLessThan, [year]);
 
   @override
-  _i5.Future<void> removeByTitle(String title) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[66], [title]),
-  );
+  _i4.Future<void> removeByTitle(String title) =>
+      this.operations.deleteBy(_removeByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> deleteByInStock(bool inStock) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[67], [inStock]),
-      );
+  _i4.Future<List<_i2.Book>> deleteByInStock(bool inStock) =>
+      this.operations.deleteByReturning(_deleteByInStock, [inStock]);
 
   @override
-  _i5.Future<int> deleteByTitleIn(List<String> titles) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[68], [titles]),
-  );
-
-  @override
-  _i5.Future<List<_i1.Book>> saveAll(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[69], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findAll() => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[70], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Book>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[71], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Book> save(_i1.Book entity) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[72], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Book?> findById(int id) => _i2.retypeFuture<_i1.Book?>(
-    this._handler.invoke(this._metadata.methods[73], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[74], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[75], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[76], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Book entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[77], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[78], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[79], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[80], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Book>> findAllSorted(_i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[81], [sort]),
-      );
-
-  @override
-  _i5.Future<_i6.Page<_i1.Book>> findAllPaged(_i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Page<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[82], [pageable]),
-      );
+  _i4.Future<int> deleteByTitleIn(List<String> titles) =>
+      this.operations.deleteBy(_deleteByTitleIn, [titles]);
 }
 
-/// Implements `MemoryBooks` through an `InvocationHandler`.
-class _$MemoryBooksImpl implements _i1.MemoryBooks {
-  _$MemoryBooksImpl(this._handler, this._metadata);
+/// Implements `MemoryBooks`: `SimpleRepository` has the CRUD methods.
+class _$MemoryBooksImpl extends _i1.SimpleRepository<_i2.Book, int>
+    implements _i2.MemoryBooks {
+  _$MemoryBooksImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _findByTitle = _i1.PartTree(r'findByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
 
-  final _i2.InterfaceMetadata<_i1.MemoryBooks> _metadata;
+  static const _findByTitleIgnoreCase = _i1.PartTree(r'findByTitleIgnoreCase', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.simpleProperty, true)]),
+  ]);
 
-  static _$MemoryBooksImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryBooks>(
-      typeName: r'MemoryBooks',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findOneByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'getByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleAndYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleOrYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'from',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'to',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearGreaterThanEqual',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThanEqual',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'years',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearNotIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'years',
-              type: const _i2.SetType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleInIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitles',
-              type: const _i2.ListType<String?>(
-                _i2.ClassType<String>(nullable: true),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleNotIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitles',
-              type: const _i2.ListType<String?>(
-                _i2.ClassType<String>(nullable: true),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleEndingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'suffix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleLikeIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleContainingIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleStartingWithIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleEndingWithIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'suffix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIsNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIsNotNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'from',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'to',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockTrue',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockFalse',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthor',
-          parameters: [
-            _i2.BeanParameter(
-              r'author',
-              type:
-                  const _i2.GenericType<
-                    _i4.AggregateReference<_i1.Author, int>
-                  >([_i2.ClassType<_i1.Author>(), _i2.ClassType<int>()]),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthorIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'authors',
-              type: const _i2.ListType<_i4.AggregateReference<_i1.Author, int>>(
-                _i2.GenericType<_i4.AggregateReference<_i1.Author, int>>([
-                  _i2.ClassType<_i1.Author>(),
-                  _i2.ClassType<int>(),
-                ]),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthorIsNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByGenre',
-          parameters: [
-            _i2.BeanParameter(
-              r'genre',
-              type: const _i2.EnumType<_i1.Genre>(_i1.Genre.values),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByGenreIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'genres',
-              type: const _i2.ListType<_i1.Genre>(
-                _i2.EnumType<_i1.Genre>(_i1.Genre.values),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByRatingBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'low',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'high',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByRatingGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'rating',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByReleasedAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'moment',
-              type: const _i2.ClassType<DateTime>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByReleased',
-          parameters: [
-            _i2.BeanParameter(
-              r'moment',
-              type: const _i2.ClassType<DateTime>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderByYearDescTitleAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderBySubtitleAscIdAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderBySubtitleDescIdAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.SetType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThanOrderByYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findDistinctByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'streamByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i5.Stream<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-        ),
-        _i2.ProxyMethod(
-          r'findByYearAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockIsTrue',
-          parameters: [
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Slice<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockEquals',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findFirstByOrderByYearAsc',
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findTop2ByOrderByYearDesc',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findTop3ByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'countByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'countByTitleContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByYearLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'removeByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByTitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllSorted',
-          parameters: [
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllPaged',
-          parameters: [
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'ListPagingAndSortingRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'PagingAndSortingRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryBooksImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+  static const _findOneByTitle = _i1.PartTree(r'findOneByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitle(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[0], [title]),
-      );
+  static const _getByTitle = _i1.PartTree(r'getByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleIgnoreCase(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[1], [title]),
-      );
+  static const _findByTitleAndYear = _i1.PartTree(r'findByTitleAndYear', [
+    _i1.OrPart([_i1.Part(r'title'), _i1.Part(r'year')]),
+  ]);
 
-  @override
-  _i5.Future<_i1.Book?> findOneByTitle(String title) =>
-      _i2.retypeFuture<_i1.Book?>(
-        this._handler.invoke(this._metadata.methods[2], [title]),
-      );
+  static const _findByTitleOrYear = _i1.PartTree(r'findByTitleOrYear', [
+    _i1.OrPart([_i1.Part(r'title')]),
+    _i1.OrPart([_i1.Part(r'year')]),
+  ]);
 
-  @override
-  _i5.Future<_i1.Book> getByTitle(String title) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[3], [title]),
+  static const _findByYearNot = _i1.PartTree(r'findByYearNot', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findByTitleNot = _i1.PartTree(r'findByTitleNot', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findByTitleNotIgnoreCase = _i1.PartTree(
+    r'findByTitleNotIgnoreCase',
+    [
+      _i1.OrPart([
+        _i1.Part(r'title', _i1.PartType.negatingSimpleProperty, true),
+      ]),
+    ],
   );
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleAndYear(String title, int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[4], [title, year]),
-      );
+  static const _findByYearBetween = _i1.PartTree(r'findByYearBetween', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.between)]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleOrYear(String title, int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[5], [title, year]),
-      );
+  static const _findByYearGreaterThan = _i1.PartTree(r'findByYearGreaterThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThan)]),
+  ]);
 
-  @override
-  _i5.Future<List<_i1.Book>> findByYearNot(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[6], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNot(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[7], [title]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNotIgnoreCase(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[8], [title]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearBetween(int from, int to) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[9], [from, to]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearGreaterThan(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[10], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearGreaterThanEqual(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[11], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearLessThan(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[12], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearLessThanEqual(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[13], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearIn(List<int> years) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[14], [years]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByYearNotIn(Set<int> years) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[15], [years]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleIn(List<String> titles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[16], [titles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleInIgnoreCase(List<String> titles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[17], [titles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIn(List<String?> subtitles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[18], [subtitles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[19], [subtitles]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleStartingWith(String prefix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[20], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleEndingWith(String suffix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[21], [suffix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleContaining(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[22], [part]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNotContaining(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[23], [part]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleLike(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[24], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleNotLike(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[25], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleLikeIgnoreCase(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[26], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleContainingIgnoreCase(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[27], [part]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[28], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[29], [suffix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIsNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[30], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIsNotNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[31], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitle(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[32], [subtitle]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleNot(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[33], [subtitle]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleLessThan(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[34], [subtitle]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleBetween(String? from, String? to) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[35], [from, to]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findBySubtitleLike(String? pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[36], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByInStockTrue() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[37], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByInStockFalse() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[38], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByInStock(bool inStock, _i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[39], [inStock, sort]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findByAuthor(
-    _i4.AggregateReference<_i1.Author, int> author,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[40], [author]),
+  static const _findByYearGreaterThanEqual = _i1.PartTree(
+    r'findByYearGreaterThanEqual',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThanEqual)]),
+    ],
   );
 
-  @override
-  _i5.Future<List<_i1.Book>> findByAuthorIn(
-    List<_i4.AggregateReference<_i1.Author, int>> authors,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[41], [authors]),
+  static const _findByYearLessThan = _i1.PartTree(r'findByYearLessThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+  ]);
+
+  static const _findByYearLessThanEqual = _i1.PartTree(
+    r'findByYearLessThanEqual',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThanEqual)]),
+    ],
   );
 
-  @override
-  _i5.Future<List<_i1.Book>> findByAuthorIsNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[42], const []),
+  static const _findByYearIn = _i1.PartTree(r'findByYearIn', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByYearNotIn = _i1.PartTree(r'findByYearNotIn', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.notIn)]),
+  ]);
+
+  static const _findByTitleIn = _i1.PartTree(r'findByTitleIn', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByTitleInIgnoreCase = _i1.PartTree(
+    r'findByTitleInIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_, true)]),
+    ],
+  );
+
+  static const _findBySubtitleIn = _i1.PartTree(r'findBySubtitleIn', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.in_)]),
+  ]);
+
+  static const _findBySubtitleNotIn = _i1.PartTree(r'findBySubtitleNotIn', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.notIn)]),
+  ]);
+
+  static const _findByTitleStartingWith = _i1.PartTree(
+    r'findByTitleStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.startingWith)]),
+    ],
+  );
+
+  static const _findByTitleEndingWith = _i1.PartTree(r'findByTitleEndingWith', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.endingWith)]),
+  ]);
+
+  static const _findByTitleContaining = _i1.PartTree(r'findByTitleContaining', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing)]),
+  ]);
+
+  static const _findByTitleNotContaining = _i1.PartTree(
+    r'findByTitleNotContaining',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.notContaining)]),
+    ],
+  );
+
+  static const _findByTitleLike = _i1.PartTree(r'findByTitleLike', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.like)]),
+  ]);
+
+  static const _findByTitleNotLike = _i1.PartTree(r'findByTitleNotLike', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.notLike)]),
+  ]);
+
+  static const _findByTitleLikeIgnoreCase = _i1.PartTree(
+    r'findByTitleLikeIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.like, true)]),
+    ],
+  );
+
+  static const _findByTitleContainingIgnoreCase = _i1.PartTree(
+    r'findByTitleContainingIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing, true)]),
+    ],
+  );
+
+  static const _findByTitleStartingWithIgnoreCase = _i1.PartTree(
+    r'findByTitleStartingWithIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.startingWith, true)]),
+    ],
+  );
+
+  static const _findByTitleEndingWithIgnoreCase = _i1.PartTree(
+    r'findByTitleEndingWithIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.endingWith, true)]),
+    ],
+  );
+
+  static const _findBySubtitleIsNull = _i1.PartTree(r'findBySubtitleIsNull', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.isNull)]),
+  ]);
+
+  static const _findBySubtitleIsNotNull = _i1.PartTree(
+    r'findBySubtitleIsNotNull',
+    [
+      _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.isNotNull)]),
+    ],
+  );
+
+  static const _findBySubtitle = _i1.PartTree(r'findBySubtitle', [
+    _i1.OrPart([_i1.Part(r'subtitle')]),
+  ]);
+
+  static const _findBySubtitleNot = _i1.PartTree(r'findBySubtitleNot', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findBySubtitleLessThan = _i1.PartTree(
+    r'findBySubtitleLessThan',
+    [
+      _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.lessThan)]),
+    ],
+  );
+
+  static const _findBySubtitleBetween = _i1.PartTree(r'findBySubtitleBetween', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.between)]),
+  ]);
+
+  static const _findBySubtitleLike = _i1.PartTree(r'findBySubtitleLike', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.like)]),
+  ]);
+
+  static const _findByInStockTrue = _i1.PartTree(r'findByInStockTrue', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isTrue)]),
+  ]);
+
+  static const _findByInStockFalse = _i1.PartTree(r'findByInStockFalse', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isFalse)]),
+  ]);
+
+  static const _findByInStock = _i1.PartTree(r'findByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findByAuthor = _i1.PartTree(r'findByAuthor', [
+    _i1.OrPart([_i1.Part(r'author')]),
+  ]);
+
+  static const _findByAuthorIn = _i1.PartTree(r'findByAuthorIn', [
+    _i1.OrPart([_i1.Part(r'author', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByAuthorIsNull = _i1.PartTree(r'findByAuthorIsNull', [
+    _i1.OrPart([_i1.Part(r'author', _i1.PartType.isNull)]),
+  ]);
+
+  static const _findByGenre = _i1.PartTree(r'findByGenre', [
+    _i1.OrPart([_i1.Part(r'genre')]),
+  ]);
+
+  static const _findByGenreIn = _i1.PartTree(r'findByGenreIn', [
+    _i1.OrPart([_i1.Part(r'genre', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByRatingBetween = _i1.PartTree(r'findByRatingBetween', [
+    _i1.OrPart([_i1.Part(r'rating', _i1.PartType.between)]),
+  ]);
+
+  static const _findByRatingGreaterThan = _i1.PartTree(
+    r'findByRatingGreaterThan',
+    [
+      _i1.OrPart([_i1.Part(r'rating', _i1.PartType.greaterThan)]),
+    ],
+  );
+
+  static const _findByReleasedAfter = _i1.PartTree(r'findByReleasedAfter', [
+    _i1.OrPart([_i1.Part(r'released', _i1.PartType.greaterThan)]),
+  ]);
+
+  static const _findByReleased = _i1.PartTree(r'findByReleased', [
+    _i1.OrPart([_i1.Part(r'released')]),
+  ]);
+
+  static const _findByInStockOrderByYearDescTitleAsc = _i1.PartTree(
+    r'findByInStockOrderByYearDescTitleAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.desc(r'year'), _i1.SortOrder.asc(r'title')]),
+  );
+
+  static const _findByInStockOrderBySubtitleAscIdAsc = _i1.PartTree(
+    r'findByInStockOrderBySubtitleAscIdAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.asc(r'subtitle'), _i1.SortOrder.asc(r'id')]),
+  );
+
+  static const _findByInStockOrderBySubtitleDescIdAsc = _i1.PartTree(
+    r'findByInStockOrderBySubtitleDescIdAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.desc(r'subtitle'), _i1.SortOrder.asc(r'id')]),
+  );
+
+  static const _findByYear = _i1.PartTree(r'findByYear', [
+    _i1.OrPart([_i1.Part(r'year')]),
+  ]);
+
+  static const _findByYearLessThanOrderByYear = _i1.PartTree(
+    r'findByYearLessThanOrderByYear',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.asc(r'year')]),
+  );
+
+  static const _findDistinctByInStock = _i1.PartTree(r'findDistinctByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.find, distinct: true));
+
+  static const _streamByInStock = _i1.PartTree(r'streamByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findByYearAfter = _i1.PartTree(r'findByYearAfter', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThan)]),
+  ]);
+
+  static const _findByInStockIsTrue = _i1.PartTree(r'findByInStockIsTrue', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isTrue)]),
+  ]);
+
+  static const _findByInStockEquals = _i1.PartTree(r'findByInStockEquals', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findFirstByOrderByYearAsc = _i1.PartTree(
+    r'findFirstByOrderByYearAsc',
+    [],
+    subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 1),
+    sort: _i1.Sort([_i1.SortOrder.asc(r'year')]),
+  );
+
+  static const _findTop2ByOrderByYearDesc = _i1.PartTree(
+    r'findTop2ByOrderByYearDesc',
+    [],
+    subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 2),
+    sort: _i1.Sort([_i1.SortOrder.desc(r'year')]),
+  );
+
+  static const _findTop3ByInStock = _i1.PartTree(r'findTop3ByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 3));
+
+  static const _countByInStock = _i1.PartTree(r'countByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.count));
+
+  static const _countByTitleContaining = _i1.PartTree(
+    r'countByTitleContaining',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.count),
+  );
+
+  static const _existsByTitle = _i1.PartTree(r'existsByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.exists));
+
+  static const _deleteByYearLessThan = _i1.PartTree(r'deleteByYearLessThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _removeByTitle = _i1.PartTree(r'removeByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByInStock = _i1.PartTree(r'deleteByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByTitleIn = _i1.PartTree(r'deleteByTitleIn', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_)]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static _$MemoryBooksImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryBooksImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Book, int>(
+          r'MemoryBooks',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
       );
 
   @override
-  _i5.Future<List<_i1.Book>> findByGenre(_i1.Genre genre) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[43], [genre]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitle(String title) =>
+      this.operations.list(_findByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByGenreIn(List<_i1.Genre> genres) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[44], [genres]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleIgnoreCase(String title) =>
+      this.operations.list(_findByTitleIgnoreCase, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByRatingBetween(double low, double high) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[45], [low, high]),
-      );
+  _i4.Future<_i2.Book?> findOneByTitle(String title) =>
+      this.operations.one(_findOneByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByRatingGreaterThan(double rating) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[46], [rating]),
-      );
+  _i4.Future<_i2.Book> getByTitle(String title) =>
+      this.operations.single(_getByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByReleasedAfter(DateTime moment) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[47], [moment]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleAndYear(String title, int year) =>
+      this.operations.list(_findByTitleAndYear, [title, year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByReleased(DateTime? moment) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[48], [moment]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleOrYear(String title, int year) =>
+      this.operations.list(_findByTitleOrYear, [title, year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderByYearDescTitleAsc(
+  _i4.Future<List<_i2.Book>> findByYearNot(int year) =>
+      this.operations.list(_findByYearNot, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNot(String title) =>
+      this.operations.list(_findByTitleNot, [title]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNotIgnoreCase(String title) =>
+      this.operations.list(_findByTitleNotIgnoreCase, [title]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearBetween(int from, int to) =>
+      this.operations.list(_findByYearBetween, [from, to]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearGreaterThan(int year) =>
+      this.operations.list(_findByYearGreaterThan, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearGreaterThanEqual(int year) =>
+      this.operations.list(_findByYearGreaterThanEqual, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearLessThan(int year) =>
+      this.operations.list(_findByYearLessThan, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearLessThanEqual(int year) =>
+      this.operations.list(_findByYearLessThanEqual, [year]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearIn(List<int> years) =>
+      this.operations.list(_findByYearIn, [years]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByYearNotIn(Set<int> years) =>
+      this.operations.list(_findByYearNotIn, [years]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleIn(List<String> titles) =>
+      this.operations.list(_findByTitleIn, [titles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleInIgnoreCase(List<String> titles) =>
+      this.operations.list(_findByTitleInIgnoreCase, [titles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleIn(List<String?> subtitles) =>
+      this.operations.list(_findBySubtitleIn, [subtitles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
+      this.operations.list(_findBySubtitleNotIn, [subtitles]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleStartingWith(String prefix) =>
+      this.operations.list(_findByTitleStartingWith, [prefix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleEndingWith(String suffix) =>
+      this.operations.list(_findByTitleEndingWith, [suffix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleContaining(String part) =>
+      this.operations.list(_findByTitleContaining, [part]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNotContaining(String part) =>
+      this.operations.list(_findByTitleNotContaining, [part]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleLike(String pattern) =>
+      this.operations.list(_findByTitleLike, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleNotLike(String pattern) =>
+      this.operations.list(_findByTitleNotLike, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleLikeIgnoreCase(String pattern) =>
+      this.operations.list(_findByTitleLikeIgnoreCase, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleContainingIgnoreCase(String part) =>
+      this.operations.list(_findByTitleContainingIgnoreCase, [part]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
+      this.operations.list(_findByTitleStartingWithIgnoreCase, [prefix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
+      this.operations.list(_findByTitleEndingWithIgnoreCase, [suffix]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleIsNull() =>
+      this.operations.list(_findBySubtitleIsNull, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleIsNotNull() =>
+      this.operations.list(_findBySubtitleIsNotNull, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitle(String? subtitle) =>
+      this.operations.list(_findBySubtitle, [subtitle]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleNot(String? subtitle) =>
+      this.operations.list(_findBySubtitleNot, [subtitle]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleLessThan(String? subtitle) =>
+      this.operations.list(_findBySubtitleLessThan, [subtitle]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleBetween(String? from, String? to) =>
+      this.operations.list(_findBySubtitleBetween, [from, to]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findBySubtitleLike(String? pattern) =>
+      this.operations.list(_findBySubtitleLike, [pattern]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStockTrue() =>
+      this.operations.list(_findByInStockTrue, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStockFalse() =>
+      this.operations.list(_findByInStockFalse, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStock(bool inStock, _i5.Sort sort) =>
+      this.operations.list(_findByInStock, [inStock], sort: sort);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByAuthor(
+    _i6.AggregateReference<_i2.Author, int> author,
+  ) => this.operations.list(_findByAuthor, [author]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByAuthorIn(
+    List<_i6.AggregateReference<_i2.Author, int>> authors,
+  ) => this.operations.list(_findByAuthorIn, [authors]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByAuthorIsNull() =>
+      this.operations.list(_findByAuthorIsNull, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByGenre(_i2.Genre genre) =>
+      this.operations.list(_findByGenre, [genre]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByGenreIn(List<_i2.Genre> genres) =>
+      this.operations.list(_findByGenreIn, [genres]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByRatingBetween(double low, double high) =>
+      this.operations.list(_findByRatingBetween, [low, high]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByRatingGreaterThan(double rating) =>
+      this.operations.list(_findByRatingGreaterThan, [rating]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByReleasedAfter(DateTime moment) =>
+      this.operations.list(_findByReleasedAfter, [moment]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByReleased(DateTime? moment) =>
+      this.operations.list(_findByReleased, [moment]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStockOrderByYearDescTitleAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[49], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderByYearDescTitleAsc, [inStock]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderBySubtitleAscIdAsc(
+  _i4.Future<List<_i2.Book>> findByInStockOrderBySubtitleAscIdAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[50], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderBySubtitleAscIdAsc, [inStock]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderBySubtitleDescIdAsc(
+  _i4.Future<List<_i2.Book>> findByInStockOrderBySubtitleDescIdAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[51], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderBySubtitleDescIdAsc, [inStock]);
 
   @override
-  _i5.Future<Set<_i1.Book>> findByYear(int year) =>
-      _i2.retypeFuture<Set<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[52], [year]),
-      );
+  _i4.Future<Set<_i2.Book>> findByYear(int year) =>
+      this.operations.set(_findByYear, [year]);
 
   @override
-  _i5.Future<Iterable<_i1.Book>> findByYearLessThanOrderByYear(int year) =>
-      _i2.retypeFuture<Iterable<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[53], [year]),
-      );
+  _i4.Future<Iterable<_i2.Book>> findByYearLessThanOrderByYear(int year) =>
+      this.operations.list(_findByYearLessThanOrderByYear, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findDistinctByInStock(bool inStock) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[54], [inStock]),
-      );
+  _i4.Future<List<_i2.Book>> findDistinctByInStock(bool inStock) =>
+      this.operations.list(_findDistinctByInStock, [inStock]);
 
   @override
-  _i5.Stream<_i1.Book> streamByInStock(bool inStock) =>
-      (this._handler.invoke(this._metadata.methods[55], [inStock])
-          as _i5.Stream<_i1.Book>);
+  _i4.Stream<_i2.Book> streamByInStock(bool inStock) =>
+      this.operations.stream(_streamByInStock, [inStock]);
 
   @override
-  _i5.Future<_i6.Page<_i1.Book>> findByYearAfter(
+  _i4.Future<_i7.Page<_i2.Book>> findByYearAfter(
     int year,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<_i6.Page<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[56], [year, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) => this.operations.page(_findByYearAfter, [year], pageable);
 
   @override
-  _i5.Future<_i6.Slice<_i1.Book>> findByInStockIsTrue(_i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Slice<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[57], [pageable]),
-      );
+  _i4.Future<_i7.Slice<_i2.Book>> findByInStockIsTrue(_i7.Pageable pageable) =>
+      this.operations.slice(_findByInStockIsTrue, const [], pageable);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockEquals(
+  _i4.Future<List<_i2.Book>> findByInStockEquals(
     bool inStock,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[58], [inStock, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) =>
+      this.operations.list(_findByInStockEquals, [inStock], pageable: pageable);
 
   @override
-  _i5.Future<_i1.Book?> findFirstByOrderByYearAsc() =>
-      _i2.retypeFuture<_i1.Book?>(
-        this._handler.invoke(this._metadata.methods[59], const []),
-      );
+  _i4.Future<_i2.Book?> findFirstByOrderByYearAsc() =>
+      this.operations.one(_findFirstByOrderByYearAsc, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findTop2ByOrderByYearDesc() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[60], const []),
-      );
+  _i4.Future<List<_i2.Book>> findTop2ByOrderByYearDesc() =>
+      this.operations.list(_findTop2ByOrderByYearDesc, const []);
 
   @override
-  _i5.Future<_i6.Page<_i1.Book>> findTop3ByInStock(
+  _i4.Future<_i7.Page<_i2.Book>> findTop3ByInStock(
     bool inStock,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<_i6.Page<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[61], [inStock, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) => this.operations.page(_findTop3ByInStock, [inStock], pageable);
 
   @override
-  _i5.Future<int> countByInStock(bool inStock) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[62], [inStock]),
-  );
+  _i4.Future<int> countByInStock(bool inStock) =>
+      this.operations.countBy(_countByInStock, [inStock]);
 
   @override
-  _i5.Future<int> countByTitleContaining(String part) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[63], [part]),
-  );
+  _i4.Future<int> countByTitleContaining(String part) =>
+      this.operations.countBy(_countByTitleContaining, [part]);
 
   @override
-  _i5.Future<bool> existsByTitle(String title) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[64], [title]),
-  );
+  _i4.Future<bool> existsByTitle(String title) =>
+      this.operations.existsBy(_existsByTitle, [title]);
 
   @override
-  _i5.Future<int> deleteByYearLessThan(int year) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[65], [year]),
-  );
+  _i4.Future<int> deleteByYearLessThan(int year) =>
+      this.operations.deleteBy(_deleteByYearLessThan, [year]);
 
   @override
-  _i5.Future<void> removeByTitle(String title) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[66], [title]),
-  );
+  _i4.Future<void> removeByTitle(String title) =>
+      this.operations.deleteBy(_removeByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> deleteByInStock(bool inStock) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[67], [inStock]),
-      );
+  _i4.Future<List<_i2.Book>> deleteByInStock(bool inStock) =>
+      this.operations.deleteByReturning(_deleteByInStock, [inStock]);
 
   @override
-  _i5.Future<int> deleteByTitleIn(List<String> titles) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[68], [titles]),
-  );
-
-  @override
-  _i5.Future<List<_i1.Book>> saveAll(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[69], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> findAll() => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[70], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Book>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[71], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Book> save(_i1.Book entity) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[72], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Book?> findById(int id) => _i2.retypeFuture<_i1.Book?>(
-    this._handler.invoke(this._metadata.methods[73], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[74], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[75], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[76], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Book entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[77], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[78], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[79], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[80], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Book>> findAllSorted(_i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[81], [sort]),
-      );
-
-  @override
-  _i5.Future<_i6.Page<_i1.Book>> findAllPaged(_i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Page<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[82], [pageable]),
-      );
+  _i4.Future<int> deleteByTitleIn(List<String> titles) =>
+      this.operations.deleteBy(_deleteByTitleIn, [titles]);
 }
 
-/// Implements `SqlBooks` through an `InvocationHandler`.
-class _$SqlBooksImpl implements _i1.SqlBooks {
-  _$SqlBooksImpl(this._handler, this._metadata);
+/// Implements `SqlBooks`: `SimpleRepository` has the CRUD methods.
+class _$SqlBooksImpl extends _i1.SimpleRepository<_i2.Book, int>
+    implements _i2.SqlBooks {
+  _$SqlBooksImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _byYear = _i1.QueryMethod(
+    r'byYear',
+    _i6.Query(r'select * from books where year = :year order by id'),
+    parameters: [r'year'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
 
-  final _i2.InterfaceMetadata<_i1.SqlBooks> _metadata;
+  static const _aroundYear = _i1.QueryMethod(
+    r'aroundYear',
+    _i6.Query(r'select * from books where year = :year or year = :year + 1'),
+    parameters: [r'year'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
 
-  static _$SqlBooksImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlBooks>(
-      typeName: r'SqlBooks',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'byYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where year = :year order by id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'aroundYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where year = :year or year = :year + 1',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'byIds',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where id in (:ids) order by id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'byTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where title = :title order by id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'byTitleLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where title like :pattern order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'byGenre',
-          parameters: [
-            _i2.BeanParameter(
-              r'genre',
-              type: const _i2.EnumType<_i1.Genre>(_i1.Genre.values),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where genre = :genre order by id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'byAuthor',
-          parameters: [
-            _i2.BeanParameter(
-              r'author',
-              type:
-                  const _i2.GenericType<
-                    _i4.AggregateReference<_i1.Author, int>
-                  >([_i2.ClassType<_i1.Author>(), _i2.ClassType<int>()]),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where author = :author order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'byStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where in_stock = :inStock order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'sameTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'book',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where title = :#{#book.title} order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'byFirstArgument',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where year = :#{[0]} order by id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'sinceCutoff',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where year >= :#{@years.cutoff} order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'yearBefore',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where year = :#{@years.before(#year)} order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'afterConfiguredCutoff',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where year > :#{@environment.getProperty("books.cutoff", "0")} order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'afterSum',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'more',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where year > :#{#p0 + #a1} order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'broken',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where title = :#{#year} order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'viaEntityName',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from #{#entityName} where title = :title'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'firstPage',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books order by id limit ${books.page-size:3}',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'withAuthor',
-          parameters: [
-            _i2.BeanParameter(
-              r'name',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.BookWithAuthor>(
-            _i2.ClassType<_i1.BookWithAuthor>(),
-          ),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author where a.name like :name order by b.id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'missingColumn',
-          returnType: const _i2.ListType<_i1.BookWithAuthor>(
-            _i2.ClassType<_i1.BookWithAuthor>(),
-          ),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select b.id, b.title from books b order by b.id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'countAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select count(*) from books where year > :year'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'titleOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<String>(nullable: true),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select title from books where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'requiredTitleOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<String>(),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select title from books where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'titlesAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<String>(_i2.ClassType<String>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select title from books where year > :year order by title',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'yearsAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.SetType<int>(_i2.ClassType<int>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select year from books where year > :year order by year',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'inStockOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(nullable: true),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select in_stock from books where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'ratingOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<double>(nullable: true),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select rating from books where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'releasedOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<DateTime>(nullable: true),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select released from books where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'genreOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.EnumType<_i1.Genre>(
-            _i1.Genre.values,
-            nullable: true,
-          ),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select genre from books where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'one',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-          annotations: const [_i4.Query(r'select * from books where id = :id')],
-        ),
-        _i2.ProxyMethod(
-          r'requiredOne',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-          annotations: const [_i4.Query(r'select * from books where id = :id')],
-        ),
-        _i2.ProxyMethod(
-          r'theOnlyOne',
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-          annotations: const [_i4.Query(r'select * from books order by id')],
-        ),
-        _i2.ProxyMethod(
-          r'asMap',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.MapType<String, dynamic>(
-            _i2.ClassType<String>(),
-            _i2.DynamicType(),
-            nullable: true,
-          ),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select id, title, year from books where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'afterSorted',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where year > :year'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'afterSortedAndOrdered',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where year > :year order by in_stock desc',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'afterWindow',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where year > :year'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'pageAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where year > :year'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'pageWithAuthor',
-          parameters: [
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.BookWithAuthor>>([
-            _i2.ClassType<_i1.BookWithAuthor>(),
-          ]),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author',
-              countQuery: r'select count(*) from books b join authors a on a.id = b.author',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'sliceAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Slice<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(r'select * from books where year > :year'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'streamAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i5.Stream<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          annotations: const [
-            _i4.Query(r'select * from books where year > :year order by id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'streamTitles',
-          returnType: const _i2.GenericType<_i5.Stream<String>>([
-            _i2.ClassType<String>(),
-          ]),
-          annotations: const [
-            _i4.Query(r'select title from books order by id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'streamWithAuthor',
-          returnType: const _i2.GenericType<_i5.Stream<_i1.BookWithAuthor>>([
-            _i2.ClassType<_i1.BookWithAuthor>(),
-          ]),
-          annotations: const [
-            _i4.Query(
-              r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author order by b.id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'shift',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'delta',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-          annotations: const [
-            _i4.Modifying(),
-            _i4.Query(
-              r'update books set year = year + :delta where year < :year',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'deleteOlder',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-          annotations: const [
-            _i4.Modifying(),
-            _i4.Query(r'delete from books where year < :year'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'retitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-          annotations: const [
-            _i4.Modifying(),
-            _i4.Query(r'update books set subtitle = :subtitle where id = :id'),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'authorsWithBooks',
-          returnType: const _i2.ListType<_i1.AuthorWithBooks>(
-            _i2.ClassType<_i1.AuthorWithBooks>(),
-          ),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select a.id, a.name, b.title from authors a left join books b on b.author = a.id order by a.id, b.id',
-              resultSetExtractor: _i1.AuthorWithBooks.extract,
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'shouted',
-          returnType: const _i2.ListType<String>(_i2.ClassType<String>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select title from books order by id',
-              rowMapper: _i1.shoutTitle,
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'bySubtitleText',
-          parameters: [
-            _i2.BeanParameter(
-              r'text',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from books where subtitle = :text order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'findByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findOneByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'getByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleAndYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleOrYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'from',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'to',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearGreaterThanEqual',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThanEqual',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'years',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearNotIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'years',
-              type: const _i2.SetType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleInIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitles',
-              type: const _i2.ListType<String?>(
-                _i2.ClassType<String>(nullable: true),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleNotIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitles',
-              type: const _i2.ListType<String?>(
-                _i2.ClassType<String>(nullable: true),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleEndingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'suffix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleNotLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleLikeIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleContainingIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleStartingWithIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByTitleEndingWithIgnoreCase',
-          parameters: [
-            _i2.BeanParameter(
-              r'suffix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIsNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleIsNotNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleNot',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'subtitle',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'from',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'to',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findBySubtitleLike',
-          parameters: [
-            _i2.BeanParameter(
-              r'pattern',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockTrue',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockFalse',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthor',
-          parameters: [
-            _i2.BeanParameter(
-              r'author',
-              type:
-                  const _i2.GenericType<
-                    _i4.AggregateReference<_i1.Author, int>
-                  >([_i2.ClassType<_i1.Author>(), _i2.ClassType<int>()]),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthorIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'authors',
-              type: const _i2.ListType<_i4.AggregateReference<_i1.Author, int>>(
-                _i2.GenericType<_i4.AggregateReference<_i1.Author, int>>([
-                  _i2.ClassType<_i1.Author>(),
-                  _i2.ClassType<int>(),
-                ]),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByAuthorIsNull',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByGenre',
-          parameters: [
-            _i2.BeanParameter(
-              r'genre',
-              type: const _i2.EnumType<_i1.Genre>(_i1.Genre.values),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByGenreIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'genres',
-              type: const _i2.ListType<_i1.Genre>(
-                _i2.EnumType<_i1.Genre>(_i1.Genre.values),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByRatingBetween',
-          parameters: [
-            _i2.BeanParameter(
-              r'low',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'high',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByRatingGreaterThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'rating',
-              type: const _i2.ClassType<double>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByReleasedAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'moment',
-              type: const _i2.ClassType<DateTime>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByReleased',
-          parameters: [
-            _i2.BeanParameter(
-              r'moment',
-              type: const _i2.ClassType<DateTime>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderByYearDescTitleAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderBySubtitleAscIdAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockOrderBySubtitleDescIdAsc',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.SetType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByYearLessThanOrderByYear',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findDistinctByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'streamByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i5.Stream<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-        ),
-        _i2.ProxyMethod(
-          r'findByYearAfter',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockIsTrue',
-          parameters: [
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Slice<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findByInStockEquals',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findFirstByOrderByYearAsc',
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findTop2ByOrderByYearDesc',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findTop3ByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'countByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'countByTitleContaining',
-          parameters: [
-            _i2.BeanParameter(
-              r'part',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByYearLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'year',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'removeByTitle',
-          parameters: [
-            _i2.BeanParameter(
-              r'title',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByInStock',
-          parameters: [
-            _i2.BeanParameter(
-              r'inStock',
-              type: const _i2.ClassType<bool>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByTitleIn',
-          parameters: [
-            _i2.BeanParameter(
-              r'titles',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Book>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Book>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllSorted',
-          parameters: [
-            _i2.BeanParameter(
-              r'sort',
-              type: const _i2.ClassType<_i3.Sort>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllPaged',
-          parameters: [
-            _i2.BeanParameter(
-              r'pageable',
-              type: const _i2.ClassType<_i6.Pageable>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.GenericType<_i6.Page<_i1.Book>>([
-            _i2.ClassType<_i1.Book>(),
-          ]),
-          isFuture: true,
-        ),
+  static const _byIds = _i1.QueryMethod(
+    r'byIds',
+    _i6.Query(r'select * from books where id in (:ids) order by id'),
+    parameters: [r'ids'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _byTitle = _i1.QueryMethod(
+    r'byTitle',
+    _i6.Query(r'select * from books where title = :title order by id'),
+    parameters: [r'title'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _byTitleLike = _i1.QueryMethod(
+    r'byTitleLike',
+    _i6.Query(r'select * from books where title like :pattern order by id'),
+    parameters: [r'pattern'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _byGenre = _i1.QueryMethod(
+    r'byGenre',
+    _i6.Query(r'select * from books where genre = :genre order by id'),
+    parameters: [r'genre'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _byAuthor = _i1.QueryMethod(
+    r'byAuthor',
+    _i6.Query(r'select * from books where author = :author order by id'),
+    parameters: [r'author'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _byStock = _i1.QueryMethod(
+    r'byStock',
+    _i6.Query(r'select * from books where in_stock = :inStock order by id'),
+    parameters: [r'inStock'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static final _sameTitle = _i1.QueryMethod(
+    r'sameTitle',
+    const _i6.Query(
+      r'select * from books where title = :#{#book.title} order by id',
+    ),
+    parameters: const [r'book'],
+    element: const _i3.ClassType<_i2.Book>(),
+    expressions: [(arguments, context) => (arguments[0] as _i2.Book).title],
+  );
+
+  static final _byFirstArgument = _i1.QueryMethod(
+    r'byFirstArgument',
+    const _i6.Query(r'select * from books where year = :#{[0]} order by id'),
+    parameters: const [r'year'],
+    element: const _i3.ClassType<_i2.Book>(),
+    expressions: [
+      (arguments, context) => _i3.SpelOperations.listElement(arguments, 0),
+    ],
+  );
+
+  static final _sinceCutoff = _i1.QueryMethod(
+    r'sinceCutoff',
+    const _i6.Query(
+      r'select * from books where year >= :#{@years.cutoff} order by id',
+    ),
+    element: const _i3.ClassType<_i2.Book>(),
+    expressions: [
+      (arguments, context) => (context.bean(r'years') as _i2.Years).cutoff,
+    ],
+  );
+
+  static final _yearBefore = _i1.QueryMethod(
+    r'yearBefore',
+    const _i6.Query(
+      r'select * from books where year = :#{@years.before(#year)} order by id',
+    ),
+    parameters: const [r'year'],
+    element: const _i3.ClassType<_i2.Book>(),
+    expressions: [
+      (arguments, context) =>
+          (context.bean(r'years') as _i2.Years).before((arguments[0] as int)),
+    ],
+  );
+
+  static final _afterConfiguredCutoff = _i1.QueryMethod(
+    r'afterConfiguredCutoff',
+    const _i6.Query(
+      r'select * from books where year > :#{@environment.getProperty("books.cutoff", "0")} order by id',
+    ),
+    element: const _i3.ClassType<_i2.Book>(),
+    expressions: [
+      (arguments, context) =>
+          context.environment!.getProperty('books.cutoff', defaultValue: '0'),
+    ],
+  );
+
+  static final _afterSum = _i1.QueryMethod(
+    r'afterSum',
+    const _i6.Query(
+      r'select * from books where year > :#{#p0 + #a1} order by id',
+    ),
+    parameters: const [r'year', r'more'],
+    element: const _i3.ClassType<_i2.Book>(),
+    expressions: [
+      (arguments, context) => (arguments[0] as int) + (arguments[1] as int),
+    ],
+  );
+
+  static final _broken = _i1.QueryMethod(
+    r'broken',
+    const _i6.Query(r'select * from books where title = :#{#year} order by id'),
+    parameters: const [r'year'],
+    element: const _i3.ClassType<_i2.Book>(),
+    expressions: [(arguments, context) => (arguments[0] as int)],
+  );
+
+  static const _viaEntityName = _i1.QueryMethod(
+    r'viaEntityName',
+    _i6.Query(r'select * from #{#entityName} where title = :title'),
+    parameters: [r'title'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _firstPage = _i1.QueryMethod(
+    r'firstPage',
+    _i6.Query(r'select * from books order by id limit ${books.page-size:3}'),
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _byAuthorName = _i1.QueryMethod(
+    r'byAuthorName',
+    _i6.Query(
+      r'select b.* from {Book} b join {Author} a on a.{Author.id} = b.{Book.author} where a.{Author.name} like :name and b.{Book.inStock} = :inStock order by b.{Book.id}',
+    ),
+    parameters: [r'name', r'inStock'],
+    element: _i3.ClassType<_i2.Book>(),
+    entities: {r'Author': _i2.Author, r'Book': _i2.Book},
+  );
+
+  static const _withAuthor = _i1.QueryMethod(
+    r'withAuthor',
+    _i6.Query(
+      r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author where a.name like :name order by b.id',
+    ),
+    parameters: [r'name'],
+    element: _i3.ClassType<_i2.BookWithAuthor>(),
+  );
+
+  static const _missingColumn = _i1.QueryMethod(
+    r'missingColumn',
+    _i6.Query(r'select b.id, b.title from books b order by b.id'),
+    element: _i3.ClassType<_i2.BookWithAuthor>(),
+  );
+
+  static const _countAfter = _i1.QueryMethod(
+    r'countAfter',
+    _i6.Query(r'select count(*) from books where year > :year'),
+    parameters: [r'year'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<int>(),
+  );
+
+  static const _titleOf = _i1.QueryMethod(
+    r'titleOf',
+    _i6.Query(r'select title from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<String>(nullable: true),
+  );
+
+  static const _requiredTitleOf = _i1.QueryMethod(
+    r'requiredTitleOf',
+    _i6.Query(r'select title from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<String>(),
+  );
+
+  static const _titlesAfter = _i1.QueryMethod(
+    r'titlesAfter',
+    _i6.Query(r'select title from books where year > :year order by title'),
+    parameters: [r'year'],
+    element: _i3.ClassType<String>(),
+  );
+
+  static const _yearsAfter = _i1.QueryMethod(
+    r'yearsAfter',
+    _i6.Query(r'select year from books where year > :year order by year'),
+    parameters: [r'year'],
+    shape: _i1.QueryShape.set,
+    element: _i3.ClassType<int>(),
+  );
+
+  static const _inStockOf = _i1.QueryMethod(
+    r'inStockOf',
+    _i6.Query(r'select in_stock from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<bool>(nullable: true),
+  );
+
+  static const _ratingOf = _i1.QueryMethod(
+    r'ratingOf',
+    _i6.Query(r'select rating from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<double>(nullable: true),
+  );
+
+  static const _releasedOf = _i1.QueryMethod(
+    r'releasedOf',
+    _i6.Query(r'select released from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<DateTime>(nullable: true),
+  );
+
+  static const _genreOf = _i1.QueryMethod(
+    r'genreOf',
+    _i6.Query(r'select genre from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.EnumType<_i2.Genre>(_i2.Genre.values, nullable: true),
+  );
+
+  static const _one = _i1.QueryMethod(
+    r'one',
+    _i6.Query(r'select * from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<_i2.Book>(nullable: true),
+  );
+
+  static const _requiredOne = _i1.QueryMethod(
+    r'requiredOne',
+    _i6.Query(r'select * from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _theOnlyOne = _i1.QueryMethod(
+    r'theOnlyOne',
+    _i6.Query(r'select * from books order by id'),
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<_i2.Book>(nullable: true),
+  );
+
+  static const _asMap = _i1.QueryMethod(
+    r'asMap',
+    _i6.Query(r'select id, title, year from books where id = :id'),
+    parameters: [r'id'],
+    shape: _i1.QueryShape.single,
+    element: _i3.MapType<String, dynamic>(
+      _i3.ClassType<String>(),
+      _i3.DynamicType(),
+      nullable: true,
+    ),
+  );
+
+  static const _afterSorted = _i1.QueryMethod(
+    r'afterSorted',
+    _i6.Query(r'select * from books where year > :year'),
+    parameters: [r'year', r'sort'],
+    sort: 1,
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _afterSortedAndOrdered = _i1.QueryMethod(
+    r'afterSortedAndOrdered',
+    _i6.Query(r'select * from books where year > :year order by in_stock desc'),
+    parameters: [r'year', r'sort'],
+    sort: 1,
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _afterWindow = _i1.QueryMethod(
+    r'afterWindow',
+    _i6.Query(r'select * from books where year > :year'),
+    parameters: [r'year', r'pageable'],
+    pageable: 1,
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _pageAfter = _i1.QueryMethod(
+    r'pageAfter',
+    _i6.Query(r'select * from books where year > :year'),
+    parameters: [r'year', r'pageable'],
+    pageable: 1,
+    shape: _i1.QueryShape.page,
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _pageWithAuthor = _i1.QueryMethod(
+    r'pageWithAuthor',
+    _i6.Query(
+      r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author',
+      countQuery:
+          r'select count(*) from books b join authors a on a.id = b.author',
+    ),
+    parameters: [r'pageable'],
+    pageable: 0,
+    shape: _i1.QueryShape.page,
+    element: _i3.ClassType<_i2.BookWithAuthor>(),
+  );
+
+  static const _sliceAfter = _i1.QueryMethod(
+    r'sliceAfter',
+    _i6.Query(r'select * from books where year > :year'),
+    parameters: [r'year', r'pageable'],
+    pageable: 1,
+    shape: _i1.QueryShape.slice,
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _streamAfter = _i1.QueryMethod(
+    r'streamAfter',
+    _i6.Query(r'select * from books where year > :year order by id'),
+    parameters: [r'year'],
+    shape: _i1.QueryShape.stream,
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _streamTitles = _i1.QueryMethod(
+    r'streamTitles',
+    _i6.Query(r'select title from books order by id'),
+    shape: _i1.QueryShape.stream,
+    element: _i3.ClassType<String>(),
+  );
+
+  static const _streamWithAuthor = _i1.QueryMethod(
+    r'streamWithAuthor',
+    _i6.Query(
+      r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author order by b.id',
+    ),
+    shape: _i1.QueryShape.stream,
+    element: _i3.ClassType<_i2.BookWithAuthor>(),
+  );
+
+  static const _shift = _i1.QueryMethod(
+    r'shift',
+    _i6.Query(r'update books set year = year + :delta where year < :year'),
+    parameters: [r'year', r'delta'],
+    change: _i1.QueryChange.rows,
+  );
+
+  static const _deleteOlder = _i1.QueryMethod(
+    r'deleteOlder',
+    _i6.Query(r'delete from books where year < :year'),
+    parameters: [r'year'],
+    change: _i1.QueryChange.any,
+  );
+
+  static const _retitle = _i1.QueryMethod(
+    r'retitle',
+    _i6.Query(r'update books set subtitle = :subtitle where id = :id'),
+    parameters: [r'id', r'subtitle'],
+    change: _i1.QueryChange.nothing,
+  );
+
+  static const _authorsWithBooks = _i1.QueryMethod(
+    r'authorsWithBooks',
+    _i6.Query(
+      r'select a.id, a.name, b.title from authors a left join books b on b.author = a.id order by a.id, b.id',
+      resultSetExtractor: _i2.AuthorWithBooks.extract,
+    ),
+    element: _i3.ClassType<_i2.AuthorWithBooks>(),
+  );
+
+  static const _shouted = _i1.QueryMethod(
+    r'shouted',
+    _i6.Query(
+      r'select title from books order by id',
+      rowMapper: _i2.shoutTitle,
+    ),
+    element: _i3.ClassType<String>(),
+  );
+
+  static const _bySubtitleText = _i1.QueryMethod(
+    r'bySubtitleText',
+    _i6.Query(r'select * from books where subtitle = :text order by id'),
+    parameters: [r'text'],
+    element: _i3.ClassType<_i2.Book>(),
+  );
+
+  static const _findByTitle = _i1.PartTree(r'findByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
+
+  static const _findByTitleIgnoreCase = _i1.PartTree(r'findByTitleIgnoreCase', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.simpleProperty, true)]),
+  ]);
+
+  static const _findOneByTitle = _i1.PartTree(r'findOneByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
+
+  static const _getByTitle = _i1.PartTree(r'getByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ]);
+
+  static const _findByTitleAndYear = _i1.PartTree(r'findByTitleAndYear', [
+    _i1.OrPart([_i1.Part(r'title'), _i1.Part(r'year')]),
+  ]);
+
+  static const _findByTitleOrYear = _i1.PartTree(r'findByTitleOrYear', [
+    _i1.OrPart([_i1.Part(r'title')]),
+    _i1.OrPart([_i1.Part(r'year')]),
+  ]);
+
+  static const _findByYearNot = _i1.PartTree(r'findByYearNot', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findByTitleNot = _i1.PartTree(r'findByTitleNot', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findByTitleNotIgnoreCase = _i1.PartTree(
+    r'findByTitleNotIgnoreCase',
+    [
+      _i1.OrPart([
+        _i1.Part(r'title', _i1.PartType.negatingSimpleProperty, true),
+      ]),
+    ],
+  );
+
+  static const _findByYearBetween = _i1.PartTree(r'findByYearBetween', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.between)]),
+  ]);
+
+  static const _findByYearGreaterThan = _i1.PartTree(r'findByYearGreaterThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThan)]),
+  ]);
+
+  static const _findByYearGreaterThanEqual = _i1.PartTree(
+    r'findByYearGreaterThanEqual',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThanEqual)]),
+    ],
+  );
+
+  static const _findByYearLessThan = _i1.PartTree(r'findByYearLessThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+  ]);
+
+  static const _findByYearLessThanEqual = _i1.PartTree(
+    r'findByYearLessThanEqual',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThanEqual)]),
+    ],
+  );
+
+  static const _findByYearIn = _i1.PartTree(r'findByYearIn', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByYearNotIn = _i1.PartTree(r'findByYearNotIn', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.notIn)]),
+  ]);
+
+  static const _findByTitleIn = _i1.PartTree(r'findByTitleIn', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByTitleInIgnoreCase = _i1.PartTree(
+    r'findByTitleInIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_, true)]),
+    ],
+  );
+
+  static const _findBySubtitleIn = _i1.PartTree(r'findBySubtitleIn', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.in_)]),
+  ]);
+
+  static const _findBySubtitleNotIn = _i1.PartTree(r'findBySubtitleNotIn', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.notIn)]),
+  ]);
+
+  static const _findByTitleStartingWith = _i1.PartTree(
+    r'findByTitleStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.startingWith)]),
+    ],
+  );
+
+  static const _findByTitleEndingWith = _i1.PartTree(r'findByTitleEndingWith', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.endingWith)]),
+  ]);
+
+  static const _findByTitleContaining = _i1.PartTree(r'findByTitleContaining', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing)]),
+  ]);
+
+  static const _findByTitleNotContaining = _i1.PartTree(
+    r'findByTitleNotContaining',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.notContaining)]),
+    ],
+  );
+
+  static const _findByTitleLike = _i1.PartTree(r'findByTitleLike', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.like)]),
+  ]);
+
+  static const _findByTitleNotLike = _i1.PartTree(r'findByTitleNotLike', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.notLike)]),
+  ]);
+
+  static const _findByTitleLikeIgnoreCase = _i1.PartTree(
+    r'findByTitleLikeIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.like, true)]),
+    ],
+  );
+
+  static const _findByTitleContainingIgnoreCase = _i1.PartTree(
+    r'findByTitleContainingIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing, true)]),
+    ],
+  );
+
+  static const _findByTitleStartingWithIgnoreCase = _i1.PartTree(
+    r'findByTitleStartingWithIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.startingWith, true)]),
+    ],
+  );
+
+  static const _findByTitleEndingWithIgnoreCase = _i1.PartTree(
+    r'findByTitleEndingWithIgnoreCase',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.endingWith, true)]),
+    ],
+  );
+
+  static const _findBySubtitleIsNull = _i1.PartTree(r'findBySubtitleIsNull', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.isNull)]),
+  ]);
+
+  static const _findBySubtitleIsNotNull = _i1.PartTree(
+    r'findBySubtitleIsNotNull',
+    [
+      _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.isNotNull)]),
+    ],
+  );
+
+  static const _findBySubtitle = _i1.PartTree(r'findBySubtitle', [
+    _i1.OrPart([_i1.Part(r'subtitle')]),
+  ]);
+
+  static const _findBySubtitleNot = _i1.PartTree(r'findBySubtitleNot', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.negatingSimpleProperty)]),
+  ]);
+
+  static const _findBySubtitleLessThan = _i1.PartTree(
+    r'findBySubtitleLessThan',
+    [
+      _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.lessThan)]),
+    ],
+  );
+
+  static const _findBySubtitleBetween = _i1.PartTree(r'findBySubtitleBetween', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.between)]),
+  ]);
+
+  static const _findBySubtitleLike = _i1.PartTree(r'findBySubtitleLike', [
+    _i1.OrPart([_i1.Part(r'subtitle', _i1.PartType.like)]),
+  ]);
+
+  static const _findByInStockTrue = _i1.PartTree(r'findByInStockTrue', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isTrue)]),
+  ]);
+
+  static const _findByInStockFalse = _i1.PartTree(r'findByInStockFalse', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isFalse)]),
+  ]);
+
+  static const _findByInStock = _i1.PartTree(r'findByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findByAuthor = _i1.PartTree(r'findByAuthor', [
+    _i1.OrPart([_i1.Part(r'author')]),
+  ]);
+
+  static const _findByAuthorIn = _i1.PartTree(r'findByAuthorIn', [
+    _i1.OrPart([_i1.Part(r'author', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByAuthorIsNull = _i1.PartTree(r'findByAuthorIsNull', [
+    _i1.OrPart([_i1.Part(r'author', _i1.PartType.isNull)]),
+  ]);
+
+  static const _findByGenre = _i1.PartTree(r'findByGenre', [
+    _i1.OrPart([_i1.Part(r'genre')]),
+  ]);
+
+  static const _findByGenreIn = _i1.PartTree(r'findByGenreIn', [
+    _i1.OrPart([_i1.Part(r'genre', _i1.PartType.in_)]),
+  ]);
+
+  static const _findByRatingBetween = _i1.PartTree(r'findByRatingBetween', [
+    _i1.OrPart([_i1.Part(r'rating', _i1.PartType.between)]),
+  ]);
+
+  static const _findByRatingGreaterThan = _i1.PartTree(
+    r'findByRatingGreaterThan',
+    [
+      _i1.OrPart([_i1.Part(r'rating', _i1.PartType.greaterThan)]),
+    ],
+  );
+
+  static const _findByReleasedAfter = _i1.PartTree(r'findByReleasedAfter', [
+    _i1.OrPart([_i1.Part(r'released', _i1.PartType.greaterThan)]),
+  ]);
+
+  static const _findByReleased = _i1.PartTree(r'findByReleased', [
+    _i1.OrPart([_i1.Part(r'released')]),
+  ]);
+
+  static const _findByInStockOrderByYearDescTitleAsc = _i1.PartTree(
+    r'findByInStockOrderByYearDescTitleAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.desc(r'year'), _i1.SortOrder.asc(r'title')]),
+  );
+
+  static const _findByInStockOrderBySubtitleAscIdAsc = _i1.PartTree(
+    r'findByInStockOrderBySubtitleAscIdAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.asc(r'subtitle'), _i1.SortOrder.asc(r'id')]),
+  );
+
+  static const _findByInStockOrderBySubtitleDescIdAsc = _i1.PartTree(
+    r'findByInStockOrderBySubtitleDescIdAsc',
+    [
+      _i1.OrPart([_i1.Part(r'inStock')]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.desc(r'subtitle'), _i1.SortOrder.asc(r'id')]),
+  );
+
+  static const _findByYear = _i1.PartTree(r'findByYear', [
+    _i1.OrPart([_i1.Part(r'year')]),
+  ]);
+
+  static const _findByYearLessThanOrderByYear = _i1.PartTree(
+    r'findByYearLessThanOrderByYear',
+    [
+      _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+    ],
+    sort: _i1.Sort([_i1.SortOrder.asc(r'year')]),
+  );
+
+  static const _findDistinctByInStock = _i1.PartTree(r'findDistinctByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.find, distinct: true));
+
+  static const _streamByInStock = _i1.PartTree(r'streamByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findByYearAfter = _i1.PartTree(r'findByYearAfter', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.greaterThan)]),
+  ]);
+
+  static const _findByInStockIsTrue = _i1.PartTree(r'findByInStockIsTrue', [
+    _i1.OrPart([_i1.Part(r'inStock', _i1.PartType.isTrue)]),
+  ]);
+
+  static const _findByInStockEquals = _i1.PartTree(r'findByInStockEquals', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ]);
+
+  static const _findFirstByOrderByYearAsc = _i1.PartTree(
+    r'findFirstByOrderByYearAsc',
+    [],
+    subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 1),
+    sort: _i1.Sort([_i1.SortOrder.asc(r'year')]),
+  );
+
+  static const _findTop2ByOrderByYearDesc = _i1.PartTree(
+    r'findTop2ByOrderByYearDesc',
+    [],
+    subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 2),
+    sort: _i1.Sort([_i1.SortOrder.desc(r'year')]),
+  );
+
+  static const _findTop3ByInStock = _i1.PartTree(r'findTop3ByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.find, maxResults: 3));
+
+  static const _countByInStock = _i1.PartTree(r'countByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.count));
+
+  static const _countByTitleContaining = _i1.PartTree(
+    r'countByTitleContaining',
+    [
+      _i1.OrPart([_i1.Part(r'title', _i1.PartType.containing)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.count),
+  );
+
+  static const _existsByTitle = _i1.PartTree(r'existsByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.exists));
+
+  static const _deleteByYearLessThan = _i1.PartTree(r'deleteByYearLessThan', [
+    _i1.OrPart([_i1.Part(r'year', _i1.PartType.lessThan)]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _removeByTitle = _i1.PartTree(r'removeByTitle', [
+    _i1.OrPart([_i1.Part(r'title')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByInStock = _i1.PartTree(r'deleteByInStock', [
+    _i1.OrPart([_i1.Part(r'inStock')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByTitleIn = _i1.PartTree(r'deleteByTitleIn', [
+    _i1.OrPart([_i1.Part(r'title', _i1.PartType.in_)]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static _$SqlBooksImpl $create(_i3.DependencyResolver r) => _$SqlBooksImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Book, int>(
+      r'SqlBooks',
+      annotations: const [_i6.UseStore(r'jdbc')],
+      queries: [
+        _byYear,
+        _aroundYear,
+        _byIds,
+        _byTitle,
+        _byTitleLike,
+        _byGenre,
+        _byAuthor,
+        _byStock,
+        _sameTitle,
+        _byFirstArgument,
+        _sinceCutoff,
+        _yearBefore,
+        _afterConfiguredCutoff,
+        _afterSum,
+        _broken,
+        _viaEntityName,
+        _firstPage,
+        _byAuthorName,
+        _withAuthor,
+        _missingColumn,
+        _countAfter,
+        _titleOf,
+        _requiredTitleOf,
+        _titlesAfter,
+        _yearsAfter,
+        _inStockOf,
+        _ratingOf,
+        _releasedOf,
+        _genreOf,
+        _one,
+        _requiredOne,
+        _theOnlyOne,
+        _asMap,
+        _afterSorted,
+        _afterSortedAndOrdered,
+        _afterWindow,
+        _pageAfter,
+        _pageWithAuthor,
+        _sliceAfter,
+        _streamAfter,
+        _streamTitles,
+        _streamWithAuthor,
+        _shift,
+        _deleteOlder,
+        _retitle,
+        _authorsWithBooks,
+        _shouted,
+        _bySubtitleText,
       ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'ListPagingAndSortingRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'PagingAndSortingRepository': [
-          const _i2.ClassType<_i1.Book>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlBooksImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Book>> byYear(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[0], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> aroundYear(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[1], [year]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> byIds(List<int> ids) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> byTitle(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[3], [title]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> byTitleLike(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[4], [pattern]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> byGenre(_i1.Genre genre) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[5], [genre]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Book>> byAuthor(
-    _i4.AggregateReference<_i1.Author, int> author,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[6], [author]),
+    ),
   );
 
   @override
-  _i5.Future<List<_i1.Book>> byStock(bool inStock) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[7], [inStock]),
-      );
+  _i4.Future<List<_i2.Book>> byYear(int year) =>
+      this.operations.query<List<_i2.Book>>(_byYear, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> sameTitle(_i1.Book book) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[8], [book]),
-      );
+  _i4.Future<List<_i2.Book>> aroundYear(int year) =>
+      this.operations.query<List<_i2.Book>>(_aroundYear, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> byFirstArgument(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[9], [year]),
-      );
+  _i4.Future<List<_i2.Book>> byIds(List<int> ids) =>
+      this.operations.query<List<_i2.Book>>(_byIds, [ids]);
 
   @override
-  _i5.Future<List<_i1.Book>> sinceCutoff() => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[10], const []),
-  );
+  _i4.Future<List<_i2.Book>> byTitle(String title) =>
+      this.operations.query<List<_i2.Book>>(_byTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> yearBefore(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[11], [year]),
-      );
+  _i4.Future<List<_i2.Book>> byTitleLike(String pattern) =>
+      this.operations.query<List<_i2.Book>>(_byTitleLike, [pattern]);
 
   @override
-  _i5.Future<List<_i1.Book>> afterConfiguredCutoff() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[12], const []),
-      );
+  _i4.Future<List<_i2.Book>> byGenre(_i2.Genre genre) =>
+      this.operations.query<List<_i2.Book>>(_byGenre, [genre]);
 
   @override
-  _i5.Future<List<_i1.Book>> afterSum(int year, int more) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[13], [year, more]),
-      );
+  _i4.Future<List<_i2.Book>> byAuthor(
+    _i6.AggregateReference<_i2.Author, int> author,
+  ) => this.operations.query<List<_i2.Book>>(_byAuthor, [author]);
 
   @override
-  _i5.Future<List<_i1.Book>> broken(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[14], [year]),
-      );
+  _i4.Future<List<_i2.Book>> byStock(bool inStock) =>
+      this.operations.query<List<_i2.Book>>(_byStock, [inStock]);
 
   @override
-  _i5.Future<List<_i1.Book>> viaEntityName(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[15], [title]),
-      );
+  _i4.Future<List<_i2.Book>> sameTitle(_i2.Book book) =>
+      this.operations.query<List<_i2.Book>>(_sameTitle, [book]);
 
   @override
-  _i5.Future<List<_i1.Book>> firstPage() => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[16], const []),
-  );
+  _i4.Future<List<_i2.Book>> byFirstArgument(int year) =>
+      this.operations.query<List<_i2.Book>>(_byFirstArgument, [year]);
 
   @override
-  _i5.Future<List<_i1.BookWithAuthor>> withAuthor(String name) =>
-      _i2.retypeFuture<List<_i1.BookWithAuthor>>(
-        this._handler.invoke(this._metadata.methods[17], [name]),
-      );
+  _i4.Future<List<_i2.Book>> sinceCutoff() =>
+      this.operations.query<List<_i2.Book>>(_sinceCutoff, const []);
 
   @override
-  _i5.Future<List<_i1.BookWithAuthor>> missingColumn() =>
-      _i2.retypeFuture<List<_i1.BookWithAuthor>>(
-        this._handler.invoke(this._metadata.methods[18], const []),
-      );
+  _i4.Future<List<_i2.Book>> yearBefore(int year) =>
+      this.operations.query<List<_i2.Book>>(_yearBefore, [year]);
 
   @override
-  _i5.Future<int> countAfter(int year) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[19], [year]),
-  );
+  _i4.Future<List<_i2.Book>> afterConfiguredCutoff() =>
+      this.operations.query<List<_i2.Book>>(_afterConfiguredCutoff, const []);
 
   @override
-  _i5.Future<String?> titleOf(int id) => _i2.retypeFuture<String?>(
-    this._handler.invoke(this._metadata.methods[20], [id]),
-  );
+  _i4.Future<List<_i2.Book>> afterSum(int year, int more) =>
+      this.operations.query<List<_i2.Book>>(_afterSum, [year, more]);
 
   @override
-  _i5.Future<String> requiredTitleOf(int id) => _i2.retypeFuture<String>(
-    this._handler.invoke(this._metadata.methods[21], [id]),
-  );
+  _i4.Future<List<_i2.Book>> broken(int year) =>
+      this.operations.query<List<_i2.Book>>(_broken, [year]);
 
   @override
-  _i5.Future<List<String>> titlesAfter(int year) =>
-      _i2.retypeFuture<List<String>>(
-        this._handler.invoke(this._metadata.methods[22], [year]),
-      );
+  _i4.Future<List<_i2.Book>> viaEntityName(String title) =>
+      this.operations.query<List<_i2.Book>>(_viaEntityName, [title]);
 
   @override
-  _i5.Future<Set<int>> yearsAfter(int year) => _i2.retypeFuture<Set<int>>(
-    this._handler.invoke(this._metadata.methods[23], [year]),
-  );
+  _i4.Future<List<_i2.Book>> firstPage() =>
+      this.operations.query<List<_i2.Book>>(_firstPage, const []);
 
   @override
-  _i5.Future<bool?> inStockOf(int id) => _i2.retypeFuture<bool?>(
-    this._handler.invoke(this._metadata.methods[24], [id]),
-  );
+  _i4.Future<List<_i2.Book>> byAuthorName(String name, bool inStock) =>
+      this.operations.query<List<_i2.Book>>(_byAuthorName, [name, inStock]);
 
   @override
-  _i5.Future<double?> ratingOf(int id) => _i2.retypeFuture<double?>(
-    this._handler.invoke(this._metadata.methods[25], [id]),
-  );
+  _i4.Future<List<_i2.BookWithAuthor>> withAuthor(String name) =>
+      this.operations.query<List<_i2.BookWithAuthor>>(_withAuthor, [name]);
 
   @override
-  _i5.Future<DateTime?> releasedOf(int id) => _i2.retypeFuture<DateTime?>(
-    this._handler.invoke(this._metadata.methods[26], [id]),
-  );
+  _i4.Future<List<_i2.BookWithAuthor>> missingColumn() =>
+      this.operations.query<List<_i2.BookWithAuthor>>(_missingColumn, const []);
 
   @override
-  _i5.Future<_i1.Genre?> genreOf(int id) => _i2.retypeFuture<_i1.Genre?>(
-    this._handler.invoke(this._metadata.methods[27], [id]),
-  );
+  _i4.Future<int> countAfter(int year) =>
+      this.operations.query<int>(_countAfter, [year]);
 
   @override
-  _i5.Future<_i1.Book?> one(int id) => _i2.retypeFuture<_i1.Book?>(
-    this._handler.invoke(this._metadata.methods[28], [id]),
-  );
+  _i4.Future<String?> titleOf(int id) =>
+      this.operations.query<String?>(_titleOf, [id]);
 
   @override
-  _i5.Future<_i1.Book> requiredOne(int id) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[29], [id]),
-  );
+  _i4.Future<String> requiredTitleOf(int id) =>
+      this.operations.query<String>(_requiredTitleOf, [id]);
 
   @override
-  _i5.Future<_i1.Book?> theOnlyOne() => _i2.retypeFuture<_i1.Book?>(
-    this._handler.invoke(this._metadata.methods[30], const []),
-  );
+  _i4.Future<List<String>> titlesAfter(int year) =>
+      this.operations.query<List<String>>(_titlesAfter, [year]);
 
   @override
-  _i5.Future<Map<String, Object?>?> asMap(int id) =>
-      _i2.retypeFuture<Map<String, Object?>?>(
-        this._handler.invoke(this._metadata.methods[31], [id]),
-      );
+  _i4.Future<Set<int>> yearsAfter(int year) =>
+      this.operations.query<Set<int>>(_yearsAfter, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> afterSorted(int year, _i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[32], [year, sort]),
-      );
+  _i4.Future<bool?> inStockOf(int id) =>
+      this.operations.query<bool?>(_inStockOf, [id]);
 
   @override
-  _i5.Future<List<_i1.Book>> afterSortedAndOrdered(int year, _i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[33], [year, sort]),
-      );
+  _i4.Future<double?> ratingOf(int id) =>
+      this.operations.query<double?>(_ratingOf, [id]);
 
   @override
-  _i5.Future<List<_i1.Book>> afterWindow(int year, _i6.Pageable pageable) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[34], [year, pageable]),
-      );
+  _i4.Future<DateTime?> releasedOf(int id) =>
+      this.operations.query<DateTime?>(_releasedOf, [id]);
 
   @override
-  _i5.Future<_i6.Page<_i1.Book>> pageAfter(int year, _i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Page<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[35], [year, pageable]),
-      );
+  _i4.Future<_i2.Genre?> genreOf(int id) =>
+      this.operations.query<_i2.Genre?>(_genreOf, [id]);
 
   @override
-  _i5.Future<_i6.Page<_i1.BookWithAuthor>> pageWithAuthor(
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<_i6.Page<_i1.BookWithAuthor>>(
-    this._handler.invoke(this._metadata.methods[36], [pageable]),
-  );
+  _i4.Future<_i2.Book?> one(int id) =>
+      this.operations.query<_i2.Book?>(_one, [id]);
 
   @override
-  _i5.Future<_i6.Slice<_i1.Book>> sliceAfter(int year, _i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Slice<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[37], [year, pageable]),
-      );
+  _i4.Future<_i2.Book> requiredOne(int id) =>
+      this.operations.query<_i2.Book>(_requiredOne, [id]);
 
   @override
-  _i5.Stream<_i1.Book> streamAfter(int year) =>
-      (this._handler.invoke(this._metadata.methods[38], [year])
-          as _i5.Stream<_i1.Book>);
+  _i4.Future<_i2.Book?> theOnlyOne() =>
+      this.operations.query<_i2.Book?>(_theOnlyOne, const []);
 
   @override
-  _i5.Stream<String> streamTitles() =>
-      (this._handler.invoke(this._metadata.methods[39], const [])
-          as _i5.Stream<String>);
+  _i4.Future<Map<String, Object?>?> asMap(int id) =>
+      this.operations.query<Map<String, Object?>?>(_asMap, [id]);
 
   @override
-  _i5.Stream<_i1.BookWithAuthor> streamWithAuthor() =>
-      (this._handler.invoke(this._metadata.methods[40], const [])
-          as _i5.Stream<_i1.BookWithAuthor>);
+  _i4.Future<List<_i2.Book>> afterSorted(int year, _i5.Sort sort) =>
+      this.operations.query<List<_i2.Book>>(_afterSorted, [year, sort]);
 
   @override
-  _i5.Future<int> shift(int year, int delta) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[41], [year, delta]),
-  );
+  _i4.Future<List<_i2.Book>> afterSortedAndOrdered(int year, _i5.Sort sort) =>
+      this.operations.query<List<_i2.Book>>(_afterSortedAndOrdered, [
+        year,
+        sort,
+      ]);
 
   @override
-  _i5.Future<bool> deleteOlder(int year) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[42], [year]),
-  );
+  _i4.Future<List<_i2.Book>> afterWindow(int year, _i7.Pageable pageable) =>
+      this.operations.query<List<_i2.Book>>(_afterWindow, [year, pageable]);
 
   @override
-  _i5.Future<void> retitle(int id, String? subtitle) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[43], [id, subtitle]),
-  );
+  _i4.Future<_i7.Page<_i2.Book>> pageAfter(int year, _i7.Pageable pageable) =>
+      this.operations.query<_i7.Page<_i2.Book>>(_pageAfter, [year, pageable]);
 
   @override
-  _i5.Future<List<_i1.AuthorWithBooks>> authorsWithBooks() =>
-      _i2.retypeFuture<List<_i1.AuthorWithBooks>>(
-        this._handler.invoke(this._metadata.methods[44], const []),
-      );
+  _i4.Future<_i7.Page<_i2.BookWithAuthor>> pageWithAuthor(
+    _i7.Pageable pageable,
+  ) => this.operations.query<_i7.Page<_i2.BookWithAuthor>>(_pageWithAuthor, [
+    pageable,
+  ]);
 
   @override
-  _i5.Future<List<String>> shouted() => _i2.retypeFuture<List<String>>(
-    this._handler.invoke(this._metadata.methods[45], const []),
-  );
+  _i4.Future<_i7.Slice<_i2.Book>> sliceAfter(int year, _i7.Pageable pageable) =>
+      this.operations.query<_i7.Slice<_i2.Book>>(_sliceAfter, [year, pageable]);
 
   @override
-  _i5.Future<List<_i1.Book>> bySubtitleText(String text) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[46], [text]),
-      );
+  _i4.Stream<_i2.Book> streamAfter(int year) =>
+      this.operations.queryStream<_i2.Book>(_streamAfter, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitle(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[47], [title]),
-      );
+  _i4.Stream<String> streamTitles() =>
+      this.operations.queryStream<String>(_streamTitles, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleIgnoreCase(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[48], [title]),
-      );
+  _i4.Stream<_i2.BookWithAuthor> streamWithAuthor() => this.operations
+      .queryStream<_i2.BookWithAuthor>(_streamWithAuthor, const []);
 
   @override
-  _i5.Future<_i1.Book?> findOneByTitle(String title) =>
-      _i2.retypeFuture<_i1.Book?>(
-        this._handler.invoke(this._metadata.methods[49], [title]),
-      );
+  _i4.Future<int> shift(int year, int delta) =>
+      this.operations.query<int>(_shift, [year, delta]);
 
   @override
-  _i5.Future<_i1.Book> getByTitle(String title) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[50], [title]),
-  );
+  _i4.Future<bool> deleteOlder(int year) =>
+      this.operations.query<bool>(_deleteOlder, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleAndYear(String title, int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[51], [title, year]),
-      );
+  _i4.Future<void> retitle(int id, String? subtitle) =>
+      this.operations.query<void>(_retitle, [id, subtitle]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleOrYear(String title, int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[52], [title, year]),
-      );
+  _i4.Future<List<_i2.AuthorWithBooks>> authorsWithBooks() => this.operations
+      .query<List<_i2.AuthorWithBooks>>(_authorsWithBooks, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearNot(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[53], [year]),
-      );
+  _i4.Future<List<String>> shouted() =>
+      this.operations.query<List<String>>(_shouted, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleNot(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[54], [title]),
-      );
+  _i4.Future<List<_i2.Book>> bySubtitleText(String text) =>
+      this.operations.query<List<_i2.Book>>(_bySubtitleText, [text]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleNotIgnoreCase(String title) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[55], [title]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitle(String title) =>
+      this.operations.list(_findByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearBetween(int from, int to) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[56], [from, to]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleIgnoreCase(String title) =>
+      this.operations.list(_findByTitleIgnoreCase, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearGreaterThan(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[57], [year]),
-      );
+  _i4.Future<_i2.Book?> findOneByTitle(String title) =>
+      this.operations.one(_findOneByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearGreaterThanEqual(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[58], [year]),
-      );
+  _i4.Future<_i2.Book> getByTitle(String title) =>
+      this.operations.single(_getByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearLessThan(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[59], [year]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleAndYear(String title, int year) =>
+      this.operations.list(_findByTitleAndYear, [title, year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearLessThanEqual(int year) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[60], [year]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleOrYear(String title, int year) =>
+      this.operations.list(_findByTitleOrYear, [title, year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearIn(List<int> years) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[61], [years]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearNot(int year) =>
+      this.operations.list(_findByYearNot, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByYearNotIn(Set<int> years) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[62], [years]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleNot(String title) =>
+      this.operations.list(_findByTitleNot, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleIn(List<String> titles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[63], [titles]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleNotIgnoreCase(String title) =>
+      this.operations.list(_findByTitleNotIgnoreCase, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleInIgnoreCase(List<String> titles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[64], [titles]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearBetween(int from, int to) =>
+      this.operations.list(_findByYearBetween, [from, to]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIn(List<String?> subtitles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[65], [subtitles]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearGreaterThan(int year) =>
+      this.operations.list(_findByYearGreaterThan, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[66], [subtitles]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearGreaterThanEqual(int year) =>
+      this.operations.list(_findByYearGreaterThanEqual, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleStartingWith(String prefix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[67], [prefix]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearLessThan(int year) =>
+      this.operations.list(_findByYearLessThan, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleEndingWith(String suffix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[68], [suffix]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearLessThanEqual(int year) =>
+      this.operations.list(_findByYearLessThanEqual, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleContaining(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[69], [part]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearIn(List<int> years) =>
+      this.operations.list(_findByYearIn, [years]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleNotContaining(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[70], [part]),
-      );
+  _i4.Future<List<_i2.Book>> findByYearNotIn(Set<int> years) =>
+      this.operations.list(_findByYearNotIn, [years]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleLike(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[71], [pattern]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleIn(List<String> titles) =>
+      this.operations.list(_findByTitleIn, [titles]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleNotLike(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[72], [pattern]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleInIgnoreCase(List<String> titles) =>
+      this.operations.list(_findByTitleInIgnoreCase, [titles]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleLikeIgnoreCase(String pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[73], [pattern]),
-      );
+  _i4.Future<List<_i2.Book>> findBySubtitleIn(List<String?> subtitles) =>
+      this.operations.list(_findBySubtitleIn, [subtitles]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleContainingIgnoreCase(String part) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[74], [part]),
-      );
+  _i4.Future<List<_i2.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
+      this.operations.list(_findBySubtitleNotIn, [subtitles]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[75], [prefix]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleStartingWith(String prefix) =>
+      this.operations.list(_findByTitleStartingWith, [prefix]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[76], [suffix]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleEndingWith(String suffix) =>
+      this.operations.list(_findByTitleEndingWith, [suffix]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIsNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[77], const []),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleContaining(String part) =>
+      this.operations.list(_findByTitleContaining, [part]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleIsNotNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[78], const []),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleNotContaining(String part) =>
+      this.operations.list(_findByTitleNotContaining, [part]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitle(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[79], [subtitle]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleLike(String pattern) =>
+      this.operations.list(_findByTitleLike, [pattern]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleNot(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[80], [subtitle]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleNotLike(String pattern) =>
+      this.operations.list(_findByTitleNotLike, [pattern]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleLessThan(String? subtitle) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[81], [subtitle]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleLikeIgnoreCase(String pattern) =>
+      this.operations.list(_findByTitleLikeIgnoreCase, [pattern]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleBetween(String? from, String? to) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[82], [from, to]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleContainingIgnoreCase(String part) =>
+      this.operations.list(_findByTitleContainingIgnoreCase, [part]);
 
   @override
-  _i5.Future<List<_i1.Book>> findBySubtitleLike(String? pattern) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[83], [pattern]),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
+      this.operations.list(_findByTitleStartingWithIgnoreCase, [prefix]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockTrue() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[84], const []),
-      );
+  _i4.Future<List<_i2.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
+      this.operations.list(_findByTitleEndingWithIgnoreCase, [suffix]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockFalse() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[85], const []),
-      );
+  _i4.Future<List<_i2.Book>> findBySubtitleIsNull() =>
+      this.operations.list(_findBySubtitleIsNull, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStock(bool inStock, _i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[86], [inStock, sort]),
-      );
+  _i4.Future<List<_i2.Book>> findBySubtitleIsNotNull() =>
+      this.operations.list(_findBySubtitleIsNotNull, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findByAuthor(
-    _i4.AggregateReference<_i1.Author, int> author,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[87], [author]),
-  );
+  _i4.Future<List<_i2.Book>> findBySubtitle(String? subtitle) =>
+      this.operations.list(_findBySubtitle, [subtitle]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByAuthorIn(
-    List<_i4.AggregateReference<_i1.Author, int>> authors,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[88], [authors]),
-  );
+  _i4.Future<List<_i2.Book>> findBySubtitleNot(String? subtitle) =>
+      this.operations.list(_findBySubtitleNot, [subtitle]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByAuthorIsNull() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[89], const []),
-      );
+  _i4.Future<List<_i2.Book>> findBySubtitleLessThan(String? subtitle) =>
+      this.operations.list(_findBySubtitleLessThan, [subtitle]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByGenre(_i1.Genre genre) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[90], [genre]),
-      );
+  _i4.Future<List<_i2.Book>> findBySubtitleBetween(String? from, String? to) =>
+      this.operations.list(_findBySubtitleBetween, [from, to]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByGenreIn(List<_i1.Genre> genres) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[91], [genres]),
-      );
+  _i4.Future<List<_i2.Book>> findBySubtitleLike(String? pattern) =>
+      this.operations.list(_findBySubtitleLike, [pattern]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByRatingBetween(double low, double high) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[92], [low, high]),
-      );
+  _i4.Future<List<_i2.Book>> findByInStockTrue() =>
+      this.operations.list(_findByInStockTrue, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findByRatingGreaterThan(double rating) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[93], [rating]),
-      );
+  _i4.Future<List<_i2.Book>> findByInStockFalse() =>
+      this.operations.list(_findByInStockFalse, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findByReleasedAfter(DateTime moment) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[94], [moment]),
-      );
+  _i4.Future<List<_i2.Book>> findByInStock(bool inStock, _i5.Sort sort) =>
+      this.operations.list(_findByInStock, [inStock], sort: sort);
 
   @override
-  _i5.Future<List<_i1.Book>> findByReleased(DateTime? moment) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[95], [moment]),
-      );
+  _i4.Future<List<_i2.Book>> findByAuthor(
+    _i6.AggregateReference<_i2.Author, int> author,
+  ) => this.operations.list(_findByAuthor, [author]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderByYearDescTitleAsc(
+  _i4.Future<List<_i2.Book>> findByAuthorIn(
+    List<_i6.AggregateReference<_i2.Author, int>> authors,
+  ) => this.operations.list(_findByAuthorIn, [authors]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByAuthorIsNull() =>
+      this.operations.list(_findByAuthorIsNull, const []);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByGenre(_i2.Genre genre) =>
+      this.operations.list(_findByGenre, [genre]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByGenreIn(List<_i2.Genre> genres) =>
+      this.operations.list(_findByGenreIn, [genres]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByRatingBetween(double low, double high) =>
+      this.operations.list(_findByRatingBetween, [low, high]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByRatingGreaterThan(double rating) =>
+      this.operations.list(_findByRatingGreaterThan, [rating]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByReleasedAfter(DateTime moment) =>
+      this.operations.list(_findByReleasedAfter, [moment]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByReleased(DateTime? moment) =>
+      this.operations.list(_findByReleased, [moment]);
+
+  @override
+  _i4.Future<List<_i2.Book>> findByInStockOrderByYearDescTitleAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[96], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderByYearDescTitleAsc, [inStock]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderBySubtitleAscIdAsc(
+  _i4.Future<List<_i2.Book>> findByInStockOrderBySubtitleAscIdAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[97], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderBySubtitleAscIdAsc, [inStock]);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockOrderBySubtitleDescIdAsc(
+  _i4.Future<List<_i2.Book>> findByInStockOrderBySubtitleDescIdAsc(
     bool inStock,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[98], [inStock]),
-  );
+  ) => this.operations.list(_findByInStockOrderBySubtitleDescIdAsc, [inStock]);
 
   @override
-  _i5.Future<Set<_i1.Book>> findByYear(int year) =>
-      _i2.retypeFuture<Set<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[99], [year]),
-      );
+  _i4.Future<Set<_i2.Book>> findByYear(int year) =>
+      this.operations.set(_findByYear, [year]);
 
   @override
-  _i5.Future<Iterable<_i1.Book>> findByYearLessThanOrderByYear(int year) =>
-      _i2.retypeFuture<Iterable<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[100], [year]),
-      );
+  _i4.Future<Iterable<_i2.Book>> findByYearLessThanOrderByYear(int year) =>
+      this.operations.list(_findByYearLessThanOrderByYear, [year]);
 
   @override
-  _i5.Future<List<_i1.Book>> findDistinctByInStock(bool inStock) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[101], [inStock]),
-      );
+  _i4.Future<List<_i2.Book>> findDistinctByInStock(bool inStock) =>
+      this.operations.list(_findDistinctByInStock, [inStock]);
 
   @override
-  _i5.Stream<_i1.Book> streamByInStock(bool inStock) =>
-      (this._handler.invoke(this._metadata.methods[102], [inStock])
-          as _i5.Stream<_i1.Book>);
+  _i4.Stream<_i2.Book> streamByInStock(bool inStock) =>
+      this.operations.stream(_streamByInStock, [inStock]);
 
   @override
-  _i5.Future<_i6.Page<_i1.Book>> findByYearAfter(
+  _i4.Future<_i7.Page<_i2.Book>> findByYearAfter(
     int year,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<_i6.Page<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[103], [year, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) => this.operations.page(_findByYearAfter, [year], pageable);
 
   @override
-  _i5.Future<_i6.Slice<_i1.Book>> findByInStockIsTrue(_i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Slice<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[104], [pageable]),
-      );
+  _i4.Future<_i7.Slice<_i2.Book>> findByInStockIsTrue(_i7.Pageable pageable) =>
+      this.operations.slice(_findByInStockIsTrue, const [], pageable);
 
   @override
-  _i5.Future<List<_i1.Book>> findByInStockEquals(
+  _i4.Future<List<_i2.Book>> findByInStockEquals(
     bool inStock,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[105], [inStock, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) =>
+      this.operations.list(_findByInStockEquals, [inStock], pageable: pageable);
 
   @override
-  _i5.Future<_i1.Book?> findFirstByOrderByYearAsc() =>
-      _i2.retypeFuture<_i1.Book?>(
-        this._handler.invoke(this._metadata.methods[106], const []),
-      );
+  _i4.Future<_i2.Book?> findFirstByOrderByYearAsc() =>
+      this.operations.one(_findFirstByOrderByYearAsc, const []);
 
   @override
-  _i5.Future<List<_i1.Book>> findTop2ByOrderByYearDesc() =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[107], const []),
-      );
+  _i4.Future<List<_i2.Book>> findTop2ByOrderByYearDesc() =>
+      this.operations.list(_findTop2ByOrderByYearDesc, const []);
 
   @override
-  _i5.Future<_i6.Page<_i1.Book>> findTop3ByInStock(
+  _i4.Future<_i7.Page<_i2.Book>> findTop3ByInStock(
     bool inStock,
-    _i6.Pageable pageable,
-  ) => _i2.retypeFuture<_i6.Page<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[108], [inStock, pageable]),
-  );
+    _i7.Pageable pageable,
+  ) => this.operations.page(_findTop3ByInStock, [inStock], pageable);
 
   @override
-  _i5.Future<int> countByInStock(bool inStock) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[109], [inStock]),
-  );
+  _i4.Future<int> countByInStock(bool inStock) =>
+      this.operations.countBy(_countByInStock, [inStock]);
 
   @override
-  _i5.Future<int> countByTitleContaining(String part) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[110], [part]),
-  );
+  _i4.Future<int> countByTitleContaining(String part) =>
+      this.operations.countBy(_countByTitleContaining, [part]);
 
   @override
-  _i5.Future<bool> existsByTitle(String title) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[111], [title]),
-  );
+  _i4.Future<bool> existsByTitle(String title) =>
+      this.operations.existsBy(_existsByTitle, [title]);
 
   @override
-  _i5.Future<int> deleteByYearLessThan(int year) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[112], [year]),
-  );
+  _i4.Future<int> deleteByYearLessThan(int year) =>
+      this.operations.deleteBy(_deleteByYearLessThan, [year]);
 
   @override
-  _i5.Future<void> removeByTitle(String title) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[113], [title]),
-  );
+  _i4.Future<void> removeByTitle(String title) =>
+      this.operations.deleteBy(_removeByTitle, [title]);
 
   @override
-  _i5.Future<List<_i1.Book>> deleteByInStock(bool inStock) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[114], [inStock]),
+  _i4.Future<List<_i2.Book>> deleteByInStock(bool inStock) =>
+      this.operations.deleteByReturning(_deleteByInStock, [inStock]);
+
+  @override
+  _i4.Future<int> deleteByTitleIn(List<String> titles) =>
+      this.operations.deleteBy(_deleteByTitleIn, [titles]);
+}
+
+/// Implements `OrderQueries`: `SimpleRepository` has the CRUD methods.
+class _$OrderQueriesImpl extends _i1.SimpleRepository<_i2.PurchaseOrder, int>
+    implements _i2.OrderQueries {
+  _$OrderQueriesImpl(super.operations);
+
+  static const _findByCustomer = _i1.PartTree(r'findByCustomer', [
+    _i1.OrPart([_i1.Part(r'customer')]),
+  ]);
+
+  static const _deleteByCustomer = _i1.PartTree(r'deleteByCustomer', [
+    _i1.OrPart([_i1.Part(r'customer')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByCustomerStartingWith = _i1.PartTree(
+    r'deleteByCustomerStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'customer', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$OrderQueriesImpl $create(_i3.DependencyResolver r) =>
+      _$OrderQueriesImpl(
+        r
+            .dependency<_i1.RepositoryFactory>()
+            .operations<_i2.PurchaseOrder, int>(r'OrderQueries'),
       );
 
   @override
-  _i5.Future<int> deleteByTitleIn(List<String> titles) => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[115], [titles]),
-  );
+  _i4.Future<List<_i2.PurchaseOrder>> findByCustomer(String customer) =>
+      this.operations.list(_findByCustomer, [customer]);
 
   @override
-  _i5.Future<List<_i1.Book>> saveAll(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[116], [entities]),
+  _i4.Future<List<_i2.PurchaseOrder>> deleteByCustomer(String customer) =>
+      this.operations.deleteByReturning(_deleteByCustomer, [customer]);
+
+  @override
+  _i4.Future<int> deleteByCustomerStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByCustomerStartingWith, [prefix]);
+}
+
+/// Implements `MemoryOrders`: `SimpleRepository` has the CRUD methods.
+class _$MemoryOrdersImpl extends _i1.SimpleRepository<_i2.PurchaseOrder, int>
+    implements _i2.MemoryOrders {
+  _$MemoryOrdersImpl(super.operations);
+
+  static const _findByCustomer = _i1.PartTree(r'findByCustomer', [
+    _i1.OrPart([_i1.Part(r'customer')]),
+  ]);
+
+  static const _deleteByCustomer = _i1.PartTree(r'deleteByCustomer', [
+    _i1.OrPart([_i1.Part(r'customer')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByCustomerStartingWith = _i1.PartTree(
+    r'deleteByCustomerStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'customer', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$MemoryOrdersImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryOrdersImpl(
+        r
+            .dependency<_i1.RepositoryFactory>()
+            .operations<_i2.PurchaseOrder, int>(
+              r'MemoryOrders',
+              annotations: const [_i6.UseStore(r'memory')],
+            ),
       );
 
   @override
-  _i5.Future<List<_i1.Book>> findAll() => _i2.retypeFuture<List<_i1.Book>>(
-    this._handler.invoke(this._metadata.methods[117], const []),
+  _i4.Future<List<_i2.PurchaseOrder>> findByCustomer(String customer) =>
+      this.operations.list(_findByCustomer, [customer]);
+
+  @override
+  _i4.Future<List<_i2.PurchaseOrder>> deleteByCustomer(String customer) =>
+      this.operations.deleteByReturning(_deleteByCustomer, [customer]);
+
+  @override
+  _i4.Future<int> deleteByCustomerStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByCustomerStartingWith, [prefix]);
+}
+
+/// Implements `SqlOrders`: `SimpleRepository` has the CRUD methods.
+class _$SqlOrdersImpl extends _i1.SimpleRepository<_i2.PurchaseOrder, int>
+    implements _i2.SqlOrders {
+  _$SqlOrdersImpl(super.operations);
+
+  static const _viaQuery = _i1.QueryMethod(
+    r'viaQuery',
+    _i6.Query(r'select id, customer from orders where customer = :customer'),
+    parameters: [r'customer'],
+    element: _i3.ClassType<_i2.PurchaseOrder>(),
+  );
+
+  static const _withoutId = _i1.QueryMethod(
+    r'withoutId',
+    _i6.Query(r'select customer from orders where customer = :customer'),
+    parameters: [r'customer'],
+    element: _i3.ClassType<_i2.PurchaseOrder>(),
+  );
+
+  static const _findByCustomer = _i1.PartTree(r'findByCustomer', [
+    _i1.OrPart([_i1.Part(r'customer')]),
+  ]);
+
+  static const _deleteByCustomer = _i1.PartTree(r'deleteByCustomer', [
+    _i1.OrPart([_i1.Part(r'customer')]),
+  ], subject: _i1.Subject(_i1.SubjectKind.delete));
+
+  static const _deleteByCustomerStartingWith = _i1.PartTree(
+    r'deleteByCustomerStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'customer', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$SqlOrdersImpl $create(_i3.DependencyResolver r) => _$SqlOrdersImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.PurchaseOrder, int>(
+      r'SqlOrders',
+      annotations: const [_i6.UseStore(r'jdbc')],
+      queries: [_viaQuery, _withoutId],
+    ),
   );
 
   @override
-  _i5.Future<List<_i1.Book>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[118], [ids]),
-      );
+  _i4.Future<List<_i2.PurchaseOrder>> viaQuery(String customer) =>
+      this.operations.query<List<_i2.PurchaseOrder>>(_viaQuery, [customer]);
 
   @override
-  _i5.Future<_i1.Book> save(_i1.Book entity) => _i2.retypeFuture<_i1.Book>(
-    this._handler.invoke(this._metadata.methods[119], [entity]),
-  );
+  _i4.Future<List<_i2.PurchaseOrder>> withoutId(String customer) =>
+      this.operations.query<List<_i2.PurchaseOrder>>(_withoutId, [customer]);
 
   @override
-  _i5.Future<_i1.Book?> findById(int id) => _i2.retypeFuture<_i1.Book?>(
-    this._handler.invoke(this._metadata.methods[120], [id]),
-  );
+  _i4.Future<List<_i2.PurchaseOrder>> findByCustomer(String customer) =>
+      this.operations.list(_findByCustomer, [customer]);
 
   @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[121], [id]),
-  );
+  _i4.Future<List<_i2.PurchaseOrder>> deleteByCustomer(String customer) =>
+      this.operations.deleteByReturning(_deleteByCustomer, [customer]);
 
   @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[122], const []),
-  );
+  _i4.Future<int> deleteByCustomerStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByCustomerStartingWith, [prefix]);
+}
 
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[123], [id]),
-  );
+/// Implements `MemoryShelves`: `SimpleRepository` has the CRUD methods.
+class _$MemoryShelvesImpl extends _i1.SimpleRepository<_i2.Shelf, int>
+    implements _i2.MemoryShelves {
+  _$MemoryShelvesImpl(super.operations);
 
-  @override
-  _i5.Future<void> delete(_i1.Book entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[124], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[125], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Book> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[126], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[127], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Book>> findAllSorted(_i3.Sort sort) =>
-      _i2.retypeFuture<List<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[128], [sort]),
-      );
-
-  @override
-  _i5.Future<_i6.Page<_i1.Book>> findAllPaged(_i6.Pageable pageable) =>
-      _i2.retypeFuture<_i6.Page<_i1.Book>>(
-        this._handler.invoke(this._metadata.methods[129], [pageable]),
+  static _$MemoryShelvesImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryShelvesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Shelf, int>(
+          r'MemoryShelves',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
       );
 }
 
-/// Implements `OrderQueries` through an `InvocationHandler`.
-class _$OrderQueriesImpl implements _i1.OrderQueries {
-  _$OrderQueriesImpl(this._handler, this._metadata);
+/// Implements `SqlShelves`: `SimpleRepository` has the CRUD methods.
+class _$SqlShelvesImpl extends _i1.SimpleRepository<_i2.Shelf, int>
+    implements _i2.SqlShelves {
+  _$SqlShelvesImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.OrderQueries> _metadata;
-
-  static _$OrderQueriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.OrderQueries>(
-      typeName: r'OrderQueries',
-      methods: [
-        _i2.ProxyMethod(
-          r'findByCustomer',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByCustomer',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByCustomerStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$OrderQueriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findByCustomer(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[0], [customer]),
-      );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> deleteByCustomer(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[1], [customer]),
-      );
-
-  @override
-  _i5.Future<int> deleteByCustomerStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[2], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> saveAll(
-    Iterable<_i1.PurchaseOrder> entities,
-  ) => _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-    this._handler.invoke(this._metadata.methods[3], [entities]),
-  );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findAll() =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[4], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[5], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.PurchaseOrder> save(_i1.PurchaseOrder entity) =>
-      _i2.retypeFuture<_i1.PurchaseOrder>(
-        this._handler.invoke(this._metadata.methods[6], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.PurchaseOrder?> findById(int id) =>
-      _i2.retypeFuture<_i1.PurchaseOrder?>(
-        this._handler.invoke(this._metadata.methods[7], [id]),
-      );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[9], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.PurchaseOrder entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.PurchaseOrder> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[13], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[14], const []),
+  static _$SqlShelvesImpl $create(_i3.DependencyResolver r) => _$SqlShelvesImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Shelf, int>(
+      r'SqlShelves',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `MemoryOrders` through an `InvocationHandler`.
-class _$MemoryOrdersImpl implements _i1.MemoryOrders {
-  _$MemoryOrdersImpl(this._handler, this._metadata);
+/// Implements `MemoryAccounts`: `SimpleRepository` has the CRUD methods.
+class _$MemoryAccountsImpl extends _i1.SimpleRepository<_i2.Account, String>
+    implements _i2.MemoryAccounts {
+  _$MemoryAccountsImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _findByOwner = _i1.PartTree(r'findByOwner', [
+    _i1.OrPart([_i1.Part(r'owner')]),
+  ]);
 
-  final _i2.InterfaceMetadata<_i1.MemoryOrders> _metadata;
-
-  static _$MemoryOrdersImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryOrders>(
-      typeName: r'MemoryOrders',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByCustomer',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
+  static _$MemoryAccountsImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryAccountsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Account, String>(
+          r'MemoryAccounts',
+          annotations: const [_i6.UseStore(r'memory')],
         ),
-        _i2.ProxyMethod(
-          r'deleteByCustomer',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByCustomerStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryOrdersImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findByCustomer(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[0], [customer]),
       );
 
   @override
-  _i5.Future<List<_i1.PurchaseOrder>> deleteByCustomer(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[1], [customer]),
+  _i4.Future<List<_i2.Account>> findByOwner(String owner) =>
+      this.operations.list(_findByOwner, [owner]);
+}
+
+/// Implements `SqlAccounts`: `SimpleRepository` has the CRUD methods.
+class _$SqlAccountsImpl extends _i1.SimpleRepository<_i2.Account, String>
+    implements _i2.SqlAccounts {
+  _$SqlAccountsImpl(super.operations);
+
+  static const _findByOwner = _i1.PartTree(r'findByOwner', [
+    _i1.OrPart([_i1.Part(r'owner')]),
+  ]);
+
+  static _$SqlAccountsImpl $create(_i3.DependencyResolver r) =>
+      _$SqlAccountsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Account, String>(
+          r'SqlAccounts',
+          annotations: const [_i6.UseStore(r'jdbc')],
+        ),
       );
 
   @override
-  _i5.Future<int> deleteByCustomerStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[2], [prefix]),
+  _i4.Future<List<_i2.Account>> findByOwner(String owner) =>
+      this.operations.list(_findByOwner, [owner]);
+}
+
+/// Implements `MemoryTickets`: `SimpleRepository` has the CRUD methods.
+class _$MemoryTicketsImpl extends _i1.SimpleRepository<_i2.Ticket, int>
+    implements _i2.MemoryTickets {
+  _$MemoryTicketsImpl(super.operations);
+
+  static _$MemoryTicketsImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryTicketsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Ticket, int>(
+          r'MemoryTickets',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
       );
+}
 
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> saveAll(
-    Iterable<_i1.PurchaseOrder> entities,
-  ) => _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-    this._handler.invoke(this._metadata.methods[3], [entities]),
-  );
+/// Implements `SqlTickets`: `SimpleRepository` has the CRUD methods.
+class _$SqlTicketsImpl extends _i1.SimpleRepository<_i2.Ticket, int>
+    implements _i2.SqlTickets {
+  _$SqlTicketsImpl(super.operations);
 
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findAll() =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[4], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[5], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.PurchaseOrder> save(_i1.PurchaseOrder entity) =>
-      _i2.retypeFuture<_i1.PurchaseOrder>(
-        this._handler.invoke(this._metadata.methods[6], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.PurchaseOrder?> findById(int id) =>
-      _i2.retypeFuture<_i1.PurchaseOrder?>(
-        this._handler.invoke(this._metadata.methods[7], [id]),
-      );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[9], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.PurchaseOrder entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.PurchaseOrder> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[13], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[14], const []),
+  static _$SqlTicketsImpl $create(_i3.DependencyResolver r) => _$SqlTicketsImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Ticket, int>(
+      r'SqlTickets',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `SqlOrders` through an `InvocationHandler`.
-class _$SqlOrdersImpl implements _i1.SqlOrders {
-  _$SqlOrdersImpl(this._handler, this._metadata);
+/// Implements `MemoryNotes`: `SimpleRepository` has the CRUD methods.
+class _$MemoryNotesImpl extends _i1.SimpleRepository<_i2.Note, int>
+    implements _i2.MemoryNotes {
+  _$MemoryNotesImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlOrders> _metadata;
-
-  static _$SqlOrdersImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlOrders>(
-      typeName: r'SqlOrders',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'viaQuery',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select id, customer from orders where customer = :customer',
-            ),
-          ],
+  static _$MemoryNotesImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryNotesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Note, int>(
+          r'MemoryNotes',
+          annotations: const [_i6.UseStore(r'memory')],
         ),
-        _i2.ProxyMethod(
-          r'withoutId',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select customer from orders where customer = :customer',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'findByCustomer',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByCustomer',
-          parameters: [
-            _i2.BeanParameter(
-              r'customer',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteByCustomerStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.PurchaseOrder>(
-            _i2.ClassType<_i1.PurchaseOrder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.PurchaseOrder>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.PurchaseOrder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.PurchaseOrder>(
-                _i2.ClassType<_i1.PurchaseOrder>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.PurchaseOrder>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlOrdersImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> viaQuery(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[0], [customer]),
       );
+}
 
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> withoutId(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[1], [customer]),
-      );
+/// Implements `SqlNotes`: `SimpleRepository` has the CRUD methods.
+class _$SqlNotesImpl extends _i1.SimpleRepository<_i2.Note, int>
+    implements _i2.SqlNotes {
+  _$SqlNotesImpl(super.operations);
 
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findByCustomer(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[2], [customer]),
-      );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> deleteByCustomer(String customer) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[3], [customer]),
-      );
-
-  @override
-  _i5.Future<int> deleteByCustomerStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[4], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> saveAll(
-    Iterable<_i1.PurchaseOrder> entities,
-  ) => _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-    this._handler.invoke(this._metadata.methods[5], [entities]),
-  );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findAll() =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[6], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.PurchaseOrder>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.PurchaseOrder>>(
-        this._handler.invoke(this._metadata.methods[7], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.PurchaseOrder> save(_i1.PurchaseOrder entity) =>
-      _i2.retypeFuture<_i1.PurchaseOrder>(
-        this._handler.invoke(this._metadata.methods[8], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.PurchaseOrder?> findById(int id) =>
-      _i2.retypeFuture<_i1.PurchaseOrder?>(
-        this._handler.invoke(this._metadata.methods[9], [id]),
-      );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[10], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.PurchaseOrder entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[13], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[14], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.PurchaseOrder> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[15], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[16], const []),
+  static _$SqlNotesImpl $create(_i3.DependencyResolver r) => _$SqlNotesImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Note, int>(
+      r'SqlNotes',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `MemoryShelves` through an `InvocationHandler`.
-class _$MemoryShelvesImpl implements _i1.MemoryShelves {
-  _$MemoryShelvesImpl(this._handler, this._metadata);
+/// Implements `SqlCrates`: `SimpleRepository` has the CRUD methods.
+class _$SqlCratesImpl extends _i1.SimpleRepository<_i2.Crate, int>
+    implements _i2.SqlCrates {
+  _$SqlCratesImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryShelves> _metadata;
-
-  static _$MemoryShelvesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryShelves>(
-      typeName: r'MemoryShelves',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Shelf>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Shelf>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Shelf>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Shelf>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Shelf>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Shelf>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Shelf>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryShelvesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Shelf>> saveAll(Iterable<_i1.Shelf> entities) =>
-      _i2.retypeFuture<List<_i1.Shelf>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Shelf>> findAll() => _i2.retypeFuture<List<_i1.Shelf>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Shelf>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Shelf>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Shelf> save(_i1.Shelf entity) => _i2.retypeFuture<_i1.Shelf>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Shelf?> findById(int id) => _i2.retypeFuture<_i1.Shelf?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Shelf entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Shelf> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
+  static _$SqlCratesImpl $create(_i3.DependencyResolver r) => _$SqlCratesImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Crate, int>(
+      r'SqlCrates',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `SqlShelves` through an `InvocationHandler`.
-class _$SqlShelvesImpl implements _i1.SqlShelves {
-  _$SqlShelvesImpl(this._handler, this._metadata);
+/// Implements `SqlAuthors`: `SimpleRepository` has the CRUD methods.
+class _$SqlAuthorsImpl extends _i1.SimpleRepository<_i2.Author, int>
+    implements _i2.SqlAuthors {
+  _$SqlAuthorsImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
+  static const _findByNameStartingWith = _i1.PartTree(
+    r'findByNameStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'name', _i1.PartType.startingWith)]),
+    ],
+  );
 
-  final _i2.InterfaceMetadata<_i1.SqlShelves> _metadata;
-
-  static _$SqlShelvesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlShelves>(
-      typeName: r'SqlShelves',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Shelf>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Shelf>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Shelf>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Shelf>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Shelf>(_i2.ClassType<_i1.Shelf>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Shelf>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Shelf>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Shelf>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlShelvesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+  static _$SqlAuthorsImpl $create(_i3.DependencyResolver r) => _$SqlAuthorsImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Author, int>(
+      r'SqlAuthors',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
+  );
 
   @override
-  _i5.Future<List<_i1.Shelf>> saveAll(Iterable<_i1.Shelf> entities) =>
-      _i2.retypeFuture<List<_i1.Shelf>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
+  _i4.Future<List<_i2.Author>> findByNameStartingWith(String prefix) =>
+      this.operations.list(_findByNameStartingWith, [prefix]);
+}
+
+/// Implements `MemoryAuthors`: `SimpleRepository` has the CRUD methods.
+class _$MemoryAuthorsImpl extends _i1.SimpleRepository<_i2.Author, int>
+    implements _i2.MemoryAuthors {
+  _$MemoryAuthorsImpl(super.operations);
+
+  static _$MemoryAuthorsImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryAuthorsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Author, int>(
+          r'MemoryAuthors',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
+      );
+}
+
+/// Implements `SqlStocks`: `SimpleRepository` has the CRUD methods.
+class _$SqlStocksImpl extends _i1.SimpleRepository<_i2.Stock, int>
+    implements _i2.SqlStocks {
+  _$SqlStocksImpl(super.operations);
+
+  static const _findBySku = _i1.PartTree(r'findBySku', [
+    _i1.OrPart([_i1.Part(r'sku')]),
+  ]);
+
+  static const _findByQuantityLessThan = _i1.PartTree(
+    r'findByQuantityLessThan',
+    [
+      _i1.OrPart([_i1.Part(r'quantity', _i1.PartType.lessThan)]),
+    ],
+  );
+
+  static const _findOneBySku = _i1.PartTree(r'findOneBySku', [
+    _i1.OrPart([_i1.Part(r'sku')]),
+  ]);
+
+  static _$SqlStocksImpl $create(_i3.DependencyResolver r) => _$SqlStocksImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Stock, int>(
+      r'SqlStocks',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
+  );
+
+  @override
+  _i4.Future<_i2.Stock?> findBySku(String sku) => this.operations.one(
+    _findBySku,
+    [sku],
+    lock: const _i6.Lock(_i6.LockMode.pessimisticWrite),
+  );
+
+  @override
+  _i4.Future<List<_i2.Stock>> findByQuantityLessThan(int quantity) =>
+      this.operations.list(_findByQuantityLessThan, [
+        quantity,
+      ], lock: const _i6.Lock(_i6.LockMode.pessimisticRead));
+
+  @override
+  _i4.Future<_i2.Stock?> findById(int id) => this.operations.findById(
+    id,
+    lock: const _i6.Lock(_i6.LockMode.pessimisticWrite),
+  );
+
+  @override
+  _i4.Future<_i2.Stock?> findOneBySku(String sku) =>
+      this.operations.one(_findOneBySku, [sku]);
+}
+
+/// Implements `FanQueries`: `SimpleRepository` has the CRUD methods.
+class _$FanQueriesImpl extends _i1.SimpleRepository<_i2.Fan, int>
+    implements _i2.FanQueries {
+  _$FanQueriesImpl(super.operations);
+
+  static const _findByClubId = _i1.PartTree(r'findByClubId', [
+    _i1.OrPart([_i1.Part(r'clubId')]),
+  ]);
+
+  static _$FanQueriesImpl $create(_i3.DependencyResolver r) => _$FanQueriesImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Fan, int>(
+      r'FanQueries',
+    ),
+  );
+
+  @override
+  _i4.Future<List<_i2.Fan>> findByClubId(int clubId) =>
+      this.operations.list(_findByClubId, [clubId]);
+}
+
+/// Implements `MemoryFans`: `SimpleRepository` has the CRUD methods.
+class _$MemoryFansImpl extends _i1.SimpleRepository<_i2.Fan, int>
+    implements _i2.MemoryFans {
+  _$MemoryFansImpl(super.operations);
+
+  static const _findByClubId = _i1.PartTree(r'findByClubId', [
+    _i1.OrPart([_i1.Part(r'clubId')]),
+  ]);
+
+  static _$MemoryFansImpl $create(_i3.DependencyResolver r) => _$MemoryFansImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Fan, int>(
+      r'MemoryFans',
+      annotations: const [_i6.UseStore(r'memory')],
+    ),
+  );
+
+  @override
+  _i4.Future<List<_i2.Fan>> findByClubId(int clubId) =>
+      this.operations.list(_findByClubId, [clubId]);
+}
+
+/// Implements `SqlFans`: `SimpleRepository` has the CRUD methods.
+class _$SqlFansImpl extends _i1.SimpleRepository<_i2.Fan, int>
+    implements _i2.SqlFans {
+  _$SqlFansImpl(super.operations);
+
+  static const _byClub = _i1.QueryMethod(
+    r'byClub',
+    _i6.Query(r'select * from fans where club_id = :clubId order by id'),
+    parameters: [r'clubId'],
+    element: _i3.ClassType<_i2.Fan>(),
+  );
+
+  static const _findByClubId = _i1.PartTree(r'findByClubId', [
+    _i1.OrPart([_i1.Part(r'clubId')]),
+  ]);
+
+  static _$SqlFansImpl $create(_i3.DependencyResolver r) => _$SqlFansImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Fan, int>(
+      r'SqlFans',
+      annotations: const [_i6.UseStore(r'jdbc')],
+      queries: [_byClub],
+    ),
+  );
+
+  @override
+  _i4.Future<List<_i2.Fan>> byClub(int clubId) =>
+      this.operations.query<List<_i2.Fan>>(_byClub, [clubId]);
+
+  @override
+  _i4.Future<List<_i2.Fan>> findByClubId(int clubId) =>
+      this.operations.list(_findByClubId, [clubId]);
+}
+
+/// Implements `CitizenQueries`: `SimpleRepository` has the CRUD methods.
+class _$CitizenQueriesImpl extends _i1.SimpleRepository<_i2.Citizen, int>
+    implements _i2.CitizenQueries {
+  _$CitizenQueriesImpl(super.operations);
+
+  static const _findByPassport = _i1.PartTree(r'findByPassport', [
+    _i1.OrPart([_i1.Part(r'passport')]),
+  ]);
+
+  static _$CitizenQueriesImpl $create(_i3.DependencyResolver r) =>
+      _$CitizenQueriesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Citizen, int>(
+          r'CitizenQueries',
+        ),
       );
 
   @override
-  _i5.Future<List<_i1.Shelf>> findAll() => _i2.retypeFuture<List<_i1.Shelf>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
+  _i4.Future<List<_i2.Citizen>> findByPassport(String? passport) =>
+      this.operations.list(_findByPassport, [passport]);
+}
 
-  @override
-  _i5.Future<List<_i1.Shelf>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Shelf>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
+/// Implements `MemoryCitizens`: `SimpleRepository` has the CRUD methods.
+class _$MemoryCitizensImpl extends _i1.SimpleRepository<_i2.Citizen, int>
+    implements _i2.MemoryCitizens {
+  _$MemoryCitizensImpl(super.operations);
+
+  static const _findByPassport = _i1.PartTree(r'findByPassport', [
+    _i1.OrPart([_i1.Part(r'passport')]),
+  ]);
+
+  static _$MemoryCitizensImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryCitizensImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Citizen, int>(
+          r'MemoryCitizens',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
       );
 
   @override
-  _i5.Future<_i1.Shelf> save(_i1.Shelf entity) => _i2.retypeFuture<_i1.Shelf>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
+  _i4.Future<List<_i2.Citizen>> findByPassport(String? passport) =>
+      this.operations.list(_findByPassport, [passport]);
+}
 
-  @override
-  _i5.Future<_i1.Shelf?> findById(int id) => _i2.retypeFuture<_i1.Shelf?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
+/// Implements `SqlCitizens`: `SimpleRepository` has the CRUD methods.
+class _$SqlCitizensImpl extends _i1.SimpleRepository<_i2.Citizen, int>
+    implements _i2.SqlCitizens {
+  _$SqlCitizensImpl(super.operations);
 
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
+  static const _findByPassport = _i1.PartTree(r'findByPassport', [
+    _i1.OrPart([_i1.Part(r'passport')]),
+  ]);
 
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Shelf entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Shelf> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
+  static _$SqlCitizensImpl $create(_i3.DependencyResolver r) =>
+      _$SqlCitizensImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Citizen, int>(
+          r'SqlCitizens',
+          annotations: const [_i6.UseStore(r'jdbc')],
+        ),
       );
 
   @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
+  _i4.Future<List<_i2.Citizen>> findByPassport(String? passport) =>
+      this.operations.list(_findByPassport, [passport]);
+}
+
+/// Implements `CategoryQueries`: `SimpleRepository` has the CRUD methods.
+class _$CategoryQueriesImpl extends _i1.SimpleRepository<_i2.Category, int>
+    implements _i2.CategoryQueries {
+  _$CategoryQueriesImpl(super.operations);
+
+  static const _deleteByNameStartingWith = _i1.PartTree(
+    r'deleteByNameStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'name', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$CategoryQueriesImpl $create(_i3.DependencyResolver r) =>
+      _$CategoryQueriesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Category, int>(
+          r'CategoryQueries',
+        ),
+      );
+
+  @override
+  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
+}
+
+/// Implements `MemoryCategories`: `SimpleRepository` has the CRUD methods.
+class _$MemoryCategoriesImpl extends _i1.SimpleRepository<_i2.Category, int>
+    implements _i2.MemoryCategories {
+  _$MemoryCategoriesImpl(super.operations);
+
+  static const _deleteByNameStartingWith = _i1.PartTree(
+    r'deleteByNameStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'name', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$MemoryCategoriesImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryCategoriesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Category, int>(
+          r'MemoryCategories',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
+      );
+
+  @override
+  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
+}
+
+/// Implements `SqlCategories`: `SimpleRepository` has the CRUD methods.
+class _$SqlCategoriesImpl extends _i1.SimpleRepository<_i2.Category, int>
+    implements _i2.SqlCategories {
+  _$SqlCategoriesImpl(super.operations);
+
+  static const _deleteByNameStartingWith = _i1.PartTree(
+    r'deleteByNameStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'name', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$SqlCategoriesImpl $create(_i3.DependencyResolver r) =>
+      _$SqlCategoriesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Category, int>(
+          r'SqlCategories',
+          annotations: const [_i6.UseStore(r'jdbc')],
+        ),
+      );
+
+  @override
+  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
+}
+
+/// Implements `EmployeeQueries`: `SimpleRepository` has the CRUD methods.
+class _$EmployeeQueriesImpl extends _i1.SimpleRepository<_i2.Employee, int>
+    implements _i2.EmployeeQueries {
+  _$EmployeeQueriesImpl(super.operations);
+
+  static const _deleteByNameStartingWith = _i1.PartTree(
+    r'deleteByNameStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'name', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$EmployeeQueriesImpl $create(_i3.DependencyResolver r) =>
+      _$EmployeeQueriesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Employee, int>(
+          r'EmployeeQueries',
+        ),
+      );
+
+  @override
+  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
+}
+
+/// Implements `MemoryEmployees`: `SimpleRepository` has the CRUD methods.
+class _$MemoryEmployeesImpl extends _i1.SimpleRepository<_i2.Employee, int>
+    implements _i2.MemoryEmployees {
+  _$MemoryEmployeesImpl(super.operations);
+
+  static const _deleteByNameStartingWith = _i1.PartTree(
+    r'deleteByNameStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'name', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$MemoryEmployeesImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryEmployeesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Employee, int>(
+          r'MemoryEmployees',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
+      );
+
+  @override
+  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
+}
+
+/// Implements `SqlEmployees`: `SimpleRepository` has the CRUD methods.
+class _$SqlEmployeesImpl extends _i1.SimpleRepository<_i2.Employee, int>
+    implements _i2.SqlEmployees {
+  _$SqlEmployeesImpl(super.operations);
+
+  static const _deleteByNameStartingWith = _i1.PartTree(
+    r'deleteByNameStartingWith',
+    [
+      _i1.OrPart([_i1.Part(r'name', _i1.PartType.startingWith)]),
+    ],
+    subject: _i1.Subject(_i1.SubjectKind.delete),
+  );
+
+  static _$SqlEmployeesImpl $create(_i3.DependencyResolver r) =>
+      _$SqlEmployeesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Employee, int>(
+          r'SqlEmployees',
+          annotations: const [_i6.UseStore(r'jdbc')],
+        ),
+      );
+
+  @override
+  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+      this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
+}
+
+/// Implements `MemoryClubs`: `SimpleRepository` has the CRUD methods.
+class _$MemoryClubsImpl extends _i1.SimpleRepository<_i2.Club, int>
+    implements _i2.MemoryClubs {
+  _$MemoryClubsImpl(super.operations);
+
+  static _$MemoryClubsImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryClubsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Club, int>(
+          r'MemoryClubs',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
+      );
+}
+
+/// Implements `SqlClubs`: `SimpleRepository` has the CRUD methods.
+class _$SqlClubsImpl extends _i1.SimpleRepository<_i2.Club, int>
+    implements _i2.SqlClubs {
+  _$SqlClubsImpl(super.operations);
+
+  static _$SqlClubsImpl $create(_i3.DependencyResolver r) => _$SqlClubsImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Club, int>(
+      r'SqlClubs',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `MemoryAccounts` through an `InvocationHandler`.
-class _$MemoryAccountsImpl implements _i1.MemoryAccounts {
-  _$MemoryAccountsImpl(this._handler, this._metadata);
+/// Implements `MemorySponsors`: `SimpleRepository` has the CRUD methods.
+class _$MemorySponsorsImpl extends _i1.SimpleRepository<_i2.Sponsor, int>
+    implements _i2.MemorySponsors {
+  _$MemorySponsorsImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryAccounts> _metadata;
-
-  static _$MemoryAccountsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryAccounts>(
-      typeName: r'MemoryAccounts',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByOwner',
-          parameters: [
-            _i2.BeanParameter(
-              r'owner',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
+  static _$MemorySponsorsImpl $create(_i3.DependencyResolver r) =>
+      _$MemorySponsorsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Sponsor, int>(
+          r'MemorySponsors',
+          annotations: const [_i6.UseStore(r'memory')],
         ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Account>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Account>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Account>(
-                _i2.ClassType<_i1.Account>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Account>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Account>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Account>(
-                _i2.ClassType<_i1.Account>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Account>(),
-          const _i2.ClassType<String>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Account>(),
-          const _i2.ClassType<String>(),
-        ],
-      },
-    );
-    return _$MemoryAccountsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Account>> findByOwner(String owner) =>
-      _i2.retypeFuture<List<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[0], [owner]),
       );
+}
 
-  @override
-  _i5.Future<_i1.Account> save(_i1.Account entity) =>
-      _i2.retypeFuture<_i1.Account>(
-        this._handler.invoke(this._metadata.methods[1], [entity]),
+/// Implements `SqlSponsors`: `SimpleRepository` has the CRUD methods.
+class _$SqlSponsorsImpl extends _i1.SimpleRepository<_i2.Sponsor, int>
+    implements _i2.SqlSponsors {
+  _$SqlSponsorsImpl(super.operations);
+
+  static _$SqlSponsorsImpl $create(_i3.DependencyResolver r) =>
+      _$SqlSponsorsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Sponsor, int>(
+          r'SqlSponsors',
+          annotations: const [_i6.UseStore(r'jdbc')],
+        ),
       );
+}
 
-  @override
-  _i5.Future<Iterable<_i1.Account>> saveAll(Iterable<_i1.Account> entities) =>
-      _i2.retypeFuture<Iterable<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[2], [entities]),
+/// Implements `MemoryPlayers`: `SimpleRepository` has the CRUD methods.
+class _$MemoryPlayersImpl extends _i1.SimpleRepository<_i2.Player, int>
+    implements _i2.MemoryPlayers {
+  _$MemoryPlayersImpl(super.operations);
+
+  static _$MemoryPlayersImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryPlayersImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Player, int>(
+          r'MemoryPlayers',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
       );
+}
 
-  @override
-  _i5.Future<_i1.Account?> findById(String id) =>
-      _i2.retypeFuture<_i1.Account?>(
-        this._handler.invoke(this._metadata.methods[3], [id]),
-      );
+/// Implements `SqlPlayers`: `SimpleRepository` has the CRUD methods.
+class _$SqlPlayersImpl extends _i1.SimpleRepository<_i2.Player, int>
+    implements _i2.SqlPlayers {
+  _$SqlPlayersImpl(super.operations);
 
-  @override
-  _i5.Future<bool> existsById(String id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<Iterable<_i1.Account>> findAll() =>
-      _i2.retypeFuture<Iterable<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[5], const []),
-      );
-
-  @override
-  _i5.Future<Iterable<_i1.Account>> findAllById(Iterable<String> ids) =>
-      _i2.retypeFuture<Iterable<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[6], [ids]),
-      );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(String id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Account entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<String> ids) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [ids]),
-      );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Account> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
+  static _$SqlPlayersImpl $create(_i3.DependencyResolver r) => _$SqlPlayersImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Player, int>(
+      r'SqlPlayers',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `SqlAccounts` through an `InvocationHandler`.
-class _$SqlAccountsImpl implements _i1.SqlAccounts {
-  _$SqlAccountsImpl(this._handler, this._metadata);
+/// Implements `MemoryGoals`: `SimpleRepository` has the CRUD methods.
+class _$MemoryGoalsImpl extends _i1.SimpleRepository<_i2.Goal, int>
+    implements _i2.MemoryGoals {
+  _$MemoryGoalsImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlAccounts> _metadata;
-
-  static _$SqlAccountsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlAccounts>(
-      typeName: r'SqlAccounts',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByOwner',
-          parameters: [
-            _i2.BeanParameter(
-              r'owner',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
+  static _$MemoryGoalsImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryGoalsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Goal, int>(
+          r'MemoryGoals',
+          annotations: const [_i6.UseStore(r'memory')],
         ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Account>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Account>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Account>(
-                _i2.ClassType<_i1.Account>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Account>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Account>(
-            _i2.ClassType<_i1.Account>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Account>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<String>(_i2.ClassType<String>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Account>(
-                _i2.ClassType<_i1.Account>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Account>(),
-          const _i2.ClassType<String>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Account>(),
-          const _i2.ClassType<String>(),
-        ],
-      },
-    );
-    return _$SqlAccountsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Account>> findByOwner(String owner) =>
-      _i2.retypeFuture<List<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[0], [owner]),
       );
+}
 
-  @override
-  _i5.Future<_i1.Account> save(_i1.Account entity) =>
-      _i2.retypeFuture<_i1.Account>(
-        this._handler.invoke(this._metadata.methods[1], [entity]),
-      );
+/// Implements `SqlGoals`: `SimpleRepository` has the CRUD methods.
+class _$SqlGoalsImpl extends _i1.SimpleRepository<_i2.Goal, int>
+    implements _i2.SqlGoals {
+  _$SqlGoalsImpl(super.operations);
 
-  @override
-  _i5.Future<Iterable<_i1.Account>> saveAll(Iterable<_i1.Account> entities) =>
-      _i2.retypeFuture<Iterable<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[2], [entities]),
-      );
-
-  @override
-  _i5.Future<_i1.Account?> findById(String id) =>
-      _i2.retypeFuture<_i1.Account?>(
-        this._handler.invoke(this._metadata.methods[3], [id]),
-      );
-
-  @override
-  _i5.Future<bool> existsById(String id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<Iterable<_i1.Account>> findAll() =>
-      _i2.retypeFuture<Iterable<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[5], const []),
-      );
-
-  @override
-  _i5.Future<Iterable<_i1.Account>> findAllById(Iterable<String> ids) =>
-      _i2.retypeFuture<Iterable<_i1.Account>>(
-        this._handler.invoke(this._metadata.methods[6], [ids]),
-      );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(String id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Account entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<String> ids) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [ids]),
-      );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Account> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
+  static _$SqlGoalsImpl $create(_i3.DependencyResolver r) => _$SqlGoalsImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Goal, int>(
+      r'SqlGoals',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `MemoryTickets` through an `InvocationHandler`.
-class _$MemoryTicketsImpl implements _i1.MemoryTickets {
-  _$MemoryTicketsImpl(this._handler, this._metadata);
+/// Implements `MemoryCoaches`: `SimpleRepository` has the CRUD methods.
+class _$MemoryCoachesImpl extends _i1.SimpleRepository<_i2.Coach, int>
+    implements _i2.MemoryCoaches {
+  _$MemoryCoachesImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryTickets> _metadata;
-
-  static _$MemoryTicketsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryTickets>(
-      typeName: r'MemoryTickets',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Ticket>(_i2.ClassType<_i1.Ticket>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Ticket>(
-            _i2.ClassType<_i1.Ticket>(),
-          ),
-          isFuture: true,
+  static _$MemoryCoachesImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryCoachesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Coach, int>(
+          r'MemoryCoaches',
+          annotations: const [_i6.UseStore(r'memory')],
         ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Ticket>(
-            _i2.ClassType<_i1.Ticket>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Ticket>(
-            _i2.ClassType<_i1.Ticket>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Ticket>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Ticket>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Ticket>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Ticket>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Ticket>(_i2.ClassType<_i1.Ticket>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Ticket>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Ticket>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Ticket>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryTicketsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Ticket>> saveAll(Iterable<_i1.Ticket> entities) =>
-      _i2.retypeFuture<List<_i1.Ticket>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
       );
+}
 
-  @override
-  _i5.Future<List<_i1.Ticket>> findAll() => _i2.retypeFuture<List<_i1.Ticket>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
+/// Implements `SqlCoaches`: `SimpleRepository` has the CRUD methods.
+class _$SqlCoachesImpl extends _i1.SimpleRepository<_i2.Coach, int>
+    implements _i2.SqlCoaches {
+  _$SqlCoachesImpl(super.operations);
 
-  @override
-  _i5.Future<List<_i1.Ticket>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Ticket>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Ticket> save(_i1.Ticket entity) =>
-      _i2.retypeFuture<_i1.Ticket>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Ticket?> findById(int id) => _i2.retypeFuture<_i1.Ticket?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Ticket entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Ticket> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
+  static _$SqlCoachesImpl $create(_i3.DependencyResolver r) => _$SqlCoachesImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Coach, int>(
+      r'SqlCoaches',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `SqlTickets` through an `InvocationHandler`.
-class _$SqlTicketsImpl implements _i1.SqlTickets {
-  _$SqlTicketsImpl(this._handler, this._metadata);
+/// Implements `MemorySquads`: `SimpleRepository` has the CRUD methods.
+class _$MemorySquadsImpl extends _i1.SimpleRepository<_i2.Squad, int>
+    implements _i2.MemorySquads {
+  _$MemorySquadsImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlTickets> _metadata;
-
-  static _$SqlTicketsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlTickets>(
-      typeName: r'SqlTickets',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Ticket>(_i2.ClassType<_i1.Ticket>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Ticket>(
-            _i2.ClassType<_i1.Ticket>(),
-          ),
-          isFuture: true,
+  static _$MemorySquadsImpl $create(_i3.DependencyResolver r) =>
+      _$MemorySquadsImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Squad, int>(
+          r'MemorySquads',
+          annotations: const [_i6.UseStore(r'memory')],
         ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Ticket>(
-            _i2.ClassType<_i1.Ticket>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Ticket>(
-            _i2.ClassType<_i1.Ticket>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Ticket>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Ticket>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Ticket>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Ticket>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Ticket>(_i2.ClassType<_i1.Ticket>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Ticket>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Ticket>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Ticket>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlTicketsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Ticket>> saveAll(Iterable<_i1.Ticket> entities) =>
-      _i2.retypeFuture<List<_i1.Ticket>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
       );
+}
 
-  @override
-  _i5.Future<List<_i1.Ticket>> findAll() => _i2.retypeFuture<List<_i1.Ticket>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
+/// Implements `SqlSquads`: `SimpleRepository` has the CRUD methods.
+class _$SqlSquadsImpl extends _i1.SimpleRepository<_i2.Squad, int>
+    implements _i2.SqlSquads {
+  _$SqlSquadsImpl(super.operations);
 
-  @override
-  _i5.Future<List<_i1.Ticket>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Ticket>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Ticket> save(_i1.Ticket entity) =>
-      _i2.retypeFuture<_i1.Ticket>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Ticket?> findById(int id) => _i2.retypeFuture<_i1.Ticket?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Ticket entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Ticket> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
+  static _$SqlSquadsImpl $create(_i3.DependencyResolver r) => _$SqlSquadsImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Squad, int>(
+      r'SqlSquads',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
-/// Implements `MemoryNotes` through an `InvocationHandler`.
-class _$MemoryNotesImpl implements _i1.MemoryNotes {
-  _$MemoryNotesImpl(this._handler, this._metadata);
+/// Implements `MemoryFolders`: `SimpleRepository` has the CRUD methods.
+class _$MemoryFoldersImpl extends _i1.SimpleRepository<_i2.Folder, int>
+    implements _i2.MemoryFolders {
+  _$MemoryFoldersImpl(super.operations);
 
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryNotes> _metadata;
-
-  static _$MemoryNotesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryNotes>(
-      typeName: r'MemoryNotes',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
+  static _$MemoryFoldersImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryFoldersImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Folder, int>(
+          r'MemoryFolders',
+          annotations: const [_i6.UseStore(r'memory')],
         ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Note>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Note>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Note>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Note>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryNotesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Note>> saveAll(Iterable<_i1.Note> entities) =>
-      _i2.retypeFuture<List<_i1.Note>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
       );
-
-  @override
-  _i5.Future<List<_i1.Note>> findAll() => _i2.retypeFuture<List<_i1.Note>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Note>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Note>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Note> save(_i1.Note entity) => _i2.retypeFuture<_i1.Note>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Note?> findById(int id) => _i2.retypeFuture<_i1.Note?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Note entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Note> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
 }
 
-/// Implements `SqlNotes` through an `InvocationHandler`.
-class _$SqlNotesImpl implements _i1.SqlNotes {
-  _$SqlNotesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlNotes> _metadata;
-
-  static _$SqlNotesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlNotes>(
-      typeName: r'SqlNotes',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Note>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Note>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Note>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Note>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Note>(_i2.ClassType<_i1.Note>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Note>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlNotesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Note>> saveAll(Iterable<_i1.Note> entities) =>
-      _i2.retypeFuture<List<_i1.Note>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Note>> findAll() => _i2.retypeFuture<List<_i1.Note>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Note>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Note>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Note> save(_i1.Note entity) => _i2.retypeFuture<_i1.Note>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Note?> findById(int id) => _i2.retypeFuture<_i1.Note?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Note entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Note> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlCrates` through an `InvocationHandler`.
-class _$SqlCratesImpl implements _i1.SqlCrates {
-  _$SqlCratesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlCrates> _metadata;
-
-  static _$SqlCratesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlCrates>(
-      typeName: r'SqlCrates',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Crate>(_i2.ClassType<_i1.Crate>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Crate>(_i2.ClassType<_i1.Crate>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Crate>(_i2.ClassType<_i1.Crate>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Crate>(_i2.ClassType<_i1.Crate>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Crate>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Crate>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Crate>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Crate>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Crate>(_i2.ClassType<_i1.Crate>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Crate>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Crate>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Crate>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlCratesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Crate>> saveAll(Iterable<_i1.Crate> entities) =>
-      _i2.retypeFuture<List<_i1.Crate>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Crate>> findAll() => _i2.retypeFuture<List<_i1.Crate>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Crate>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Crate>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Crate> save(_i1.Crate entity) => _i2.retypeFuture<_i1.Crate>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Crate?> findById(int id) => _i2.retypeFuture<_i1.Crate?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Crate entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Crate> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlAuthors` through an `InvocationHandler`.
-class _$SqlAuthorsImpl implements _i1.SqlAuthors {
-  _$SqlAuthorsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlAuthors> _metadata;
-
-  static _$SqlAuthorsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlAuthors>(
-      typeName: r'SqlAuthors',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByNameStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Author>(_i2.ClassType<_i1.Author>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Author>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Author>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Author>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Author>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Author>(_i2.ClassType<_i1.Author>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlAuthorsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Author>> findByNameStartingWith(String prefix) =>
-      _i2.retypeFuture<List<_i1.Author>>(
-        this._handler.invoke(this._metadata.methods[0], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Author>> saveAll(Iterable<_i1.Author> entities) =>
-      _i2.retypeFuture<List<_i1.Author>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Author>> findAll() => _i2.retypeFuture<List<_i1.Author>>(
-    this._handler.invoke(this._metadata.methods[2], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Author>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Author>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Author> save(_i1.Author entity) =>
-      _i2.retypeFuture<_i1.Author>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Author?> findById(int id) => _i2.retypeFuture<_i1.Author?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Author entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Author> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `MemoryAuthors` through an `InvocationHandler`.
-class _$MemoryAuthorsImpl implements _i1.MemoryAuthors {
-  _$MemoryAuthorsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryAuthors> _metadata;
-
-  static _$MemoryAuthorsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryAuthors>(
-      typeName: r'MemoryAuthors',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Author>(_i2.ClassType<_i1.Author>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Author>(
-            _i2.ClassType<_i1.Author>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Author>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Author>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Author>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Author>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Author>(_i2.ClassType<_i1.Author>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Author>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryAuthorsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Author>> saveAll(Iterable<_i1.Author> entities) =>
-      _i2.retypeFuture<List<_i1.Author>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Author>> findAll() => _i2.retypeFuture<List<_i1.Author>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Author>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Author>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Author> save(_i1.Author entity) =>
-      _i2.retypeFuture<_i1.Author>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Author?> findById(int id) => _i2.retypeFuture<_i1.Author?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Author entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Author> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlStocks` through an `InvocationHandler`.
-class _$SqlStocksImpl implements _i1.SqlStocks {
-  _$SqlStocksImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlStocks> _metadata;
-
-  static _$SqlStocksImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlStocks>(
-      typeName: r'SqlStocks',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findBySku',
-          parameters: [
-            _i2.BeanParameter(
-              r'sku',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
-          isFuture: true,
-          annotations: const [_i4.Lock(_i4.LockMode.pessimisticWrite)],
-        ),
-        _i2.ProxyMethod(
-          r'findByQuantityLessThan',
-          parameters: [
-            _i2.BeanParameter(
-              r'quantity',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-          isFuture: true,
-          annotations: const [_i4.Lock(_i4.LockMode.pessimisticRead)],
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
-          isFuture: true,
-          annotations: const [_i4.Lock(_i4.LockMode.pessimisticWrite)],
-        ),
-        _i2.ProxyMethod(
-          r'findOneBySku',
-          parameters: [
-            _i2.BeanParameter(
-              r'sku',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Stock>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Stock>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Stock>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Stock>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Stock>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Stock>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlStocksImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<_i1.Stock?> findBySku(String sku) => _i2.retypeFuture<_i1.Stock?>(
-    this._handler.invoke(this._metadata.methods[0], [sku]),
-  );
-
-  @override
-  _i5.Future<List<_i1.Stock>> findByQuantityLessThan(int quantity) =>
-      _i2.retypeFuture<List<_i1.Stock>>(
-        this._handler.invoke(this._metadata.methods[1], [quantity]),
-      );
-
-  @override
-  _i5.Future<_i1.Stock?> findById(int id) => _i2.retypeFuture<_i1.Stock?>(
-    this._handler.invoke(this._metadata.methods[2], [id]),
-  );
-
-  @override
-  _i5.Future<_i1.Stock?> findOneBySku(String sku) =>
-      _i2.retypeFuture<_i1.Stock?>(
-        this._handler.invoke(this._metadata.methods[3], [sku]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Stock>> saveAll(Iterable<_i1.Stock> entities) =>
-      _i2.retypeFuture<List<_i1.Stock>>(
-        this._handler.invoke(this._metadata.methods[4], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Stock>> findAll() => _i2.retypeFuture<List<_i1.Stock>>(
-    this._handler.invoke(this._metadata.methods[5], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Stock>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Stock>>(
-        this._handler.invoke(this._metadata.methods[6], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Stock> save(_i1.Stock entity) => _i2.retypeFuture<_i1.Stock>(
-    this._handler.invoke(this._metadata.methods[7], [entity]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[9], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Stock entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Stock> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[13], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[14], const []),
-  );
-}
-
-/// Implements `FanQueries` through an `InvocationHandler`.
-class _$FanQueriesImpl implements _i1.FanQueries {
-  _$FanQueriesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.FanQueries> _metadata;
-
-  static _$FanQueriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.FanQueries>(
-      typeName: r'FanQueries',
-      methods: [
-        _i2.ProxyMethod(
-          r'findByClubId',
-          parameters: [
-            _i2.BeanParameter(
-              r'clubId',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Fan>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Fan>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Fan>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Fan>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$FanQueriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Fan>> findByClubId(int clubId) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[0], [clubId]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Fan>> saveAll(Iterable<_i1.Fan> entities) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Fan>> findAll() => _i2.retypeFuture<List<_i1.Fan>>(
-    this._handler.invoke(this._metadata.methods[2], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Fan>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Fan> save(_i1.Fan entity) => _i2.retypeFuture<_i1.Fan>(
-    this._handler.invoke(this._metadata.methods[4], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Fan?> findById(int id) => _i2.retypeFuture<_i1.Fan?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Fan entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Fan> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `MemoryFans` through an `InvocationHandler`.
-class _$MemoryFansImpl implements _i1.MemoryFans {
-  _$MemoryFansImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryFans> _metadata;
-
-  static _$MemoryFansImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryFans>(
-      typeName: r'MemoryFans',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByClubId',
-          parameters: [
-            _i2.BeanParameter(
-              r'clubId',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Fan>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Fan>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Fan>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Fan>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryFansImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Fan>> findByClubId(int clubId) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[0], [clubId]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Fan>> saveAll(Iterable<_i1.Fan> entities) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Fan>> findAll() => _i2.retypeFuture<List<_i1.Fan>>(
-    this._handler.invoke(this._metadata.methods[2], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Fan>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Fan> save(_i1.Fan entity) => _i2.retypeFuture<_i1.Fan>(
-    this._handler.invoke(this._metadata.methods[4], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Fan?> findById(int id) => _i2.retypeFuture<_i1.Fan?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Fan entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Fan> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `SqlFans` through an `InvocationHandler`.
-class _$SqlFansImpl implements _i1.SqlFans {
-  _$SqlFansImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlFans> _metadata;
-
-  static _$SqlFansImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlFans>(
-      typeName: r'SqlFans',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'byClub',
-          parameters: [
-            _i2.BeanParameter(
-              r'clubId',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-          annotations: const [
-            _i4.Query(
-              r'select * from fans where club_id = :clubId order by id',
-            ),
-          ],
-        ),
-        _i2.ProxyMethod(
-          r'findByClubId',
-          parameters: [
-            _i2.BeanParameter(
-              r'clubId',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Fan>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Fan>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Fan>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Fan>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Fan>(_i2.ClassType<_i1.Fan>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Fan>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlFansImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Fan>> byClub(int clubId) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[0], [clubId]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Fan>> findByClubId(int clubId) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[1], [clubId]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Fan>> saveAll(Iterable<_i1.Fan> entities) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[2], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Fan>> findAll() => _i2.retypeFuture<List<_i1.Fan>>(
-    this._handler.invoke(this._metadata.methods[3], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Fan>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Fan>>(
-        this._handler.invoke(this._metadata.methods[4], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Fan> save(_i1.Fan entity) => _i2.retypeFuture<_i1.Fan>(
-    this._handler.invoke(this._metadata.methods[5], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Fan?> findById(int id) => _i2.retypeFuture<_i1.Fan?>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[8], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Fan entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Fan> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[12], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[13], const []),
-  );
-}
-
-/// Implements `CitizenQueries` through an `InvocationHandler`.
-class _$CitizenQueriesImpl implements _i1.CitizenQueries {
-  _$CitizenQueriesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.CitizenQueries> _metadata;
-
-  static _$CitizenQueriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.CitizenQueries>(
-      typeName: r'CitizenQueries',
-      methods: [
-        _i2.ProxyMethod(
-          r'findByPassport',
-          parameters: [
-            _i2.BeanParameter(
-              r'passport',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Citizen>(
-                _i2.ClassType<_i1.Citizen>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Citizen>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Citizen>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Citizen>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Citizen>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Citizen>(
-                _i2.ClassType<_i1.Citizen>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$CitizenQueriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findByPassport(String? passport) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[0], [passport]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> saveAll(Iterable<_i1.Citizen> entities) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findAll() =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Citizen> save(_i1.Citizen entity) =>
-      _i2.retypeFuture<_i1.Citizen>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Citizen?> findById(int id) => _i2.retypeFuture<_i1.Citizen?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Citizen entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Citizen> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `MemoryCitizens` through an `InvocationHandler`.
-class _$MemoryCitizensImpl implements _i1.MemoryCitizens {
-  _$MemoryCitizensImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryCitizens> _metadata;
-
-  static _$MemoryCitizensImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryCitizens>(
-      typeName: r'MemoryCitizens',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByPassport',
-          parameters: [
-            _i2.BeanParameter(
-              r'passport',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Citizen>(
-                _i2.ClassType<_i1.Citizen>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Citizen>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Citizen>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Citizen>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Citizen>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Citizen>(
-                _i2.ClassType<_i1.Citizen>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryCitizensImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findByPassport(String? passport) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[0], [passport]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> saveAll(Iterable<_i1.Citizen> entities) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findAll() =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Citizen> save(_i1.Citizen entity) =>
-      _i2.retypeFuture<_i1.Citizen>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Citizen?> findById(int id) => _i2.retypeFuture<_i1.Citizen?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Citizen entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Citizen> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `SqlCitizens` through an `InvocationHandler`.
-class _$SqlCitizensImpl implements _i1.SqlCitizens {
-  _$SqlCitizensImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlCitizens> _metadata;
-
-  static _$SqlCitizensImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlCitizens>(
-      typeName: r'SqlCitizens',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'findByPassport',
-          parameters: [
-            _i2.BeanParameter(
-              r'passport',
-              type: const _i2.ClassType<String>(nullable: true),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Citizen>(
-                _i2.ClassType<_i1.Citizen>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Citizen>(
-            _i2.ClassType<_i1.Citizen>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Citizen>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Citizen>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Citizen>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Citizen>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Citizen>(
-                _i2.ClassType<_i1.Citizen>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Citizen>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlCitizensImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findByPassport(String? passport) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[0], [passport]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> saveAll(Iterable<_i1.Citizen> entities) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findAll() =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Citizen>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Citizen>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Citizen> save(_i1.Citizen entity) =>
-      _i2.retypeFuture<_i1.Citizen>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Citizen?> findById(int id) => _i2.retypeFuture<_i1.Citizen?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Citizen entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Citizen> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `CategoryQueries` through an `InvocationHandler`.
-class _$CategoryQueriesImpl implements _i1.CategoryQueries {
-  _$CategoryQueriesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.CategoryQueries> _metadata;
-
-  static _$CategoryQueriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.CategoryQueries>(
-      typeName: r'CategoryQueries',
-      methods: [
-        _i2.ProxyMethod(
-          r'deleteByNameStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Category>(
-                _i2.ClassType<_i1.Category>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Category>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Category>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Category>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Category>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Category>(
-                _i2.ClassType<_i1.Category>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$CategoryQueriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[0], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> saveAll(Iterable<_i1.Category> entities) =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> findAll() =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Category> save(_i1.Category entity) =>
-      _i2.retypeFuture<_i1.Category>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Category?> findById(int id) => _i2.retypeFuture<_i1.Category?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Category entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Category> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `MemoryCategories` through an `InvocationHandler`.
-class _$MemoryCategoriesImpl implements _i1.MemoryCategories {
-  _$MemoryCategoriesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryCategories> _metadata;
-
-  static _$MemoryCategoriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryCategories>(
-      typeName: r'MemoryCategories',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'deleteByNameStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Category>(
-                _i2.ClassType<_i1.Category>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Category>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Category>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Category>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Category>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Category>(
-                _i2.ClassType<_i1.Category>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryCategoriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[0], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> saveAll(Iterable<_i1.Category> entities) =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> findAll() =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Category> save(_i1.Category entity) =>
-      _i2.retypeFuture<_i1.Category>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Category?> findById(int id) => _i2.retypeFuture<_i1.Category?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Category entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Category> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `SqlCategories` through an `InvocationHandler`.
-class _$SqlCategoriesImpl implements _i1.SqlCategories {
-  _$SqlCategoriesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlCategories> _metadata;
-
-  static _$SqlCategoriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlCategories>(
-      typeName: r'SqlCategories',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'deleteByNameStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Category>(
-                _i2.ClassType<_i1.Category>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Category>(
-            _i2.ClassType<_i1.Category>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Category>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Category>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Category>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Category>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Category>(
-                _i2.ClassType<_i1.Category>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Category>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlCategoriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[0], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> saveAll(Iterable<_i1.Category> entities) =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> findAll() =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Category>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Category>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Category> save(_i1.Category entity) =>
-      _i2.retypeFuture<_i1.Category>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Category?> findById(int id) => _i2.retypeFuture<_i1.Category?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Category entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Category> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `EmployeeQueries` through an `InvocationHandler`.
-class _$EmployeeQueriesImpl implements _i1.EmployeeQueries {
-  _$EmployeeQueriesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.EmployeeQueries> _metadata;
-
-  static _$EmployeeQueriesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.EmployeeQueries>(
-      typeName: r'EmployeeQueries',
-      methods: [
-        _i2.ProxyMethod(
-          r'deleteByNameStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Employee>(
-                _i2.ClassType<_i1.Employee>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Employee>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Employee>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Employee>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Employee>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Employee>(
-                _i2.ClassType<_i1.Employee>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$EmployeeQueriesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[0], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> saveAll(Iterable<_i1.Employee> entities) =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> findAll() =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Employee> save(_i1.Employee entity) =>
-      _i2.retypeFuture<_i1.Employee>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Employee?> findById(int id) => _i2.retypeFuture<_i1.Employee?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Employee entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Employee> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `MemoryEmployees` through an `InvocationHandler`.
-class _$MemoryEmployeesImpl implements _i1.MemoryEmployees {
-  _$MemoryEmployeesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryEmployees> _metadata;
-
-  static _$MemoryEmployeesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryEmployees>(
-      typeName: r'MemoryEmployees',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'deleteByNameStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Employee>(
-                _i2.ClassType<_i1.Employee>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Employee>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Employee>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Employee>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Employee>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Employee>(
-                _i2.ClassType<_i1.Employee>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryEmployeesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[0], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> saveAll(Iterable<_i1.Employee> entities) =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> findAll() =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Employee> save(_i1.Employee entity) =>
-      _i2.retypeFuture<_i1.Employee>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Employee?> findById(int id) => _i2.retypeFuture<_i1.Employee?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Employee entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Employee> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `SqlEmployees` through an `InvocationHandler`.
-class _$SqlEmployeesImpl implements _i1.SqlEmployees {
-  _$SqlEmployeesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlEmployees> _metadata;
-
-  static _$SqlEmployeesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlEmployees>(
-      typeName: r'SqlEmployees',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'deleteByNameStartingWith',
-          parameters: [
-            _i2.BeanParameter(
-              r'prefix',
-              type: const _i2.ClassType<String>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Employee>(
-                _i2.ClassType<_i1.Employee>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Employee>(
-            _i2.ClassType<_i1.Employee>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Employee>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Employee>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Employee>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Employee>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Employee>(
-                _i2.ClassType<_i1.Employee>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Employee>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlEmployeesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
-      _i2.retypeFuture<int>(
-        this._handler.invoke(this._metadata.methods[0], [prefix]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> saveAll(Iterable<_i1.Employee> entities) =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[1], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> findAll() =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[2], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Employee>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Employee>>(
-        this._handler.invoke(this._metadata.methods[3], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Employee> save(_i1.Employee entity) =>
-      _i2.retypeFuture<_i1.Employee>(
-        this._handler.invoke(this._metadata.methods[4], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Employee?> findById(int id) => _i2.retypeFuture<_i1.Employee?>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[6], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[7], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Employee entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[10], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Employee> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[11], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[12], const []),
-  );
-}
-
-/// Implements `MemoryClubs` through an `InvocationHandler`.
-class _$MemoryClubsImpl implements _i1.MemoryClubs {
-  _$MemoryClubsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryClubs> _metadata;
-
-  static _$MemoryClubsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryClubs>(
-      typeName: r'MemoryClubs',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Club>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Club>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Club>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Club>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Club>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Club>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Club>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryClubsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Club>> saveAll(Iterable<_i1.Club> entities) =>
-      _i2.retypeFuture<List<_i1.Club>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Club>> findAll() => _i2.retypeFuture<List<_i1.Club>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Club>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Club>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Club> save(_i1.Club entity) => _i2.retypeFuture<_i1.Club>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Club?> findById(int id) => _i2.retypeFuture<_i1.Club?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Club entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Club> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlClubs` through an `InvocationHandler`.
-class _$SqlClubsImpl implements _i1.SqlClubs {
-  _$SqlClubsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlClubs> _metadata;
-
-  static _$SqlClubsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlClubs>(
-      typeName: r'SqlClubs',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Club>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Club>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Club>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Club>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Club>(_i2.ClassType<_i1.Club>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Club>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Club>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Club>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlClubsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Club>> saveAll(Iterable<_i1.Club> entities) =>
-      _i2.retypeFuture<List<_i1.Club>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Club>> findAll() => _i2.retypeFuture<List<_i1.Club>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Club>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Club>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Club> save(_i1.Club entity) => _i2.retypeFuture<_i1.Club>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Club?> findById(int id) => _i2.retypeFuture<_i1.Club?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Club entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Club> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `MemorySponsors` through an `InvocationHandler`.
-class _$MemorySponsorsImpl implements _i1.MemorySponsors {
-  _$MemorySponsorsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemorySponsors> _metadata;
-
-  static _$MemorySponsorsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemorySponsors>(
-      typeName: r'MemorySponsors',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Sponsor>(
-                _i2.ClassType<_i1.Sponsor>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Sponsor>(
-            _i2.ClassType<_i1.Sponsor>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Sponsor>(
-            _i2.ClassType<_i1.Sponsor>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Sponsor>(
-            _i2.ClassType<_i1.Sponsor>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Sponsor>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Sponsor>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Sponsor>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Sponsor>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Sponsor>(
-                _i2.ClassType<_i1.Sponsor>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Sponsor>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Sponsor>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Sponsor>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemorySponsorsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Sponsor>> saveAll(Iterable<_i1.Sponsor> entities) =>
-      _i2.retypeFuture<List<_i1.Sponsor>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Sponsor>> findAll() =>
-      _i2.retypeFuture<List<_i1.Sponsor>>(
-        this._handler.invoke(this._metadata.methods[1], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Sponsor>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Sponsor>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Sponsor> save(_i1.Sponsor entity) =>
-      _i2.retypeFuture<_i1.Sponsor>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Sponsor?> findById(int id) => _i2.retypeFuture<_i1.Sponsor?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Sponsor entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Sponsor> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlSponsors` through an `InvocationHandler`.
-class _$SqlSponsorsImpl implements _i1.SqlSponsors {
-  _$SqlSponsorsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlSponsors> _metadata;
-
-  static _$SqlSponsorsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlSponsors>(
-      typeName: r'SqlSponsors',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Sponsor>(
-                _i2.ClassType<_i1.Sponsor>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Sponsor>(
-            _i2.ClassType<_i1.Sponsor>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Sponsor>(
-            _i2.ClassType<_i1.Sponsor>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Sponsor>(
-            _i2.ClassType<_i1.Sponsor>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Sponsor>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Sponsor>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Sponsor>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Sponsor>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Sponsor>(
-                _i2.ClassType<_i1.Sponsor>(),
-              ),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Sponsor>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Sponsor>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Sponsor>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlSponsorsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Sponsor>> saveAll(Iterable<_i1.Sponsor> entities) =>
-      _i2.retypeFuture<List<_i1.Sponsor>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Sponsor>> findAll() =>
-      _i2.retypeFuture<List<_i1.Sponsor>>(
-        this._handler.invoke(this._metadata.methods[1], const []),
-      );
-
-  @override
-  _i5.Future<List<_i1.Sponsor>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Sponsor>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Sponsor> save(_i1.Sponsor entity) =>
-      _i2.retypeFuture<_i1.Sponsor>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Sponsor?> findById(int id) => _i2.retypeFuture<_i1.Sponsor?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Sponsor entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Sponsor> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `MemoryPlayers` through an `InvocationHandler`.
-class _$MemoryPlayersImpl implements _i1.MemoryPlayers {
-  _$MemoryPlayersImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryPlayers> _metadata;
-
-  static _$MemoryPlayersImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryPlayers>(
-      typeName: r'MemoryPlayers',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Player>(_i2.ClassType<_i1.Player>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Player>(
-            _i2.ClassType<_i1.Player>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Player>(
-            _i2.ClassType<_i1.Player>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Player>(
-            _i2.ClassType<_i1.Player>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Player>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Player>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Player>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Player>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Player>(_i2.ClassType<_i1.Player>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Player>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Player>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Player>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryPlayersImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Player>> saveAll(Iterable<_i1.Player> entities) =>
-      _i2.retypeFuture<List<_i1.Player>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Player>> findAll() => _i2.retypeFuture<List<_i1.Player>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Player>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Player>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Player> save(_i1.Player entity) =>
-      _i2.retypeFuture<_i1.Player>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Player?> findById(int id) => _i2.retypeFuture<_i1.Player?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Player entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Player> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlPlayers` through an `InvocationHandler`.
-class _$SqlPlayersImpl implements _i1.SqlPlayers {
-  _$SqlPlayersImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlPlayers> _metadata;
-
-  static _$SqlPlayersImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlPlayers>(
-      typeName: r'SqlPlayers',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Player>(_i2.ClassType<_i1.Player>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Player>(
-            _i2.ClassType<_i1.Player>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Player>(
-            _i2.ClassType<_i1.Player>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Player>(
-            _i2.ClassType<_i1.Player>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Player>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Player>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Player>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Player>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Player>(_i2.ClassType<_i1.Player>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Player>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Player>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Player>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlPlayersImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Player>> saveAll(Iterable<_i1.Player> entities) =>
-      _i2.retypeFuture<List<_i1.Player>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Player>> findAll() => _i2.retypeFuture<List<_i1.Player>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Player>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Player>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Player> save(_i1.Player entity) =>
-      _i2.retypeFuture<_i1.Player>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Player?> findById(int id) => _i2.retypeFuture<_i1.Player?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Player entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Player> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `MemoryGoals` through an `InvocationHandler`.
-class _$MemoryGoalsImpl implements _i1.MemoryGoals {
-  _$MemoryGoalsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryGoals> _metadata;
-
-  static _$MemoryGoalsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryGoals>(
-      typeName: r'MemoryGoals',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Goal>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Goal>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Goal>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Goal>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Goal>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Goal>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Goal>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryGoalsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Goal>> saveAll(Iterable<_i1.Goal> entities) =>
-      _i2.retypeFuture<List<_i1.Goal>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Goal>> findAll() => _i2.retypeFuture<List<_i1.Goal>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Goal>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Goal>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Goal> save(_i1.Goal entity) => _i2.retypeFuture<_i1.Goal>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Goal?> findById(int id) => _i2.retypeFuture<_i1.Goal?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Goal entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Goal> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlGoals` through an `InvocationHandler`.
-class _$SqlGoalsImpl implements _i1.SqlGoals {
-  _$SqlGoalsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlGoals> _metadata;
-
-  static _$SqlGoalsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlGoals>(
-      typeName: r'SqlGoals',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Goal>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Goal>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Goal>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Goal>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Goal>(_i2.ClassType<_i1.Goal>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Goal>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Goal>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Goal>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlGoalsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Goal>> saveAll(Iterable<_i1.Goal> entities) =>
-      _i2.retypeFuture<List<_i1.Goal>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Goal>> findAll() => _i2.retypeFuture<List<_i1.Goal>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Goal>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Goal>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Goal> save(_i1.Goal entity) => _i2.retypeFuture<_i1.Goal>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Goal?> findById(int id) => _i2.retypeFuture<_i1.Goal?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Goal entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Goal> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `MemoryCoaches` through an `InvocationHandler`.
-class _$MemoryCoachesImpl implements _i1.MemoryCoaches {
-  _$MemoryCoachesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryCoaches> _metadata;
-
-  static _$MemoryCoachesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryCoaches>(
-      typeName: r'MemoryCoaches',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Coach>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Coach>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Coach>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Coach>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Coach>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Coach>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Coach>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryCoachesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Coach>> saveAll(Iterable<_i1.Coach> entities) =>
-      _i2.retypeFuture<List<_i1.Coach>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Coach>> findAll() => _i2.retypeFuture<List<_i1.Coach>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Coach>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Coach>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Coach> save(_i1.Coach entity) => _i2.retypeFuture<_i1.Coach>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Coach?> findById(int id) => _i2.retypeFuture<_i1.Coach?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Coach entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Coach> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlCoaches` through an `InvocationHandler`.
-class _$SqlCoachesImpl implements _i1.SqlCoaches {
-  _$SqlCoachesImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlCoaches> _metadata;
-
-  static _$SqlCoachesImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlCoaches>(
-      typeName: r'SqlCoaches',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Coach>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Coach>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Coach>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Coach>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Coach>(_i2.ClassType<_i1.Coach>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Coach>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Coach>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Coach>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlCoachesImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Coach>> saveAll(Iterable<_i1.Coach> entities) =>
-      _i2.retypeFuture<List<_i1.Coach>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Coach>> findAll() => _i2.retypeFuture<List<_i1.Coach>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Coach>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Coach>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Coach> save(_i1.Coach entity) => _i2.retypeFuture<_i1.Coach>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Coach?> findById(int id) => _i2.retypeFuture<_i1.Coach?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Coach entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Coach> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `MemorySquads` through an `InvocationHandler`.
-class _$MemorySquadsImpl implements _i1.MemorySquads {
-  _$MemorySquadsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemorySquads> _metadata;
-
-  static _$MemorySquadsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemorySquads>(
-      typeName: r'MemorySquads',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Squad>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Squad>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Squad>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Squad>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Squad>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Squad>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Squad>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemorySquadsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Squad>> saveAll(Iterable<_i1.Squad> entities) =>
-      _i2.retypeFuture<List<_i1.Squad>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Squad>> findAll() => _i2.retypeFuture<List<_i1.Squad>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Squad>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Squad>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Squad> save(_i1.Squad entity) => _i2.retypeFuture<_i1.Squad>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Squad?> findById(int id) => _i2.retypeFuture<_i1.Squad?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Squad entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Squad> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlSquads` through an `InvocationHandler`.
-class _$SqlSquadsImpl implements _i1.SqlSquads {
-  _$SqlSquadsImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlSquads> _metadata;
-
-  static _$SqlSquadsImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlSquads>(
-      typeName: r'SqlSquads',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Squad>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Squad>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Squad>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Squad>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Squad>(_i2.ClassType<_i1.Squad>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Squad>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Squad>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Squad>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlSquadsImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Squad>> saveAll(Iterable<_i1.Squad> entities) =>
-      _i2.retypeFuture<List<_i1.Squad>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Squad>> findAll() => _i2.retypeFuture<List<_i1.Squad>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Squad>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Squad>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Squad> save(_i1.Squad entity) => _i2.retypeFuture<_i1.Squad>(
-    this._handler.invoke(this._metadata.methods[3], [entity]),
-  );
-
-  @override
-  _i5.Future<_i1.Squad?> findById(int id) => _i2.retypeFuture<_i1.Squad?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Squad entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Squad> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `MemoryFolders` through an `InvocationHandler`.
-class _$MemoryFoldersImpl implements _i1.MemoryFolders {
-  _$MemoryFoldersImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.MemoryFolders> _metadata;
-
-  static _$MemoryFoldersImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.MemoryFolders>(
-      typeName: r'MemoryFolders',
-      annotations: const [_i4.UseStore(r'memory')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Folder>(_i2.ClassType<_i1.Folder>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Folder>(
-            _i2.ClassType<_i1.Folder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Folder>(
-            _i2.ClassType<_i1.Folder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Folder>(
-            _i2.ClassType<_i1.Folder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Folder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Folder>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Folder>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Folder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Folder>(_i2.ClassType<_i1.Folder>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Folder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Folder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Folder>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$MemoryFoldersImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Folder>> saveAll(Iterable<_i1.Folder> entities) =>
-      _i2.retypeFuture<List<_i1.Folder>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Folder>> findAll() => _i2.retypeFuture<List<_i1.Folder>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Folder>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Folder>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Folder> save(_i1.Folder entity) =>
-      _i2.retypeFuture<_i1.Folder>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Folder?> findById(int id) => _i2.retypeFuture<_i1.Folder?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Folder entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Folder> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
-  );
-}
-
-/// Implements `SqlFolders` through an `InvocationHandler`.
-class _$SqlFoldersImpl implements _i1.SqlFolders {
-  _$SqlFoldersImpl(this._handler, this._metadata);
-
-  final _i2.InvocationHandler _handler;
-
-  final _i2.InterfaceMetadata<_i1.SqlFolders> _metadata;
-
-  static _$SqlFoldersImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.SqlFolders>(
-      typeName: r'SqlFolders',
-      annotations: const [_i4.UseStore(r'jdbc')],
-      methods: [
-        _i2.ProxyMethod(
-          r'saveAll',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Folder>(_i2.ClassType<_i1.Folder>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Folder>(
-            _i2.ClassType<_i1.Folder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAll',
-          returnType: const _i2.ListType<_i1.Folder>(
-            _i2.ClassType<_i1.Folder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ListType<_i1.Folder>(
-            _i2.ClassType<_i1.Folder>(),
-          ),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'save',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Folder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Folder>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'findById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<_i1.Folder>(nullable: true),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'existsById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.ClassType<bool>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'count',
-          returnType: const _i2.ClassType<int>(),
-          isFuture: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteById',
-          parameters: [
-            _i2.BeanParameter(
-              r'id',
-              type: const _i2.ClassType<int>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'delete',
-          parameters: [
-            _i2.BeanParameter(
-              r'entity',
-              type: const _i2.ClassType<_i1.Folder>(),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllById',
-          parameters: [
-            _i2.BeanParameter(
-              r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAllOf',
-          parameters: [
-            _i2.BeanParameter(
-              r'entities',
-              type: const _i2.ListType<_i1.Folder>(_i2.ClassType<_i1.Folder>()),
-              isRequired: true,
-            ),
-          ],
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-        _i2.ProxyMethod(
-          r'deleteAll',
-          returnType: const _i2.DynamicType(),
-          isFuture: true,
-          isVoid: true,
-        ),
-      ],
-      supertypeArguments: {
-        r'ListCrudRepository': [
-          const _i2.ClassType<_i1.Folder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'CrudRepository': [
-          const _i2.ClassType<_i1.Folder>(),
-          const _i2.ClassType<int>(),
-        ],
-        r'DataRepository': [
-          const _i2.ClassType<_i1.Folder>(),
-          const _i2.ClassType<int>(),
-        ],
-      },
-    );
-    return _$SqlFoldersImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
-
-  @override
-  _i5.Future<List<_i1.Folder>> saveAll(Iterable<_i1.Folder> entities) =>
-      _i2.retypeFuture<List<_i1.Folder>>(
-        this._handler.invoke(this._metadata.methods[0], [entities]),
-      );
-
-  @override
-  _i5.Future<List<_i1.Folder>> findAll() => _i2.retypeFuture<List<_i1.Folder>>(
-    this._handler.invoke(this._metadata.methods[1], const []),
-  );
-
-  @override
-  _i5.Future<List<_i1.Folder>> findAllById(Iterable<int> ids) =>
-      _i2.retypeFuture<List<_i1.Folder>>(
-        this._handler.invoke(this._metadata.methods[2], [ids]),
-      );
-
-  @override
-  _i5.Future<_i1.Folder> save(_i1.Folder entity) =>
-      _i2.retypeFuture<_i1.Folder>(
-        this._handler.invoke(this._metadata.methods[3], [entity]),
-      );
-
-  @override
-  _i5.Future<_i1.Folder?> findById(int id) => _i2.retypeFuture<_i1.Folder?>(
-    this._handler.invoke(this._metadata.methods[4], [id]),
-  );
-
-  @override
-  _i5.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
-    this._handler.invoke(this._metadata.methods[5], [id]),
-  );
-
-  @override
-  _i5.Future<int> count() => _i2.retypeFuture<int>(
-    this._handler.invoke(this._metadata.methods[6], const []),
-  );
-
-  @override
-  _i5.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[7], [id]),
-  );
-
-  @override
-  _i5.Future<void> delete(_i1.Folder entity) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[8], [entity]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[9], [ids]),
-  );
-
-  @override
-  _i5.Future<void> deleteAllOf(Iterable<_i1.Folder> entities) =>
-      _i2.retypeFuture<void>(
-        this._handler.invoke(this._metadata.methods[10], [entities]),
-      );
-
-  @override
-  _i5.Future<void> deleteAll() => _i2.retypeFuture<void>(
-    this._handler.invoke(this._metadata.methods[11], const []),
+/// Implements `SqlFolders`: `SimpleRepository` has the CRUD methods.
+class _$SqlFoldersImpl extends _i1.SimpleRepository<_i2.Folder, int>
+    implements _i2.SqlFolders {
+  _$SqlFoldersImpl(super.operations);
+
+  static _$SqlFoldersImpl $create(_i3.DependencyResolver r) => _$SqlFoldersImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Folder, int>(
+      r'SqlFolders',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
   );
 }
 
 /// Beans found by `@ComponentScan` in `lib/ and test/repository/jdbc/app/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i1.Years>(
+    _i3.BeanDefinition<_i2.Years>(
       name: r'years',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#Years',
-      types: const [_i1.Years],
-      create: (r) => _i1.Years(),
-      annotations: const [_i2.Component(), _i2.Introspected()],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      types: const [_i2.Years],
+      create: (r) => _i2.Years(),
+      annotations: const [_i3.Component(), _i3.Introspected()],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches Years, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.BookQueries>(
+    _i3.BeanDefinition<_i2.BookQueries>(
       name: r'bookQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#BookQueries',
       types: const [
-        _i1.BookQueries,
-        _i7.ListCrudRepository<_i1.Book, int>,
-        _i7.CrudRepository<_i1.Book, int>,
-        _i7.DataRepository<_i1.Book, int>,
-        _i7.ListPagingAndSortingRepository<_i1.Book, int>,
-        _i7.PagingAndSortingRepository<_i1.Book, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
-        _i7.ListPagingAndSortingRepository<dynamic, dynamic>,
-        _i7.PagingAndSortingRepository<dynamic, dynamic>,
+        _i2.BookQueries,
+        _i8.ListCrudRepository<_i2.Book, int>,
+        _i8.CrudRepository<_i2.Book, int>,
+        _i8.DataRepository<_i2.Book, int>,
+        _i8.ListPagingAndSortingRepository<_i2.Book, int>,
+        _i8.PagingAndSortingRepository<_i2.Book, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+        _i8.ListPagingAndSortingRepository<dynamic, dynamic>,
+        _i8.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookQueriesImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches BookQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryBooks>(
+    _i3.BeanDefinition<_i2.MemoryBooks>(
       name: r'memoryBooks',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryBooks',
       types: const [
-        _i1.MemoryBooks,
-        _i1.BookQueries,
-        _i7.ListCrudRepository<_i1.Book, int>,
-        _i7.CrudRepository<_i1.Book, int>,
-        _i7.DataRepository<_i1.Book, int>,
-        _i7.ListPagingAndSortingRepository<_i1.Book, int>,
-        _i7.PagingAndSortingRepository<_i1.Book, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
-        _i7.ListPagingAndSortingRepository<dynamic, dynamic>,
-        _i7.PagingAndSortingRepository<dynamic, dynamic>,
+        _i2.MemoryBooks,
+        _i2.BookQueries,
+        _i8.ListCrudRepository<_i2.Book, int>,
+        _i8.CrudRepository<_i2.Book, int>,
+        _i8.DataRepository<_i2.Book, int>,
+        _i8.ListPagingAndSortingRepository<_i2.Book, int>,
+        _i8.PagingAndSortingRepository<_i2.Book, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+        _i8.ListPagingAndSortingRepository<dynamic, dynamic>,
+        _i8.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryBooksImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryBooks, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlBooks>(
+    _i3.BeanDefinition<_i2.SqlBooks>(
       name: r'sqlBooks',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlBooks',
       types: const [
-        _i1.SqlBooks,
-        _i1.BookQueries,
-        _i7.ListCrudRepository<_i1.Book, int>,
-        _i7.CrudRepository<_i1.Book, int>,
-        _i7.DataRepository<_i1.Book, int>,
-        _i7.ListPagingAndSortingRepository<_i1.Book, int>,
-        _i7.PagingAndSortingRepository<_i1.Book, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
-        _i7.ListPagingAndSortingRepository<dynamic, dynamic>,
-        _i7.PagingAndSortingRepository<dynamic, dynamic>,
+        _i2.SqlBooks,
+        _i2.BookQueries,
+        _i8.ListCrudRepository<_i2.Book, int>,
+        _i8.CrudRepository<_i2.Book, int>,
+        _i8.DataRepository<_i2.Book, int>,
+        _i8.ListPagingAndSortingRepository<_i2.Book, int>,
+        _i8.PagingAndSortingRepository<_i2.Book, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+        _i8.ListPagingAndSortingRepository<dynamic, dynamic>,
+        _i8.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlBooksImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlBooks, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.OrderQueries>(
+    _i3.BeanDefinition<_i2.OrderQueries>(
       name: r'orderQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#OrderQueries',
       types: const [
-        _i1.OrderQueries,
-        _i7.ListCrudRepository<_i1.PurchaseOrder, int>,
-        _i7.CrudRepository<_i1.PurchaseOrder, int>,
-        _i7.DataRepository<_i1.PurchaseOrder, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.OrderQueries,
+        _i8.ListCrudRepository<_i2.PurchaseOrder, int>,
+        _i8.CrudRepository<_i2.PurchaseOrder, int>,
+        _i8.DataRepository<_i2.PurchaseOrder, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$OrderQueriesImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches OrderQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryOrders>(
+    _i3.BeanDefinition<_i2.MemoryOrders>(
       name: r'memoryOrders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryOrders',
       types: const [
-        _i1.MemoryOrders,
-        _i1.OrderQueries,
-        _i7.ListCrudRepository<_i1.PurchaseOrder, int>,
-        _i7.CrudRepository<_i1.PurchaseOrder, int>,
-        _i7.DataRepository<_i1.PurchaseOrder, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryOrders,
+        _i2.OrderQueries,
+        _i8.ListCrudRepository<_i2.PurchaseOrder, int>,
+        _i8.CrudRepository<_i2.PurchaseOrder, int>,
+        _i8.DataRepository<_i2.PurchaseOrder, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryOrdersImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryOrders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlOrders>(
+    _i3.BeanDefinition<_i2.SqlOrders>(
       name: r'sqlOrders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlOrders',
       types: const [
-        _i1.SqlOrders,
-        _i1.OrderQueries,
-        _i7.ListCrudRepository<_i1.PurchaseOrder, int>,
-        _i7.CrudRepository<_i1.PurchaseOrder, int>,
-        _i7.DataRepository<_i1.PurchaseOrder, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlOrders,
+        _i2.OrderQueries,
+        _i8.ListCrudRepository<_i2.PurchaseOrder, int>,
+        _i8.CrudRepository<_i2.PurchaseOrder, int>,
+        _i8.DataRepository<_i2.PurchaseOrder, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlOrdersImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlOrders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryShelves>(
+    _i3.BeanDefinition<_i2.MemoryShelves>(
       name: r'memoryShelves',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryShelves',
       types: const [
-        _i1.MemoryShelves,
-        _i7.ListCrudRepository<_i1.Shelf, int>,
-        _i7.CrudRepository<_i1.Shelf, int>,
-        _i7.DataRepository<_i1.Shelf, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryShelves,
+        _i8.ListCrudRepository<_i2.Shelf, int>,
+        _i8.CrudRepository<_i2.Shelf, int>,
+        _i8.DataRepository<_i2.Shelf, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryShelvesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryShelves, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlShelves>(
+    _i3.BeanDefinition<_i2.SqlShelves>(
       name: r'sqlShelves',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlShelves',
       types: const [
-        _i1.SqlShelves,
-        _i7.ListCrudRepository<_i1.Shelf, int>,
-        _i7.CrudRepository<_i1.Shelf, int>,
-        _i7.DataRepository<_i1.Shelf, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlShelves,
+        _i8.ListCrudRepository<_i2.Shelf, int>,
+        _i8.CrudRepository<_i2.Shelf, int>,
+        _i8.DataRepository<_i2.Shelf, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlShelvesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlShelves, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryAccounts>(
+    _i3.BeanDefinition<_i2.MemoryAccounts>(
       name: r'memoryAccounts',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryAccounts',
       types: const [
-        _i1.MemoryAccounts,
-        _i7.CrudRepository<_i1.Account, String>,
-        _i7.DataRepository<_i1.Account, String>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryAccounts,
+        _i8.CrudRepository<_i2.Account, String>,
+        _i8.DataRepository<_i2.Account, String>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryAccountsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryAccounts, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlAccounts>(
+    _i3.BeanDefinition<_i2.SqlAccounts>(
       name: r'sqlAccounts',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlAccounts',
       types: const [
-        _i1.SqlAccounts,
-        _i7.CrudRepository<_i1.Account, String>,
-        _i7.DataRepository<_i1.Account, String>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlAccounts,
+        _i8.CrudRepository<_i2.Account, String>,
+        _i8.DataRepository<_i2.Account, String>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlAccountsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlAccounts, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryTickets>(
+    _i3.BeanDefinition<_i2.MemoryTickets>(
       name: r'memoryTickets',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryTickets',
       types: const [
-        _i1.MemoryTickets,
-        _i7.ListCrudRepository<_i1.Ticket, int>,
-        _i7.CrudRepository<_i1.Ticket, int>,
-        _i7.DataRepository<_i1.Ticket, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryTickets,
+        _i8.ListCrudRepository<_i2.Ticket, int>,
+        _i8.CrudRepository<_i2.Ticket, int>,
+        _i8.DataRepository<_i2.Ticket, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryTicketsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryTickets, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlTickets>(
+    _i3.BeanDefinition<_i2.SqlTickets>(
       name: r'sqlTickets',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlTickets',
       types: const [
-        _i1.SqlTickets,
-        _i7.ListCrudRepository<_i1.Ticket, int>,
-        _i7.CrudRepository<_i1.Ticket, int>,
-        _i7.DataRepository<_i1.Ticket, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlTickets,
+        _i8.ListCrudRepository<_i2.Ticket, int>,
+        _i8.CrudRepository<_i2.Ticket, int>,
+        _i8.DataRepository<_i2.Ticket, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlTicketsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlTickets, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryNotes>(
+    _i3.BeanDefinition<_i2.MemoryNotes>(
       name: r'memoryNotes',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryNotes',
       types: const [
-        _i1.MemoryNotes,
-        _i7.ListCrudRepository<_i1.Note, int>,
-        _i7.CrudRepository<_i1.Note, int>,
-        _i7.DataRepository<_i1.Note, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryNotes,
+        _i8.ListCrudRepository<_i2.Note, int>,
+        _i8.CrudRepository<_i2.Note, int>,
+        _i8.DataRepository<_i2.Note, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryNotesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryNotes, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlNotes>(
+    _i3.BeanDefinition<_i2.SqlNotes>(
       name: r'sqlNotes',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlNotes',
       types: const [
-        _i1.SqlNotes,
-        _i7.ListCrudRepository<_i1.Note, int>,
-        _i7.CrudRepository<_i1.Note, int>,
-        _i7.DataRepository<_i1.Note, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlNotes,
+        _i8.ListCrudRepository<_i2.Note, int>,
+        _i8.CrudRepository<_i2.Note, int>,
+        _i8.DataRepository<_i2.Note, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlNotesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlNotes, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlCrates>(
+    _i3.BeanDefinition<_i2.SqlCrates>(
       name: r'sqlCrates',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCrates',
       types: const [
-        _i1.SqlCrates,
-        _i7.ListCrudRepository<_i1.Crate, int>,
-        _i7.CrudRepository<_i1.Crate, int>,
-        _i7.DataRepository<_i1.Crate, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlCrates,
+        _i8.ListCrudRepository<_i2.Crate, int>,
+        _i8.CrudRepository<_i2.Crate, int>,
+        _i8.DataRepository<_i2.Crate, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCratesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlCrates, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlAuthors>(
+    _i3.BeanDefinition<_i2.SqlAuthors>(
       name: r'sqlAuthors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlAuthors',
       types: const [
-        _i1.SqlAuthors,
-        _i7.ListCrudRepository<_i1.Author, int>,
-        _i7.CrudRepository<_i1.Author, int>,
-        _i7.DataRepository<_i1.Author, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlAuthors,
+        _i8.ListCrudRepository<_i2.Author, int>,
+        _i8.CrudRepository<_i2.Author, int>,
+        _i8.DataRepository<_i2.Author, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlAuthorsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlAuthors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryAuthors>(
+    _i3.BeanDefinition<_i2.MemoryAuthors>(
       name: r'memoryAuthors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryAuthors',
       types: const [
-        _i1.MemoryAuthors,
-        _i7.ListCrudRepository<_i1.Author, int>,
-        _i7.CrudRepository<_i1.Author, int>,
-        _i7.DataRepository<_i1.Author, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryAuthors,
+        _i8.ListCrudRepository<_i2.Author, int>,
+        _i8.CrudRepository<_i2.Author, int>,
+        _i8.DataRepository<_i2.Author, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryAuthorsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryAuthors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlStocks>(
+    _i3.BeanDefinition<_i2.SqlStocks>(
       name: r'sqlStocks',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlStocks',
       types: const [
-        _i1.SqlStocks,
-        _i7.ListCrudRepository<_i1.Stock, int>,
-        _i7.CrudRepository<_i1.Stock, int>,
-        _i7.DataRepository<_i1.Stock, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlStocks,
+        _i8.ListCrudRepository<_i2.Stock, int>,
+        _i8.CrudRepository<_i2.Stock, int>,
+        _i8.DataRepository<_i2.Stock, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlStocksImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlStocks, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.FanQueries>(
+    _i3.BeanDefinition<_i2.FanQueries>(
       name: r'fanQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#FanQueries',
       types: const [
-        _i1.FanQueries,
-        _i7.ListCrudRepository<_i1.Fan, int>,
-        _i7.CrudRepository<_i1.Fan, int>,
-        _i7.DataRepository<_i1.Fan, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.FanQueries,
+        _i8.ListCrudRepository<_i2.Fan, int>,
+        _i8.CrudRepository<_i2.Fan, int>,
+        _i8.DataRepository<_i2.Fan, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$FanQueriesImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches FanQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryFans>(
+    _i3.BeanDefinition<_i2.MemoryFans>(
       name: r'memoryFans',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryFans',
       types: const [
-        _i1.MemoryFans,
-        _i1.FanQueries,
-        _i7.ListCrudRepository<_i1.Fan, int>,
-        _i7.CrudRepository<_i1.Fan, int>,
-        _i7.DataRepository<_i1.Fan, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryFans,
+        _i2.FanQueries,
+        _i8.ListCrudRepository<_i2.Fan, int>,
+        _i8.CrudRepository<_i2.Fan, int>,
+        _i8.DataRepository<_i2.Fan, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryFansImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryFans, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlFans>(
+    _i3.BeanDefinition<_i2.SqlFans>(
       name: r'sqlFans',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlFans',
       types: const [
-        _i1.SqlFans,
-        _i1.FanQueries,
-        _i7.ListCrudRepository<_i1.Fan, int>,
-        _i7.CrudRepository<_i1.Fan, int>,
-        _i7.DataRepository<_i1.Fan, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlFans,
+        _i2.FanQueries,
+        _i8.ListCrudRepository<_i2.Fan, int>,
+        _i8.CrudRepository<_i2.Fan, int>,
+        _i8.DataRepository<_i2.Fan, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlFansImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlFans, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.CitizenQueries>(
+    _i3.BeanDefinition<_i2.CitizenQueries>(
       name: r'citizenQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#CitizenQueries',
       types: const [
-        _i1.CitizenQueries,
-        _i7.ListCrudRepository<_i1.Citizen, int>,
-        _i7.CrudRepository<_i1.Citizen, int>,
-        _i7.DataRepository<_i1.Citizen, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.CitizenQueries,
+        _i8.ListCrudRepository<_i2.Citizen, int>,
+        _i8.CrudRepository<_i2.Citizen, int>,
+        _i8.DataRepository<_i2.Citizen, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$CitizenQueriesImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches CitizenQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryCitizens>(
+    _i3.BeanDefinition<_i2.MemoryCitizens>(
       name: r'memoryCitizens',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryCitizens',
       types: const [
-        _i1.MemoryCitizens,
-        _i1.CitizenQueries,
-        _i7.ListCrudRepository<_i1.Citizen, int>,
-        _i7.CrudRepository<_i1.Citizen, int>,
-        _i7.DataRepository<_i1.Citizen, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryCitizens,
+        _i2.CitizenQueries,
+        _i8.ListCrudRepository<_i2.Citizen, int>,
+        _i8.CrudRepository<_i2.Citizen, int>,
+        _i8.DataRepository<_i2.Citizen, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryCitizensImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryCitizens, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlCitizens>(
+    _i3.BeanDefinition<_i2.SqlCitizens>(
       name: r'sqlCitizens',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCitizens',
       types: const [
-        _i1.SqlCitizens,
-        _i1.CitizenQueries,
-        _i7.ListCrudRepository<_i1.Citizen, int>,
-        _i7.CrudRepository<_i1.Citizen, int>,
-        _i7.DataRepository<_i1.Citizen, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlCitizens,
+        _i2.CitizenQueries,
+        _i8.ListCrudRepository<_i2.Citizen, int>,
+        _i8.CrudRepository<_i2.Citizen, int>,
+        _i8.DataRepository<_i2.Citizen, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCitizensImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlCitizens, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.CategoryQueries>(
+    _i3.BeanDefinition<_i2.CategoryQueries>(
       name: r'categoryQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#CategoryQueries',
       types: const [
-        _i1.CategoryQueries,
-        _i7.ListCrudRepository<_i1.Category, int>,
-        _i7.CrudRepository<_i1.Category, int>,
-        _i7.DataRepository<_i1.Category, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.CategoryQueries,
+        _i8.ListCrudRepository<_i2.Category, int>,
+        _i8.CrudRepository<_i2.Category, int>,
+        _i8.DataRepository<_i2.Category, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$CategoryQueriesImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches CategoryQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryCategories>(
+    _i3.BeanDefinition<_i2.MemoryCategories>(
       name: r'memoryCategories',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryCategories',
       types: const [
-        _i1.MemoryCategories,
-        _i1.CategoryQueries,
-        _i7.ListCrudRepository<_i1.Category, int>,
-        _i7.CrudRepository<_i1.Category, int>,
-        _i7.DataRepository<_i1.Category, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryCategories,
+        _i2.CategoryQueries,
+        _i8.ListCrudRepository<_i2.Category, int>,
+        _i8.CrudRepository<_i2.Category, int>,
+        _i8.DataRepository<_i2.Category, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryCategoriesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryCategories, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlCategories>(
+    _i3.BeanDefinition<_i2.SqlCategories>(
       name: r'sqlCategories',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCategories',
       types: const [
-        _i1.SqlCategories,
-        _i1.CategoryQueries,
-        _i7.ListCrudRepository<_i1.Category, int>,
-        _i7.CrudRepository<_i1.Category, int>,
-        _i7.DataRepository<_i1.Category, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlCategories,
+        _i2.CategoryQueries,
+        _i8.ListCrudRepository<_i2.Category, int>,
+        _i8.CrudRepository<_i2.Category, int>,
+        _i8.DataRepository<_i2.Category, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCategoriesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlCategories, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.EmployeeQueries>(
+    _i3.BeanDefinition<_i2.EmployeeQueries>(
       name: r'employeeQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#EmployeeQueries',
       types: const [
-        _i1.EmployeeQueries,
-        _i7.ListCrudRepository<_i1.Employee, int>,
-        _i7.CrudRepository<_i1.Employee, int>,
-        _i7.DataRepository<_i1.Employee, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.EmployeeQueries,
+        _i8.ListCrudRepository<_i2.Employee, int>,
+        _i8.CrudRepository<_i2.Employee, int>,
+        _i8.DataRepository<_i2.Employee, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$EmployeeQueriesImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches EmployeeQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryEmployees>(
+    _i3.BeanDefinition<_i2.MemoryEmployees>(
       name: r'memoryEmployees',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryEmployees',
       types: const [
-        _i1.MemoryEmployees,
-        _i1.EmployeeQueries,
-        _i7.ListCrudRepository<_i1.Employee, int>,
-        _i7.CrudRepository<_i1.Employee, int>,
-        _i7.DataRepository<_i1.Employee, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryEmployees,
+        _i2.EmployeeQueries,
+        _i8.ListCrudRepository<_i2.Employee, int>,
+        _i8.CrudRepository<_i2.Employee, int>,
+        _i8.DataRepository<_i2.Employee, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryEmployeesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryEmployees, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlEmployees>(
+    _i3.BeanDefinition<_i2.SqlEmployees>(
       name: r'sqlEmployees',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlEmployees',
       types: const [
-        _i1.SqlEmployees,
-        _i1.EmployeeQueries,
-        _i7.ListCrudRepository<_i1.Employee, int>,
-        _i7.CrudRepository<_i1.Employee, int>,
-        _i7.DataRepository<_i1.Employee, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlEmployees,
+        _i2.EmployeeQueries,
+        _i8.ListCrudRepository<_i2.Employee, int>,
+        _i8.CrudRepository<_i2.Employee, int>,
+        _i8.DataRepository<_i2.Employee, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlEmployeesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlEmployees, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryClubs>(
+    _i3.BeanDefinition<_i2.MemoryClubs>(
       name: r'memoryClubs',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryClubs',
       types: const [
-        _i1.MemoryClubs,
-        _i7.ListCrudRepository<_i1.Club, int>,
-        _i7.CrudRepository<_i1.Club, int>,
-        _i7.DataRepository<_i1.Club, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryClubs,
+        _i8.ListCrudRepository<_i2.Club, int>,
+        _i8.CrudRepository<_i2.Club, int>,
+        _i8.DataRepository<_i2.Club, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryClubsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryClubs, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlClubs>(
+    _i3.BeanDefinition<_i2.SqlClubs>(
       name: r'sqlClubs',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlClubs',
       types: const [
-        _i1.SqlClubs,
-        _i7.ListCrudRepository<_i1.Club, int>,
-        _i7.CrudRepository<_i1.Club, int>,
-        _i7.DataRepository<_i1.Club, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlClubs,
+        _i8.ListCrudRepository<_i2.Club, int>,
+        _i8.CrudRepository<_i2.Club, int>,
+        _i8.DataRepository<_i2.Club, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlClubsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlClubs, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemorySponsors>(
+    _i3.BeanDefinition<_i2.MemorySponsors>(
       name: r'memorySponsors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemorySponsors',
       types: const [
-        _i1.MemorySponsors,
-        _i7.ListCrudRepository<_i1.Sponsor, int>,
-        _i7.CrudRepository<_i1.Sponsor, int>,
-        _i7.DataRepository<_i1.Sponsor, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemorySponsors,
+        _i8.ListCrudRepository<_i2.Sponsor, int>,
+        _i8.CrudRepository<_i2.Sponsor, int>,
+        _i8.DataRepository<_i2.Sponsor, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemorySponsorsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemorySponsors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlSponsors>(
+    _i3.BeanDefinition<_i2.SqlSponsors>(
       name: r'sqlSponsors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlSponsors',
       types: const [
-        _i1.SqlSponsors,
-        _i7.ListCrudRepository<_i1.Sponsor, int>,
-        _i7.CrudRepository<_i1.Sponsor, int>,
-        _i7.DataRepository<_i1.Sponsor, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlSponsors,
+        _i8.ListCrudRepository<_i2.Sponsor, int>,
+        _i8.CrudRepository<_i2.Sponsor, int>,
+        _i8.DataRepository<_i2.Sponsor, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlSponsorsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlSponsors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryPlayers>(
+    _i3.BeanDefinition<_i2.MemoryPlayers>(
       name: r'memoryPlayers',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryPlayers',
       types: const [
-        _i1.MemoryPlayers,
-        _i7.ListCrudRepository<_i1.Player, int>,
-        _i7.CrudRepository<_i1.Player, int>,
-        _i7.DataRepository<_i1.Player, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryPlayers,
+        _i8.ListCrudRepository<_i2.Player, int>,
+        _i8.CrudRepository<_i2.Player, int>,
+        _i8.DataRepository<_i2.Player, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryPlayersImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryPlayers, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlPlayers>(
+    _i3.BeanDefinition<_i2.SqlPlayers>(
       name: r'sqlPlayers',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlPlayers',
       types: const [
-        _i1.SqlPlayers,
-        _i7.ListCrudRepository<_i1.Player, int>,
-        _i7.CrudRepository<_i1.Player, int>,
-        _i7.DataRepository<_i1.Player, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlPlayers,
+        _i8.ListCrudRepository<_i2.Player, int>,
+        _i8.CrudRepository<_i2.Player, int>,
+        _i8.DataRepository<_i2.Player, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlPlayersImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlPlayers, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryGoals>(
+    _i3.BeanDefinition<_i2.MemoryGoals>(
       name: r'memoryGoals',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryGoals',
       types: const [
-        _i1.MemoryGoals,
-        _i7.ListCrudRepository<_i1.Goal, int>,
-        _i7.CrudRepository<_i1.Goal, int>,
-        _i7.DataRepository<_i1.Goal, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryGoals,
+        _i8.ListCrudRepository<_i2.Goal, int>,
+        _i8.CrudRepository<_i2.Goal, int>,
+        _i8.DataRepository<_i2.Goal, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryGoalsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryGoals, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlGoals>(
+    _i3.BeanDefinition<_i2.SqlGoals>(
       name: r'sqlGoals',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlGoals',
       types: const [
-        _i1.SqlGoals,
-        _i7.ListCrudRepository<_i1.Goal, int>,
-        _i7.CrudRepository<_i1.Goal, int>,
-        _i7.DataRepository<_i1.Goal, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlGoals,
+        _i8.ListCrudRepository<_i2.Goal, int>,
+        _i8.CrudRepository<_i2.Goal, int>,
+        _i8.DataRepository<_i2.Goal, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlGoalsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlGoals, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryCoaches>(
+    _i3.BeanDefinition<_i2.MemoryCoaches>(
       name: r'memoryCoaches',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryCoaches',
       types: const [
-        _i1.MemoryCoaches,
-        _i7.ListCrudRepository<_i1.Coach, int>,
-        _i7.CrudRepository<_i1.Coach, int>,
-        _i7.DataRepository<_i1.Coach, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryCoaches,
+        _i8.ListCrudRepository<_i2.Coach, int>,
+        _i8.CrudRepository<_i2.Coach, int>,
+        _i8.DataRepository<_i2.Coach, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryCoachesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryCoaches, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlCoaches>(
+    _i3.BeanDefinition<_i2.SqlCoaches>(
       name: r'sqlCoaches',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCoaches',
       types: const [
-        _i1.SqlCoaches,
-        _i7.ListCrudRepository<_i1.Coach, int>,
-        _i7.CrudRepository<_i1.Coach, int>,
-        _i7.DataRepository<_i1.Coach, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlCoaches,
+        _i8.ListCrudRepository<_i2.Coach, int>,
+        _i8.CrudRepository<_i2.Coach, int>,
+        _i8.DataRepository<_i2.Coach, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCoachesImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlCoaches, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemorySquads>(
+    _i3.BeanDefinition<_i2.MemorySquads>(
       name: r'memorySquads',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemorySquads',
       types: const [
-        _i1.MemorySquads,
-        _i7.ListCrudRepository<_i1.Squad, int>,
-        _i7.CrudRepository<_i1.Squad, int>,
-        _i7.DataRepository<_i1.Squad, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemorySquads,
+        _i8.ListCrudRepository<_i2.Squad, int>,
+        _i8.CrudRepository<_i2.Squad, int>,
+        _i8.DataRepository<_i2.Squad, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemorySquadsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemorySquads, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlSquads>(
+    _i3.BeanDefinition<_i2.SqlSquads>(
       name: r'sqlSquads',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlSquads',
       types: const [
-        _i1.SqlSquads,
-        _i7.ListCrudRepository<_i1.Squad, int>,
-        _i7.CrudRepository<_i1.Squad, int>,
-        _i7.DataRepository<_i1.Squad, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlSquads,
+        _i8.ListCrudRepository<_i2.Squad, int>,
+        _i8.CrudRepository<_i2.Squad, int>,
+        _i8.DataRepository<_i2.Squad, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlSquadsImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlSquads, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.MemoryFolders>(
+    _i3.BeanDefinition<_i2.MemoryFolders>(
       name: r'memoryFolders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryFolders',
       types: const [
-        _i1.MemoryFolders,
-        _i7.ListCrudRepository<_i1.Folder, int>,
-        _i7.CrudRepository<_i1.Folder, int>,
-        _i7.DataRepository<_i1.Folder, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.MemoryFolders,
+        _i8.ListCrudRepository<_i2.Folder, int>,
+        _i8.CrudRepository<_i2.Folder, int>,
+        _i8.DataRepository<_i2.Folder, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryFoldersImpl.$create(r),
-      annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches MemoryFolders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i1.SqlFolders>(
+    _i3.BeanDefinition<_i2.SqlFolders>(
       name: r'sqlFolders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlFolders',
       types: const [
-        _i1.SqlFolders,
-        _i7.ListCrudRepository<_i1.Folder, int>,
-        _i7.CrudRepository<_i1.Folder, int>,
-        _i7.DataRepository<_i1.Folder, int>,
-        _i7.ListCrudRepository<dynamic, dynamic>,
-        _i7.CrudRepository<dynamic, dynamic>,
-        _i7.DataRepository<dynamic, dynamic>,
+        _i2.SqlFolders,
+        _i8.ListCrudRepository<_i2.Folder, int>,
+        _i8.CrudRepository<_i2.Folder, int>,
+        _i8.DataRepository<_i2.Folder, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlFoldersImpl.$create(r),
-      annotations: const [_i4.UseStore(r'jdbc')],
-      aopProxy: _i2.AopProxyFactory.pruned(
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
         reason: r'the build found no pointcut of the application that matches SqlFolders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i8.JdbcDriver>(
+    _i3.BeanDefinition<_i1.EntityIntrospections>(
+      name: r'entityIntrospections#application',
+      source: r'package:spring_boot_starter_data#EntityIntrospections',
+      types: const [_i1.EntityIntrospections],
+      create: (r) => _i1.EntityIntrospections([
+        _i1.EntityIntrospection<_i2.Author>(
+          r'Author',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'authors')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.name,
+          },
+          create: (v) => _i2.Author(name: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Book>(
+          r'Book',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'title',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'year',
+              _i3.ClassType<int>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'subtitle',
+              _i3.ClassType<String>(nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'inStock',
+              _i3.ClassType<bool>(),
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: true,
+            ),
+            _i1.EntityProperty(
+              r'author',
+              _i3.GenericType<_i6.AggregateReference<_i2.Author, int>>([
+                _i3.ClassType<_i2.Author>(),
+                _i3.ClassType<int>(),
+              ], nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'rating',
+              _i3.ClassType<double>(nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'released',
+              _i3.ClassType<DateTime>(nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'genre',
+              _i3.EnumType<_i2.Genre>(_i2.Genre.values, nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'version',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Version()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'books')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.title,
+            2 => e.year,
+            3 => e.subtitle,
+            4 => e.inStock,
+            5 => e.author,
+            6 => e.rating,
+            7 => e.released,
+            8 => e.genre,
+            _ => e.version,
+          },
+          create: (v) => _i2.Book(
+            title: v[1] as String,
+            year: v[2] as int,
+            id: v[0] as int?,
+            subtitle: v[3] as String?,
+            inStock: v[4] as bool,
+            author: v[5] as _i6.AggregateReference<_i2.Author, int>?,
+            rating: v[6] as double?,
+            released: v[7] as DateTime?,
+            genre: v[8] as _i2.Genre?,
+            version: v[9] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.title = v as String,
+            2 => e.year = v as int,
+            3 => e.subtitle = v as String?,
+            4 => e.inStock = v as bool,
+            5 => e.author = v as _i6.AggregateReference<_i2.Author, int>?,
+            6 => e.rating = v as double?,
+            7 => e.released = v as DateTime?,
+            8 => e.genre = v as _i2.Genre?,
+            9 => e.version = v as int?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.PurchaseOrder>(
+          r'PurchaseOrder',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'customer',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'lines',
+              _i3.ListType<_i2.OrderLine>(_i3.ClassType<_i2.OrderLine>()),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+            _i1.EntityProperty(
+              r'notes',
+              _i3.MapType<String, _i2.OrderNote>(
+                _i3.ClassType<String>(),
+                _i3.ClassType<_i2.OrderNote>(),
+              ),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: {},
+            ),
+            _i1.EntityProperty(
+              r'tags',
+              _i3.SetType<_i2.OrderTag>(_i3.ClassType<_i2.OrderTag>()),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: {},
+            ),
+          ],
+          annotations: const [_i6.Table(r'orders')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.customer,
+            2 => e.lines,
+            3 => e.notes,
+            _ => e.tags,
+          },
+          create: (v) => _i2.PurchaseOrder(
+            customer: v[1] as String,
+            id: v[0] as int?,
+            lines: v[2] as List<_i2.OrderLine>,
+            notes: v[3] as Map<String, _i2.OrderNote>,
+            tags: v[4] as Set<_i2.OrderTag>,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.customer = v as String,
+            2 => e.lines = v as List<_i2.OrderLine>,
+            3 => e.notes = v as Map<String, _i2.OrderNote>,
+            4 => e.tags = v as Set<_i2.OrderTag>,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.OrderLine>(
+          r'OrderLine',
+          const [
+            _i1.EntityProperty(
+              r'sku',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'quantity',
+              _i3.ClassType<int>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'order_lines')],
+          get: (e, i) => switch (i) {
+            0 => e.sku,
+            _ => e.quantity,
+          },
+          create: (v) =>
+              _i2.OrderLine(sku: v[0] as String, quantity: v[1] as int),
+          write: (e, i, v) => switch (i) {
+            0 => e.sku = v as String,
+            1 => e.quantity = v as int,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.OrderNote>(
+          r'OrderNote',
+          const [
+            _i1.EntityProperty(
+              r'text',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'order_notes')],
+          get: (e, i) => e.text,
+          create: (v) => _i2.OrderNote(text: v[0] as String),
+          write: (e, i, v) => switch (i) {
+            0 => e.text = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.OrderTag>(
+          r'OrderTag',
+          const [
+            _i1.EntityProperty(
+              r'label',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'order_tags')],
+          get: (e, i) => e.label,
+          create: (v) => _i2.OrderTag(label: v[0] as String),
+          write: (e, i, v) => switch (i) {
+            0 => e.label = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Shelf>(
+          r'Shelf',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'slots',
+              _i3.ListType<_i2.Slot>(_i3.ClassType<_i2.Slot>()),
+              annotations: [
+                _i6.MappedCollection(
+                  idColumn: r'shelf_id',
+                  keyColumn: r'position',
+                ),
+              ],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+          ],
+          annotations: const [_i6.Table(r'shelves')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.slots,
+          },
+          create: (v) => _i2.Shelf(
+            name: v[1] as String,
+            id: v[0] as int?,
+            slots: v[2] as List<_i2.Slot>,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.slots = v as List<_i2.Slot>,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Slot>(
+          r'Slot',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'label',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'slots')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.label,
+          },
+          create: (v) => _i2.Slot(label: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.label = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Crate>(
+          r'Crate',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'jars',
+              _i3.ListType<_i2.Jar>(_i3.ClassType<_i2.Jar>()),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+          ],
+          annotations: const [_i6.Table(r'crates')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.jars,
+          },
+          create: (v) => _i2.Crate(
+            name: v[1] as String,
+            id: v[0] as int?,
+            jars: v[2] as List<_i2.Jar>,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.jars = v as List<_i2.Jar>,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Jar>(
+          r'Jar',
+          const [
+            _i1.EntityProperty(
+              r'label',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'lids',
+              _i3.ListType<_i2.Lid>(_i3.ClassType<_i2.Lid>()),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+          ],
+          annotations: const [_i6.Table(r'jars')],
+          get: (e, i) => switch (i) {
+            0 => e.label,
+            _ => e.lids,
+          },
+          create: (v) =>
+              _i2.Jar(label: v[0] as String, lids: v[1] as List<_i2.Lid>),
+          write: (e, i, v) => switch (i) {
+            0 => e.label = v as String,
+            1 => e.lids = v as List<_i2.Lid>,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Lid>(
+          r'Lid',
+          const [
+            _i1.EntityProperty(
+              r'color',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'lids')],
+          get: (e, i) => e.color,
+          create: (v) => _i2.Lid(color: v[0] as String),
+          write: (e, i, v) => switch (i) {
+            0 => e.color = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Account>(
+          r'Account',
+          const [
+            _i1.EntityProperty(
+              r'iban',
+              _i3.ClassType<String>(),
+              annotations: [_i6.Id()],
+              parameter: true,
+            ),
+            _i1.EntityProperty(
+              r'owner',
+              _i3.ClassType<String>(),
+              parameter: true,
+            ),
+            _i1.EntityProperty(
+              r'version',
+              _i3.ClassType<int>(),
+              annotations: [_i6.Version()],
+              parameter: true,
+              hasDefaultValue: true,
+              defaultValue: 0,
+            ),
+          ],
+          annotations: const [_i6.Table(r'accounts')],
+          get: (e, i) => switch (i) {
+            0 => e.iban,
+            1 => e.owner,
+            _ => e.version,
+          },
+          create: (v) => _i2.Account(
+            iban: v[0] as String,
+            owner: v[1] as String,
+            version: v[2] as int,
+          ),
+        ),
+        _i1.EntityIntrospection<_i2.Ticket>(
+          r'Ticket',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'subject',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'stamp',
+              _i3.ClassType<DateTime>(nullable: true),
+              annotations: [_i6.Version()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'tickets')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.subject,
+            _ => e.stamp,
+          },
+          create: (v) => _i2.Ticket(
+            subject: v[1] as String,
+            id: v[0] as int?,
+            stamp: v[2] as DateTime?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.subject = v as String,
+            2 => e.stamp = v as DateTime?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Stock>(
+          r'Stock',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'sku',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'quantity',
+              _i3.ClassType<int>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'stock')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.sku,
+            _ => e.quantity,
+          },
+          create: (v) => _i2.Stock(
+            sku: v[1] as String,
+            quantity: v[2] as int,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.sku = v as String,
+            2 => e.quantity = v as int,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Note>(
+          r'Note',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'text',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'notes')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.text,
+          },
+          create: (v) => _i2.Note(text: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.text = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Club>(
+          r'Club',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              annotations: [_i6.Unique()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'clubs')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            _ => e.name,
+          },
+          create: (v) => _i2.Club(name: v[1] as String, id: v[0] as int?),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Fan>(
+          r'Fan',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'clubId',
+              _i3.ClassType<int>(),
+              annotations: [_i6.Reference(_i2.Club)],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'fans')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.clubId,
+          },
+          create: (v) => _i2.Fan(
+            name: v[1] as String,
+            clubId: v[2] as int,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.clubId = v as int,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Sponsor>(
+          r'Sponsor',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'clubId',
+              _i3.ClassType<int>(),
+              annotations: [
+                _i6.Reference(_i2.Club),
+                _i6.OnDelete(_i6.OnDeleteAction.restrict),
+              ],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'sponsors')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.clubId,
+          },
+          create: (v) => _i2.Sponsor(
+            name: v[1] as String,
+            clubId: v[2] as int,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.clubId = v as int,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Player>(
+          r'Player',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'club',
+              _i3.GenericType<_i6.AggregateReference<_i2.Club, int>>([
+                _i3.ClassType<_i2.Club>(),
+                _i3.ClassType<int>(),
+              ]),
+              annotations: [_i6.OnDelete(_i6.OnDeleteAction.cascade)],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'medals',
+              _i3.ListType<_i2.Medal>(_i3.ClassType<_i2.Medal>()),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+          ],
+          annotations: const [_i6.Table(r'players')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            2 => e.club,
+            _ => e.medals,
+          },
+          create: (v) => _i2.Player(
+            name: v[1] as String,
+            club: v[2] as _i6.AggregateReference<_i2.Club, int>,
+            id: v[0] as int?,
+            medals: v[3] as List<_i2.Medal>,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.club = v as _i6.AggregateReference<_i2.Club, int>,
+            3 => e.medals = v as List<_i2.Medal>,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Medal>(
+          r'Medal',
+          const [
+            _i1.EntityProperty(
+              r'title',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'medals')],
+          get: (e, i) => e.title,
+          create: (v) => _i2.Medal(title: v[0] as String),
+          write: (e, i, v) => switch (i) {
+            0 => e.title = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Goal>(
+          r'Goal',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'playerId',
+              _i3.ClassType<int>(),
+              annotations: [
+                _i6.Reference(_i2.Player),
+                _i6.OnDelete(_i6.OnDeleteAction.cascade),
+              ],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'minute',
+              _i3.ClassType<int>(),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'goals')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.playerId,
+            _ => e.minute,
+          },
+          create: (v) => _i2.Goal(
+            playerId: v[1] as int,
+            minute: v[2] as int,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.playerId = v as int,
+            2 => e.minute = v as int,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Coach>(
+          r'Coach',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'clubId',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [
+                _i6.Reference(_i2.Club),
+                _i6.OnDelete(_i6.OnDeleteAction.setNull),
+              ],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'coaches')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.clubId,
+          },
+          create: (v) => _i2.Coach(
+            name: v[1] as String,
+            clubId: v[2] as int?,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.clubId = v as int?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Squad>(
+          r'Squad',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'places',
+              _i3.ListType<_i2.Place>(_i3.ClassType<_i2.Place>()),
+              annotations: [_i6.MappedCollection()],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: [],
+            ),
+          ],
+          annotations: const [_i6.Table(r'squads')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.places,
+          },
+          create: (v) => _i2.Squad(
+            name: v[1] as String,
+            id: v[0] as int?,
+            places: v[2] as List<_i2.Place>,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.places = v as List<_i2.Place>,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Place>(
+          r'Place',
+          const [
+            _i1.EntityProperty(
+              r'label',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'clubId',
+              _i3.ClassType<int>(),
+              annotations: [
+                _i6.Reference(_i2.Club),
+                _i6.OnDelete(_i6.OnDeleteAction.cascade),
+              ],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'places')],
+          get: (e, i) => switch (i) {
+            0 => e.label,
+            _ => e.clubId,
+          },
+          create: (v) => _i2.Place(label: v[0] as String, clubId: v[1] as int),
+          write: (e, i, v) => switch (i) {
+            0 => e.label = v as String,
+            1 => e.clubId = v as int,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Employee>(
+          r'Employee',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'bossId',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Reference(_i2.Employee)],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'employees')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.bossId,
+          },
+          create: (v) => _i2.Employee(
+            name: v[1] as String,
+            bossId: v[2] as int?,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.bossId = v as int?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Category>(
+          r'Category',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'parentId',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [
+                _i6.Reference(_i2.Category),
+                _i6.OnDelete(_i6.OnDeleteAction.restrict),
+              ],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'categories')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.parentId,
+          },
+          create: (v) => _i2.Category(
+            name: v[1] as String,
+            parentId: v[2] as int?,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.parentId = v as int?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Folder>(
+          r'Folder',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'parentId',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [
+                _i6.Reference(_i2.Folder),
+                _i6.OnDelete(_i6.OnDeleteAction.cascade),
+              ],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'folders')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.parentId,
+          },
+          create: (v) => _i2.Folder(
+            name: v[1] as String,
+            parentId: v[2] as int?,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.parentId = v as int?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Citizen>(
+          r'Citizen',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'firstName',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'lastName',
+              _i3.ClassType<String>(nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'passport',
+              _i3.ClassType<String>(nullable: true),
+              annotations: [_i6.Unique()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [
+            _i6.Table(r'citizens'),
+            _i6.UniqueConstraint([
+              r'firstName',
+              r'lastName',
+            ], name: r'uq_citizens_name'),
+          ],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.firstName,
+            2 => e.lastName,
+            _ => e.passport,
+          },
+          create: (v) => _i2.Citizen(
+            firstName: v[1] as String,
+            lastName: v[2] as String?,
+            passport: v[3] as String?,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.firstName = v as String,
+            2 => e.lastName = v as String?,
+            3 => e.passport = v as String?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.BookWithAuthor>(
+          r'BookWithAuthor',
+          const [
+            _i1.EntityProperty(r'id', _i3.ClassType<int>(), parameter: true),
+            _i1.EntityProperty(
+              r'title',
+              _i3.ClassType<String>(),
+              parameter: true,
+            ),
+            _i1.EntityProperty(
+              r'authorName',
+              _i3.ClassType<String>(),
+              parameter: true,
+            ),
+          ],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.title,
+            _ => e.authorName,
+          },
+          create: (v) => _i2.BookWithAuthor(
+            id: v[0] as int,
+            title: v[1] as String,
+            authorName: v[2] as String,
+          ),
+        ),
+      ]),
+    ),
+    _i3.BeanDefinition<_i1.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i8.JdbcDriver],
-      conditions: [_i8.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i1.JdbcDriver],
+      conditions: [_i1.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.Author>(
-      className: r'Author',
-      properties: [
-        _i2.BeanProperty<_i1.Author>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Author>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'authors')],
-      constructor: _i2.BeanConstructor<_i1.Author>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Author.new, positional, named) as _i1.Author),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Book>(
-      className: r'Book',
-      properties: [
-        _i2.BeanProperty<_i1.Book>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-          set: (bean, value) => bean.title = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'year',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.year,
-          set: (bean, value) => bean.year = (value as int),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'subtitle',
-          type: String,
-          nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.subtitle,
-          set: (bean, value) => bean.subtitle = (value as String?),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'inStock',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
-          get: (bean) => bean.inStock,
-          set: (bean, value) => bean.inStock = (value as bool),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'author',
-          type: _i4.AggregateReference<_i1.Author, int>,
-          nullable: true,
-          typeInfo:
-              const _i2.GenericType<_i4.AggregateReference<_i1.Author, int>>([
-                _i2.ClassType<_i1.Author>(),
-                _i2.ClassType<int>(),
-              ], nullable: true),
-          get: (bean) => bean.author,
-          set: (bean, value) =>
-              bean.author = (value as _i4.AggregateReference<_i1.Author, int>?),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'rating',
-          type: double,
-          nullable: true,
-          typeInfo: const _i2.ClassType<double>(nullable: true),
-          get: (bean) => bean.rating,
-          set: (bean, value) => bean.rating = (value as double?),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'released',
-          type: DateTime,
-          nullable: true,
-          typeInfo: const _i2.ClassType<DateTime>(nullable: true),
-          get: (bean) => bean.released,
-          set: (bean, value) => bean.released = (value as DateTime?),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'genre',
-          type: _i1.Genre,
-          nullable: true,
-          typeInfo: const _i2.EnumType<_i1.Genre>(
-            _i1.Genre.values,
-            nullable: true,
-          ),
-          get: (bean) => bean.genre,
-          set: (bean, value) => bean.genre = (value as _i1.Genre?),
-        ),
-        _i2.BeanProperty<_i1.Book>(
-          r'version',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.version,
-          set: (bean, value) => bean.version = (value as int?),
-          annotations: const [_i4.Version()],
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i1.Book>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      annotations: const [_i4.Table(r'books')],
-      constructor: _i2.BeanConstructor<_i1.Book>(
-        parameters: [
-          _i2.BeanParameter(
-            r'title',
-            type: const _i2.ClassType<String>(),
-            symbol: #title,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'year',
-            type: const _i2.ClassType<int>(),
-            symbol: #year,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'subtitle',
-            type: const _i2.ClassType<String>(nullable: true),
-            symbol: #subtitle,
-          ),
-          _i2.BeanParameter(
-            r'inStock',
-            type: const _i2.ClassType<bool>(),
-            symbol: #inStock,
-            hasDefaultValue: true,
-            defaultValue: true,
-          ),
-          _i2.BeanParameter(
-            r'author',
-            type:
-                const _i2.GenericType<_i4.AggregateReference<_i1.Author, int>>([
-                  _i2.ClassType<_i1.Author>(),
-                  _i2.ClassType<int>(),
-                ], nullable: true),
-            symbol: #author,
-          ),
-          _i2.BeanParameter(
-            r'rating',
-            type: const _i2.ClassType<double>(nullable: true),
-            symbol: #rating,
-          ),
-          _i2.BeanParameter(
-            r'released',
-            type: const _i2.ClassType<DateTime>(nullable: true),
-            symbol: #released,
-          ),
-          _i2.BeanParameter(
-            r'genre',
-            type: const _i2.EnumType<_i1.Genre>(
-              _i1.Genre.values,
-              nullable: true,
-            ),
-            symbol: #genre,
-          ),
-          _i2.BeanParameter(
-            r'version',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #version,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Book.new, positional, named) as _i1.Book),
-      ),
-    ),
-    _i2.BeanIntrospection<_i4.AggregateReference<dynamic, dynamic>>(
-      className: r'AggregateReference',
-      specialize: (arguments) => arguments[0].capture(
-        <T>() => arguments[1].capture(
-          <ID>() => _i2.BeanIntrospection<_i4.AggregateReference<T, ID>>(
-            className: r'AggregateReference',
-            properties: [
-              _i2.BeanProperty<_i4.AggregateReference<T, ID>>(
-                r'id',
-                type: ID,
-                nullable: true,
-                typeInfo: (arguments[1] as _i2.TypeInfo<ID>),
-                get: (bean) => bean.id,
-              ),
-              _i2.BeanProperty<_i4.AggregateReference<T, ID>>(
-                r'hashCode',
-                type: int,
-                typeInfo: const _i2.ClassType<int>(),
-                get: (bean) => bean.hashCode,
-              ),
-            ],
-            methods: [
-              _i2.BeanMethod<_i4.AggregateReference<T, ID>>(
-                r'toString',
-                returnType: String,
-                invoke: (bean, arguments) =>
-                    Function.apply(bean.toString, arguments),
-              ),
-            ],
-            constructor: _i2.BeanConstructor<_i4.AggregateReference<T, ID>>(
-              parameters: [
-                _i2.BeanParameter(
-                  r'id',
-                  type: (arguments[1] as _i2.TypeInfo<ID>),
-                  isRequired: true,
-                ),
-              ],
-              create: (positional, named) =>
-                  _i4.AggregateReference<T, ID>((positional[0] as ID)),
-            ),
-          ),
-        ),
-      ),
-      properties: [
-        _i2.BeanProperty<_i4.AggregateReference<dynamic, dynamic>>(
-          r'id',
-          type: dynamic,
-          nullable: true,
-          typeInfo: const _i2.DynamicType(),
-          get: (bean) => bean.id,
-        ),
-        _i2.BeanProperty<_i4.AggregateReference<dynamic, dynamic>>(
-          r'hashCode',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.hashCode,
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i4.AggregateReference<dynamic, dynamic>>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      constructor:
-          _i2.BeanConstructor<_i4.AggregateReference<dynamic, dynamic>>(
-            parameters: [
-              _i2.BeanParameter(
-                r'id',
-                type: const _i2.DynamicType(),
-                isRequired: true,
-              ),
-            ],
-            create: (positional, named) =>
-                _i4.AggregateReference<dynamic, dynamic>(
-                  (positional[0] as dynamic),
-                ),
-          ),
-    ),
-    _i2.BeanIntrospection<_i1.PurchaseOrder>(
-      className: r'PurchaseOrder',
-      properties: [
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'customer',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.customer,
-          set: (bean, value) => bean.customer = (value as String),
-        ),
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'lines',
-          type: List<_i1.OrderLine>,
-          typeInfo: const _i2.ListType<_i1.OrderLine>(
-            _i2.ClassType<_i1.OrderLine>(),
-          ),
-          get: (bean) => bean.lines,
-          set: (bean, value) => bean.lines = (value as List<_i1.OrderLine>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'notes',
-          type: Map<String, _i1.OrderNote>,
-          typeInfo: const _i2.MapType<String, _i1.OrderNote>(
-            _i2.ClassType<String>(),
-            _i2.ClassType<_i1.OrderNote>(),
-          ),
-          get: (bean) => bean.notes,
-          set: (bean, value) =>
-              bean.notes = (value as Map<String, _i1.OrderNote>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-        _i2.BeanProperty<_i1.PurchaseOrder>(
-          r'tags',
-          type: Set<_i1.OrderTag>,
-          typeInfo: const _i2.SetType<_i1.OrderTag>(
-            _i2.ClassType<_i1.OrderTag>(),
-          ),
-          get: (bean) => bean.tags,
-          set: (bean, value) => bean.tags = (value as Set<_i1.OrderTag>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'orders')],
-      constructor: _i2.BeanConstructor<_i1.PurchaseOrder>(
-        parameters: [
-          _i2.BeanParameter(
-            r'customer',
-            type: const _i2.ClassType<String>(),
-            symbol: #customer,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'lines',
-            type: const _i2.ListType<_i1.OrderLine>(
-              _i2.ClassType<_i1.OrderLine>(),
-            ),
-            symbol: #lines,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-          _i2.BeanParameter(
-            r'notes',
-            type: const _i2.MapType<String, _i1.OrderNote>(
-              _i2.ClassType<String>(),
-              _i2.ClassType<_i1.OrderNote>(),
-            ),
-            symbol: #notes,
-            hasDefaultValue: true,
-            defaultValue: const {},
-          ),
-          _i2.BeanParameter(
-            r'tags',
-            type: const _i2.SetType<_i1.OrderTag>(
-              _i2.ClassType<_i1.OrderTag>(),
-            ),
-            symbol: #tags,
-            hasDefaultValue: true,
-            defaultValue: const {},
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.PurchaseOrder.new, positional, named)
-                as _i1.PurchaseOrder),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.OrderLine>(
-      className: r'OrderLine',
-      properties: [
-        _i2.BeanProperty<_i1.OrderLine>(
-          r'sku',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.sku,
-          set: (bean, value) => bean.sku = (value as String),
-        ),
-        _i2.BeanProperty<_i1.OrderLine>(
-          r'quantity',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.quantity,
-          set: (bean, value) => bean.quantity = (value as int),
-        ),
-      ],
-      annotations: const [_i4.Table(r'order_lines')],
-      constructor: _i2.BeanConstructor<_i1.OrderLine>(
-        parameters: [
-          _i2.BeanParameter(
-            r'sku',
-            type: const _i2.ClassType<String>(),
-            symbol: #sku,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'quantity',
-            type: const _i2.ClassType<int>(),
-            symbol: #quantity,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.OrderLine.new, positional, named)
-                as _i1.OrderLine),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.OrderNote>(
-      className: r'OrderNote',
-      properties: [
-        _i2.BeanProperty<_i1.OrderNote>(
-          r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
-          set: (bean, value) => bean.text = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'order_notes')],
-      constructor: _i2.BeanConstructor<_i1.OrderNote>(
-        parameters: [
-          _i2.BeanParameter(
-            r'text',
-            type: const _i2.ClassType<String>(),
-            symbol: #text,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.OrderNote.new, positional, named)
-                as _i1.OrderNote),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.OrderTag>(
-      className: r'OrderTag',
-      properties: [
-        _i2.BeanProperty<_i1.OrderTag>(
-          r'label',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.label,
-          set: (bean, value) => bean.label = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'order_tags')],
-      constructor: _i2.BeanConstructor<_i1.OrderTag>(
-        parameters: [
-          _i2.BeanParameter(
-            r'label',
-            type: const _i2.ClassType<String>(),
-            symbol: #label,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.OrderTag.new, positional, named)
-                as _i1.OrderTag),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Shelf>(
-      className: r'Shelf',
-      properties: [
-        _i2.BeanProperty<_i1.Shelf>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Shelf>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Shelf>(
-          r'slots',
-          type: List<_i1.Slot>,
-          typeInfo: const _i2.ListType<_i1.Slot>(_i2.ClassType<_i1.Slot>()),
-          get: (bean) => bean.slots,
-          set: (bean, value) => bean.slots = (value as List<_i1.Slot>),
-          annotations: const [
-            _i4.MappedCollection(idColumn: r'shelf_id', keyColumn: r'position'),
-          ],
-        ),
-      ],
-      annotations: const [_i4.Table(r'shelves')],
-      constructor: _i2.BeanConstructor<_i1.Shelf>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'slots',
-            type: const _i2.ListType<_i1.Slot>(_i2.ClassType<_i1.Slot>()),
-            symbol: #slots,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Shelf.new, positional, named) as _i1.Shelf),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Slot>(
-      className: r'Slot',
-      properties: [
-        _i2.BeanProperty<_i1.Slot>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Slot>(
-          r'label',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.label,
-          set: (bean, value) => bean.label = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'slots')],
-      constructor: _i2.BeanConstructor<_i1.Slot>(
-        parameters: [
-          _i2.BeanParameter(
-            r'label',
-            type: const _i2.ClassType<String>(),
-            symbol: #label,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Slot.new, positional, named) as _i1.Slot),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Crate>(
-      className: r'Crate',
-      properties: [
-        _i2.BeanProperty<_i1.Crate>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Crate>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Crate>(
-          r'jars',
-          type: List<_i1.Jar>,
-          typeInfo: const _i2.ListType<_i1.Jar>(_i2.ClassType<_i1.Jar>()),
-          get: (bean) => bean.jars,
-          set: (bean, value) => bean.jars = (value as List<_i1.Jar>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'crates')],
-      constructor: _i2.BeanConstructor<_i1.Crate>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'jars',
-            type: const _i2.ListType<_i1.Jar>(_i2.ClassType<_i1.Jar>()),
-            symbol: #jars,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Crate.new, positional, named) as _i1.Crate),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Jar>(
-      className: r'Jar',
-      properties: [
-        _i2.BeanProperty<_i1.Jar>(
-          r'label',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.label,
-          set: (bean, value) => bean.label = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Jar>(
-          r'lids',
-          type: List<_i1.Lid>,
-          typeInfo: const _i2.ListType<_i1.Lid>(_i2.ClassType<_i1.Lid>()),
-          get: (bean) => bean.lids,
-          set: (bean, value) => bean.lids = (value as List<_i1.Lid>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'jars')],
-      constructor: _i2.BeanConstructor<_i1.Jar>(
-        parameters: [
-          _i2.BeanParameter(
-            r'label',
-            type: const _i2.ClassType<String>(),
-            symbol: #label,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'lids',
-            type: const _i2.ListType<_i1.Lid>(_i2.ClassType<_i1.Lid>()),
-            symbol: #lids,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Jar.new, positional, named) as _i1.Jar),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Lid>(
-      className: r'Lid',
-      properties: [
-        _i2.BeanProperty<_i1.Lid>(
-          r'color',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.color,
-          set: (bean, value) => bean.color = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'lids')],
-      constructor: _i2.BeanConstructor<_i1.Lid>(
-        parameters: [
-          _i2.BeanParameter(
-            r'color',
-            type: const _i2.ClassType<String>(),
-            symbol: #color,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Lid.new, positional, named) as _i1.Lid),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Account>(
-      className: r'Account',
-      properties: [
-        _i2.BeanProperty<_i1.Account>(
-          r'iban',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.iban,
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Account>(
-          r'owner',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.owner,
-        ),
-        _i2.BeanProperty<_i1.Account>(
-          r'version',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.version,
-          annotations: const [_i4.Version()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'accounts')],
-      constructor: _i2.BeanConstructor<_i1.Account>(
-        parameters: [
-          _i2.BeanParameter(
-            r'iban',
-            type: const _i2.ClassType<String>(),
-            symbol: #iban,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'owner',
-            type: const _i2.ClassType<String>(),
-            symbol: #owner,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'version',
-            type: const _i2.ClassType<int>(),
-            symbol: #version,
-            hasDefaultValue: true,
-            defaultValue: 0,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Account.new, positional, named) as _i1.Account),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Ticket>(
-      className: r'Ticket',
-      properties: [
-        _i2.BeanProperty<_i1.Ticket>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Ticket>(
-          r'subject',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.subject,
-          set: (bean, value) => bean.subject = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Ticket>(
-          r'stamp',
-          type: DateTime,
-          nullable: true,
-          typeInfo: const _i2.ClassType<DateTime>(nullable: true),
-          get: (bean) => bean.stamp,
-          set: (bean, value) => bean.stamp = (value as DateTime?),
-          annotations: const [_i4.Version()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'tickets')],
-      constructor: _i2.BeanConstructor<_i1.Ticket>(
-        parameters: [
-          _i2.BeanParameter(
-            r'subject',
-            type: const _i2.ClassType<String>(),
-            symbol: #subject,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'stamp',
-            type: const _i2.ClassType<DateTime>(nullable: true),
-            symbol: #stamp,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Ticket.new, positional, named) as _i1.Ticket),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Stock>(
-      className: r'Stock',
-      properties: [
-        _i2.BeanProperty<_i1.Stock>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Stock>(
-          r'sku',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.sku,
-          set: (bean, value) => bean.sku = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Stock>(
-          r'quantity',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.quantity,
-          set: (bean, value) => bean.quantity = (value as int),
-        ),
-      ],
-      annotations: const [_i4.Table(r'stock')],
-      constructor: _i2.BeanConstructor<_i1.Stock>(
-        parameters: [
-          _i2.BeanParameter(
-            r'sku',
-            type: const _i2.ClassType<String>(),
-            symbol: #sku,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'quantity',
-            type: const _i2.ClassType<int>(),
-            symbol: #quantity,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Stock.new, positional, named) as _i1.Stock),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Note>(
-      className: r'Note',
-      properties: [
-        _i2.BeanProperty<_i1.Note>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Note>(
-          r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
-          set: (bean, value) => bean.text = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'notes')],
-      constructor: _i2.BeanConstructor<_i1.Note>(
-        parameters: [
-          _i2.BeanParameter(
-            r'text',
-            type: const _i2.ClassType<String>(),
-            symbol: #text,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Note.new, positional, named) as _i1.Note),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Club>(
-      className: r'Club',
-      properties: [
-        _i2.BeanProperty<_i1.Club>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Club>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-          annotations: const [_i4.Unique()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'clubs')],
-      constructor: _i2.BeanConstructor<_i1.Club>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Club.new, positional, named) as _i1.Club),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Fan>(
-      className: r'Fan',
-      properties: [
-        _i2.BeanProperty<_i1.Fan>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Fan>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Fan>(
-          r'clubId',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.clubId,
-          set: (bean, value) => bean.clubId = (value as int),
-          annotations: const [_i4.Reference(_i1.Club)],
-        ),
-      ],
-      annotations: const [_i4.Table(r'fans')],
-      constructor: _i2.BeanConstructor<_i1.Fan>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'clubId',
-            type: const _i2.ClassType<int>(),
-            symbol: #clubId,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Fan.new, positional, named) as _i1.Fan),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Sponsor>(
-      className: r'Sponsor',
-      properties: [
-        _i2.BeanProperty<_i1.Sponsor>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Sponsor>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Sponsor>(
-          r'clubId',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.clubId,
-          set: (bean, value) => bean.clubId = (value as int),
-          annotations: const [
-            _i4.Reference(_i1.Club),
-            _i4.OnDelete(_i4.OnDeleteAction.restrict),
-          ],
-        ),
-      ],
-      annotations: const [_i4.Table(r'sponsors')],
-      constructor: _i2.BeanConstructor<_i1.Sponsor>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'clubId',
-            type: const _i2.ClassType<int>(),
-            symbol: #clubId,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Sponsor.new, positional, named) as _i1.Sponsor),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Player>(
-      className: r'Player',
-      properties: [
-        _i2.BeanProperty<_i1.Player>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Player>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Player>(
-          r'club',
-          type: _i4.AggregateReference<_i1.Club, int>,
-          typeInfo:
-              const _i2.GenericType<_i4.AggregateReference<_i1.Club, int>>([
-                _i2.ClassType<_i1.Club>(),
-                _i2.ClassType<int>(),
-              ]),
-          get: (bean) => bean.club,
-          set: (bean, value) =>
-              bean.club = (value as _i4.AggregateReference<_i1.Club, int>),
-          annotations: const [_i4.OnDelete(_i4.OnDeleteAction.cascade)],
-        ),
-        _i2.BeanProperty<_i1.Player>(
-          r'medals',
-          type: List<_i1.Medal>,
-          typeInfo: const _i2.ListType<_i1.Medal>(_i2.ClassType<_i1.Medal>()),
-          get: (bean) => bean.medals,
-          set: (bean, value) => bean.medals = (value as List<_i1.Medal>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'players')],
-      constructor: _i2.BeanConstructor<_i1.Player>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'club',
-            type: const _i2.GenericType<_i4.AggregateReference<_i1.Club, int>>([
-              _i2.ClassType<_i1.Club>(),
-              _i2.ClassType<int>(),
-            ]),
-            symbol: #club,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'medals',
-            type: const _i2.ListType<_i1.Medal>(_i2.ClassType<_i1.Medal>()),
-            symbol: #medals,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Player.new, positional, named) as _i1.Player),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Medal>(
-      className: r'Medal',
-      properties: [
-        _i2.BeanProperty<_i1.Medal>(
-          r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-          set: (bean, value) => bean.title = (value as String),
-        ),
-      ],
-      annotations: const [_i4.Table(r'medals')],
-      constructor: _i2.BeanConstructor<_i1.Medal>(
-        parameters: [
-          _i2.BeanParameter(
-            r'title',
-            type: const _i2.ClassType<String>(),
-            symbol: #title,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Medal.new, positional, named) as _i1.Medal),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Goal>(
-      className: r'Goal',
-      properties: [
-        _i2.BeanProperty<_i1.Goal>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Goal>(
-          r'playerId',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.playerId,
-          set: (bean, value) => bean.playerId = (value as int),
-          annotations: const [
-            _i4.Reference(_i1.Player),
-            _i4.OnDelete(_i4.OnDeleteAction.cascade),
-          ],
-        ),
-        _i2.BeanProperty<_i1.Goal>(
-          r'minute',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.minute,
-          set: (bean, value) => bean.minute = (value as int),
-        ),
-      ],
-      annotations: const [_i4.Table(r'goals')],
-      constructor: _i2.BeanConstructor<_i1.Goal>(
-        parameters: [
-          _i2.BeanParameter(
-            r'playerId',
-            type: const _i2.ClassType<int>(),
-            symbol: #playerId,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'minute',
-            type: const _i2.ClassType<int>(),
-            symbol: #minute,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Goal.new, positional, named) as _i1.Goal),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Coach>(
-      className: r'Coach',
-      properties: [
-        _i2.BeanProperty<_i1.Coach>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Coach>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Coach>(
-          r'clubId',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.clubId,
-          set: (bean, value) => bean.clubId = (value as int?),
-          annotations: const [
-            _i4.Reference(_i1.Club),
-            _i4.OnDelete(_i4.OnDeleteAction.setNull),
-          ],
-        ),
-      ],
-      annotations: const [_i4.Table(r'coaches')],
-      constructor: _i2.BeanConstructor<_i1.Coach>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'clubId',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #clubId,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Coach.new, positional, named) as _i1.Coach),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Squad>(
-      className: r'Squad',
-      properties: [
-        _i2.BeanProperty<_i1.Squad>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Squad>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Squad>(
-          r'places',
-          type: List<_i1.Place>,
-          typeInfo: const _i2.ListType<_i1.Place>(_i2.ClassType<_i1.Place>()),
-          get: (bean) => bean.places,
-          set: (bean, value) => bean.places = (value as List<_i1.Place>),
-          annotations: const [_i4.MappedCollection()],
-        ),
-      ],
-      annotations: const [_i4.Table(r'squads')],
-      constructor: _i2.BeanConstructor<_i1.Squad>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-          _i2.BeanParameter(
-            r'places',
-            type: const _i2.ListType<_i1.Place>(_i2.ClassType<_i1.Place>()),
-            symbol: #places,
-            hasDefaultValue: true,
-            defaultValue: const [],
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Squad.new, positional, named) as _i1.Squad),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Place>(
-      className: r'Place',
-      properties: [
-        _i2.BeanProperty<_i1.Place>(
-          r'label',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.label,
-          set: (bean, value) => bean.label = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Place>(
-          r'clubId',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.clubId,
-          set: (bean, value) => bean.clubId = (value as int),
-          annotations: const [
-            _i4.Reference(_i1.Club),
-            _i4.OnDelete(_i4.OnDeleteAction.cascade),
-          ],
-        ),
-      ],
-      annotations: const [_i4.Table(r'places')],
-      constructor: _i2.BeanConstructor<_i1.Place>(
-        parameters: [
-          _i2.BeanParameter(
-            r'label',
-            type: const _i2.ClassType<String>(),
-            symbol: #label,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'clubId',
-            type: const _i2.ClassType<int>(),
-            symbol: #clubId,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Place.new, positional, named) as _i1.Place),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Employee>(
-      className: r'Employee',
-      properties: [
-        _i2.BeanProperty<_i1.Employee>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Employee>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Employee>(
-          r'bossId',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.bossId,
-          set: (bean, value) => bean.bossId = (value as int?),
-          annotations: const [_i4.Reference(_i1.Employee)],
-        ),
-      ],
-      annotations: const [_i4.Table(r'employees')],
-      constructor: _i2.BeanConstructor<_i1.Employee>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'bossId',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #bossId,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Employee.new, positional, named)
-                as _i1.Employee),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Category>(
-      className: r'Category',
-      properties: [
-        _i2.BeanProperty<_i1.Category>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Category>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Category>(
-          r'parentId',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.parentId,
-          set: (bean, value) => bean.parentId = (value as int?),
-          annotations: const [
-            _i4.Reference(_i1.Category),
-            _i4.OnDelete(_i4.OnDeleteAction.restrict),
-          ],
-        ),
-      ],
-      annotations: const [_i4.Table(r'categories')],
-      constructor: _i2.BeanConstructor<_i1.Category>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'parentId',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #parentId,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Category.new, positional, named)
-                as _i1.Category),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Folder>(
-      className: r'Folder',
-      properties: [
-        _i2.BeanProperty<_i1.Folder>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Folder>(
-          r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Folder>(
-          r'parentId',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.parentId,
-          set: (bean, value) => bean.parentId = (value as int?),
-          annotations: const [
-            _i4.Reference(_i1.Folder),
-            _i4.OnDelete(_i4.OnDeleteAction.cascade),
-          ],
-        ),
-      ],
-      annotations: const [_i4.Table(r'folders')],
-      constructor: _i2.BeanConstructor<_i1.Folder>(
-        parameters: [
-          _i2.BeanParameter(
-            r'name',
-            type: const _i2.ClassType<String>(),
-            symbol: #name,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'parentId',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #parentId,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Folder.new, positional, named) as _i1.Folder),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.Citizen>(
-      className: r'Citizen',
-      properties: [
-        _i2.BeanProperty<_i1.Citizen>(
-          r'id',
-          type: int,
-          nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.id,
-          set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i4.Id()],
-        ),
-        _i2.BeanProperty<_i1.Citizen>(
-          r'firstName',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.firstName,
-          set: (bean, value) => bean.firstName = (value as String),
-        ),
-        _i2.BeanProperty<_i1.Citizen>(
-          r'lastName',
-          type: String,
-          nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.lastName,
-          set: (bean, value) => bean.lastName = (value as String?),
-        ),
-        _i2.BeanProperty<_i1.Citizen>(
-          r'passport',
-          type: String,
-          nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.passport,
-          set: (bean, value) => bean.passport = (value as String?),
-          annotations: const [_i4.Unique()],
-        ),
-      ],
-      annotations: const [
-        _i4.Table(r'citizens'),
-        _i4.UniqueConstraint([
-          r'firstName',
-          r'lastName',
-        ], name: r'uq_citizens_name'),
-      ],
-      constructor: _i2.BeanConstructor<_i1.Citizen>(
-        parameters: [
-          _i2.BeanParameter(
-            r'firstName',
-            type: const _i2.ClassType<String>(),
-            symbol: #firstName,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'lastName',
-            type: const _i2.ClassType<String>(nullable: true),
-            symbol: #lastName,
-          ),
-          _i2.BeanParameter(
-            r'passport',
-            type: const _i2.ClassType<String>(nullable: true),
-            symbol: #passport,
-          ),
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(nullable: true),
-            symbol: #id,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Citizen.new, positional, named) as _i1.Citizen),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.BookWithAuthor>(
-      className: r'BookWithAuthor',
-      properties: [
-        _i2.BeanProperty<_i1.BookWithAuthor>(
-          r'id',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.id,
-        ),
-        _i2.BeanProperty<_i1.BookWithAuthor>(
-          r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-        ),
-        _i2.BeanProperty<_i1.BookWithAuthor>(
-          r'authorName',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.authorName,
-        ),
-      ],
-      methods: [
-        _i2.BeanMethod<_i1.BookWithAuthor>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i1.BookWithAuthor>(
-        parameters: [
-          _i2.BeanParameter(
-            r'id',
-            type: const _i2.ClassType<int>(),
-            symbol: #id,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'title',
-            type: const _i2.ClassType<String>(),
-            symbol: #title,
-            isRequired: true,
-          ),
-          _i2.BeanParameter(
-            r'authorName',
-            type: const _i2.ClassType<String>(),
-            symbol: #authorName,
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.BookWithAuthor.new, positional, named)
-                as _i1.BookWithAuthor),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.AuthorWithBooks>(
+    _i3.BeanIntrospection<_i2.AuthorWithBooks>(
       className: r'AuthorWithBooks',
       properties: [
-        _i2.BeanProperty<_i1.AuthorWithBooks>(
+        _i3.BeanProperty<_i2.AuthorWithBooks>(
           r'name',
           type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.name,
         ),
-        _i2.BeanProperty<_i1.AuthorWithBooks>(
+        _i3.BeanProperty<_i2.AuthorWithBooks>(
           r'titles',
           type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
+          typeInfo: const _i3.ListType<String>(_i3.ClassType<String>()),
           get: (bean) => bean.titles,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i1.AuthorWithBooks>(
+      constructor: _i3.BeanConstructor<_i2.AuthorWithBooks>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'name',
-            type: const _i2.ClassType<String>(),
+            type: const _i3.ClassType<String>(),
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'titles',
-            type: const _i2.ListType<String>(_i2.ClassType<String>()),
+            type: const _i3.ListType<String>(_i3.ClassType<String>()),
             isRequired: true,
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i1.AuthorWithBooks.new, positional, named)
-                as _i1.AuthorWithBooks),
+            (Function.apply(_i2.AuthorWithBooks.new, positional, named)
+                as _i2.AuthorWithBooks),
       ),
     ),
-    _i2.BeanIntrospection<_i1.Years>(
+    _i3.BeanIntrospection<_i2.Years>(
       className: r'Years',
       properties: [
-        _i2.BeanProperty<_i1.Years>(
+        _i3.BeanProperty<_i2.Years>(
           r'cutoff',
           type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: const _i3.ClassType<int>(),
           get: (bean) => bean.cutoff,
         ),
       ],
       methods: [
-        _i2.BeanMethod<_i1.Years>(
+        _i3.BeanMethod<_i2.Years>(
           r'before',
           returnType: int,
           parameterTypes: const [int],
           invoke: (bean, arguments) => Function.apply(bean.before, arguments),
         ),
       ],
-      annotations: const [_i2.Component()],
-      instantiate: () => _i1.Years(),
-      constructor: _i2.BeanConstructor<_i1.Years>(
+      annotations: const [_i3.Component()],
+      instantiate: () => _i2.Years(),
+      constructor: _i3.BeanConstructor<_i2.Years>(
         parameters: [],
         create: (positional, named) =>
-            (Function.apply(_i1.Years.new, positional, named) as _i1.Years),
+            (Function.apply(_i2.Years.new, positional, named) as _i2.Years),
       ),
     ),
   ],
   typeTests: {
-    _i1.Club: (value) => value is _i1.Club,
-    _i1.Player: (value) => value is _i1.Player,
-    _i1.Employee: (value) => value is _i1.Employee,
-    _i1.Category: (value) => value is _i1.Category,
-    _i1.Folder: (value) => value is _i1.Folder,
+    _i2.Club: (value) => value is _i2.Club,
+    _i2.Player: (value) => value is _i2.Player,
+    _i2.Employee: (value) => value is _i2.Employee,
+    _i2.Category: (value) => value is _i2.Category,
+    _i2.Folder: (value) => value is _i2.Folder,
   },
 );
 
-final class _$Sqlite3Binding implements _i8.SqliteBinding {
+final class _$Sqlite3Binding implements _i1.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i8.SqliteDatabase open(
+  _i1.SqliteDatabase open(
     String filename, {
-    _i8.SqliteOpenMode mode = _i8.SqliteOpenMode.readWriteCreate,
+    _i1.SqliteOpenMode mode = _i1.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
@@ -18339,7 +5562,7 @@ final class _$Sqlite3Binding implements _i8.SqliteBinding {
   );
 }
 
-final class _$Sqlite3Database implements _i8.SqliteDatabase {
+final class _$Sqlite3Database implements _i1.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
   final _i9.Database _database;
@@ -18358,7 +5581,7 @@ final class _$Sqlite3Database implements _i8.SqliteDatabase {
   });
 
   @override
-  _i8.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i1.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -18396,7 +5619,7 @@ final class _$Sqlite3Database implements _i8.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i8.SqliteCursor {
+final class _$Sqlite3Cursor implements _i1.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
   final _i9.PreparedStatement _statement;
@@ -18425,7 +5648,7 @@ T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
   } on _i9.SqliteException catch (e) {
-    throw _i8.SqlError(
+    throw _i1.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -18433,8 +5656,8 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i8.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i8.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i1.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i1.SqliteJdbcDriver(const _$Sqlite3Binding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
@@ -18495,7 +5718,7 @@ _i10.SpringApplication get springApplication => _i10.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '3907be21',
+  fingerprint: 'b6a6213e',
 );
 
 /// Starts the application: config files, environment, context, runners

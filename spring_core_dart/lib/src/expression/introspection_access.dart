@@ -145,7 +145,35 @@ final class IntrospectionMethodResolver implements MethodResolver {
     String name,
     List<Object?> arguments,
   ) {
-    final method = introspector.findIntrospection(target)?.getMethod(name);
+    final introspection = introspector.findIntrospection(target);
+    final method = introspection?.getMethod(name);
+    if (method == null &&
+        introspection != null &&
+        !introspection.describesPart(IntrospectionPart.methods)) {
+      // The resolvers after this one may know the method (`toString()`);
+      // when none does, the class was described without its methods: the
+      // usual method-not-found error, with the reason added (the
+      // interpreter fills in the expression and position).
+      for (final later
+          in context.methodResolvers
+              .skipWhile(
+                (resolver) => !identical(resolver, this),
+              )
+              .skip(1)) {
+        if (later.resolve(context, target, name, arguments) case final found?) {
+          return found;
+        }
+      }
+      final type = introspection.beanType;
+      final types = arguments.map((a) => a == null ? 'null' : a.runtimeType);
+      final reason =
+          '$type, which is described without its methods: if it has '
+          "'$name', add @Introspected() to $type";
+      throw SpelEvaluationException(
+        SpelMessage.methodNotFound,
+        inserts: ['$name(${types.join(',')})', reason],
+      );
+    }
     if (method == null || method.parameterTypes.length < arguments.length) {
       return null;
     }

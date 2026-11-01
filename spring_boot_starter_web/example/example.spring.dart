@@ -262,6 +262,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           get: (bean) => bean.title,
         ),
       ],
+      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i1.Book>(
         parameters: [
           _i2.BeanParameter(
@@ -299,6 +300,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           annotations: const [_i2.NotBlank()],
         ),
       ],
+      parts: const {_i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i1.NewBook>(
         parameters: [
           _i2.BeanParameter(
@@ -316,29 +318,6 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ],
         create: (positional, named) =>
             (Function.apply(_i1.NewBook.new, positional, named) as _i1.NewBook),
-      ),
-    ),
-    _i2.BeanIntrospection<_i1.BookNotFound>(
-      className: r'BookNotFound',
-      properties: [
-        _i2.BeanProperty<_i1.BookNotFound>(
-          r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
-        ),
-      ],
-      constructor: _i2.BeanConstructor<_i1.BookNotFound>(
-        parameters: [
-          _i2.BeanParameter(
-            r'isbn',
-            type: const _i2.ClassType<String>(),
-            isRequired: true,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i1.BookNotFound.new, positional, named)
-                as _i1.BookNotFound),
       ),
     ),
   ],
@@ -404,7 +383,7 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'a9d3e8e5',
+  fingerprint: 'cc94a1c1',
 );
 
 /// Starts the application: config files, environment, context, runners
