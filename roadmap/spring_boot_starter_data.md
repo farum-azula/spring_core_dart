@@ -1,4 +1,10 @@
-# spring_boot_starter_data (planned, 0.6.0)
+# spring_boot_starter_data (done, in 0.6.0)
+
+Steps 1 to 4 below are done and released together as 0.6.0 (the
+checklist: [release_0_6.md](release_0_6.md)); Redis is postponed
+indefinitely, the Supabase starter comes next, and the "Later" items at the
+end of the order of work stay open. The sections below keep the plan and
+the decisions as they were made.
 
 Spring Data for Dart: entities, repositories, transactions, locks, SpEL in
 queries; on a server and in Flutter apps. One starter, no driver inside:
@@ -354,6 +360,15 @@ Later, not in 0.6.0 (the owner): MongoDB (`@Document`, `MongoTemplate`,
 locks, `MongoTransactionManager` on a replica set; the driver to decide:
 `mongo_dart` behind our template first, checked on a replica set, our
 own if it falls short).
+
+Later (the security check of 0.6.0): a `Pageable` / `Sort` argument
+resolver for controllers in the web starter, as Spring Data Web's
+`PageableHandlerMethodArgumentResolver` and `SortHandlerMethodArgumentResolver`:
+`page`, `size` and `sort=property,direction` read from the request, a
+maximum page size (`spring.data.web.pageable.max-page-size`, Spring's
+default 2000) and a default size, invalid values answered with a 400 or
+replaced by the defaults, a property allow-list for `sort`. Until then every
+application parses these itself (and must cap `size`; the README says so).
 
 ## The full example
 

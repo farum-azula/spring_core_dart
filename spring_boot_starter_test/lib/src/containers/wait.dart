@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:spring_boot_starter_test/src/containers/docker_client.dart';
 import 'package:spring_boot_starter_test/src/containers/docker_exception.dart';
+import 'package:spring_boot_starter_test/src/containers/socket_guard.dart';
 
 /// What a [WaitStrategy] can look at: the started container, the ports
 /// published for it and the time left to become ready.
@@ -218,6 +219,7 @@ final class _ListeningPortWait implements WaitStrategy {
     } on Exception {
       return false;
     }
+    ignoreDoneErrors(socket);
     final dropped = Completer<bool>();
     socket.listen(
       (_) {},

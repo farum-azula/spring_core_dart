@@ -4,6 +4,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:spring_boot_starter_test/containers.dart';
+import 'package:spring_boot_starter_test/src/containers/postgres_container.dart'
+    show PostgresProtocolWait;
 import 'package:test/test.dart';
 
 class _FakeContainer implements WaitTarget {
@@ -21,6 +23,10 @@ class _FakeContainer implements WaitTarget {
 
   /// The lines the fake container prints; close it to end the output.
   final StreamController<DockerLogLine> output = StreamController.broadcast();
+
+  /// What was printed before the strategy started to watch: the daemon
+  /// replays it, as it does for a followed log without a start time.
+  final List<DockerLogLine> history = [];
 
   bool running = true;
   String? health;
@@ -55,7 +61,10 @@ class _FakeContainer implements WaitTarget {
   );
 
   @override
-  Stream<DockerLogLine> logs() => output.stream;
+  Stream<DockerLogLine> logs() async* {
+    yield* Stream.fromIterable(List.of(history));
+    yield* output.stream;
+  }
 
   @override
   Future<void> poll(
@@ -80,8 +89,10 @@ class _FakeContainer implements WaitTarget {
     }
   }
 
-  void print(String text, {DockerStream stream = DockerStream.stdout}) =>
-      output.add(DockerLogLine(stream, text));
+  void print(String text, {DockerStream stream = DockerStream.stdout}) {
+    history.add(DockerLogLine(stream, text));
+    output.add(DockerLogLine(stream, text));
+  }
 }
 
 Future<void> _settle() =>
@@ -119,6 +130,38 @@ void main() {
       expect(ready, isFalse);
       container.print('ready 2', stream: DockerStream.stderr);
       await wait;
+    });
+
+    test('counts the lines printed before the wait started', () async {
+      // PostgreSQL's image logs the line once for its temporary server and
+      // once for the real one: the first may be long printed.
+      final container = _FakeContainer()
+        ..history.addAll([
+          const DockerLogLine(
+            DockerStream.stderr,
+            'LOG: database system is ready',
+          ),
+          const DockerLogLine(DockerStream.stdout, 'init process complete'),
+        ]);
+      var ready = false;
+      final wait = Wait.forLogMessage(
+        'system is ready',
+        2,
+      ).waitUntilReady(container).then((_) => ready = true);
+      await _settle();
+      expect(ready, isFalse, reason: 'one of two lines seen');
+      container.print('LOG: database system is ready');
+      await wait;
+      expect(ready, isTrue);
+    });
+
+    test('is ready at once when the lines are all in the history', () async {
+      final container = _FakeContainer()
+        ..history.addAll([
+          const DockerLogLine(DockerStream.stderr, 'ready'),
+          const DockerLogLine(DockerStream.stderr, 'ready'),
+        ]);
+      await Wait.forLogMessage('ready', 2).waitUntilReady(container);
     });
 
     test('fails when the output ends before the line', () async {
@@ -183,6 +226,27 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('a connection that is reset is no uncaught error', () async {
+      // The server never reads, so closing it resets the connection. A
+      // failure of the probe's socket would reach the test as an uncaught
+      // error and fail it.
+      final server = await ServerSocket.bind('127.0.0.1', 0);
+      addTearDown(server.close);
+      server.listen((socket) async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        socket.destroy();
+      });
+      final container = _FakeContainer(
+        ports: [80],
+        timeout: const Duration(milliseconds: 600),
+      )..mapped[80] = server.port;
+      await expectLater(
+        Wait.forListeningPort().waitUntilReady(container),
+        throwsA(isA<ContainerLaunchException>()),
+      );
+      await _settle();
     });
 
     test('waits for every published port', () async {
@@ -357,5 +421,40 @@ void main() {
     await _settle();
     container.print('two');
     await wait;
+  });
+
+  group('the PostgreSQL protocol wait', () {
+    test('is ready when the port answers the SSLRequest', () async {
+      final server = await ServerSocket.bind('127.0.0.1', 0);
+      addTearDown(server.close);
+      server.listen((socket) {
+        socket.add([0x4e]);
+        unawaited(socket.close());
+      });
+      final container = _FakeContainer(ports: [5432])
+        ..mapped[5432] = server.port;
+      await const PostgresProtocolWait().waitUntilReady(container);
+    });
+
+    test('a connection that is reset is no uncaught error', () async {
+      // A port forwarder in front of a server that is not there: it takes
+      // the SSLRequest and resets the connection without a word. The probe
+      // wrote to its socket, so the reset fails the socket's `done` too.
+      final server = await ServerSocket.bind('127.0.0.1', 0);
+      addTearDown(server.close);
+      server.listen((socket) async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        socket.destroy(); // unread data: reset
+      });
+      final container = _FakeContainer(
+        ports: [5432],
+        timeout: const Duration(milliseconds: 800),
+      )..mapped[5432] = server.port;
+      await expectLater(
+        const PostgresProtocolWait().waitUntilReady(container),
+        throwsA(isA<ContainerLaunchException>()),
+      );
+      await _settle();
+    });
   });
 }

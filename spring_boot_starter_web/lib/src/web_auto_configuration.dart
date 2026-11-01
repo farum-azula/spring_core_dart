@@ -253,6 +253,7 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     create: (r) {
       final requestMapping = r.dependency<RequestMappingHandlerMapping>();
+      final server = serverProperties(r.dependency<Environment>());
       final mappings =
           r.optionalDependencyList<HandlerMapping>() ??
           <HandlerMapping>[requestMapping];
@@ -261,7 +262,8 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
         handlerMappings: mappings,
         requestMapping: requestMapping,
         writer: r.dependency<ResponseWriter>(),
-        contextPath: serverProperties(r.dependency<Environment>()).contextPath,
+        contextPath: server.contextPath,
+        requestTimeout: server.requestTimeout,
         logRequestDetails:
             r
                 .dependency<Environment>()

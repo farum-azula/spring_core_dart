@@ -112,6 +112,7 @@ void _tests() {
         final order = <String>[];
         final holding = Completer<void>();
         final release = Completer<void>();
+        final asking = Completer<void>();
         final first = j.transaction().execute((_) async {
           await j.sqlStocks.findBySku('a');
           order.add('first holds');
@@ -122,10 +123,13 @@ void _tests() {
         await holding.future;
         final second = j.transaction().execute((_) async {
           order.add('second asks');
+          asking.complete();
           final stock = await j.sqlStocks.findBySku('a');
           order.add('second holds');
           return stock;
         });
+        // The second is in its transaction and asking; it must still wait.
+        await asking.future;
         await Future<void>.delayed(const Duration(milliseconds: 300));
         expect(order, ['first holds', 'second asks']);
         release.complete();
@@ -293,26 +297,21 @@ void _tests() {
       'with an OptimisticLockingFailureException',
       () => _run((j) async {
         final book = await j.sqlBooks.save(Book(title: 'Dune', year: 1965));
-        final read = Completer<void>();
-        final go = Completer<void>();
-        Future<Object?> change(String title) => j
+        // Both read the row (the same version) before either writes: each
+        // reports its read and waits until the other has reported its own.
+        final reads = [Completer<void>(), Completer<void>()];
+        Future<Object?> change(int index, String title) => j
             .transaction()
             .execute((_) async {
               final copy = (await j.sqlBooks.findById(book.id!))!;
-              if (!read.isCompleted) {
-                read.complete();
-                await go.future;
-              }
+              reads[index].complete();
+              await Future.wait(reads.map((c) => c.future));
               copy.title = title;
               await j.sqlBooks.save(copy);
             })
             .then<Object?>((_) => null, onError: (Object e) => e);
-        final first = change('first');
-        await read.future;
-        final second = change('second');
-        // The second read the row too, before the first writes.
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-        go.complete();
+        final first = change(0, 'first');
+        final second = change(1, 'second');
         final results = await Future.wait([first, second]);
         expect(
           results.whereType<OptimisticLockingFailureException>(),

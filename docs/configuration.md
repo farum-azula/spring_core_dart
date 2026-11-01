@@ -48,7 +48,7 @@ The differences are listed where they apply and again at the
 20. [Reference: SQL databases](#20-reference-sql-databases)
 21. [Tests](#21-tests)
 22. [Code generation options (`build.yaml`)](#22-code-generation-options)
-22. [Differences from Spring Boot](#differences-from-spring-boot)
+23. [Differences from Spring Boot](#differences-from-spring-boot)
 
 ---
 
@@ -1790,6 +1790,7 @@ spring:
         default:
           connect-timeout: 5s
           read-timeout: 30s
+          call-timeout: 45s
           logger-level: basic
         catalog:
           url: https://api.neon.books
@@ -1811,6 +1812,7 @@ spring:
 spring.feign.client.decode-slash=true
 spring.feign.client.config.default.connect-timeout=5s
 spring.feign.client.config.default.read-timeout=30s
+spring.feign.client.config.default.call-timeout=45s
 spring.feign.client.config.default.logger-level=basic
 spring.feign.client.config.catalog.url=https://api.neon.books
 spring.feign.client.config.catalog.read-timeout=10s
@@ -1832,6 +1834,7 @@ The keys under `spring.feign.client.config.<client>.`:
 | `url` | URL | — | The base URL when `@FeignClient(url:)` is empty; `http://` is added when the scheme is missing |
 | `read-timeout` | duration | `60s` (`0`: none) | The longest wait for the response, then between two chunks of the body; not a limit for the whole call |
 | `connect-timeout` | duration | `10s` (`0`: none) | **Under `default` only**: the connect timeout of the transport all clients share |
+| `call-timeout` | duration | none (`0` or less: none) | The longest one call may take **in all**: every attempt, the pauses of the `Retryer` and the wait for the answer. When it passes, the call throws `FeignCallTimeoutException` (not retried, whatever the retryer says; a pause that would end past the limit ends the call at once); the client's `fallback` still answers. It is the earlier of this and the `RequestDeadline` the call runs under (a web request with `server.request-timeout`, [section 18](#deadlines-one-limit-for-a-request-and-the-calls-it-makes)), and the connect and read timeouts of each attempt are capped by what remains. For an `EventStream<T>` method it limits establishing each connection (up to the status and headers), not the stream's life. This starter's own key: Spring Cloud OpenFeign has only `connect-timeout` and `read-timeout` |
 | `logger-level` | `none` / `basic` / `headers` / `full` | `none` | How much of each call is logged, under the logger `feign.<Interface>` at debug level |
 | `dismiss404` | bool | `false` | A 404 gives `null` (or a `ResponseEntity`) instead of an exception; `void` methods still throw |
 | `default-request-headers.<Header>` | list | — | Headers sent when the request has none of that name; `default`'s and the client's are merged |
@@ -1851,7 +1854,7 @@ The keys under `spring.feign.client.config.<client>.`:
 `retryer`, `error-decoder` and `request-interceptors` name beans. Spring
 takes class names and creates the class; here a class name must match
 exactly one bean. The `event-stream.*` keys are this starter's own, as
-Spring Cloud OpenFeign cannot stream. Not supported: service discovery
+Spring Cloud OpenFeign cannot stream, and so is `call-timeout`. Not supported: service discovery
 and load balancing (every client needs a URL), circuit breakers, a
 per-client `connect-timeout`, compression, and the `encoder`, `decoder`,
 `contract` and `capabilities` keys.
@@ -3091,6 +3094,7 @@ server:
   context-path: /shop
   max-http-request-body-size: 10MB
   connection-timeout: 60s
+  request-timeout: 30s
   compression:
     enabled: true
     mime-types: text/html,application/json
@@ -3133,6 +3137,7 @@ server.shutdown=graceful
 server.context-path=/shop
 server.max-http-request-body-size=10MB
 server.connection-timeout=60s
+server.request-timeout=30s
 server.compression.enabled=true
 server.compression.mime-types=text/html,application/json
 server.compression.min-response-size=2KB
@@ -3168,6 +3173,7 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `server.context-path` | path | — | A prefix of every mapping, such as `/shop`. A missing leading `/` is added and a trailing one dropped; other paths answer 404. |
 | `server.max-http-request-body-size` | data size, or `-1` | `10MB` | A larger request body is answered with 413, whatever its `Content-Type`; `-1` means no limit. This starter's own key. Only the multipart resolver reads uploads with `spring.web.multipart.max-request-size` instead |
 | `server.connection-timeout` | duration; `0` or less (`-1`) for none | `60s` | How long a request body may send nothing while it is read: then the answer is 408 and the connection closes. Also how long an idle keep-alive connection stays open. `0` or a negative value means no limit, as in Tomcat. Tomcat's `connectionTimeout` (Spring Boot 2.0 had this key; Boot 4 has `server.tomcat.connection-timeout`) |
+| `server.request-timeout` | duration; `0` or less for none | no limit | The longest a request's filters and handler may take to answer. When it passes before the answer starts, the answer is a 503 `ProblemDetail` with a generic detail (`AsyncRequestTimeoutException`, logged as a warning, at most once per 10 seconds), what the handler does afterwards is dropped, and the request's `RequestDeadline` has run out for the code it called (see [Deadlines](#deadlines-one-limit-for-a-request-and-the-calls-it-makes)). Not applied to a response that became a stream (server-sent events, a streamed body: `spring.mvc.async.request-timeout` limits an `SseEmitter`) or to a WebSocket handshake. A response already being sent is left alone. The time the handler spends reading a slow upload counts; `server.connection-timeout` still ends a body that sends nothing. This starter's own key: Spring Boot has none |
 | `server.forward-headers-strategy` | `none` / `native` / `framework` | `none` | Behind a reverse proxy: apply its `Forwarded` or `X-Forwarded-Proto`, `-Host`, `-Port`, `-For` headers (the scheme, so cookies get `Secure` behind TLS; the host and port; the client's address), from trusted proxies only. `native` and `framework` do the same here. Another value stops the start |
 | `server.forward-headers.trusted-proxies` | list of addresses and CIDR ranges | loopback, `10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `100.64/10`, `::1`, `fc00::/7`, `fe80::/10` | Whose forwarded headers are believed (Tomcat's `internalProxies`); a client reaching the server from elsewhere cannot set them. Not in Spring Boot |
 | `server.compression.enabled` | bool (only `true` turns it on) | `false` | gzip of the responses of `mime-types`, from `min-response-size` on (or of unknown length), for clients that send `Accept-Encoding: gzip`; never partial content, nor an answer with a strong `ETag` (as Tomcat). Every answer it would compress gets `Vary: Accept-Encoding`, for clients without gzip too |
@@ -3202,6 +3208,38 @@ locations. Mappings are logged at debug level under the logger
 `spring.web.mvc` (`logging.level.spring.web.mvc=debug`), and the server
 under `spring.web.server`.
 
+### Deadlines: one limit for a request and the calls it makes
+
+`server.request-timeout` is more than a timer: the request runs under a
+`RequestDeadline` (`spring_web_dart`) of that length, carried in the
+`Zone` like a transaction, so that code the request calls can read it:
+`RequestDeadline.current` is the deadline (or `null`), with `remaining`,
+`isExpired` and `check()`, which throws a `RequestDeadlineExceededException`.
+A deadline started inside another ends at the earlier of the two, never
+later, and `RequestDeadline.run(budget, body)` starts one in code of your own.
+
+The Feign starter honours it. A call a controller makes through a Feign
+client never outlives the request: the effective limit of the call is the
+earlier of its `call-timeout` ([section 15](#15-reference-feign-clients))
+and what remains of the request's deadline, and the connect and read
+timeouts of each attempt are capped by what remains. When the time is gone,
+the call throws `FeignCallTimeoutException`, which is not retried, and the
+request is answered with the 503. Nothing else is interrupted: Dart cannot
+stop running code, so a handler that never looks at the deadline runs on,
+with its late answer dropped.
+
+A response that becomes a stream (server-sent events, a streamed body)
+leaves the request's deadline when it starts, so what the stream does later
+is not cut at it. The filters (the security starter's filter chain
+included) are part of the request, so the time they use is taken from the
+handler's.
+
+Spring has no such limit for synchronous requests (Tomcat times out
+connections, Spring MVC only asynchronous requests with
+`spring.mvc.async.request-timeout`), and no limit follows a request into
+the calls it makes. `server.request-timeout`, `call-timeout` and
+`RequestDeadline` are extensions of Spring for Dart.
+
 An application that also uses `spring_boot_starter_data` answers its data
 errors with the right status instead of a 500, through the bean
 `dataAccessExceptionResolver` the generator adds (no property switches
@@ -3213,6 +3251,8 @@ which always comes first):
 | `OptimisticLockingFailureException` | 409 | `The resource was changed by someone else` |
 | `DuplicateKeyException` | 409 | `The resource already exists` |
 | `EmptyResultDataAccessException` | 404 | `Not found` |
+| `PropertyReferenceException` (a sort property that does not exist) | 400 | `Invalid sort property` |
+| `InvalidPagingRequestException` (a negative page, a size below one, an offset past 2^53 - 1, a direction that is not `asc` or `desc`) | 400 | `Invalid page or sort request` |
 
 The answer is a `ProblemDetail` with this fixed detail, never the
 exception's message (it may hold SQL or values); the exception is logged
@@ -3360,8 +3400,8 @@ sharing sessions, is shared (the client's README, *DPoP*).
 
 `spring_boot_starter_data` opens the database of `spring.datasource.url`
 with the driver the application lists (`sqlite3` for `sqlite:` URLs,
-`postgres` for `postgresql:` ones), runs its migrations at startup, before any repository or `JdbcTemplate`
-can use it, and checks the schema against the entities. Without a URL the
+`postgres` for `postgresql:` ones), runs its migrations at startup, before
+any repository or `JdbcTemplate` can use it, and checks the schema against the entities. Without a URL the
 repositories keep their data in memory.
 
 <table>
@@ -3422,19 +3462,19 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.datasource.sqlite.base-directory` | working directory | where relative `sqlite:file:` names are looked for; in a Flutter app the starter sets it ([SQLite databases](#sqlite-databases)) |
 | `spring.datasource.sqlite.isolate` | `false` | `true` opens each connection inside an isolate of its own, so a long query or a busy wait does not hold the caller's isolate (the UI's, the web server's); in a Flutter app the starter sets it to `true` |
 | `spring.datasource.sqlite.location` | `support` | read by the Flutter starter only: `support`, `cache` or `documents`, the directory it sets `base-directory` to ([SQLite databases](#sqlite-databases)) |
-| `spring.datasource.postgresql.sslmode` | `prefer` | `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`; also `spring.datasource.postgres.*` ([PostgreSQL](#postgresql)) |
+| `spring.datasource.postgresql.sslmode` | `prefer` | `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`; also `spring.datasource.postgres.*` ([PostgreSQL](#postgresql)); every driver key is read through the environment, so it is also an environment variable (`SPRING_DATASOURCE_POSTGRESQL_SSLMODE=verify-full`, `SPRING_DATASOURCES_SHOP_SQLITE_BUSYTIMEOUT=2000`), a command line argument or a file entry, and a name the driver does not know is refused; a driver's keys are read under the URL's scheme and under the driver's name (`spring.datasource.sqlite3.busy-timeout` is `sqlite.busy-timeout`), the driver's name winning |
 | `spring.datasource.postgresql.ssl-root-cert` | system roots | PEM file of the certificate authorities a `verify-*` mode checks the server against |
-| `spring.datasource.postgresql.connect-timeout` | `15s` | the longest wait for the connection and the TLS handshake (`500ms`, `30s`, `1m`, or milliseconds) |
+| `spring.datasource.postgresql.connect-timeout` | `15s` | the longest wait for the connection and the TLS handshake (`500ms`, `30s`, `1m`, or milliseconds; this key does not take `PT30S`) |
 | `spring.datasource.postgresql.application-name` | | shown in `pg_stat_activity` |
 | `spring.datasource.postgresql.search-path` | the server's | the schemas of `search_path`, comma separated (the URL's `currentSchema`) |
 | `spring.datasources.<name>.*` | | the same keys for a named database (beans qualified `<name>`, `@UseDataSource('<name>')`), also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
 | `spring.sql.init.mode` | `embedded` | `schema.sql` / `data.sql`: `embedded` (in-memory databases only), `always`, `never` |
-| `spring.sql.init.schema-locations`, `data-locations`, `platform`, `continue-on-error`, `separator`, `encoding` | Boot's | as in Spring Boot |
+| `spring.sql.init.schema-locations`, `data-locations`, `platform`, `continue-on-error`, `separator`, `encoding` | `schema.sql` and `data.sql` (and their `-<platform>` variants), `all`, `false`, `;`, `utf-8` | as in Spring Boot |
 | `spring.sql.migration.enabled` | `true` | run `lib/resources/db/migration/V<version>__<name>.sql` and `R__<name>.sql` (no files: nothing) |
 | `spring.sql.migration.locations` | `classpath:db/migration` | `{vendor}` is the database (`sqlite`, `postgresql`) |
 | `spring.sql.migration.table` | `schema_history` | the history table |
 | `spring.sql.migration.validate-on-migrate` | `true` | an applied file that changed, or went missing, stops the start |
-| `spring.sql.migration.baseline-on-migrate`, `baseline-version`, `baseline-description` | `false`, `1` | start the history on an existing database |
+| `spring.sql.migration.baseline-on-migrate`, `baseline-version`, `baseline-description` | `false`, `1`, `<< Baseline >>` | start the history on an existing database |
 | `spring.sql.migration.target` | `latest` | migrate up to this version |
 | `spring.sql.migration.out-of-order`, `ignore-migration-patterns` | `false`, `*:future` | as Flyway |
 | `spring.sql.migration.placeholders.<name>`, `placeholder-replacement`, `placeholder-prefix`, `placeholder-suffix` | `true`, `${`, `}` | `${name}` in the files |
@@ -3442,7 +3482,7 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.sql.migration.connect-retries`, `connect-retries-interval`, `lock-timeout` | `0`, `10s`, `1m` | wait for the database, and for another instance migrating it |
 | `spring.data.jdbc.schema` | `validate` | `none`, `validate` (tables and columns of the entities must exist and fit), `create`, `create-drop` (from the entities; not with migrations or scripts) |
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
-| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info |
+| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info: the value of a name that looks secret (a column or parameter name that contains `password`, `token`, `secret`, `credential`, `apikey` or `privatekey`, or has the word `key`: `sslpassword`, `apiToken`, `clientSecret`; not `keyword`) is `******`, and so is a value bound without a name (a plain list to a `JdbcTemplate`); the values also show at trace, with the same masks |
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
 | `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
 
@@ -3477,7 +3517,14 @@ spring.datasource.password=s3cret
   the certificate is not checked) or `verify-full` (also checks the
   certificate and the host name, against the system's roots or
   `ssl-root-cert`) for anything but a development database. `verify-ca` is as
-  strict as `verify-full`.
+  strict as `verify-full`. When `prefer` falls back to plain text the driver
+  logs a warning (once for each database). The setting can come from an
+  environment variable: `SPRING_DATASOURCE_POSTGRESQL_SSLMODE=verify-full`.
+- **The URL in logs.** The password of the user info is never logged, and
+  the value of a query parameter whose name looks secret (`password`,
+  `sslpassword`, `token`...) is written `******` in every log line and
+  message that shows the URL. Prefer `spring.datasource.username` and
+  `password` (or the user info) to secrets in the query.
 - **Parameters and values.** The statements keep `?` (the starter turns it
   into `$1`, `$2`; quoted text, comments and `$$` bodies are left alone, and
   `??` is a literal `?`, for the `jsonb` operators), and values always go as
@@ -3549,8 +3596,9 @@ files, each is an alternative schema and a column of any is known). The
 build reads these settings from `application.properties`, `application.yml`
 and `application.yaml` (also in `config/`), and only `classpath:` locations:
 with a `file:` location, a `${placeholder}` in one, a profile file or a
-profile-specific YAML document that sets them, a `spring.config.import` or
-the settings of a named data source, it cannot see the schema and does not
+profile-specific YAML document that sets them, a `spring.config.import`,
+`spring.config.location` or `spring.config.additional-location`, or the
+settings of a named data source, it cannot see the schema and does not
 look for misspelled names. An application that declares its own
 `NamingStrategy` bean hides the names derived from the entities.
 
@@ -3570,9 +3618,20 @@ build leaves to the interpreter (`T(...)`, `new`, selection and projection,
 the classes of the arguments of such a method are described for SpEL.
 
 In an application that also uses the web starter, a `DuplicateKeyException`
-or an `OptimisticLockingFailureException` is answered with a 409 and an
-`EmptyResultDataAccessException` with a 404 ([the table](#18-reference-web-server)),
+or an `OptimisticLockingFailureException` is answered with a 409, an
+`EmptyResultDataAccessException` with a 404, and a sort property that does
+not exist or an invalid page with a 400 ([the table](#18-reference-web-server)),
 whatever the database.
+
+A SQL data source sets its schema up on a connection, which Dart cannot wait
+for without `await`: start the application with `await runApplicationAsync(args)`
+(`SpringApplication.runAsync`); the synchronous `runApplication(args)` fails
+at start with a report that says so.
+
+`save` inserts an entity that is new and updates one that is not: with a
+`@Version`, new means a `null` version, or `0` for a version that cannot be
+null (`int`); a nullable `int?` version is new only when `null`, so a row
+stored at version 0 can be updated (Spring Data's rule for `long` and `Long`).
 
 ## 21. Tests
 
@@ -3782,8 +3841,9 @@ their defaults.
   environment never does.
 - These keys are this project's own: `spring.messages.default-locale`,
   `spring.cache.simple.*`, every `spring.websocket.client.*` and
-  `spring.flutter.*` key, the Feign `event-stream.*` keys,
-  `server.max-http-request-body-size`, `server.connection-timeout` (a
+  `spring.flutter.*` key, the Feign `event-stream.*` keys and
+  `call-timeout`, `server.max-http-request-body-size`,
+  `server.request-timeout`, `server.connection-timeout` (a
   Spring Boot 2.0 key), `server.websocket.*`,
   `spring.web.multipart.max-part-count` and
   `spring.mvc.sse.heartbeat-interval`.
@@ -3796,6 +3856,14 @@ their defaults.
   such as `server.tomcat.*`. `server.ssl.*` takes PEM file paths. Errors
   are `ProblemDetail`s, except the plain-text answers Spring gives too
   (a refused CORS request, a refused WebSocket handshake).
+- A request can have a deadline: `server.request-timeout` times the
+  filters and the handler, and the Feign calls inside it stop at what
+  remains of it (`RequestDeadline`; see
+  [Deadlines](#deadlines-one-limit-for-a-request-and-the-calls-it-makes)).
+  Spring has no timeout for a synchronous request, and none that follows a
+  request into the calls it makes; its Feign has only `connect-timeout` and
+  `read-timeout` per attempt, where `call-timeout` limits a call with its
+  retries.
 - `spring.main.web-application-type` knows only `none` (no server).
 - Not read: `allow-circular-references`, `keep-alive`,
   `spring.task.execution.*`, `spring.task.scheduling.pool.*`,

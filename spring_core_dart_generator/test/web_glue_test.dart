@@ -96,6 +96,8 @@ void main() {
       expect(output, contains("'The resource was changed by someone else'"));
       expect(output, contains("'The resource already exists'"));
       expect(output, contains("'Not found'"));
+      expect(output, contains("'Invalid sort property'"));
+      expect(output, contains("'Invalid page or sort request'"));
     });
 
     test('the symbols get the library import prefixes', () {
@@ -117,9 +119,12 @@ void main() {
       expect(output, contains('$d.OptimisticLockingFailureException()'));
       expect(output, contains('$d.DuplicateKeyException()'));
       expect(output, contains('$d.EmptyResultDataAccessException()'));
+      expect(output, contains('$d.PropertyReferenceException()'));
+      expect(output, contains('$d.InvalidPagingRequestException()'));
       expect(output, contains('$w.ResponseStatusException('));
       expect(output, contains('$w.HttpStatus.conflict'));
       expect(output, contains('$w.HttpStatus.notFound'));
+      expect(output, contains('$w.HttpStatus.badRequest'));
     });
 
     test('the documentation of the template is not copied', () {

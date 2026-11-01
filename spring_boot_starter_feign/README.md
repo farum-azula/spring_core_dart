@@ -367,6 +367,7 @@ The keys are those of Spring Cloud OpenFeign:
 ```properties
 spring.feign.client.config.default.read-timeout=10s
 spring.feign.client.config.default.connect-timeout=2s
+spring.feign.client.config.default.call-timeout=15s
 spring.feign.client.config.catalog.url=https://api.neon.books
 spring.feign.client.config.catalog.logger-level=basic
 spring.feign.client.config.catalog.dismiss404=true
@@ -384,6 +385,7 @@ spring.feign.client.decode-slash=false
 | `url` | — | the base URL when `@FeignClient(url:)` is not given or is empty. `http://` is put in front of a URL without a scheme |
 | `read-timeout` | `60s` | the longest wait for data: for the response, then between two chunks of the body. It is not a limit for the whole call, as in Feign. `10s`, `PT1M` or milliseconds; `0` for none |
 | `connect-timeout` | `10s` | the connection timeout of the default transport. Read under `default` only, for all clients; `0` for none |
+| `call-timeout` | none | the longest one call may take in all, retries and pauses included; `0` for none (see [A limit for the whole call](#a-limit-for-the-whole-call-call-timeout)) |
 | `logger-level` | `none` | `none`, `basic`, `headers` or `full` (see [Logging](#logging)) |
 | `dismiss404` | `false` | a 404 gives `null` (nullable results) or a `ResponseEntity` instead of an exception; a `void` method still throws, as in Feign |
 | `default-request-headers.<Name>` | — | a header added to every request that has none of that name once the interceptors ran. `a,b` or a YAML list gives two values |
@@ -533,6 +535,51 @@ attempts in all, pauses of `period` × 1.5ⁿ (150 ms, 225 ms, 338 ms, ...
 with the default `period` of 100 ms), never longer than `maxPeriod`
 (1 second). When the server sent `Retry-After`, it waits until then
 instead, still at most `maxPeriod`.
+
+### A limit for the whole call: `call-timeout`
+
+`read-timeout` limits each wait for data, and a `Retryer` multiplies the
+attempts, so one call can take much longer than any timeout says. Set
+`call-timeout` for the time the call may take **in all**: from the first
+attempt, through every pause and retry, to the last byte of the answer.
+
+```properties
+spring.feign.client.config.catalog.call-timeout=5s
+```
+
+When it passes, the call throws a `FeignCallTimeoutException` (a
+`FeignException` with status `-1`, the number of `attempts`, and whether
+the limit was the caller's deadline). It is **never retried**, whatever
+the `Retryer` says, because the time is gone: a pause the retryer asks for
+that would end past the limit ends the call at once instead of sleeping to
+it. The `fallback` of the client still answers it, as any failure. The
+connect and read timeouts of each attempt are capped by what remains, so a
+`read-timeout` of 60 seconds cannot outlast a `call-timeout` of 5.
+
+A call made while a web request is handled (`server.request-timeout` of the
+web starter), or inside `RequestDeadline.run(...)`, has a second limit: the
+deadline of the code that makes it. The call is limited by the **earlier**
+of the two, so it never outlives its request. The interceptors run under
+the same limit.
+
+```dart
+// At most 2 seconds for the whole checkout, whatever the clients do.
+final order = await RequestDeadline.run(
+  const Duration(seconds: 2),
+  () async {
+    final stock = await warehouse.reserve(basket);
+    return payments.charge(basket, stock);
+  },
+);
+```
+
+For an `EventStream<T>` method the limit applies to establishing the
+connection (until the status and headers arrive), each time it connects,
+not to the life of the stream. A stream that cannot connect within it fails
+with the `FeignCallTimeoutException` and does not reconnect.
+
+`call-timeout` has no default and no counterpart in Spring Cloud OpenFeign,
+which limits only the connect and the read of each attempt.
 
 ## Interceptors
 
@@ -686,6 +733,10 @@ the responses.
 - No service discovery or load balancing: every client needs a URL.
 - `connect-timeout` is one setting for all clients (`default`);
   `read-timeout` is per client.
+- `call-timeout` is an addition: Spring Cloud OpenFeign limits the connect
+  and the read of each attempt, never a call as a whole, and no deadline of
+  the caller reaches the call. Here the call is limited by the earlier of
+  `call-timeout` and the `RequestDeadline` it runs under.
 - The fallback answers every failure, without a circuit breaker; there is
   no `FallbackFactory` yet.
 - `Accept: application/json` is sent by default (`text/event-stream` for

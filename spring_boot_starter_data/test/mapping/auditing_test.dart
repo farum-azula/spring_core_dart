@@ -90,6 +90,20 @@ void main() {
       );
     });
 
+    test('with a nullable int version: new only when null, so a row at '
+        'version 0 can be updated', () {
+      final entity = context.fromIntrospection(_intVersion(nullable: true));
+      expect(strategy.isNew(entity, _Counted()), isTrue);
+      expect(strategy.isNew(entity, _Counted()..count = 0), isFalse);
+      expect(strategy.isNew(entity, _Counted()..count = 1), isFalse);
+    });
+
+    test('with a non-nullable int version: new when 0', () {
+      final entity = context.fromIntrospection(_intVersion(nullable: false));
+      expect(strategy.isNew(entity, _Counted()..count = 0), isTrue);
+      expect(strategy.isNew(entity, _Counted()..count = 3), isFalse);
+    });
+
     test('with a DateTime version: new only when null', () {
       final entity = context.fromIntrospection(_dateVersion());
       expect(strategy.isNew(entity, _Stamped()), isTrue);
@@ -244,6 +258,26 @@ class _Versioned {
 class _Stamped {
   DateTime? at;
 }
+
+class _Counted {
+  int? count;
+}
+
+EntityIntrospection<_Counted> _intVersion({required bool nullable}) =>
+    EntityIntrospection<_Counted>(
+      'Counted',
+      [
+        EntityProperty(
+          'count',
+          ClassType<int>(nullable: nullable),
+          annotations: const [Version()],
+          writable: true,
+        ),
+      ],
+      get: (o, _) => o.count,
+      create: (v) => _Counted(),
+      write: (o, i, x) => o.count = x as int?,
+    );
 
 EntityIntrospection<_Stamped> _dateVersion() => EntityIntrospection<_Stamped>(
   'Stamped',

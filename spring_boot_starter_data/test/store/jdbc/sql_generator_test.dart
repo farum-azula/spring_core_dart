@@ -161,6 +161,105 @@ void main() {
     );
 
     test(
+      'the values carry the column they are bound to (for the logs)',
+      () => run(() async {
+        List<String> names(BoundSql statement) =>
+            (statement.parameters as BoundParameters).names;
+        expect(
+          names(
+            pg.insert(accounts, {'iban': 'DE01', 'owner': 'Ada', 'version': 1}),
+          ),
+          ['iban', 'owner', 'version'],
+        );
+        expect(
+          names(
+            pg.update(
+              accounts,
+              {'iban': 'DE01', 'owner': 'Ada L.', 'version': 2},
+              id: 'DE01',
+              expectedVersion: 1,
+            ),
+          ),
+          ['owner', 'version', 'iban', 'version'],
+        );
+        expect(names(pg.deleteById(accounts, 'DE01')), ['iban']);
+        expect(names(pg.selectById(accounts, 'DE01')), ['iban']);
+        expect(names(pg.selectByIds(books, [1, 2, 3])), ['id', 'id', 'id']);
+        expect(
+          names(
+            where(
+              pg,
+              criteria(PartType.between, [1, 5], property: 'year'),
+            ),
+          ),
+          ['year', 'year'],
+        );
+        expect(
+          names(
+            where(
+              pg,
+              criteria(PartType.in_, [
+                [1, 2, 3],
+              ], property: 'year'),
+            ),
+          ),
+          ['year', 'year', 'year'],
+        );
+        expect(
+          names(where(pg, criteria(PartType.containing, ['x']))),
+          ['title'],
+        );
+        expect(names(pg.count(books, null)), isEmpty);
+        // Every marker has a name.
+        final statement = where(
+          pg,
+          criteria(PartType.like, ['a%'], ignoreCase: true),
+        );
+        expect(
+          statement.parameters.length,
+          (statement.parameters as BoundParameters).names.length,
+        );
+      }),
+    );
+
+    test(
+      'a negative offset is refused, not dropped',
+      () => run(() async {
+        expect(
+          () => pg.select(books, offset: -1),
+          throwsA(isA<InvalidDataAccessApiUsageException>()),
+        );
+        expect(
+          () => lite.select(books, offset: -10, limit: 5),
+          throwsA(isA<InvalidDataAccessApiUsageException>()),
+        );
+      }),
+    );
+
+    test(
+      'a sort property that is no column is a PropertyReferenceException with '
+      'the name escaped',
+      () => run(() async {
+        expect(
+          () => pg.orderBy(books, Sort.by(['title\r\nINFO forged'])),
+          throwsA(
+            isA<PropertyReferenceException>()
+                .having((e) => e.propertyName, 'propertyName', contains('\r'))
+                .having(
+                  (e) => e.message,
+                  'message',
+                  allOf(
+                    isNot(contains('\n')),
+                    isNot(contains('\r')),
+                    contains('"title<EOL><EOL>INFO forged"'),
+                  ),
+                ),
+          ),
+        );
+      }),
+    );
+
+    test(
       'a window: limit and offset by the dialect, id order without a sort',
       () => run(() async {
         final both = pg.select(books, limit: 5, offset: 10);
@@ -513,7 +612,7 @@ void main() {
             isA<InvalidDataAccessApiUsageException>().having(
               (e) => e.message,
               'message',
-              contains("'nope'"),
+              contains('"nope"'),
             ),
           ),
         );

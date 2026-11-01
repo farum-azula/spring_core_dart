@@ -221,6 +221,41 @@ class Note {
   String text;
 }
 
+/// Columns that hold secrets: the logs write their values masked.
+@Table('members')
+class Member {
+  Member({
+    required this.username,
+    required this.passwordHash,
+    this.apiToken,
+    this.id,
+  });
+
+  @Id()
+  int? id;
+
+  String username;
+
+  String passwordHash;
+
+  String? apiToken;
+}
+
+/// A version that is a nullable `int`: new only when null, so a row stored
+/// at version 0 can be updated.
+@Table('gauges')
+class Gauge {
+  Gauge({required this.name, this.id, this.version});
+
+  @Id()
+  int? id;
+
+  String name;
+
+  @Version()
+  int? version;
+}
+
 // --- References, foreign keys and unique keys ------------------------------
 
 /// What the other aggregates reference; its name is unique.
@@ -927,6 +962,25 @@ abstract interface class MemoryFolders
 @UseStore('jdbc')
 abstract interface class SqlFolders
     implements ListCrudRepository<Folder, int> {}
+
+@UseStore('jdbc')
+abstract interface class SqlMembers implements ListCrudRepository<Member, int> {
+  Future<Member?> findOneByUsernameAndApiToken(
+    String username,
+    String apiToken,
+  );
+
+  Future<List<Member>> findByPasswordHash(String passwordHash);
+
+  Future<List<Member>> findByUsernameIn(List<String> usernames);
+}
+
+@UseStore('memory')
+abstract interface class MemoryGauges
+    implements ListCrudRepository<Gauge, int> {}
+
+@UseStore('jdbc')
+abstract interface class SqlGauges implements ListCrudRepository<Gauge, int> {}
 
 @SpringBootApplication()
 Future<void> main(List<String> args) async {

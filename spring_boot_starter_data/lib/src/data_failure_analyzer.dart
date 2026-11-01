@@ -36,8 +36,12 @@ final class DataFailureAnalyzer implements FailureAnalyzer {
 
   @override
   FailureAnalysis? analyze(Object failure) {
+    BeanCreationException? bean;
     for (final error in _chain(failure)) {
-      final analysis = _explain(error, failure);
+      if (error is BeanCreationException) {
+        bean = error;
+      }
+      final analysis = _explain(error, failure, bean);
       if (analysis != null) {
         return analysis;
       }
@@ -57,51 +61,71 @@ final class DataFailureAnalyzer implements FailureAnalyzer {
     }
   }
 
-  static FailureAnalysis? _explain(Object error, Object failure) =>
-      switch (error) {
-        DataSourceConfigurationException(:final message, :final action) =>
-          FailureAnalysis(
-            'Failed to configure the data source: $message',
-            action,
-            failure,
-          ),
-        SchemaValidationException(:final message) => FailureAnalysis(
-          'The database schema does not fit the entities. $message',
-          'Add a migration that creates or changes what is missing (a file '
-              'such as db/migration/V2__add_column.sql), or change the '
-              'entity. spring.data.jdbc.schema=none switches the check '
-              'off, and create or create-drop builds the tables from the '
-              'entities (for tests and prototypes, without migrations).',
-          failure,
-        ),
-        MigrationException(:final message) => FailureAnalysis(
-          'A database migration failed. $message',
-          'Fix the migration file named above. A migration that failed was '
-              'rolled back, so the database is at the previous version; '
-              'a migration that was applied must never be edited, add a '
-              'new one instead.',
-          failure,
-        ),
-        ScriptException(:final message) => FailureAnalysis(
-          'A database script failed. $message',
-          'Fix the script named above, or set spring.sql.init.mode=never '
-              'to skip the scripts.',
-          failure,
-        ),
-        SchemaException(:final message) => FailureAnalysis(
-          'The database could not be set up. $message',
-          'Check the spring.sql.* and spring.data.jdbc.schema properties '
-              'named above.',
-          failure,
-        ),
-        CannotGetJdbcConnectionException(:final message) => FailureAnalysis(
-          'The application could not connect to the database. $message',
-          'Check that the database is running and that '
-              'spring.datasource.url, username and password (or the '
-              'spring.datasources.<name> ones) are right. The pool waits '
-              'at most spring.datasource.pool.connection-timeout.',
-          failure,
-        ),
-        _ => null,
-      };
+  // [bean] is the failed bean closest to [error] in the chain.
+  static FailureAnalysis? _explain(
+    Object error,
+    Object failure,
+    BeanCreationException? bean,
+  ) => switch (error) {
+    DataSourceConfigurationException(:final message, :final action) =>
+      FailureAnalysis(
+        'Failed to configure the data source: $message',
+        action,
+        failure,
+      ),
+    SchemaValidationException(:final message) => FailureAnalysis(
+      'The database schema does not fit the entities. $message',
+      'Add a migration that creates or changes what is missing (a file '
+          'such as db/migration/V2__add_column.sql), or change the '
+          'entity. spring.data.jdbc.schema=none switches the check '
+          'off, and create or create-drop builds the tables from the '
+          'entities (for tests and prototypes, without migrations).',
+      failure,
+    ),
+    MigrationException(:final message) => FailureAnalysis(
+      'A database migration failed. $message',
+      'Fix the migration file named above. A migration that failed was '
+          'rolled back, so the database is at the previous version; '
+          'a migration that was applied must never be edited, add a '
+          'new one instead.',
+      failure,
+    ),
+    ScriptException(:final message) => FailureAnalysis(
+      'A database script failed. $message',
+      'Fix the script named above, or set spring.sql.init.mode=never '
+          'to skip the scripts.',
+      failure,
+    ),
+    SchemaException(:final message) => FailureAnalysis(
+      'The database could not be set up. $message',
+      'Check the spring.sql.* and spring.data.jdbc.schema properties '
+          'named above.',
+      failure,
+    ),
+    // The core's refusal of a synchronous refresh: the data source (or
+    // what waits for it) sets up the schema asynchronously.
+    StateError(:final message)
+        when message.startsWith('An init callback returned a Future') &&
+            bean != null =>
+      FailureAnalysis(
+        'The application was started synchronously, and the bean '
+            "'${bean.beanName}' needs asynchronous startup. With a SQL "
+            'data source the schema is checked and migrated on a connection, '
+            'which Dart cannot wait for without await, so the context must '
+            'be refreshed with refreshAsync().',
+        'Start the application with `await runApplicationAsync(args)` '
+            '(SpringApplication.runAsync) instead of runApplication(args); '
+            'in a test, ApplicationContextRunner.runAsync.',
+        failure,
+      ),
+    CannotGetJdbcConnectionException(:final message) => FailureAnalysis(
+      'The application could not connect to the database. $message',
+      'Check that the database is running and that '
+          'spring.datasource.url, username and password (or the '
+          'spring.datasources.<name> ones) are right. The pool waits '
+          'at most spring.datasource.pool.connection-timeout.',
+      failure,
+    ),
+    _ => null,
+  };
 }

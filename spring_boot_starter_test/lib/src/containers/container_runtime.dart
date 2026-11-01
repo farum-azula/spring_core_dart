@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:spring_boot_starter_test/src/containers/docker_client.dart';
 import 'package:spring_boot_starter_test/src/containers/docker_exception.dart';
+import 'package:spring_boot_starter_test/src/containers/reaper_connection.dart';
 
 /// What every container of one test process shares: the connection to the
 /// daemon, the id of the run, and the reaper that removes the run's
@@ -20,6 +20,9 @@ import 'package:spring_boot_starter_test/src/containers/docker_exception.dart';
 /// with the label ten seconds later (unless the run connects again) and
 /// exits. The run's own `stop()` removes its containers at once; Ryuk is
 /// the safety net.
+///
+/// A connection that is cut meanwhile is registered again ([ReaperConnection]);
+/// it never fails a test.
 ///
 /// The connection closes with the last running container, so a script that
 /// stopped everything can exit; a later start connects again to the same
@@ -64,8 +67,7 @@ final class ContainerRuntime {
 
   Future<DockerClient>? _client;
   Future<void>? _reaperStart;
-  Socket? _reaperSocket;
-  ({String host, int port})? _ryuk;
+  ReaperConnection? _reaper;
   int _protected = 0;
 
   /// Whether the reaper is switched off (`TESTCONTAINERS_RYUK_DISABLED`).
@@ -102,7 +104,7 @@ final class ContainerRuntime {
       return;
     }
     try {
-      if (_reaperSocket == null) {
+      if (_reaper?.isConnected != true) {
         await (_reaperStart ??= _connectReaper().whenComplete(
           () => _reaperStart = null,
         ));
@@ -117,19 +119,19 @@ final class ContainerRuntime {
   /// closes.
   void release() {
     if (_protected > 0 && --_protected == 0) {
-      _reaperSocket?.destroy();
-      _reaperSocket = null;
+      _reaper?.close();
     }
   }
 
   Future<void> _connectReaper() async {
     final docker = await client();
-    if (_ryuk case final known?) {
+    if (_reaper case final known?) {
       try {
-        _reaperSocket = await _register(known.host, known.port, 3);
+        await known.open(seconds: 3);
         return;
       } on Object {
-        _ryuk = null; // it is gone: start a new one
+        known.close();
+        _reaper = null; // it is gone: start a new one
       }
     }
     final image =
@@ -164,8 +166,13 @@ final class ContainerRuntime {
         throw DockerException('The reaper container published no port');
       }
       final host = docker.endpoint.containerHost;
-      _ryuk = (host: host, port: port);
-      _reaperSocket = await _register(host, port, 30);
+      final connection = ReaperConnection(
+        host,
+        port,
+        'label=$sessionLabel=$sessionId',
+      );
+      await connection.open();
+      _reaper = connection;
     } on DockerException catch (e) {
       throw DockerException(
         'The reaper (Ryuk, which removes the containers of a test run that '
@@ -174,52 +181,5 @@ final class ContainerRuntime {
         statusCode: e.statusCode,
       );
     }
-  }
-
-  // Connects to Ryuk, which may still be starting, sends the label filter
-  // and waits for its ACK. The connection stays open: its end is the
-  // signal to clean up.
-  Future<Socket> _register(String host, int port, int seconds) async {
-    final deadline = DateTime.now().add(Duration(seconds: seconds));
-    Object? last;
-    while (DateTime.now().isBefore(deadline)) {
-      Socket? socket;
-      try {
-        socket = await Socket.connect(
-          host,
-          port,
-          timeout: const Duration(seconds: 2),
-        );
-        final acknowledged = Completer<void>();
-        final text = StringBuffer();
-        socket.listen(
-          (data) {
-            text.write(utf8.decode(data, allowMalformed: true));
-            if (text.toString().contains('ACK') && !acknowledged.isCompleted) {
-              acknowledged.complete();
-            }
-          },
-          onError: (Object _) {},
-          onDone: () {
-            if (!acknowledged.isCompleted) {
-              acknowledged.completeError(
-                const SocketException('The reaper closed the connection'),
-              );
-            }
-            if (identical(_reaperSocket, socket)) {
-              _reaperSocket = null;
-            }
-          },
-        );
-        socket.write('label=$sessionLabel=$sessionId\n');
-        await acknowledged.future.timeout(const Duration(seconds: 3));
-        return socket;
-      } on Exception catch (e) {
-        last = e;
-        socket?.destroy();
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-      }
-    }
-    throw DockerException('Cannot reach the reaper at $host:$port: $last');
   }
 }

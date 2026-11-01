@@ -61,12 +61,6 @@ final class Services {
 
     @Service
     public static class Inner {
-        private final Env env;
-
-        Inner(Env env) {
-            this.env = env;
-        }
-
         @Transactional(propagation = Propagation.REQUIRED)
         public void required(Ctx c) { c.innerWork(); }
 

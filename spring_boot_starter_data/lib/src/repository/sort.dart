@@ -1,3 +1,5 @@
+import 'package:spring_boot_starter_data/src/exceptions.dart';
+
 /// How a query orders its results: a list of [SortOrder]s, each a property and
 /// a direction, applied in turn.
 ///
@@ -166,11 +168,12 @@ enum Direction {
   desc;
 
   /// The direction whose name is [value] (`asc`/`desc`, any case); throws
-  /// an [ArgumentError] otherwise, as Spring's `Direction.fromString`.
+  /// an [InvalidPagingRequestException] (an [ArgumentError]) otherwise, as
+  /// Spring's `Direction.fromString`.
   static Direction fromString(String value) => switch (value.toLowerCase()) {
     'asc' => Direction.asc,
     'desc' => Direction.desc,
-    _ => throw ArgumentError.value(
+    _ => throw InvalidPagingRequestException(
       value,
       'value',
       "Invalid value; must be 'asc' or 'desc'",

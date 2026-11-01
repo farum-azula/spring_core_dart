@@ -17,8 +17,11 @@ import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 typedef ConnectionCallback<T> = Future<T> Function(JdbcConnection connection);
 
 /// Positional parameters that also know their names, so the trace log can
-/// say `:id = 42` instead of `?1 = 42`. The named-parameter template
-/// passes them; applications use a plain list.
+/// say `:id = 42` instead of `?1 = 42`, and mask the value of a `password`.
+/// The named-parameter template and the repositories' statements pass them
+/// (the name of a repository's value is its column); applications use a
+/// plain list, whose values have no name (and are masked when they are
+/// logged at info).
 final class BoundParameters extends UnmodifiableListView<Object?> {
   /// The values with the [names] they were bound under.
   BoundParameters(super.source, this.names);
@@ -164,7 +167,9 @@ class JdbcTemplate {
 
   void _logValues(List<Object?> params, List<List<Object?>>? batch) {
     if (batch != null) {
-      batch.forEach(_logger.parameters);
+      for (final row in batch) {
+        _logger.parameters(row, row is BoundParameters ? row.names : null);
+      }
     } else {
       _logger.parameters(
         params,

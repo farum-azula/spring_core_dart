@@ -48,7 +48,11 @@ class DataSourceConfigurationException extends NonTransientDataAccessException {
 ///   `pool.validation` (true): see [PoolSettings];
 /// - `<scheme>.*` and `<driver name>.*`: the driver's own settings, passed
 ///   as [ConnectionSettings.properties] (`sqlite.busy-timeout`,
-///   `sqlite.base-directory`, `sqlite.isolate`).
+///   `sqlite.base-directory`, `sqlite.isolate`; `postgresql.sslmode`...).
+///   The driver lists its keys ([JdbcDriver.propertyNames]) and each is read
+///   through the environment, so an environment variable
+///   (`SPRING_DATASOURCE_POSTGRESQL_SSLMODE`) sets it as a file or an
+///   argument does.
 ///
 /// Durations are written `500ms`, `30s`, `10m`, `PT30S`, or as a number of
 /// milliseconds.
@@ -277,8 +281,9 @@ final class DataSourceProperties {
   /// `<prefix><driver name>.*`, the second wins).
   ConnectionSettings connectionSettings(JdbcDriver driver) {
     final properties = <String, String>{};
+    final reader = _Reader(_environment, prefix);
     for (final key in {url.scheme.toLowerCase(), driver.name}) {
-      properties.addAll(_Reader(_environment, prefix).below(key));
+      properties.addAll(reader.driverProperties(key, driver.propertyNames));
     }
     return ConnectionSettings(
       url: url,
@@ -399,25 +404,44 @@ final class _Reader {
     action: 'Set $prefix$key to $expected.',
   );
 
-  // The properties below `<prefix><key>.`, by the rest of their name.
-  Map<String, String> below(String key) {
-    final start = '$prefix$key.';
+  // The driver's properties below `<prefix><key>.`, by the rest of their
+  // name. Each of the [known] names is read through the environment, which
+  // finds it as a file, an argument or an environment variable
+  // (`SPRING_DATASOURCE_POSTGRESQL_SSLMODE`). A name the sources list below
+  // the prefix and the driver does not know is passed on too, for the
+  // driver to refuse.
+  Map<String, String> driverProperties(String key, List<String> known) {
     final found = <String, String>{};
+    for (final name in known) {
+      final value = environment.getProperty('$prefix$key.$name');
+      if (value != null) {
+        found[name] = value;
+      }
+    }
     final env = environment;
-    if (env is! ConfigurableEnvironment) {
+    final parent = ConfigurationPropertyName.ofIfValid('$prefix$key');
+    if (env is! ConfigurableEnvironment || parent == null) {
       return found;
     }
+    const uniform = ConfigurationPropertyNameForm.uniform;
+    final knownForms = {
+      for (final name in known)
+        ConfigurationPropertyName.adapt(name, '.').getElement(0, form: uniform),
+    };
+    final index = parent.numberOfElements;
     for (final source in env.propertySources) {
       if (source is! EnumerablePropertySource<Object>) {
         continue;
       }
-      for (final property in source.propertyNames) {
-        if (property.startsWith(start) && property.length > start.length) {
-          final rest = property.substring(start.length);
-          final value = environment.getProperty(property);
-          if (value != null) {
-            found.putIfAbsent(rest, () => value);
-          }
+      for (final MapEntry(key: name, value: keys)
+          in ConfigurationPropertySources.propertyNames(source).entries) {
+        if (!parent.isParentOf(name) ||
+            knownForms.contains(name.getElement(index, form: uniform))) {
+          continue;
+        }
+        final value = source.getProperty(keys.first);
+        if (value != null) {
+          found.putIfAbsent(name.getElement(index), () => value.toString());
         }
       }
     }

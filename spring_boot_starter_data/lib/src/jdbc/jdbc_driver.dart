@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
+import 'package:spring_boot_starter_data/src/log_values.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 
 /// A database driver, as the starter sees it: opens connections for the
@@ -23,6 +24,15 @@ abstract interface class JdbcDriver {
 
   /// The SQL of its database.
   SqlDialect get dialect;
+
+  /// The names of its own settings, as they are written below
+  /// `spring.datasource.<scheme>.` (`sslmode`, `busy-timeout`).
+  ///
+  /// The starter reads each of them through the environment, so a
+  /// variable (`SPRING_DATASOURCE_POSTGRESQL_SSLMODE`), a command line
+  /// argument and a file all set it; any other name found below the
+  /// prefix is passed on and the driver refuses it.
+  List<String> get propertyNames;
 
   /// Opens a connection to the database of [settings].
   ///
@@ -56,13 +66,43 @@ final class ConnectionSettings {
   /// Driver-specific settings (`spring.datasource.<driver>.*`), by name.
   final Map<String, String> properties;
 
-  /// The URL as it may be logged: without its password.
-  String get safeUrl {
-    if (url.userInfo.isEmpty) {
-      return url.toString();
+  /// The URL as it may be logged: without its password, and with the
+  /// value of every query parameter whose name looks secret (`password`,
+  /// `sslpassword`, `token`...) masked.
+  String get safeUrl => maskUrl(url);
+
+  /// [url] as it may be logged or put in a message: see [safeUrl].
+  static String maskUrl(Uri url) {
+    var safe = url;
+    if (safe.userInfo.isNotEmpty) {
+      safe = safe.replace(userInfo: safe.userInfo.split(':').first);
     }
-    final user = url.userInfo.split(':').first;
-    return url.replace(userInfo: user.isEmpty ? '' : user).toString();
+    if (safe.hasQuery) {
+      var masked = false;
+      final parts = <String>[];
+      for (final part in safe.query.split('&')) {
+        final equals = part.indexOf('=');
+        final name = equals < 0 ? part : part.substring(0, equals);
+        if (equals >= 0 && _looksSecret(name)) {
+          parts.add('$name=${LogValues.masked}');
+          masked = true;
+        } else {
+          parts.add(part);
+        }
+      }
+      if (masked) {
+        safe = safe.replace(query: parts.join('&'));
+      }
+    }
+    return safe.toString();
+  }
+
+  static bool _looksSecret(String encodedName) {
+    try {
+      return LogValues.looksSecret(Uri.decodeQueryComponent(encodedName));
+    } on FormatException {
+      return LogValues.looksSecret(encodedName);
+    }
   }
 
   @override

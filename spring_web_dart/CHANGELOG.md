@@ -1,3 +1,10 @@
+## Unreleased
+
+### Changes
+
+- The doc comments name the renamed properties (`spring.web.multipart.*`, `server.context-path`; see `spring_boot_starter_web`).
+- `RequestDeadline`, a time limit for the total work of a request and the calls it makes, carried in the `Zone` like a transaction (an extension: Spring has no counterpart): `RequestDeadline.run(budget, body)` and `runUntil(instant, body)` (a nested deadline ends at the earlier of the two, never later), `RequestDeadline.current` (`null` outside any), `remaining`, `isExpired`, `check()`, which throws a `RequestDeadlineExceededException`. It works in the browser too. The web starter's `server.request-timeout` and the Feign starter's `call-timeout` use it.
+
 ## 0.5.0
 
 ### Breaking

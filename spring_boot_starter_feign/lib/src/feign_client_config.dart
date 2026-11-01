@@ -57,6 +57,7 @@ enum FeignLoggerLevel {
 ///
 /// ```properties
 /// spring.feign.client.config.default.read-timeout=10s
+/// spring.feign.client.config.default.call-timeout=15s
 /// spring.feign.client.config.catalog.url=https://api.neon.books
 /// spring.feign.client.config.catalog.logger-level=basic
 /// spring.feign.client.config.catalog.dismiss404=true
@@ -80,9 +81,11 @@ enum FeignLoggerLevel {
 /// a bean name, or a class name (`com.example.AuditInterceptor` or
 /// `AuditInterceptor`) matching the type of exactly one bean.
 ///
-/// The `event-stream.*` keys (reconnection of `EventStream<T>` methods)
-/// and `sensitive-headers` are additions of this starter: Spring Cloud
-/// OpenFeign cannot stream, and its logger masks no header.
+/// The `event-stream.*` keys (reconnection of `EventStream<T>` methods),
+/// `sensitive-headers` and `call-timeout` (the total time of one call,
+/// retries included; Spring Cloud OpenFeign has only the connect and read
+/// timeouts) are additions of this starter: Spring Cloud OpenFeign cannot
+/// stream, its logger masks no header and it limits no call as a whole.
 /// Spring's counterpart is `FeignClientProperties`.
 final class FeignClientConfig {
   /// Settings with these values; the defaults are those of a client
@@ -90,6 +93,7 @@ final class FeignClientConfig {
   const FeignClientConfig({
     this.url,
     this.readTimeout = defaultReadTimeout,
+    this.callTimeout,
     this.loggerLevel = FeignLoggerLevel.none,
     this.dismiss404 = false,
     this.defaultRequestHeaders = const {},
@@ -123,6 +127,24 @@ final class FeignClientConfig {
   /// `null` (the property set to `0`) waits forever. For an event stream
   /// it covers the wait for the response only.
   final Duration? readTimeout;
+
+  /// The longest one call may take in all (`call-timeout`): from the first
+  /// attempt through every retry and the pauses between them to the
+  /// answer, read to its last byte. `null`, the default, for no limit; the
+  /// property set to `0` or a negative duration means none too.
+  ///
+  /// Where [readTimeout] limits each wait for data, this limits the sum.
+  /// It is also capped by what remains of the `RequestDeadline` the call
+  /// runs under (a web request with `server.request-timeout`), so the
+  /// earlier of the two ends the call; the connect and read timeouts of
+  /// each attempt are capped by what remains too. When it passes, the call
+  /// throws a `FeignCallTimeoutException` and is not retried, whatever the
+  /// retryer says. For an event stream it limits establishing each
+  /// connection (up to the status and headers), not the stream's life.
+  ///
+  /// Spring Cloud OpenFeign has no such setting (only `connect-timeout`
+  /// and `read-timeout`): this is an extension of Spring for Dart.
+  final Duration? callTimeout;
 
   /// How much the client logs (`logger-level`); nothing by default.
   final FeignLoggerLevel loggerLevel;
@@ -268,6 +290,10 @@ final class FeignClientConfig {
     return FeignClientConfig(
       url: get('url'),
       readTimeout: readTimeout == Duration.zero ? null : readTimeout,
+      callTimeout: switch (duration('call-timeout')) {
+        final timeout? when timeout > Duration.zero => timeout,
+        _ => null,
+      },
       loggerLevel: level == null
           ? FeignLoggerLevel.none
           : FeignLoggerLevel.parse(level),

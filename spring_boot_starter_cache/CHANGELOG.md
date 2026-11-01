@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- `CacheAnnotationPointcut.annotationTypes` lists the annotations the pointcut matches (`@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching`); the generator reads it to give a proxy class only to the beans that carry one (smaller generated code; regenerate the `.spring.dart` files).
+
 ## 0.5.0
 
 ### Breaking

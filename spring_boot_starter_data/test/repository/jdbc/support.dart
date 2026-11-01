@@ -109,6 +109,19 @@ create table notes (
   id integer primary key,
   text text not null
 )''',
+  '''
+create table members (
+  id integer primary key,
+  username text not null,
+  password_hash text not null,
+  api_token text
+)''',
+  '''
+create table gauges (
+  id integer primary key,
+  name text not null,
+  version integer
+)''',
 ];
 
 /// The same tables for PostgreSQL: identity ids, `bigint`, `double
@@ -194,6 +207,9 @@ final class Jdbc {
   SqlAuthors get sqlAuthors => context.getBean<SqlAuthors>();
   SqlStocks get sqlStocks => context.getBean<SqlStocks>();
   SqlCrates get sqlCrates => context.getBean<SqlCrates>();
+  SqlMembers get sqlMembers => context.getBean<SqlMembers>();
+  SqlGauges get sqlGauges => context.getBean<SqlGauges>();
+  MemoryGauges get memoryGauges => context.getBean<MemoryGauges>();
 }
 
 final class _Holder {

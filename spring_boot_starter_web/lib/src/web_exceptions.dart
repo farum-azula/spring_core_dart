@@ -273,13 +273,39 @@ class PayloadTooLargeErrorException extends ErrorResponseException {
       );
 }
 
-/// The error of an asynchronous request that timed out, answered with a
-/// 503 when thrown.
+/// The error of a request that did not finish in time, answered with a
+/// 503 (Service Unavailable) when thrown.
 ///
-/// The starter itself does not throw it: an `SseEmitter` that times out
-/// just ends its stream. It exists so that application code can signal
-/// such a timeout with Spring's name, `AsyncRequestTimeoutException`.
+/// The starter answers with it when `server.request-timeout` passes
+/// before a request's filters and handler have answered, and for an error
+/// that ends a request after its `RequestDeadline` passed (the work was
+/// stopped because nobody waits any more). Application code can throw it
+/// too, to signal a timeout of its own. It carries no detail by default,
+/// as Spring's; the starter's own answers say that the request did not
+/// complete in time, without the limit or what ran.
+///
+/// ```dart
+/// // A report that takes too long is the caller's to retry later.
+/// if (RequestDeadline.current?.isExpired ?? false) {
+///   throw AsyncRequestTimeoutException();
+/// }
+/// ```
+///
+/// Spring (Java): `AsyncRequestTimeoutException`, which Spring MVC throws
+/// when an asynchronous request (`DeferredResult`, `Callable`) times out
+/// (`spring.mvc.async.request-timeout`). Spring never times out a
+/// synchronous request; `server.request-timeout` is an extension of
+/// Spring for Dart.
 class AsyncRequestTimeoutException extends ErrorResponseException {
-  /// A timeout, with the 503 problem and no detail.
-  AsyncRequestTimeoutException() : super(HttpStatus.serviceUnavailable);
+  /// A timeout, with the 503 problem and [detail] (none by default).
+  AsyncRequestTimeoutException([String? detail])
+    : super(
+        HttpStatus.serviceUnavailable,
+        body: detail == null
+            ? null
+            : ProblemDetail.forStatusAndDetail(
+                HttpStatus.serviceUnavailable,
+                detail,
+              ),
+      );
 }

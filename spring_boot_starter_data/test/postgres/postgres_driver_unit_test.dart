@@ -247,6 +247,45 @@ void main() {
       },
     );
 
+    test('the fall back to plain text is a warning, once for each database, '
+        'without the password', () async {
+      const noTls = SqlError('Server does not support SSL');
+      final records = <SpringLogRecord>[];
+      final stop = SpringLog.listen(records.add);
+      addTearDown(stop);
+      final driver = PostgresJdbcDriver(
+        FakeBinding(failures: [noTls, null, noTls, null, noTls, null]),
+      );
+      Future<void> open(String url) async {
+        final connection = await driver.connect(_settings(url));
+        await connection.close();
+      }
+
+      await open('postgresql://app:hunter2@h/db');
+      await open('postgresql://app:hunter2@h/db');
+      await open('postgresql://other/db');
+      final warnings = records
+          .where((r) => r.level == SpringLogLevel.warning)
+          .toList();
+      expect(warnings, hasLength(2));
+      expect(warnings.first.loggerName, 'spring.jdbc.postgres');
+      expect(warnings.first.message, contains('no TLS'));
+      expect(warnings.first.message, contains('plain text'));
+      expect(warnings.first.message, contains('sslmode=prefer'));
+      expect(warnings.first.message, contains('verify-full'));
+      expect(warnings.first.message, isNot(contains('hunter')));
+      expect(warnings.last.message, contains('postgresql://other/db'));
+    });
+
+    test('no warning for a server with TLS, nor for sslmode=disable', () async {
+      final records = <SpringLogRecord>[];
+      final stop = SpringLog.listen(records.add);
+      addTearDown(stop);
+      await tried('prefer');
+      await tried('disable');
+      expect(records.where((r) => r.level == SpringLogLevel.warning), isEmpty);
+    });
+
     test('a wrong password does not fall back', () async {
       const wrong = SqlError(
         'password authentication failed',

@@ -224,7 +224,79 @@ void main() {
     );
     expect(records.every((r) => r.level == SpringLogLevel.info), isTrue);
     expect(text(records), contains('update t set a = ?'));
-    expect(text(records), contains('?1 = 5 (int)'));
+    // A plain list has no names: its values cannot be told from secrets.
+    expect(text(records), contains('?1 = ******'));
+    expect(text(records), isNot(contains('5')));
+  });
+
+  test('show-parameters: values with a name are shown, secret names are '
+      'masked, and unnamed values are masked', () async {
+    final named = NamedParameterJdbcTemplate(
+      JdbcTemplate(
+        ds,
+        logSettings: const JdbcLogSettings(showParameters: true),
+      ),
+    );
+    final records = await capture(
+      () => named.update(
+        'update users set password = :password, name = :name where id = :id',
+        {'password': 'hunter2', 'name': 'Ada', 'id': 7},
+      ),
+    );
+    final all = text(records);
+    expect(all, contains('password = ******'));
+    expect(all, contains('name = "Ada" (String)'));
+    expect(all, contains('id = 7 (int)'));
+    expect(all, isNot(contains('hunter2')));
+  });
+
+  test('trace: a plain list shows its values by position, bound parameters '
+      'by name, each row of a batch too', () async {
+    SpringLog.setLevel(
+      'spring.jdbc.core.StatementCreatorUtils',
+      SpringLogLevel.trace,
+    );
+    final jdbc = JdbcTemplate(ds);
+    final named = NamedParameterJdbcTemplate(jdbc);
+    final records = await capture(() async {
+      await jdbc.update('delete from t where a = ?', ['x']);
+      await jdbc.update(
+        'insert into users (name, pw) values (?, ?)',
+        BoundParameters(['Ada', 'secret-1'], ['name', 'pwd_hash']),
+      );
+      await named.batchUpdate(
+        'insert into users (name, password, api_key) '
+        'values (:name, :password, :apiKey)',
+        [
+          {'name': 'Ada', 'password': 'batch-secret-1', 'apiKey': 'k1'},
+          {'name': 'Bob', 'password': 'batch-secret-2', 'apiKey': 'k2'},
+        ],
+      );
+      await jdbc.batchUpdate('insert into t values (?, ?)', [
+        BoundParameters(['plain-1', 1], ['token', 'n']),
+        BoundParameters(['plain-2', 2], ['token', 'n']),
+      ]);
+    });
+    final all = text(records);
+    expect(all, contains('?1 = "x" (String)'));
+    expect(all, contains('name = "Ada" (String)'));
+    expect(all, contains('pwd_hash = ******'));
+    expect(all, contains('name = "Bob" (String)'));
+    expect(all, contains('password = ******'));
+    expect(all, contains('apiKey = ******'));
+    expect(all, contains('token = ******'));
+    expect(all, contains('n = 2 (int)'));
+    for (final secret in [
+      'secret-1',
+      'batch-secret-1',
+      'batch-secret-2',
+      'k1',
+      'k2',
+      'plain-1',
+      'plain-2',
+    ]) {
+      expect(all, isNot(contains(secret)));
+    }
   });
 
   test('format-sql puts the main clauses on their own lines', () async {

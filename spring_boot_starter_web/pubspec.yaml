@@ -24,6 +24,9 @@ dependencies:
 dev_dependencies:
   # For example/ and test/app/: the generator writes the *.spring.dart files.
   build_runner: ^2.17.0
+  # The tests call a slow service through a Feign client from a request that
+  # has a deadline (server.request-timeout).
+  spring_boot_starter_feign: ^0.5.0
   spring_boot_starter_test: ^0.5.0
   # The tests open WebSocket endpoints on the server over real sockets.
   spring_boot_starter_websocket: ^0.5.0

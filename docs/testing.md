@@ -45,7 +45,7 @@ widgets with the test's beans, themes and platforms.
 | `src/test/resources` | `test/resources/` |
 | `@DataJdbcTest`, `@AutoConfigureTestDatabase` | `@DataTest()` ([section 19](#19-data-tests-datatest)) |
 | `@Rollback`, `@Commit` | the same annotations (`@DataTest` classes) |
-| Testcontainers: `@Testcontainers`, `@Container`, `GenericContainer`, `PostgreSQLContainer`; Spring Boot's `@ServiceConnection` | the same annotations and classes, from `package:spring_boot_starter_test/containers.dart` ([section 20](#20-containers-in-tests)) |
+| Testcontainers: `@Testcontainers`, `@Container`, `GenericContainer`, `PostgreSQLContainer`; Spring Boot's `@ServiceConnection` | the same annotations and `GenericContainer`; `PostgresContainer` for `PostgreSQLContainer`; all from `package:spring_boot_starter_test/containers.dart` ([section 20](#20-containers-in-tests)) |
 
 ## Contents
 
@@ -1693,8 +1693,8 @@ start reconnects.
 
 `withReuse(true)` keeps a container alive after the tests, to be found again
 by the next run: for fast iterations on a laptop. It is found by a hash of
-its configuration (image, environment, command, ports, health check, files
-and labels), carries no run id (so the reaper leaves it), and `stop()` does
+its configuration (image, environment, command, entrypoint, ports, health
+check, files and labels), carries no run id (so the reaper leaves it), and `stop()` does
 not remove it. It is off when the `CI` environment variable is set. Remove
 what was kept with
 `docker rm -f $(docker ps -aq --filter label=org.testcontainers.reuse.hash)`.

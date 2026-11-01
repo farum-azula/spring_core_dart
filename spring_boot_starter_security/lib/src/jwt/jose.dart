@@ -340,13 +340,32 @@ bool verifySignature(
   JwsAlgorithm algorithm,
   VerificationKey key,
 ) {
+  return verifySignatureBytes(
+    algorithm,
+    key,
+    jws.signingInput,
+    jws.signature,
+  );
+}
+
+/// Whether [signature] is [key]'s [algorithm] signature of [input]: the
+/// check of [verifySignature] on the raw bytes, which a token's signing
+/// input always is (`header.payload`) but a test vector's message is not.
+///
+/// The same answers as [verifySignature]: `false`, never an error, for a
+/// key that does not fit or is not meant for signatures, a signature of
+/// the wrong length, or input the primitives cannot read.
+bool verifySignatureBytes(
+  JwsAlgorithm algorithm,
+  VerificationKey key,
+  Uint8List input,
+  Uint8List signature,
+) {
   if (!key.fits(algorithm) ||
       (key.algorithm != null && key.algorithm != algorithm.name) ||
       (key.use != null && key.use != 'sig')) {
     return false;
   }
-  final input = jws.signingInput;
-  final signature = jws.signature;
   try {
     switch ((algorithm._family, key)) {
       case (_Family.hmac, final SecretVerificationKey secret):

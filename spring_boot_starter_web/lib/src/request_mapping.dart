@@ -865,15 +865,19 @@ final class RequestMappingHandlerMapping
     MethodParameter parameter,
   ) {
     final value = type.value;
-    return type.capture(
-      <M>() => {
-        for (final entry in values.entries)
-          if (entry.value.isNotEmpty)
-            entry.key: value is ListType<Object?>
+    // Built with the parameter's own key and value types: a plain map
+    // literal would be a Map<String, Object?>, which a handler declaring
+    // Map<String, String> refuses.
+    return type.create([
+      for (final entry in values.entries)
+        if (entry.value.isNotEmpty)
+          MapEntry(
+            entry.key,
+            value is ListType<Object?>
                 ? _list(entry.value, value.element, entry.key)
                 : _scalar(entry.value.first, value, entry.key),
-      },
-    );
+          ),
+    ]);
   }
 
   Future<Object?> _readBody(_Call call, MethodParameter parameter) async {

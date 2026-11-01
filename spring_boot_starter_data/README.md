@@ -4,9 +4,10 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-> **In development.** Repositories run in memory (with transactions and
-> locks) or on SQLite and PostgreSQL from properties (see
-> [the roadmap](https://github.com/farum-azula/spring_core_dart/blob/main/roadmap/spring_boot_starter_data.md)).
+> **First release.** Repositories run in memory (with transactions and
+> locks) or on SQLite and PostgreSQL from properties. What is planned next
+> is in
+> [the roadmap](https://github.com/farum-azula/spring_core_dart/blob/main/roadmap/spring_boot_starter_data.md).
 
 Spring Data for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications: describe an aggregate with `@Table`, declare a repository
@@ -42,6 +43,14 @@ abstract interface class BookRepository
   Future<int> countByYearBetween(int from, int to);
 }
 ```
+
+`save` inserts a new entity and updates an existing one, and the rule is
+Spring Data's. With a `@Version`, the entity is new when the version is
+`null`, or `0` for a version that cannot be null (`int version = 0`, Java's
+primitive `long`); a nullable `int? version` (Java's `Long`) is new only when
+`null`, so a row stored at version `0` (by a SQL script, or by a Spring Data
+JDBC application) is updated, not inserted again. A `DateTime` version is new
+when `null`. Without a version, an entity is new when its id is `null`.
 
 The build parses the method names and checks them against the entity: a
 name the entity does not support (`findByTitel`) is a build error, not a
@@ -368,12 +377,14 @@ startup, but does not hold back early queries.
 | `spring.datasource.sqlite.busy-timeout` | `5000` | milliseconds a connection waits for a lock |
 | `spring.datasource.sqlite.base-directory` | working directory | where relative `sqlite:file:` names are looked for; beats `SqliteJdbcDriver.baseDirectory` |
 | `spring.datasource.sqlite.isolate` | `false` | `true` opens each connection inside an isolate of its own; beats `SqliteJdbcDriver(isolate:)` |
-| `spring.datasource.postgresql.sslmode` | `prefer` | `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`; `ssl-root-cert`, `connect-timeout`, `application-name` and `search-path` sit beside it |
+| `spring.datasource.postgresql.sslmode` | `prefer` | `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`; `ssl-root-cert`, `connect-timeout`, `application-name` and `search-path` sit beside it. Like every `postgresql.*` and `sqlite.*` key, also set by a variable (`SPRING_DATASOURCE_POSTGRESQL_SSLMODE=verify-full`, `SPRING_DATASOURCES_SHOP_POSTGRESQL_SSLMODE` for a named database) |
+| `spring.datasource.sqlite.location` | `support` | read by the Flutter starter only: `support`, `cache` or `documents`, the directory it sets `base-directory` to |
 | `spring.datasources.<name>.*` | | the same keys for a named database, also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
-| `spring.sql.init.*`, `spring.sql.migration.*`, `spring.data.jdbc.schema` | see the roadmap | scripts, migrations, `none` / `validate` (default) / `create` / `create-drop` |
+| `spring.sql.init.*`, `spring.sql.migration.*`, `spring.data.jdbc.schema` | see [the configuration reference](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#20-reference-sql-databases) | scripts, migrations, `none` / `validate` (default) / `create` / `create-drop` |
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
-| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info |
+| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info; the values of a name that looks secret, and the values bound without a name, are masked (see "What the logs hold") |
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
+| `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
 
 **PostgreSQL.** List `postgres` (the `postgres` package is the application's
 dependency, never the starter's) and give a `postgresql://` URL, in the
@@ -398,8 +409,11 @@ generator writes a `PostgresBinding` over the package and the
   `57014` a `QueryTimeoutException`, `42xxx` wrong SQL, `08xxx` a lost
   connection...), with the server's message but never a bound value or a
   password;
-- TLS follows `sslmode` (default `prefer`: TLS if the server has it; use
-  `require` or `verify-full` outside development);
+- TLS follows `sslmode` (default `prefer`: TLS if the server has it, plain
+  text when it has none, which an attacker on the path can force: the driver
+  logs a warning, once for each database, when it falls back; use `require`
+  or `verify-full` outside development, also through
+  `SPRING_DATASOURCE_POSTGRESQL_SSLMODE`);
 - text is ordered by the database's collation, not code units as in the
   in-memory store and SQLite.
 
@@ -442,21 +456,71 @@ app's own directory (`spring.datasource.sqlite.location`: `support`,
 `cache` or `documents`): it only sets these properties, the starters do not
 depend on each other.
 
+**What the logs hold.** Statements are logged at debug without values. The
+values are logged at trace (`spring.jdbc.core.StatementCreatorUtils`), or at
+info with `spring.data.jdbc.show-parameters=true`, each with the name it is
+bound to: the column of a repository's `save`, derived query or `delete`, the
+`:name` of a `@Query`. The value of a name that looks secret (case and
+separators ignored, it contains `password`, `passwd`, `passphrase`, `secret`,
+`credential`, `token`, `apikey`, `privatekey`, `accesskey`, `signingkey` or
+`encryptionkey`, or one of its words is `pwd` or `key`: `password_hash`,
+`apiToken`, `clientSecret`, `sslpassword`, `privatekey`; not `monkey`,
+`keyword`, `tokenizer` or `secretary`) is written
+`******`, in the repository's method line too. A value bound without a name
+(a plain list given to a `JdbcTemplate`) cannot be told from a secret: it is
+shown at trace, as Spring does, and masked when `show-parameters` puts it at
+info. A password of the URL's user info is never logged, and neither is the
+value of a query parameter whose name looks secret
+(`?password=…`, `sslpassword`, `token`): the pool's "Starting..." line and
+every message about a URL show `password=******`. Names that do not look
+secret but hold one (`pw`, `pin`) are not masked: name columns so the rule
+sees them, or keep trace off in production.
+
+**Input from requests.** A `Sort` or a `Pageable` built from request
+parameters never reaches the SQL as text: sort properties are entity
+properties (or, for a `@Query`, identifiers, quoted: `a.b`), directions
+are `asc` and `desc`. A `@Query` that returns an entity checks the name
+against the entity's properties and columns, and one that returns a class
+against the class's properties (`authorName` sorts by `author_name`, as the
+row mapper matches it) and the entity's; a single column, a `Map` or a
+`rowMapper` result knows nothing to check against, and the database answers an
+unknown column. A property that does not exist is a
+`PropertyReferenceException` (an `InvalidDataAccessApiUsageException`) whose
+message writes the name escaped, so a name with a line break cannot forge a
+log line. `PageRequest.of` refuses a negative page, a size below one, and a
+page and size whose offset would pass 2^53 - 1 (an
+`InvalidPagingRequestException`, an `ArgumentError`), so an offset never
+wraps around to another page; a `Pageable` of your own with a negative
+offset is refused by the stores. There is no `Pageable`/`Sort` argument
+resolver for controllers yet: parse `page`, `size` and `sort` yourself and
+cap `size` (a client that sends `size=1000000000` gets the whole table), and
+allow-list the properties a request may sort by (a sort is an `ORDER BY`
+oracle: a client can learn the order of values it cannot read, such as a
+password hash). Bind request bodies to DTOs, not to entities: an entity
+binding lets the client choose the id and the version.
+
 **In a web application.** With
 [`spring_boot_starter_web`](https://pub.dev/packages/spring_boot_starter_web)
 among the application's dependencies, the generator adds a
 `HandlerExceptionResolver` (the bean `dataAccessExceptionResolver`) that
 answers an `OptimisticLockingFailureException` or a `DuplicateKeyException`
-with a 409 and an `EmptyResultDataAccessException` with a 404, with a fixed
-detail that never shows the exception's message; the starters do not
-depend on each other.
+with a 409, an `EmptyResultDataAccessException` with a 404, and a
+`PropertyReferenceException` ("Invalid sort property") or an
+`InvalidPagingRequestException` ("Invalid page or sort request") with a 400,
+with a fixed detail that never shows the exception's message (the web
+starter logs these answers at debug); the starters do not depend on each
+other.
 
-Durations are written `500ms`, `30s`, `10m`, `PT30S`, or as milliseconds.
+Durations are written `500ms`, `30s`, `10m`, `PT30S`, or as milliseconds
+(`spring.datasource.postgresql.connect-timeout` does not take `PT30S`).
 The names of `spring.datasources` are found in property sources that list
 their keys (files, the command line), not in an environment variable
 alone. The context must be refreshed with `refreshAsync()` (what
 `SpringApplication.runAsync` and `ApplicationContextRunner.runAsync` do):
-the schema is set up asynchronously.
+the schema is set up on a connection, which Dart cannot wait for without
+`await`. With a SQL data source start the application with
+`await runApplicationAsync(args)`; the synchronous `runApplication(args)`
+fails at start with a report that says so.
 
 ## Testing: `@DataTest`
 

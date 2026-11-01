@@ -6,6 +6,7 @@
 
 ### Changes
 
+- Checked against Project Wycheproof's test vectors (Apache-2.0, `test/fixtures/wycheproof/`): ES256 and RS256 verification of ID tokens, the conversion of DER ECDSA signatures of platform keys (`ECDSA.transcodeSignatureToConcat`) followed by verification, and the signatures of the software DPoP key and the JWT client secret (64-byte `R || S`, deterministic, valid): no bug found.
 - Debug lines for the main steps, never with a secret: the token request (`Sending the authorization_code token request of registration keycloak to sso.test/token`, the status of the answer), the discovery documents and JWK Sets fetched (host, path, status, key count), and a refresh of an access token. The query of a URL, tokens, codes, the client secret and its JWT are never logged.
 
 ## 0.5.0

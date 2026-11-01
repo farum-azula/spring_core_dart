@@ -9,29 +9,42 @@ import 'package:spring_boot_starter_data/src/store/data_store.dart';
 /// Values are logged only at trace; the debug lines hold the statements
 /// alone.
 abstract final class LogValues {
-  static const _masked = '******';
+  /// What is written instead of a secret value.
+  static const masked = '******';
 
-  // Words that mark a secret in a parameter, property or column name.
-  static const _secretWords = {
-    'password',
-    'passwd',
-    'pwd',
-    'passphrase',
-    'secret',
-    'token',
-    'key',
-    'apikey',
-    'credential',
-    'credentials',
-  };
+  // Words of their own that mark a secret: too short, or too common as a
+  // part of other words, to be looked for inside a longer name.
+  static const _secretWords = {'pwd', 'key'};
 
-  /// Whether [name] (a parameter, a property or a column: `password`,
-  /// `apiKey`, `refresh_token`, `clientSecret`) looks like it holds a
-  /// secret: one of its words, split at `_`, `-`, `.` and at camel-case
-  /// humps, is `password`, `passwd`, `pwd`, `passphrase`, `secret`,
-  /// `token`, `key`, `apikey` or `credential(s)`. `monkey` and `tokenizer`
-  /// are not secret words.
+  // What marks a secret anywhere in a name, once its case and separators are
+  // gone (`sslpassword`, `dbPassword`, `client_secret`, `apiToken`). The
+  // lookaheads leave out the words that only start like one.
+  static final _secretParts = RegExp(
+    'password|passwd|passphrase|secret(?!ar)|credential|token(?!iz|is)'
+    '|apikey|privatekey|accesskey|signingkey|encryptionkey',
+  );
+
+  /// Whether [name] (a parameter, a property, a column or a URL's query
+  /// parameter) looks like it holds a secret. Case and separators (`_`,
+  /// `-`, `.`, spaces) do not matter: `password`, `sslpassword`,
+  /// `dbPassword`, `refresh_token`, `apitoken`, `CLIENT_SECRET`, `privateKey`
+  /// all do.
+  ///
+  /// It does when the name, written together in lower case, contains
+  /// `password`, `passwd`, `passphrase`, `secret`, `credential`, `token`,
+  /// `apikey`, `privatekey`, `accesskey`, `signingkey` or `encryptionkey`,
+  /// or when one of its words (split at separators and camel-case humps) is
+  /// `pwd` or `key`. Words that merely start like these are not secret:
+  /// `secretary`, `tokenizer`, `tokenise`, and names that only contain the
+  /// letters of `key` (`keyword`, `monkey`, `turkey`, `keyboard`).
+  ///
+  /// The rule errs towards masking: `tokens_per_page` is masked. A name
+  /// that holds a secret in other words (`pw`, `pin`, `otp`) is not.
   static bool looksSecret(String name) {
+    final lower = name.toLowerCase();
+    if (_secretParts.hasMatch(lower.replaceAll(RegExp('[^a-z0-9]+'), ''))) {
+      return true;
+    }
     final words = name
         .replaceAllMapped(
           RegExp('([a-z0-9])([A-Z])'),
@@ -44,7 +57,7 @@ abstract final class LogValues {
 
   /// [value] for a trace line, masked when [name] looks secret.
   static String value(String name, Object? value) => looksSecret(name)
-      ? _masked
+      ? masked
       : value == null
       ? 'null'
       : LogFormatUtils.formatValue(value);

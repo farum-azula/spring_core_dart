@@ -419,6 +419,74 @@ void _suite(String db) {
     );
 
     test(
+      'a sort by a name that is not a column of the entity is a '
+      'PropertyReferenceException, and nothing runs',
+      () => run(() async {
+        final sql = await statements(() async {
+          for (final name in ['nothing', 'authorName', 'b.nothing']) {
+            await expectLater(
+              books.afterSorted(1990, Sort.by([name])),
+              throwsA(isA<PropertyReferenceException>()),
+              reason: name,
+            );
+            await expectLater(
+              books.afterWindow(1990, PageRequest.of(0, 2, Sort.by([name]))),
+              throwsA(isA<PropertyReferenceException>()),
+              reason: name,
+            );
+          }
+        });
+        expect(sql, isEmpty);
+        // The columns of the entity, by property or by column name.
+        expect(
+          ids(await books.afterSorted(1990, Sort.by(['in_stock', 'id']))),
+          hasLength(5),
+        );
+        await books.afterSorted(1990, Sort.by(['IN_STOCK', 'inStock']));
+        await books.afterSorted(1990, Sort.by(['id']));
+      }),
+    );
+
+    test(
+      'a DTO sorts by its properties, as the row mapper maps them',
+      () => run(() async {
+        Future<List<BookWithAuthor>> page(String name) async =>
+            (await books.pageWithAuthor(PageRequest.of(0, 5, Sort.by([name]))))
+                .content;
+        // The property: its column in snake case, as the select names it.
+        expect(
+          [for (final b in await page('authorName')) b.authorName],
+          [
+            'Gibson',
+            'Gibson',
+            'Gibson',
+            'Herbert',
+            'Herbert',
+          ],
+        );
+        // The column as the select names it.
+        await page('author_name');
+        // An entity's column of the joined table works as it did.
+        await page('b.title');
+        final sql = await statements(() => page('authorName'));
+        expect(sql.first, contains('order by "author_name" ASC NULLS LAST'));
+        for (final name in ['nothing', 'b.nothing', 'authorname2']) {
+          await expectLater(
+            page(name),
+            throwsA(
+              isA<PropertyReferenceException>().having(
+                (e) => e.message,
+                'message',
+                contains('known: '),
+              ),
+            ),
+            reason: name,
+          );
+        }
+      }),
+    );
+
+    test(
       'a sort that is not a name is refused, and nothing runs',
       () => run(() async {
         await expectLater(

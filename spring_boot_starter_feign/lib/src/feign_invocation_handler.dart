@@ -177,19 +177,40 @@ final class FeignInvocationHandler implements InvocationHandler {
     },
   );
 
+  // Each connection of an event stream is limited like a call: by
+  // `call-timeout` and the enclosing deadline, up to the status and
+  // headers; the stream itself is not.
   Future<StreamedHttpResponse> _connectEvents(
     _Plan plan,
     List<Object?> arguments,
     String? lastEventId,
+  ) => _limited(
+    (enclosing) =>
+        _connectEventsWithin(plan, arguments, lastEventId, enclosing),
+  );
+
+  Future<StreamedHttpResponse> _connectEventsWithin(
+    _Plan plan,
+    List<Object?> arguments,
+    String? lastEventId,
+    bool enclosing,
   ) async {
-    final request = _request(
-      await _prepare(
-        plan,
-        arguments,
-        await plan.multipart(arguments),
-        lastEventId: lastEventId,
-      ),
+    final deadline = RequestDeadline.current;
+    final template = await _prepare(
+      plan,
+      arguments,
+      await plan.multipart(arguments),
+      lastEventId: lastEventId,
     );
+    if (deadline != null && deadline.isExpired) {
+      throw _timedOut(
+        plan,
+        _request(template),
+        attempts: 0,
+        enclosing: enclosing,
+      );
+    }
+    final request = _request(template, deadline);
     final watch = Stopwatch()..start();
     _logRequest(request);
     final StreamedHttpResponse response;
@@ -197,6 +218,15 @@ final class FeignInvocationHandler implements InvocationHandler {
       response = await transport.stream(request);
     } on HttpTransportException catch (error) {
       _logError(error, watch);
+      if (_atDeadline(deadline, error)) {
+        throw _timedOut(
+          plan,
+          request,
+          attempts: 1,
+          enclosing: enclosing,
+          cause: error,
+        );
+      }
       throw RetryableException(
         -1,
         '${error.message} executing ${request.method.value} ${request.url}',
@@ -253,14 +283,76 @@ final class FeignInvocationHandler implements InvocationHandler {
     return template;
   }
 
-  HttpRequest _request(RequestTemplate template) => HttpRequest(
-    method: template.method,
-    url: template.url,
-    headers: template.headers,
-    body: template.body,
-    readTimeout: config.readTimeout,
-    followRedirects: config.followRedirects,
-  );
+  // [deadline] is what limits the call as a whole (its call-timeout or
+  // the deadline of the code that makes it): the exchange as a whole, the
+  // connect included, may not take longer than what is left of it, nor a
+  // wait for data.
+  HttpRequest _request(RequestTemplate template, [RequestDeadline? deadline]) {
+    final left = deadline?.remaining;
+    final readTimeout = config.readTimeout;
+    return HttpRequest(
+      method: template.method,
+      url: template.url,
+      headers: template.headers,
+      body: template.body,
+      timeout: left,
+      readTimeout: left == null
+          ? readTimeout
+          : (readTimeout == null || left < readTimeout ? left : readTimeout),
+      followRedirects: config.followRedirects,
+    );
+  }
+
+  // Runs [body] under the call's limit: `call-timeout` when set, and the
+  // deadline of the caller (RequestDeadline.current, which `run` keeps
+  // when it is earlier). [body] gets whether the caller's deadline is the
+  // earlier one; RequestDeadline.current inside is the limit, or null.
+  T _limited<T>(T Function(bool enclosing) body) {
+    final own = config.callTimeout;
+    final outer = RequestDeadline.current;
+    final enclosing = outer != null && (own == null || outer.remaining <= own);
+    return own == null
+        ? body(enclosing)
+        : RequestDeadline.run(own, () => body(enclosing));
+  }
+
+  // How close to the end of the limit a timeout of the transport must be
+  // to count as the limit's: the timers of the transport and of the
+  // deadline are a few milliseconds apart.
+  static const _deadlineSlack = Duration(milliseconds: 5);
+
+  static bool _atDeadline(RequestDeadline? deadline, Object? error) =>
+      deadline != null &&
+      error is HttpTransportException &&
+      error.isTimeout &&
+      deadline.remaining <= _deadlineSlack;
+
+  String _limitText(bool enclosing) => enclosing
+      ? 'the deadline of the enclosing request'
+      : 'the call timeout of ${config.callTimeout!.inMilliseconds} ms';
+
+  FeignCallTimeoutException _timedOut(
+    _Plan plan,
+    HttpRequest? request, {
+    required int attempts,
+    required bool enclosing,
+    Object? cause,
+    String? why,
+  }) {
+    final limit = _limitText(enclosing);
+    final target = request == null
+        ? ''
+        : ' during [${request.method.value}] to [${request.url}]';
+    return FeignCallTimeoutException(
+      '${why ?? 'The call did not finish within $limit'} '
+      '(after $attempts attempt${attempts == 1 ? '' : 's'})$target '
+      '[${plan.methodKey}]',
+      attempts: attempts,
+      enclosingDeadline: enclosing,
+      request: request,
+      cause: cause,
+    );
+  }
 
   Future<Object?> _execute(
     _Plan plan,
@@ -287,21 +379,67 @@ final class FeignInvocationHandler implements InvocationHandler {
     _Plan plan,
     ProxyMethod method,
     List<Object?> arguments,
+  ) => _limited((enclosing) => _attempts(plan, method, arguments, enclosing));
+
+  Future<Object?> _attempts(
+    _Plan plan,
+    ProxyMethod method,
+    List<Object?> arguments,
+    bool enclosing,
   ) async {
+    // The limit of the whole call: `call-timeout` and the enclosing
+    // deadline, the earlier; null when the call is not limited.
+    final deadline = RequestDeadline.current;
     // A multipart body is built once (files are read once): every attempt
     // sends the same bytes with the same boundary.
     final multipart = await plan.multipart(arguments);
     for (var attempt = 1; ; attempt++) {
       // Like Feign, the interceptors run for every attempt — here on a
       // fresh template, so a refreshed token reaches the retry.
-      final request = _request(await _prepare(plan, arguments, multipart));
+      final template = await _prepare(plan, arguments, multipart);
+      if (deadline != null && deadline.isExpired) {
+        throw _timedOut(
+          plan,
+          _request(template),
+          attempts: attempt - 1,
+          enclosing: enclosing,
+        );
+      }
+      final request = _request(template, deadline);
       try {
         final response = await _send(request, plan, method);
         return plan.decode(response, method);
       } on RetryableException catch (error) {
+        // A timeout at the very end of the limit is the limit's: the call
+        // is over, not retried.
+        if (_atDeadline(deadline, error.cause)) {
+          throw _timedOut(
+            plan,
+            request,
+            attempts: attempt,
+            enclosing: enclosing,
+            cause: error.cause,
+          );
+        }
         final delay = retryer.nextDelay(attempt, error);
         if (delay == null) {
           rethrow;
+        }
+        // A pause past the end of the limit: no sleeping to it, the next
+        // attempt would not start in time.
+        if (deadline != null && delay >= deadline.remaining) {
+          throw _timedOut(
+            plan,
+            request,
+            attempts: attempt,
+            enclosing: enclosing,
+            cause: error,
+            why:
+                'The call cannot be tried again within '
+                '${_limitText(enclosing)} (the retry pause is '
+                '${delay.inMilliseconds} ms, '
+                '${deadline.remaining.inMilliseconds} ms are left)',
+          );
         }
         if (config.loggerLevel != FeignLoggerLevel.none) {
           _log.debug(

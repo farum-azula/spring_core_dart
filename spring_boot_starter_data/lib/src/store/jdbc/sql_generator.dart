@@ -1,4 +1,6 @@
+import 'package:spring_boot_dart/spring_boot_dart.dart' show LogFormatUtils;
 import 'package:spring_boot_starter_data/src/exceptions.dart';
+import 'package:spring_boot_starter_data/src/jdbc/jdbc_template.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
@@ -11,6 +13,9 @@ import 'package:spring_boot_starter_data/src/store/data_store.dart';
 /// The values are column values (as `EntityConverter.toColumnValue` gives
 /// them); the `JdbcTemplate` that runs the statement applies the
 /// dialect's conversion. Nothing of a value is ever written into [sql].
+/// The generator's statements carry the column each value is bound to
+/// ([BoundParameters]), so the trace log masks the values of a `password`
+/// column as it does a named `@Query` parameter.
 ///
 /// Spring (Java): none; Spring Data JDBC's `Sql` plus the
 /// `SqlParameterSource` of `NamedParameterJdbcOperations`.
@@ -21,7 +26,8 @@ final class BoundSql {
   /// The SQL, with `?` for each value.
   final String sql;
 
-  /// The values of the markers, in order.
+  /// The values of the markers, in order (a [BoundParameters], with the
+  /// column of each, for the statements the generator writes).
   final List<Object?> parameters;
 
   @override
@@ -105,7 +111,7 @@ final class SqlGenerator {
     final markers = List.filled(row.length, '?').join(', ');
     return BoundSql(
       'insert into ${table(entity)} ($columns) values ($markers)',
-      row.values.toList(),
+      BoundParameters(row.values.toList(), row.keys.toList()),
     );
   }
 
@@ -124,12 +130,12 @@ final class SqlGenerator {
       for (final entry in row.entries)
         if (entry.key != idColumn) entry,
     ];
-    final parameters = <Object?>[];
+    final parameters = _Binder();
     final assignments = sets.isEmpty
         ? '${_q(idColumn)} = ${_q(idColumn)}'
         : sets
               .map((e) {
-                parameters.add(e.value);
+                parameters.add(e.key, e.value);
                 return '${_q(e.key)} = ?';
               })
               .join(', ');
@@ -142,7 +148,7 @@ final class SqlGenerator {
     );
     return BoundSql(
       'update ${table(entity)} set $assignments$where',
-      parameters,
+      parameters.bound,
     );
   }
 
@@ -153,7 +159,7 @@ final class SqlGenerator {
     Object? id, {
     Object? expectedVersion,
   }) {
-    final parameters = <Object?>[];
+    final parameters = _Binder();
     final where = _byIdWhere(
       entity,
       id,
@@ -161,22 +167,24 @@ final class SqlGenerator {
       parameters,
       checkVersion: expectedVersion != null,
     );
-    return BoundSql('delete from ${table(entity)}$where', parameters);
+    return BoundSql('delete from ${table(entity)}$where', parameters.bound);
   }
 
   String _byIdWhere(
     PersistentEntity<Object> entity,
     Object? id,
     Object? expectedVersion,
-    List<Object?> parameters, {
+    _Binder parameters, {
     required bool checkVersion,
   }) {
-    parameters.add(id);
-    final buffer = StringBuffer(' where ${_q(_id(entity).columnName)} = ?');
+    final idColumn = _id(entity).columnName;
+    parameters.add(idColumn, id);
+    final buffer = StringBuffer(' where ${_q(idColumn)} = ?');
     if (checkVersion && entity.versionProperty != null) {
       // A null expected version never matches (`= null`): bound as it is.
-      parameters.add(expectedVersion);
-      buffer.write(' and ${_q(entity.versionProperty!.columnName)} = ?');
+      final versionColumn = entity.versionProperty!.columnName;
+      parameters.add(versionColumn, expectedVersion);
+      buffer.write(' and ${_q(versionColumn)} = ?');
     }
     return buffer.toString();
   }
@@ -186,9 +194,9 @@ final class SqlGenerator {
     PersistentEntity<Object> entity,
     Criteria? criteria,
   ) {
-    final parameters = <Object?>[];
+    final parameters = _Binder();
     final where = _where(entity, criteria, parameters);
-    return BoundSql('delete from ${table(entity)}$where', parameters);
+    return BoundSql('delete from ${table(entity)}$where', parameters.bound);
   }
 
   // ----------------------------------------------------------------- read
@@ -202,7 +210,7 @@ final class SqlGenerator {
   }) => BoundSql(
     'select ${columnList(entity)} from ${table(entity)} '
     'where ${_q(_id(entity).columnName)} = ?${_suffix(lock)}',
-    [id],
+    BoundParameters([id], [_id(entity).columnName]),
   );
 
   /// `select columns from t where id in (?, ...) order by id` for [ids]
@@ -216,7 +224,7 @@ final class SqlGenerator {
       'select ${columnList(entity)} from ${table(entity)} '
       'where $idColumn in (${List.filled(ids.length, '?').join(', ')}) '
       'order by $idColumn',
-      ids,
+      BoundParameters(ids, List.filled(ids.length, _id(entity).columnName)),
     );
   }
 
@@ -235,7 +243,12 @@ final class SqlGenerator {
     bool distinct = false,
     String lock = '',
   }) {
-    final parameters = <Object?>[];
+    if (offset != null && offset < 0) {
+      throw InvalidDataAccessApiUsageException(
+        'The offset must not be negative: $offset',
+      );
+    }
+    final parameters = _Binder();
     final where = _where(entity, criteria, parameters);
     final paged = (offset != null && offset > 0) || limit != null;
     final order = sort.isSorted || paged
@@ -251,28 +264,28 @@ final class SqlGenerator {
     return BoundSql(
       '$keyword ${columnList(entity)} from ${table(entity)}$where$order'
       '${_suffix(window)}${_suffix(lock)}',
-      parameters,
+      parameters.bound,
     );
   }
 
   /// `select count(*) from t [where criteria]`.
   BoundSql count(PersistentEntity<Object> entity, Criteria? criteria) {
-    final parameters = <Object?>[];
+    final parameters = _Binder();
     final where = _where(entity, criteria, parameters);
     return BoundSql(
       'select count(*) from ${table(entity)}$where',
-      parameters,
+      parameters.bound,
     );
   }
 
   /// `select 1 from t [where criteria] limit 1`.
   BoundSql exists(PersistentEntity<Object> entity, Criteria? criteria) {
-    final parameters = <Object?>[];
+    final parameters = _Binder();
     final where = _where(entity, criteria, parameters);
     return BoundSql(
       'select 1 from ${table(entity)}$where '
       '${dialect.limitOffset(1, null)}',
-      parameters,
+      parameters.bound,
     );
   }
 
@@ -287,7 +300,7 @@ final class SqlGenerator {
     Object? rootId,
   ) => BoundSql(
     'delete from ${table(child)} where ${_q(reverseColumn)} = ?',
-    [rootId],
+    BoundParameters([rootId], [reverseColumn]),
   );
 
   /// `delete from child where reverse in (select id from root where
@@ -298,12 +311,12 @@ final class SqlGenerator {
     PersistentEntity<Object> root,
     Criteria? criteria,
   ) {
-    final parameters = <Object?>[];
+    final parameters = _Binder();
     final where = _where(root, criteria, parameters);
     return BoundSql(
       'delete from ${table(child)} where ${_q(reverseColumn)} in '
       '(select ${_q(_id(root).columnName)} from ${table(root)}$where)',
-      parameters,
+      parameters.bound,
     );
   }
 
@@ -329,7 +342,7 @@ final class SqlGenerator {
     return BoundSql(
       'select $columns from ${table(child)} '
       'where ${_q(reverseColumn)} in ($markers)$order',
-      rootIds,
+      BoundParameters(rootIds, List.filled(rootIds.length, reverseColumn)),
     );
   }
 
@@ -361,9 +374,9 @@ final class SqlGenerator {
       } else if (free != null) {
         column = free(order.property);
       } else {
-        throw InvalidDataAccessApiUsageException(
-          "No column '${order.property}' of "
-          '${entity.introspection.className} for sorting',
+        throw PropertyReferenceException(
+          order.property,
+          entity.introspection.className,
         );
       }
       final nullsFirst = switch (order.nullHandling) {
@@ -389,7 +402,7 @@ final class SqlGenerator {
   String _where(
     PersistentEntity<Object> entity,
     Criteria? criteria,
-    List<Object?> parameters,
+    _Binder parameters,
   ) {
     if (criteria == null || criteria.isEmpty) {
       return '';
@@ -416,8 +429,8 @@ final class SqlGenerator {
     final property = entity.property(name);
     if (property == null || property.isMappedCollection) {
       throw InvalidDataAccessApiUsageException(
-        "No column '$name' of ${entity.introspection.className} for a "
-        'condition',
+        'No column ${LogFormatUtils.formatValue(name)} of '
+        '${entity.introspection.className} for a condition',
       );
     }
     return property;
@@ -430,10 +443,11 @@ final class SqlGenerator {
     PersistentProperty property,
     Part part,
     List<Object?> arguments,
-    List<Object?> parameters,
+    _Binder parameters,
   ) {
     final ic = part.ignoreCase;
-    final column = _q(property.columnName);
+    final name = property.columnName;
+    final column = _q(name);
     final left = ic ? dialect.lower(column) : column;
     final marker = ic ? dialect.lower('?') : '?';
     Object? argument(int index) => converter.toColumnValue(arguments[index]);
@@ -442,7 +456,7 @@ final class SqlGenerator {
       if (value == null) {
         return _never;
       }
-      parameters.add(value);
+      parameters.add(name, value);
       return '$left $operator $marker';
     }
 
@@ -452,10 +466,10 @@ final class SqlGenerator {
       case PartType.isNotNull:
         return '$column is not null';
       case PartType.isTrue:
-        parameters.add(true);
+        parameters.add(name, true);
         return '$column = ?';
       case PartType.isFalse:
-        parameters.add(false);
+        parameters.add(name, false);
         return '$column = ?';
       case PartType.simpleProperty:
         return argument(0) == null ? '$column is null' : compare('=');
@@ -476,14 +490,15 @@ final class SqlGenerator {
           return _never;
         }
         parameters
-          ..add(low)
-          ..add(high);
+          ..add(name, low)
+          ..add(name, high);
         return '$left between $marker and $marker';
       case PartType.like:
-        return _like(column, part, _parse(argument(0)), parameters);
+        return _like(column, name, part, _parse(argument(0)), parameters);
       case PartType.notLike:
         return _like(
           column,
+          name,
           part,
           _parse(argument(0)),
           parameters,
@@ -492,6 +507,7 @@ final class SqlGenerator {
       case PartType.startingWith:
         return _like(
           column,
+          name,
           part,
           _literal(argument(0), end: true),
           parameters,
@@ -499,6 +515,7 @@ final class SqlGenerator {
       case PartType.endingWith:
         return _like(
           column,
+          name,
           part,
           _literal(argument(0), start: true),
           parameters,
@@ -506,6 +523,7 @@ final class SqlGenerator {
       case PartType.containing:
         return _like(
           column,
+          name,
           part,
           _literal(argument(0), start: true, end: true),
           parameters,
@@ -513,6 +531,7 @@ final class SqlGenerator {
       case PartType.notContaining:
         return _like(
           column,
+          name,
           part,
           _literal(argument(0), start: true, end: true),
           parameters,
@@ -536,7 +555,7 @@ final class SqlGenerator {
           if (values.isEmpty) {
             return _never;
           }
-          parameters.addAll(values);
+          parameters.addAll(name, values);
           return '$left in (${List.filled(values.length, marker).join(', ')})';
         }
         if (elements.isEmpty) {
@@ -546,7 +565,7 @@ final class SqlGenerator {
           // `x not in (..., null)` is never true.
           return _never;
         }
-        parameters.addAll(elements);
+        parameters.addAll(name, elements);
         return '$left not in '
             '(${List.filled(elements.length, marker).join(', ')})';
     }
@@ -605,9 +624,10 @@ final class SqlGenerator {
 
   String _like(
     String column,
+    String name,
     Part part,
     List<Object>? tokens,
-    List<Object?> parameters, {
+    _Binder parameters, {
     bool negate = false,
   }) {
     if (tokens == null) {
@@ -615,15 +635,15 @@ final class SqlGenerator {
     }
     final not = negate ? 'not ' : '';
     if (part.ignoreCase) {
-      parameters.add(_likeText(tokens));
+      parameters.add(name, _likeText(tokens));
       return '${dialect.lower(column)} ${not}like ${dialect.lower('?')} '
           r"escape '\'";
     }
     if (dialect.likeIgnoresCase) {
-      parameters.add(_globText(tokens));
+      parameters.add(name, _globText(tokens));
       return '$column $not${dialect.globOperator} ?';
     }
-    parameters.add(_likeText(tokens));
+    parameters.add(name, _likeText(tokens));
     return "$column ${not}like ? escape '\\'";
   }
 
@@ -672,3 +692,23 @@ final class SqlGenerator {
 }
 
 enum _Wildcard { any, one }
+
+// The values of a statement under construction, with the column each is
+// bound to.
+final class _Binder {
+  final _values = <Object?>[];
+  final _names = <String>[];
+
+  void add(String name, Object? value) {
+    _values.add(value);
+    _names.add(name);
+  }
+
+  void addAll(String name, Iterable<Object?> values) {
+    for (final value in values) {
+      add(name, value);
+    }
+  }
+
+  BoundParameters get bound => BoundParameters(_values, _names);
+}

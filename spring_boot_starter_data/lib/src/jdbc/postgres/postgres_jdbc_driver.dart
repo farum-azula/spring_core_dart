@@ -62,6 +62,9 @@ final class PostgresJdbcDriver implements JdbcDriver {
 
   static const _log = SpringLog('spring.jdbc.postgres');
 
+  // The databases (by URL) whose fall back to plain text was reported.
+  final _warned = <String>{};
+
   @override
   String get name => 'postgres';
 
@@ -70,6 +73,9 @@ final class PostgresJdbcDriver implements JdbcDriver {
 
   @override
   SqlDialect get dialect => const PostgresDialect();
+
+  @override
+  List<String> get propertyNames => PostgresTarget.propertyNames;
 
   @override
   Future<JdbcConnection> connect(ConnectionSettings settings) async {
@@ -93,11 +99,15 @@ final class PostgresJdbcDriver implements JdbcDriver {
         if (last || !PostgresTarget.noTls(error)) {
           throw cleanError(error);
         }
-        _log.debug(
-          () =>
-              'The server of ${settings.safeUrl} has no TLS: connecting '
-              'without it (sslmode=${target.mode.text})',
-        );
+        // Once for each database: the pool opens connections all day.
+        if (_warned.add(settings.safeUrl)) {
+          _log.warning(
+            'The server of ${settings.safeUrl} has no TLS: connecting in '
+            'plain text (sslmode=${target.mode.text}). Set sslmode to '
+            'require, or to verify-full to check the certificate and the '
+            'host name, so a connection that cannot be encrypted is refused',
+          );
+        }
       }
     }
     final connection = _PostgresConnection(session!);
@@ -319,6 +329,9 @@ final class PostgresTarget {
     'application-name',
     'search-path',
   };
+
+  /// The settings of `spring.datasource.postgresql.*`.
+  static List<String> get propertyNames => List.unmodifiable(_properties);
 
   /// The endpoint for one attempt, with [sslMode].
   PostgresEndpoint endpoint(PostgresSslMode sslMode) => PostgresEndpoint(

@@ -534,6 +534,59 @@ class RetryableException extends FeignException {
   final DateTime? retryAfter;
 }
 
+/// The error of a call that ran out of time: its `call-timeout`, or the
+/// `RequestDeadline` of the code that made it, passed before the call
+/// finished.
+///
+/// A call has a total limit when the client's `call-timeout` is set
+/// (`spring.feign.client.config.<name>.call-timeout`), and, while a web
+/// request with `server.request-timeout` is handled, the request's
+/// deadline limits every call it makes; the earlier of the two ends the
+/// call. The limit covers every attempt, the pauses of
+/// the `Retryer` and the wait for the answer, so the call is **never
+/// retried** after this error (it is not a [RetryableException]): the time
+/// is gone, and a retry would only start work nobody waits for. A pause
+/// that would last past the limit ends the call at once rather than
+/// sleeping to the end of it. A client's `fallback`, if it has one, still
+/// answers, as for any failure. In a web request whose deadline passed,
+/// the error ends the request with a 503.
+///
+/// [status] is `-1`, [cause] the transport's timeout when there was one.
+///
+/// ```dart
+/// // The shop shows the book without its price when the price service
+/// // is too slow.
+/// try {
+///   price = await prices.find(isbn);
+/// } on FeignCallTimeoutException {
+///   price = null;
+/// }
+/// ```
+///
+/// Spring (Java) has no counterpart: Spring Cloud OpenFeign limits the
+/// connect and the read of each attempt only. This is an extension of
+/// Spring for Dart.
+class FeignCallTimeoutException extends FeignException {
+  /// A call that ran out of time after [attempts] attempts;
+  /// [enclosingDeadline] says that the `RequestDeadline` of the caller, not
+  /// the client's `call-timeout`, was the limit.
+  FeignCallTimeoutException(
+    String message, {
+    required this.attempts,
+    required this.enclosingDeadline,
+    super.request,
+    super.cause,
+  }) : super(-1, message);
+
+  /// How many attempts were made (sent) before the time ran out: `0` when
+  /// the limit had passed before the first one.
+  final int attempts;
+
+  /// Whether the limit was the `RequestDeadline` of the code that made the
+  /// call (a web request's, say), not the client's own `call-timeout`.
+  final bool enclosingDeadline;
+}
+
 /// The error of a call whose answer could not be read as the method's
 /// return type, such as JSON of another shape or text where an object
 /// was expected.

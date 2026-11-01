@@ -9,8 +9,8 @@ one topic per page.
 
 | Page | Status |
 |---|---|
-| [Configuration](configuration.md) | Written: files, locations, precedence, profiles, imports, placeholders, binding, every property of the framework and the starters, Flutter's app widget, themes and fonts, YAML and `.properties` side by side |
-| [Testing](testing.md) | Written: test classes with annotations and `springBootTest`, `ApplicationContextRunner`, matchers, logs, the generated code and its build errors |
+| [Configuration](configuration.md) | Written: files, locations, precedence, profiles, imports, placeholders, binding, every property of the framework and the starters (SQL databases, PostgreSQL and migrations: section 20), Flutter's app widget, themes and fonts, YAML and `.properties` side by side |
+| [Testing](testing.md) | Written: test classes with annotations and `springBootTest`, `ApplicationContextRunner`, matchers, logs, data tests (`@DataTest`), containers in tests, the generated code and its build errors |
 | [Flutter testing](flutter-testing.md) | Written as a specification: `spring_boot_starter_flutter_test` (planned, [roadmap](../roadmap/spring_boot_starter_flutter_test.md)), widget tests, `pumpSpring`, themes, platforms, goldens; and how to test today with `SpringScope` |
 | [Code style](style.md) | Written |
 | [Dependencies](dependencies.md) | Written, checked by `tool/test/docs_dependency_graph_test.dart` |
@@ -25,6 +25,7 @@ one topic per page.
 | JSON (`ObjectMapper`) | Planned |
 | Logging | Planned (its properties are in Configuration) |
 | Scheduling, caching | Planned |
+| Data | Planned: repositories, derived queries, `@Query`, transactions, migrations, SQLite and PostgreSQL. Today: the [data starter's README](../spring_boot_starter_data/README.md), the properties in [Configuration](configuration.md#20-reference-sql-databases) and the tests in [Testing](testing.md#19-data-tests-datatest) |
 | HTTP, Feign, WebSocket | Planned |
 | Flutter | Planned: the app widget, beans in widgets, themes, fonts, assets, lifecycle, platform profiles, hot reload |
 | Code generation | Planned: what the generator writes, its options (`build.yaml`), its build errors |

@@ -1,6 +1,9 @@
 ## Unreleased
 
+### Changes
+
 - Where a SQLite database lives: with a SQL database in the properties (`spring.datasource.url`, or `spring.datasources.<name>.url`), `SpringApplicationWidget` reads the app's directories from `path_provider` before the application starts and, once the configuration files are read, sets `spring.datasource.sqlite.base-directory` to the directory of `spring.datasource.sqlite.location` (`support`, the default; `cache`; `documents`; any other value stops the start) and `spring.datasource.sqlite.isolate=true`, with the lowest precedence (the app's own properties win), for the primary data source and each named one. `support` is Android's `databases/` directory, iOS's and macOS's Application Support, Windows' `%LOCALAPPDATA%\<company>\<product>` (not the roaming directory) and Linux's `$XDG_DATA_HOME/<app id>`. The directory is created when it is missing. Nothing is set on the web or in a widget test (no `path_provider` plugin). The starter depends on `path_provider` (flutter.dev) and its platform interface, and only sets properties: it does not depend on the data starter.
+- `BeanReadsPointcut.annotationTypes` and `NotifyListenersPointcut.annotationTypes` list the annotations the pointcuts match (`@ChangeNotifierComponent`, `@NotifyListeners`); the generator reads them to give a proxy class only to the beans that carry one (smaller generated code; regenerate the `.spring.dart` files).
 
 ## 0.5.0
 

@@ -10,6 +10,7 @@ name: 'Release: publish to pub.dev'
 #           spring_boot_starter_cache, spring_boot_starter_feign,
 #           spring_boot_starter_websocket, spring_boot_starter_web,
 #           spring_boot_starter_test
+#         → spring_boot_starter_data (after the logging starter)
 #         → spring_security_core → spring_boot_starter_oauth2_client
 #         → spring_boot_starter_security
 #         → spring_boot_starter_flutter (with the Flutter SDK)
@@ -154,6 +155,24 @@ jobs:
           sdk: stable
       - run: dart pub get
       - run: dart run tool/publish.dart --package ${{ matrix.package }}
+
+  # spring_boot_starter_data needs Boot and the logging starter (its dev
+  # dependencies, the generator, the test and cache starters, only matter
+  # for its tests, which ran above): after the starters, next to the
+  # security packages.
+  data:
+    name: Publish spring_boot_starter_data
+    needs: starters
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart run tool/publish.dart --package spring_boot_starter_data
 
   # spring_security_core needs the logging starter,
   # spring_boot_starter_oauth2_client Feign and spring_security_core,

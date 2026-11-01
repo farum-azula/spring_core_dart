@@ -274,6 +274,9 @@ class FakeJdbcDriver implements JdbcDriver {
   @override
   List<String> get schemes => const ['fake'];
 
+  @override
+  List<String> get propertyNames => const [];
+
   /// The connections opened, in order.
   final connections = <FakeJdbcConnection>[];
 

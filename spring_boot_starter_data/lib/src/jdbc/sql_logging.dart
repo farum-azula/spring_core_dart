@@ -23,7 +23,8 @@ final class JdbcLogSettings {
   final bool showSql;
 
   /// `show-parameters`: the bound values are logged at info too, instead of
-  /// trace; those of secret-looking names stay masked.
+  /// trace; those of secret-looking names stay masked, and so do those
+  /// bound without a name (a plain list given to a `JdbcTemplate`).
   final bool showParameters;
 
   /// `format-sql`: the SQL in the log on several lines.
@@ -81,18 +82,23 @@ final class StatementLogger {
       settings.showParameters ? SpringLogLevel.info : SpringLogLevel.trace;
 
   /// Logs the bound [values] of a statement about to run; [names] says
-  /// what each is (`:id`), else they are `?1`, `?2`...
+  /// what each is (`:id`, a column), else they are `?1`, `?2`...
+  ///
+  /// The value of a name that looks secret is masked. A value without a
+  /// name cannot be told from a secret: it is shown at trace (the log of
+  /// development) and masked when `show-parameters` puts it at info.
   void parameters(List<Object?> values, [List<String>? names]) {
     if (values.isEmpty || !_valuesLog.isEnabled(_valuesLevel)) {
       return;
     }
     final label = _label;
     for (final (i, value) in values.indexed) {
-      final name = names != null && i < names.length ? names[i] : '?${i + 1}';
-      final shown = LogValues.value(name, value);
-      final type = LogValues.looksSecret(name) || value == null
-          ? ''
-          : ' (${value.runtimeType})';
+      final named = names != null && i < names.length;
+      final name = named ? names[i] : '?${i + 1}';
+      final hidden =
+          LogValues.looksSecret(name) || (!named && settings.showParameters);
+      final shown = hidden ? LogValues.masked : LogValues.value(name, value);
+      final type = hidden || value == null ? '' : ' (${value.runtimeType})';
       _valuesLog.log(_valuesLevel, '[$label]   $name = $shown$type');
     }
   }

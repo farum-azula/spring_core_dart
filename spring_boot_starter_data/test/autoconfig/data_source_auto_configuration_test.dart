@@ -86,6 +86,19 @@ void main() {
     return analysis!.report;
   }
 
+  group('a synchronous start', () {
+    test('fails with a report that says to use runApplicationAsync', () {
+      Object? found;
+      runner().run((context) => found = context.startupFailure);
+      expect(found, isNotNull);
+      final text = report(found!);
+      expect(text, contains('started synchronously'));
+      expect(text, contains('needs asynchronous startup'));
+      expect(text, contains('refreshAsync()'));
+      expect(text, contains('await runApplicationAsync(args)'));
+    });
+  });
+
   group('the schema at startup', () {
     test('the migrations are applied and the repositories work at once', () {
       return started((context) async {
@@ -692,6 +705,9 @@ final class _OtherDriver implements JdbcDriver {
 
   @override
   SqlDialect get dialect => _delegate.dialect;
+
+  @override
+  List<String> get propertyNames => _delegate.propertyNames;
 
   @override
   Future<JdbcConnection> connect(ConnectionSettings settings) =>

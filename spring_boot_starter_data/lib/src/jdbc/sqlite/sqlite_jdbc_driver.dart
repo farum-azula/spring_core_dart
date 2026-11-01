@@ -96,6 +96,10 @@ final class SqliteJdbcDriver implements JdbcDriver {
   /// `true` or `false`): it wins over [isolate].
   static const isolateProperty = 'isolate';
 
+  /// The key of the busy timeout, in milliseconds, in
+  /// [ConnectionSettings.properties] (`spring.datasource.sqlite.busy-timeout`).
+  static const busyTimeoutProperty = 'busy-timeout';
+
   /// The default `busy_timeout`.
   static const defaultBusyTimeout = Duration(milliseconds: 5000);
 
@@ -107,6 +111,13 @@ final class SqliteJdbcDriver implements JdbcDriver {
 
   @override
   SqlDialect get dialect => const SqliteDialect();
+
+  @override
+  List<String> get propertyNames => const [
+    baseDirectoryProperty,
+    isolateProperty,
+    busyTimeoutProperty,
+  ];
 
   @override
   Future<JdbcConnection> connect(ConnectionSettings settings) async {
@@ -152,7 +163,7 @@ final class SqliteJdbcDriver implements JdbcDriver {
   }
 
   static Duration _busyTimeout(ConnectionSettings settings) {
-    final text = settings.properties['busy-timeout'];
+    final text = settings.properties[busyTimeoutProperty];
     if (text == null) {
       return defaultBusyTimeout;
     }
@@ -160,7 +171,7 @@ final class SqliteJdbcDriver implements JdbcDriver {
     if (millis == null || millis < 0) {
       throw ArgumentError.value(
         text,
-        'busy-timeout',
+        busyTimeoutProperty,
         'Must be a number of milliseconds, zero or more',
       );
     }
@@ -204,7 +215,7 @@ final class _Target {
     };
     if (path.isEmpty) {
       throw ArgumentError.value(
-        url.toString(),
+        ConnectionSettings.maskUrl(url),
         'url',
         'No database: use sqlite:file:books.db or sqlite::memory:',
       );

@@ -1,3 +1,5 @@
+import 'package:spring_boot_dart/spring_boot_dart.dart' show LogFormatUtils;
+
 /// The root of the errors of data access: every store (in memory, SQLite,
 /// PostgreSQL, Redis, Supabase) translates its driver's errors into this one
 /// hierarchy, so a caller catches the same exceptions whatever the store.
@@ -177,6 +179,64 @@ class InvalidDataAccessApiUsageException
     extends NonTransientDataAccessException {
   /// A wrong use described by [message].
   InvalidDataAccessApiUsageException(super.message, {super.cause, super.sql});
+}
+
+/// A sort asked for a property the entity does not have (or, for a `@Query`,
+/// a name that is no column or property).
+///
+/// Often the property comes from a request (`?sort=title,desc`): the
+/// message writes the name with [LogFormatUtils.formatValue] (quoted, line
+/// breaks and control characters replaced, cut when long), so it cannot
+/// forge a log line; [propertyName] keeps the name as it was given. The web
+/// glue answers it with a 400 and a fixed detail.
+///
+/// Spring (Java): `org.springframework.data.mapping.PropertyReferenceException`
+/// (Spring's repositories translate it to
+/// `InvalidDataAccessApiUsageException`).
+class PropertyReferenceException extends InvalidDataAccessApiUsageException {
+  /// A refused sort [propertyName] of [typeName]; [hint] says what is
+  /// accepted.
+  PropertyReferenceException(
+    this.propertyName,
+    this.typeName, {
+    String? hint,
+    super.cause,
+  }) : super(
+         'No property ${LogFormatUtils.formatValue(propertyName)} found for '
+         'type $typeName${hint == null ? '' : ': $hint'}',
+       );
+
+  /// The name that was refused, as it was given (never log it as it is).
+  final String propertyName;
+
+  /// The type that was searched for it (an entity's class name, or the
+  /// repository method of a `@Query`).
+  final String typeName;
+}
+
+/// A request for a page or a sort that cannot be served: a negative page, a
+/// size below one, an offset past what a database counts, a direction that
+/// is neither `asc` nor `desc`.
+///
+/// An [ArgumentError], as Spring's `IllegalArgumentException` of
+/// `PageRequest.of`, raised where the request is built, before any store
+/// is reached; the web glue answers it with a 400 and a fixed detail.
+/// [toString] writes the invalid value escaped (it may come from a request),
+/// [invalidValue] has it as it was given.
+///
+/// Spring (Java): `IllegalArgumentException`.
+class InvalidPagingRequestException extends ArgumentError {
+  /// The invalid [value] of [name], and what is wrong with it.
+  InvalidPagingRequestException(
+    super.value,
+    String super.name,
+    String super.message,
+  ) : super.value();
+
+  @override
+  String toString() =>
+      'InvalidPagingRequestException: $message ($name: '
+      '${LogFormatUtils.formatValue(invalidValue)})';
 }
 
 /// The store cannot be reached, or the connection was lost.

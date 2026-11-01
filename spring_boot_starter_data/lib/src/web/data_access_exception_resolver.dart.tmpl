@@ -19,10 +19,13 @@
 //     OptimisticLockingFailureException  409  The resource was changed by someone else
 //     DuplicateKeyException              409  The resource already exists
 //     EmptyResultDataAccessException     404  Not found
+//     PropertyReferenceException         400  Invalid sort property
+//     InvalidPagingRequestException      400  Invalid page or sort request
 //
 // The detail is fixed: an exception's message may hold SQL, table names or
-// values, and must never reach a client (the starter logs the error at
-// debug level). Keep it small: each line is copied into every application.
+// values, and must never reach a client (the web starter logs an answer
+// below 500 at debug level, with the detail only). Keep it small: each line
+// is copied into every application.
 
 final class _$DataAccessExceptionResolver
     implements {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HandlerExceptionResolver}} {
@@ -50,6 +53,18 @@ final class _$DataAccessExceptionResolver
       {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ResponseStatusException}}(
         {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HttpStatus}}.notFound,
         'Not found',
+        error,
+      ),
+    {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PropertyReferenceException}}() =>
+      {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ResponseStatusException}}(
+        {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HttpStatus}}.badRequest,
+        'Invalid sort property',
+        error,
+      ),
+    {{package:spring_boot_starter_data/spring_boot_starter_data.dart#InvalidPagingRequestException}}() =>
+      {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ResponseStatusException}}(
+        {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HttpStatus}}.badRequest,
+        'Invalid page or sort request',
         error,
       ),
     _ => null,

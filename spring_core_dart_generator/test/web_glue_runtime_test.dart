@@ -91,6 +91,28 @@ Future<void> main() async {
       EmptyResultDataAccessException(1, message: message),
       _SubclassOfDuplicateKey(),
     ]),
+    // What a request can ask for wrongly: a sort property with a line
+    // break, a direction, a page past the offsets a database counts.
+    'invalid': await ask(resolver, [
+      PropertyReferenceException('title\r\nFORGED', 'Book'),
+      InvalidPagingRequestException(-1, 'page', 'must not be negative'),
+      () {
+        try {
+          PageRequest.of(1 << 61, 8);
+        } on InvalidPagingRequestException catch (error) {
+          return error;
+        }
+        throw StateError('no error');
+      }(),
+      () {
+        try {
+          Direction.fromString('up\nFORGED');
+        } on InvalidPagingRequestException catch (error) {
+          return error;
+        }
+        throw StateError('no error');
+      }(),
+    ]),
     'passed': await ask(resolver, [
       DataIntegrityViolationException(message),
       IncorrectResultSizeDataAccessException(1, 2),
@@ -212,6 +234,17 @@ void main() {
       // A subtype of a mapped exception is mapped too.
       _problem(409, 'Conflict', 'The resource already exists'),
     ]);
+  });
+
+  test('an invalid sort property, page or direction is a 400 with a fixed '
+      'detail', () {
+    expect(result['invalid'], [
+      _problem(400, 'Bad Request', 'Invalid sort property'),
+      _problem(400, 'Bad Request', 'Invalid page or sort request'),
+      _problem(400, 'Bad Request', 'Invalid page or sort request'),
+      _problem(400, 'Bad Request', 'Invalid page or sort request'),
+    ]);
+    expect(jsonEncode(result['invalid']), isNot(contains('FORGED')));
   });
 
   test('the details are fixed: nothing of the exception reaches the '

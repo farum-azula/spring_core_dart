@@ -3472,6 +3472,75 @@ class _$SqlFoldersImpl extends _i1.SimpleRepository<_i2.Folder, int>
   );
 }
 
+/// Implements `SqlMembers`: `SimpleRepository` has the CRUD methods.
+class _$SqlMembersImpl extends _i1.SimpleRepository<_i2.Member, int>
+    implements _i2.SqlMembers {
+  _$SqlMembersImpl(super.operations);
+
+  static const _findOneByUsernameAndApiToken = _i1.PartTree(
+    r'findOneByUsernameAndApiToken',
+    [
+      _i1.OrPart([_i1.Part(r'username'), _i1.Part(r'apiToken')]),
+    ],
+  );
+
+  static const _findByPasswordHash = _i1.PartTree(r'findByPasswordHash', [
+    _i1.OrPart([_i1.Part(r'passwordHash')]),
+  ]);
+
+  static const _findByUsernameIn = _i1.PartTree(r'findByUsernameIn', [
+    _i1.OrPart([_i1.Part(r'username', _i1.PartType.in_)]),
+  ]);
+
+  static _$SqlMembersImpl $create(_i3.DependencyResolver r) => _$SqlMembersImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Member, int>(
+      r'SqlMembers',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
+  );
+
+  @override
+  _i4.Future<_i2.Member?> findOneByUsernameAndApiToken(
+    String username,
+    String apiToken,
+  ) => this.operations.one(_findOneByUsernameAndApiToken, [username, apiToken]);
+
+  @override
+  _i4.Future<List<_i2.Member>> findByPasswordHash(String passwordHash) =>
+      this.operations.list(_findByPasswordHash, [passwordHash]);
+
+  @override
+  _i4.Future<List<_i2.Member>> findByUsernameIn(List<String> usernames) =>
+      this.operations.list(_findByUsernameIn, [usernames]);
+}
+
+/// Implements `MemoryGauges`: `SimpleRepository` has the CRUD methods.
+class _$MemoryGaugesImpl extends _i1.SimpleRepository<_i2.Gauge, int>
+    implements _i2.MemoryGauges {
+  _$MemoryGaugesImpl(super.operations);
+
+  static _$MemoryGaugesImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryGaugesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.Gauge, int>(
+          r'MemoryGauges',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
+      );
+}
+
+/// Implements `SqlGauges`: `SimpleRepository` has the CRUD methods.
+class _$SqlGaugesImpl extends _i1.SimpleRepository<_i2.Gauge, int>
+    implements _i2.SqlGauges {
+  _$SqlGaugesImpl(super.operations);
+
+  static _$SqlGaugesImpl $create(_i3.DependencyResolver r) => _$SqlGaugesImpl(
+    r.dependency<_i1.RepositoryFactory>().operations<_i2.Gauge, int>(
+      r'SqlGauges',
+      annotations: const [_i6.UseStore(r'jdbc')],
+    ),
+  );
+}
+
 /// Beans found by `@ComponentScan` in `lib/ and test/repository/jdbc/app/`.
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
@@ -4292,6 +4361,60 @@ _i3.BeanModule get $application => _i3.BeanModule(
         reason: r'the build found no pointcut of the application that matches SqlFolders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
+    _i3.BeanDefinition<_i2.SqlMembers>(
+      name: r'sqlMembers',
+      source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlMembers',
+      types: const [
+        _i2.SqlMembers,
+        _i8.ListCrudRepository<_i2.Member, int>,
+        _i8.CrudRepository<_i2.Member, int>,
+        _i8.DataRepository<_i2.Member, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+      ],
+      create: (r) => _$SqlMembersImpl.$create(r),
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SqlMembers, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      ),
+    ),
+    _i3.BeanDefinition<_i2.MemoryGauges>(
+      name: r'memoryGauges',
+      source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryGauges',
+      types: const [
+        _i2.MemoryGauges,
+        _i8.ListCrudRepository<_i2.Gauge, int>,
+        _i8.CrudRepository<_i2.Gauge, int>,
+        _i8.DataRepository<_i2.Gauge, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+      ],
+      create: (r) => _$MemoryGaugesImpl.$create(r),
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: _i3.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches MemoryGauges, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      ),
+    ),
+    _i3.BeanDefinition<_i2.SqlGauges>(
+      name: r'sqlGauges',
+      source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlGauges',
+      types: const [
+        _i2.SqlGauges,
+        _i8.ListCrudRepository<_i2.Gauge, int>,
+        _i8.CrudRepository<_i2.Gauge, int>,
+        _i8.DataRepository<_i2.Gauge, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+      ],
+      create: (r) => _$SqlGaugesImpl.$create(r),
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: _i3.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SqlGauges, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      ),
+    ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
@@ -4888,6 +5011,98 @@ _i3.BeanModule get $application => _i3.BeanModule(
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.text = v as String,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Member>(
+          r'Member',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'username',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'passwordHash',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'apiToken',
+              _i3.ClassType<String>(nullable: true),
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'members')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.username,
+            2 => e.passwordHash,
+            _ => e.apiToken,
+          },
+          create: (v) => _i2.Member(
+            username: v[1] as String,
+            passwordHash: v[2] as String,
+            apiToken: v[3] as String?,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.username = v as String,
+            2 => e.passwordHash = v as String,
+            3 => e.apiToken = v as String?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.Gauge>(
+          r'Gauge',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'version',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Version()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'gauges')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            _ => e.version,
+          },
+          create: (v) => _i2.Gauge(
+            name: v[1] as String,
+            id: v[0] as int?,
+            version: v[2] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.version = v as int?,
             _ => null,
           },
         ),
@@ -5886,7 +6101,7 @@ _i12.SpringApplication get springApplication => _i12.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '15e96ecb',
+  fingerprint: '019acf15',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -802,6 +802,11 @@ final class InMemoryDataStore implements DataStore {
     Duration? lockTimeout,
     bool skipLocked = false,
   }) async {
+    if (offset != null && offset < 0) {
+      throw InvalidDataAccessApiUsageException(
+        'The offset must not be negative: $offset',
+      );
+    }
     final tx = _enter('select', write: lock != null);
     if (lock != null) {
       _requireLockTx(tx, lock);
@@ -1512,8 +1517,12 @@ final class InMemoryDataStore implements DataStore {
   ) {
     final property = entity.property(name);
     if (property == null || property.isMappedCollection) {
+      if (where == 'sorting') {
+        throw PropertyReferenceException(name, entity.introspection.className);
+      }
       throw InvalidDataAccessApiUsageException(
-        "No column '$name' of ${entity.introspection.className} for $where",
+        'No column ${LogFormatUtils.formatValue(name)} of '
+        '${entity.introspection.className} for $where',
       );
     }
     return property;

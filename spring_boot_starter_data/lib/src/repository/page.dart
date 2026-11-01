@@ -1,3 +1,4 @@
+import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 
 /// A request for one page of results: which page, how large, in what order.
@@ -55,17 +56,35 @@ final class PageRequest implements Pageable {
   const PageRequest._(this.pageNumber, this.pageSize, this.sort);
 
   /// A request for page [page] (zero-based) of [size] items, ordered by
-  /// [sort]. Throws an [ArgumentError] for a negative page or a size below
-  /// one, as Spring does.
+  /// [sort]. Throws an [InvalidPagingRequestException] (an [ArgumentError])
+  /// for a negative page, a size below one, or a page and size that reach
+  /// past [maxOffset]: an offset never wraps around to another page.
   factory PageRequest.of(int page, int size, [Sort sort = Sort.unsorted]) {
     if (page < 0) {
-      throw ArgumentError.value(page, 'page', 'must not be negative');
+      throw InvalidPagingRequestException(page, 'page', 'must not be negative');
     }
     if (size < 1) {
-      throw ArgumentError.value(size, 'size', 'must be greater than zero');
+      throw InvalidPagingRequestException(
+        size,
+        'size',
+        'must be greater than zero',
+      );
+    }
+    // The division cannot overflow, the product could.
+    if (size > maxOffset || page > (maxOffset - size) ~/ size) {
+      throw InvalidPagingRequestException(
+        page,
+        'page',
+        'is too large for a size of $size (the offset must not pass '
+            '$maxOffset)',
+      );
     }
     return PageRequest._(page, size, sort);
   }
+
+  /// The largest offset (and so the last row a page may reach):
+  /// 2^53 - 1, what a database and a JavaScript number count exactly.
+  static const maxOffset = 9007199254740991;
 
   @override
   final int pageNumber;
@@ -89,7 +108,7 @@ final class PageRequest implements Pageable {
   bool get hasPrevious => pageNumber > 0;
 
   @override
-  Pageable next() => PageRequest._(pageNumber + 1, pageSize, sort);
+  Pageable next() => PageRequest.of(pageNumber + 1, pageSize, sort);
 
   @override
   Pageable previousOrFirst() =>

@@ -78,8 +78,11 @@ class DateTimeProvider {
 /// `save` updates it.
 ///
 /// The rule is Spring Data JDBC's: with a `@Version` property, an entity is
-/// new when the version is null or (an `int`) 0; a `DateTime` version is
-/// new only when null. Without one, an entity is new when its id is null.
+/// new when the version is null, or 0 for a version of the primitive kind (a
+/// non-nullable `int`, Java's `long`); a nullable `int?` (Java's `Long`) is
+/// new only when null, so a row stored at version 0 can be updated; a
+/// `DateTime` version is new only when null. Without a version, an entity is
+/// new when its id is null.
 /// A class with neither a version nor an id cannot be saved: a
 /// [MappingException].
 ///
@@ -94,7 +97,8 @@ class IsNewStrategy {
   bool isNew(PersistentEntity<Object> entity, Object instance) {
     if (entity.versionProperty case final version?) {
       final value = version.getValue(instance);
-      return value == null || (value is int && value == 0);
+      return value == null ||
+          (value is int && value == 0 && !version.isNullable);
     }
     if (entity.idProperty case final id?) {
       return id.getValue(instance) == null;

@@ -1068,6 +1068,7 @@ spring.lifecycle.timeout-per-shutdown-phase=20s
 server.context-path=/shop        # a prefix of every mapping
 server.max-http-request-body-size=10MB   # 413 above (10MB by default), whatever the type; -1: no limit
 server.connection-timeout=60s            # a body that sends nothing this long: 408; idle connections close; 0 or -1: no limit
+server.request-timeout=30s               # filters and handler must answer within this: else 503; no limit by default (see below)
 server.compression.enabled=true          # gzip, for clients that accept it
 server.compression.mime-types=text/html,application/json   # Spring Boot's list by default
 server.compression.min-response-size=2KB # the default
@@ -1080,6 +1081,47 @@ server.ssl.certificate-private-key=/etc/shop/key.pem
 
 Every property, with YAML next to it, is in the
 [configuration reference](../docs/configuration.md#18-reference-web-server).
+
+### A deadline for every request: `server.request-timeout`
+
+By default a request takes as long as its handler does. With
+`server.request-timeout=30s` the filters and the handler must answer
+within 30 seconds: when the time passes before the answer starts, the
+client gets a `503 Service Unavailable` problem (an
+`AsyncRequestTimeoutException`, with the generic detail "The request did
+not complete in time." and no word of the limit), and whatever the handler
+does to the response afterwards is dropped, with no second answer and no
+unhandled error. `0` or a negative value means no limit, which is the
+default.
+
+The request runs under a `RequestDeadline` of that length, which the code
+it calls can read through `RequestDeadline.current` (`remaining`,
+`isExpired`, `check()`), and which the Feign starter honours: a call a
+controller makes through a Feign client stops at the request's deadline, so
+it never outlives the request (see the Feign starter's
+[`call-timeout`](../spring_boot_starter_feign/README.md#a-limit-for-the-whole-call-call-timeout)).
+
+```dart
+@GetMapping('/report')
+Future<Report> report() async {
+  final sales = await sales.totals();      // a Feign client, limited by the request
+  RequestDeadline.current?.check();        // between steps: stop when nobody waits
+  return Report(sales, await stock.levels());
+}
+```
+
+What it does not do: Dart cannot stop running code, so a handler that never
+looks at the deadline keeps running after the 503 (its late answer is
+dropped); an event stream or a streamed body is not cut (a response that
+starts to stream leaves the deadline, and `spring.mvc.async.request-timeout`
+limits an `SseEmitter`); a WebSocket handshake is not timed; a response
+already being sent is left alone; and the time the handler spends reading a
+slow upload counts (`server.connection-timeout` still ends a body that sends
+nothing). There is no per-route override yet: the property applies to every
+request.
+
+Spring has no such limit for synchronous requests, and nothing that follows
+a request into the calls it makes: it is an extension of Spring for Dart.
 
 ### Behind a reverse proxy
 
@@ -1382,6 +1424,11 @@ the bean as the context holds it, so AOP advice on a controller
 
 ## Differences from Spring
 
+- **`server.request-timeout` and `RequestDeadline`** are extensions: Spring
+  times out connections (Tomcat) and asynchronous requests
+  (`spring.mvc.async.request-timeout`), not the handling of a synchronous
+  request, and no deadline follows a request into the calls it makes. See
+  [A deadline for every request](#a-deadline-for-every-request-serverrequest-timeout).
 - **Renamed properties:** `server.servlet.context-path` and
   `server.servlet.session.*` are `server.context-path` and
   `server.session.*`, and `spring.servlet.multipart.*` is

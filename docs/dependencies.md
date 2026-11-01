@@ -158,7 +158,10 @@ million downloads a month).
   `spring_boot_starter_security/test/app/jwt/keys.dart`).
 - **Its results are checked against other implementations**: password
   hashes against Spring Security's Java encoders both ways, signatures
-  against the RFC 7515 vectors, the DPoP signatures against the RFC 6979
+  against the RFC 7515 vectors and Project Wycheproof's (ECDSA, RSA
+  PKCS#1 and PSS, HMAC, PBKDF2, invalid curve points: Apache-2.0 test
+  data vendored under each package's `test/fixtures/wycheproof/`, never
+  published), the DPoP signatures against the RFC 6979
   vectors (and checked by the security starter's verifier), SHA-256
   against the RFC 7636 vector,
   plus fuzz and mutation tests

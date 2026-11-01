@@ -72,8 +72,9 @@ What comes next, in order:
    dependencies' known vulnerabilities (Dart, Gradle, Swift), the threat
    model and ASVS checklist extended, the ZAP scan; then **0.5.0**, the
    minor release.
-7. **The data starter** ([spring_boot_starter_data.md](spring_boot_starter_data.md),
-   0.6.0; the owner's order, October 2026): Spring Data JDBC's model, one
+7. ~~**The data starter**~~ Done, to be released as 0.6.0 (checklist:
+   [release_0_6.md](release_0_6.md)) ([spring_boot_starter_data.md](spring_boot_starter_data.md);
+   the owner's order, October 2026): Spring Data JDBC's model, one
    starter without drivers (the application's `postgres` / `sqlite3`
    wired by the generator), several databases, transactions with the
    propagation × isolation test matrix, `@Version` and `@Lock`,
@@ -168,7 +169,8 @@ What comes next, in order:
 | [spring_ai.md](spring_ai.md) | `spring_boot_starter_ai` | planned: `ChatClient`, the model providers in one package, streaming, tool calling, structured output, chat memory, embeddings |
 | [spring_ai_mcp.md](spring_ai_mcp.md) | `spring_boot_starter_ai` | MCP, later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
 | [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: Spring's OAuth2 client: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant with PKCE, authorized clients and their refresh, users, Bearer and DPoP tokens on Feign (DPoP `auto` by default), the token headers of WebSocket handshakes (`OAuth2AccessTokenHeaders`), the hardening (the plain `http://` warning, one discovery with the resource server, differential and mutation tests); next: runs on devices |
-| [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | planned for 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), several databases (SQLite, PostgreSQL; Redis postponed indefinitely), `@Transactional`, `@Version`, `@Lock`, SpEL in `@Query` |
+| [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | done, in 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), SQLite and PostgreSQL (Redis postponed indefinitely), `@Transactional` compared with Spring's propagation and isolation matrix, `@Version`, `@Lock`, SpEL in `@Query` compiled by the build, migrations, `@DataTest`, `JdbcTemplate` and `JdbcClient`; what is left is in the file |
+| [release_0_6.md](release_0_6.md) | all packages | the checklist of the 0.6.0 release: what was verified, what remains before the Release button |
 | [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the 0.6.0 release (the data starter ships without it): Supabase's official packages; its database as a store of the repositories, its Auth as a login of the security starters (one session, ours), later Storage, Realtime, Edge Functions |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
 | [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |

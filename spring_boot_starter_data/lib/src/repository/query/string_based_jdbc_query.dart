@@ -9,6 +9,7 @@ import 'package:spring_boot_starter_data/src/jdbc/named_parameter_utils.dart';
 import 'package:spring_boot_starter_data/src/jdbc/row_mapper.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
+import 'package:spring_boot_starter_data/src/mapping/naming_strategy.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
 import 'package:spring_boot_starter_data/src/repository/query/query_method.dart';
@@ -47,6 +48,21 @@ import 'package:spring_boot_starter_data/src/store/jdbc/jdbc_data_store.dart';
 /// as quoted column names (anything that is not an identifier is refused)
 /// and its window as `LIMIT`/`OFFSET` of the dialect, after the query's
 /// own `order by` (joined with a comma) or after the query.
+///
+/// **A sort is checked against what the result is mapped from**, and a name
+/// that is not there is a `PropertyReferenceException` (a 400 through the
+/// web glue), not a database error:
+///
+/// - an entity result: the properties of the entity (by property name, or by
+///   the name of its column), `alias.column` too for a joined table;
+/// - a DTO result: the properties of the DTO, sorted by the column of the
+///   same name in snake case (`authorName` by `author_name`, as the row
+///   mapper matches them), or a column written as the select names it
+///   (`author_name`), and the entity's properties as above;
+/// - a single column, a `Map`, a `rowMapper` or a `resultSetExtractor`:
+///   nothing is known about the columns, so the name only has to be an
+///   identifier and is quoted: the database decides, and an unknown column
+///   is its error.
 ///
 /// **Results** by the return type of the method:
 ///
@@ -98,6 +114,7 @@ final class StringBasedJdbcQuery {
     required this._beanFactory,
     required this._inTransaction,
     required this._translateError,
+    required this._naming,
   });
 
   final String _where;
@@ -123,6 +140,9 @@ final class StringBasedJdbcQuery {
   final Future<Object?> Function(Future<Object?> Function() body)
   _inTransaction;
   final DataAccessException Function(Object error) _translateError;
+
+  // Names the columns of a DTO's properties, as the mapping does.
+  final NamingStrategy _naming;
 
   Query get _query => _method.query;
   QueryShape get _shape => _method.shape;
@@ -273,6 +293,7 @@ final class StringBasedJdbcQuery {
       beanFactory: beanFactory,
       inTransaction: inTransaction,
       translateError: translateError,
+      naming: mappingContext?.namingStrategy ?? const NamingStrategy(),
     );
   }
 
@@ -536,6 +557,11 @@ final class StringBasedJdbcQuery {
     (int, int)? window, {
     bool windowed = true,
   }) {
+    if (window != null && window.$1 < 0) {
+      throw InvalidDataAccessApiUsageException(
+        '$_where: the offset must not be negative: ${window.$1}',
+      );
+    }
     var text = QueryTextSupport.trim(_main.sql);
     if (windowed) {
       final sort = _sortOf(arguments);
@@ -557,15 +583,83 @@ final class StringBasedJdbcQuery {
     return (text, _source(_main, arguments));
   }
 
+  // A sort name of the Sort or Pageable as SQL: an identifier, checked
+  // against what the result is mapped from when that is known (see the
+  // class's documentation).
   String _column(String name) {
     if (!_identifier.hasMatch(name)) {
-      throw InvalidDataAccessApiUsageException(
-        "'$name' cannot be a sort property of $_where: use the name of a "
-        'column or property (a, a.b), nothing else',
+      throw PropertyReferenceException(
+        name,
+        _where,
+        hint: 'use the name of a column or property (a, a.b), nothing else',
       );
     }
-    return name.split('.').map(_store.dialect.quote).join('.');
+    final parts = name.split('.');
+    final String column;
+    switch (_kind) {
+      case _Kind.entity || _Kind.dto:
+        final known = _knownColumn(parts.last);
+        if (known == null) {
+          throw PropertyReferenceException(
+            name,
+            _where,
+            hint:
+                'the result has no such property or column; '
+                'known: ${_sortNames.join(', ')}',
+          );
+        }
+        column = known;
+      case _Kind.scalar || _Kind.map || _Kind.custom:
+        column = parts.last;
+    }
+    return [
+      ...parts.take(parts.length - 1),
+      column,
+    ].map(_store.dialect.quote).join('.');
   }
+
+  // The column [name] stands for in a sort of the entity or DTO result, or
+  // null for a name that is none of its properties or columns.
+  String? _knownColumn(String name) {
+    final lower = name.toLowerCase();
+    if (_kind == _Kind.dto) {
+      if (_dtoProperties.contains(name)) {
+        return _naming.snakeCase(name);
+      }
+      // A column as the select names it: matched as the row mapper does.
+      final normalized = _normalizeName(name);
+      if (_dtoProperties.any((p) => _normalizeName(p) == normalized)) {
+        return name;
+      }
+    }
+    if (_entity.property(name) case final property?
+        when !property.isMappedCollection) {
+      return property.columnName;
+    }
+    for (final property in _entity.columns) {
+      if (property.columnName.toLowerCase() == lower) {
+        return property.columnName;
+      }
+    }
+    return null;
+  }
+
+  static String _normalizeName(String name) =>
+      name.replaceAll('_', '').toLowerCase();
+
+  // The properties of the DTO the rows are mapped to.
+  late final List<String> _dtoProperties = [
+    if (_described case final described?)
+      for (final property in described.properties) property.name
+    else if (_introspector.forType(_element.type) case final bean?)
+      for (final property in bean.properties) property.name,
+  ];
+
+  // What a sort of the entity or DTO result may name, for the message.
+  late final List<String> _sortNames = [
+    if (_kind == _Kind.dto) ..._dtoProperties,
+    for (final property in _entity.columns) property.name,
+  ];
 
   RowMapper<Object?> _rowMapper() {
     if (_query.rowMapper case final mapper?) {

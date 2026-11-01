@@ -163,7 +163,7 @@ class NamedParameterJdbcTemplate {
         }
         final prepared = [for (final params in batch) _prepare(sql, params)];
         return jdbc.batchUpdate(prepared.first.sql, [
-          for (final item in prepared) item.values,
+          for (final item in prepared) BoundParameters(item.values, item.names),
         ]);
       });
 
