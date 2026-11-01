@@ -442,4 +442,56 @@ void main() {
       expect(TestContainers.skipReason(skipWithoutDocker: false), isNull);
     });
   });
+
+  group('removing a container, against a fake daemon', () {
+    late HttpServer daemon;
+    late DockerClient docker;
+    var status = 204;
+    var message = '';
+
+    setUp(() async {
+      daemon = await HttpServer.bind(InternetAddress.loopbackIPv4, 0)
+        ..listen((request) async {
+          await request.drain<void>();
+          final response = request.response..statusCode = status;
+          if (message.isNotEmpty) {
+            response
+              ..headers.contentType = ContentType.json
+              ..write(jsonEncode({'message': message}));
+          }
+          await response.close();
+        });
+      docker = DockerClient(
+        DockerEndpoint.resolve(
+          environment: {'DOCKER_HOST': 'tcp://127.0.0.1:${daemon.port}'},
+        )!,
+      );
+    });
+
+    tearDown(() async {
+      docker.close();
+      await daemon.close(force: true);
+    });
+
+    test('a removal already in progress (auto-remove) is not an error', () {
+      status = 409;
+      message = 'removal of container abc is already in progress';
+      expect(docker.removeContainer('abc'), completes);
+    });
+
+    test('a container that is gone is not an error', () {
+      status = 404;
+      message = 'No such container: abc';
+      expect(docker.removeContainer('abc'), completes);
+    });
+
+    test('another conflict is still an error', () {
+      status = 409;
+      message = 'You cannot remove a running container abc';
+      expect(
+        docker.removeContainer('abc'),
+        throwsA(isA<DockerException>()),
+      );
+    });
+  });
 }

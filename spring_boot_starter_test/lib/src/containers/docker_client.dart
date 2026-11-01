@@ -458,13 +458,14 @@ final class DockerClient {
   );
 
   /// Removes the container [id]; [force] kills it first, [volumes] removes
-  /// its anonymous volumes. A container that does not exist is not an
-  /// error.
+  /// its anonymous volumes. A container that does not exist, or that the
+  /// daemon is already removing (a container started with auto-remove
+  /// goes away on its own once stopped), is not an error.
   Future<void> removeContainer(
     String id, {
     bool force = true,
     bool volumes = true,
-  }) => _ignoreMissing(
+  }) => _ignoreGone(
     () async {
       await _drain(
         await _send(
@@ -643,6 +644,18 @@ final class DockerClient {
 
   static Future<void> _drain(HttpClientResponse response) =>
       response.drain<void>();
+
+  // A removal the daemon already does answers 409 "removal of container
+  // ... is already in progress": the container is going, as asked.
+  static Future<void> _ignoreGone(Future<void> Function() call) async {
+    try {
+      await _ignoreMissing(call);
+    } on DockerException catch (e) {
+      if (e.statusCode != 409 || !e.message.contains('already in progress')) {
+        rethrow;
+      }
+    }
+  }
 
   static Future<void> _ignoreMissing(Future<void> Function() call) async {
     try {

@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- Stopping a container started with auto-remove failed on Linux with 409 "removal of container … is already in progress": the daemon removes it on its own once stopped; `DockerClient.removeContainer` treats that answer like a container already gone.
 - A reset of a socket the containers support opened failed whatever test was running (`SocketException: Connection reset by peer`, in a `setUpAll`, on Linux's Docker only in practice): a socket that was written to completes its `done` with the error that ended it, and nobody listened to it, so it surfaced as an uncaught error that `package:test` charged to the running test. The connection to the reaper (kept open for the whole run) and the probes of `Wait.forListeningPort()` and `PostgresContainer` now handle it. A cut connection to the reaper is logged at debug level (`spring_boot_starter_test.containers.reaper`), forgotten, and registered again in the background and at the next container start; the containers stay protected meanwhile.
 
 ## 0.5.0

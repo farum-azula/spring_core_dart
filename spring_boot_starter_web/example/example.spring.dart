@@ -11,11 +11,13 @@ import 'dart:async' as _i3;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i9;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i11;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i12;
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+    as _i12;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i13;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i13;
+    as _i14;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_web_dart/src/annotations.dart' as _i4;
 import 'package:spring_web_dart/src/controller_annotations.dart' as _i8;
@@ -329,9 +331,10 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
   [$application],
   autoConfigurations: [
     _i10.springBootAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
-    _i12.springBootStarterWebAutoConfiguration,
-    _i13.springBootStarterWebsocketAutoConfiguration,
+    _i11.springBootStarterFeignAutoConfiguration,
+    _i12.springBootStarterLoggingAutoConfiguration,
+    _i13.springBootStarterWebAutoConfiguration,
+    _i14.springBootStarterWebsocketAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -383,7 +386,7 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'cc94a1c1',
+  fingerprint: '4b57cf33',
 );
 
 /// Starts the application: config files, environment, context, runners
