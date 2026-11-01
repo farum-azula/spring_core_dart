@@ -27,7 +27,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```
 ///
 /// Differs from Spring: these keys are this project's own (shaped like
-/// `spring.cloud.openfeign.client.config.*`); Spring Boot has no
+/// `spring.feign.client.config.*`); Spring Boot has no
 /// properties for WebSocket clients.
 final class WebSocketClientConfig {
   /// Settings with these values; the defaults are those of a client

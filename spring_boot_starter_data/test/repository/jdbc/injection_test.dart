@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
+import '../../postgres/support.dart' show postgresSkip;
 import 'support.dart';
 
 // Hostile text in every operator of the derived queries and in the
@@ -30,43 +31,63 @@ const List<String> hostile = [
   _union,
 ];
 
+// The operators whose answer depends on how the database orders text.
+const _collated = {'subtitle less than', 'subtitle between'};
+
 const String _union =
     "x' UNION SELECT id, name, 1, null, 1, null, null, null, null, null "
     'FROM authors --';
 
 void main() {
+  for (final db in const ['sqlite', 'postgres']) {
+    group(
+      db,
+      () => _suite(db),
+      skip: db == 'postgres' ? postgresSkip : null,
+      tags: db == 'postgres' ? 'postgres' : null,
+    );
+  }
+}
+
+void _suite(String db) {
   late Jdbc jdbc;
   late BookQueries sql;
   late BookQueries memory;
   late SqlBooks queries;
 
-  Future<void> run(FutureOr<void> Function() body) => withJdbc((j) async {
-    jdbc = j;
-    sql = j.sqlBooks;
-    memory = j.memoryBooks;
-    queries = j.sqlBooks;
-    // The same books in both stores: the normal ones, and one for each
-    // hostile text as its title and its subtitle.
-    for (final books in [sql, memory]) {
-      await books.saveAll([
-        Book(title: 'Dune', year: 1965, subtitle: 'sequel'),
-        Book(title: 'Neuromancer', year: 1984),
-        Book(title: 'plain', year: 1999, subtitle: 'a_b'),
-        for (final (i, text) in hostile.indexed)
-          Book(title: text, year: 3000 + i, subtitle: text),
-      ]);
-    }
-    await body();
-  });
+  Future<void> run(FutureOr<void> Function() body) =>
+      withJdbc(postgres: db == 'postgres', (j) async {
+        jdbc = j;
+        sql = j.sqlBooks;
+        memory = j.memoryBooks;
+        queries = j.sqlBooks;
+        // The same books in both stores: the normal ones, and one for each
+        // hostile text as its title and its subtitle.
+        for (final books in [sql, memory]) {
+          await books.saveAll([
+            Book(title: 'Dune', year: 1965, subtitle: 'sequel'),
+            Book(title: 'Neuromancer', year: 1984),
+            Book(title: 'plain', year: 1999, subtitle: 'a_b'),
+            for (final (i, text) in hostile.indexed)
+              Book(title: text, year: 3000 + i, subtitle: text),
+          ]);
+        }
+        await body();
+      });
 
   setUpAll(() => SpringLog.handler = (_) {});
 
+  // The value of [future], or the type of the error it fails with.
+  Future<Object?> outcome(Future<Object?> future) => future.then<Object?>(
+    (value) => value,
+    onError: (Object error) => error.runtimeType,
+  );
+
   Future<void> expectIntact() async {
+    // The table is still there, with its rows.
     expect(
-      await jdbc.jdbc.queryForObject<int>(
-        "select count(*) from sqlite_master where name = 'books'",
-      ),
-      1,
+      await jdbc.jdbc.queryForObject<int>('select count(*) from books'),
+      3 + hostile.length,
     );
     expect(await sql.count(), 3 + hostile.length);
     expect(await jdbc.sqlAuthors.count(), 0);
@@ -110,6 +131,13 @@ void main() {
         () => run(() async {
           for (final text in hostile) {
             final fromSql = ids(await value(sql, text));
+            // PostgreSQL compares text with the database's collation, which
+            // is not the bytewise order of the memory store (it ignores
+            // punctuation first): a range of hostile text answers its own
+            // way, and must still be answered as a value.
+            if (db == 'postgres' && _collated.contains(key)) {
+              continue;
+            }
             final fromMemory = ids(await value(memory, text));
             expect(fromSql, fromMemory, reason: '$key with "$text"');
           }
@@ -190,13 +218,19 @@ void main() {
             ids(await queries.bySubtitleText(text)),
             ids(await sql.findBySubtitle(text)),
           );
-          // The query's own LIKE is SQLite's (case blind, no escape): what
-          // the same statement answers when run by hand.
+          // The query's own LIKE is the database's (SQLite's is case blind
+          // with no escape character, PostgreSQL's escapes with a backslash
+          // and refuses one that ends the pattern): what the same statement
+          // answers when run by hand, or the same failure.
           expect(
-            ids(await queries.byTitleLike(text)),
-            await jdbc.jdbc.queryForList<int>(
-              'select id from books where title like ? order by id',
-              [text],
+            await outcome(
+              queries.byTitleLike(text).then((books) => ids(books)),
+            ),
+            await outcome(
+              jdbc.jdbc.queryForList<int>(
+                'select id from books where title like ? order by id',
+                [text],
+              ),
             ),
             reason: '"$text" as a pattern',
           );

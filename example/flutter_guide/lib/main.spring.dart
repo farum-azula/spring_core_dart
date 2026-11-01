@@ -4490,7 +4490,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       '# Browsers: a wide window. The page\'s origin must be allowed by the\n# server\'s CORS settings (the server guide allows localhost).\napp.navigation=rail\n\n# `flutter run -d chrome` (or -d web-server) serves the app on\n# http://localhost:5050/, the origin the server\'s CORS and SSO settings\n# expect. spring_core_dart_generator writes it into web_dev_config.yaml,\n# which the Flutter tool reads; a --web-port flag still wins.\nspring.flutter.web.port=5050\n\n# The login of the web app (spring_boot_starter_flutter_security, server\n# mode): the server guide logs the user in and keeps the session, the\n# page holds only its HttpOnly cookie. The server is another origin\n# (localhost:8080), so the starter\'s transport sends the cookies there\n# and the CSRF token of its XSRF-TOKEN cookie; "who is logged in" and the\n# logout are the server guide\'s /api/me and /api/logout, the form login\'s\n# as well as Keycloak\'s.\nspring.flutter.security.web.server-url=\${api.base-url}\nspring.flutter.security.web.user-endpoint=/api/me\nspring.flutter.security.web.logout-url=/api/logout\n',
     ),
     r'application.properties': _i2.EmbeddedResource.text(
-      '# NEON Books, the app. The platform profiles (mobile, android, ios,\n# desktop, macos, windows, linux, web) add their own files:\n# application-<profile>.properties. The theme is in application.yml.\n\napp.title=NEON Books\n\n# The server guide (example/server_guide): `dart run bin/main.dart` there.\n# The Feign clients use api.base-url, the support chat api.ws-url.\n# `flutter run --dart-define=API_HOST=192.168.1.20:8080` for a phone on\n# the LAN.\napi.host=localhost:8080\napi.base-url=http://\${api.host}\napi.ws-url=ws://\${api.host}\napi.connect-timeout=5s\n\n# The Feign clients: a short read timeout (the default is 60s), the calls\n# logged at debug level (the Logs screen shows them).\nspring.cloud.openfeign.client.config.default.read-timeout=10s\nspring.cloud.openfeign.client.config.default.logger-level=basic\n# The stock events reconnect after 2s and give up after 10 silent tries.\nspring.cloud.openfeign.client.config.stock.event-stream.reconnect-delay=2s\nspring.cloud.openfeign.client.config.stock.event-stream.max-attempts=10\n\n# The support chat\'s socket reconnects, waiting 1s, 2s, 4s, ... up to 30s.\nspring.websocket.client.config.support.reconnect.delay=1s\nspring.websocket.client.config.support.reconnect.max-delay=30s\n\n# The catalog refresh (lib/src/catalog/catalog_refresh.dart).\ncatalog.refresh-interval=5m\n\n# The caches of lib/src/catalog/catalog_service.dart, in memory.\nspring.cache.cache-names=catalog,books,covers\n\n# Logging: the console in Boot\'s format, and the in-memory LogBuffer the\n# Logs screen shows (debug and up, the last 500 lines).\nlogging.level.root=info\nlogging.level.neon=debug\nlogging.level.feign=debug\nlogging.buffer.capacity=500\nlogging.threshold.buffer=debug\n\n# The app widget: a MaterialApp (Scaffold and AppBar need it) without the\n# debug banner. The locales come from messages.properties and\n# messages_ja.properties.\nspring.flutter.app.type=material\nspring.flutter.app.title=\${app.title}\nspring.flutter.app.debug-banner=false\nspring.cache.simple.caches.covers.max-size=50\n\n# Single sign-on with Keycloak (chapter 7): off, the app logs in with a\n# name and password (the server\'s form login). The `sso` profile turns it\n# on (application-sso.properties):\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\nneon.sso.enabled=false\n\n#---\nspring.config.activate.on-profile=sso & !web\n# With `sso`, the native apps log in themselves at Keycloak: a public\n# client (no secret in an app), PKCE, the system\'s login window. A\n# document guarded by profiles, here and not in application-sso.properties,\n# because only the native apps have it (a profile file cannot be guarded,\n# as in Spring Boot): a web page never holds tokens, its server logs it in.\nspring.security.oauth2.client.registration.keycloak.client-id=neon-app\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# iOS, Android, macOS: the app\'s own scheme; the system\'s login window\n# hands the redirect to the app (Android: RedirectReceiverActivity in the manifest).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=books.neon.app:/oauth2/callback\nneon.sso.post-logout-redirect-uri=books.neon.app:/oauth2/logout\n# Discovery: the endpoints come from the realm\'s metadata at the first\n# login, not at startup (the app starts offline too). The Android\n# emulator reaches it through `adb reverse tcp:8180 tcp:8180`: the issuer\n# must be the same address everywhere, or the server refuses the tokens.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# `ada` or `root`, the names the server knows, not Keycloak\'s ids.\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n#---\nspring.config.activate.on-profile=sso & (windows | linux)\n# Windows and Linux have no app schemes to catch: the redirect goes to a\n# server of the app on 127.0.0.1, any free port (RFC 8252 §7.3).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=http://127.0.0.1/oauth2/callback\nneon.sso.post-logout-redirect-uri=http://127.0.0.1/oauth2/logout\n',
+      '# NEON Books, the app. The platform profiles (mobile, android, ios,\n# desktop, macos, windows, linux, web) add their own files:\n# application-<profile>.properties. The theme is in application.yml.\n\napp.title=NEON Books\n\n# The server guide (example/server_guide): `dart run bin/main.dart` there.\n# The Feign clients use api.base-url, the support chat api.ws-url.\n# `flutter run --dart-define=API_HOST=192.168.1.20:8080` for a phone on\n# the LAN.\napi.host=localhost:8080\napi.base-url=http://\${api.host}\napi.ws-url=ws://\${api.host}\napi.connect-timeout=5s\n\n# The Feign clients: a short read timeout (the default is 60s), the calls\n# logged at debug level (the Logs screen shows them).\nspring.feign.client.config.default.read-timeout=10s\nspring.feign.client.config.default.logger-level=basic\n# The stock events reconnect after 2s and give up after 10 silent tries.\nspring.feign.client.config.stock.event-stream.reconnect-delay=2s\nspring.feign.client.config.stock.event-stream.max-attempts=10\n\n# The support chat\'s socket reconnects, waiting 1s, 2s, 4s, ... up to 30s.\nspring.websocket.client.config.support.reconnect.delay=1s\nspring.websocket.client.config.support.reconnect.max-delay=30s\n\n# The catalog refresh (lib/src/catalog/catalog_refresh.dart).\ncatalog.refresh-interval=5m\n\n# The caches of lib/src/catalog/catalog_service.dart, in memory.\nspring.cache.cache-names=catalog,books,covers\n\n# Logging: the console in Boot\'s format, and the in-memory LogBuffer the\n# Logs screen shows (debug and up, the last 500 lines).\nlogging.level.root=info\nlogging.level.neon=debug\nlogging.level.feign=debug\nlogging.buffer.capacity=500\nlogging.threshold.buffer=debug\n\n# The app widget: a MaterialApp (Scaffold and AppBar need it) without the\n# debug banner. The locales come from messages.properties and\n# messages_ja.properties.\nspring.flutter.app.type=material\nspring.flutter.app.title=\${app.title}\nspring.flutter.app.debug-banner=false\nspring.cache.simple.caches.covers.max-size=50\n\n# Single sign-on with Keycloak (chapter 7): off, the app logs in with a\n# name and password (the server\'s form login). The `sso` profile turns it\n# on (application-sso.properties):\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\nneon.sso.enabled=false\n\n#---\nspring.config.activate.on-profile=sso & !web\n# With `sso`, the native apps log in themselves at Keycloak: a public\n# client (no secret in an app), PKCE, the system\'s login window. A\n# document guarded by profiles, here and not in application-sso.properties,\n# because only the native apps have it (a profile file cannot be guarded,\n# as in Spring Boot): a web page never holds tokens, its server logs it in.\nspring.security.oauth2.client.registration.keycloak.client-id=neon-app\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# iOS, Android, macOS: the app\'s own scheme; the system\'s login window\n# hands the redirect to the app (Android: RedirectReceiverActivity in the manifest).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=books.neon.app:/oauth2/callback\nneon.sso.post-logout-redirect-uri=books.neon.app:/oauth2/logout\n# Discovery: the endpoints come from the realm\'s metadata at the first\n# login, not at startup (the app starts offline too). The Android\n# emulator reaches it through `adb reverse tcp:8180 tcp:8180`: the issuer\n# must be the same address everywhere, or the server refuses the tokens.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# `ada` or `root`, the names the server knows, not Keycloak\'s ids.\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n#---\nspring.config.activate.on-profile=sso & (windows | linux)\n# Windows and Linux have no app schemes to catch: the redirect goes to a\n# server of the app on 127.0.0.1, any free port (RFC 8252 §7.3).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=http://127.0.0.1/oauth2/callback\nneon.sso.post-logout-redirect-uri=http://127.0.0.1/oauth2/logout\n',
     ),
     r'application.yml': _i2.EmbeddedResource.text(
       "# The look of the app: the shared part of every theme and the standard\n# `dark` theme's differences. Each custom theme has a file of its own in\n# themes/. No ThemeData in the code.\nspring:\n  config:\n    import: >-\n      classpath:themes/neon.yml, classpath:themes/neon-night.yml,\n      classpath:themes/sepia.yml, classpath:themes/high-contrast.yml\n\n  flutter:\n    theme:\n      # system | light | dark | neon | neon-night | sepia | high-contrast\n      # (and `winter` once loaded at run time, see Settings)\n      active: system\n      system-dark: dark\n\n      seed-color: deepPurple\n      typography:\n        font-family: Roboto\n        # Japanese glyphs: the system's fonts on devices, in tests the\n        # cut-down font of test/fonts/.\n        font-family-fallback: [Noto Sans JP]\n        display: { font-family: Roboto Condensed, weight: bold }\n        headline: { font-family: Roboto Condensed }\n        title-large: { weight: 500 }\n        # A monospaced font file would go into res/fonts/ like the others;\n        # Roboto Condensed stands in (the Logs screen).\n        code: { font-family: Roboto Condensed, size: 12 }\n      shape:\n        medium: 16\n      components:\n        app-bar:\n          scrolled-under-elevation: level2\n        card:\n          shape: large\n          color: surface-container-low\n        input:\n          style: outline\n          shape: small\n        snack-bar:\n          behavior: floating\n      spacing:\n        s: 8\n        m: 16\n        l: 24\n      tokens:\n        brand:\n          accent: '#FF40A0'\n          banner-height: 96\n\n      themes:\n        dark:\n          seed-color: deepPurple.shade200\n          components:\n            card: { color: surface-container }\n",
@@ -5207,34 +5207,6 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
       'SPRING_CACHE_SIMPLE_CACHES_COVERS_MAXSIZE': const String.fromEnvironment(
         'SPRING_CACHE_SIMPLE_CACHES_COVERS_MAXSIZE',
       ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_LOGGERLEVEL',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_LOGGERLEVEL':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_LOGGERLEVEL',
-          ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
-          ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_MAXATTEMPTS',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_MAXATTEMPTS':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_MAXATTEMPTS',
-          ),
-    if (const bool.hasEnvironment(
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_RECONNECTDELAY',
-    ))
-      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_RECONNECTDELAY':
-          const String.fromEnvironment(
-            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_RECONNECTDELAY',
-          ),
     if (const bool.hasEnvironment('SPRING_CONFIG_ACTIVATE_ONPROFILE'))
       'SPRING_CONFIG_ACTIVATE_ONPROFILE': const String.fromEnvironment(
         'SPRING_CONFIG_ACTIVATE_ONPROFILE',
@@ -5243,6 +5215,34 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
       'SPRING_CONFIG_IMPORT': const String.fromEnvironment(
         'SPRING_CONFIG_IMPORT',
       ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_LOGGERLEVEL',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_LOGGERLEVEL':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_LOGGERLEVEL',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_MAXATTEMPTS',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_MAXATTEMPTS':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_MAXATTEMPTS',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_RECONNECTDELAY',
+    ))
+      'SPRING_FEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_RECONNECTDELAY':
+          const String.fromEnvironment(
+            'SPRING_FEIGN_CLIENT_CONFIG_STOCK_EVENTSTREAM_RECONNECTDELAY',
+          ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_APP_DEBUGBANNER'))
       'SPRING_FLUTTER_APP_DEBUGBANNER': const String.fromEnvironment(
         'SPRING_FLUTTER_APP_DEBUGBANNER',
@@ -5555,34 +5555,6 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
           const String.fromEnvironment(
             'spring.cache.simple.caches.covers.max-size',
           ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.default.logger-level',
-    ))
-      'spring.cloud.openfeign.client.config.default.logger-level':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.default.logger-level',
-          ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.default.read-timeout',
-    ))
-      'spring.cloud.openfeign.client.config.default.read-timeout':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.default.read-timeout',
-          ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.stock.event-stream.max-attempts',
-    ))
-      'spring.cloud.openfeign.client.config.stock.event-stream.max-attempts':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.stock.event-stream.max-attempts',
-          ),
-    if (const bool.hasEnvironment(
-      'spring.cloud.openfeign.client.config.stock.event-stream.reconnect-delay',
-    ))
-      'spring.cloud.openfeign.client.config.stock.event-stream.reconnect-delay':
-          const String.fromEnvironment(
-            'spring.cloud.openfeign.client.config.stock.event-stream.reconnect-delay',
-          ),
     if (const bool.hasEnvironment('spring.config.activate.on-profile'))
       'spring.config.activate.on-profile': const String.fromEnvironment(
         'spring.config.activate.on-profile',
@@ -5591,6 +5563,34 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
       'spring.config.import': const String.fromEnvironment(
         'spring.config.import',
       ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.default.logger-level',
+    ))
+      'spring.feign.client.config.default.logger-level':
+          const String.fromEnvironment(
+            'spring.feign.client.config.default.logger-level',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.default.read-timeout',
+    ))
+      'spring.feign.client.config.default.read-timeout':
+          const String.fromEnvironment(
+            'spring.feign.client.config.default.read-timeout',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.stock.event-stream.max-attempts',
+    ))
+      'spring.feign.client.config.stock.event-stream.max-attempts':
+          const String.fromEnvironment(
+            'spring.feign.client.config.stock.event-stream.max-attempts',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.feign.client.config.stock.event-stream.reconnect-delay',
+    ))
+      'spring.feign.client.config.stock.event-stream.reconnect-delay':
+          const String.fromEnvironment(
+            'spring.feign.client.config.stock.event-stream.reconnect-delay',
+          ),
     if (const bool.hasEnvironment('spring.flutter.app.debug-banner'))
       'spring.flutter.app.debug-banner': const String.fromEnvironment(
         'spring.flutter.app.debug-banner',
@@ -5854,7 +5854,7 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '60582111',
+  fingerprint: '0082fca9',
 );
 
 /// Starts the application: config files, environment, context, runners

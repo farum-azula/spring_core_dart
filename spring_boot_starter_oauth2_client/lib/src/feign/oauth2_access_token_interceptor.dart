@@ -28,8 +28,8 @@ const _log = SpringLog('spring.security.oauth2.client.feign');
 /// Switch it on with Spring Cloud OpenFeign's properties:
 ///
 /// ```properties
-/// spring.cloud.openfeign.oauth2.enabled=true
-/// spring.cloud.openfeign.oauth2.client-registration-id=keycloak
+/// spring.feign.oauth2.enabled=true
+/// spring.feign.oauth2.client-registration-id=keycloak
 /// ```
 ///
 /// A call made while nobody is logged in (an `authorization_code`

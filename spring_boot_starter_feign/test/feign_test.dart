@@ -189,7 +189,7 @@ void main() {
     server.when(HttpMethod.get, '/v1/books/0/details').respond(404);
     await runner
         .withPropertyValues([
-          'spring.cloud.openfeign.client.config.catalog.dismiss404=true',
+          'spring.feign.client.config.catalog.dismiss404=true',
         ])
         .runAsync((context) async {
           expect(await context.getBean<CatalogClient>().maybe('0'), isNull);
@@ -202,8 +202,8 @@ void main() {
         .respond(200, json: {'isbn': '1', 'title': 'A'});
     await runner
         .withPropertyValues([
-          'spring.cloud.openfeign.client.config.default.read-timeout=3s',
-          'spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon',
+          'spring.feign.client.config.default.read-timeout=3s',
+          'spring.feign.client.config.catalog.default-request-headers.X-Shop=neon',
         ])
         .withBean<RequestInterceptor>(() => TraceInterceptor())
         .runAsync((context) async {
@@ -277,7 +277,7 @@ void main() {
     server.when(HttpMethod.get, '/v1/ping').respond(200, body: 'pong');
     await runner
         .withPropertyValues([
-          'spring.cloud.openfeign.client.config.catalog.logger-level=basic',
+          'spring.feign.client.config.catalog.logger-level=basic',
         ])
         .runAsync((context) async {
           await context.getBean<CatalogClient>().ping();

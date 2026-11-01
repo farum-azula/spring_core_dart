@@ -427,7 +427,7 @@ abstract interface class CatalogClient {
   a `RetryableException`.
 - **Properties.** The read timeout, the logger level, the event stream's
   reconnect delay and attempts, and the socket's reconnect back-off are
-  `spring.cloud.openfeign.client.config.*` and
+  `spring.feign.client.config.*` and
   `spring.websocket.client.config.*` in `application.properties`.
 
 Try: with the server running, open Live stock while the server's restock
@@ -546,7 +546,7 @@ full: [the roadmap](../../roadmap/spring_boot_starter_oauth2_client.md#which-flo
   of `spring_boot_starter_flutter_security`: the Secure Enclave, the
   Android Keystore, the `SecretStore` on desktops): each call carries
   `Authorization: DPoP <token>` and a fresh proof, and a stolen token is
-  useless without the device. Not `spring.cloud.openfeign.oauth2.enabled`: its
+  useless without the device. Not `spring.feign.oauth2.enabled`: its
   interceptor, as Spring Cloud OpenFeign's, fails every call made while
   nobody is logged in, and the catalog is public. The support chat's
   handshake carries the token too (`SupportHandshake`, with

@@ -656,6 +656,10 @@ final class TestEmitter {
   // starter's testing library.
   bool _usesData = false;
 
+  // The `transactionManager:` of the `@DataTest` class being generated, as
+  // source, or null.
+  String? _transactionManager;
+
   /// Generates every test class of [file] and returns the formatted
   /// source of the generated library.
   ///
@@ -913,9 +917,14 @@ final class TestEmitter {
       _body.writeln('final $_logs = _sbt.captureLogs();');
     }
     final application = _application(testClass, context);
+    _transactionManager = null;
     if (dataTest != null) {
       _usesData = true;
       final scope = _Scope.of(file, testClass);
+      _transactionManager = _code(
+        namedNode(dataTest, 'transactionManager'),
+        scope: scope,
+      );
       final arguments = [
         application,
         if (_code(namedNode(dataTest, 'include'), scope: scope)
@@ -1407,6 +1416,8 @@ final class TestEmitter {
       '$_app.context',
       '() => $instance.${method.name}()',
       if (rollback != 'true') 'rollback: $rollback',
+      if (_transactionManager case final manager?)
+        'transactionManager: $manager',
       if (before.isNotEmpty) 'before: [${before.join(', ')}]',
       if (after.isNotEmpty) 'after: [${after.join(', ')}]',
     ];

@@ -5,7 +5,7 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// is answered with a 404.
 ///
 /// The dispatcher throws it when every handler mapping has passed on the
-/// request, and also for a path outside `server.servlet.context-path`.
+/// request, and also for a path outside `server.context-path`.
 /// Catch it in a `@ControllerAdvice` to answer unknown paths your own
 /// way.
 ///

@@ -195,12 +195,12 @@ void main() {
   });
 
   group('Feign', () {
-    test('spring.cloud.openfeign.oauth2.enabled adds the interceptor', () {
+    test('spring.feign.oauth2.enabled adds the interceptor', () {
       runner
           .withPropertyValues([
             ..._registration,
-            'spring.cloud.openfeign.oauth2.enabled=true',
-            'spring.cloud.openfeign.oauth2.client-registration-id=partner',
+            'spring.feign.oauth2.enabled=true',
+            'spring.feign.oauth2.client-registration-id=partner',
           ])
           .run((context) {
             final interceptor = context.getBean<OAuth2AccessTokenInterceptor>();
@@ -227,7 +227,7 @@ void main() {
       runner
           .withPropertyValues([
             ..._registration,
-            'spring.cloud.openfeign.oauth2.enabled=true',
+            'spring.feign.oauth2.enabled=true',
           ])
           .withBean<ErrorDecoder>(() => const DefaultErrorDecoder())
           .run((context) {

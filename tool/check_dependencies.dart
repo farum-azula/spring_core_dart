@@ -99,8 +99,7 @@ final class AllowedPackage {
   final Set<String>? onlyIn;
 }
 
-/// Exceptions to [allowedPublishers]. Database drivers will be added here,
-/// e.g.:
+/// Exceptions to [allowedPublishers]: the database drivers, for example:
 ///
 /// ```dart
 /// 'sqlite3': AllowedPackage(
@@ -109,6 +108,16 @@ final class AllowedPackage {
 /// ),
 /// ```
 const allowedPackages = {
+  'postgres': AllowedPackage(
+    'The PostgreSQL driver (agilord.com; the owner allowed database '
+    'drivers, as sqlite3): only a dev dependency of spring_boot_starter_data, '
+    'to test the driver glue the generator writes into applications that '
+    "list postgres themselves; the starter's runtime never depends on it. "
+    'It is pure Dart: unlike sqlite3 it needs no entry for the workspace '
+    'root. Its own dependencies (buffer, charcode, pool...) are allowed '
+    'through it only.',
+    onlyIn: {'spring_boot_starter_data'},
+  ),
   'sqlite3': AllowedPackage(
     'The SQLite driver (the owner allowed database drivers): only a dev '
     'dependency of spring_boot_starter_data, to test the driver glue the '

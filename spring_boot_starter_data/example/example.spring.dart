@@ -8,15 +8,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'dart:async' as _i3;
+import 'dart:io' as _i16;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i16;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i15;
+import 'package:postgres/postgres.dart' as _i15;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i18;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i17;
 import 'package:spring_boot_dart/src/conditions.dart' as _i8;
 import 'package:spring_boot_dart/src/runners.dart' as _i12;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i17;
+    as _i19;
 import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
-    as _i18;
+    as _i20;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i4;
 import 'package:spring_boot_starter_data/src/annotations.dart' as _i5;
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_client.dart' as _i13;
@@ -27,7 +29,7 @@ import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i6;
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
     as _i11;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i19;
+    as _i21;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:sqlite3/sqlite3.dart' as _i14;
 
@@ -1540,6 +1542,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
       conditions: [_i4.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
+    _i2.BeanDefinition<_i4.JdbcDriver>(
+      name: r'postgresJdbcDriver',
+      source: r'package:spring_boot_starter_data#postgres',
+      types: const [_i4.JdbcDriver],
+      conditions: [_i4.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      create: (r) => _$postgresJdbcDriver(),
+    ),
   ],
   resources: const {
     r'application.properties': _i2.EmbeddedResource.text(
@@ -1683,15 +1692,174 @@ T _$sqlite3Guard<T>(T Function() action) {
 _i4.JdbcDriver _$sqlite3JdbcDriver() =>
     _i4.SqliteJdbcDriver(const _$Sqlite3Binding());
 
+final class _$PostgresBinding implements _i4.PostgresBinding {
+  const _$PostgresBinding();
+
+  @override
+  Future<_i4.PostgresSession> open(_i4.PostgresEndpoint endpoint) =>
+      _$postgresGuard(() async {
+        final roots = endpoint.rootCertificate;
+        return _$PostgresSession(
+          await _i15.Connection.open(
+            _i15.Endpoint(
+              host: endpoint.host,
+              port: endpoint.port,
+              database: endpoint.database,
+              username: endpoint.username,
+              password: endpoint.password,
+            ),
+            settings: _i15.ConnectionSettings(
+              sslMode: switch (endpoint.sslMode) {
+                _i4.PostgresSslMode.disable => _i15.SslMode.disable,
+                _i4.PostgresSslMode.require => _i15.SslMode.require,
+                _i4.PostgresSslMode.verifyFull => _i15.SslMode.verifyFull,
+              },
+              securityContext: roots == null
+                  ? null
+                  : (_i16.SecurityContext(withTrustedRoots: false)
+                      ..setTrustedCertificates(roots)),
+              connectTimeout: endpoint.connectTimeout,
+              applicationName: endpoint.applicationName,
+            ),
+          ),
+        );
+      });
+}
+
+final class _$PostgresSession implements _i4.PostgresSession {
+  _$PostgresSession(this._connection);
+
+  final _i15.Connection _connection;
+
+  @override
+  bool get isOpen => _connection.isOpen;
+
+  @override
+  Future<_i4.PostgresResult> execute(
+    String sql, {
+    List<Object?> parameters = const [],
+    bool simple = false,
+    Duration? timeout,
+  }) => _$postgresGuard(() async {
+    final result = await _connection.execute(
+      sql,
+      parameters: parameters.isEmpty
+          ? null
+          : [for (final value in parameters) _$postgresParameter(value)],
+      queryMode: simple ? _i15.QueryMode.simple : null,
+      timeout: timeout,
+    );
+    final columns = _$postgresColumns(result.schema);
+    return _i4.PostgresResult(columns, [
+      for (final row in result) _$postgresValues(row),
+    ], result.affectedRows);
+  });
+
+  @override
+  Stream<_i4.PostgresRow> stream(
+    String sql, {
+    List<Object?> parameters = const [],
+    Duration? timeout,
+  }) async* {
+    final statement = await _$postgresGuard(() => _connection.prepare(sql));
+    try {
+      List<String>? columns;
+      await for (final row in statement.bind([
+        for (final value in parameters) _$postgresParameter(value),
+      ])) {
+        columns ??= _$postgresColumns(row.schema);
+        yield _i4.PostgresRow(columns, _$postgresValues(row));
+      }
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+    } finally {
+      try {
+        await statement.dispose();
+      } on Object {
+        // The connection is gone: nothing is left to free.
+      }
+    }
+  }
+
+  @override
+  Future<void> close() => _$postgresGuard(_connection.close);
+}
+
+// The package writes a double that is not finite (`Infinity`, `NaN`) as a
+// quoted text the server refuses, unless it knows the type.
+Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
+    ? _i15.TypedValue(_i15.Type.double, value)
+    : value;
+
+List<String> _$postgresColumns(_i15.ResultSchema schema) => [
+  for (final column in schema.columns) column.columnName ?? '',
+];
+
+// A value of a type the package does not decode (an enum, `citext`...) as
+// its text or bytes.
+List<Object?> _$postgresValues(_i15.ResultRow row) => [
+  for (final value in row)
+    value is _i15.UndecodedBytes
+        ? (value.isBinary ? value.bytes : value.asString)
+        : value,
+];
+
+// The exceptions of the package and of the socket as the SqlError the
+// driver understands: the message, the SQL state, the constraint's name;
+// never the DETAIL line (it holds values) and never the exception itself.
+Object _$postgresError(Object error) {
+  if (error is _i15.ServerException) {
+    return _i4.SqlError(
+      error.message,
+      sqlState: error.code,
+      constraint: error.constraintName,
+      connectionLost:
+          error.severity == _i15.Severity.fatal ||
+          error.severity == _i15.Severity.panic,
+    );
+  }
+  if (error is _i15.PgException) {
+    // The package names the value it cannot send.
+    final inference = error.message.startsWith('Could not infer');
+    return _i4.SqlError(
+      inference
+          ? 'A parameter value has a type the driver cannot send'
+          : error.message,
+      connectionLost: !inference,
+    );
+  }
+  if (error is _i16.SocketException || error is _i16.TlsException) {
+    return _i4.SqlError('$error', connectionLost: true);
+  }
+  if (error is _i3.TimeoutException) {
+    return _i4.SqlError(
+      error.message ?? 'The connection timed out',
+      connectionLost: true,
+    );
+  }
+  return error;
+}
+
+Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+  }
+}
+
+_i4.JdbcDriver _$postgresJdbcDriver() =>
+    _i4.PostgresJdbcDriver(const _$PostgresBinding());
+
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i15.SpringApplication get springApplication => _i15.SpringApplication(
+_i17.SpringApplication get springApplication => _i17.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i16.springBootAutoConfiguration,
-    _i17.springBootStarterCacheAutoConfiguration,
-    _i18.springBootStarterDataAutoConfiguration,
-    _i19.springBootStarterLoggingAutoConfiguration,
+    _i18.springBootAutoConfiguration,
+    _i19.springBootStarterCacheAutoConfiguration,
+    _i20.springBootStarterDataAutoConfiguration,
+    _i21.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -1755,32 +1923,32 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '5f638cce',
+  fingerprint: 'f0539f0d',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i15.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i17.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i15.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i17.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i15.ConfigurableApplicationContext reloadApplication(
-  _i15.ConfigurableApplicationContext running, {
+_i17.ConfigurableApplicationContext reloadApplication(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i15.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i15.ConfigurableApplicationContext running, {
+Future<_i17.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 

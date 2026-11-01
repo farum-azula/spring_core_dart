@@ -5,7 +5,8 @@ name: CI
 # Independent jobs on separate machines, so the run takes about as long as
 # its slowest job (not the sum of every step): static checks, generated
 # code, the starters' applications, the unit tests in four parts, the
-# integration tests (real sockets and processes), node/examples, Flutter.
+# integration tests (real sockets and processes), the data starter on a
+# PostgreSQL service, node/examples, Flutter.
 on:
   push:
     branches: [main]
@@ -279,6 +280,44 @@ jobs:
         env:
           PACKAGES: ${{ needs.changes.outputs.packages }}
         run: dart run tool/test_all.dart --only "$PACKAGES" --tags integration
+
+  # The data starter's tests that need a PostgreSQL server (tagged
+  # `postgres`: the driver, the schema and migrations, the locks, and the
+  # suites the in-memory store, SQLite and PostgreSQL share), against a
+  # service container. Without SPRING_TEST_POSTGRES_URL they are skipped, as
+  # in the jobs above. Each test works in a schema of its own.
+  postgres:
+    name: PostgreSQL (data starter)
+    needs: changes
+    if: contains(needs.changes.outputs.packages, 'spring_boot_starter_data')
+    runs-on: ubuntu-26.04
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Tests tagged postgres
+        working-directory: spring_boot_starter_data
+        env:
+          SPRING_TEST_POSTGRES_URL: postgresql://postgres:test@localhost:5432/postgres
+        run: dart test -t postgres --reporter expanded
 
   # The security starter against Spring Security itself
   # (roadmap/security_verification.md, section 3): the same raw requests to

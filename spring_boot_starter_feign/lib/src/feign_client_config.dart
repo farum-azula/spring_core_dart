@@ -1,6 +1,3 @@
-// The properties example in the documentation has lines that cannot be wrapped.
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// How much a Feign client logs about its calls, set per client with the
@@ -12,7 +9,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// (`logging.level.feign=debug`):
 ///
 /// ```properties
-/// spring.cloud.openfeign.client.config.catalog.logger-level=basic
+/// spring.feign.client.config.catalog.logger-level=basic
 /// logging.level.feign=debug
 /// ```
 ///
@@ -52,26 +49,26 @@ enum FeignLoggerLevel {
 /// headers and query parameters, redirects, event-stream reconnection,
 /// and the beans that retry, decode errors and intercept requests.
 ///
-/// They come from `spring.cloud.openfeign.client.config.<name>.*`, where
+/// They come from `spring.feign.client.config.<name>.*`, where
 /// `<name>` is the client's name (or `contextId`); what a client does not
-/// set falls back to `spring.cloud.openfeign.client.config.default.*`.
+/// set falls back to `spring.feign.client.config.default.*`.
 /// Applications set the properties; the starter reads them with [of] when
 /// it creates each client.
 ///
 /// ```properties
-/// spring.cloud.openfeign.client.config.default.read-timeout=10s
-/// spring.cloud.openfeign.client.config.catalog.url=https://api.neon.books
-/// spring.cloud.openfeign.client.config.catalog.logger-level=basic
-/// spring.cloud.openfeign.client.config.catalog.dismiss404=true
-/// spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon
-/// spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en,de
-/// spring.cloud.openfeign.client.config.catalog.retryer=catalogRetryer
-/// spring.cloud.openfeign.client.config.catalog.error-decoder=catalogErrors
-/// spring.cloud.openfeign.client.config.catalog.request-interceptors[0]=audit
-/// spring.cloud.openfeign.client.config.catalog.follow-redirects=false
-/// spring.cloud.openfeign.client.config.catalog.sensitive-headers=X-Api-Key
-/// spring.cloud.openfeign.client.config.orders.event-stream.reconnect-delay=1s
-/// spring.cloud.openfeign.client.decode-slash=false
+/// spring.feign.client.config.default.read-timeout=10s
+/// spring.feign.client.config.catalog.url=https://api.neon.books
+/// spring.feign.client.config.catalog.logger-level=basic
+/// spring.feign.client.config.catalog.dismiss404=true
+/// spring.feign.client.config.catalog.default-request-headers.X-Shop=neon
+/// spring.feign.client.config.catalog.default-query-parameters.lang=en,de
+/// spring.feign.client.config.catalog.retryer=catalogRetryer
+/// spring.feign.client.config.catalog.error-decoder=catalogErrors
+/// spring.feign.client.config.catalog.request-interceptors[0]=audit
+/// spring.feign.client.config.catalog.follow-redirects=false
+/// spring.feign.client.config.catalog.sensitive-headers=X-Api-Key
+/// spring.feign.client.config.orders.event-stream.reconnect-delay=1s
+/// spring.feign.client.decode-slash=false
 /// ```
 ///
 /// `default-request-headers` and `default-query-parameters` are maps of
@@ -161,7 +158,7 @@ final class FeignClientConfig {
   final bool followRedirects;
 
   /// Whether a `/` in a `@PathVariable` value stays a `/` instead of
-  /// `%2F` (`spring.cloud.openfeign.client.decode-slash`, one setting for
+  /// `%2F` (`spring.feign.client.decode-slash`, one setting for
   /// all clients); `true` by default.
   final bool decodeSlash;
 
@@ -212,7 +209,7 @@ final class FeignClientConfig {
     'dpop',
   };
 
-  static const _prefix = 'spring.cloud.openfeign.client.config.';
+  static const _prefix = 'spring.feign.client.config.';
 
   // A boolean property like Boot's binding: true / false (also on / off,
   // yes / no, 1 / 0) in any case; anything else fails.
@@ -279,8 +276,8 @@ final class FeignClientConfig {
       defaultQueryParameters: queries,
       followRedirects: flag('follow-redirects', defaultValue: true),
       decodeSlash: _flag(
-        environment.getProperty('spring.cloud.openfeign.client.decode-slash'),
-        'spring.cloud.openfeign.client.decode-slash',
+        environment.getProperty('spring.feign.client.decode-slash'),
+        'spring.feign.client.decode-slash',
         defaultValue: true,
       ),
       eventStreamReconnect: flag('event-stream.reconnect', defaultValue: true),
@@ -305,7 +302,7 @@ final class FeignClientConfig {
   }
 
   /// The connection timeout of the default transport, one setting for all
-  /// clients (`spring.cloud.openfeign.client.config.default.connect-timeout`):
+  /// clients (`spring.feign.client.config.default.connect-timeout`):
   /// [defaultConnectTimeout] when it is not set, `null` (no timeout) when
   /// it is `0`.
   static Duration? connectTimeout(Environment environment) {

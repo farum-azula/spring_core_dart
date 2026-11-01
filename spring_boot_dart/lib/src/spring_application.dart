@@ -13,6 +13,7 @@ import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/hot_reload.dart';
+import 'package:spring_boot_dart/src/renamed_properties.dart';
 import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
     if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
@@ -375,10 +376,11 @@ class SpringApplication {
 
   // The post-processors before (`true`) or after config data, in order;
   // Boot's built-in SpringApplicationJsonEnvironmentPostProcessor among
-  // them.
+  // them, and the check for renamed properties.
   Iterable<EnvironmentPostProcessor> _postProcessors({required bool before}) =>
-      OrderComparator.sort([
+      OrderComparator.sort(<EnvironmentPostProcessor>[
         const SpringApplicationJsonEnvironmentPostProcessor(),
+        const RenamedPropertiesEnvironmentPostProcessor(),
         ...environmentPostProcessors,
       ]).where(
         (processor) =>

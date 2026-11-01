@@ -18,7 +18,7 @@ import 'example.spring.dart';
 
 /// The partner's API. The starter's interceptor adds
 /// `Authorization: Bearer <token>` to every call
-/// (`spring.cloud.openfeign.oauth2.enabled=true`).
+/// (`spring.feign.oauth2.enabled=true`).
 @FeignClient('orders', url: r'${partner.url}')
 abstract interface class OrdersClient {
   @GetMapping('/orders')
@@ -68,8 +68,8 @@ Future<void> main(List<String> args) async {
       '$registration.scope': 'orders.read',
       'spring.security.oauth2.client.provider.partner.token-uri':
           '$base/oauth2/token',
-      'spring.cloud.openfeign.oauth2.enabled': 'true',
-      'spring.cloud.openfeign.oauth2.client-registration-id': 'partner',
+      'spring.feign.oauth2.enabled': 'true',
+      'spring.feign.oauth2.client-registration-id': 'partner',
       'partner.url': base,
     },
   );

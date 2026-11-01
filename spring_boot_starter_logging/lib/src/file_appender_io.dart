@@ -15,7 +15,7 @@ const _log = SpringLog('spring_boot_starter_logging');
 /// Most applications do not create one: setting `logging.file.name` (a
 /// file) or `logging.file.path` (a directory, with `spring.log` in it)
 /// makes the starter create it, with its limits from
-/// `logging.logback.rollingpolicy.*`; it is then `LoggingSystem.file`.
+/// `logging.file.rolling-policy.*`; it is then `LoggingSystem.file`.
 /// Create one yourself for a second file, such as one that keeps only
 /// errors.
 ///

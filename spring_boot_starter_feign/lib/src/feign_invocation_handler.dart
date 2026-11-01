@@ -77,7 +77,7 @@ final class FeignInvocationHandler implements InvocationHandler {
   /// The interface's `@FeignClient` annotation.
   final FeignClient client;
 
-  /// The client's settings from `spring.cloud.openfeign.client.config.*`.
+  /// The client's settings from `spring.feign.client.config.*`.
   final FeignClientConfig config;
 
   /// Resolves the `${...}` placeholders of the URL, the paths and the
@@ -131,7 +131,7 @@ final class FeignInvocationHandler implements InvocationHandler {
     if (url == null) {
       problems.add(
         'no URL: set @FeignClient(url: ...) or '
-        'spring.cloud.openfeign.client.config.${client.configKey}.url',
+        'spring.feign.client.config.${client.configKey}.url',
       );
       return '';
     }

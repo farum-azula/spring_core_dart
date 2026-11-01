@@ -26,7 +26,7 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 ///    configuration class never reach clients that do not list it);
 ///    without any, a [DefaultErrorDecoder] and [Retryer.never];
 /// 3. the `retryer` and `error-decoder` properties of
-///    `spring.cloud.openfeign.client.config.<name>` (or `default`), which
+///    `spring.feign.client.config.<name>` (or `default`), which
 ///    win over both, as with Spring's default `default-to-properties`;
 ///    the `request-interceptors` property adds interceptors.
 ///
@@ -305,7 +305,7 @@ final class _ClientBeans {
   T named<T extends Object>(String reference, String property) {
     final beans = _beans;
     final where =
-        'spring.cloud.openfeign.client.config.'
+        'spring.feign.client.config.'
         '${client.configKey}.$property';
     if (beans == null) {
       _fail('$where=$reference: no bean factory to look it up');

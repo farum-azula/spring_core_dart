@@ -145,11 +145,13 @@ class NamedParameterJdbcTemplate {
   Future<int> updateWithKeyHolder(
     String sql,
     Object params,
-    KeyHolder holder,
-  ) => _future(
+    KeyHolder holder, {
+    String? keyColumn,
+  }) => _future(
     sql,
     params,
-    (text, values) => jdbc.updateWithKeyHolder(text, values, holder),
+    (text, values) =>
+        jdbc.updateWithKeyHolder(text, values, holder, keyColumn: keyColumn),
   );
 
   /// Runs [sql] once for each of [batch] (each a map, source or bean);

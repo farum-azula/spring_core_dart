@@ -305,6 +305,39 @@ class ShopTest {
     );
   });
 
+  test(
+    '@DataTest(transactionManager:) names the manager of every test',
+    () async {
+      final source = await _generated('''
+@DataTest(transactionManager: 'archive')
+class ShopTest {
+  @Test()
+  @Commit()
+  void committed() {}
+
+  @Test()
+  void rolledBack() {}
+}
+''');
+      expect(
+        source,
+        _has(
+          "_sbt.test('committed', () => _data.runInTestTransaction( "
+          'app.context, () => instance.committed(), rollback: false, '
+          "transactionManager: 'archive'));",
+        ),
+      );
+      expect(
+        source,
+        _has(
+          "_sbt.test('rolled back', () => _data.runInTestTransaction( "
+          'app.context, () => instance.rolledBack(), '
+          "transactionManager: 'archive'));",
+        ),
+      );
+    },
+  );
+
   group('rollback or commit', () {
     test('@Commit and @Rollback(false) commit, the innermost wins', () async {
       final source = _squash(

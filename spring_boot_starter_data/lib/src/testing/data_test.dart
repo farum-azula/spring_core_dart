@@ -45,7 +45,8 @@
 ///   using the in-memory store.
 ///
 /// Each test (with its `@BeforeEach` and `@AfterEach` methods) runs in a
-/// transaction of the context's `PlatformTransactionManager`, which is
+/// transaction of every `PlatformTransactionManager` its repositories use
+/// (or of the one [transactionManager] names), which is
 /// rolled back at the end, so tests never see each other's data; the
 /// repositories and `@Transactional` methods join it. [Commit] and
 /// [Rollback] change that. A test that needs a transaction of its own
@@ -95,6 +96,7 @@ final class DataTest {
     this.resourceDirectories = const ['test/resources'],
     this.include = const [],
     this.replaceDatabase = true,
+    this.transactionManager = '',
   });
 
   /// The entry point of the application to start, as a path in the package
@@ -146,6 +148,18 @@ final class DataTest {
   /// tables are created from the entities (`spring.data.jdbc.schema=create`)
   /// unless that property is set.
   final bool replaceDatabase;
+
+  /// The name of the transaction manager bean the tests run in (its bean
+  /// name or qualifier, as in `@Transactional(transactionManager: ...)`);
+  /// empty, the default, runs each test in a transaction of every manager
+  /// the application's repositories use.
+  ///
+  /// Name one when the application has several databases and the test
+  /// touches one of them: only that database is rolled back, and the
+  /// repositories of the others write for real. A test fails with a
+  /// `StateError` when no manager has the name. Spring's
+  /// `@Transactional(transactionManager: 'name')` on a test class.
+  final String transactionManager;
 }
 
 /// Says whether the transaction of a [DataTest] test is rolled back at its

@@ -50,7 +50,7 @@ abstract interface class ServerHttpRequest {
   Uri get uri;
 
   /// The path without the query, still percent-encoded
-  /// (`/api/books/978-0`). Behind a `server.servlet.context-path`, filters
+  /// (`/api/books/978-0`). Behind a `server.context-path`, filters
   /// and handlers see the path without that prefix.
   String get path;
 
@@ -91,7 +91,7 @@ abstract interface class ServerHttpRequest {
   /// above `server.max-http-request-body-size` ends with a
   /// [PayloadTooLargeException], whatever its `Content-Type` (the
   /// starter's multipart resolver reads uploads with their own limit,
-  /// `spring.servlet.multipart.max-request-size`). For small bodies,
+  /// `spring.web.multipart.max-request-size`). For small bodies,
   /// [ServerHttpRequestBody.readBodyBytes] and
   /// [ServerHttpRequestBody.readBodyText] are simpler.
   Stream<Uint8List> get body;

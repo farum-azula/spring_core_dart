@@ -1,13 +1,15 @@
-// The semantics of references, foreign keys and unique keys, on both stores:
-// the same calls and the same assertions run on the in-memory store and on
+// The semantics of references, foreign keys and unique keys, on the stores:
+// the same calls and the same assertions run on the in-memory store, on
 // SQLite (whose tables the starter creates from the annotations, with
-// `PRAGMA foreign_keys = ON`), so a test that passes in memory does not fail
-// in production. Same approach as semantics_test.dart.
+// `PRAGMA foreign_keys = ON`) and, when SPRING_TEST_POSTGRES_URL names a
+// server, on PostgreSQL, so a test that passes in memory does not fail in
+// production. Same approach as semantics_test.dart.
 import 'dart:async';
 
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
+import '../../postgres/support.dart' show postgresSkip;
 import 'support.dart';
 
 /// The repositories of the store under test.
@@ -44,7 +46,7 @@ final class Refs {
     citizens: j.context.getBean<MemoryCitizens>(),
   );
 
-  factory Refs.sqlite(Jdbc j) => Refs(
+  factory Refs.sql(Jdbc j) => Refs(
     j,
     books: j.sqlBooks,
     clubs: j.context.getBean<SqlClubs>(),
@@ -87,26 +89,33 @@ final Matcher integrityViolation = throwsA(
 final Matcher duplicateKey = throwsA(isA<DuplicateKeyException>());
 
 void main() {
-  for (final store in const ['memory', 'sqlite']) {
-    group(store, () => _suite(sqlite: store == 'sqlite'));
+  for (final store in const ['memory', 'sqlite', 'postgres']) {
+    group(
+      store,
+      () => _suite(store),
+      skip: store == 'postgres' ? postgresSkip : null,
+      tags: store == 'postgres' ? 'postgres' : null,
+    );
   }
 }
 
-void _suite({required bool sqlite}) {
+void _suite(String store) {
+  final sql = store != 'memory';
   late Refs refs;
   late TransactionTemplate tx;
 
-  Future<void> run(Future<void> Function() body) => withJdbc((j) async {
-    refs = sqlite ? Refs.sqlite(j) : Refs.memory(j);
-    tx = sqlite
-        ? j.transaction()
-        : TransactionTemplate(
-            InMemoryTransactionManager(
-              j.factory.stores['memory']! as InMemoryDataStore,
-            ),
-          );
-    await body();
-  });
+  Future<void> run(Future<void> Function() body) =>
+      withJdbc(postgres: store == 'postgres', (j) async {
+        refs = sql ? Refs.sql(j) : Refs.memory(j);
+        tx = sql
+            ? j.transaction()
+            : TransactionTemplate(
+                InMemoryTransactionManager(
+                  j.factory.stores['memory']! as InMemoryDataStore,
+                ),
+              );
+        await body();
+      });
 
   Future<int> club(String name) async => (await refs.clubs.save(
     Club(name: name),
@@ -230,7 +239,7 @@ void _suite({required bool sqlite}) {
           (await refs.fans.findByClubId(reds)).map((f) => f.name),
           ['Ann', 'Cat'],
         );
-        if (sqlite) {
+        if (sql) {
           expect(
             (await refs.context.context.getBean<SqlFans>().byClub(blues))
                 .map((f) => f.name),
@@ -319,7 +328,7 @@ void _suite({required bool sqlite}) {
           (await refs.players.findById(kim.id!))!.medals.map((m) => m.title),
           ['bronze'],
         );
-        if (sqlite) {
+        if (sql) {
           // The database removed the children of the players too.
           expect(
             await refs.context.jdbc.queryForObject<int>(
@@ -463,6 +472,13 @@ void _suite({required bool sqlite}) {
         final sub = await refs.categories.save(
           Category(name: 'c sub', parentId: top.id),
         );
+        if (store == 'postgres') {
+          // RESTRICT looks when the statement is done, not row by row: both
+          // rows are gone by then, whatever the order of the table.
+          expect(await refs.categories.deleteByNameStartingWith('c'), 2);
+          expect(await refs.categories.count(), 0);
+          return;
+        }
         // The parent comes first: it is deleted while its child exists.
         await expectLater(
           refs.categories.deleteByNameStartingWith('c'),
@@ -573,7 +589,19 @@ void _suite({required bool sqlite}) {
             const SortOrder.asc('id'),
           ]),
         );
-        expect(titles(sorted), ['Zeta', 'ärger', 'Ärger']);
+        if (store == 'postgres') {
+          // The database's collation orders the letters: bytewise (`C`) as
+          // in memory, or the locale's, which puts ä before z.
+          expect(
+            titles(sorted),
+            anyOf(
+              equals(['Zeta', 'ärger', 'Ärger']),
+              equals(['ärger', 'Ärger', 'Zeta']),
+            ),
+          );
+        } else {
+          expect(titles(sorted), ['Zeta', 'ärger', 'Ärger']);
+        }
       }),
     );
   });

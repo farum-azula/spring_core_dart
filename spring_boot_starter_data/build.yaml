@@ -11,6 +11,7 @@ targets:
           - test/transaction/app/**
           - test/integration/app/**
           - test/sqlite/app/**
+          - test/postgres/app/**
           - test/autoconfig/app/**
           - test/repository/jdbc/app/**
           - test/data_test/app/**

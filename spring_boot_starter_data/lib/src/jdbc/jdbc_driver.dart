@@ -96,11 +96,13 @@ abstract interface class JdbcConnection {
 
   /// Runs the change [sql] (insert, update, delete) and returns the rows
   /// changed and, with [returnGeneratedKey], the key the database gave an
-  /// inserted row.
+  /// inserted row: SQLite's `rowid`; PostgreSQL's `RETURNING` of
+  /// [keyColumn] (the first column of the row without it).
   Future<JdbcUpdate> update(
     String sql, [
     List<Object?> parameters = const [],
     bool returnGeneratedKey = false,
+    String? keyColumn,
   ]);
 
   /// Runs [sql] once for each parameter list of [batch]; returns the rows

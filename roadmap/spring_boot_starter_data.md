@@ -210,11 +210,74 @@ the application adds the driver it wants, the generator sees it.
      `replaceDatabase:`. The generator joins the data starter and the test
      starter in the generated test file (`DataTestSetup`,
      `runInTestTransaction` of `spring_boot_starter_data/testing.dart`);
-     left: a `@Transactional`-style choice of the transaction manager, and
-     the database of a container (`replaceDatabase: false` takes it).
+     `@DataTest(transactionManager: 'name')` (Spring's
+     `@Transactional(transactionManager:)`) runs the tests in that one
+     manager's transaction; left: the database of a container
+     (`replaceDatabase: false` takes it, untested against a container) and a
+     per-test choice of the manager.
 4. PostgreSQL (the `postgres` package): a connection pool
    (`spring.datasource.pool.*`), `FOR UPDATE` / `FOR SHARE`, `NOWAIT`,
    `SKIP LOCKED`.
+   Built; decided while building it:
+   - the driver is the SQLite one's twin: the generator writes a thin glue
+     (`lib/src/jdbc/drivers/postgres.dart.tmpl`, one more row of the same
+     table, bean `postgresJdbcDriver`) that implements the starter's
+     `PostgresBinding` over `package:postgres` (open, `execute` with `$n`
+     parameters, a stream of rows, close; the package's exceptions as
+     `SqlError`s with the SQL state, the constraint's name and no `DETAIL`);
+     `PostgresJdbcDriver` and `PostgresDialect` are the starter's, tested
+     without a server over a fake binding. The driver parses
+     `postgresql://user:password@host:port/db?sslmode=…` (`jdbc:` dropped by
+     the properties; unknown parameters are errors, so a typo never weakens
+     TLS), rewrites `?` to `$1` outside quotes, comments and `$$` (`??` is a
+     literal `?`), takes the generated key with `RETURNING <id column>`
+     (`JdbcConnection.update(keyColumn:)`), begins transactions with their
+     isolation level and `READ ONLY`, bounds statements with the package's
+     per-statement timeout (the server cancels, `57014`), and drops from the
+     message what the server says about the data (the `DETAIL` line, the
+     rejected value of a class 22 error);
+   - `sslmode` has libpq's names and default `prefer` (TLS, then plain text
+     if the server has none); `require` does not check the certificate,
+     `verify-ca` and `verify-full` do (the package offers no weaker check);
+   - the package writes a non-finite `double` as text the server refuses:
+     the glue types it; the package's `execute` of several statements that
+     return rows fails, so scripts are split by the starter as they already
+     were;
+   - the dialect: `BIGINT`, `TEXT`, `BOOLEAN`, `DOUBLE PRECISION`,
+     `TIMESTAMPTZ`, `BYTEA`, `NUMERIC`; identity ids; `LIMIT` / `OFFSET`
+     (`OFFSET` alone); row locks; `SET LOCAL lock_timeout`; schema
+     validation from `information_schema` and `pg_catalog` (types by
+     `data_type`, foreign keys with their action, unique keys, partial and
+     expression indexes left out); foreign keys of cycles added by `ALTER
+     TABLE` after the tables; `DROP … CASCADE` for referenced tables;
+     transactional DDL for the migrations and an advisory lock for their
+     run; errors by SQL state;
+   - differences the tests state: text is ordered and compared by the
+     database's collation (`COLLATE "C"` would match the in-memory store,
+     but would make `lower()` ASCII only and the ordering unlike what a
+     Spring Data application on PostgreSQL gives); `ON DELETE RESTRICT` is
+     checked when the statement ends, not row by row; the identity
+     sequence does not follow ids written by hand; a failed statement
+     aborts the transaction (`25P02`) until a savepoint or the rollback;
+   - tests: unit tests of the dialect, the markers, the URL and the driver
+     (a fake binding); the glue; and, tagged `postgres` and run when
+     `SPRING_TEST_POSTGRES_URL` is set, the driver (values, streams, keys,
+     transactions, isolation, savepoints, locks, timeouts, TLS, errors and
+     a killed connection), the schema (creation, validation, scripts,
+     migrations, concurrent runners), the locks and optimistic locking
+     through repositories, and the shared suites (entity stores, derived
+     queries, references, injection, `@Query`) beside the in-memory store
+     and SQLite. CI runs them on a `postgres:17` service container.
+   Left: containers in tests (`@Container`, `@ServiceConnection`, our own
+   Docker client: the tests above need a server started by hand or by CI);
+   the transaction race matrix of "Transactions: the test matrix" on
+   PostgreSQL (the pieces above cover locks, optimistic locking, read
+   committed against repeatable read, serialization failures and deadlocks,
+   but not the propagation matrix across two services); the comparison with
+   Spring Data JDBC on the same database (a Spring twin application, as the
+   security starter has one); `@DataTest` against a PostgreSQL container;
+   `COPY` and other bulk paths; a `LISTEN` / `NOTIFY` bridge; Unix sockets
+   and several hosts in one URL; client certificates (`sslcert`, `sslkey`).
 5. Redis, with this project's own client (RESP over `dart:io`: a few
    hundred lines, a pool, TLS, `AUTH`, the database index, Pub/Sub; no
    third-party package), switched on by `spring.data.redis.*` (Spring
@@ -890,7 +953,7 @@ review and commit; never applied by itself.
 - Supabase repositories run no DDL: the schema is the server's (Supabase
   CLI migrations); a Flutter app never holds the credentials for it.
 
-## Renaming properties named after Java libraries (the owner, at the end of 0.6.0)
+## Renaming properties named after Java libraries (the owner, at the end of 0.6.0; done)
 
 Properties named after a library or a Java technology this project does
 not use are renamed; names of Spring's own concepts stay. The old Spring
@@ -905,10 +968,17 @@ defaults):
 | `spring.servlet.multipart.*` | `spring.web.multipart.*` |
 | `server.servlet.context-path`, `server.servlet.session.*` | `server.context-path`, `server.session.*` |
 | `logging.logback.rollingpolicy.*` | `logging.file.rolling-policy.*` |
-| (`spring.flyway.*`, planned) | `spring.sql.migration.*` |
+| `spring.flyway.*` | `spring.sql.migration.*` |
 
 Code, tests, READMEs, docs, guides, and a Breaking entry in each
 package's CHANGELOG.
+
+Done: every binding, test, example and doc uses the new names, and
+`spring_boot_dart` has the check (`RenamedPropertiesEnvironmentPostProcessor`,
+the one table of old prefixes) that stops the start for an old name in
+any property source, in a file, an argument, a `--dart-define` or an
+environment variable, naming the new key. docs/configuration.md lists the
+renames under "Differences from Spring Boot".
 
 ## Differences from Spring to state in the docs
 

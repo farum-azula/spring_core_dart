@@ -227,7 +227,7 @@ enum ClientAuth {
 /// | `server.address` | all interfaces (`127.0.0.1` in Flutter apps) |
 /// | `server.shutdown` | `graceful` |
 /// | `server.ssl.enabled`, `server.ssl.certificate`, `server.ssl.certificate-private-key`, `server.ssl.key-password`, `server.ssl.trust-certificate`, `server.ssl.client-auth` | no TLS |
-/// | `server.servlet.context-path` | none: a prefix of every mapping |
+/// | `server.context-path` | none: a prefix of every mapping |
 /// | `server.max-http-request-body-size` | `10MB` (`-1`: no limit) |
 /// | `server.http2.enabled` | ignored (`dart:io` speaks HTTP/1.1) |
 /// | `server.compression.enabled` | `false`; `true` gzips the responses of `mime-types` from `min-response-size` on, for clients that accept gzip |
@@ -263,9 +263,8 @@ final class ServerProperties {
   /// Flutter apps, so they open no port to the network by accident.
   ///
   /// TLS is on when `server.ssl.certificate` is set and
-  /// `server.ssl.enabled` is not `false`. The legacy
-  /// `server.context-path` is read when `server.servlet.context-path` is
-  /// not set; a context path gets a leading `/` and loses a trailing
+  /// `server.ssl.enabled` is not `false`. A context path
+  /// (`server.context-path`) gets a leading `/` and loses a trailing
   /// one. Durations are written as `10s`, `500ms` (a bare number is
   /// milliseconds) or `PT10S`. Throws an
   /// [ArgumentError] for a port that is not a number, an unknown
@@ -324,8 +323,7 @@ final class ServerProperties {
             },
           )
         : null;
-    var contextPath =
-        text('server.servlet.context-path') ?? text('server.context-path');
+    var contextPath = text('server.context-path');
     if (contextPath != null) {
       if (!contextPath.startsWith('/')) {
         contextPath = '/$contextPath';
@@ -429,7 +427,7 @@ final class ServerProperties {
   /// The largest request body accepted, in bytes; 10 MB by default, `-1`
   /// for no limit. A larger body is a 413, whatever its `Content-Type`.
   /// Only the multipart resolver reads uploads with its own limit
-  /// (`spring.servlet.multipart.max-request-size`), through
+  /// (`spring.web.multipart.max-request-size`), through
   /// [maxRequestBodySizeAttribute].
   final int maxRequestBodySize;
 
@@ -536,7 +534,7 @@ final class ServerProperties {
 /// largest body in bytes, `-1` for no limit. Set it before the body is
 /// read.
 ///
-/// The multipart resolver sets it to `spring.servlet.multipart.max-request-size`,
+/// The multipart resolver sets it to `spring.web.multipart.max-request-size`,
 /// so uploads have their own limit while every other reader of a
 /// `multipart/*` body keeps the server's. A handler that streams a large
 /// body of its own can do the same:

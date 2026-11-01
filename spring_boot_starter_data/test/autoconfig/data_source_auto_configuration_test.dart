@@ -52,9 +52,25 @@ void main() {
     await body(context);
   });
 
-  Future<Object> failure(List<String> properties) async {
+  // [withoutPostgres] leaves out the PostgreSQL driver the generator wrote
+  // beside the SQLite one (the starter lists both packages), for the tests
+  // of a scheme no driver handles.
+  Future<Object> failure(
+    List<String> properties, {
+    bool withoutPostgres = false,
+  }) async {
     Object? found;
-    await runner(properties).runAsync<void>((context) {
+    var configured = runner(properties);
+    if (withoutPostgres) {
+      configured = configured.withInitializer(
+        ApplicationContextInitializer.of(
+          (context) => context.addBeanFactoryPostProcessor(
+            _Without('postgresJdbcDriver'),
+          ),
+        ),
+      );
+    }
+    await configured.runAsync<void>((context) {
       found = context.startupFailure;
     });
     expect(found, isNotNull, reason: 'the application should not start');
@@ -243,7 +259,7 @@ void main() {
           name: 'dataSource',
           create: (r) => PooledDataSource(
             name: 'own',
-            driver: r.dependency<JdbcDriver>(),
+            driver: r.dependency<JdbcDriver>(name: 'sqlite3JdbcDriver'),
             settings: ConnectionSettings(
               url: Uri.parse('sqlite:file:${temp.path}/own.db'),
             ),
@@ -276,7 +292,7 @@ void main() {
     test('a URL no driver handles says what to add', () async {
       final error = await failure([
         'spring.datasource.url=postgresql://db:5432/shop',
-      ]);
+      ], withoutPostgres: true);
       expect(
         '$error',
         contains('spring.datasource.url is postgresql://db:5432/shop'),
@@ -319,7 +335,7 @@ void main() {
 
     test('a password in the URL is never shown', () async {
       final error = await failure([
-        'spring.datasource.url=postgresql://shop:s3cr3t@db:5432/shop',
+        'spring.datasource.url=postgresql://shop:s3cr3t@127.0.0.1:1/shop',
       ]);
       expect('$error', isNot(contains('s3cr3t')));
       expect(report(error), isNot(contains('s3cr3t')));
@@ -329,7 +345,8 @@ void main() {
       final second = BeanModule('second', [
         BeanDefinition<JdbcDriver>(
           name: 'otherSqliteDriver',
-          create: (r) => _OtherDriver(r.dependency<JdbcDriver>()),
+          create: (r) =>
+              _OtherDriver(r.dependency<JdbcDriver>(name: 'sqlite3JdbcDriver')),
         ),
       ]);
       Object? found;
@@ -346,7 +363,8 @@ void main() {
       final second = BeanModule('second', [
         BeanDefinition<JdbcDriver>(
           name: 'otherSqliteDriver',
-          create: (r) => _OtherDriver(r.dependency<JdbcDriver>()),
+          create: (r) =>
+              _OtherDriver(r.dependency<JdbcDriver>(name: 'sqlite3JdbcDriver')),
         ),
       ]);
       return runner([
@@ -644,6 +662,20 @@ void main() {
       });
     });
   });
+}
+
+// Removes the bean [name] once the definitions are registered.
+final class _Without implements BeanDefinitionRegistryPostProcessor {
+  _Without(this.name);
+
+  final String name;
+
+  @override
+  void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) =>
+      registry.removeBeanDefinition(name);
+
+  @override
+  void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {}
 }
 
 // A second driver for the sqlite scheme.

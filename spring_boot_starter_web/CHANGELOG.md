@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Breaking
+
+- Properties renamed: `spring.servlet.multipart.*` is `spring.web.multipart.*`; `server.servlet.context-path` is `server.context-path` and `server.servlet.session.*` is `server.session.*` (there is no servlet container). An old name stops the start, naming the new one. The Boot 1 key `server.context-path`, which was read when `server.servlet.context-path` was not set, is now the key itself.
+
 ### Changes
 
 - `HandlerExceptionResolver`, Spring's extension point for turning an error into an answer: a bean returns an `ErrorResponse` (status, headers and problem) or `null` to pass the error on. The resolvers are asked in `@Order` after the `@ExceptionHandler` methods of the controller and of the `@ControllerAdvice` beans (the application's handlers always win) and before the default 500; not for an error that is already an `ErrorResponse` or that a filter throws; a resolver that throws is logged and skipped. A library maps its exceptions to HTTP with it: with `spring_boot_starter_data` among the dependencies the generator adds one, so an `OptimisticLockingFailureException` and a `DuplicateKeyException` are a 409 and an `EmptyResultDataAccessException` a 404 (see the data starter).

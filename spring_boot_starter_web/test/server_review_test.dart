@@ -457,9 +457,9 @@ void main() {
 
     ApplicationContextRunner runner([List<String> properties = const []]) =>
         webRunner([
-          'spring.servlet.multipart.location=${uploads.path}',
-          'spring.servlet.multipart.max-file-size=-1',
-          'spring.servlet.multipart.max-request-size=64KB',
+          'spring.web.multipart.location=${uploads.path}',
+          'spring.web.multipart.max-file-size=-1',
+          'spring.web.multipart.max-request-size=64KB',
           ...properties,
         ]);
 
@@ -530,7 +530,7 @@ void main() {
         'temporary file, the shutdown is not held up', () async {
       final watch = Stopwatch();
       await runner([
-        'spring.servlet.multipart.max-request-size=10MB',
+        'spring.web.multipart.max-request-size=10MB',
       ]).runAsync((context) async {
         final client = await Client.of(context.context);
         final socket = await io.Socket.connect('127.0.0.1', client.port);
@@ -558,7 +558,7 @@ void main() {
       'temporary files are in a private directory, with random names',
       () async {
         await runner([
-          'spring.servlet.multipart.max-request-size=10MB',
+          'spring.web.multipart.max-request-size=10MB',
         ]).runAsync((context) async {
           final client = await Client.of(context.context);
           final socket = await io.Socket.connect('127.0.0.1', client.port);

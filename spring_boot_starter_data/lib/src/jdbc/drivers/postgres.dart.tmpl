@@ -1,0 +1,198 @@
+// The glue of the PostgreSQL driver, as the generator writes it into a module
+// whose package depends on `postgres`. This is NOT a Dart library: the
+// starter does not depend on `postgres`, so no analyzer and no pub check
+// may see an import of it. The generator reads this file (an asset of
+// `spring_boot_starter_data`), resolves the placeholders and appends the
+// result to the generated library.
+//
+// Placeholder syntax, resolved through code_builder's allocator so that
+// every symbol gets the generated library's own import prefix and import:
+//
+//     {{package:<library uri without "package:">#<Symbol>}}
+//     {{dart:<library>#<Symbol>}}
+//
+// For example `{{package:postgres/postgres.dart#Connection}}` becomes
+// `_i3.Connection` with `import 'package:postgres/postgres.dart' as _i3;`.
+// Write every symbol of another library this way, and no `import` line. What
+// remains must be valid Dart. Keep it small: each line is copied into every
+// application.
+//
+// The generator makes the bean `postgresJdbcDriver` from the function
+// `_$postgresJdbcDriver` below (the name is in the generator's table).
+//
+// The package's exceptions become `SqlError`s without their `detail` (a
+// duplicate key's detail holds the values) and without the exception itself.
+
+final class _$PostgresBinding
+    implements {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresBinding}} {
+  const _$PostgresBinding();
+
+  @override
+  Future<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresSession}}> open(
+    {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresEndpoint}} endpoint,
+  ) => _$postgresGuard(() async {
+    final roots = endpoint.rootCertificate;
+    return _$PostgresSession(
+      await {{package:postgres/postgres.dart#Connection}}.open(
+        {{package:postgres/postgres.dart#Endpoint}}(
+          host: endpoint.host,
+          port: endpoint.port,
+          database: endpoint.database,
+          username: endpoint.username,
+          password: endpoint.password,
+        ),
+        settings: {{package:postgres/postgres.dart#ConnectionSettings}}(
+          sslMode: switch (endpoint.sslMode) {
+            {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresSslMode}}.disable =>
+              {{package:postgres/postgres.dart#SslMode}}.disable,
+            {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresSslMode}}.require =>
+              {{package:postgres/postgres.dart#SslMode}}.require,
+            {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresSslMode}}.verifyFull =>
+              {{package:postgres/postgres.dart#SslMode}}.verifyFull,
+          },
+          securityContext: roots == null
+              ? null
+              : ({{dart:io#SecurityContext}}(withTrustedRoots: false)
+                  ..setTrustedCertificates(roots)),
+          connectTimeout: endpoint.connectTimeout,
+          applicationName: endpoint.applicationName,
+        ),
+      ),
+    );
+  });
+}
+
+final class _$PostgresSession
+    implements {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresSession}} {
+  _$PostgresSession(this._connection);
+
+  final {{package:postgres/postgres.dart#Connection}} _connection;
+
+  @override
+  bool get isOpen => _connection.isOpen;
+
+  @override
+  Future<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresResult}}> execute(
+    String sql, {
+    List<Object?> parameters = const [],
+    bool simple = false,
+    Duration? timeout,
+  }) => _$postgresGuard(() async {
+    final result = await _connection.execute(
+      sql,
+      parameters: parameters.isEmpty
+          ? null
+          : [for (final value in parameters) _$postgresParameter(value)],
+      queryMode: simple ? {{package:postgres/postgres.dart#QueryMode}}.simple : null,
+      timeout: timeout,
+    );
+    final columns = _$postgresColumns(result.schema);
+    return {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresResult}}(
+      columns,
+      [for (final row in result) _$postgresValues(row)],
+      result.affectedRows,
+    );
+  });
+
+  @override
+  Stream<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresRow}}> stream(
+    String sql, {
+    List<Object?> parameters = const [],
+    Duration? timeout,
+  }) async* {
+    final statement = await _$postgresGuard(() => _connection.prepare(sql));
+    try {
+      List<String>? columns;
+      await for (final row in statement.bind([
+        for (final value in parameters) _$postgresParameter(value),
+      ])) {
+        columns ??= _$postgresColumns(row.schema);
+        yield {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresRow}}(
+          columns,
+          _$postgresValues(row),
+        );
+      }
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+    } finally {
+      try {
+        await statement.dispose();
+      } on Object {
+        // The connection is gone: nothing is left to free.
+      }
+    }
+  }
+
+  @override
+  Future<void> close() => _$postgresGuard(_connection.close);
+}
+
+// The package writes a double that is not finite (`Infinity`, `NaN`) as a
+// quoted text the server refuses, unless it knows the type.
+Object? _$postgresParameter(Object? value) =>
+    value is double && !value.isFinite
+        ? {{package:postgres/postgres.dart#TypedValue}}({{package:postgres/postgres.dart#Type}}.double, value)
+        : value;
+
+List<String> _$postgresColumns({{package:postgres/postgres.dart#ResultSchema}} schema) => [
+  for (final column in schema.columns) column.columnName ?? '',
+];
+
+// A value of a type the package does not decode (an enum, `citext`...) as
+// its text or bytes.
+List<Object?> _$postgresValues({{package:postgres/postgres.dart#ResultRow}} row) => [
+  for (final value in row)
+    value is {{package:postgres/postgres.dart#UndecodedBytes}}
+        ? (value.isBinary ? value.bytes : value.asString)
+        : value,
+];
+
+// The exceptions of the package and of the socket as the SqlError the
+// driver understands: the message, the SQL state, the constraint's name;
+// never the DETAIL line (it holds values) and never the exception itself.
+Object _$postgresError(Object error) {
+  if (error is {{package:postgres/postgres.dart#ServerException}}) {
+    return {{package:spring_boot_starter_data/spring_boot_starter_data.dart#SqlError}}(
+      error.message,
+      sqlState: error.code,
+      constraint: error.constraintName,
+      connectionLost:
+          error.severity == {{package:postgres/postgres.dart#Severity}}.fatal ||
+          error.severity == {{package:postgres/postgres.dart#Severity}}.panic,
+    );
+  }
+  if (error is {{package:postgres/postgres.dart#PgException}}) {
+    // The package names the value it cannot send.
+    final inference = error.message.startsWith('Could not infer');
+    return {{package:spring_boot_starter_data/spring_boot_starter_data.dart#SqlError}}(
+      inference ? 'A parameter value has a type the driver cannot send' : error.message,
+      connectionLost: !inference,
+    );
+  }
+  if (error is {{dart:io#SocketException}} || error is {{dart:io#TlsException}}) {
+    return {{package:spring_boot_starter_data/spring_boot_starter_data.dart#SqlError}}(
+      '$error',
+      connectionLost: true,
+    );
+  }
+  if (error is {{dart:async#TimeoutException}}) {
+    return {{package:spring_boot_starter_data/spring_boot_starter_data.dart#SqlError}}(
+      error.message ?? 'The connection timed out',
+      connectionLost: true,
+    );
+  }
+  return error;
+}
+
+Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+  }
+}
+
+{{package:spring_boot_starter_data/spring_boot_starter_data.dart#JdbcDriver}} _$postgresJdbcDriver() =>
+    {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PostgresJdbcDriver}}(
+      const _$PostgresBinding(),
+    );

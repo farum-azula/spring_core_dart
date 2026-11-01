@@ -214,7 +214,7 @@ final class LoginUrlAuthenticationEntryPoint
   /// The path of the login page, such as `/login`.
   final String loginFormUrl;
 
-  /// The application's context path (`server.servlet.context-path`),
+  /// The application's context path (`server.context-path`),
   /// put in front of [loginFormUrl]; `''` for none.
   final String contextPath;
 

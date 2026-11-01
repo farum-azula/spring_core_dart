@@ -22,7 +22,7 @@ import 'package:spring_core_dart/src/json/naming.dart';
 /// message queues, caches, HTTP clients written by hand. The web and Feign
 /// starters already use it for request and response bodies, so a
 /// controller or client only declares the model types. In Spring Boot the
-/// mapper is a bean configured from `spring.jackson.*`: inject it rather
+/// mapper is a bean configured from `spring.json.*`: inject it rather
 /// than creating one, so every part of the application writes the same
 /// JSON.
 ///
@@ -218,7 +218,7 @@ class ObjectMapper {
   final bool readDateTimestampsAsNanoseconds;
 
   /// The time zone dates are written in and dates without an offset are
-  /// read in (Jackson's `setTimeZone`, `spring.jackson.time-zone`): `UTC`,
+  /// read in (Jackson's `setTimeZone`, `spring.json.time-zone`): `UTC`,
   /// `Z` or a fixed offset; `null` writes each `DateTime` in its own zone
   /// (local or UTC) and reads in UTC.
   final String? timeZone;
@@ -230,7 +230,7 @@ class ObjectMapper {
 
   /// Whether the properties of an object are written sorted by JSON name
   /// (constructor parameters first), instead of in declaration order;
-  /// `spring.jackson.mapper.sort-properties-alphabetically`.
+  /// `spring.json.mapper.sort-properties-alphabetically`.
   final bool sortPropertiesAlphabetically;
 
   /// Whether properties without `@JsonView` are included when a view is

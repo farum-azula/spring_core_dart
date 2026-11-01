@@ -583,7 +583,7 @@ response split between the query and the body.
   log. The page to come back to (a `Lax` cookie) is not sent with the
   post: after a form post login the user lands on the default page.
   With `HttpSessionOAuth2AuthorizationRequestRepository` instead, the
-  session cookie needs `server.servlet.session.cookie.same-site=none`
+  session cookie needs `server.session.cookie.same-site=none`
   over HTTPS. The CSRF protection of the other requests does not rest
   on `SameSite`.
 - **Apple's `user`:** the first login's name and e-mail (JSON) reach the
@@ -833,7 +833,7 @@ So that one request cannot make the server do unbounded work:
   the process signs the cookies. Spring's session versions
   (`HttpSessionRequestCache`, `HttpSessionCsrfTokenRepository`,
   `HttpSessionOAuth2AuthorizationRequestRepository`) can still be set;
-- sessions are limited by `server.servlet.session.max-sessions` (10 000
+- sessions are limited by `server.session.max-sessions` (10 000
   by default). When the store is full, expired sessions are removed;
   if none is, the login is refused with `503`. No live session is
   removed to make room;
@@ -904,8 +904,8 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   token, the saved request and the OAuth 2.0 authorization request in
   the session, here they are signed cookies (see the size limits
   above). The session cookie is `SameSite=Lax` by default
-  (`server.servlet.session.cookie.same-site`), and sessions are limited
-  (`server.servlet.session.max-sessions`, 10 000; at the limit a new
+  (`server.session.cookie.same-site`), and sessions are limited
+  (`server.session.max-sessions`, 10 000; at the limit a new
   login is refused with 503, as WebFlux's `InMemoryWebSessionStore`).
   Spring Boot on Tomcat has no limit of its own.
 - **CSRF and token requests:** only a token in the header

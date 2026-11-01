@@ -298,6 +298,51 @@ void main() {
       expect(manager.calls, ['begin 1', 'rollback 1']);
     });
 
+    test(
+      'transactionManager names the only one that gets a transaction',
+      () async {
+        await runInTestTransaction(many, () {
+          expect(manager.current, isNull);
+          expect(second.currentId, 1);
+        }, transactionManager: 'archiveTransactionManager');
+        expect(manager.calls, isEmpty);
+        expect(second.calls, ['begin 1', 'rollback 1']);
+        await runInTestTransaction(
+          many,
+          () {},
+          rollback: false,
+          transactionManager: 'archiveTransactionManager',
+        );
+        expect(second.calls, [
+          'begin 1',
+          'rollback 1',
+          'begin 2',
+          'commit 2',
+        ]);
+        expect(manager.calls, isEmpty);
+      },
+    );
+
+    test('an empty transactionManager means all of them', () async {
+      await runInTestTransaction(many, () {}, transactionManager: '');
+      expect(manager.calls, ['begin 1', 'rollback 1']);
+      expect(second.calls, ['begin 1', 'rollback 1']);
+    });
+
+    test('a transactionManager no bean has fails and names it', () {
+      expect(
+        () => runInTestTransaction(many, () {}, transactionManager: 'nope'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains("@DataTest(transactionManager: 'nope')"),
+          ),
+        ),
+      );
+      expect(manager.calls, isEmpty);
+    });
+
     test('the managers of the repositories are included', () async {
       final factory = RepositoryFactory(
         mappingContext: testContext(),

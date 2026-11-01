@@ -1033,7 +1033,7 @@ test('a missing part, a file too large', () async {
 ```
 
 `MockMultipartFile` comes with `spring_boot_starter_test`. Set the limits
-for a test with `properties: {'spring.servlet.multipart.max-file-size':
+for a test with `properties: {'spring.web.multipart.max-file-size':
 '64KB'}`.
 
 A download (a `Resource`, a byte stream, a `StreamingResponseBody`) is
@@ -1361,6 +1361,11 @@ each other's data, whichever store it is in.
   it, so clean up in `@AfterEach` or in a later test. A **failing test is
   rolled back** even then, so a failure leaves nothing behind (Spring would
   commit).
+- **`@DataTest(transactionManager: 'archive')`** runs the tests in the
+  transaction of that one manager (its bean name or qualifier, as in
+  `@Transactional(transactionManager: ...)`) and no other: the repositories
+  of the other databases write for real, so clean up after them. A name no
+  manager has fails the test with a `StateError` that says so.
 - Callbacks that wait for a commit (`afterCommit`) run only for tests that
   commit.
 - Work the test starts and does not await cannot use the transaction after
@@ -1376,6 +1381,7 @@ each other's data, whichever store it is in.
 | `resourceDirectories` | `['test/resources']` | the test classpath |
 | `include` | `[]` | `@Import`, `includeFilters` |
 | `replaceDatabase` | `true` | `@AutoConfigureTestDatabase(replace = ...)` |
+| `transactionManager` | `''` (every manager the repositories use) | `@Transactional(transactionManager = ...)` |
 
 ### As functions
 
@@ -1437,8 +1443,9 @@ never depend on each other.
 
 - **Not `@Transactional`**: a `@DataTest` class is transactional by itself,
   and `@Commit` and `@Rollback` are the only controls. There is no
-  `@Transactional` on a test class or method, and no choice of the
-  transaction manager: all the managers of the repositories are used.
+  `@Transactional` on a test class or method; the transaction manager is
+  chosen with `@DataTest(transactionManager:)` (all the managers of the
+  repositories are used without it), for the whole class, not per test.
 - **The slice is decided from the bean's types**, not by a component scan
   with filters: the beans of the starter's extension points are in, the
   rest is out, and `include` adds. Spring excludes `@Configuration` classes

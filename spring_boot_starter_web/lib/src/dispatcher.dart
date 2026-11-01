@@ -194,7 +194,7 @@ final class DispatcherHandler implements HttpHandler {
   final ResponseWriter writer;
 
   /// The prefix every request path must start with
-  /// (`server.servlet.context-path`, such as `/shop`); it is removed
+  /// (`server.context-path`, such as `/shop`); it is removed
   /// before routing, so the mappings do not repeat it. Empty: no prefix.
   final String contextPath;
 

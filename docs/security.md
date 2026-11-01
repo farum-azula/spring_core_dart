@@ -179,7 +179,7 @@ describes how the tests show it.
      the CSRF token is sent as a form field, the CSRF filter has already
      read the form, with the web starter's 1 MiB limit, and the login
      filter uses those fields;
-   - the number of sessions: `server.servlet.session.max-sessions`
+   - the number of sessions: `server.session.max-sessions`
      (10 000 by default). Only a login makes a session: before it, the
      CSRF token, the page to come back to and the OAuth 2.0
      authorization request are cookies signed by the server

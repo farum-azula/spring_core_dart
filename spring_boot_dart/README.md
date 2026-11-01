@@ -382,8 +382,8 @@ constraint message stays as it is instead of being looked up in
 ## JSON: the `ObjectMapper` bean
 
 Every application gets an `ObjectMapper` bean to read and write JSON,
-set up from the `spring.jackson.*` properties as with Spring Boot's
-`JacksonAutoConfiguration`. Inject it anywhere; the web starter uses the
+set up from the `spring.json.*` properties (Spring Boot's
+`spring.jackson.*`, as `JacksonAutoConfiguration` reads them). Inject it anywhere; the web starter uses the
 same bean for request and response bodies. It is named
 `jacksonJsonMapper` (Boot 4's name). It knows every `@Introspected`
 class of the application, and adds every `JsonSerializer` and
@@ -404,22 +404,22 @@ class Catalog {
 
 | Property | Default | Meaning |
 |---|---|---|
-| `spring.jackson.property-naming-strategy` | `LOWER_CAMEL_CASE` | `SNAKE_CASE`, `UPPER_SNAKE_CASE`, `UPPER_CAMEL_CASE`, `KEBAB_CASE`, `LOWER_CASE`, `LOWER_DOT_CASE` |
-| `spring.jackson.default-property-inclusion` | `always` | `non_null`, `non_absent`, `non_empty`, `non_default` |
-| `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
-| `spring.jackson.deserialization.accept-float-as-int` | `true` | `1.5` into an `int` truncates; `false` rejects it |
-| `spring.jackson.deserialization.fail-on-null-for-primitives` | `true` | a JSON `null` (or a missing constructor value) for a non-nullable `int`, `double`, `num` or `bool` fails, as in Jackson 3; `false` reads `0` or `false` |
-| `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4) or `spring.jackson.serialization.write-dates-as-timestamps` (Boot 3; the former wins) | `false` | `DateTime` as epoch seconds with the fraction (Jackson 3) |
-| `spring.jackson.datatype.datetime.write-durations-as-timestamps` (or `serialization.`) | `false` | `Duration` as seconds |
-| `spring.jackson.datatype.datetime.write-date-timestamps-as-nanoseconds` (or `serialization.`) | `true` | `false`: timestamps in milliseconds |
-| `spring.jackson.datatype.datetime.read-date-timestamps-as-nanoseconds` (or `deserialization.`) | `true` | integer timestamps are seconds; `false`: milliseconds |
-| `spring.jackson.mapper.default-view-inclusion` | `false` | properties without `@JsonView` are written with a view |
-| `spring.jackson.serialization.indent-output` | `false` | pretty-print |
-| `spring.jackson.mapper.sort-properties-alphabetically` | `true` | properties sorted by JSON name, constructor parameters first (Jackson 3's and Boot 4's order); `false`: declaration order |
-| `spring.jackson.time-zone` | each date in its own zone | `UTC` or a fixed offset such as `+02:00` |
+| `spring.json.property-naming-strategy` | `LOWER_CAMEL_CASE` | `SNAKE_CASE`, `UPPER_SNAKE_CASE`, `UPPER_CAMEL_CASE`, `KEBAB_CASE`, `LOWER_CASE`, `LOWER_DOT_CASE` |
+| `spring.json.default-property-inclusion` | `always` | `non_null`, `non_absent`, `non_empty`, `non_default` |
+| `spring.json.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
+| `spring.json.deserialization.accept-float-as-int` | `true` | `1.5` into an `int` truncates; `false` rejects it |
+| `spring.json.deserialization.fail-on-null-for-primitives` | `true` | a JSON `null` (or a missing constructor value) for a non-nullable `int`, `double`, `num` or `bool` fails, as in Jackson 3; `false` reads `0` or `false` |
+| `spring.json.datatype.datetime.write-dates-as-timestamps` (Boot 4) or `spring.json.serialization.write-dates-as-timestamps` (Boot 3; the former wins) | `false` | `DateTime` as epoch seconds with the fraction (Jackson 3) |
+| `spring.json.datatype.datetime.write-durations-as-timestamps` (or `serialization.`) | `false` | `Duration` as seconds |
+| `spring.json.datatype.datetime.write-date-timestamps-as-nanoseconds` (or `serialization.`) | `true` | `false`: timestamps in milliseconds |
+| `spring.json.datatype.datetime.read-date-timestamps-as-nanoseconds` (or `deserialization.`) | `true` | integer timestamps are seconds; `false`: milliseconds |
+| `spring.json.mapper.default-view-inclusion` | `false` | properties without `@JsonView` are written with a view |
+| `spring.json.serialization.indent-output` | `false` | pretty-print |
+| `spring.json.mapper.sort-properties-alphabetically` | `true` | properties sorted by JSON name, constructor parameters first (Jackson 3's and Boot 4's order); `false`: declaration order |
+| `spring.json.time-zone` | each date in its own zone | `UTC` or a fixed offset such as `+02:00` |
 
 A boolean property that is not `true` counts as `false`, so a typo such
-as `ture` silently turns a feature off. Any other `spring.jackson.*`
+as `ture` silently turns a feature off. Any other `spring.json.*`
 key (Boot binds Jackson's feature flags, `date-format`, `locale`, ...)
 is logged as a warning naming the key and ignored. Dart has no time zone
 database, so a named zone such as `Europe/Berlin` stops the start with a
@@ -982,6 +982,7 @@ starter does this for you and starts the application from a widget.
 
 | Spring Boot | Here | Why |
 |---|---|---|
+| `spring.cloud.openfeign.*`, `spring.jackson.*`, `spring.servlet.multipart.*`, `server.servlet.*`, `logging.logback.rollingpolicy.*`, `spring.flyway.*` | `spring.feign.*`, `spring.json.*`, `spring.web.multipart.*`, `server.*`, `logging.file.rolling-policy.*`, `spring.sql.migration.*`; an old name stops the start and names the new one (`RenamedPropertiesEnvironmentPostProcessor`, in every `SpringApplication`) | Servlet, Jackson, Spring Cloud, Logback and Flyway mean nothing in Dart; `spring-boot-properties-migrator` only warns, and an ignored old name would silently leave a setting at its default |
 | Constructor binding passes `null` for a missing property without `@DefaultValue` | A missing non-nullable scalar stops the start; a missing collection is empty and a missing nested object is created with its own defaults (what Boot does with an empty `@DefaultValue`) | Dart's non-nullable types |
 | `@ConstructorBinding` picks one of several constructors | Constructor binding only for a class whose only public generative constructor has parameters | Not implemented yet |
 | `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1, or name one file's encoding where it is named, `classpath:legacy.properties[encoding=iso-8859-1]`, as in Boot 4.1) | Dart files are UTF-8 |
@@ -993,7 +994,7 @@ starter does this for you and starts the application from a widget.
 | `@DurationUnit(ChronoUnit.X)`, `@DataSizeUnit(DataUnit.X)` | The same with Dart enums (`ChronoUnit.seconds`, `DataUnit.megabytes`; no months or years) | Dart naming; `Duration` has no calendar units |
 | `BindHandler.onFailure` returns a replacement value or rethrows | `onFailure(name, error)` returns whether the failure counts (`false` leaves the property unbound) | Errors are collected and reported together |
 | `JsonMapperBuilderCustomizer` gets Jackson's `JsonMapper.Builder` | It gets the core `JsonMapperBuilder` (naming, inclusion, time zone, features, serializers, modules); Jackson's other builder methods are missing | Only what the Dart mapper supports |
-| A `spring.jackson.*` boolean that is not `true` or `false` fails the binding | It counts as `false`, silently | Not checked yet |
+| A `spring.json.*` boolean that is not `true` or `false` fails the binding | It counts as `false`, silently | Not checked yet |
 | The condition evaluation report explains each outcome (`found bean 'x'`, `@ConditionalOnProperty (a=b) matched`) | It names each condition and whether it matched; a configuration class's conditions are listed under its key | Conditions are plain Dart objects |
 | The banner is printed to `System.out`; `banner.txt` may use `${application.version}`, `${AnsiColor.*}` | `print` (`spring.main.banner-mode=log` logs it); `banner.txt` gets `${spring-boot.version}`, `${spring-boot.formatted-version}` and environment placeholders | Dart has no manifest version or ANSI property source |
 | `@AutoConfiguration(before:, after:)` and `@AutoConfigureOrder` on the class | `before`, `after` and `order` of `@AutoConfigurationModule` (a module is the unit; classes can be named in them, by short name) | The generator discovers modules, not classes |

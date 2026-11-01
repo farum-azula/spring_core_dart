@@ -307,13 +307,16 @@ class JdbcTemplate {
   }
 
   /// Runs the insert [sql], puts the generated key in [holder] and returns
-  /// the rows changed.
+  /// the rows changed. [keyColumn] names the column that holds the key, for
+  /// a database that returns a column (PostgreSQL); without it the first
+  /// column of the inserted row is the key.
   Future<int> updateWithKeyHolder(
     String sql,
     List<Object?> params,
-    KeyHolder holder,
-  ) => _run(sql, params, (connection, bound) async {
-    final update = await connection.update(sql, bound, true);
+    KeyHolder holder, {
+    String? keyColumn,
+  }) => _run(sql, params, (connection, bound) async {
+    final update = await connection.update(sql, bound, true, keyColumn);
     holder.key = update.generatedKey;
     return (update.affectedRows, update.affectedRows);
   });

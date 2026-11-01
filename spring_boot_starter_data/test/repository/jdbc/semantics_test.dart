@@ -1,10 +1,13 @@
-// One suite, two stores: the same calls and the same assertions run on the
-// in-memory store and on SQLite (through the JDBC store), so the two behave
-// identically. Where SQLite cannot match the in-memory store, the test says
-// so and asserts the difference explicitly (`if (sqlite)`).
+// One suite, three stores: the same calls and the same assertions run on the
+// in-memory store, on SQLite and, when SPRING_TEST_POSTGRES_URL names a
+// server, on PostgreSQL (through the JDBC store), so they behave
+// identically. Where a database cannot match the in-memory store, the test
+// says so and asserts the difference explicitly (`if (sqlite)`); what only
+// reads the tables of a SQL store is under `if (sql)`.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
+import '../../postgres/support.dart' show postgresSkip;
 import 'support.dart';
 
 // The stores' repositories the suite works with.
@@ -31,12 +34,19 @@ final class Kit {
 Future<void> seed(Kit kit) => seedBooks(kit.authors, kit.books);
 
 void main() {
-  for (final store in const ['memory', 'sqlite']) {
-    group(store, () => _suite(sqlite: store == 'sqlite'));
+  for (final store in const ['memory', 'sqlite', 'postgres']) {
+    group(
+      store,
+      () => _suite(store),
+      skip: store == 'postgres' ? postgresSkip : null,
+      tags: store == 'postgres' ? 'postgres' : null,
+    );
   }
 }
 
-void _suite({required bool sqlite}) {
+void _suite(String store) {
+  final sql = store != 'memory';
+  final sqlite = store == 'sqlite';
   late Kit kit;
   late Jdbc jdbc;
   late BookQueries books;
@@ -44,9 +54,9 @@ void _suite({required bool sqlite}) {
   Future<void> run(
     Future<void> Function() body, {
     bool seeded = true,
-  }) => withJdbc((j) async {
+  }) => withJdbc(postgres: store == 'postgres', (j) async {
     jdbc = j;
-    kit = sqlite
+    kit = sql
         ? Kit(
             j.sqlBooks,
             j.sqlOrders,
@@ -384,10 +394,20 @@ void _suite({required bool sqlite}) {
     test(
       'ignoring the case in the order',
       () => run(() async {
-        expect(
-          ids(await books.findAllSorted(Sort.by(['title']))),
-          [6, 5, 1, 2, 3, 4, 7, 8],
-        );
+        final byTitle = ids(await books.findAllSorted(Sort.by(['title'])));
+        if (store == 'postgres') {
+          // The database's collation orders the text: bytewise (`C`), or the
+          // locale's, which puts 'a_b' and 'axb' before 'Cryptonomicon'.
+          expect(
+            byTitle,
+            anyOf(
+              equals([6, 5, 1, 2, 3, 4, 7, 8]),
+              equals([6, 7, 8, 5, 1, 2, 3, 4]),
+            ),
+          );
+        } else {
+          expect(byTitle, [6, 5, 1, 2, 3, 4, 7, 8]);
+        }
         expect(
           ids(
             await books.findAllSorted(
@@ -888,7 +908,7 @@ void _suite({required bool sqlite}) {
         expect([for (final l in again.lines) l.sku], ['only']);
         expect(again.notes.keys, ['new']);
         expect(again.tags, isEmpty);
-        if (sqlite) {
+        if (sql) {
           // Replaced in the child tables, not added to.
           expect(
             await jdbc.jdbc.queryForObject<int>(
@@ -951,7 +971,7 @@ void _suite({required bool sqlite}) {
         expect(deleted.single.notes, hasLength(2));
         expect(await orders.deleteByCustomerStartingWith('ba'), 1);
         expect([for (final o in await orders.findAll()) o.customer], ['cy']);
-        if (sqlite) {
+        if (sql) {
           for (final table in ['order_lines', 'order_notes', 'order_tags']) {
             expect(
               await jdbc.jdbc.queryForObject<int>(
@@ -968,7 +988,7 @@ void _suite({required bool sqlite}) {
         }
         await orders.deleteAll();
         expect(await orders.count(), 0);
-        if (sqlite) {
+        if (sql) {
           expect(
             await jdbc.jdbc.queryForObject<int>(
               'select count(*) from order_lines',

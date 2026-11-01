@@ -11,7 +11,7 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 const _log = SpringLog('spring_boot_starter_logging');
 
 /// Reads a size written in a property, such as
-/// `logging.logback.rollingpolicy.max-file-size`, and returns it in bytes.
+/// `logging.file.rolling-policy.max-file-size`, and returns it in bytes.
 ///
 /// Accepts `10MB`, `512 KB`, `1GB`, `100B` or a plain number of bytes
 /// (`1024`); the unit is case-insensitive. Units are binary, as in
@@ -94,10 +94,10 @@ int parseDataSize(String value) {
 /// logging.file.name=logs/shop.log         # or logging.file.path=logs (spring.log)
 /// logging.pattern.file=%d %5p [%logger] %m%X%n%ex
 /// logging.threshold.file=info
-/// logging.logback.rollingpolicy.max-file-size=10MB   # shop.log.1, .2, ...
-/// logging.logback.rollingpolicy.max-history=7        # rolled-over files kept
-/// logging.logback.rollingpolicy.total-size-cap=0B    # total (0B: no limit)
-/// logging.logback.rollingpolicy.clean-history-on-start=false
+/// logging.file.rolling-policy.max-file-size=10MB   # shop.log.1, .2, ...
+/// logging.file.rolling-policy.max-history=7        # rolled-over files kept
+/// logging.file.rolling-policy.total-size-cap=0B    # total (0B: no limit)
+/// logging.file.rolling-policy.clean-history-on-start=false
 /// logging.enabled=false                   # leave SpringLog alone
 /// ```
 ///
@@ -403,14 +403,13 @@ final class LoggingSystem {
     };
   }
 
-  // The names before Spring Boot's logging.logback.rollingpolicy.*.
+  // The names from before Spring Boot 2.4, which this project never read.
   static const _removedProperties = {
-    'logging.file.max-size': 'logging.logback.rollingpolicy.max-file-size',
-    'logging.file.max-history': 'logging.logback.rollingpolicy.max-history',
-    'logging.file.total-size-cap':
-        'logging.logback.rollingpolicy.total-size-cap',
+    'logging.file.max-size': 'logging.file.rolling-policy.max-file-size',
+    'logging.file.max-history': 'logging.file.rolling-policy.max-history',
+    'logging.file.total-size-cap': 'logging.file.rolling-policy.total-size-cap',
     'logging.file.clean-history-on-start':
-        'logging.logback.rollingpolicy.clean-history-on-start',
+        'logging.file.rolling-policy.clean-history-on-start',
   };
 
   void _configureFile(
@@ -439,7 +438,7 @@ final class LoggingSystem {
       return;
     }
     final path = _resolve(name ?? '${_trimSlash(directory!)}/spring.log');
-    const policy = 'logging.logback.rollingpolicy';
+    const policy = 'logging.file.rolling-policy';
     if (environment.containsProperty('$policy.file-name-pattern')) {
       _log.warning(
         '$policy.file-name-pattern is not supported (ignored): files roll '

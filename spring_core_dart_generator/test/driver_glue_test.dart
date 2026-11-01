@@ -336,4 +336,54 @@ void main() {
       await expectNoGlue(_sources()..remove('pkg|pubspec.yaml'));
     });
   });
+  // The PostgreSQL glue is the starter's real template; the packages are
+  // empty libraries: only what the generator writes is checked here (the
+  // starter's own tests compile it against the real `postgres` package).
+  group('with postgres and the starter among the dependencies', () {
+    late String output;
+
+    setUpAll(
+      () async => output = await _build({
+        ..._sources(
+          pubspec: [
+            'name: pkg',
+            'dependencies:',
+            '  spring_boot_starter_data: any',
+            '  postgres: any',
+          ].join('\n'),
+        ),
+        'postgres|lib/postgres.dart': '',
+      }),
+    );
+
+    test('the glue and a JdbcDriver bean are written', () {
+      expect(output, contains(r'class _$PostgresBinding'));
+      expect(output, contains(r'class _$PostgresSession'));
+      final code = _normalize(output);
+      expect(code, contains("name:r'postgresJdbcDriver'"));
+      expect(code, contains(r'create:(r)=>_$postgresJdbcDriver()'));
+      expect(code, contains(".named(r'postgresJdbcDriver')"));
+      // No SQLite glue: sqlite3 is not a dependency.
+      expect(output, isNot(contains('Sqlite3')));
+    });
+
+    test('the symbols of the package, of the starter and of dart:io get '
+        'the library import prefixes', () {
+      expect(output, isNot(contains('{{')));
+      final postgres = RegExp(
+        r"import 'package:postgres/postgres.dart' as (_i\d+);",
+      ).firstMatch(output);
+      final io = RegExp(r"import 'dart:io' as (_i\d+);").firstMatch(output);
+      final async = RegExp(
+        r"import 'dart:async' as (_i\d+);",
+      ).firstMatch(output);
+      expect(postgres, isNotNull);
+      expect(io, isNotNull);
+      expect(async, isNotNull);
+      expect(output, contains('${postgres![1]}.Connection.open('));
+      expect(output, contains('error is ${postgres[1]}.ServerException'));
+      expect(output, contains('${io![1]}.SecurityContext('));
+      expect(output, contains('${async![1]}.TimeoutException'));
+    });
+  });
 }

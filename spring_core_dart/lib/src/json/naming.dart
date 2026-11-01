@@ -6,7 +6,7 @@
 /// lowerCamelCase, such as a snake_case API, instead of writing
 /// `@JsonProperty` on every field. Set it for all classes with
 /// `ObjectMapper(namingStrategy: ...)` (in Spring Boot, the property
-/// `spring.jackson.property-naming-strategy`), or for one class with
+/// `spring.json.property-naming-strategy`), or for one class with
 /// `@JsonNaming`. A name given by `@JsonProperty` is used as it is. The
 /// translation follows Jackson's `PropertyNamingStrategies`, acronyms
 /// included.

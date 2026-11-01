@@ -428,7 +428,7 @@ void main() {
       'session and leave every login in place',
       () => withApp(
         rulesSecurityBeans,
-        properties: ['server.servlet.session.max-sessions=20'],
+        properties: ['server.session.max-sessions=20'],
         (mvc, context) async {
           final users = [
             for (var i = 0; i < 6; i++)
@@ -470,7 +470,7 @@ void main() {
       'the logins stay and the pages still work',
       () => withApp(
         rulesSecurityBeans,
-        properties: ['server.servlet.session.max-sessions=2'],
+        properties: ['server.session.max-sessions=2'],
         (mvc, context) async {
           final users = [
             await loggedIn(mvc, 'ada'),
@@ -525,8 +525,9 @@ void main() {
       () => withApp(
         rulesSecurityBeans,
         properties: [
-          'server.servlet.session.max-sessions=2',
-          'server.servlet.session.timeout=2s',
+          'server.session.max-sessions=2',
+          // Long enough for both logins on a loaded CI machine.
+          'server.session.timeout=6s',
         ],
         (mvc, context) async {
           final first = await loggedIn(mvc, 'ada');
@@ -547,7 +548,7 @@ void main() {
           expect(refused.status, 503);
           await stillLoggedIn([first, second]);
           // Nobody comes back for the whole timeout: both expire.
-          await Future<void>.delayed(const Duration(milliseconds: 2200));
+          await Future<void>.delayed(const Duration(milliseconds: 6200));
           final third = await loggedIn(mvc, 'ada');
           await stillLoggedIn([third]);
           // ada's expired session went at her login (the per-user count
@@ -562,7 +563,7 @@ void main() {
       'its least recently used one ends, other users are untouched',
       () => withApp(
         rulesSecurityBeans,
-        properties: ['server.servlet.session.max-sessions=30'],
+        properties: ['server.session.max-sessions=30'],
         (mvc, context) async {
           final root = await loggedIn(mvc, 'root');
           final ada = [for (var i = 0; i < 11; i++) await loggedIn(mvc, 'ada')];

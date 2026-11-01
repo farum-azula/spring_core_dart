@@ -61,13 +61,19 @@ final class DriverGlue {
   final String typeUrl;
 }
 
-/// The drivers the starter has glue for. `postgres` is added here.
+/// The drivers the starter has glue for.
 const driverGlues = [
   DriverGlue(
     package: 'sqlite3',
     template: 'lib/src/jdbc/drivers/sqlite3.dart.tmpl',
     beanName: 'sqlite3JdbcDriver',
     factory: r'_$sqlite3JdbcDriver',
+  ),
+  DriverGlue(
+    package: 'postgres',
+    template: 'lib/src/jdbc/drivers/postgres.dart.tmpl',
+    beanName: 'postgresJdbcDriver',
+    factory: r'_$postgresJdbcDriver',
   ),
   // The web starter's HandlerExceptionResolver for data errors (409, 404);
   // the template, with the exceptions' names, is the data starter's.
@@ -93,8 +99,8 @@ final class DriverGlueOutput {
   final Expression definition;
 }
 
-// `{{package:sqlite3/sqlite3.dart#Database}}`
-final _placeholder = RegExp(r'\{\{package:([^#{}\s]+)#(\w+)\}\}');
+// `{{package:sqlite3/sqlite3.dart#Database}}`, `{{dart:io#SecurityContext}}`
+final _placeholder = RegExp(r'\{\{((?:package|dart):[^#{}\s]+)#(\w+)\}\}');
 
 /// The glue of every driver in [driverGlues] whose package is among
 /// [dependencies] (the application's own), provided the application also
@@ -142,7 +148,7 @@ Code _resolve(String template) {
   return Code.scope(
     (allocate) => body.replaceAllMapped(
       _placeholder,
-      (match) => allocate(refer(match[2]!, 'package:${match[1]}')),
+      (match) => allocate(refer(match[2]!, match[1])),
     ),
   );
 }

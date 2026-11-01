@@ -335,7 +335,7 @@ with `Sec-WebSocket-Version: 13`) are problems.
 | a request body that sends nothing for `server.connection-timeout` (60 s) | 408 |
 | `@Valid` violations | 400 with `errors`: `[{"field": "isbn", "message": "...", "rejectedValue": ""}]` (messages from the `MessageSource`) |
 | a body above `server.max-http-request-body-size` | 413 |
-| an upload above `spring.servlet.multipart.max-file-size` or `max-request-size`, or with more than `max-part-count` parts | 413 (`MaxUploadSizeExceededException`) |
+| an upload above `spring.web.multipart.max-file-size` or `max-request-size`, or with more than `max-part-count` parts | 413 (`MaxUploadSizeExceededException`) |
 | a malformed multipart request, or `@RequestPart` on a request that is not multipart | 400 (`MultipartRequestException`) |
 | `throw ResponseStatusException(HttpStatus.notFound, 'No book 9')` | its status and detail |
 | an `ErrorResponse` or `ErrorResponseException` | its status, headers and problem |
@@ -572,16 +572,16 @@ it when it cannot be moved). After `transferTo`, the file can no longer
 be read or moved again.
 
 **Limits and temporary files** use Spring Boot's
-[`spring.servlet.multipart.*`](../docs/configuration.md#18-reference-web-server)
+[`spring.web.multipart.*`](../docs/configuration.md#18-reference-web-server)
 keys:
 
 ```properties
-spring.servlet.multipart.max-file-size=5MB        # one file (or part); 1MB by default, -1: no limit
-spring.servlet.multipart.max-request-size=20MB    # the whole request; 10MB by default, -1: no limit
-spring.servlet.multipart.max-part-count=100       # files and fields together; 50 by default, -1: no limit
-spring.servlet.multipart.file-size-threshold=64KB # smaller files stay in memory; 0B by default: all go to disk
-spring.servlet.multipart.location=/var/tmp/shop   # a private directory is made in it; the system's temporary directory by default
-spring.servlet.multipart.enabled=false            # don't parse multipart requests
+spring.web.multipart.max-file-size=5MB        # one file (or part); 1MB by default, -1: no limit
+spring.web.multipart.max-request-size=20MB    # the whole request; 10MB by default, -1: no limit
+spring.web.multipart.max-part-count=100       # files and fields together; 50 by default, -1: no limit
+spring.web.multipart.file-size-threshold=64KB # smaller files stay in memory; 0B by default: all go to disk
+spring.web.multipart.location=/var/tmp/shop   # a private directory is made in it; the system's temporary directory by default
+spring.web.multipart.enabled=false            # don't parse multipart requests
 ```
 
 - Above a limit, the upload is a 413 (`MaxUploadSizeExceededException`)
@@ -726,22 +726,22 @@ new id, so an id someone saw before the login stops working. The
 client never chooses an id: an unknown id from a cookie is ignored.
 
 ```properties
-server.servlet.session.timeout=15m              # without a request; 30m by default, seconds without a unit
-server.servlet.session.cookie.name=SHOPSESSION  # JSESSIONID by default
-server.servlet.session.cookie.same-site=strict  # lax by default; strict, none, or unset
-server.servlet.session.max-sessions=50000       # 10000 by default; -1: no limit
+server.session.timeout=15m              # without a request; 30m by default, seconds without a unit
+server.session.cookie.name=SHOPSESSION  # JSESSIONID by default
+server.session.cookie.same-site=strict  # lax by default; strict, none, or unset
+server.session.max-sessions=50000       # 10000 by default; -1: no limit
 ```
 
 | Property | Default |
 |---|---|
-| `server.servlet.session.timeout` | `30m` |
-| `server.servlet.session.cookie.name` | `JSESSIONID` |
-| `server.servlet.session.cookie.path` | the context path, or `/` |
-| `server.servlet.session.cookie.domain` | none |
-| `server.servlet.session.cookie.http-only` | `true` |
-| `server.servlet.session.cookie.secure` | secure when the request came over HTTPS |
-| `server.servlet.session.cookie.same-site` | `lax` |
-| `server.servlet.session.max-sessions` | `10000` (`-1`: no limit) |
+| `server.session.timeout` | `30m` |
+| `server.session.cookie.name` | `JSESSIONID` |
+| `server.session.cookie.path` | the context path, or `/` |
+| `server.session.cookie.domain` | none |
+| `server.session.cookie.http-only` | `true` |
+| `server.session.cookie.secure` | secure when the request came over HTTPS |
+| `server.session.cookie.same-site` | `lax` |
+| `server.session.max-sessions` | `10000` (`-1`: no limit) |
 
 The number of sessions is limited (`max-sessions`). At the limit, a new
 session first removes every expired one; when the store is still full,
@@ -1065,7 +1065,7 @@ server.port=8080                         # 0: a free port
 server.address=127.0.0.1                 # all interfaces by default (127.0.0.1 in Flutter apps)
 server.shutdown=graceful                 # or immediate
 spring.lifecycle.timeout-per-shutdown-phase=20s
-server.servlet.context-path=/shop        # a prefix of every mapping
+server.context-path=/shop        # a prefix of every mapping
 server.max-http-request-body-size=10MB   # 413 above (10MB by default), whatever the type; -1: no limit
 server.connection-timeout=60s            # a body that sends nothing this long: 408; idle connections close; 0 or -1: no limit
 server.compression.enabled=true          # gzip, for clients that accept it
@@ -1382,6 +1382,11 @@ the bean as the context holds it, so AOP advice on a controller
 
 ## Differences from Spring
 
+- **Renamed properties:** `server.servlet.context-path` and
+  `server.servlet.session.*` are `server.context-path` and
+  `server.session.*`, and `spring.servlet.multipart.*` is
+  `spring.web.multipart.*`: there is no servlet container. The old names
+  stop the start and name the new ones.
 - **Errors are `ProblemDetail`** (`application/problem+json`), except
   the plain-text answers Spring gives too (a refused CORS request or
   WebSocket handshake). Spring Boot's default is the `/error` JSON
@@ -1426,11 +1431,12 @@ the bean as the context holds it, so AOP advice on a controller
   all of them as a `Map`) or a `@RequestBody() Map<String, String>`.
 - **No `HttpSession` parameter:** a handler gets the session with
   `request.getSession()`. The session cookie is `SameSite=Lax` and the
-  number of sessions is limited (`server.servlet.session.max-sessions`;
+  number of sessions is limited (`server.session.max-sessions`;
   at the limit, expired ones are removed, then a new session is refused
   with `503`).
 - **Multipart without a servlet container:** the
-  `spring.servlet.multipart.*` keys keep Boot's names, but the temporary
+  `spring.web.multipart.*` keys are Boot's `spring.servlet.multipart.*`
+  without the servlet, and the temporary
   files are this starter's own (`file-size-threshold` is `0B`: every
   file goes to disk). Only `multipart/form-data` parts are bound, not
   `multipart/mixed`, for `@RequestPart`.
@@ -1480,7 +1486,7 @@ the bean as the context holds it, so AOP advice on a controller
   parameter, a parameter nothing can fill, an invalid
   `@ExceptionHandler`.
 - `server.max-http-request-body-size`, `spring.mvc.sse.heartbeat-interval`,
-  `spring.servlet.multipart.max-part-count` (Boot's
+  `spring.web.multipart.max-part-count` (Boot's
   `server.tomcat.max-part-count`), `server.connection-timeout` (Boot
   2.0's key; Boot 4's is `server.tomcat.connection-timeout`) and
   `server.websocket.*` are this starter's own properties.

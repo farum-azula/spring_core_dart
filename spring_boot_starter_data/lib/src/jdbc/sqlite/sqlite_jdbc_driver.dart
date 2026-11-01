@@ -7,6 +7,7 @@ import 'package:spring_boot_starter_data/src/jdbc/sqlite/sqlite_binding.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sqlite/sqlite_dialect.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sqlite/sqlite_engine.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sqlite/sqlite_worker.dart';
+import 'package:spring_boot_starter_data/src/jdbc/statement_mutex.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
 
@@ -239,37 +240,11 @@ final class _Target {
   }
 }
 
-// Runs one action at a time, in the order they were asked.
-final class _Mutex {
-  Future<void> _tail = Future.value();
-
-  // The action's turn: completes once the earlier ones are done; the
-  // returned function gives the turn up.
-  Future<void Function()> acquire() {
-    final done = Completer<void>();
-    final turn = _tail.then(
-      (_) =>
-          () => done.complete(),
-    );
-    _tail = done.future;
-    return turn;
-  }
-
-  Future<T> run<T>(FutureOr<T> Function() action) async {
-    final release = await acquire();
-    try {
-      return await action();
-    } finally {
-      release();
-    }
-  }
-}
-
 final class _SqliteConnection implements JdbcConnection {
   _SqliteConnection(this._engine);
 
   final SqliteEngine _engine;
-  final _mutex = _Mutex();
+  final _mutex = StatementMutex();
   bool _closed = false;
 
   // Runs [command] when it is this call's turn.
@@ -324,6 +299,7 @@ final class _SqliteConnection implements JdbcConnection {
     String sql, [
     List<Object?> parameters = const [],
     bool returnGeneratedKey = false,
+    String? keyColumn,
   ]) => _mutex.run(
     () => _run(UpdateCommand(sql, parameters, returnGeneratedKey)),
   );

@@ -17,7 +17,9 @@ Future<SqliteJdbcDriver> startDriver({bool isolate = false}) async {
         if (context.startupFailure case final failure?) {
           throw StateError('The application did not start: $failure');
         }
-        driver = context.getBean<JdbcDriver>() as SqliteJdbcDriver;
+        driver = context.getBean<JdbcDriver>(
+          qualifier: 'sqlite3JdbcDriver',
+        ) as SqliteJdbcDriver;
       });
   return isolate ? SqliteJdbcDriver(driver.binding, isolate: true) : driver;
 }

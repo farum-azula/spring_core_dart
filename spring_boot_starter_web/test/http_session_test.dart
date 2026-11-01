@@ -193,11 +193,11 @@ void main() {
       StandardEnvironment()
         ..propertySources.addFirst(
           const MapPropertySource('t', {
-            'server.servlet.session.timeout': '15m',
-            'server.servlet.session.cookie.name': 'SID',
-            'server.servlet.session.cookie.same-site': 'strict',
-            'server.servlet.session.cookie.secure': 'true',
-            'server.servlet.session.max-sessions': '-1',
+            'server.session.timeout': '15m',
+            'server.session.cookie.name': 'SID',
+            'server.session.cookie.same-site': 'strict',
+            'server.session.cookie.secure': 'true',
+            'server.session.max-sessions': '-1',
           }),
         ),
       contextPath: '/shop',

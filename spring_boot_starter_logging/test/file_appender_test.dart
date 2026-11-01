@@ -406,7 +406,7 @@ void main() {
     expect(() => parseDataSize('1.5MB'), throwsFormatException);
   });
 
-  group('logging.file.* and logging.logback.rollingpolicy.* properties', () {
+  group('logging.file.* and logging.file.rolling-policy.* properties', () {
     final runner = const ApplicationContextRunner()
         .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
         .withPropertyValues([
@@ -446,9 +446,9 @@ void main() {
             'logging.file.name=app/shop.log',
             'logging.file.path=ignored',
             'logging.threshold.file=warn',
-            'logging.logback.rollingpolicy.max-file-size=1KB',
-            'logging.logback.rollingpolicy.max-history=1',
-            'logging.logback.rollingpolicy.total-size-cap=2KB',
+            'logging.file.rolling-policy.max-file-size=1KB',
+            'logging.file.rolling-policy.max-history=1',
+            'logging.file.rolling-policy.total-size-cap=2KB',
           ])
           .run((context) {
             final file = LoggingSystem.instance.file!;
@@ -486,13 +486,13 @@ void main() {
       runner
           .withPropertyValues([
             'logging.file.path=${dir.path}',
-            'logging.logback.rollingpolicy.max-file-size=big',
+            'logging.file.rolling-policy.max-file-size=big',
           ])
           .run((context) => expect(context, hasFailed()));
       runner
           .withPropertyValues([
             'logging.file.path=${dir.path}',
-            'logging.logback.rollingpolicy.max-history=all',
+            'logging.file.rolling-policy.max-history=all',
           ])
           .run((context) => expect(context, hasFailed()));
     });
@@ -522,15 +522,15 @@ void main() {
         // One element, split for the line width.
         // ignore: no_adjacent_strings_in_list
         'logging.file.max-size is not supported (ignored): use '
-            'logging.logback.rollingpolicy.max-file-size',
+            'logging.file.rolling-policy.max-file-size',
         // One element, split for the line width.
         // ignore: no_adjacent_strings_in_list
         'logging.file.max-history is not supported (ignored): use '
-            'logging.logback.rollingpolicy.max-history',
+            'logging.file.rolling-policy.max-history',
         // One element, split for the line width.
         // ignore: no_adjacent_strings_in_list
         'logging.file.clean-history-on-start is not supported (ignored): use '
-            'logging.logback.rollingpolicy.clean-history-on-start',
+            'logging.file.rolling-policy.clean-history-on-start',
       ]);
     });
 
@@ -566,7 +566,7 @@ void main() {
       runner
           .withPropertyValues([
             'logging.file.name=${dir.path}/run/app.log',
-            'logging.logback.rollingpolicy.max-file-size=30B',
+            'logging.file.rolling-policy.max-file-size=30B',
           ])
           .run((context) {
             log.info('first line, long enough');

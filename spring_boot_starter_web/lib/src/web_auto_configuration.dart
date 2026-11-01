@@ -72,13 +72,13 @@ CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
 /// - `responseWriter` — writes results as JSON (the `ObjectMapper`), text,
 ///   bytes, `ProblemDetail`, server-sent events;
 /// - `multipartResolver` — reads `multipart/form-data` uploads
-///   (`spring.servlet.multipart.*`), unless the application declares one;
+///   (`spring.web.multipart.*`), unless the application declares one;
 /// - `requestMappingHandlerMapping` — the controllers, with the
 ///   `WebMvcConfigurer` beans' interceptors, CORS mappings and argument
 ///   resolvers, the `CorsConfigurationSource` bean named
 ///   `corsConfigurationSource` and the [HandlerExceptionResolver] beans;
 /// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
-///   `request.getSession()` (`server.servlet.session.*`), sessions in
+///   `request.getSession()` (`server.session.*`), sessions in
 ///   memory unless the application declares an [HttpSessionRepository];
 /// - `forwardedHeaderFilter`, with `server.forward-headers-strategy` set
 ///   to `native` or `framework` — [ForwardedHeaderFilter], first of all

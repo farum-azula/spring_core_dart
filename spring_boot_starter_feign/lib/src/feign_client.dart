@@ -14,7 +14,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// `FeignException`.
 ///
 /// Each client has a [name], which keys its configuration under
-/// `spring.cloud.openfeign.client.config.<name>.*` (timeouts, logging,
+/// `spring.feign.client.config.<name>.*` (timeouts, logging,
 /// default headers; `default` applies to all clients), and a base [url].
 ///
 /// ```dart
@@ -88,7 +88,7 @@ class FeignClient {
   final Type? fallback;
 
   /// The configuration key instead of [name]
-  /// (`spring.cloud.openfeign.client.config.<contextId>.*`), e.g. for two
+  /// (`spring.feign.client.config.<contextId>.*`), e.g. for two
   /// clients of one service with different settings.
   final String? contextId;
 
@@ -135,7 +135,7 @@ class FeignClient {
   final List<Type> configuration;
 
   /// The key of the client's configuration
-  /// (`spring.cloud.openfeign.client.config.<key>.*`): [contextId] when
+  /// (`spring.feign.client.config.<key>.*`): [contextId] when
   /// set and not empty, else [name].
   String get configKey => switch (contextId) {
     final id? when id.isNotEmpty => id,

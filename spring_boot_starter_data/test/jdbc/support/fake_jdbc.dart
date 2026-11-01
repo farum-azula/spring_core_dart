@@ -185,6 +185,7 @@ class FakeJdbcConnection implements JdbcConnection {
     String sql, [
     List<Object?> parameters = const [],
     bool returnGeneratedKey = false,
+    String? keyColumn,
   ]) => _statement(
     'update',
     sql,

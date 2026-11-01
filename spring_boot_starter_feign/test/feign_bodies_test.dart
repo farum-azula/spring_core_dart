@@ -1,6 +1,6 @@
 // The property strings are lists of independent entries, each one a single
 // string; a long key cannot be split in two (adjacent strings in a list).
-// ignore_for_file: no_adjacent_strings_in_list, lines_longer_than_80_chars
+// ignore_for_file: no_adjacent_strings_in_list
 
 import 'dart:convert';
 
@@ -116,9 +116,9 @@ void main() {
     await runner
         .withBean<RequestInterceptor>(AuditInterceptor.new, name: 'audit')
         .withPropertyValues([
-          'spring.cloud.openfeign.client.config.forms.request-interceptors[0]='
+          'spring.feign.client.config.forms.request-interceptors[0]='
               'audit',
-          'spring.cloud.openfeign.client.config.default.request-interceptors[0]='
+          'spring.feign.client.config.default.request-interceptors[0]='
               'AuditInterceptor',
         ])
         .runAsync((context) async {

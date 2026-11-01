@@ -12,7 +12,7 @@
 /// - `LogBuffer` and `LogQuery`, the last records in memory, made for an
 ///   in-app log screen;
 /// - `FileAppender`, log files that roll over by size (`logging.file.*`,
-///   `logging.logback.rollingpolicy.*`; not on the web);
+///   `logging.file.rolling-policy.*`; not on the web);
 /// - `LogAppender`, your own output, such as crash reporting.
 ///
 /// Re-exports `spring_boot_dart`.

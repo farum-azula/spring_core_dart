@@ -340,6 +340,7 @@ final class JdbcDataStore implements DataStore {
             statement.sql,
             statement.parameters,
             holder,
+            keyColumn: idProperty.columnName,
           );
           id = switch (holder.key) {
             final int key => key,

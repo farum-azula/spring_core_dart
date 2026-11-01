@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/src/configuration_properties.dart';
+import 'package:spring_boot_dart/src/renamed_properties.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 /// A plain-language explanation of why the application failed to start,
@@ -238,6 +239,18 @@ FailureAnalysis? _analyze(Object error, List<Object> chain) => switch (error) {
           'lowercase alpha-numeric characters and must start with a letter',
       "Modify '$name' so that it conforms to the canonical names "
           'requirements.',
+      error,
+    ),
+  // The check for properties under their former names (Boot's
+  // spring-boot-properties-migrator, failing instead of warning).
+  RenamedPropertiesException(:final properties, :final description) =>
+    FailureAnalysis(
+      'These properties have been renamed:\n\n$description',
+      'Rename ${properties.length == 1 ? 'it' : 'them'} in '
+          'lib/resources/application.properties (or the YAML file), on the '
+          'command line or in the environment: the old names are Spring '
+          "Boot's, and an old name is not read, so the start stops. See "
+          '"Renamed properties" in docs/configuration.md.',
       error,
     ),
   ConfigurationPropertiesBindException(:final prefix, :final errors) =>

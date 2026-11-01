@@ -1,3 +1,9 @@
+## Unreleased
+
+### Breaking
+
+- Properties renamed: `spring.cloud.openfeign.*` is `spring.feign.*` (`spring.feign.client.config.<name>.*`, `spring.feign.client.decode-slash`; Spring Cloud means nothing in Dart). An old name stops the start, naming the new one.
+
 ## 0.5.0
 
 ### Changes

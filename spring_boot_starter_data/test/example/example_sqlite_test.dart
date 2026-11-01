@@ -95,7 +95,7 @@ void main() {
     Object? error;
     try {
       final context = await springApplication.runAsync([
-        '--spring.datasource.url=postgresql://db:5432/shop',
+        '--spring.datasource.url=mysql://db:3306/shop',
         '--spring.main.banner-mode=off',
       ]);
       await context.closeAsync();
@@ -111,9 +111,10 @@ void main() {
         .join();
     expect(
       report,
-      contains('spring.datasource.url is postgresql://db:5432/shop'),
+      contains('spring.datasource.url is mysql://db:3306/shop'),
     );
-    expect(report, contains('Add the postgres package'));
+    // The example has the drivers of SQLite and PostgreSQL: not this one.
+    expect(report, contains('No driver is known for the scheme "mysql"'));
   });
 
   test('a start without a database URL stays in memory', () async {

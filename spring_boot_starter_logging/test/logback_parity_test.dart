@@ -170,7 +170,7 @@ void main() {
             'logging.file.name=${dir.path}/shop.log',
             'logging.pattern.file=%m',
             'logging.charset.file=ISO-8859-1',
-            'logging.logback.rollingpolicy.file-name-pattern=x-%i.gz',
+            'logging.file.rolling-policy.file-name-pattern=x-%i.gz',
           ])
           .run((context) {
             expect(context.hasFailed, isFalse);
@@ -185,7 +185,7 @@ void main() {
       ]);
       expect(
         warnings,
-        contains(startsWith('logging.logback.rollingpolicy.file-name-pattern')),
+        contains(startsWith('logging.file.rolling-policy.file-name-pattern')),
       );
       // Java's aliases (Charset.forName) work too.
       for (final (name, charset) in [

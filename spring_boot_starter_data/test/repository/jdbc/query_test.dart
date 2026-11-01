@@ -1,17 +1,32 @@
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
+import '../../postgres/support.dart' show postgresSkip;
 import 'support.dart';
 
-// The @Query methods of SqlBooks on SQLite, over the seed of support.dart.
+// The @Query methods of SqlBooks on SQLite and, with SPRING_TEST_POSTGRES_URL
+// set, on PostgreSQL, over the seed of support.dart.
 void main() {
+  for (final db in const ['sqlite', 'postgres']) {
+    group(
+      db,
+      () => _suite(db),
+      skip: db == 'postgres' ? postgresSkip : null,
+      tags: db == 'postgres' ? 'postgres' : null,
+    );
+  }
+}
+
+void _suite(String db) {
   late Jdbc jdbc;
   late SqlBooks books;
 
   Future<void> run(
     Future<void> Function() body, {
     List<String> properties = const ['books.page-size=2', 'books.cutoff=1990'],
-  }) => withJdbc(properties: properties, (j) async {
+  }) => withJdbc(postgres: db == 'postgres', properties: properties, (
+    j,
+  ) async {
     jdbc = j;
     books = j.sqlBooks;
     await seedBooks(j.sqlAuthors, j.sqlBooks);
@@ -344,7 +359,10 @@ void main() {
       () => run(() async {
         expect(
           ids(await books.afterSorted(1990, Sort.by(['title']))),
-          [6, 5, 4, 7, 8],
+          // The database orders the text: bytewise, or by its locale.
+          db == 'postgres'
+              ? anyOf(equals([6, 5, 4, 7, 8]), equals([6, 7, 8, 5, 4]))
+              : [6, 5, 4, 7, 8],
         );
         expect(
           ids(
@@ -380,7 +398,9 @@ void main() {
       () => run(() async {
         expect(
           ids(await books.afterSortedAndOrdered(1990, Sort.by(['title']))),
-          [6, 4, 7, 8, 5],
+          db == 'postgres'
+              ? anyOf(equals([6, 4, 7, 8, 5]), equals([6, 7, 8, 4, 5]))
+              : [6, 4, 7, 8, 5],
         );
         final sql = await statements(
           () => books.afterSortedAndOrdered(1990, Sort.by(['title'])),
@@ -559,7 +579,8 @@ void main() {
         expect(await books.shift(1000, 1), 0);
         expect(await books.deleteOlder(1990), isTrue);
         expect(await books.deleteOlder(1000), isFalse);
-        expect(ids(await books.findAll()), [1, 2, 4, 5, 6, 7, 8]);
+        // A table has no order of its own once rows were updated.
+        expect(ids(await books.findAll())..sort(), [1, 2, 4, 5, 6, 7, 8]);
         await books.retitle(4, 'a subtitle');
         expect((await books.one(4))!.subtitle, 'a subtitle');
         await books.retitle(4, null);

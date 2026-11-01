@@ -258,7 +258,7 @@ final class SavedRequestAwareAuthenticationSuccessHandler
   /// `false` by default.
   final bool alwaysUseDefaultTargetUrl;
 
-  /// The application's context path (`server.servlet.context-path`); `''`
+  /// The application's context path (`server.context-path`); `''`
   /// for none.
   final String contextPath;
 

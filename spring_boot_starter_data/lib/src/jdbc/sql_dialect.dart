@@ -118,7 +118,7 @@ abstract class SqlDialect {
   /// The `ALTER TABLE` statement adding the foreign key [name] on [column]
   /// of [table] to [parentColumn] of [parentTable], with [onDelete]: for a
   /// database that cannot have the key in `CREATE TABLE` when the parent
-  /// comes later (PostgreSQL, next to this one).
+  /// comes later (PostgreSQL).
   String addForeignKeyStatement({
     required String name,
     required String table,

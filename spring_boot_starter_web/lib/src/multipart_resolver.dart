@@ -16,7 +16,7 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 const _log = SpringLog('spring.web.multipart');
 
 /// The limits and storage settings for file uploads, read from
-/// `spring.servlet.multipart.*`.
+/// `spring.web.multipart.*`.
 ///
 /// Uploads are `multipart/form-data` requests. The limits keep a client
 /// from filling the disk or memory; the threshold and location decide
@@ -26,17 +26,17 @@ const _log = SpringLog('spring.web.multipart');
 ///
 /// | Property | Default |
 /// |---|---|
-/// | `spring.servlet.multipart.enabled` | `true` |
-/// | `spring.servlet.multipart.max-file-size` | `1MB` (`-1`: no limit) |
-/// | `spring.servlet.multipart.max-request-size` | `10MB` (`-1`: no limit) |
-/// | `spring.servlet.multipart.max-part-count` | `50` (`-1`: no limit) |
-/// | `spring.servlet.multipart.file-size-threshold` | `0B`: every file goes to a temporary file (in memory where there is no `dart:io`) |
-/// | `spring.servlet.multipart.location` | a private directory (`0700`) in the system's temporary directory |
+/// | `spring.web.multipart.enabled` | `true` |
+/// | `spring.web.multipart.max-file-size` | `1MB` (`-1`: no limit) |
+/// | `spring.web.multipart.max-request-size` | `10MB` (`-1`: no limit) |
+/// | `spring.web.multipart.max-part-count` | `50` (`-1`: no limit) |
+/// | `spring.web.multipart.file-size-threshold` | `0B`: every file goes to a temporary file (in memory where there is no `dart:io`) |
+/// | `spring.web.multipart.location` | a private directory (`0700`) in the system's temporary directory |
 ///
 /// ```properties
 /// # Covers up to 5 MB each, at most 20 MB per request.
-/// spring.servlet.multipart.max-file-size=5MB
-/// spring.servlet.multipart.max-request-size=20MB
+/// spring.web.multipart.max-file-size=5MB
+/// spring.web.multipart.max-request-size=20MB
 /// ```
 ///
 /// The keys are Spring Boot's; `file-size-threshold` defaults to `0B`
@@ -55,12 +55,12 @@ final class MultipartProperties {
     this.location,
   });
 
-  /// Reads `spring.servlet.multipart.*` from [environment]. Sizes take a
+  /// Reads `spring.web.multipart.*` from [environment]. Sizes take a
   /// unit (`512KB`, `5MB`); `-1` means no limit.
   factory MultipartProperties.of(PropertyResolver environment) {
     String? text(String key) {
       final value = environment
-          .getProperty('spring.servlet.multipart.$key')
+          .getProperty('spring.web.multipart.$key')
           ?.trim();
       return value == null || value.isEmpty ? null : value;
     }
@@ -81,7 +81,7 @@ final class MultipartProperties {
           int.tryParse(value) ??
               (throw ArgumentError.value(
                 value,
-                'spring.servlet.multipart.max-part-count',
+                'spring.web.multipart.max-part-count',
                 'not a number',
               )),
       },
@@ -122,7 +122,7 @@ final class MultipartProperties {
   final String? location;
 }
 
-/// The error of an upload larger than `spring.servlet.multipart.max-file-size`
+/// The error of an upload larger than `spring.web.multipart.max-file-size`
 /// or `max-request-size`, or with more parts than `max-part-count`; it is
 /// answered with a 413.
 ///
@@ -239,7 +239,7 @@ final class MultipartRequest {
 /// memory.
 ///
 /// The starter declares it as the `multipartResolver` bean, configured
-/// from `spring.servlet.multipart.*`, and uses it for `@RequestPart`
+/// from `spring.web.multipart.*`, and uses it for `@RequestPart`
 /// parameters and for `@RequestParam` on a multipart request. A request
 /// is read at most once, whoever asks first; files are streamed to
 /// temporary files as they arrive, checked against the limits, and

@@ -5,3 +5,10 @@ tags:
   # and the rest with --exclude-tags integration.
   integration:
     timeout: 2x
+
+  # Tests that need a PostgreSQL server: they run when SPRING_TEST_POSTGRES_URL
+  # (postgresql://user:password@host:port/database) is set, and are skipped
+  # without it. CI runs them against a service container:
+  #   dart test -t postgres
+  postgres:
+    timeout: 2x

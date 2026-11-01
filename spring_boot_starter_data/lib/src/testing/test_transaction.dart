@@ -47,31 +47,30 @@ const _definition = TransactionDefinition(name: 'test');
 /// })); // rolled back
 /// ```
 ///
-/// Spring (Java): `TransactionalTestExecutionListener`, which starts the
-/// transaction before `@BeforeEach` and ends it after `@AfterEach`; Spring
-/// uses the one transaction manager the test names (or the only one).
 /// The steps run in the scope's zone, so a `package:test` `setUp` or
 /// `tearDown` cannot be part of it: the generated code calls the lifecycle
 /// methods from here instead.
 ///
-/// ```dart
-/// final app = springBootTest(springApplication);
-///
-/// test('saves a book', () => runInTestTransaction(app.context, () async {
-///   await app.getBean<BookRepository>().save(Book(title: 'Dune'));
-/// })); // rolled back
-/// ```
+/// With [transactionManager] only the manager of that name (the bean's name
+/// or qualifier, as in `@Transactional(transactionManager: ...)`) gets a
+/// transaction, the way Spring's test uses the one manager it names; a
+/// repository on another store then writes outside the test's transaction
+/// and keeps what it writes. An unknown name throws a [StateError].
 ///
 /// Spring (Java): `TransactionalTestExecutionListener`, which starts the
-/// transaction before `@BeforeEach` and ends it after `@AfterEach`.
+/// transaction before `@BeforeEach` and ends it after `@AfterEach`, with the
+/// manager of `@Transactional(transactionManager:)` or the only one.
 Future<void> runInTestTransaction(
   BeanFactory beans,
   FutureOr<void> Function() body, {
   bool rollback = true,
+  String? transactionManager,
   List<FutureOr<void> Function()> before = const [],
   List<FutureOr<void> Function()> after = const [],
 }) {
-  final managers = _managersOf(beans);
+  final managers = transactionManager == null || transactionManager.isEmpty
+      ? _managersOf(beans)
+      : [_namedManager(beans, transactionManager)];
   return TransactionSynchronizationManager.runInScope<void>(() async {
     final begun = <(PlatformTransactionManager, TransactionStatus)>[];
     Object? failure;
@@ -146,6 +145,18 @@ Future<void> runInTestTransaction(
       Error.throwWithStackTrace(error, trace!);
     }
   });
+}
+
+// The manager [name] of a `@DataTest(transactionManager:)`.
+PlatformTransactionManager _namedManager(BeanFactory beans, String name) {
+  try {
+    return beans.getBean<PlatformTransactionManager>(qualifier: name);
+  } on Object catch (error) {
+    throw StateError(
+      "No PlatformTransactionManager bean '$name' for "
+      "@DataTest(transactionManager: '$name'): $error",
+    );
+  }
 }
 
 // The managers the repositories of [beans] write through, one for each

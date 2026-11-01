@@ -60,8 +60,8 @@ from the environment (`${PARTNER_SECRET}`), never from the sources.
 ## 2. The token on Feign calls
 
 ```properties
-spring.cloud.openfeign.oauth2.enabled=true
-spring.cloud.openfeign.oauth2.client-registration-id=partner
+spring.feign.oauth2.enabled=true
+spring.feign.oauth2.client-registration-id=partner
 ```
 
 ```dart

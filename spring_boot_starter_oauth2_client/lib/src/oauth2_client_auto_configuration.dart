@@ -39,7 +39,7 @@ final class _OnClientSecretJwt implements Condition {
 
 const _clients = ConditionalOnBean(ClientRegistrationRepository);
 const _feign = ConditionalOnBooleanProperty(
-  'spring.cloud.openfeign.oauth2.enabled',
+  'spring.feign.oauth2.enabled',
 );
 
 /// The bean definitions the OAuth2 client starter adds to every
@@ -87,12 +87,12 @@ const _feign = ConditionalOnBooleanProperty(
 ///   `authorization_code`, `refresh_token` and `client_credentials`
 ///   grants;
 ///
-/// and with `spring.cloud.openfeign.oauth2.enabled=true` (Spring Cloud
+/// and with `spring.feign.oauth2.enabled=true` (Spring Cloud
 /// OpenFeign's `FeignAutoConfiguration.Oauth2FeignConfiguration`):
 ///
 /// - `oauth2AccessTokenInterceptor`, the [OAuth2AccessTokenInterceptor]
 ///   of every Feign client, for the registration
-///   `spring.cloud.openfeign.oauth2.client-registration-id` (else the
+///   `spring.feign.oauth2.client-registration-id` (else the
 ///   Feign client's name), with the `dPoPKey`;
 /// - `oauth2AccessTokenErrorDecoder`, the [OAuth2AccessTokenErrorDecoder]
 ///   that renews a token rejected with 401, unless the application has an
@@ -103,8 +103,8 @@ const _feign = ConditionalOnBooleanProperty(
 /// spring.security.oauth2.client.registration.partner.client-secret=${PARTNER_SECRET}
 /// spring.security.oauth2.client.registration.partner.authorization-grant-type=client_credentials
 /// spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token
-/// spring.cloud.openfeign.oauth2.enabled=true
-/// spring.cloud.openfeign.oauth2.client-registration-id=partner
+/// spring.feign.oauth2.enabled=true
+/// spring.feign.oauth2.client-registration-id=partner
 /// ```
 final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<ClientRegistrationRepository>(
@@ -342,7 +342,7 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) => OAuth2AccessTokenInterceptor(
       r.dependency<OAuth2AuthorizedClientManager>(),
       clientRegistrationId: r.dependency<Environment>().getProperty(
-        'spring.cloud.openfeign.oauth2.client-registration-id',
+        'spring.feign.oauth2.client-registration-id',
       ),
       authorizedClientService: r
           .optionalDependency<OAuth2AuthorizedClientService>(),

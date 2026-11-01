@@ -18,8 +18,8 @@
 /// spring.security.oauth2.client.registration.partner.client-secret=${PARTNER_SECRET}
 /// spring.security.oauth2.client.registration.partner.authorization-grant-type=client_credentials
 /// spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token
-/// spring.cloud.openfeign.oauth2.enabled=true
-/// spring.cloud.openfeign.oauth2.client-registration-id=partner
+/// spring.feign.oauth2.enabled=true
+/// spring.feign.oauth2.client-registration-id=partner
 /// ```
 ///
 /// ```dart

@@ -875,7 +875,7 @@ bytes, or the unit of `@DataSizeUnit` on the field.
 ### Booleans
 
 `true`, `on`, `yes` and `1` are true; `false`, `off`, `no` and `0` are
-false, in any case. Any other value fails the start. The `spring.jackson.*`
+false, in any case. Any other value fails the start. The `spring.json.*`
 switches are stricter: they are on only when the value is `true`.
 
 ### Enums
@@ -1485,7 +1485,7 @@ when its value is exactly `true`; any other value turns it off.
 
 ```yaml
 spring:
-  jackson:
+  json:
     property-naming-strategy: SNAKE_CASE
     default-property-inclusion: non_null
     time-zone: UTC
@@ -1501,13 +1501,13 @@ spring:
 </td><td>
 
 ```properties
-spring.jackson.property-naming-strategy=SNAKE_CASE
-spring.jackson.default-property-inclusion=non_null
-spring.jackson.time-zone=UTC
-spring.jackson.serialization.indent-output=true
-spring.jackson.serialization.write-dates-as-timestamps=false
-spring.jackson.deserialization.fail-on-unknown-properties=true
-spring.jackson.mapper.sort-properties-alphabetically=false
+spring.json.property-naming-strategy=SNAKE_CASE
+spring.json.default-property-inclusion=non_null
+spring.json.time-zone=UTC
+spring.json.serialization.indent-output=true
+spring.json.serialization.write-dates-as-timestamps=false
+spring.json.deserialization.fail-on-unknown-properties=true
+spring.json.mapper.sort-properties-alphabetically=false
 ```
 
 </td></tr>
@@ -1515,23 +1515,23 @@ spring.jackson.mapper.sort-properties-alphabetically=false
 
 | Key | Default | Meaning |
 |---|---|---|
-| `spring.jackson.property-naming-strategy` | `LOWER_CAMEL_CASE` | How field names become JSON names: `SNAKE_CASE`, `UPPER_SNAKE_CASE`, `UPPER_CAMEL_CASE`, `LOWER_CAMEL_CASE`, `LOWER_CASE`, `KEBAB_CASE`, `LOWER_DOT_CASE` |
-| `spring.jackson.default-property-inclusion` | `always` | Which properties are written: `always`, `non_null`, `non_absent`, `non_empty`, `non_default` |
-| `spring.jackson.time-zone` | — | `UTC`, `Z` or a fixed offset (`+02:00`); named zones such as `Europe/Berlin` fail, as Dart has no time zone database |
-| `spring.jackson.serialization.indent-output` | `false` | Pretty-printed JSON |
-| `spring.jackson.serialization.write-dates-as-timestamps` | `false` | Dates as numbers. `spring.jackson.datatype.datetime.write-dates-as-timestamps` does the same and wins |
-| `spring.jackson.serialization.write-durations-as-timestamps` | `false` | Durations as numbers |
-| `spring.jackson.serialization.write-date-timestamps-as-nanoseconds` | `true` | Timestamps with a fraction |
-| `spring.jackson.deserialization.read-date-timestamps-as-nanoseconds` | `true` | Reads timestamps with a fraction |
-| `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | An unknown JSON property fails the read |
-| `spring.jackson.deserialization.accept-float-as-int` | `true` | `1.0` can be read into an `int` |
-| `spring.jackson.deserialization.fail-on-null-for-primitives` | `true` | `null` for a non-nullable number or `bool` fails the read |
-| `spring.jackson.mapper.sort-properties-alphabetically` | `true` | Writes properties in alphabetical order |
-| `spring.jackson.mapper.default-view-inclusion` | `false` | Properties without `@JsonView` appear in every view |
+| `spring.json.property-naming-strategy` | `LOWER_CAMEL_CASE` | How field names become JSON names: `SNAKE_CASE`, `UPPER_SNAKE_CASE`, `UPPER_CAMEL_CASE`, `LOWER_CAMEL_CASE`, `LOWER_CASE`, `KEBAB_CASE`, `LOWER_DOT_CASE` |
+| `spring.json.default-property-inclusion` | `always` | Which properties are written: `always`, `non_null`, `non_absent`, `non_empty`, `non_default` |
+| `spring.json.time-zone` | — | `UTC`, `Z` or a fixed offset (`+02:00`); named zones such as `Europe/Berlin` fail, as Dart has no time zone database |
+| `spring.json.serialization.indent-output` | `false` | Pretty-printed JSON |
+| `spring.json.serialization.write-dates-as-timestamps` | `false` | Dates as numbers. `spring.json.datatype.datetime.write-dates-as-timestamps` does the same and wins |
+| `spring.json.serialization.write-durations-as-timestamps` | `false` | Durations as numbers |
+| `spring.json.serialization.write-date-timestamps-as-nanoseconds` | `true` | Timestamps with a fraction |
+| `spring.json.deserialization.read-date-timestamps-as-nanoseconds` | `true` | Reads timestamps with a fraction |
+| `spring.json.deserialization.fail-on-unknown-properties` | `false` | An unknown JSON property fails the read |
+| `spring.json.deserialization.accept-float-as-int` | `true` | `1.0` can be read into an `int` |
+| `spring.json.deserialization.fail-on-null-for-primitives` | `true` | `null` for a non-nullable number or `bool` fails the read |
+| `spring.json.mapper.sort-properties-alphabetically` | `true` | Writes properties in alphabetical order |
+| `spring.json.mapper.default-view-inclusion` | `false` | Properties without `@JsonView` appear in every view |
 
 The other three `datetime` timestamp switches also have a
-`spring.jackson.datatype.datetime.*` form that wins over the one above.
-Any other `spring.jackson.*` key (`date-format`, `locale`, `visibility`,
+`spring.json.datatype.datetime.*` form that wins over the one above.
+Any other `spring.json.*` key (`date-format`, `locale`, `visibility`,
 `generator.*`, `parser.*`, …) is logged as a warning and ignored.
 
 ---
@@ -1561,8 +1561,7 @@ logging:
     dateformat: "HH:mm:ss.SSS"
   file:
     name: logs/shop.log
-  logback:
-    rollingpolicy:
+    rolling-policy:
       max-file-size: 10MB
       max-history: 7
   threshold:
@@ -1585,8 +1584,8 @@ logging.group.payments=shop.payments,shop.billing
 logging.pattern.console=%d %-5level %logger{36} - %msg%n
 logging.pattern.dateformat=HH:mm:ss.SSS
 logging.file.name=logs/shop.log
-logging.logback.rollingpolicy.max-file-size=10MB
-logging.logback.rollingpolicy.max-history=7
+logging.file.rolling-policy.max-file-size=10MB
+logging.file.rolling-policy.max-history=7
 logging.threshold.file=info
 logging.buffer.capacity=2000
 spring.output.ansi.enabled=never
@@ -1619,14 +1618,14 @@ The levels are `trace`, `debug`, `info`, `warn` (or `warning`), `error`
 | `logging.file.name` | path | — | The log file; `${LOG_FILE}` in patterns |
 | `logging.file.path` | directory | — | Writes `<dir>/spring.log` when no name is set; `${LOG_PATH}` in patterns |
 | `logging.charset.file` | charset | UTF-8 | The file's encoding. `logging.charset.console` is only checked |
-| `logging.logback.rollingpolicy.max-file-size` | data size | `10MB` | The size at which the file rolls over to `.1`, `.2`, … |
-| `logging.logback.rollingpolicy.max-history` | int | `7` | How many rolled files are kept |
-| `logging.logback.rollingpolicy.total-size-cap` | data size | `0B` (no limit) | The largest total size of the rolled files |
-| `logging.logback.rollingpolicy.clean-history-on-start` | bool | `false` | Deletes the rolled files when the application starts |
+| `logging.file.rolling-policy.max-file-size` | data size | `10MB` | The size at which the file rolls over to `.1`, `.2`, … |
+| `logging.file.rolling-policy.max-history` | int | `7` | How many rolled files are kept |
+| `logging.file.rolling-policy.total-size-cap` | data size | `0B` (no limit) | The largest total size of the rolled files |
+| `logging.file.rolling-policy.clean-history-on-start` | bool | `false` | Deletes the rolled files when the application starts |
 | `spring.output.ansi.enabled` | `always` / `detect` / `never` | `always` | Colours on the console: `%clr`, or the time, level and logger of a pattern without colours. `never` gives plain text, for logs read by a program. `detect` colours only on a terminal or in a Flutter debug or profile build (Spring Boot's default) |
 
 Log files are not written on the web; a warning says so.
-`logging.logback.rollingpolicy.file-name-pattern` and the old
+`logging.file.rolling-policy.file-name-pattern` and the old
 `logging.file.max-size`, `max-history`, `total-size-cap` and
 `clean-history-on-start` keys are ignored with a warning. There is no
 `logging.config`, `logback.xml` or `logging.structured.*`.
@@ -1784,50 +1783,49 @@ a client's own entry wins over it.
 
 ```yaml
 spring:
-  cloud:
-    openfeign:
-      client:
-        decode-slash: true
-        config:
-          default:
-            connect-timeout: 5s
-            read-timeout: 30s
-            logger-level: basic
-          catalog:
-            url: https://api.neon.books
-            read-timeout: 10s
-            dismiss404: true
-            default-request-headers:
-              X-Client: [shop]
-            default-query-parameters:
-              lang: [en]
-            retryer: catalogRetryer
-            request-interceptors: [authInterceptor]
-            event-stream:
-              reconnect-delay: 2s
+  feign:
+    client:
+      decode-slash: true
+      config:
+        default:
+          connect-timeout: 5s
+          read-timeout: 30s
+          logger-level: basic
+        catalog:
+          url: https://api.neon.books
+          read-timeout: 10s
+          dismiss404: true
+          default-request-headers:
+            X-Client: [shop]
+          default-query-parameters:
+            lang: [en]
+          retryer: catalogRetryer
+          request-interceptors: [authInterceptor]
+          event-stream:
+            reconnect-delay: 2s
 ```
 
 </td><td>
 
 ```properties
-spring.cloud.openfeign.client.decode-slash=true
-spring.cloud.openfeign.client.config.default.connect-timeout=5s
-spring.cloud.openfeign.client.config.default.read-timeout=30s
-spring.cloud.openfeign.client.config.default.logger-level=basic
-spring.cloud.openfeign.client.config.catalog.url=https://api.neon.books
-spring.cloud.openfeign.client.config.catalog.read-timeout=10s
-spring.cloud.openfeign.client.config.catalog.dismiss404=true
-spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Client=shop
-spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en
-spring.cloud.openfeign.client.config.catalog.retryer=catalogRetryer
-spring.cloud.openfeign.client.config.catalog.request-interceptors=authInterceptor
-spring.cloud.openfeign.client.config.catalog.event-stream.reconnect-delay=2s
+spring.feign.client.decode-slash=true
+spring.feign.client.config.default.connect-timeout=5s
+spring.feign.client.config.default.read-timeout=30s
+spring.feign.client.config.default.logger-level=basic
+spring.feign.client.config.catalog.url=https://api.neon.books
+spring.feign.client.config.catalog.read-timeout=10s
+spring.feign.client.config.catalog.dismiss404=true
+spring.feign.client.config.catalog.default-request-headers.X-Client=shop
+spring.feign.client.config.catalog.default-query-parameters.lang=en
+spring.feign.client.config.catalog.retryer=catalogRetryer
+spring.feign.client.config.catalog.request-interceptors=authInterceptor
+spring.feign.client.config.catalog.event-stream.reconnect-delay=2s
 ```
 
 </td></tr>
 </table>
 
-The keys under `spring.cloud.openfeign.client.config.<client>.`:
+The keys under `spring.feign.client.config.<client>.`:
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
@@ -1848,7 +1846,7 @@ The keys under `spring.cloud.openfeign.client.config.<client>.`:
 
 | Global key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.cloud.openfeign.client.decode-slash` | bool | `true` | `false` encodes `/` in path variables as `%2F` |
+| `spring.feign.client.decode-slash` | bool | `true` | `false` encodes `/` in path variables as `%2F` |
 
 `retryer`, `error-decoder` and `request-interceptors` name beans. Spring
 takes class names and creates the class; here a class name must match
@@ -3077,7 +3075,7 @@ browser the keys are not read.
 `spring_boot_starter_web` runs the application's controllers on a
 `dart:io` HTTP server. It reads Spring Boot's `server.*` keys for the
 port, TLS and shutdown, the keys of the controllers' server-sent events,
-and the upload limits (`spring.servlet.multipart.*`; see the starter's
+and the upload limits (`spring.web.multipart.*`; see the starter's
 [Files](../spring_boot_starter_web/README.md#files-uploads-and-downloads)
 section).
 
@@ -3090,8 +3088,7 @@ server:
   port: 8080
   address: 0.0.0.0
   shutdown: graceful
-  servlet:
-    context-path: /shop
+  context-path: /shop
   max-http-request-body-size: 10MB
   connection-timeout: 60s
   compression:
@@ -3117,7 +3114,7 @@ spring:
       request-timeout: 30m
     sse:
       heartbeat-interval: 15s
-  servlet:
+  web:
     multipart:
       enabled: true
       max-file-size: 5MB
@@ -3133,7 +3130,7 @@ spring:
 server.port=8080
 server.address=0.0.0.0
 server.shutdown=graceful
-server.servlet.context-path=/shop
+server.context-path=/shop
 server.max-http-request-body-size=10MB
 server.connection-timeout=60s
 server.compression.enabled=true
@@ -3151,12 +3148,12 @@ server.ssl.client-auth=want
 spring.lifecycle.timeout-per-shutdown-phase=20s
 spring.mvc.async.request-timeout=30m
 spring.mvc.sse.heartbeat-interval=15s
-spring.servlet.multipart.enabled=true
-spring.servlet.multipart.max-file-size=5MB
-spring.servlet.multipart.max-request-size=20MB
-spring.servlet.multipart.max-part-count=100
-spring.servlet.multipart.file-size-threshold=64KB
-spring.servlet.multipart.location=/var/tmp/shop-uploads
+spring.web.multipart.enabled=true
+spring.web.multipart.max-file-size=5MB
+spring.web.multipart.max-request-size=20MB
+spring.web.multipart.max-part-count=100
+spring.web.multipart.file-size-threshold=64KB
+spring.web.multipart.location=/var/tmp/shop-uploads
 ```
 
 </td></tr>
@@ -3168,8 +3165,8 @@ spring.servlet.multipart.location=/var/tmp/shop-uploads
 | `server.address` | IP address or host name | all interfaces; **`127.0.0.1` in Flutter apps** | The address to listen on. `localhost` is `127.0.0.1`; a host name is looked up. Flutter apps default to `127.0.0.1` so they open no port to the network by accident |
 | `server.shutdown` | `graceful` / `immediate` | `graceful` | `graceful` accepts no new connections and lets running requests finish. Open event streams and WebSockets are closed at once (code 1001) |
 | `spring.lifecycle.timeout-per-shutdown-phase` | duration | `30s` | How long a graceful shutdown waits for running requests. As in Spring Boot, it is also the timeout per phase of the context's `lifecycleProcessor` (`spring_boot_dart`'s `LifecycleAutoConfiguration`), so the beans are destroyed only after the requests finished |
-| `server.servlet.context-path` | path | — | A prefix of every mapping, such as `/shop`. A missing leading `/` is added and a trailing one dropped; other paths answer 404. The old key `server.context-path` is read when this one is not set |
-| `server.max-http-request-body-size` | data size, or `-1` | `10MB` | A larger request body is answered with 413, whatever its `Content-Type`; `-1` means no limit. This starter's own key. Only the multipart resolver reads uploads with `spring.servlet.multipart.max-request-size` instead |
+| `server.context-path` | path | — | A prefix of every mapping, such as `/shop`. A missing leading `/` is added and a trailing one dropped; other paths answer 404. |
+| `server.max-http-request-body-size` | data size, or `-1` | `10MB` | A larger request body is answered with 413, whatever its `Content-Type`; `-1` means no limit. This starter's own key. Only the multipart resolver reads uploads with `spring.web.multipart.max-request-size` instead |
 | `server.connection-timeout` | duration; `0` or less (`-1`) for none | `60s` | How long a request body may send nothing while it is read: then the answer is 408 and the connection closes. Also how long an idle keep-alive connection stays open. `0` or a negative value means no limit, as in Tomcat. Tomcat's `connectionTimeout` (Spring Boot 2.0 had this key; Boot 4 has `server.tomcat.connection-timeout`) |
 | `server.forward-headers-strategy` | `none` / `native` / `framework` | `none` | Behind a reverse proxy: apply its `Forwarded` or `X-Forwarded-Proto`, `-Host`, `-Port`, `-For` headers (the scheme, so cookies get `Secure` behind TLS; the host and port; the client's address), from trusted proxies only. `native` and `framework` do the same here. Another value stops the start |
 | `server.forward-headers.trusted-proxies` | list of addresses and CIDR ranges | loopback, `10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `100.64/10`, `::1`, `fc00::/7`, `fe80::/10` | Whose forwarded headers are believed (Tomcat's `internalProxies`); a client reaching the server from elsewhere cannot set them. Not in Spring Boot |
@@ -3189,12 +3186,12 @@ spring.servlet.multipart.location=/var/tmp/shop-uploads
 | `spring.main.web-application-type` | `none`, or anything else | — | `none`: the beans (and `MockMvc`) exist, but no server starts. Other values start it |
 | `spring.mvc.async.request-timeout` | duration | no limit | The timeout of an `SseEmitter` created without one; when it passes, the emitter completes after running its `onTimeout` callbacks |
 | `spring.mvc.sse.heartbeat-interval` | duration | — (none) | Sends a comment line in every open event stream at this interval, so proxies keep idle streams open. This starter's own key |
-| `spring.servlet.multipart.enabled` | bool | `true` | `false`: `multipart/*` requests are not parsed, and `@RequestPart` parameters answer 400 |
-| `spring.servlet.multipart.max-file-size` | data size, or `-1` | `1MB` | The largest file (or other part) of an upload; above it the answer is 413 (`MaxUploadSizeExceededException`). `-1` means no limit |
-| `spring.servlet.multipart.max-request-size` | data size, or `-1` | `10MB` | The largest multipart request as a whole; above it the answer is 413. `-1` means no limit |
-| `spring.servlet.multipart.max-part-count` | int, or `-1` | `50` | The most parts (files and fields) of a multipart request; above it the answer is 413. This starter's own key: Spring Boot sets the same limit on Tomcat with `server.tomcat.max-part-count` (50) |
-| `spring.servlet.multipart.file-size-threshold` | data size | `0B` | Files above this size are written to a temporary file; smaller ones stay in memory. With `0B` every file goes to a temporary file (in memory where there is no `dart:io`). Temporary files are deleted after the request |
-| `spring.servlet.multipart.location` | directory path | the system's temporary directory | Where the private directory (`0700`) of the uploads' temporary files is made; the files have random names and are deleted when the request ends or fails |
+| `spring.web.multipart.enabled` | bool | `true` | `false`: `multipart/*` requests are not parsed, and `@RequestPart` parameters answer 400 |
+| `spring.web.multipart.max-file-size` | data size, or `-1` | `1MB` | The largest file (or other part) of an upload; above it the answer is 413 (`MaxUploadSizeExceededException`). `-1` means no limit |
+| `spring.web.multipart.max-request-size` | data size, or `-1` | `10MB` | The largest multipart request as a whole; above it the answer is 413. `-1` means no limit |
+| `spring.web.multipart.max-part-count` | int, or `-1` | `50` | The most parts (files and fields) of a multipart request; above it the answer is 413. This starter's own key: Spring Boot sets the same limit on Tomcat with `server.tomcat.max-part-count` (50) |
+| `spring.web.multipart.file-size-threshold` | data size | `0B` | Files above this size are written to a temporary file; smaller ones stay in memory. With `0B` every file goes to a temporary file (in memory where there is no `dart:io`). Temporary files are deleted after the request |
+| `spring.web.multipart.location` | directory path | the system's temporary directory | Where the private directory (`0700`) of the uploads' temporary files is made; the files have random names and are deleted when the request ends or fails |
 | `spring.test.web-environment` | `mock` / `random-port` / `defined-port` / `none` | not set: a server starts | Set by `springBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`). In tests only `random-port` (port `0`) and `defined-port` start a server |
 | `local.server.port` | int, **written by the server** | — | The port the server listens on, set once it listens (also in `WebServerInitializedEvent`). Read it; do not set it |
 
@@ -3340,8 +3337,8 @@ The keys under `spring.security.oauth2.client.provider.<id>.`:
 
 Two keys with Spring Cloud OpenFeign's names, read by this starter, add
 the token of a registration to every Feign call:
-`spring.cloud.openfeign.oauth2.enabled` (`false`) and
-`spring.cloud.openfeign.oauth2.client-registration-id` (else the Feign
+`spring.feign.oauth2.enabled` (`false`) and
+`spring.feign.oauth2.client-registration-id` (else the Feign
 client's name); [section 15](#15-reference-feign-clients) has the other
 Feign keys.
 
@@ -3362,8 +3359,8 @@ sharing sessions, is shared (the client's README, *DPoP*).
 ## 20. Reference: SQL databases
 
 `spring_boot_starter_data` opens the database of `spring.datasource.url`
-with the driver the application lists (`sqlite3` for `sqlite:` URLs),
-runs its migrations at startup, before any repository or `JdbcTemplate`
+with the driver the application lists (`sqlite3` for `sqlite:` URLs,
+`postgres` for `postgresql:` ones), runs its migrations at startup, before any repository or `JdbcTemplate`
 can use it, and checks the schema against the entities. Without a URL the
 repositories keep their data in memory.
 
@@ -3412,9 +3409,9 @@ spring.data.jdbc.slow-query-threshold=500ms
 
 | Key | Default | Meaning |
 |---|---|---|
-| `spring.datasource.url` | | `sqlite:file:books.db`, `sqlite::memory:` (one connection: `pool.max-size=1`); a leading `jdbc:` is dropped; a scheme no listed driver handles stops the start, naming the package to add |
+| `spring.datasource.url` | | `sqlite:file:books.db`, `sqlite::memory:` (one connection: `pool.max-size=1`), `postgresql://user:password@host:5432/shop?sslmode=require` ([PostgreSQL](#postgresql)); a leading `jdbc:` is dropped; a scheme no listed driver handles stops the start, naming the package to add |
 | `spring.datasource.username`, `.password` | | when the URL does not carry them; never logged |
-| `spring.datasource.driver` | | the driver's name (`sqlite3`) when two handle the scheme |
+| `spring.datasource.driver` | | the driver's name (`sqlite3`, `postgres`) when two handle the scheme |
 | `spring.datasource.pool.max-size` | `10` | most connections at once |
 | `spring.datasource.pool.min-idle` | `0` | connections kept open when idle |
 | `spring.datasource.pool.connection-timeout` | `30s` | the longest wait for a connection, then `CannotGetJdbcConnectionException` |
@@ -3425,11 +3422,16 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.datasource.sqlite.base-directory` | working directory | where relative `sqlite:file:` names are looked for; in a Flutter app the starter sets it ([SQLite databases](#sqlite-databases)) |
 | `spring.datasource.sqlite.isolate` | `false` | `true` opens each connection inside an isolate of its own, so a long query or a busy wait does not hold the caller's isolate (the UI's, the web server's); in a Flutter app the starter sets it to `true` |
 | `spring.datasource.sqlite.location` | `support` | read by the Flutter starter only: `support`, `cache` or `documents`, the directory it sets `base-directory` to ([SQLite databases](#sqlite-databases)) |
+| `spring.datasource.postgresql.sslmode` | `prefer` | `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`; also `spring.datasource.postgres.*` ([PostgreSQL](#postgresql)) |
+| `spring.datasource.postgresql.ssl-root-cert` | system roots | PEM file of the certificate authorities a `verify-*` mode checks the server against |
+| `spring.datasource.postgresql.connect-timeout` | `15s` | the longest wait for the connection and the TLS handshake (`500ms`, `30s`, `1m`, or milliseconds) |
+| `spring.datasource.postgresql.application-name` | | shown in `pg_stat_activity` |
+| `spring.datasource.postgresql.search-path` | the server's | the schemas of `search_path`, comma separated (the URL's `currentSchema`) |
 | `spring.datasources.<name>.*` | | the same keys for a named database (beans qualified `<name>`, `@UseDataSource('<name>')`), also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
 | `spring.sql.init.mode` | `embedded` | `schema.sql` / `data.sql`: `embedded` (in-memory databases only), `always`, `never` |
 | `spring.sql.init.schema-locations`, `data-locations`, `platform`, `continue-on-error`, `separator`, `encoding` | Boot's | as in Spring Boot |
 | `spring.sql.migration.enabled` | `true` | run `lib/resources/db/migration/V<version>__<name>.sql` and `R__<name>.sql` (no files: nothing) |
-| `spring.sql.migration.locations` | `classpath:db/migration` | `{vendor}` is the database (`sqlite`) |
+| `spring.sql.migration.locations` | `classpath:db/migration` | `{vendor}` is the database (`sqlite`, `postgresql`) |
 | `spring.sql.migration.table` | `schema_history` | the history table |
 | `spring.sql.migration.validate-on-migrate` | `true` | an applied file that changed, or went missing, stops the start |
 | `spring.sql.migration.baseline-on-migrate`, `baseline-version`, `baseline-description` | `false`, `1` | start the history on an existing database |
@@ -3444,8 +3446,88 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
 | `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
 
-Spring Boot's `spring.flyway.*` names are not used: the migrations are
-this project's own runner (Flyway's file naming, `spring.sql.migration.*`).
+Spring Boot's `spring.flyway.*` names are not used (and stop the start,
+see [Renamed properties](#renamed-properties)): the migrations are this
+project's own runner (Flyway's file naming, `spring.sql.migration.*`).
+
+### PostgreSQL
+
+Add the `postgres` package to the application's dependencies next to
+`spring_boot_starter_data`, run the generator again (it writes a thin glue
+over the package, as it does for `sqlite3`), and give the URL:
+
+```properties
+spring.datasource.url=postgresql://shop:s3cret@db.example.com:5432/shop?sslmode=verify-full
+# or, as pasted from Spring Boot:
+spring.datasource.url=jdbc:postgresql://db.example.com:5432/shop
+spring.datasource.username=shop
+spring.datasource.password=s3cret
+```
+
+- **The URL.** Host (default `localhost`), port (5432) and database (the
+  user's name, else `postgres`) as usual; a user or password with special
+  characters is percent-encoded (`%40` for `@`). The parameters after `?` are
+  `sslmode`, `sslrootcert`, `connect_timeout` (seconds), `application_name`
+  and `currentSchema` (or `search_path`); another one is an error, so that a
+  typo such as `sslMod=require` never silently weakens a setting. The
+  properties above set the same, and win over the URL.
+- **TLS.** `sslmode` is libpq's. The default `prefer` (and `allow`) tries TLS
+  first and connects in plain text when the server has none, which an
+  attacker who can cut the connection can force: use `require` (encrypted,
+  the certificate is not checked) or `verify-full` (also checks the
+  certificate and the host name, against the system's roots or
+  `ssl-root-cert`) for anything but a development database. `verify-ca` is as
+  strict as `verify-full`.
+- **Parameters and values.** The statements keep `?` (the starter turns it
+  into `$1`, `$2`; quoted text, comments and `$$` bodies are left alone, and
+  `??` is a literal `?`, for the `jsonb` operators), and values always go as
+  parameters. `int` is `BIGINT`, `String` and enums `TEXT`, `bool` `BOOLEAN`,
+  `double` `DOUBLE PRECISION`, `DateTime` `TIMESTAMPTZ` (always the instant,
+  read back in UTC), `Uint8List` `BYTEA`, `BigInt` `NUMERIC`. A generated id
+  is `BIGINT GENERATED BY DEFAULT AS IDENTITY`, and comes back with
+  `RETURNING`; an id you write yourself does not move the sequence.
+- **Transactions.** Every isolation level is offered (`readUncommitted` is
+  accepted and runs as read committed, as PostgreSQL documents), read only
+  transactions refuse writes, `nested` uses savepoints, a transaction timeout
+  or `spring.jdbc.template.query-timeout` cancels the statement on the server
+  (a `QueryTimeoutException`; the connection stays usable). DDL is
+  transactional, so a failing migration leaves nothing of itself, and the
+  migrations of several instances queue on an advisory lock.
+- **Locks.** `@Lock` is a row lock: `FOR UPDATE` for `pessimisticWrite`, `FOR
+  SHARE` for `pessimisticRead`; a zero `timeout` is `NOWAIT`, a longer one is
+  `SET LOCAL lock_timeout` before the query, `skipLocked` is `SKIP LOCKED`
+  (and wins over a zero timeout: the server refuses both words). Unlike
+  SQLite, the `@Lock` query need not be the first statement of its
+  transaction.
+- **Errors.** By SQL state: `23505` is a `DuplicateKeyException` (with the
+  constraint's name), the other `23xxx` and `22xxx` a
+  `DataIntegrityViolationException`, `40001` a
+  `CannotSerializeTransactionException`, `40P01` a
+  `DeadlockLoserDataAccessException`, `55P03` (`NOWAIT`, `lock_timeout`) a
+  `CannotAcquireLockException`, `57014` a `QueryTimeoutException`, `42601`,
+  `42P01`, `42703` and the other syntax and name errors a
+  `BadSqlGrammarException`, `25006` an `InvalidDataAccessResourceUsageException`,
+  and `08xxx`, `28xxx` (authentication), `53xxx`, `57P01` and a missing
+  database a `DataAccessResourceFailureException`. The messages are the
+  server's own, without the `DETAIL` line (a duplicate key's holds the values)
+  and without the rejected value of `invalid input syntax for type integer`;
+  a password is never in a message.
+- **Text order.** `ORDER BY` and the range operators on text use the
+  database's collation, as in any Spring Data application: a database made
+  with `en_US.UTF-8` puts `a_b` before `Cryptonomicon`, where the in-memory
+  store and SQLite compare code units. `ignoreCase` is `lower()`, which folds
+  the letters the locale knows (`C`: ASCII only). `ON DELETE RESTRICT` is
+  looked at when the statement ends, not row by row as in SQLite, so deleting a
+  parent and its child in one statement works.
+- **Schema.** `spring.data.jdbc.schema=create` writes the tables above
+  (foreign keys come after the tables, so references in a cycle work);
+  `validate` reads `information_schema` and `pg_catalog`: any integer width
+  fits an `int`, `real` and `numeric` a `double`, `varchar` and `uuid` a
+  `String`, `date` and both timestamps a `DateTime`; foreign keys (with their
+  `ON DELETE`) and unique keys are compared too.
+
+The tests that need a server run when `SPRING_TEST_POSTGRES_URL` is set (see
+the data starter's README).
 
 **The build reads the schema too.** The SQL of each `@Query` is checked when
 the application is built (see the starter's README): a misspelled table or
@@ -3564,6 +3646,32 @@ Two limits of SpEL expressions are compile-time defines (`-D` or
 
 ## Differences from Spring Boot
 
+### Renamed properties
+
+Spring Boot's names for a few properties carry Java history that means
+nothing in Dart: there is no servlet container, no Jackson, no Spring
+Cloud, no Logback and no Flyway here. These properties have the names
+below instead, and the rest of Spring Boot's names are kept.
+
+| Spring Boot | Here |
+|---|---|
+| `spring.cloud.openfeign.*` | `spring.feign.*` |
+| `spring.jackson.*` | `spring.json.*` |
+| `spring.servlet.multipart.*` | `spring.web.multipart.*` |
+| `server.servlet.context-path`, `server.servlet.session.*` | `server.context-path`, `server.session.*` |
+| `logging.logback.rollingpolicy.*` | `logging.file.rolling-policy.*` |
+| `spring.flyway.*` | `spring.sql.migration.*` |
+
+An old name does not work silently: `spring_boot_dart` stops the start
+(`APPLICATION FAILED TO START`) when any property source holds a key
+under an old name (in a file, on the command line, in `--dart-define`s or
+as an environment variable such as `SPRING_JACKSON_TIME_ZONE`) and lists
+each key with its new name, for example
+`spring.jackson.default-property-inclusion is now
+spring.json.default-property-inclusion`. A forgotten
+`server.servlet.session.*` ignored in silence would leave the sessions on
+their defaults.
+
 - `.properties` files are read as UTF-8; Spring Boot reads ISO-8859-1. For
   Spring Boot's behaviour use
   `PropertiesPropertySourceLoader(encoding: latin1)`, or name the encoding
@@ -3669,12 +3777,13 @@ Two limits of SpEL expressions are compile-time defines (`-D` or
   `spring.flutter.*` key, the Feign `event-stream.*` keys,
   `server.max-http-request-body-size`, `server.connection-timeout` (a
   Spring Boot 2.0 key), `server.websocket.*`,
-  `spring.servlet.multipart.max-part-count` and
+  `spring.web.multipart.max-part-count` and
   `spring.mvc.sse.heartbeat-interval`.
 - The web server (`spring_boot_starter_web`) reads only the `server.*` and
-  `spring.servlet.multipart.*` keys of
-  [section 18](#18-reference-web-server). They keep Spring Boot's names,
-  though there is no servlet container. There is no HTTP/2, no forwarded
+  `spring.web.multipart.*` keys of
+  [section 18](#18-reference-web-server). They are Spring Boot's names
+  without `servlet` (see [Renamed properties](#renamed-properties)), as
+  there is no servlet container. There is no HTTP/2, no forwarded
   headers, no key stores, no `server.error.*` and no server-specific keys
   such as `server.tomcat.*`. `server.ssl.*` takes PEM file paths. Errors
   are `ProblemDetail`s, except the plain-text answers Spring gives too
@@ -3683,7 +3792,7 @@ Two limits of SpEL expressions are compile-time defines (`-D` or
 - Not read: `allow-circular-references`, `keep-alive`,
   `spring.task.execution.*`, `spring.task.scheduling.pool.*`,
   `spring.aop.*`, `management.*`, `info.*`, `logging.config`,
-  `logging.structured.*`, `spring.jackson.*` keys other than those listed
+  `logging.structured.*`, `spring.json.*` keys other than those listed
   (they are warned about and ignored), and cache stores other than
   `simple`.
 - Jackson time zones and `@Scheduled` zones: only UTC and fixed offsets

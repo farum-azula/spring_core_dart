@@ -327,9 +327,9 @@ stream. An error status ends it with the `FeignException` of the
 reconnects.
 
 ```properties
-spring.cloud.openfeign.client.config.orders.event-stream.reconnect=true
-spring.cloud.openfeign.client.config.orders.event-stream.reconnect-delay=3s
-spring.cloud.openfeign.client.config.orders.event-stream.max-attempts=10
+spring.feign.client.config.orders.event-stream.reconnect=true
+spring.feign.client.config.orders.event-stream.reconnect-delay=3s
+spring.feign.client.config.orders.event-stream.max-attempts=10
 ```
 
 | Property | Meaning |
@@ -365,18 +365,18 @@ The name `default` applies to every client; a client's own setting wins.
 The keys are those of Spring Cloud OpenFeign:
 
 ```properties
-spring.cloud.openfeign.client.config.default.read-timeout=10s
-spring.cloud.openfeign.client.config.default.connect-timeout=2s
-spring.cloud.openfeign.client.config.catalog.url=https://api.neon.books
-spring.cloud.openfeign.client.config.catalog.logger-level=basic
-spring.cloud.openfeign.client.config.catalog.dismiss404=true
-spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon
-spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en
-spring.cloud.openfeign.client.config.catalog.follow-redirects=false
-spring.cloud.openfeign.client.config.catalog.retryer=catalogRetryer
-spring.cloud.openfeign.client.config.catalog.error-decoder=com.example.ShopErrors
-spring.cloud.openfeign.client.config.catalog.request-interceptors[0]=requestIds
-spring.cloud.openfeign.client.decode-slash=false
+spring.feign.client.config.default.read-timeout=10s
+spring.feign.client.config.default.connect-timeout=2s
+spring.feign.client.config.catalog.url=https://api.neon.books
+spring.feign.client.config.catalog.logger-level=basic
+spring.feign.client.config.catalog.dismiss404=true
+spring.feign.client.config.catalog.default-request-headers.X-Shop=neon
+spring.feign.client.config.catalog.default-query-parameters.lang=en
+spring.feign.client.config.catalog.follow-redirects=false
+spring.feign.client.config.catalog.retryer=catalogRetryer
+spring.feign.client.config.catalog.error-decoder=com.example.ShopErrors
+spring.feign.client.config.catalog.request-interceptors[0]=requestIds
+spring.feign.client.decode-slash=false
 ```
 
 | Property | Default | Meaning |
@@ -393,7 +393,7 @@ spring.cloud.openfeign.client.decode-slash=false
 | `request-interceptors` | — | more `RequestInterceptor`s for the client: a list of bean names or class names, those under `default` first |
 | `follow-redirects` | `true` | whether redirects are followed; with `false`, a 3xx answer is an error status |
 | `sensitive-headers` | — | more headers whose values the `headers` and `full` logs show as `***`, such as `X-Api-Key`: a list, those under `default` first (see [Logging](#logging)) |
-| `spring.cloud.openfeign.client.decode-slash` | `true` | one setting for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: it is sent as `%2F`) |
+| `spring.feign.client.decode-slash` | `true` | one setting for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: it is sent as `%2F`) |
 
 The `default-request-headers` and `default-query-parameters` of a client
 add to those of `default`, and win for the same name.
@@ -629,7 +629,7 @@ shows; send secrets as headers and name the ones the starter does not
 mask already:
 
 ```properties
-spring.cloud.openfeign.client.config.default.sensitive-headers=X-Api-Key,X-Partner-Token
+spring.feign.client.config.default.sensitive-headers=X-Api-Key,X-Partner-Token
 ```
 
 ## Transport
@@ -679,6 +679,9 @@ the responses.
 ## Differences from Spring Cloud OpenFeign
 
 - No `@EnableFeignClients`: the starter is enough.
+- The properties are `spring.feign.*`, not `spring.cloud.openfeign.*`
+  (Spring Cloud means nothing in Dart); the old name stops the start and
+  names the new one.
 - Methods return `Future`s, because HTTP is asynchronous in Dart.
 - No service discovery or load balancing: every client needs a URL.
 - `connect-timeout` is one setting for all clients (`default`);

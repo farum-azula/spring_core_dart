@@ -7,6 +7,10 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'dart:async' as _i7;
+import 'dart:io' as _i6;
+
+import 'package:postgres/postgres.dart' as _i5;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:sqlite3/sqlite3.dart' as _i4;
@@ -66,6 +70,13 @@ _i2.BeanModule get $sharedBeans => _i2.BeanModule(r'sharedBeans', [
     types: const [_i3.JdbcDriver],
     conditions: [_i3.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
     create: (r) => _$sqlite3JdbcDriver(),
+  ),
+  _i2.BeanDefinition<_i3.JdbcDriver>(
+    name: r'postgresJdbcDriver',
+    source: r'package:spring_boot_starter_data#postgres',
+    types: const [_i3.JdbcDriver],
+    conditions: [_i3.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+    create: (r) => _$postgresJdbcDriver(),
   ),
 ]);
 
@@ -184,3 +195,162 @@ T _$sqlite3Guard<T>(T Function() action) {
 
 _i3.JdbcDriver _$sqlite3JdbcDriver() =>
     _i3.SqliteJdbcDriver(const _$Sqlite3Binding());
+
+final class _$PostgresBinding implements _i3.PostgresBinding {
+  const _$PostgresBinding();
+
+  @override
+  Future<_i3.PostgresSession> open(_i3.PostgresEndpoint endpoint) =>
+      _$postgresGuard(() async {
+        final roots = endpoint.rootCertificate;
+        return _$PostgresSession(
+          await _i5.Connection.open(
+            _i5.Endpoint(
+              host: endpoint.host,
+              port: endpoint.port,
+              database: endpoint.database,
+              username: endpoint.username,
+              password: endpoint.password,
+            ),
+            settings: _i5.ConnectionSettings(
+              sslMode: switch (endpoint.sslMode) {
+                _i3.PostgresSslMode.disable => _i5.SslMode.disable,
+                _i3.PostgresSslMode.require => _i5.SslMode.require,
+                _i3.PostgresSslMode.verifyFull => _i5.SslMode.verifyFull,
+              },
+              securityContext: roots == null
+                  ? null
+                  : (_i6.SecurityContext(withTrustedRoots: false)
+                      ..setTrustedCertificates(roots)),
+              connectTimeout: endpoint.connectTimeout,
+              applicationName: endpoint.applicationName,
+            ),
+          ),
+        );
+      });
+}
+
+final class _$PostgresSession implements _i3.PostgresSession {
+  _$PostgresSession(this._connection);
+
+  final _i5.Connection _connection;
+
+  @override
+  bool get isOpen => _connection.isOpen;
+
+  @override
+  Future<_i3.PostgresResult> execute(
+    String sql, {
+    List<Object?> parameters = const [],
+    bool simple = false,
+    Duration? timeout,
+  }) => _$postgresGuard(() async {
+    final result = await _connection.execute(
+      sql,
+      parameters: parameters.isEmpty
+          ? null
+          : [for (final value in parameters) _$postgresParameter(value)],
+      queryMode: simple ? _i5.QueryMode.simple : null,
+      timeout: timeout,
+    );
+    final columns = _$postgresColumns(result.schema);
+    return _i3.PostgresResult(columns, [
+      for (final row in result) _$postgresValues(row),
+    ], result.affectedRows);
+  });
+
+  @override
+  Stream<_i3.PostgresRow> stream(
+    String sql, {
+    List<Object?> parameters = const [],
+    Duration? timeout,
+  }) async* {
+    final statement = await _$postgresGuard(() => _connection.prepare(sql));
+    try {
+      List<String>? columns;
+      await for (final row in statement.bind([
+        for (final value in parameters) _$postgresParameter(value),
+      ])) {
+        columns ??= _$postgresColumns(row.schema);
+        yield _i3.PostgresRow(columns, _$postgresValues(row));
+      }
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+    } finally {
+      try {
+        await statement.dispose();
+      } on Object {
+        // The connection is gone: nothing is left to free.
+      }
+    }
+  }
+
+  @override
+  Future<void> close() => _$postgresGuard(_connection.close);
+}
+
+// The package writes a double that is not finite (`Infinity`, `NaN`) as a
+// quoted text the server refuses, unless it knows the type.
+Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
+    ? _i5.TypedValue(_i5.Type.double, value)
+    : value;
+
+List<String> _$postgresColumns(_i5.ResultSchema schema) => [
+  for (final column in schema.columns) column.columnName ?? '',
+];
+
+// A value of a type the package does not decode (an enum, `citext`...) as
+// its text or bytes.
+List<Object?> _$postgresValues(_i5.ResultRow row) => [
+  for (final value in row)
+    value is _i5.UndecodedBytes
+        ? (value.isBinary ? value.bytes : value.asString)
+        : value,
+];
+
+// The exceptions of the package and of the socket as the SqlError the
+// driver understands: the message, the SQL state, the constraint's name;
+// never the DETAIL line (it holds values) and never the exception itself.
+Object _$postgresError(Object error) {
+  if (error is _i5.ServerException) {
+    return _i3.SqlError(
+      error.message,
+      sqlState: error.code,
+      constraint: error.constraintName,
+      connectionLost:
+          error.severity == _i5.Severity.fatal ||
+          error.severity == _i5.Severity.panic,
+    );
+  }
+  if (error is _i5.PgException) {
+    // The package names the value it cannot send.
+    final inference = error.message.startsWith('Could not infer');
+    return _i3.SqlError(
+      inference
+          ? 'A parameter value has a type the driver cannot send'
+          : error.message,
+      connectionLost: !inference,
+    );
+  }
+  if (error is _i6.SocketException || error is _i6.TlsException) {
+    return _i3.SqlError('$error', connectionLost: true);
+  }
+  if (error is _i7.TimeoutException) {
+    return _i3.SqlError(
+      error.message ?? 'The connection timed out',
+      connectionLost: true,
+    );
+  }
+  return error;
+}
+
+Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+  }
+}
+
+_i3.JdbcDriver _$postgresJdbcDriver() =>
+    _i3.PostgresJdbcDriver(const _$PostgresBinding());
