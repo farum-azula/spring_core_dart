@@ -713,7 +713,7 @@ can only be read asynchronously (Flutter assets, `http:` imports),
 `application.yaml`, with their `application-{profile}` variants, in two
 location groups, as in Boot:
 
-1. `classpath:/;classpath:/config/`, which is `lib/resources/`;
+1. `resources:/;resources:/config/`, which is `lib/resources/`;
 2. `file:./;file:./config/;file:./config/*/`, which overrides the first.
 
 Within a group a profile-specific file wins, so `./application.properties`
@@ -745,7 +745,7 @@ Boot: `,` separates groups and `;` joins locations into one group.
 - As in Boot, whether a location found anything is decided once the
   profile files are read, and its `-{profile}` variants count
   (`file:./config/*/app.yml` with only `app-dev.yml` loads when `dev` is
-  active). A `classpath:` directory counts only when a file is found in
+  active). A `resources:` directory counts only when a file is found in
   it. A `;` group is one location, in `spring.config.import` too (in a
   file or not): optional when its first entry is, found when any entry
   finds something. A location that is not found is reported as written:
@@ -819,7 +819,7 @@ element that is not one of `[0]`, `[1]`... (`spring.config.import[x]`,
 **Encoding.** `.properties` files are read as UTF-8. Spring reads
 ISO-8859-1; for that use `PropertiesPropertySourceLoader(encoding: latin1)`
 in `ConfigDataEnvironment(loaders: ...)`, an encoding hint for one config
-file (`classpath:legacy.properties[encoding=iso-8859-1]`), or
+file (`resources:legacy.properties[encoding=iso-8859-1]`), or
 `@PropertySource(encoding: 'ISO-8859-1')`. A config file that is not
 valid in its encoding fails with a `ConfigDataLoadException` naming the
 file and the encoding.
@@ -855,14 +855,14 @@ the last one declared wins.
 
 ```dart
 @Configuration()
-@PropertySource(['classpath:mail.properties'])
+@PropertySource(['resources:mail.properties'])
 class MailConfig {}
 ```
 
 - It is loaded only when the declaring class's conditions (`@Profile`,
   `@Conditional`, ...) match. Classes pulled in with `@Import` inherit the
   importer's conditions.
-- A pattern (`file:config/*.properties`, `classpath*:`) loads every match;
+- A pattern (`file:config/*.properties`, `resources*:`) loads every match;
   no match is fine (Spring 6.1).
 - As in Spring it reads `.properties`, exactly as `java.util.Properties`
   reads them (`PropertiesParser`), as UTF-8 unless `encoding:` says
@@ -1156,7 +1156,7 @@ greeting=Willkommen bei {0}!
 class MessagesConfig {
   @Bean()
   MessageSource messageSource() =>
-      ReloadableResourceBundleMessageSource(basenames: ['classpath:messages']);
+      ReloadableResourceBundleMessageSource(basenames: ['resources:messages']);
 }
 
 context.getMessage('greeting', args: ['NEON'], locale: 'de');
@@ -1177,8 +1177,8 @@ context.getMessage('greeting', args: ['NEON'], locale: 'de');
 #### Resources
 
 A **resource** is a file the application reads, wherever it lives.
-`lib/resources/` is the classpath: the generator embeds its files, so
-`classpath:...` works in `dart run`, AOT executables, Flutter and the web,
+`lib/resources/` is the resources: the generator embeds its files, so
+`resources:...` works in `dart run`, AOT executables, Flutter and the web,
 without asset declarations.
 
 ```dart
@@ -1186,7 +1186,7 @@ without asset declarations.
 class WelcomeLetter {
   // Resolved by the context's resource loader, so custom protocols and
   // asset loaders apply.
-  WelcomeLetter(@Value('classpath:templates/welcome.txt') this.template);
+  WelcomeLetter(@Value('resources:templates/welcome.txt') this.template);
   final Resource template;
 
   String text() => template.readAsStringSync();
@@ -1195,7 +1195,7 @@ class WelcomeLetter {
 
 `ResourceLoader` understands:
 
-- `classpath:` (also plain paths such as `app.properties`, as in Spring);
+- `resources:` (also plain paths such as `app.properties`, as in Spring);
 - `file:`, percent-decoded (`file:my%20dir/a.txt`);
 - `package:my_app/config/app.yml`, the package's file through the package
   config (not on the web or in AOT executables);
@@ -1205,8 +1205,8 @@ class WelcomeLetter {
   a Flutter asset loader plugs in.
 
 `PathMatchingResourcePatternResolver` resolves patterns with
-`AntPathMatcher`, for `file:` and the classpath. `classpath:` searches the
-first classpath root that has the pattern's base directory, `classpath*:`
+`AntPathMatcher`, for `file:` and the classpath. `resources:` searches the
+first classpath root that has the pattern's base directory, `resources*:`
 every root (added directories, then the embedded resources). Matching
 directories are returned too, and directories the pattern cannot match
 are not walked. A `FileSystemResource` of a directory exists but is not
@@ -1214,10 +1214,10 @@ readable, as in Spring.
 
 Patterns are cleaned as Spring's `StringUtils.cleanPath` cleans them:
 `\\` (two backslashes) is read as one `/`, then each `\` left as `/`, and
-`.` and `..` segments are resolved (`classpath*:mail\*.txt`,
-`classpath*:mail/*/../*.txt` and `classpath*:mail/*\\..\\*.txt` are
-`classpath*:mail/*.txt`). So a `{name:regex}` must not use `\`, which
-becomes `/` (`classpath:mail/{n:\w+}.txt` matches nothing, in Spring
+`.` and `..` segments are resolved (`resources*:mail\*.txt`,
+`resources*:mail/*/../*.txt` and `resources*:mail/*\\..\\*.txt` are
+`resources*:mail/*.txt`). So a `{name:regex}` must not use `\`, which
+becomes `/` (`resources:mail/{n:\w+}.txt` matches nothing, in Spring
 too): write character classes such as `[0-9]` or `[a-zA-Z0-9_]` instead.
 As in Spring, a `file:` pattern's wildcards are those written: only the
 directory before the first wildcard is percent-decoded
@@ -1226,11 +1226,11 @@ the one file named `*.txt` and the rest of a pattern matches `%` as it
 is. Kept differences from Spring 7:
 
 - a `..` that climbs above a classpath root finds nothing (Spring's
-  `classpath*:mail/../../*.txt` can reach files next to a classpath
+  `resources*:mail/../../*.txt` can reach files next to a classpath
   directory);
-- a `\` in the directory before the first wildcard of a `classpath*:`
-  pattern is cleaned too (`classpath*:conf\sub/*.txt` finds
-  `conf/sub/*.txt`, as `classpath:conf\sub/*.txt` does in both), where
+- a `\` in the directory before the first wildcard of a `resources*:`
+  pattern is cleaned too (`resources*:conf\sub/*.txt` finds
+  `conf/sub/*.txt`, as `resources:conf\sub/*.txt` does in both), where
   Spring hands the name to Java's class loader, which refuses it, and
   finds nothing;
 - a `file:` pattern whose separators are `\` there is read the same way,
@@ -1238,10 +1238,10 @@ is. Kept differences from Spring 7:
   `file:C:\config\*.properties` find their files, where Spring on
   macOS and Linux finds nothing (`Invalid URI [file:]`, as its root
   directory ends at the last `/`);
-- a `classpath:` pattern whose base directory no root has
-  (`classpath:nodir/*.txt`) gives an empty list, where Spring throws a
+- a `resources:` pattern whose base directory no root has
+  (`resources:nodir/*.txt`) gives an empty list, where Spring throws a
   `FileNotFoundException` (`class path resource [nodir/] cannot be
-  resolved to URL because it does not exist`); `classpath*:` gives an
+  resolved to URL because it does not exist`); `resources*:` gives an
   empty list in both.
 
 **Why `lib/resources/`**, and not `bin/` or the project root: `lib/` is
@@ -1258,7 +1258,7 @@ else:
 my_app/
   bin/main.dart              # @SpringBootApplication
   lib/resources/
-    application.properties   # classpath:application.properties
+    application.properties   # resources:application.properties
 ```
 
 Tests see `test/resources/` first (`spring_boot_starter_test`), as
@@ -2276,7 +2276,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `ConversionService.canConvert(Class, Class)` | `canConvertType<S>(Type target)`; `canConvert(Object? source, Type target)` checks a value | Dart cannot pass a source type and test subtypes on a `Type` value |
 | `ChronoUnit` (all `java.time` units) | `ChronoUnit` with `nanos` … `days` (no months or years), for `DurationStyle.parse(unit:)` | A Dart `Duration` has no calendar units |
 | A relative import in a file found through a wildcard location (`file:./config/*/`) is resolved against the pattern (`config/*/x.yml`): read from every subdirectory, and a path with a directory fails ("must end with '*/'") | Relative to the importing file's own directory | Boot's quirk reads other directories' files |
-| `configtree:` reads any file system; a location that is a file fails, even an `optional:` one | File system paths only (not `classpath:` or assets); values are strings; a location that is a file counts as missing (`optional:` skips it) | Config trees are mounted volumes |
+| `configtree:` reads any file system; a location that is a file fails, even an `optional:` one | File system paths only (not `resources:` or assets); values are strings; a location that is a file counts as missing (`optional:` skips it) | Config trees are mounted volumes |
 | In a `;` group of locations, spaces around an entry are part of the location (`a.yml; b.yml` names ` b.yml`), and an empty entry is the importing file's directory (`b.yml;` also reads its `application.*`; `spring.config.location` fails on one) | Spaces are trimmed and empty entries skipped | A stray space or `;` should not change what is read |
 | The first entry of a `;` group picks the resolver of the whole group: `x.yml;configtree:/run/secrets/` reads the tree entry as a plain directory (its `application.*`), `configtree:/run/secrets/;x.yml` fails (a config tree location not ending in `/`) | Each entry is read by its own prefix: both read `x.yml` and the tree | Each entry of a group is a location of its own |
 | Boot 4.1.2 reads `spring.profiles.active`, `.default` and `.group.*` from on-profile documents (and documents of another cloud platform), applied or not; only `spring.profiles.include` fails there | Such a document fails when it applies and is ignored when it does not | What Boot's documentation describes |

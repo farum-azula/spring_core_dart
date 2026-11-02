@@ -774,7 +774,10 @@ final class SpringWorkspace {
         }
         if (entry.key == 'spring.messages.common-messages') {
           for (final name in entry.value.split(',')) {
-            final trimmed = name.trim().replaceFirst('classpath:', '');
+            final trimmed = name.trim().replaceFirst(
+              RegExp('^(?:resources|classpath):'),
+              '',
+            );
             if (trimmed.isNotEmpty) {
               common
                   .putIfAbsent(_packageRoot(path), () => {})
@@ -792,7 +795,10 @@ final class SpringWorkspace {
         if (entry.key == 'spring.messages.basename') {
           final names = basenames.putIfAbsent(_packageRoot(path), () => {});
           for (final name in entry.value.split(',')) {
-            final trimmed = name.trim().replaceFirst('classpath:', '');
+            final trimmed = name.trim().replaceFirst(
+              RegExp('^(?:resources|classpath):'),
+              '',
+            );
             if (trimmed.isNotEmpty) {
               names.add(trimmed.replaceAll('.', '/'));
             }
@@ -856,7 +862,7 @@ final class SpringWorkspace {
   ///
   /// Depending on what is there: the beans of an injection point or a bean
   /// name, the definitions of a property key or a message code, the file of
-  /// a `classpath:` location, the class or method a pointcut names. Empty
+  /// a `resources:` location, the class or method a pointcut names. Empty
   /// when there is nothing Spring-specific at [offset]; the Dart analysis
   /// server answers for the rest.
   List<SourceRange> definition(String path, int offset) {
@@ -1295,10 +1301,10 @@ final class SpringWorkspace {
       const [];
 
   static final _resourceLocation = RegExp(
-    r'^(?:optional:)?(classpath\*?|file|asset):(.+)$',
+    r'^(?:optional:)?((?:resources|classpath)\*?|file|asset):(.+)$',
   );
 
-  // `classpath:legacy.properties` (in `@PropertySource`, `@Value`,
+  // `resources:legacy.properties` (in `@PropertySource`, `@Value`,
   // `getResource(...)`, ...): the file in `lib/resources/` of the package,
   // `test/resources/` first for test files, like the test classpath.
   // `file:` paths are relative to the package directory (where the app is
@@ -1310,7 +1316,7 @@ final class SpringWorkspace {
     }
     final location = match.group(2)!;
     if (location.endsWith('/')) {
-      return null; // a directory, like `classpath:/config/`
+      return null; // a directory, like `resources:/config/`
     }
     final package = _packageRoot(path);
     final List<String> searched;

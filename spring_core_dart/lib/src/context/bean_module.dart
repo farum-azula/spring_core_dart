@@ -49,7 +49,7 @@ final class PropertySourceDeclaration {
   /// its `@PropertySource` in other profiles, as in Spring.
   final List<Condition> conditions;
 
-  /// Resource locations (`file:`, `classpath:`, patterns); may contain
+  /// Resource locations (`file:`, `resources:`, patterns); may contain
   /// `${...}` placeholders.
   final List<String> locations;
 
@@ -144,7 +144,7 @@ final class ImportDeclaration {
 /// environment, then registers each definition whose conditions match and
 /// runs its [registrars]. [configurers] let `autowireBean` inject
 /// `@Configurable` classes, [introspections] go to the context's
-/// `BeanIntrospector`, and [resources] become `classpath:` files.
+/// `BeanIntrospector`, and [resources] become `resources:` files.
 ///
 /// ```dart
 /// @ComponentScan()
@@ -174,7 +174,7 @@ final class BeanModule {
   /// Creates a module named [name] from [definitions]; the collections are
   /// copied into unmodifiable lists and maps.
   ///
-  /// The [resources] are registered as `classpath:` files right away, so
+  /// The [resources] are registered as `resources:` files right away, so
   /// configuration files read before the context starts can find them.
   BeanModule(
     this.name,
@@ -200,13 +200,13 @@ final class BeanModule {
        configurablePostConstruct = Map.unmodifiable(configurablePostConstruct),
        configurablePreDestroy = Map.unmodifiable(configurablePreDestroy),
        resources = Map.unmodifiable(resources) {
-    // Embedded `lib/resources/` files become `classpath:` resources as soon
+    // Embedded `lib/resources/` files become `resources:` resources as soon
     // as the module exists (before config files are read).
     ClasspathResources.registerAll(resources, owner: name);
   }
 
   /// The files of the package's `lib/resources/`, embedded by the
-  /// generator and keyed by path; they are served as `classpath:`
+  /// generator and keyed by path; they are served as `resources:`
   /// resources (see [ClasspathResources]), which works in AOT, Flutter and
   /// the web too.
   final Map<String, EmbeddedResource> resources;

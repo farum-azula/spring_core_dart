@@ -449,18 +449,18 @@ void main() {
       final remove = ClasspathResources.addDirectory('$root/cp');
       try {
         final e = env({
-          'spring.config.import': 'classpath:/cpdir/',
+          'spring.config.import': 'resources:/cpdir/',
           'spring.profiles.active': 'dev',
         });
         process(e);
         expect(e.getProperty('b'), 'cp');
         expect(
-          () => process(env({'spring.config.import': 'classpath:/cpdir/'})),
+          () => process(env({'spring.config.import': 'resources:/cpdir/'})),
           throwsA(
             isA<ConfigDataLocationNotFoundException>().having(
               (e) => e.location,
               'location',
-              'classpath:/cpdir/',
+              'resources:/cpdir/',
             ),
           ),
         );
@@ -1328,9 +1328,9 @@ void main() {
 
     test('ConfigDataEnvironment.fileHints reads a location so', () {
       final hints = ConfigDataEnvironment.fileHints(
-        'classpath:conf[x]/dev.conf[encoding=Latin1][.properties]',
+        'resources:conf[x]/dev.conf[encoding=Latin1][.properties]',
       );
-      expect(hints.path, 'classpath:conf/dev.conf');
+      expect(hints.path, 'resources:conf/dev.conf');
       expect(hints.extension, 'properties');
       expect(hints.encoding, latin1);
       final none = ConfigDataEnvironment.fileHints('x.yml[foo]');

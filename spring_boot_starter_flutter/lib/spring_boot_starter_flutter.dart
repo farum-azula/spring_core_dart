@@ -52,6 +52,9 @@ export 'src/app_lifecycle.dart';
 export 'src/context_extensions.dart';
 export 'src/desktop_window/desktop_window.dart';
 export 'src/desktop_window/desktop_window_settings.dart';
+export 'src/files/file_store.dart';
+export 'src/files/file_template.dart' show FileArea, FileTemplate;
+export 'src/files/memory_file_store.dart' show InMemoryFileStore;
 export 'src/notify_listeners.dart';
 export 'src/platform_profiles.dart';
 export 'src/spring_app.dart';
@@ -62,6 +65,7 @@ export 'src/theme/spring_theme_data.dart'
     show SpringThemeData, SpringTextSpec, SpringThemeExtension;
 export 'src/theme/spring_themes.dart';
 export 'src/theme/theme_fonts.dart';
+export 'src/theme/theme_key_reader.dart';
 export 'src/theme/theme_values.dart' show ThemePropertyException;
 
 /// The validation constraint that keeps a string's length or a

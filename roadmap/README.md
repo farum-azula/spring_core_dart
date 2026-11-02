@@ -104,21 +104,27 @@ What comes next, in order:
    cannot work fully (timers, in-memory caches and sessions, files,
    isolates) without starters knowing any platform (the open section of
    [serverless.md](serverless.md)).
-10. **Typed keys from the configuration** (the section in
-   [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#typed-keys-from-the-configuration-generated)):
-   the generator writes getters for the theme's colors, spacing, text
-   styles, tokens and theme names (`context.theme.colors.surfaceContainerLow`)
-   and for the messages (`context.messages.basket.total(sum)`); then
-   assets and routes. A renamed key fails the build, not the app.
-    In 0.7.1 (the owner, November 2026): the theme from a URL or GitHub
-    under a name of the app's choice, and `resources:` in place of
-    `classpath:` (the prefix that points into `lib/resources/`; `classpath`
-    is Java history like `servlet` and `jackson`): `resources:` everywhere a
-    location is read (`spring.config.import`, `@PropertySource`,
-    `spring.sql.migration.locations`, ...), `classpath:` first a warning
-    naming the new prefix, then refused like the renamed properties. Then
-    the theme's states and every Flutter component theme (no generated
-    widgets).
+10. **0.6.2: the theme** (the owner, November 2026; branch `theme`), in
+   the Flutter starter ([spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#typed-keys-from-the-configuration-generated)):
+   - typed keys from the configuration: the generator writes getters for
+     the theme's colors, spacing, text styles, tokens and theme names
+     (`context.theme.colors.surfaceContainerLow`, `context.theme.spacing.m`)
+     and for the messages (`context.messages.basket.total(sum)`); a renamed
+     key fails the build, not the app (assets and routes later) — done:
+     `lib/spring_keys.dart` from the `spring_flutter_keys` builder;
+   - the components' states (hovered, pressed, focused, disabled) and every
+     component theme of Flutter (about 50, today 16) and Cupertino's — no
+     generated widgets;
+   - the theme from a URL or GitHub under a name of the app's choice,
+     cached through `FileTemplate`, a new bean for the app's files (kept,
+     cache, documents, temporary; a replaceable `FileStore`);
+   - `resources:` in place of `classpath:` (the prefix that points into
+     `lib/resources/`; `classpath` is Java history like `servlet` and
+     `jackson`): `resources:` everywhere a location is read
+     (`spring.config.import`, `@PropertySource`,
+     `spring.sql.migration.locations`, ...); in 0.6.2 `classpath:` still
+     works with a warning naming the new prefix, and a later minor release
+     refuses it like the renamed properties.
 11. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
    `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
    `@HttpExchange` later.

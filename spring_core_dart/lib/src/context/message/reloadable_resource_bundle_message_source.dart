@@ -18,7 +18,7 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 /// For the basename `i18n/messages` and the locale `ru_RU`, the files
 /// `i18n/messages_ru_RU.properties`, `i18n/messages_ru.properties` and
 /// `i18n/messages.properties` are consulted. Basenames are locations for
-/// the [resourceLoader] (`file:`, `classpath:`, plain paths, custom
+/// the [resourceLoader] (`file:`, `resources:`, plain paths, custom
 /// protocols). The lookup goes basename by basename, as in Spring: every
 /// locale file of the first basename (requested locale, [fallbackLocale],
 /// base file) before the second basename, so `messages.properties` wins

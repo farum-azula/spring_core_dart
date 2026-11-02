@@ -1,3 +1,10 @@
+## Unreleased
+
+### Changes
+
+- Typed keys of the configuration: for a Flutter app the new builder `spring_flutter_keys` writes `lib/spring_keys.dart` with `context.theme` (colors, spacing, text styles and tokens that `spring.flutter.theme.*` declares in any theme, typed by value; `AppThemes` with the theme names) and `context.messages` (a getter or a method with `Object?` parameters per message of `messages*.properties`). A renamed key is a compile error. Warnings for a message missing in a locale; errors for different argument counts between locales, a malformed placeholder, a message that is also a prefix, a token of two types, and a name that is no Dart name.
+- The build-time readers (`spring.sql.migration.locations`, `spring.sql.init.schema-locations`, `spring.config.import` file hints of the web dev config) accept `resources:` and `resources*:` as well as `classpath:`/`classpath*:`, and the defaults are `resources:`. Regenerate the `.spring.dart` files whose `@PropertySource`/`@Value` locations or embedded config files changed to `resources:`.
+
 ## 0.6.1
 
 ### Changes

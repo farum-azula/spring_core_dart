@@ -103,7 +103,7 @@ final app = springBootTest(
 ```
 
 Test data files work too: `test/resources/books.json` is
-`classpath:books.json` in the tests.
+`resources:books.json` in the tests.
 
 ## 4. A fresh application after a test that changes state
 

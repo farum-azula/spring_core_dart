@@ -39,10 +39,10 @@ class CoverStore {
     if (uploaded.isNotEmpty) {
       return uploaded.first;
     }
-    final packaged = _resources.getResource('classpath:covers/$isbn.png');
+    final packaged = _resources.getResource('resources:covers/$isbn.png');
     return packaged.exists()
         ? packaged
-        : _resources.getResource('classpath:covers/default.png');
+        : _resources.getResource('resources:covers/default.png');
   }
 
   /// Keeps [file] as the cover of [isbn] (moved from the upload's

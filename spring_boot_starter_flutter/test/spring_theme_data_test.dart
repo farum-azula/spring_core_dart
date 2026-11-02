@@ -684,7 +684,7 @@ void main() {
         ('seed-colour', 'a theme property'),
         ('themes', 'a theme is themes.<name>.<property>'),
         ('motion.speed', 'motion.page-transition'),
-        ('cupertino.primary', 'cupertino.primary-color'),
+        ('cupertino.primary', 'primary-color'),
         ('typography.body.colour', 'a text style property'),
         ('typography.code', 'typography.code.<font-family'),
       ]) {

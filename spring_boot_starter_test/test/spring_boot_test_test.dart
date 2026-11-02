@@ -164,7 +164,7 @@ void main() {
       final app = springBootTest(
         SpringApplication([appModule()]),
         profiles: ['test'],
-        propertyFiles: ['classpath:extra-test.properties'],
+        propertyFiles: ['resources:extra-test.properties'],
         properties: {'app.extra': 'from properties'},
       );
 
@@ -191,7 +191,7 @@ void main() {
       test('test data is a classpath resource', () {
         expect(
           app.context
-              .getResource('classpath:data/books.txt')
+              .getResource('resources:data/books.txt')
               .readAsStringSync(),
           'Dune;Solaris\n',
         );

@@ -33,7 +33,7 @@ import 'package:test_api/scaffolding.dart';
 /// - [resourceDirectories]: directories first on the classpath during the
 ///   tests, like `src/test/resources` (default `test/resources`). Put
 ///   `application-test.properties` (with `profiles: ['test']`) or test
-///   data read as `classpath:...` there. Relative paths are resolved
+///   data read as `resources:...` there. Relative paths are resolved
 ///   against the package of the calling test file, wherever the tests are
 ///   started from. They are never embedded into the application. A file
 ///   with the same path as one in `lib/resources/` replaces it entirely,

@@ -22,7 +22,7 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 ///   `BigInt`, `bool`, `Uri`, `DateTime` (ISO-8601), `Duration` (`10s`,
 ///   `5m`, `PT10S`, a plain number of milliseconds), `DataSize` (`10MB`),
 ///   `RegExp` (the text as is, not trimmed) and `Resource` (a location
-///   such as `classpath:a.txt`). For the number, boolean, URI, date,
+///   such as `resources:a.txt`). For the number, boolean, URI, date,
 ///   duration, size and encoding targets a blank string becomes `null`.
 /// - `bool` from `true`, `on`, `yes`, `1` and `false`, `off`, `no`, `0`, in
 ///   any case; anything else fails.

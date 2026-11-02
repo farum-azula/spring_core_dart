@@ -77,10 +77,10 @@ void main() {
       const [],
       autoConfigurations: [springBootStarterFlutterSecurityAutoConfiguration],
       bannerMode: BannerMode.off,
-      // Only the classpath: on Android the working directory is `/`, and
+      // Only the resources: on Android the working directory is `/`, and
       // listing its unreadable `config/` fails the default
       // `file:./config/*/` location.
-    ).runAsync(const ['--spring.config.location=optional:classpath:/']);
+    ).runAsync(const ['--spring.config.location=optional:resources:/']);
     addTearDown(context.close);
 
     final bean = context.getBean<SecretStore>();

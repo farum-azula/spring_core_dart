@@ -48,7 +48,7 @@ bin/advanced.dart             chapter 13, runnable
 lib/src/app.dart              @ComponentScan of lib/src/ (the `log` getters of @Log go there)
 lib/src/<area>/               shop, catalog, stock, orders, security, web, support, supplier, aop, admin
 lib/src/advanced/             chapter 13 (active only with the `advanced` profile)
-lib/resources/                the classpath: configuration, messages, sample data, covers, templates
+lib/resources/                the resources: configuration, messages, sample data, covers, templates
 test/                         one or more test files per chapter; test/resources/ is the test classpath
 tool/                         release_check.dart (chapter 14), hash_password.dart (chapter 4)
 ```
@@ -198,7 +198,7 @@ application.
 | relaxed binding: `NEON_SHOP_NAME=...`, `--neon.shop.max-basket-size=5` | any `neon.*` property |
 | `@ConditionalOnProperty`, `@ConditionalOnMissingBean`, `@Conditional` with the application's own `Condition` | `SupportBot`, `ShopConfig.clock`, `SupplierConfigured` + `RestockJob` |
 | `@PropertySource` | `SupportBot` (`lib/resources/support/bot.properties`) |
-| `classpath:` resources (`Resource`), text and binary | `SampleData` (`data/books.json`), `OrderMailer` (`templates/`), `CoverStore` (`covers/`) |
+| `resources:` resources (`Resource`), text and binary | `SampleData` (`data/books.json`), `OrderMailer` (`templates/`), `CoverStore` (`covers/`) |
 | `messages*.properties` (English, Japanese) through `MessageSource` | `lib/resources/messages/`, `SupportBot`, `ApiErrors`, `OrderMailer` |
 
 Try:

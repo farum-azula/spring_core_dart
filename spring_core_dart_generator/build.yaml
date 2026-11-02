@@ -21,3 +21,12 @@ builders:
     build_extensions: {"$package$": []}
     auto_apply: dependents
     build_to: source
+  # Writes lib/spring_keys.dart: context.theme and context.messages, the
+  # typed keys of spring.flutter.theme.* and messages*.properties. Only for
+  # a package that depends on spring_boot_starter_flutter.
+  spring_flutter_keys:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springFlutterKeysBuilder"]
+    build_extensions: {"$package$": ["lib/spring_keys.dart"]}
+    auto_apply: dependents
+    build_to: source

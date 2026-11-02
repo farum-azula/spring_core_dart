@@ -112,6 +112,7 @@ explained chapter by chapter.
 - [The app lifecycle](#the-app-lifecycle)
 - [Platform profiles](#platform-profiles)
 - [Assets](#assets)
+- [Files of the app](#files-of-the-app)
 - [SQLite databases](#sqlite-databases)
 - [Desktop window](#desktop-window)
 - [Configuration at build time](#configuration-at-build-time)
@@ -653,6 +654,11 @@ spring:
         input: { style: outline, shape: small }
         navigation-bar: { label-behavior: onlyShowSelected }
         snack-bar: { behavior: floating }
+        checkbox:
+          fill-color: { default: outline, selected: primary, error: error }
+        filled-button:
+          background-color: { default: primary, hovered: primary@90%, disabled: on-surface@12% }
+          side: { focused: { color: secondary, width: 2 } }
       tokens:                                 # the app's own values, read through SpringTheme
         brand: { accent: '#FF6B00', hero-height: 240 }
 
@@ -673,20 +679,36 @@ spring:
   theme is light unless it says `brightness: dark` or extends a dark one.
   `extends` builds a theme on another one; a cycle or an unknown name
   fails the start. Custom themes can live in files of their own:
-  `spring.config.import: classpath:themes/ocean.yml`.
-- **Components** are Material's, built from the tokens as Material 3
-  specifies; `components.*` only changes what differs. A changed shape
-  value reaches the components that use it (`shape.medium` → cards). The
-  components: `app-bar`, `button` (all four buttons) and
-  `filled-button` / `elevated-button` / `outlined-button` / `text-button`,
-  `card`, `input`, `chip`, `dialog`, `bottom-sheet`, `navigation-bar`,
-  `snack-bar`, `tooltip`, `list-tile`, `divider`,
-  `floating-action-button`, `tab-bar`, `popup-menu`.
+  `spring.config.import: resources:themes/ocean.yml`.
+- **Components** are Flutter's own; `components.*` only changes what
+  differs from Material 3, and the app keeps using Flutter's widgets (the
+  theme generates none). Every component theme of `ThemeData` can be set
+  (48: `app-bar`, `badge`, `banner`, the buttons, `card`, `checkbox`,
+  `chip`, `data-table`, `date-picker`, `dialog`, `drawer`, `dropdown-menu`,
+  `input`, `list-tile`, the menus, the navigation bars and rail,
+  `progress-indicator`, `radio`, `scrollbar`, the search bar and view,
+  `slider`, `snack-bar`, `switch`, `tab-bar`, `time-picker`, `tooltip`, ...)
+  and Cupertino's `CupertinoThemeData` under `cupertino.*`. A property is
+  Flutter's own, in kebab case (`titleTextStyle` is `title-text-style`) and
+  is read by the type of its value (color, shape, border side, insets, text
+  style, number, enum, duration, ...), so coverage does not depend on a
+  hand-written list. A changed shape value reaches the components that use
+  it (`shape.medium` -> cards).
+- **A value per state.** What Flutter models as a `WidgetStateProperty`
+  (colors, borders, elevation, text styles, overlay, cursor, ...) takes one
+  value, or a map per state: `background-color: { default: primary,
+  hovered: primary@90%, pressed: tertiary, disabled: on-surface@12% }`.
+  The strongest state wins: `disabled` > `error` > `pressed` > `dragged` >
+  `hovered` > `focused` > `selected` > `scrolled-under` > `default`; a
+  state with no value (and no `default`) keeps Flutter's. Colors accept a
+  role, a `Colors` name or hex, and an opacity (`primary@12%`). Every
+  component, property and value type is listed in the
+  [configuration reference](../docs/configuration.md#themes-every-property).
 - **Checked at the start.** Every theme is read when the application
   starts. An invalid value (`seed-color: purpel`, `shape: hugee`) or a
   misspelled key (`seed-colour`, `typography.body.colour`, an unknown
   component or component property) fails the start, naming the property
-  and what it may be.
+  and the valid ones, with a "did you mean" for a typo.
 - **Made once.** Each theme becomes a `SpringThemeData`, a Material
   `ThemeData` and a `CupertinoThemeData` once; switching only picks
   another one.
@@ -781,6 +803,34 @@ Every theme property, step by step and as a reference:
 A complete app with every theme feature and golden screenshots of each
 theme: [the Flutter guide, 3. Themes](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#3-themes).
 
+### Typed keys
+
+`dart run build_runner build` also writes `lib/spring_keys.dart` with
+`context.theme`: a getter for every colour, spacing, text style and token
+that the properties declare under `spring.flutter.theme` (in any theme), and
+`AppThemes` with the theme names:
+
+```dart
+Card(
+  color: context.theme.colors.surfaceContainerLow,
+  child: Padding(
+    padding: EdgeInsets.all(context.theme.spacing.m),
+    child: Text('isbn', style: context.theme.typography.code),
+  ),
+);
+context.theme.tokens.brand.accent;        // Color; heroHeight is a double
+selection.select(AppThemes.ocean);        // a ThemeSelection
+```
+
+The getters read the theme shown now (a `ThemeKeyReader` over
+`SpringTheme.of(context)`), so a switched or reloaded theme changes them and
+the widget rebuilds. A key renamed in the properties no longer compiles. The
+Material roles computed from the seed stay in `Theme.of(context).colorScheme`,
+and the string API (`space('m')`, `tokenColor('brand.accent')`) stays for keys
+added at run time. See the
+[configuration reference](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md)
+for the naming rules.
+
 ### Fonts
 
 Font files go into any directory under `flutter: assets:` and are listed
@@ -800,6 +850,58 @@ spring.flutter.fonts.auto-load=true
 # font files for other uses, such as PDFs
 spring.flutter.fonts.exclude=assets/pdf/**
 ```
+
+### Themes from a URL
+
+A theme can be a file on the network, under the name you choose:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      active: brand
+      themes:
+        brand:
+          source: github:neon/themes/ocean.yml@v3   # or an https URL
+          source-sha256: 3f9a...                    # optional: refuse other content
+          refresh: 1h                               # optional: look again in the background
+        brand-dark:
+          extends: brand
+          brightness: dark
+```
+
+`github:owner/repo/path@ref` is `https://raw.githubusercontent.com/owner/repo/ref/path`
+(`HEAD` without `@ref`); any other source must be `https`. The file is written
+like the theme part of `application.yml` (under `spring.flutter.theme`, or
+its keys at the top, or one `themes.<any name>` block); it is shown under the
+name **you** gave it. Only the theme's own keys are taken: any other key
+(`spring.datasource.*`, `active`, `source`) is ignored with a warning, so a
+remote file never changes the app's other settings.
+
+The theme is always cached in the app's directory (through
+[`FileTemplate`](#files-of-the-app), place `support`,
+`spring/themes/<sha256 of source and pin>/`) and the cache survives restarts:
+
+- without `refresh` it is downloaded once, by the first start that has the
+  network, and read from the cache for ever: no request on later starts;
+- with `refresh` the cache is used at once, and when it is older than the
+  interval the file is read again in the background (`If-None-Match` /
+  `If-Modified-Since`, so an unchanged file costs a `304`); a new theme is
+  shown as soon as it arrives, with no restart;
+- the cache belongs to the source: another `source` or `source-sha256`
+  downloads again (that is how a new version is picked up without
+  `refresh`), and the folders of sources no longer configured are removed at
+  start;
+- the start never waits on the network when there is a cache. With none
+  (the first start) the download may take 10 seconds at most and 1 MiB at
+  most; offline, an error, a timeout, a wrong `source-sha256` or an invalid
+  theme fall back to the theme the app's own files describe for that name
+  (and the next start tries again).
+
+The typed theme keys come from the build: a downloaded file changes values,
+it does not add keys. The HTTP client is the `HttpTransport` bean if the app
+has one (the Feign starter declares it), else `spring_web_dart`'s client
+(`dart:io`, the browser's `fetch`).
 
 ## Messages and languages
 
@@ -822,6 +924,22 @@ Text(context.message('basket.total', args: [total]));
 A missing code throws a `NoSuchMessageException`, unless you pass
 `defaultMessage:` or set `spring.messages.use-code-as-default-message=true`
 (then the code itself is shown).
+
+### Typed messages
+
+The generator (`spring_core_dart_generator`) writes `context.messages` from
+the same files into `lib/spring_keys.dart`: a getter for a message without
+arguments, a method for one with `{0}`, `{1}`, ... (`Object?` parameters,
+formatted by the same message source, in the current language):
+
+```dart
+Text(context.messages.basket.total(sum));
+Text(context.messages.basket.empty);
+```
+
+A key missing in a language is a build warning; different argument counts in
+two languages fail the build. `context.message('...')` stays for keys built
+at run time.
 
 The app's locales are the languages of these files unless
 `spring.flutter.app.locales` lists them
@@ -918,7 +1036,7 @@ A Flutter app has two places for files, as a Spring app has
 |---|---|---|
 | for | config files, messages, small texts and templates | images, video, sound, large data |
 | how | embedded into the generated code (up to 1 MB per file) | in the app's asset bundle, loaded when read |
-| location | `classpath:mail/welcome.txt` | `asset:assets/intro.mp4` |
+| location | `resources:mail/welcome.txt` | `asset:assets/intro.mp4` |
 | reading | synchronous or asynchronous | asynchronous |
 
 Both are injected the same way, with `@Value` and a `Resource`. A bean
@@ -950,7 +1068,7 @@ looks the key up in the app's asset manifest, which
 `SpringApplicationWidget` loads before the start. (`@Resource` is not for
 this: in Spring, and here, it injects a bean by name.)
 
-Spring (Java): a `ClassPathResource` from `@Value("classpath:...")`.
+Spring (Java): a `ClassPathResource` from `@Value("resources:...")`.
 
 The generator checks every `@Value('asset:...')`. A missing file, or one
 not declared under `flutter: assets:`, fails the build with the lines to
@@ -970,6 +1088,67 @@ A directory entry (`- assets/sounds/`) takes in the new files of that
 directory, but not those of its subdirectories (as in Flutter). Keys
 with placeholders (`asset:${sound.file}`) and other packages' assets
 (`asset:packages/...`) are only known at run time and are not checked.
+
+## Files of the app
+
+`FileTemplate` is a bean for the app's own files, in the right directory of
+every platform, shaped like `SecretTemplate`: a template over a replaceable
+store.
+
+```dart
+@Service()
+class Library {
+  Library(this.files);
+  final FileTemplate files;
+
+  Future<void> save(List<Book> books) => files.write('catalog.json', books);
+
+  Future<List<Book>> load() async =>
+      await files.read<List<Book>>(
+        'catalog.json',
+        const ListType<Book>(ClassType<Book>()),
+      ) ??
+      [];
+
+  Future<void> cacheCover(String id, Uint8List png) =>
+      files.cache.write('covers/$id.png', png);   // the OS may clear it
+
+  Future<void> export(String csv) =>
+      files.documents.write('books.csv', csv);    // the user sees it
+}
+```
+
+- `write` / `read<T>` take text (`String`), bytes (`Uint8List`) or objects
+  (JSON through the application's `ObjectMapper`); `exists`, `delete` (a file
+  or a folder), `list(prefix)` (a folder when it ends in `/`, else the start of
+  a path) and `modifiedAt` complete them. A missing file reads as `null`.
+- Places: `support` (the default: private, kept, backed up), `cache`
+  (`files.cache`), `documents` (`files.documents`): the directories
+  `path_provider` finds, the same ones the SQLite databases use (`support` on
+  Windows is `%LOCALAPPDATA%\<company>\<product>`, the machine's own, not the
+  roaming directory; `cache` there is its `cache` folder). On the web all are
+  IndexedDB.
+- Writes are atomic (a temporary file beside the target, then a rename); a
+  path stays inside its place (`..` and absolute paths throw an
+  `ArgumentError`).
+- Temporary files have unique names in a folder of the run
+  (`<system temp>/spring/<run id>/`):
+
+  ```dart
+  final small = await files.temp(suffix: '.jpg', (file) async {
+    await file.writeAsBytes(photo);          // or File(file.path) for a real file
+    return compress(File(file.path));
+  });                                        // deleted here, also after an error
+  await files.tempDir((dir) => unzip(archive, into: dir.path));
+  final keep = await files.createTemp();     // yours to delete
+  ```
+
+  What a block or `createTemp` leaves is removed when the context closes,
+  and the folders of runs that died at the next start. On the web temporary
+  files are in memory: they have no `path`, and `tempDir` is unsupported.
+- Replaceable: declare a `FileStore` bean (an encrypting one, a remote one)
+  and `FileTemplate` and the theme cache follow; declare a `FileTemplate` to
+  replace the template itself.
 
 ## SQLite databases
 
@@ -1003,7 +1182,7 @@ keep the calls on the UI isolate.
 | Android | the app's `databases/` directory, as `Context.getDatabasePath` |
 | iOS | `Library/Application Support` |
 | macOS | the container's `Application Support/<bundle id>` |
-| Windows | `%LOCALAPPDATA%\<company>\<product>` (not the roaming directory) |
+| Windows | `%LOCALAPPDATA%\<company>\<product>` (not the roaming directory); `cache` is its `cache` folder, so the two never share a folder |
 | Linux | `$XDG_DATA_HOME/<app id>` |
 
 The directory is created when it is missing. Nothing is set on the web

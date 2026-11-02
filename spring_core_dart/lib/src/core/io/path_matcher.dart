@@ -86,7 +86,7 @@ abstract interface class PathMatcher {
 }
 
 /// The [PathMatcher] for Ant-style patterns, the syntax of locations such
-/// as `classpath*:i18n/**/*.properties`.
+/// as `resources*:i18n/**/*.properties`.
 ///
 /// - `?` matches one character, `*` zero or more characters within a
 ///   segment, `**` zero or more whole segments;

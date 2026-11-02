@@ -22,13 +22,13 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 /// app evidently uses the dev server's file: a config file it can read
 /// without loading the config (any `.properties`, `.yml` or `.yaml` file
 /// of `lib/resources/`, in any document, for any profile, and a file an
-/// import names with a file hint, such as `classpath:dev.conf[.yaml]` or
-/// `classpath:web.properties[encoding=iso-8859-1]` (a file that is not
+/// import names with a file hint, such as `resources:dev.conf[.yaml]` or
+/// `resources:web.properties[encoding=iso-8859-1]` (a file that is not
 /// UTF-8 is read only that way), its placeholders resolved with their
 /// defaults or the files' values)
 /// sets a `spring.flutter.web.*` key or `spring.flutter.security.web.mode`.
 /// An import whose name has a placeholder only the running app resolves
-/// (`classpath:${ENV}.conf[.yaml]`) cannot be followed there, so keys only
+/// (`resources:${ENV}.conf[.yaml]`) cannot be followed there, so keys only
 /// that file sets do not count. Without such a key, the config is not
 /// loaded at all: nothing is written, a file the builder generated before
 /// is deleted, and nothing the config holds (an import, a placeholder, a
@@ -42,7 +42,7 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 /// An app with such a key has its config read as the app reads it in a
 /// browser: `application.*`, then `application-web.*` (the `web` platform
 /// profile), the files of the profiles `spring.profiles.active` names
-/// there and the files `spring.config.import` names (a `classpath:` one
+/// there and the files `spring.config.import` names (a `resources:` one
 /// from `lib/resources/`), names matched the relaxed way. Environment
 /// variables and `--dart-define` values do not count, so a placeholder
 /// only they can resolve is unknown at build time: a profile name with one
@@ -66,7 +66,7 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 /// to write, a warning names the first required one as written (the web
 /// version would fail to start with it, as the app's own start reports).
 /// An import the build cannot read (`asset:`, `http:`, `https:`, or a
-/// `classpath:` file missing from `lib/resources/`, which another package
+/// `resources:` file missing from `lib/resources/`, which another package
 /// may provide) is skipped silently, even a required one: it may exist at
 /// run time.
 ///
@@ -178,7 +178,7 @@ final class WebDevConfigBuilder implements Builder {
         key: ?text,
     };
     // Files that are not UTF-8: read only through an import that names
-    // their encoding (`classpath:dev.properties[encoding=iso-8859-1]`).
+    // their encoding (`resources:dev.properties[encoding=iso-8859-1]`).
     final binary = {
       for (final MapEntry(:key, value: (:text, :base64)) in resources.entries)
         if (text == null && base64 != null) key: base64Decode(base64),
@@ -427,7 +427,7 @@ final class WebDevServerSettings {
   /// The settings of the config [files] of `lib/resources/` (path below
   /// that directory to content; the files that are not UTF-8 as [binary],
   /// read only through an import that names their encoding, such as
-  /// `classpath:dev.properties[encoding=iso-8859-1]`), read for the `web`
+  /// `resources:dev.properties[encoding=iso-8859-1]`), read for the `web`
   /// profile; `null` when
   /// there is nothing to write: no `spring.flutter.web.*` property is set
   /// and the browser does not log in by itself
@@ -507,7 +507,7 @@ final class WebDevServerSettings {
       'version would fail to start with it. Make the import optional '
       "('optional:$location') to read it on the other platforms only, or "
       'put the properties into a file of lib/resources/ and import that '
-      'with classpath:. ${WebDevConfigBuilder.fileName} is written without '
+      'with resources:. ${WebDevConfigBuilder.fileName} is written without '
       'it.';
 
   static String _quoted(String value) => jsonEncode(value);
@@ -560,7 +560,7 @@ final class WebDevServerSettings {
 
 // What a location of the config finds when the app runs in a browser, as
 // far as the build knows it:
-// - `memory:` (the default locations), `classpath:` and plain paths: the
+// - `memory:` (the default locations), `resources:` and plain paths: the
 //   build's own files of lib/resources/, as the app reads its embedded
 //   ones, not a lib/resources/ on disk below the working directory
 //   (another package's in a workspace build);
@@ -626,7 +626,7 @@ final class _BrowserResources implements ProtocolResolver {
 
   // Whether a location (a `;` group as written) has an entry of the file
   // system or of a package: what a browser can never read. Any other
-  // location that is not found (a `classpath:` directory without config
+  // location that is not found (a `resources:` directory without config
   // files) may be provided at run time and is skipped silently.
   static bool notInBrowser(String location) {
     for (var entry in location.split(';')) {
@@ -649,10 +649,10 @@ final class _BrowserResources implements ProtocolResolver {
 
 // ` (in lib/resources/application-web.yaml)` for the property source of
 // a config file of lib/resources/ (named `Config resource
-// 'memory:/application-web.yaml'`, or `'classpath:...'` when imported).
+// 'memory:/application-web.yaml'`, or `'resources:...'` when imported).
 String _sourceOrigin(String sourceName) {
   final match = RegExp(
-    "'(?:memory|classpath):/?([^']+)'",
+    "'(?:memory|resources|classpath):/?([^']+)'",
   ).firstMatch(sourceName);
   return match == null ? '' : ' (in lib/resources/${match[1]})';
 }
@@ -663,11 +663,11 @@ String _sourceOrigin(String sourceName) {
 // which files do not parse, and every key with its first value (the keys
 // a placeholder may find at build time). Every .properties, .yml and
 // .yaml file counts, as an import may name any of them, and so does a
-// file an import names with file hints (`classpath:dev.conf[.yaml]`,
-// `classpath:web.properties[encoding=iso-8859-1]`), read in that format
+// file an import names with file hints (`resources:dev.conf[.yaml]`,
+// `resources:web.properties[encoding=iso-8859-1]`), read in that format
 // and encoding (a file that is not UTF-8 only that way). A placeholder in
 // such an import is resolved with its default or a value of the files
-// (`classpath:${ENV:dev}.conf[.yaml]`); one only the running app knows
+// (`resources:${ENV:dev}.conf[.yaml]`); one only the running app knows
 // leaves the import unscanned.
 final class _StaticConfig {
   _StaticConfig(this._files, this._binary) {
@@ -842,7 +842,7 @@ final class _StaticConfig {
   }
 
   // The file of lib/resources/ that the import [location] of the file at
-  // [importing] names with a file hint (relative, or `classpath:`), as the
+  // [importing] names with a file hint (relative, or `resources:`), as the
   // app reads its file hints (ConfigDataEnvironment.fileHints, on the
   // location joined to the importing file's directory, so brackets in that
   // directory's path are taken out too): with the loader of the extension
@@ -854,6 +854,7 @@ final class _StaticConfig {
     if (value.startsWith(ConfigDataEnvironment.optionalPrefix)) {
       value = value.substring(ConfigDataEnvironment.optionalPrefix.length);
     }
+    value = ClasspathResources.migrate(value);
     if (!value.contains('[') || value.endsWith('/')) {
       return null; // no hint: every config file is read anyway
     }

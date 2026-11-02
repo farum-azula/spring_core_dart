@@ -107,7 +107,7 @@ final class SpringBootTest {
   /// Directories put first on the classpath while the tests run, like
   /// `src/test/resources` in a Java project.
   ///
-  /// Config files and `classpath:` resources are looked up there before
+  /// Config files and `resources:` resources are looked up there before
   /// the application's `lib/resources/`: put `application-test.properties`
   /// or test data there. A file with the same path as one in
   /// `lib/resources/` hides it entirely. Relative paths are resolved
@@ -161,7 +161,7 @@ final class ActiveProfiles {
 /// // A bigger basket than in production, plus the settings of a file.
 /// @SpringBootTest()
 /// @TestPropertySource(
-///   locations: ['classpath:big-shop.properties'], // test/resources/
+///   locations: ['resources:big-shop.properties'], // test/resources/
 ///   properties: {'shop.max-basket-size': 100},
 /// )
 /// class BasketTest { ... }
@@ -171,7 +171,7 @@ final class ActiveProfiles {
 /// ```java
 /// @SpringBootTest
 /// @TestPropertySource(
-///     locations = "classpath:big-shop.properties",
+///     locations = "resources:big-shop.properties",
 ///     properties = "shop.max-basket-size=100")
 /// class BasketTest { ... }
 /// ```
@@ -188,7 +188,7 @@ final class TestPropertySource {
   final Map<String, Object?> properties;
 
   /// Resource locations of `.properties` files, such as
-  /// `classpath:big-shop.properties` (found in `test/resources/` first).
+  /// `resources:big-shop.properties` (found in `test/resources/` first).
   /// When two files set the same key, the later file wins.
   final List<String> locations;
 }

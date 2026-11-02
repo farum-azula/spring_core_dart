@@ -40,7 +40,7 @@ import 'package:spring_core_dart/src/core/log_format.dart';
 ///   Locations come in groups: in `spring.config.location` and
 ///   `spring.config.additional-location`, `,` separates groups and `;`
 ///   joins locations into one group. The defaults are two groups,
-///   `optional:classpath:/;optional:classpath:/config/` and
+///   `optional:resources:/;optional:resources:/config/` and
 ///   `optional:file:./;optional:file:./config/;optional:file:./config/*/`
 ///   (`*/` searches every subdirectory, in alphabetical order). Within a
 ///   group, later locations override earlier ones and profile files
@@ -101,7 +101,7 @@ import 'package:spring_core_dart/src/core/log_format.dart';
 ///   and so does a location that finds nothing (a missing directory, a
 ///   wildcard without a match), wherever it is written. As in Boot, that
 ///   is decided once the profile files are read: a location whose
-///   `-{profile}` variant is found counts as found, and a `classpath:`
+///   `-{profile}` variant is found counts as found, and a `resources:`
 ///   directory counts only when a file is found in it. The variants are
 ///   the only files that may always be missing. A `;` group of locations
 ///   (in `spring.config.import` too, in a file or not) is one location:
@@ -238,11 +238,11 @@ class ConfigDataEnvironment {
 
   /// Where config files are looked for unless configured otherwise, as in
   /// Spring Boot: two groups of `;`-separated locations, the packaged one
-  /// first and the working directory second (which wins). `classpath:` is
+  /// first and the working directory second (which wins). `resources:` is
   /// `lib/resources/` (see `ClasspathResources`); `config/*/` searches each
   /// subdirectory of `./config/`.
   static const defaultSearchLocations = [
-    'optional:classpath:/;optional:classpath:/config/',
+    'optional:resources:/;optional:resources:/config/',
     'optional:file:./;optional:file:./config/;optional:file:./config/*/',
   ];
 
@@ -340,9 +340,9 @@ class ConfigDataEnvironment {
   ///
   /// ```dart
   /// final hints = ConfigDataEnvironment.fileHints(
-  ///   'classpath:dev.conf[.properties][encoding=latin1]',
+  ///   'resources:dev.conf[.properties][encoding=latin1]',
   /// );
-  /// hints.path; // 'classpath:dev.conf'
+  /// hints.path; // 'resources:dev.conf'
   /// hints.extension; // 'properties'
   /// hints.encoding; // latin1
   /// ConfigDataEnvironment.fileHints('conf[x]/').path; // 'conf[x]/'
@@ -517,7 +517,10 @@ final class _Group {
   // trimmed and empty ones dropped (Boot keeps the spaces, so
   // `a.yaml; b.yaml` names ` b.yaml` there).
   static _Group? of(String value) {
-    final locations = _Run._split(value, ';');
+    final locations = [
+      for (final location in _Run._split(value, ';'))
+        ClasspathResources.migrateOptional(location),
+    ];
     if (locations.isEmpty) {
       return null;
     }
@@ -2075,7 +2078,7 @@ final class _Run {
       !RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(location) &&
       !_isUrl(location);
 
-  // A `scheme:` prefix of two or more letters (`file:`, `classpath:`).
+  // A `scheme:` prefix of two or more letters (`file:`, `resources:`).
   static bool _isUrl(String location) =>
       RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location);
 

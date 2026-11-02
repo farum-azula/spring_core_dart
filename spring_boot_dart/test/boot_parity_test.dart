@@ -531,13 +531,13 @@ void main() {
           marker('small', const ConditionalOnExpression(r'#{${x.n:0} < 2}')),
           marker(
             'resource',
-            const ConditionalOnResource(['classpath:conditions/present.txt']),
+            const ConditionalOnResource(['resources:conditions/present.txt']),
           ),
           marker(
             'noResource',
             const ConditionalOnResource([
-              'classpath:conditions/present.txt',
-              'classpath:conditions/absent.txt',
+              'resources:conditions/present.txt',
+              'resources:conditions/absent.txt',
             ]),
           ),
           marker('named', const ConditionalOnBean.named('helloA')),
@@ -766,7 +766,7 @@ void main() {
             bannerMode: BannerMode.log,
             out: (_) {},
           ).run([
-            '--spring.banner.location=classpath:parity/banner.txt',
+            '--spring.banner.location=resources:parity/banner.txt',
             '--app.edition=eu',
           ]);
       addTearDown(context.close);

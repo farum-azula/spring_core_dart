@@ -244,7 +244,7 @@ class ConditionalOnExpression implements Condition {
 /// Useful for a bean that reads a file which only some installations
 /// have, such as a certificate or a template, so the application starts
 /// without it elsewhere. The locations are resolved like any resource
-/// (`classpath:` is `lib/resources/`, `file:` the file system), after
+/// (`resources:` is `lib/resources/`, `file:` the file system), after
 /// `${...}` placeholders are replaced.
 ///
 /// ```dart
@@ -260,7 +260,7 @@ class ConditionalOnResource implements Condition {
   /// Requires every location of [resources] to exist.
   const ConditionalOnResource(this.resources);
 
-  /// The resource locations that must exist (`classpath:...`,
+  /// The resource locations that must exist (`resources:...`,
   /// `file:...`); they may contain `${...}` placeholders.
   final List<String> resources;
 

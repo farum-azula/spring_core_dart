@@ -98,7 +98,7 @@ void main() {
       final error = await failure<SchemaException>(
         () => initializer(
           db,
-          const SqlInitSettings(schemaLocations: ['classpath:nope.sql']),
+          const SqlInitSettings(schemaLocations: ['resources:nope.sql']),
         ).initialize(),
       );
       expect(error.message, contains('nope.sql'));
@@ -111,7 +111,7 @@ void main() {
       await initializer(
         db,
         const SqlInitSettings(
-          schemaLocations: ['optional:classpath:gone.sql', 'classpath:a.sql'],
+          schemaLocations: ['optional:resources:gone.sql', 'resources:a.sql'],
         ),
       ).initialize();
       expect(await tablesOf(db), ['book']);
@@ -127,8 +127,8 @@ void main() {
       await initializer(
         db,
         const SqlInitSettings(
-          schemaLocations: ['classpath:sql/1.sql', 'classpath:sql/2.sql'],
-          dataLocations: ['classpath:sql/3.sql'],
+          schemaLocations: ['resources:sql/1.sql', 'resources:sql/2.sql'],
+          dataLocations: ['resources:sql/3.sql'],
         ),
       ).initialize();
       expect(await tablesOf(db), ['one', 'two']);
@@ -177,7 +177,7 @@ void main() {
         db,
         const SqlInitSettings(
           platform: 'sqlite',
-          schemaLocations: ['classpath:db-@@platform@@.sql'],
+          schemaLocations: ['resources:db-@@platform@@.sql'],
         ),
       ).initialize();
       expect(await tablesOf(db), ['book']);
@@ -257,8 +257,8 @@ void main() {
           const MapPropertySource('test', {
             'spring.sql.init.mode': 'always',
             'spring.sql.init.schema-locations':
-                'classpath:a.sql, classpath:b.sql',
-            'spring.sql.init.data-locations': 'classpath:c.sql',
+                'resources:a.sql, resources:b.sql',
+            'spring.sql.init.data-locations': 'resources:c.sql',
             'spring.sql.init.platform': 'sqlite',
             'spring.sql.init.continue-on-error': 'true',
             'spring.sql.init.separator': '@@',
@@ -267,8 +267,8 @@ void main() {
         );
       final settings = SqlInitSettings.fromEnvironment(env);
       expect(settings.mode, SqlInitMode.always);
-      expect(settings.schemaLocations, ['classpath:a.sql', 'classpath:b.sql']);
-      expect(settings.dataLocations, ['classpath:c.sql']);
+      expect(settings.schemaLocations, ['resources:a.sql', 'resources:b.sql']);
+      expect(settings.dataLocations, ['resources:c.sql']);
       expect(settings.platform, 'sqlite');
       expect(settings.continueOnError, isTrue);
       expect(settings.separator, '@@');

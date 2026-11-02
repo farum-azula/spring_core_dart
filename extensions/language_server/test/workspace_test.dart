@@ -191,10 +191,10 @@ void main() {
   });
 
   group('resources', () {
-    test('classpath: and file: locations go to the file', () {
+    test('resources: and file: locations go to the file', () {
       const config = '''
 @Configuration()
-@PropertySource(['classpath:legacy.properties', 'optional:classpath:none.properties'])
+@PropertySource(['resources:legacy.properties', 'optional:resources:none.properties'])
 class LegacyConfig {
   @Value('file:config/extra.properties')
   late final Resource extra;
@@ -218,18 +218,42 @@ class LegacyConfig {
         ))
           '${range.path.substring(root.path.length)}:${range.startLine}',
       ];
-      expect(targets('classpath:legacy'), [
+      expect(targets('resources:legacy'), [
         '/lib/resources/legacy.properties:0',
       ]);
       expect(targets('file:config'), ['/config/extra.properties:0']);
-      expect(targets('optional:classpath:none'), isEmpty);
+      expect(targets('optional:resources:none'), isEmpty);
       expect(
-        workspace.hover(path, config.indexOf('classpath:legacy') + 3),
+        workspace.hover(path, config.indexOf('resources:legacy') + 3),
         contains('lib/resources/legacy.properties'),
       );
       expect(
-        workspace.hover(path, config.indexOf('optional:classpath:none') + 3),
+        workspace.hover(path, config.indexOf('optional:resources:none') + 3),
         contains('not found'),
+      );
+    });
+
+    test('the former classpath: prefix goes to the file as well', () {
+      const config = '''
+@PropertySource(['classpath:old.properties'])
+class OldConfig {}
+''';
+      final path = '${root.path}/lib/external/old_config.dart';
+      File(path)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(config);
+      File('${root.path}/lib/resources/old.properties')
+          .writeAsStringSync('old=1\n');
+      workspace.refresh(force: true);
+      expect(
+        [
+          for (final range in workspace.definition(
+            path,
+            config.indexOf('classpath:old') + 3,
+          ))
+            range.path.substring(root.path.length),
+        ],
+        ['/lib/resources/old.properties'],
       );
     });
 
@@ -238,7 +262,7 @@ class LegacyConfig {
       File(path)
         ..createSync(recursive: true)
         ..writeAsStringSync(
-          "final r = loader.getResource('classpath:data.txt');\n",
+          "final r = loader.getResource('resources:data.txt');\n",
         );
       File('${root.path}/test/resources/data.txt')
         ..createSync(recursive: true)

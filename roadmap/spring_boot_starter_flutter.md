@@ -290,6 +290,22 @@ flush.
 
 ## Typed keys from the configuration (generated)
 
+**Done in 0.6.2** (the owner, November 2026; the theme and the messages),
+with the theme from a URL and the components' states below still to come.
+
+As built (differs from the sketch below): one builder, `spring_flutter_keys`,
+writes `lib/spring_keys.dart` (`extension SpringKeys on BuildContext` with
+`theme` and `messages`). The classes are `AppTheme` (`colors`, `spacing`,
+`typography`, `tokens`), `AppThemes` (static constants for
+`ThemeSelection.select`) and `AppMessages`; they are cheap views that read
+the active theme through the starter's `ThemeKeyReader` when a getter is
+called (no per-theme fields). Tokens are two levels (`tokens.<group>.<key>`),
+typed by value (`#RRGGBB` / `0x...` colour, number, else text); the message
+parameters are `Object?` (no types from the formats yet); `spring.messages.basename`
+is read from the config files; the generator reads every config file of
+`lib/resources/` (any profile, any theme). Still open: the same `Messages` for
+a server, asset and route constants.
+
 Today the theme's own values are read by string keys:
 `SpringTheme.of(context).colors['surface']`, `theme.space('m')`,
 `theme.textStyle('code')`, the `tokens.*` (`brand.accent`), theme names
@@ -404,7 +420,23 @@ Theme.of(context).colorScheme.primary;   // Flutter's, from the seed
   `spring-boot-configuration-processor` only writes metadata for editor
   completion), so it is an addition, listed as such in the docs.
 
-### The theme from a URL (0.7.1; the owner, November 2026)
+### The theme from a URL (0.6.2; the owner, November 2026)
+
+**Done in 0.6.2** (docs: the starter's README, "Themes from a URL", and
+`docs/configuration.md`, "A theme from a URL"): `ThemeSourceLoader` (an
+`ApplicationRunner`, so the first frame has the theme) as specified below.
+Details settled while building it: the cache is
+`spring/themes/<sha256 of source + "\n" + pin>/theme.yml` and `meta.json`
+(`source`, `sha256` of the content, `fetchedAt`, `etag`, `lastModified`);
+the file is written like the theme part of `application.yml` (under
+`spring.flutter.theme`, or its keys at the top, or one `themes.<any name>`
+block); the first download waits at most 10 s and 1 MiB (no cache), redirects
+only to `https`; the HTTP client is the app's `HttpTransport` bean, else
+`spring_web_dart`'s (the Flutter starter depends on it now);
+`SpringThemes.applySource` keeps the downloaded themes between the files'
+and `load`'s. Not done: a retry when the network returns while the app runs
+without `refresh` (the next start retries); the web (IndexedDB) store is not
+exercised by a test in a browser.
 
 A theme loaded from `https` (a raw GitHub link, or a `github:owner/repo/path@ref`
 shorthand) under a name the app chooses, whatever the file calls it:
@@ -418,7 +450,7 @@ spring:
         brand:
           source: https://raw.githubusercontent.com/neon/themes/main/ocean.yml
           source-sha256: 3f9a…     # optional: refuse other content
-          refresh: 1h              # optional: re-read and apply without a restart
+          refresh: 1h              # optional: re-read in the background; without it, cached forever
         brand-dark:
           extends: brand
           brightness: dark
@@ -428,13 +460,26 @@ spring:
   under that theme); anything else in it is ignored with a warning: a remote
   file never changes the application's other settings. Not a general
   `spring.config.import` from URLs (Spring Boot has none either).
-- `https` only; the last good copy is cached in the app's directory; offline,
+- The theme is always cached in the app's directory and the cache survives
+  restarts. Without `refresh` it is downloaded once (the first start that
+  has the network) and then read from the cache forever: no request on
+  later starts. With `refresh` the cache is used at once and re-read in the
+  background when it is older than that interval. The cache belongs to the
+  source: another `source` or `source-sha256` downloads again (that is how
+  a new version of the theme is picked up without `refresh`).
+- `https` only; offline,
   a timeout or an error falls back to the cache, else to the theme in the
   app's resources: the start never fails or hangs on the network.
 - Typed keys (above) come from the build: a remote file changes values, it
   does not add keys.
 
-### More of the theme: states and every component (the owner, November 2026)
+### More of the theme: states and every component (0.6.2; the owner, November 2026)
+
+**Done in 0.6.2** (docs: the starter's README, "Themes from properties", and
+`docs/configuration.md`, "Themes: every property"): a `ThemeReader` maps each
+component's constructor by property type, 48 components and `cupertino.*`,
+states per property, errors with the valid keys and a "did you mean". Only
+the named variants below are left to decide.
 
 The theme configures Flutter's own components (`ThemeData` and its component
 themes); the app keeps using Flutter's widgets. **No generated widgets**: the
@@ -602,6 +647,50 @@ This needs native code in the Flutter starter (as
 (`window_manager` and the like are not allowed by the dependency rules).
 Later in the same place: the position, and the size and position the user left restored on the next start (then
 `initial-size` applies to the first start only).
+
+## Files of the app: `FileTemplate` (0.6.2; the owner, November 2026)
+
+**Done in 0.6.2** (docs: the starter's README, "Files of the app", and
+`docs/configuration.md`): `FileTemplate`, `FileArea` (`files.cache`),
+`FileStore`, `LocalFileStore` (dart:io; stale runs found by an exclusive lock
+on the run folder's `.lock`, which the OS drops when the process dies),
+`IndexedDbFileStore` (the web, `dart:js_interop` only, in memory where
+IndexedDB is missing) and `InMemoryFileStore`. `list(prefix)` is a folder when
+the prefix ends in `/`, else the start of a path. On the web `tempDir` and
+`TempFile.path` are unsupported. Windows' `support` is `path_provider`'s
+(roaming) support directory, not the local one the SQLite databases use.
+
+A bean of the Flutter starter for the app's own files, shaped like
+`SecretTemplate` (a template over a replaceable store):
+
+```dart
+await files.write('catalog.json', books);              // support: kept
+final books = await files.read<List<Book>>('catalog.json');
+await files.cache.write('thumb.png', bytes);           // the OS may clear it
+await files.documents.write('export.csv', csv);        // the user sees it
+
+final small = await files.temp((file) async {          // a new temporary file,
+  await file.writeAsBytes(photo);                      // deleted after the block
+  return compress(file);
+});
+await files.tempDir((dir) => unzip(archive, into: dir));
+final keep = await files.createTemp();                 // when a block is not enough
+```
+
+- Places: `support` (default, kept), `cache`, `documents`, temporary — the
+  directories the starter already finds through `path_provider`; the web
+  uses IndexedDB.
+- Writes are atomic (a temporary file, then a rename); paths stay inside
+  their place (`..` and absolute paths are refused); objects go through the
+  `ObjectMapper`.
+- Temporary files have unique names under the app's own folder of the run;
+  removed after their block (an error too), when the context closes, and at
+  the next start for runs that died.
+- Replaceable: `FileStore` (write, read, delete, list, modified at, per
+  place) under `FileTemplate`; both beans `@ConditionalOnMissingBean`, so an
+  app swaps the store (encrypted, remote) and everything on top — the theme
+  cache too — follows.
+- The theme from a URL keeps its cache through it (in `support`).
 
 ## Environment of the app
 

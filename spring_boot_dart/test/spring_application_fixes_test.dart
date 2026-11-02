@@ -191,7 +191,7 @@ void main() {
             resourceLoader: DefaultResourceLoader(
               protocolResolvers: [
                 FunctionProtocolResolver(
-                  (location, _) => location == 'classpath:banner.txt'
+                  (location, _) => location == 'resources:banner.txt'
                       ? AsyncOnly(r'Hello ${app.who}')
                       : null,
                 ),
@@ -318,7 +318,7 @@ void main() {
       final context = start([
         '--spring.messages.basename=fixes_messages/plain',
         '--spring.messages.always-use-message-format=true',
-        '--spring.messages.common-messages=classpath:fixes_messages/common.properties',
+        '--spring.messages.common-messages=resources:fixes_messages/common.properties',
       ]);
       expect(context.getMessage('quoted', locale: 'en'), "It's");
       expect(context.getMessage('shared', locale: 'en'), 'common');

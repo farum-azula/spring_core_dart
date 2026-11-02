@@ -123,10 +123,10 @@ void main() {
     expect(_body(files), 'server:\n  port: 5051\n');
   });
 
-  // A classpath: import was read from lib/resources/ on disk below the
+  // A resources: import was read from lib/resources/ on disk below the
   // working directory, and a property set only in an imported file was
   // not seen at all.
-  test('spring.config.import: classpath: and relative imports read the '
+  test('spring.config.import: resources: and relative imports read the '
       "build's own files", () async {
     final files = _Files();
     await _build(files, {
@@ -134,8 +134,8 @@ void main() {
           'spring:\n'
           '  config:\n'
           '    import:\n'
-          '      - classpath:web/dev-server.yaml\n'
-          '      - optional:classpath:/web/missing.yaml\n',
+          '      - resources:web/dev-server.yaml\n'
+          '      - optional:resources:/web/missing.yaml\n',
       'web/dev-server.yaml':
           'spring:\n'
           '  config:\n'
@@ -163,9 +163,9 @@ void main() {
       final files = _Files();
       await _build(files, {
         'application-web.properties':
-            'spring.config.import=classpath:dev/web.properties\n',
+            'spring.config.import=resources:dev/web.properties\n',
         'application-ios.properties':
-            'spring.config.import=classpath:dev/ios.properties\n',
+            'spring.config.import=resources:dev/ios.properties\n',
         'dev/web.properties': 'spring.flutter.web.port=5054\n',
         'dev/ios.properties': 'spring.flutter.web.host=0.0.0.0\n',
       });
@@ -179,12 +179,16 @@ void main() {
   test('an import with an extension hint is followed', () async {
     for (final resources in [
       {
+        'application.yaml': 'spring.config.import: resources:dev.conf[.yaml]\n',
+        'dev.conf': 'spring:\n  flutter:\n    web:\n      port: 5057\n',
+      },
+      {
         'application.yaml': 'spring.config.import: classpath:dev.conf[.yaml]\n',
         'dev.conf': 'spring:\n  flutter:\n    web:\n      port: 5057\n',
       },
       {
         'application.properties':
-            'spring.config.import[0]=classpath:web/dev.conf[.properties]\n',
+            'spring.config.import[0]=resources:web/dev.conf[.properties]\n',
         'web/dev.conf': 'spring.flutter.web.port=5057\n',
       },
     ]) {
@@ -202,7 +206,7 @@ void main() {
     for (final resources in <Map<String, Object>>[
       {
         'application.yaml':
-            'spring.config.import: classpath:dev.conf[.yaml][encoding=utf-8]\n',
+            'spring.config.import: resources:dev.conf[.yaml][encoding=utf-8]\n',
         'dev.conf': 'spring:\n  flutter:\n    web:\n      port: 5057\n',
       },
       {
@@ -214,7 +218,7 @@ void main() {
       {
         'application.properties':
             'spring.config.import='
-            'classpath:web/dev.conf[.properties][encoding=iso-8859-1]\n',
+            'resources:web/dev.conf[.properties][encoding=iso-8859-1]\n',
         'web/dev.conf': latin1.encode(
           '# café\nspring.flutter.web.port=5057\n',
         ),
@@ -246,7 +250,7 @@ void main() {
     final none = _Files();
     final quiet = await _build(none, {
       'application.yaml':
-          'spring.config.import: classpath:dev.conf[.yaml][encoding=utf-16]\n',
+          'spring.config.import: resources:dev.conf[.yaml][encoding=utf-16]\n',
       'dev.conf': 'spring.flutter.web.port: 5057\n',
     });
     expect(none.content, isNull);
@@ -255,7 +259,7 @@ void main() {
     final logs = await _build(_Files(), {
       'application.yaml':
           'spring.flutter.web.port: 5050\n'
-          'spring.config.import: classpath:dev.conf[.yaml][encoding=utf-16]\n',
+          'spring.config.import: resources:dev.conf[.yaml][encoding=utf-16]\n',
       'dev.conf': 'spring.flutter.web.host: devhost\n',
     });
     expect(_severe(logs).single, contains("unsupported charset 'utf-16'"));
@@ -289,7 +293,7 @@ void main() {
     List<String> locations() => [
       'file:$root/dev.yaml',
       'file:$root/dev[.yaml]',
-      'classpath:web.yaml;file:$root/dev.yaml',
+      'resources:web.yaml;file:$root/dev.yaml',
       '$root/dev.yaml',
       'file:$root/conf/',
       'file:$root/*/',
@@ -392,7 +396,7 @@ void main() {
             'spring:\n'
             '  config:\n'
             '    import:\n'
-            '      - classpath:themes/ocean.yml\n'
+            '      - resources:themes/ocean.yml\n'
             '      - optional:file:./local.yml\n'
             '      - configtree:/run/secrets/\n',
       });
@@ -461,7 +465,7 @@ void main() {
       },
       'imports with placeholders': {
         'application.properties':
-            r'spring.config.import=classpath:${ENV}.yaml,'
+            r'spring.config.import=resources:${ENV}.yaml,'
             'file:\${HOME}/app.yaml,optional:\${DIR}/\n',
       },
       'a runtime profile in a profile file': {
@@ -478,13 +482,13 @@ void main() {
             '      - package:other/x.yaml\n'
             '      - /abs/path/app.yaml\n'
             '      - file:./conf/*/app.yaml\n'
-            '      - classpath:missing.yaml\n'
-            '      - classpath:/nodir/\n'
+            '      - resources:missing.yaml\n'
+            '      - resources:/nodir/\n'
             '      - asset:config/app.yaml\n'
             '      - https://config.example/app.yaml\n'
             '      - x[.yml]\n'
             '      - file:./local[.yml]\n'
-            '      - "classpath:a.yaml;file:/etc/b.yaml"\n'
+            '      - "resources:a.yaml;file:/etc/b.yaml"\n'
             '      - "optional:nodir/;file:/etc/c.yaml"\n',
         'a.yaml': 'a: 1\n',
       },
@@ -492,12 +496,12 @@ void main() {
         'application.properties': 'spring.config.import=file:./app.conf\n',
       },
       'a directory without a trailing slash': {
-        'application.properties': 'spring.config.import=classpath:conf\n',
+        'application.properties': 'spring.config.import=resources:conf\n',
       },
       'an import cycle': {
         'application.yaml': 'spring.config.import: a.yaml\n',
         'a.yaml': 'spring.config.import: b.yaml\na: 1\n',
-        'b.yaml': 'spring.config.import: classpath:a.yaml\nb: 1\n',
+        'b.yaml': 'spring.config.import: resources:a.yaml\nb: 1\n',
       },
       'a hinted import cycle': {
         'application.yaml': 'spring.config.import: a.conf[.yaml]\n',
@@ -597,7 +601,7 @@ void main() {
         {
           'application.yaml':
               'spring.profiles.active: \${APP_PROFILE}\n'
-              'spring.config.import: optional:classpath:web/dev.conf[.yaml]\n',
+              'spring.config.import: optional:resources:web/dev.conf[.yaml]\n',
           'web/dev.conf': 'spring.flutter.web.port: 5070\n',
         },
       ]) {
@@ -690,7 +694,7 @@ void main() {
           {
             'application.properties':
                 r'spring.config.import=${CONFIG},'
-                'classpath:\${ENV}.yaml;classpath:web.yaml\n',
+                'resources:\${ENV}.yaml;resources:web.yaml\n',
             'web.yaml': port,
           },
           ['spring.config.import'],
@@ -700,7 +704,7 @@ void main() {
         (
           {
             'application-web.properties':
-                'spring.config.import=classpath:web/dev.yaml\n',
+                'spring.config.import=resources:web/dev.yaml\n',
             'web/dev.yaml':
                 '${port}spring.config.import: file:\${HOME}/web.yaml\n',
           },
@@ -795,7 +799,7 @@ void main() {
       final logs = await _build(files, {
         'application.yaml':
             'spring.profiles.active: \${APP_PROFILE:dev}\n'
-            'spring.config.import: classpath:\${ENV:web}.yaml\n',
+            'spring.config.import: resources:\${ENV:web}.yaml\n',
         'application-dev.yaml': port,
         'web.yaml': 'spring.flutter.web.host: 0.0.0.0\n',
       });
@@ -838,12 +842,12 @@ void main() {
 
   // A required location that finds nothing in lib/resources/ was warned
   // about as one of the file system.
-  test('a classpath: directory without config files is skipped silently, '
-      'as a classpath: file missing from lib/resources/ is', () async {
+  test('a resources: directory without config files is skipped silently, '
+      'as a resources: file missing from lib/resources/ is', () async {
     final files = _Files();
     final logs = await _build(files, {
       'application.yaml':
-          'spring.config.import: classpath:/web/, classpath:missing.yaml\n'
+          'spring.config.import: resources:/web/, resources:missing.yaml\n'
           'spring.flutter.web.port: 5056\n',
     });
     expect(_problems(logs), isEmpty);
@@ -1694,7 +1698,7 @@ spring:
       final logs = await _build(files, {
         'application.yaml':
             '${port}spring.config.import: '
-            r'optional:${DIR}/x.yaml;classpath:y.yaml'
+            r'optional:${DIR}/x.yaml;resources:y.yaml'
             '\n',
         'y.yaml': 'spring.flutter.web.host: y\n',
       });
@@ -1805,20 +1809,20 @@ spring:
     for (final resources in [
       {
         'application.yaml':
-            r'spring.config.import: classpath:${X:web}.conf[.yaml]'
+            r'spring.config.import: resources:${X:web}.conf[.yaml]'
             '\n',
         'web.conf': 'spring.flutter.web.port: 5050\n',
       },
       {
         'application.yaml':
             'env: web\n'
-            r'spring.config.import: classpath:${env}.conf[.yaml]'
+            r'spring.config.import: resources:${env}.conf[.yaml]'
             '\n',
         'web.conf': 'spring.flutter.web.port: 5050\n',
       },
       {
         'application.yaml':
-            'spring.config.import: optional:classpath:web.conf[.YAML]\n',
+            'spring.config.import: optional:resources:web.conf[.YAML]\n',
         'web.conf': 'spring.flutter.web.port: 5050\n',
       },
     ]) {
@@ -1831,7 +1835,7 @@ spring:
     final files = _Files();
     final logs = await _build(files, {
       'application.yaml':
-          r'spring.config.import: optional:classpath:${ENV}.conf[.yaml]'
+          r'spring.config.import: optional:resources:${ENV}.conf[.yaml]'
           '\n',
       'web.conf': 'spring.flutter.web.port: 5050\n',
     });

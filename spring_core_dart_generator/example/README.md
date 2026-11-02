@@ -156,7 +156,7 @@ is described in the
 ## Resources
 
 Files in `lib/resources/` are embedded into the generated code, so
-`classpath:application.properties` and `@Value('classpath:logo.png')`
+`resources:application.properties` and `@Value('resources:logo.png')`
 work everywhere without declaring Flutter assets.
 
 ## More

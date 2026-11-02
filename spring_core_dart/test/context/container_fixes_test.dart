@@ -148,7 +148,7 @@ void main() {
         'fixes/conf/other.properties': EmbeddedResource.text('b=2'),
       });
       final resource = DefaultResourceLoader().getResource(
-        'classpath:fixes/conf/app.properties',
+        'resources:fixes/conf/app.properties',
       );
       expect(resource.filename, 'app.properties');
       final sibling = resource.createRelative('other.properties');

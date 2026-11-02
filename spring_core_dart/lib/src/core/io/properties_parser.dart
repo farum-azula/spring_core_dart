@@ -257,7 +257,7 @@ final class _LineReader {
 /// ```dart
 /// // Country names shipped with the application.
 /// final countries = await PropertiesLoaderUtils.loadProperties(
-///   resourceLoader.getResource('classpath:countries.properties'),
+///   resourceLoader.getResource('resources:countries.properties'),
 /// );
 /// ```
 ///

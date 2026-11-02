@@ -12,7 +12,12 @@ import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:flutter/cupertino.dart' show CupertinoThemeData;
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
 import 'package:flutter/material.dart' show ThemeData;
+import 'package:spring_boot_starter_flutter/src/files/file_store.dart';
+import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
+import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_source.dart';
+import 'package:spring_web_dart/spring_web_dart.dart' show HttpTransport;
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
 // The auto-configurations this starter builds on (logging, and through it spring_boot_dart's), so a test of an application that lists only this starter can name them.
@@ -29,7 +34,11 @@ const _source =
 ///   `@ChangeNotifierComponent` beans, and the one that tells Spring
 ///   widgets which of those beans their `build` read;
 /// - the app's themes from `spring.flutter.theme.*` (`SpringThemes`) and
-///   the choice of the theme shown (`ThemeSelection`).
+///   the choice of the theme shown (`ThemeSelection`), and the loader of
+///   the themes that come from a URL (`themes.<name>.source`);
+/// - the app's files: a `FileStore` (`platformFileStore`: the device's
+///   directories, IndexedDB in a browser) and the `FileTemplate` on it
+///   (`fileTemplate`), each only when the app declares none.
 ///
 /// Logins and secrets (the platform's secure storage, the login window)
 /// are `spring_boot_starter_flutter_security`'s.
@@ -84,6 +93,43 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       types: const [ThemeSelection, ChangeNotifier, Listenable],
       source: _source,
       create: (r) => ThemeSelection(r.dependency<SpringThemes>()),
+    ),
+    BeanDefinition<FileStore>(
+      name: 'platformFileStore',
+      types: const [FileStore],
+      source: _source,
+      conditions: const [
+        ConditionGroup('$_source.platformFileStore', [
+          ConditionalOnMissingBean(FileStore),
+        ]),
+      ],
+      create: (_) => createPlatformFileStore(),
+    ),
+    BeanDefinition<FileTemplate>(
+      name: 'fileTemplate',
+      source: _source,
+      conditions: const [
+        ConditionGroup('$_source.fileTemplate', [
+          ConditionalOnMissingBean(FileTemplate),
+        ]),
+      ],
+      create: (r) => FileTemplate(
+        r.dependency<FileStore>(),
+        objectMapper: r.optionalDependency<ObjectMapper>(),
+      ),
+      preDestroy: (files) => files.close(),
+    ),
+    BeanDefinition<ThemeSourceLoader>(
+      name: 'themeSourceLoader',
+      types: const [ThemeSourceLoader, ApplicationRunner],
+      source: _source,
+      create: (r) => ThemeSourceLoader.fromEnvironment(
+        r.dependency<ConfigurableEnvironment>(),
+        themes: r.dependency<SpringThemes>(),
+        files: r.dependency<FileTemplate>(),
+        transport: r.optionalDependency<HttpTransport>(),
+      ),
+      preDestroy: (loader) => loader.dispose(),
     ),
   ],
 );

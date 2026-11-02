@@ -408,7 +408,7 @@ Where the test's properties come from, highest first:
 @SpringBootTest(properties: {'shop.name': 'Test Books'})
 @ActiveProfiles(['test'])                       // application-test.yml
 @TestPropertySource(
-  locations: ['classpath:big-shop.properties'],    // test/resources/
+  locations: ['resources:big-shop.properties'],    // test/resources/
   properties: {'shop.max-basket-size': 100},
 )
 @TestEnvironment({'SHOP_CURRENCY': 'EUR'})

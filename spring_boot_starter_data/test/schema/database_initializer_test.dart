@@ -383,7 +383,7 @@ void main() {
       final env = envOf({
         'spring.datasources.audit.data.jdbc.schema': 'none',
         'spring.datasources.audit.sql.migration.locations':
-            'classpath:db/audit',
+            'resources:db/audit',
         'spring.data.jdbc.schema': 'create',
       });
       final audit = DatabaseInitSettings.fromEnvironment(
@@ -391,7 +391,7 @@ void main() {
         'spring.datasources.audit.',
       );
       expect(audit.schema, SchemaMode.none);
-      expect(audit.migration.locations, ['classpath:db/audit']);
+      expect(audit.migration.locations, ['resources:db/audit']);
       expect(
         DatabaseInitSettings.fromEnvironment(env).schema,
         SchemaMode.create,

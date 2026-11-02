@@ -22,7 +22,7 @@ class FakeGateway implements PaymentGateway {
 @ActiveProfiles(['dev', 'test'])
 @TestPropertySource(
   properties: {'test.source': 'from @TestPropertySource'},
-  locations: ['classpath:lifecycle.properties'],
+  locations: ['resources:lifecycle.properties'],
 )
 @TestEnvironment({'TEST_FROM_ENV': 'env'})
 class LifecycleTest {

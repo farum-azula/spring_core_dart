@@ -6,7 +6,7 @@ import 'dart:typed_data';
 ///
 /// Internal: a conditional import picks this file, or the `dart:io`
 /// variant, so resources and config data compile everywhere. On the web,
-/// `file:` locations are simply never found and `classpath:` resources
+/// `file:` locations are simply never found and `resources:` resources
 /// come from the generated code instead. Spring has no equivalent: the
 /// JVM always has a file system.
 abstract final class FileAccess {

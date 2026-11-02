@@ -34,7 +34,7 @@ class VipDesk {
 @Component()
 abstract class OrderMailer {
   OrderMailer(
-    @Value('classpath:templates/order-confirmation.txt') this.template,
+    @Value('resources:templates/order-confirmation.txt') this.template,
     this.messages,
     this.mail,
     this.shop,

@@ -552,7 +552,7 @@ void main() {
             [configClass('Settings', skipped)],
             propertySources: [
               PropertySourceDeclaration(const [
-                'classpath:bean_conditions/settings.properties',
+                'resources:bean_conditions/settings.properties',
               ], conditions: skipped),
             ],
             resources: const {

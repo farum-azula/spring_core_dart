@@ -191,7 +191,7 @@ void main() {
           bannerMode: BannerMode.off,
         ).runAsync(const [
           // Only the classpath (see secret_store_test.dart).
-          '--spring.config.location=optional:classpath:/',
+          '--spring.config.location=optional:resources:/',
           '--spring.security.oauth2.client.registration.it.client-id=neon-app',
           '--spring.security.oauth2.client.registration.it.authorization-grant-type=authorization_code',
           '--spring.security.oauth2.client.registration.it.redirect-uri=books.neon.app:/cb',

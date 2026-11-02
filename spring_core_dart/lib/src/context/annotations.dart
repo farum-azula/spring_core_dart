@@ -1013,7 +1013,7 @@ class PropertySource {
     this.encoding,
   });
 
-  /// Resource locations of the property files (`file:`, `classpath:`,
+  /// Resource locations of the property files (`file:`, `resources:`,
   /// patterns).
   final List<String> value;
 

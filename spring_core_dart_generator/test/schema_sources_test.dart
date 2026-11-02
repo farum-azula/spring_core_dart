@@ -62,8 +62,8 @@ void main() {
   test('spring.sql.migration.locations, with {vendor} for any directory', () {
     final sources = _find({
       'application.properties':
-          'spring.sql.migration.locations=classpath:sql/{vendor}, '
-          'classpath:more\n',
+          'spring.sql.migration.locations=resources:sql/{vendor}, '
+          'resources:more\n',
       'sql/sqlite/V1__one.sql': 'sqlite',
       'sql/V2__two.sql': 'none',
       'more/V3__three.sql': 'three',
@@ -73,12 +73,38 @@ void main() {
     expect(sources.reliable, isTrue);
   });
 
+  test('the former classpath: prefix is read as resources:', () {
+    final files = {
+      'sql/V1__one.sql': 'one',
+      'db/schema-h2.sql': 'schema',
+    };
+    final old = _find({
+      ...files,
+      'application.properties':
+          'spring.sql.migration.locations=classpath:sql\n'
+          'spring.sql.init.platform=h2\n'
+          'spring.sql.init.schema-locations='
+          'optional:classpath*:db/schema-@@platform@@.sql\n',
+    });
+    final current = _find({
+      ...files,
+      'application.properties':
+          'spring.sql.migration.locations=resources:sql\n'
+          'spring.sql.init.platform=h2\n'
+          'spring.sql.init.schema-locations='
+          'optional:resources*:db/schema-@@platform@@.sql\n',
+    });
+    expect(old.scripts, ['one', 'schema']);
+    expect(old.scripts, current.scripts);
+    expect(old.reliable, isTrue);
+  });
+
   test('spring.sql.init.schema-locations, @@platform@@ and a * in a name', () {
     final sources = _find({
       'application.properties':
           'spring.sql.init.platform=h2\n'
-          'spring.sql.init.schema-locations=classpath:db/schema-@@platform@@.sql,'
-          'optional:classpath:sql/*.sql\n',
+          'spring.sql.init.schema-locations=resources:db/schema-@@platform@@.sql,'
+          'optional:resources:sql/*.sql\n',
       'db/schema-h2.sql': 'h2',
       'db/schema-all.sql': 'all',
       'sql/a.sql': 'a',
@@ -94,7 +120,7 @@ void main() {
           '# a comment\n'
           '! another\n'
           'server.port = 8080\n'
-          'spring.sql.migration.locations = classpath:db/m\n',
+          'spring.sql.migration.locations = resources:db/m\n',
       'db/m/V1__one.sql': 'one',
     });
     expect(sources.scripts, ['one']);
@@ -105,7 +131,7 @@ void main() {
     () {
       for (final property in [
         'spring.sql.migration.locations=file:/var/migrations',
-        r'spring.sql.migration.locations=classpath:db/${vendor}',
+        r'spring.sql.migration.locations=resources:db/${vendor}',
         'spring.sql.init.schema-locations=file:schema.sql',
       ]) {
         final sources = _find({
@@ -131,7 +157,7 @@ void main() {
               'spring:\n'
               '  sql:\n'
               '    migration:\n'
-              '      locations: classpath:db/m\n',
+              '      locations: resources:db/m\n',
           'db/m/V1__one.sql': 'one',
           'db/migration/V2__other.sql': 'other',
         });
@@ -140,7 +166,7 @@ void main() {
       }
       final dotted = _find({
         'application.yml':
-            'spring.sql.init.schema-locations: classpath:s.sql\n',
+            'spring.sql.init.schema-locations: resources:s.sql\n',
         's.sql': 'init',
         'schema.sql': 'default',
       });
@@ -154,13 +180,13 @@ void main() {
             '  sql:\n'
             '    migration:\n'
             '      locations:\n'
-            '        - classpath:a\n'
-            '        - classpath:b\n',
+            '        - resources:a\n'
+            '        - resources:b\n',
         'a/V1__a.sql': 'a',
         'b/V2__b.sql': 'b',
         'c/V3__c.sql': 'c',
         'config/application.properties':
-            'spring.sql.migration.locations=classpath:c\n',
+            'spring.sql.migration.locations=resources:c\n',
       });
       expect(sources.scripts, ['c']);
       expect(sources.reliable, isTrue);
@@ -168,7 +194,7 @@ void main() {
         _find({
           'application.yml':
               'spring:\n  sql:\n    migration:\n      locations:\n'
-              '        - classpath:a\n        - classpath:b\n',
+              '        - resources:a\n        - resources:b\n',
           'a/V1__a.sql': 'a',
           'b/V2__b.sql': 'b',
         }).scripts,
@@ -178,9 +204,9 @@ void main() {
 
     test('properties win over YAML', () {
       final sources = _find({
-        'application.yml': 'spring.sql.migration.locations: classpath:y\n',
+        'application.yml': 'spring.sql.migration.locations: resources:y\n',
         'application.properties':
-            'spring.sql.migration.locations=classpath:p\n',
+            'spring.sql.migration.locations=resources:p\n',
         'y/V1__y.sql': 'y',
         'p/V1__p.sql': 'p',
       });
@@ -198,10 +224,10 @@ void main() {
         'config/application-prod.yaml',
       ]) {
         for (final text in [
-          'spring.sql.migration.locations: classpath:other\n',
+          'spring.sql.migration.locations: resources:other\n',
           'spring.sql.init.platform: postgres\n',
-          'spring.sql.init.schema-locations: classpath:other.sql\n',
-          'spring:\n  sql:\n    migration:\n      locations: classpath:other\n',
+          'spring.sql.init.schema-locations: resources:other.sql\n',
+          'spring:\n  sql:\n    migration:\n      locations: resources:other\n',
         ]) {
           if (file.endsWith('.properties') && text.startsWith('spring:')) {
             continue;
@@ -229,10 +255,10 @@ void main() {
 
     test('a document for some profiles, an import, a named data source', () {
       const conditional =
-          'spring.sql.migration.locations: classpath:dev\n'
+          'spring.sql.migration.locations: resources:dev\n'
           '---\n'
           'spring.config.activate.on-profile: dev\n'
-          'spring.sql.migration.locations: classpath:other\n';
+          'spring.sql.migration.locations: resources:other\n';
       const nested =
           'spring:\n'
           '  datasources:\n'
@@ -242,8 +268,8 @@ void main() {
           '          platform: h2\n';
       for (final text in [
         conditional,
-        'spring.config.import: optional:classpath:more.yml\n',
-        'spring.datasources.main.sql.migration.locations: classpath:main\n',
+        'spring.config.import: optional:resources:more.yml\n',
+        'spring.datasources.main.sql.migration.locations: resources:main\n',
         nested,
       ]) {
         final sources = _find({...migration, 'application.yml': text});
@@ -279,7 +305,7 @@ void main() {
     const settings = {
       'application.properties':
           'spring.sql.migration.locations='
-          'classpath:db/{vendor}, classpath:common\n',
+          'resources:db/{vendor}, resources:common\n',
     };
 
     test('each database is an alternative with the common files', () {

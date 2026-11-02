@@ -7,7 +7,7 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 
 /// A [ResourceLoader] that also finds all resources matching a pattern
-/// with wildcards, such as `classpath:templates/*.html` or
+/// with wildcards, such as `resources:templates/*.html` or
 /// `file:config/**/*.properties`.
 ///
 /// Use it to load every file of a kind without listing them: all
@@ -22,7 +22,7 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 ///   final ResourcePatternResolver resources; // the application context
 ///
 ///   // Every mail template shipped in lib/resources/mail/.
-///   List<Resource> all() => resources.getResources('classpath:mail/*.txt');
+///   List<Resource> all() => resources.getResources('resources:mail/*.txt');
 /// }
 /// ```
 ///
@@ -37,7 +37,7 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 ///   }
 ///
 ///   Resource[] all() throws IOException {
-///     return resources.getResources("classpath:mail/*.txt");
+///     return resources.getResources("resources:mail/*.txt");
 ///   }
 /// }
 /// ```
@@ -56,28 +56,28 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 /// The application context uses one, so applications usually go through
 /// the context; create one to search files without a context, in a tool
 /// or a test. Patterns work for `file:` and classpath locations
-/// (`classpath:`, `classpath*:` or no prefix, as in
+/// (`resources:`, `resources*:` or no prefix, as in
 /// [DefaultResourceLoader]); other locations go to [resourceLoader] as
 /// they are, without wildcard expansion.
 ///
 /// The classpath roots are the directories added with
 /// `ClasspathResources.addDirectory` (latest first), then the embedded
-/// resources together with `lib/resources/`. As in Spring, a `classpath:`
+/// resources together with `lib/resources/`. As in Spring, a `resources:`
 /// pattern searches only the first root that has its base directory,
-/// while `classpath*:` searches every root, and `classpath*:` without
+/// while `resources*:` searches every root, and `resources*:` without
 /// wildcards gives the resource of every root that has it.
 ///
 /// Matching files and directories are returned, sorted by path within a
 /// root; directories the pattern cannot match below are not walked. The
 /// pattern is cleaned first, as Spring cleans it: the directory before
 /// the first wildcard is normalized as a classpath location is
-/// (`classpath:./mail/../mail//*.txt` is `classpath:mail/*.txt`), and in
+/// (`resources:./mail/../mail//*.txt` is `resources:mail/*.txt`), and in
 /// the rest, as by Spring's `StringUtils.cleanPath`, `\\` (two
 /// backslashes) is read as one `/`, then each `\` left as `/`, and `.` and
-/// `..` segments are resolved (`classpath:mail\*.txt`,
-/// `classpath:mail/*/../*.txt` and `classpath:mail/*\\..\\*.txt` are
-/// `classpath:mail/*.txt`). As in Spring, a `{name:regex}` must not use
-/// `\`, which becomes `/` (`classpath:mail/{n:\w+}.txt` matches nothing):
+/// `..` segments are resolved (`resources:mail\*.txt`,
+/// `resources:mail/*/../*.txt` and `resources:mail/*\\..\\*.txt` are
+/// `resources:mail/*.txt`). As in Spring, a `{name:regex}` must not use
+/// `\`, which becomes `/` (`resources:mail/{n:\w+}.txt` matches nothing):
 /// write character classes such as `[0-9]` or `[a-zA-Z0-9_]` instead.
 /// As in Spring, the wildcards of a `file:` pattern are those written:
 /// only the directory before the first one is percent-decoded
@@ -88,19 +88,19 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 ///
 /// - a `..` that climbs above the roots, or above the directory before
 ///   the first wildcard, finds nothing (Spring's
-///   `classpath*:mail/../../*.txt` can reach files next to a classpath
+///   `resources*:mail/../../*.txt` can reach files next to a classpath
 ///   directory; here nothing outside the roots is found);
-/// - a `\` in the directory before the first wildcard of a `classpath*:`
-///   pattern is cleaned too (`classpath*:conf\sub/*.txt` finds
-///   `conf/sub/*.txt`, as `classpath:conf\sub/*.txt` does in both), where
+/// - a `\` in the directory before the first wildcard of a `resources*:`
+///   pattern is cleaned too (`resources*:conf\sub/*.txt` finds
+///   `conf/sub/*.txt`, as `resources:conf\sub/*.txt` does in both), where
 ///   Spring hands the name to Java's class loader, which refuses it;
 /// - a `file:` pattern whose separators are `\` there is read the same
 ///   way, so Windows paths work (`file:lib\resources\mail\*.txt`,
 ///   `file:C:\config\*.properties`), where Spring on macOS and Linux
 ///   finds nothing (`Invalid URI [file:]`: its root directory ends at the
 ///   last `/`);
-/// - a `classpath:` pattern whose base directory no root has
-///   (`classpath:nodir/*.txt`) gives an empty list, where Spring throws a
+/// - a `resources:` pattern whose base directory no root has
+///   (`resources:nodir/*.txt`) gives an empty list, where Spring throws a
 ///   `FileNotFoundException` (`cannot be resolved to URL because it does
 ///   not exist`).
 ///
@@ -113,7 +113,7 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 ///     ResourcePropertySource.fromResource(resource),
 ///   );
 /// }
-/// resolver.getResources('classpath*:i18n/messages*.properties');
+/// resolver.getResources('resources*:i18n/messages*.properties');
 /// ```
 ///
 /// Spring (Java):
@@ -124,7 +124,7 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 ///   environment.getPropertySources()
 ///       .addLast(new ResourcePropertySource(resource));
 /// }
-/// resolver.getResources("classpath*:i18n/messages*.properties");
+/// resolver.getResources("resources*:i18n/messages*.properties");
 /// ```
 class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   /// Creates a resolver that loads single resources with [resourceLoader]
@@ -137,9 +137,9 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
        pathMatcher = pathMatcher ?? AntPathMatcher();
 
   /// The prefix that searches every classpath root instead of the first
-  /// one that has the base directory: `classpath*:`, Spring's
+  /// one that has the base directory: `resources*:`, Spring's
   /// `CLASSPATH_ALL_URL_PREFIX`.
-  static const classpathAllUrlPrefix = 'classpath*:';
+  static const String classpathAllUrlPrefix = ClasspathResources.allPrefix;
 
   /// The loader for locations without wildcards and for prefixes this
   /// resolver does not expand.
@@ -152,7 +152,8 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   Resource getResource(String location) => resourceLoader.getResource(location);
 
   @override
-  List<Resource> getResources(String locationPattern) {
+  List<Resource> getResources(String location) {
+    final locationPattern = ClasspathResources.migrate(location);
     if (locationPattern.startsWith(classpathAllUrlPrefix)) {
       final path = locationPattern.substring(classpathAllUrlPrefix.length);
       if (!pathMatcher.isPattern(path)) {
@@ -259,8 +260,8 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   // A classpath pattern split as Spring's determineRootDir splits it: the
   // directory before the first segment with wildcards ([_classpathDirectory])
   // and the rest, cleaned as Spring 7 cleans it ([_subPattern]):
-  // `classpath:mail\*.txt` is `classpath:mail/*.txt` and
-  // `classpath:mail/{n:\w+}.txt` matches nothing, as in Spring. `null` when
+  // `resources:mail\*.txt` is `resources:mail/*.txt` and
+  // `resources:mail/{n:\w+}.txt` matches nothing, as in Spring. `null` when
   // a `..` climbs above the roots or above that directory: nothing there.
   _ClasspathPattern? _classpathPattern(String path) {
     final directory = _rootDirectory(path);

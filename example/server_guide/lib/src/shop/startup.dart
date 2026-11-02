@@ -7,7 +7,7 @@ import 'package:neon_books_server/src/catalog/book_repository.dart';
 import 'package:neon_books_server/src/shop/shop_properties.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
-/// dev only: fills the empty catalog from `classpath:data/books.json`
+/// dev only: fills the empty catalog from `resources:data/books.json`
 /// (through the repository: the service would ask for an admin).
 @Component()
 @Profile(['dev'])

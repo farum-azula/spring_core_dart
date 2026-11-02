@@ -279,7 +279,7 @@ spring:
       process(e);
       expect(e.getProperty('v'), 'b');
       for (final location in [
-        'optional:classpath:/config/*/',
+        'optional:resources:/config/*/',
         'optional:file:$root/*/*/',
         'optional:file:$root/config/*.properties',
       ]) {

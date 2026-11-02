@@ -63,7 +63,7 @@ void main() {
     List<String> additionalProfiles = const [],
   }) => ConfigDataEnvironment(
     environment,
-    // One group, like Boot's default `classpath:/;classpath:/config/`.
+    // One group, like Boot's default `resources:/;resources:/config/`.
     defaultLocations: ['optional:file:$root/;optional:file:$root/config/'],
     resourceLoader: resourceLoader,
     loaders: loaders ?? const [PropertiesPropertySourceLoader()],
@@ -133,7 +133,7 @@ a=2
     ConfigDataEnvironment(e).processAndApplySync();
     // Boot's two groups.
     expect(ConfigDataEnvironment.defaultSearchLocations, [
-      'optional:classpath:/;optional:classpath:/config/',
+      'optional:resources:/;optional:resources:/config/',
       'optional:file:./;optional:file:./config/;optional:file:./config/*/',
     ]);
   });

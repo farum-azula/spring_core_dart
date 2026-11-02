@@ -16,7 +16,7 @@
 /// - `ConversionService` and `DefaultConversionService`: turn text into
 ///   `int`, `Duration`, `DataSize`, lists, enums and your own types.
 /// - `Resource`, `ResourceLoader` and `ResourcePatternResolver`: read
-///   `classpath:` (`lib/resources/`), `file:`, `http:` and custom
+///   `resources:` (`lib/resources/`), `file:`, `http:` and custom
 ///   locations; `AntPathMatcher` for wildcards.
 /// - `Ordered`, `Order` and `OrderComparator`: the order of beans run or
 ///   injected in turn.

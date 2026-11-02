@@ -14,7 +14,7 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 /// Turns a file named in `@PropertySource` into a property source; write
 /// one to let `@PropertySource` read a format other than `.properties`.
 ///
-/// `@PropertySource(['classpath:extra.properties'])` adds one file's
+/// `@PropertySource(['resources:extra.properties'])` adds one file's
 /// properties to the environment from a `@Configuration` class. As in
 /// Spring, it reads `.properties` files unless the annotation's `factory`
 /// names a class implementing this interface. The usual reason to write
@@ -41,7 +41,7 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 /// }
 ///
 /// @Configuration()
-/// @PropertySource(['classpath:app.yml'], factory: YamlPropertySourceFactory)
+/// @PropertySource(['resources:app.yml'], factory: YamlPropertySourceFactory)
 /// class AppConfig {}
 /// ```
 ///
@@ -60,7 +60,7 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 /// }
 ///
 /// @Configuration
-/// @PropertySource(value = "classpath:app.yml",
+/// @PropertySource(value = "resources:app.yml",
 ///     factory = YamlPropertySourceFactory.class)
 /// class AppConfig {}
 /// ```
@@ -202,7 +202,7 @@ class PropertySourceProcessor {
   /// arguments of `@PropertySource`. `${...}` in a location is resolved
   /// against the environment first.
   ///
-  /// A pattern (`file:conf/*.properties`, `classpath*:`) adds every match,
+  /// A pattern (`file:conf/*.properties`, `resources*:`) adds every match,
   /// and no match is fine. With [ignoreResourceNotFound], missing files and
   /// unresolvable placeholders are skipped; otherwise they throw
   /// `PropertySourceNotFoundException` or `PlaceholderResolutionException`.
@@ -232,7 +232,7 @@ class PropertySourceProcessor {
         }
         rethrow;
       }
-      // A pattern (`file:conf/*.properties`, `classpath*:`) loads every
+      // A pattern (`file:conf/*.properties`, `resources*:`) loads every
       // match, none being fine (Spring 6.1's PropertySourceProcessor).
       if (_patterns.isPattern(resolved)) {
         final loader = resourceLoader;

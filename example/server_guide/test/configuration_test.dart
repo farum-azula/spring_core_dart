@@ -98,7 +98,7 @@ void main() {
     test('@PropertySource of the bot, classpath resources, messages', () {
       final environment = app.context.environment;
       expect(environment.getProperty('bot.answers.delivery'), 'bot.delivery');
-      final books = app.context.getResource('classpath:data/books.json');
+      final books = app.context.getResource('resources:data/books.json');
       expect(books.exists(), isTrue);
       expect(
         app.context.getMessage('shop.welcome', args: ['NEON'], locale: 'ja'),

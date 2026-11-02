@@ -36,7 +36,7 @@ abstract interface class MigrationSource {
 }
 
 /// The files of the migration locations, found through a resource
-/// resolver: `classpath:db/migration` is the embedded `lib/resources/db/
+/// resolver: `resources:db/migration` is the embedded `lib/resources/db/
 /// migration/` (and the directories added to the classpath), `file:` a
 /// directory.
 ///

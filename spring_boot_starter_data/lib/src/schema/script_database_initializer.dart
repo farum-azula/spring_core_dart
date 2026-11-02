@@ -74,13 +74,13 @@ final class SqlInitSettings {
   final SqlInitMode mode;
 
   /// The locations of the schema scripts (`schema-locations`); empty for
-  /// the default, `classpath:schema.sql` and `classpath:schema-PLATFORM.
+  /// the default, `resources:schema.sql` and `resources:schema-PLATFORM.
   /// sql`, both optional. A location you give must exist, unless it starts
   /// with `optional:`; `@@platform@@` in it is replaced by the platform.
   final List<String> schemaLocations;
 
   /// The locations of the data scripts (`data-locations`); empty for the
-  /// default, `classpath:data.sql` and `classpath:data-PLATFORM.sql`.
+  /// default, `resources:data.sql` and `resources:data-PLATFORM.sql`.
   final List<String> dataLocations;
 
   /// The platform in the names of the platform scripts (`platform`);
@@ -104,7 +104,7 @@ final class SqlInitSettings {
 /// have two owners of the schema.
 ///
 /// The scripts are found by their locations through a resource loader
-/// (`classpath:` reads what the generator embedded from `lib/resources/`);
+/// (`resources:` reads what the generator embedded from `lib/resources/`);
 /// a missing default script is skipped, a missing script that was asked
 /// for by name stops the start. A failed statement stops the start naming
 /// the file and the line, unless `continue-on-error`.
@@ -221,8 +221,8 @@ class ScriptDatabaseInitializer {
     final platform = settings.platform;
     final locations = configured.isEmpty
         ? [
-            'optional:classpath:$kind.sql',
-            'optional:classpath:$kind-$platform.sql',
+            'optional:resources:$kind.sql',
+            'optional:resources:$kind-$platform.sql',
           ]
         : [for (final l in configured) l.replaceAll('@@platform@@', platform)];
     final found = <Resource>[];

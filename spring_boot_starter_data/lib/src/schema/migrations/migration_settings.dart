@@ -11,7 +11,7 @@ final class MigrationSettings {
   /// The settings; the defaults are Flyway's.
   const MigrationSettings({
     this.enabled = true,
-    this.locations = const ['classpath:db/migration'],
+    this.locations = const ['resources:db/migration'],
     this.table = 'schema_history',
     this.validateOnMigrate = true,
     this.outOfOrder = false,

@@ -150,6 +150,14 @@ final class SpringThemes extends ChangeNotifier {
 
   final Map<String, String> _files;
   Map<String, String> _remote = const {};
+  // Themes read from a URL, by the name they were given: over the files,
+  // under what `load` adds.
+  final _sourced = <String, Map<String, String>>{};
+
+  Map<String, String> get _fromFiles => {
+    ..._files,
+    for (final properties in _sourced.values) ...properties,
+  };
 
   /// The customizers applied to every Material theme, in order.
   final List<ThemeCustomizer> customizers;
@@ -220,7 +228,7 @@ final class SpringThemes extends ChangeNotifier {
   /// `ThemePropertyException` and changes nothing. Then the listeners
   /// (the app) are told, and the app shows the new values at once.
   void load(Map<String, String> properties) {
-    final config = ThemeConfig({..._files, ...properties});
+    final config = ThemeConfig({..._fromFiles, ...properties});
     final data = _read(config); // throws before anything changes
     _remote = Map.of(properties);
     _use(config, data);
@@ -261,7 +269,36 @@ final class SpringThemes extends ChangeNotifier {
   /// a theme that is gone falls back to `system`.
   void unload() {
     _remote = const {};
-    _apply(ThemeConfig(_files));
+    _apply(ThemeConfig(_fromFiles));
+    notifyListeners();
+  }
+
+  /// Sets the properties of the theme read from a URL under [name]
+  /// (`themes.<name>.seed-color`, keys relative to `spring.flutter.theme`),
+  /// or takes them away with `null`; the starter's theme source loader
+  /// calls it. They go over the files' properties and under what [load]
+  /// adds, and replace what an earlier call for the same [name] set.
+  ///
+  /// Every theme is checked first: an invalid property throws a
+  /// `ThemePropertyException` and changes nothing. Then the listeners (the
+  /// app) are told, and the app shows the new values at once.
+  void applySource(String name, Map<String, String>? properties) {
+    final next = {..._sourced};
+    if (properties == null) {
+      next.remove(name);
+    } else {
+      next[name] = Map.of(properties);
+    }
+    final config = ThemeConfig({
+      ..._files,
+      for (final values in next.values) ...values,
+      ..._remote,
+    });
+    final data = _read(config); // throws before anything changes
+    _sourced
+      ..clear()
+      ..addAll(next);
+    _use(config, data);
     notifyListeners();
   }
 

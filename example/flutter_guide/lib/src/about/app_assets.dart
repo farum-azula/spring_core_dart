@@ -5,7 +5,7 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 
 /// The app's assets (`assets/` in pubspec.yaml) as injected resources:
 /// `@Value('asset:...')` gives an `AssetResource`, as
-/// `@Value('classpath:...')` gives a file of `lib/resources/` in Spring.
+/// `@Value('resources:...')` gives a file of `lib/resources/` in Spring.
 /// The generator checks that each file exists and is declared.
 @Component()
 class AppAssets {
