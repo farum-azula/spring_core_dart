@@ -1,3 +1,7 @@
+## 0.6.2
+
+- feat: 0.6.2 — the theme (typed keys and messages, states, every component, a theme from a URL), (#20)
+
 ## 0.6.1
 
 - No changes of its own; released with the family version 0.6.1.

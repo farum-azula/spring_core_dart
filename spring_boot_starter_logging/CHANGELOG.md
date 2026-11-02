@@ -1,3 +1,7 @@
+## 0.6.2
+
+- No changes of its own; released with the family version 0.6.2.
+
 ## 0.6.1
 
 - No changes of its own; released with the family version 0.6.1.
