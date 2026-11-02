@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
+import 'package:spring_core_dart/src/core/log.dart';
 
 /// The content of one file of `lib/resources/`, written into the generated
 /// code at build time.
@@ -63,8 +64,59 @@ final class EmbeddedResource {
 /// Resource resource = new ClassPathResource("banner.txt");
 /// ```
 abstract final class ClasspathResources {
-  /// The location prefix, `classpath:`.
-  static const prefix = 'classpath:';
+  /// The location prefix, `resources:`.
+  static const prefix = 'resources:';
+
+  /// The prefix that searches every root, `resources*:` (Spring's
+  /// `classpath*:`).
+  static const allPrefix = 'resources*:';
+
+  /// The former prefix, `classpath:`, still read in 0.6.2 with a warning
+  /// and refused in the next minor release.
+  static const legacyPrefix = 'classpath:';
+
+  /// The former prefix of the search over every root, `classpath*:`.
+  static const legacyAllPrefix = 'classpath*:';
+
+  static const _log = SpringLog('spring_core_dart.io');
+  static final _warned = <String>{};
+
+  /// [location] with the former prefix `classpath:` (or `classpath*:`)
+  /// replaced by `resources:` (`resources*:`), after a warning naming the
+  /// new prefix, once per location. Anything else, an `optional:` prefix
+  /// included, is returned as it is.
+  static String migrate(String location) {
+    final String legacy;
+    final String current;
+    if (location.startsWith(legacyPrefix)) {
+      legacy = legacyPrefix;
+      current = prefix;
+    } else if (location.startsWith(legacyAllPrefix)) {
+      legacy = legacyAllPrefix;
+      current = allPrefix;
+    } else {
+      return location;
+    }
+    if (_warned.add(location)) {
+      _log.warning(
+        "'$location' uses the prefix $legacy, which is now $current "
+        '($legacy is refused in the next minor release)',
+      );
+    }
+    return '$current${location.substring(legacy.length)}';
+  }
+
+  /// [location] after `optional:`-aware [migrate]: `optional:classpath:x`
+  /// gives `optional:resources:x`.
+  static String migrateOptional(String location) {
+    const optional = 'optional:';
+    return location.startsWith(optional)
+        ? '$optional${migrate(location.substring(optional.length))}'
+        : migrate(location);
+  }
+
+  /// Forgets the locations already warned about, for tests.
+  static void resetLegacyWarnings() => _warned.clear();
 
   /// The directory read from disk for paths that are not embedded:
   /// `lib/resources`, relative to the working directory.
@@ -137,7 +189,8 @@ abstract final class ClasspathResources {
   /// The paths of all embedded files, relative to `lib/resources/`.
   static Iterable<String> get paths => _embedded.keys;
 
-  /// The resource for `classpath:<path>` or a plain [path]: a file of an
+  /// The resource for `resources:<path>` (or the former `classpath:`) or a
+  /// plain [path]: a file of an
   /// added directory when it exists there, otherwise the embedded file,
   /// otherwise the file under [directory] (which may not exist). A path
   /// that climbs above the root with `..` gives a resource that does not
@@ -145,9 +198,10 @@ abstract final class ClasspathResources {
   /// file. A file read from disk is a [FileSystemResource], whose
   /// `createRelative` is a file's.
   static Resource resolve(String path) {
-    final relative = path.startsWith(prefix)
-        ? path.substring(prefix.length)
-        : path;
+    final location = migrate(path);
+    final relative = location.startsWith(prefix)
+        ? location.substring(prefix.length)
+        : location;
     final normalized = normalize(relative);
     if (normalized == null) {
       return _OutsideClasspathResource(_clean(relative));

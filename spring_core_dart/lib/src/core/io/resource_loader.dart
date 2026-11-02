@@ -5,7 +5,7 @@ import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
-/// Turns a location string such as `classpath:mail.txt`,
+/// Turns a location string such as `resources:mail.txt`,
 /// `file:./data.csv` or `https://...` into a [Resource] to read.
 ///
 /// It is the one place that knows what the prefixes mean, so code can take
@@ -13,7 +13,7 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 /// points. The application context is the resource loader beans get: a
 /// constructor parameter of type `ResourceLoader` receives it
 /// (`ResourceLoaderAware` works too). For a fixed location,
-/// `@Value('classpath:...') Resource` is simpler. `classpath:` reads
+/// `@Value('resources:...') Resource` is simpler. `resources:` reads
 /// `lib/resources/` (see [ClasspathResources]); a [ProtocolResolver] adds
 /// other prefixes, such as Flutter assets.
 ///
@@ -23,7 +23,7 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 ///   Imports(this.resources, @Value(r'${shop.import.file}') this.location);
 ///
 ///   final ResourceLoader resources; // the application context
-///   final String location; // `file:./import.csv` or `classpath:demo.csv`
+///   final String location; // `file:./import.csv` or `resources:demo.csv`
 ///
 ///   Future<String> read() => resources.getResource(location).readAsString();
 /// }
@@ -197,7 +197,7 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
       FileSystemResource(path).path.replaceFirst(RegExp('^/'), '');
 }
 
-/// The [ResourceLoader] used everywhere: it knows `classpath:`, `file:`,
+/// The [ResourceLoader] used everywhere: it knows `resources:`, `file:`,
 /// `http:`, `https:` and `package:` locations, plus any prefix taught by a
 /// [ProtocolResolver].
 ///
@@ -207,7 +207,7 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 /// handled in this order:
 ///
 /// 1. Registered [ProtocolResolver]s, in order.
-/// 2. `classpath:`: the files of `lib/resources/` (see
+/// 2. `resources:`: the files of `lib/resources/` (see
 ///    [ClasspathResources]).
 /// 3. `file:`: a [FileSystemResource], percent-decoded (see
 ///    [FileSystemResource.fromFileUrl]).
@@ -259,6 +259,11 @@ class DefaultResourceLoader implements ResourceLoader {
 
   @override
   Resource getResource(String location) {
+    final resolved = ClasspathResources.migrate(location);
+    return _resource(resolved);
+  }
+
+  Resource _resource(String location) {
     for (final resolver in _resolvers) {
       final resource = resolver.resolve(location, this);
       if (resource != null) {

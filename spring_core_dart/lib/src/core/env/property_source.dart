@@ -47,7 +47,7 @@ abstract class AbstractPropertySource<T extends Object> {
 
   /// The name of this source, unique within the environment's list. It is
   /// how other code finds, replaces or orders the source, and it appears
-  /// in error messages (`Config resource 'classpath:/application.yml'`).
+  /// in error messages (`Config resource 'resources:/application.yml'`).
   final String name;
 
   /// The object the values are read from: a map, the command-line

@@ -44,7 +44,7 @@ Future<void> main() async {
     },
   );
 
-  // The dev profile's sample data, read from classpath:data/books.json by
+  // The dev profile's sample data, read from resources:data/books.json by
   // the ObjectMapper (constructor parameters by name, @JsonValue enums).
   final books = context.getBean<BookRepository>();
   final dune = books.findByIsbn('9780441013593');

@@ -174,7 +174,7 @@ final class FlutterAppSettings {
           ? basename.trim().substring(0, basename.trim().lastIndexOf('/') + 1)
           : '';
       for (final resource in context.getResources(
-        'classpath:$directory${name}_*.properties',
+        'resources:$directory${name}_*.properties',
       )) {
         final file = resource.filename ?? '';
         final tag = file.substring(

@@ -1527,7 +1527,7 @@ the bean as the context holds it, so AOP advice on a controller
   security rules and controllers all see the same path, but a proxy in
   front whose rules look at paths must refuse a `\` itself.
 - **HTTP/1.1 only**; `server.http2.enabled` is not read.
-- **TLS from PEM file paths**, not `classpath:` locations; no keystores
+- **TLS from PEM file paths**, not `resources:` locations; no keystores
   or SSL bundles.
 - **More startup checks** than Spring: a path variable without a
   parameter, a parameter nothing can fill, an invalid

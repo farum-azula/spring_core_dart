@@ -450,7 +450,7 @@ greeting=Добро пожаловать в {0}!
 class MessagesConfig {
   @Bean()
   MessageSource messageSource() =>
-      ReloadableResourceBundleMessageSource(basenames: ['classpath:messages']);
+      ReloadableResourceBundleMessageSource(basenames: ['resources:messages']);
 }
 
 context.getMessage('greeting', args: ['NEON'], locale: 'ru');
@@ -475,7 +475,7 @@ late final String appName;                     // (its class needs @Introspected
 ```dart
 @Service()
 class WelcomeLetter {
-  WelcomeLetter(@Value('classpath:templates/welcome.txt') this.template);
+  WelcomeLetter(@Value('resources:templates/welcome.txt') this.template);
   final Resource template;
 
   String text() => template.readAsStringSync();

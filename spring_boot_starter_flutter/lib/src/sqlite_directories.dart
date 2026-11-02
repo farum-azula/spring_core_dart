@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/app_directories.dart';
 import 'package:spring_boot_starter_flutter/src/sqlite_directories_stub.dart'
     if (dart.library.io) 'package:spring_boot_starter_flutter/src/sqlite_directories_io.dart'
     as native;
@@ -57,26 +58,23 @@ String androidDatabasesDirectory(String support) {
   return '$trimmed/databases';
 }
 
-/// The directory `support` is on [platform], from the directories
-/// `path_provider` gives: [support] (the application support one) and
-/// [cache] (the application cache one); null when the one needed is null.
+/// The directory `support` is on [platform] for the databases, from the
+/// directories `path_provider` gives: [support] (the application support
+/// one) and [cache] (the application cache one); null when the one needed
+/// is null.
 ///
-/// Android: `databases/` next to the support directory; Windows: the cache
-/// directory of `path_provider`, which is the app's directory under
-/// `%LOCALAPPDATA%` (company and product names), the machine's own (its
-/// support directory is the roaming one); everywhere else the support
-/// directory (iOS and macOS: Application Support, Linux:
-/// `$XDG_DATA_HOME/<app id>`).
+/// Android: `databases/` next to the support directory; everywhere else the
+/// directory of the app (see [appSupportDirectory]): Windows the app's
+/// directory under `%LOCALAPPDATA%` (company and product names), the
+/// machine's own; iOS and macOS Application Support, Linux
+/// `$XDG_DATA_HOME/<app id>`.
 String? sqliteSupportDirectory(
   TargetPlatform platform, {
   String? support,
   String? cache,
-}) => switch (platform) {
-  TargetPlatform.windows => cache,
-  TargetPlatform.android =>
-    support == null ? null : androidDatabasesDirectory(support),
-  _ => support,
-};
+}) => platform == TargetPlatform.android
+    ? (support == null ? null : androidDatabasesDirectory(support))
+    : appSupportDirectory(platform, support: support, cache: cache);
 
 /// The directories of the app a database can live in, read from
 /// `path_provider` before the application starts, so that
@@ -154,7 +152,7 @@ final class SqliteDirectories {
         support: support,
         cache: cache,
       ),
-      SqliteLocation.cache: cache,
+      SqliteLocation.cache: appCacheDirectory(platform, cache: cache),
       SqliteLocation.documents: documents,
     };
     return SqliteDirectories._({

@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- `@TestPropertySource`, `@SpringBootTest` and the test resource directories document and use `resources:`; `classpath:` still works with a warning (see `spring_core_dart`).
+
 ## 0.6.1
 
 - test(containers): labels unique per run — CI runs the docker tests twice at once and one run saw the (#19)

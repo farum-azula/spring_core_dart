@@ -35,7 +35,7 @@ added to those of the Dart language server:
 | `${shop.name}` in `@Value` (and `getProperty('shop.name')`, `@ConditionalOnProperty`) | the key in every `application*.properties` that defines it |
 | `@ConfigurationProperties('shop')` | the `shop.*` keys |
 | a bean name in SpEL: `#{appConfig.name}`, `#{@clock.now()}` | that bean |
-| `classpath:legacy.properties` (in `@PropertySource`, `@Value`, `getResource`), `file:config/app.properties`, `asset:assets/logo.png` | the file: `lib/resources/` of the package (`test/resources/` first in tests), `file:` and `asset:` relative to the package |
+| `resources:legacy.properties` (in `@PropertySource`, `@Value`, `getResource`), `file:config/app.properties`, `asset:assets/logo.png` | the file: `lib/resources/` of the package (`test/resources/` first in tests), `file:` and `asset:` relative to the package |
 | in a pointcut (`@Pointcut`, `@Before`, `@Around`, ...): a type in `within(...)` / `execution(...)`, `@annotation(Timed)` | the class (wildcards like `*Service` give every match) |
 | `pricing()`, `AuditAspect.pricing()` in a pointcut | the `@Pointcut` method |
 | `#isbn` in a cache key or condition: `@Cacheable('books', key: '#isbn')` | the method parameter |
@@ -44,7 +44,7 @@ added to those of the Dart language server:
 Navigation puts the cursor at the target without selecting it.
 
 **Hover** shows the value of a property in every profile file, the
-candidate beans of an injection point, the file a `classpath:` location
+candidate beans of an injection point, the file a `resources:` location
 resolves to, and the expression of a named pointcut.
 
 **Checks**, while you type:

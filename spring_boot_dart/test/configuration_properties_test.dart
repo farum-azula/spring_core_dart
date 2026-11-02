@@ -504,7 +504,7 @@ app:
       final loader = DefaultResourceLoader(
         protocolResolvers: [
           FunctionProtocolResolver(
-            (location, _) => location == 'classpath:/application.yml'
+            (location, _) => location == 'resources:/application.yml'
                 ? ByteArrayResource.fromString(yaml, description: 'yml')
                 : null,
           ),

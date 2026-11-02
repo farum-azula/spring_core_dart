@@ -108,7 +108,7 @@ flutter test --tags golden                   # the screenshots (macOS only, see 
 lib/
   main.dart                    @SpringBootApplication, SpringApplicationWidget
   main.spring.dart             generated: the beans, proxies, Feign clients, context getters, `log`
-  resources/                   the classpath: application*.properties, application.yml,
+  resources/                   the resources: application*.properties, application.yml,
                                themes/*.yml, messages*.properties
   src/app/                     the home (sections), app properties, language, lifecycle and route logs
   src/api/                     the server's API: models, Feign clients, the WebSocket client,

@@ -803,8 +803,8 @@ void main() {
         db,
         const MigrationSettings(
           locations: [
-            'classpath:db/migration/{vendor}',
-            'classpath:db/migration/common/',
+            'resources:db/migration/{vendor}',
+            'resources:db/migration/common/',
           ],
         ),
       ).migrate();
@@ -815,7 +815,7 @@ void main() {
       expect(await tablesOf(db), ['c', 's', 'schema_history']);
     });
 
-    test('the default location is classpath:db/migration', () async {
+    test('the default location is resources:db/migration', () async {
       classpath({
         'db/migration/V1__a.sql': 'CREATE TABLE a (x);',
         'db/migration/V2__b.sql': 'CREATE TABLE b (x);',
@@ -864,7 +864,7 @@ void main() {
     test("the defaults are Flyway's", () {
       final s = MigrationSettings.fromEnvironment(envOf(const {}));
       expect(s.enabled, isTrue);
-      expect(s.locations, ['classpath:db/migration']);
+      expect(s.locations, ['resources:db/migration']);
       expect(s.table, 'schema_history');
       expect(s.validateOnMigrate, isTrue);
       expect(s.outOfOrder, isFalse);
@@ -886,7 +886,7 @@ void main() {
         envOf({
           'spring.sql.migration.enabled': 'false',
           'spring.sql.migration.locations':
-              'classpath:db/{vendor}, classpath:extra',
+              'resources:db/{vendor}, resources:extra',
           'spring.sql.migration.table': 'hist',
           'spring.sql.migration.validate-on-migrate': 'false',
           'spring.sql.migration.out-of-order': 'true',
@@ -907,7 +907,7 @@ void main() {
         }),
       );
       expect(s.enabled, isFalse);
-      expect(s.locations, ['classpath:db/{vendor}', 'classpath:extra']);
+      expect(s.locations, ['resources:db/{vendor}', 'resources:extra']);
       expect(s.table, 'hist');
       expect(s.validateOnMigrate, isFalse);
       expect(s.outOfOrder, isTrue);

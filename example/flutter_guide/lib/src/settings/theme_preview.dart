@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:neon_books_app/spring_keys.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The theme's name on the brand's accent: the app's own tokens
 /// (`spring.flutter.theme.tokens.brand.*`), per theme, read through
-/// `SpringTheme.of(context)`.
+/// `context.theme` (generated, typed).
 class ThemeBanner extends StatelessWidget {
   const ThemeBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = SpringTheme.of(context);
-    final accent = theme.tokenColor('brand.accent')!;
+    final brand = context.theme.tokens.brand;
+    final accent = brand.accent;
     return Container(
-      height: theme.tokenNumber('brand.banner-height'),
-      margin: EdgeInsets.all(theme.space('m')),
+      height: brand.bannerHeight,
+      margin: EdgeInsets.all(context.theme.spacing.m),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: accent,

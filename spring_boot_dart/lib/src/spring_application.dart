@@ -349,7 +349,7 @@ class SpringApplication {
   Resource _bannerResource(Environment environment) =>
       (resourceLoader ?? DefaultResourceLoader()).getResource(
         environment.getProperty('spring.banner.location') ??
-            'classpath:banner.txt',
+            'resources:banner.txt',
       );
 
   // The banner file when it can only be read asynchronously (a Flutter
@@ -407,7 +407,7 @@ class SpringApplication {
   /// always restarts.
   final String? fingerprint;
 
-  /// Reads the config files, the banner file and `classpath:` resources;
+  /// Reads the config files, the banner file and `resources:` resources;
   /// a `DefaultResourceLoader` by default. In Flutter, pass a loader that
   /// reads assets and start with [runAsync], since assets can only be
   /// read asynchronously.

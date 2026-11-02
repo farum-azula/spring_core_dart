@@ -6,7 +6,7 @@ Editor support for everything the framework does today. Available now:
 navigation from injection points to beans and from `@Value` placeholders to
 properties files, SpEL and placeholder highlighting, checks for invalid
 SpEL, unknown keys and non-raw placeholder strings, hovers with property
-values and candidate beans, navigation to `classpath:` / `file:` resources,
+values and candidate beans, navigation to `resources:` / `file:` resources,
 and pointcut highlighting, navigation (types, annotations, beans, named
 pointcuts) and checks, spring_boot_starter_flutter support (`context.<bean>`
 getters, `context.bean<T>()` and the bean records of Spring widgets go to
@@ -29,7 +29,7 @@ release train, set by `tool/version.dart` and checked in CI), so extension
   back: where a bean is injected); from `@Value(r'${shop.name}')` to the
   key in `application*.properties` (every profile file that defines it)
   and from a key to its usages, `@ConfigurationProperties` fields
-  included; from `classpath:...` / `@PropertySource` locations to the
+  included; from `resources:...` / `@PropertySource` locations to the
   file in `lib/resources/`; from `@annotation(Timed)` and pointcuts to the
   advised methods; from an event to its listeners.
 - Navigation and completion in every string that names a bean or a

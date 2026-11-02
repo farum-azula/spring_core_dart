@@ -14,6 +14,9 @@
 ///   `springApplication` and `runApplication(args)`.
 /// - A test file with `@SpringBootTest` classes gets a
 ///   `test/spring/<name>.test.spring.dart` file with `runSpringTests()`.
+/// - A Flutter app with `spring.flutter.theme.*` properties or message
+///   files in `lib/resources/` gets `lib/spring_keys.dart`, with the typed
+///   `context.theme` and `context.messages`.
 /// - A Flutter app with `spring.flutter.web.*` properties in
 ///   `lib/resources/` gets a `web_dev_config.yaml`, which sets the host,
 ///   port, headers and proxy of `flutter run` on the web.
@@ -59,6 +62,7 @@ library;
 
 import 'package:build/build.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
@@ -148,3 +152,23 @@ Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();
 /// ```
 Builder springFlutterWebBuilder(BuilderOptions options) =>
     WebDevConfigBuilder();
+
+/// Creates the builder of `lib/spring_keys.dart` ([FlutterKeysBuilder]),
+/// registered in `build.yaml` as `spring_flutter_keys`.
+///
+/// For an app that depends on `spring_boot_starter_flutter` it writes the
+/// typed keys of the configuration: `context.theme.colors.surface`,
+/// `context.theme.spacing.m`, `context.messages.basket.total(price)`. A key
+/// renamed in `lib/resources/` is then a compile error in the widgets that
+/// use it. It takes no options.
+///
+/// ```dart
+/// import 'package:my_app/spring_keys.dart';
+///
+/// Padding(
+///   padding: EdgeInsets.all(context.theme.spacing.m),
+///   child: Text(context.messages.basket.empty),
+/// );
+/// ```
+Builder springFlutterKeysBuilder(BuilderOptions options) =>
+    FlutterKeysBuilder();

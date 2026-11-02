@@ -212,7 +212,7 @@ void main() {
           schema(
             _replaced({
               ..._file,
-              'spring.sql.migration.locations': 'classpath:db/none',
+              'spring.sql.migration.locations': 'resources:db/none',
             }),
           ),
           'create',
@@ -240,8 +240,8 @@ void main() {
         schema(
           _replaced({
             ..._file,
-            'spring.sql.init.schema-locations': 'classpath:seed/schema.sql',
-            'spring.sql.init.data-locations': 'optional:classpath:none.sql',
+            'spring.sql.init.schema-locations': 'resources:seed/schema.sql',
+            'spring.sql.init.data-locations': 'optional:resources:none.sql',
           }),
         ),
         isNull,
@@ -266,7 +266,7 @@ void main() {
         'spring.datasources.archive.url': 'sqlite:file:archive.db',
         'spring.datasources.shop.url': 'sqlite:file:shop.db',
         'spring.datasources.archive.sql.migration.locations':
-            'classpath:db/archive',
+            'resources:db/archive',
       });
       // archive has migrations; shop looks at db/migration, which is empty.
       expect(schema(environment, prefix), isNull);

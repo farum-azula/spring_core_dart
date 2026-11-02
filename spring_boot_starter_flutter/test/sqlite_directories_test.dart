@@ -245,6 +245,11 @@ void main() {
         r'C:\Users\u\AppData\Local\Acme\Books',
       );
       expect(directories.of(SqliteLocation.documents), r'C:\Users\u\Documents');
+      // The cache is a folder of its own, never the folder of support.
+      expect(
+        directories.of(SqliteLocation.cache),
+        r'C:\Users\u\AppData\Local\Acme\Books\cache',
+      );
       expect(paths.asked, isNot(contains('support')));
     });
 

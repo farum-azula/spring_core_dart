@@ -154,7 +154,7 @@ final class InvalidConfigDataPropertyException implements Exception {
 ///
 /// Thrown, with the location and the reason, for a file that is not valid
 /// `.properties` or YAML, a file extension no loader handles, a location
-/// form that is not supported (a `classpath:` wildcard, more than one
+/// form that is not supported (a `resources:` wildcard, more than one
 /// `*`), an invalid `spring.config.activate.on-cloud-platform` or
 /// `spring.config.on-not-found` value, and a resource that can only be
 /// read asynchronously (a Flutter asset, a URL) during a synchronous load.

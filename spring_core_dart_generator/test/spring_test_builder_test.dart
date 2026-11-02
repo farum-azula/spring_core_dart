@@ -195,7 +195,7 @@ class ShopTest {}
   resourceDirectories: ['test/data'],
 )
 @ActiveProfiles(['dev', 'test'])
-@TestPropertySource(properties: {'c': 3}, locations: ['classpath:x.properties'])
+@TestPropertySource(properties: {'c': 3}, locations: ['resources:x.properties'])
 @TestEnvironment({'D': '4'})
 class ShopTest {
   @DynamicPropertySource()
@@ -211,7 +211,7 @@ class ShopTest {
     );
     expect(source, _has("args: ['--a=1'],"));
     expect(source, _has("properties: {...{'b': 2}, ...{'c': 3}},"));
-    expect(source, _has("propertyFiles: ['classpath:x.properties'],"));
+    expect(source, _has("propertyFiles: ['resources:x.properties'],"));
     expect(source, _has("resourceDirectories: ['test/data'],"));
     expect(source, _has("profiles: ['dev', 'test'],"));
     expect(source, _has("systemEnvironment: {'D': '4'},"));

@@ -139,14 +139,14 @@ void main() {
           expect(resource.readAsStringSync(), 'a=1', reason: location);
           expect(
             resource.description,
-            loader.getResource('classpath:app.properties').description,
+            loader.getResource('resources:app.properties').description,
           );
         }
         final resolver = PathMatchingResourcePatternResolver();
         expect([
           for (final r in resolver.getResources('*.properties')) r.filename,
         ], contains('app.properties'));
-        expect(resolver.getResources('classpath:/app.*'), hasLength(1));
+        expect(resolver.getResources('resources:/app.*'), hasLength(1));
       } finally {
         remove();
       }

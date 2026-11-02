@@ -159,7 +159,7 @@ enum Shutdown {
 ///
 /// The certificate and key are PEM files given by path, as Spring Boot's
 /// `server.ssl.certificate` and `server.ssl.certificate-private-key`
-/// (there are no keystores, SSL bundles or `classpath:` locations).
+/// (there are no keystores, SSL bundles or `resources:` locations).
 /// Applications set the properties; this class is what
 /// [ServerProperties.ssl] holds.
 ///

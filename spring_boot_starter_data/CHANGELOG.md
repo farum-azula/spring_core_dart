@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The defaults of `spring.sql.migration.locations` (`resources:db/migration`) and `spring.sql.init.*-locations` (`optional:resources:schema.sql`, ...) use `resources:`; `classpath:` still works with a warning (see `spring_core_dart`).
+
 ## 0.6.1
 
 ### Changes

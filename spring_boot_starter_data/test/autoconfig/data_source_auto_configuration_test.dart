@@ -38,7 +38,7 @@ void main() {
       .withPropertyValues([
         'spring.datasource.url=sqlite:file:${temp.path}/app.db',
         'spring.datasources.stats.url=sqlite:file:${temp.path}/stats.db',
-        'spring.datasources.stats.sql.migration.locations=classpath:db/stats',
+        'spring.datasources.stats.sql.migration.locations=resources:db/stats',
         ...extra,
       ]);
 
@@ -152,7 +152,7 @@ void main() {
 
     test('a schema that does not fit the entities stops the start', () async {
       final error = await failure([
-        'spring.sql.migration.locations=classpath:db/partial',
+        'spring.sql.migration.locations=resources:db/partial',
       ]);
       expect('$error', contains('year'));
       expect('$error', contains('books'));
@@ -462,7 +462,7 @@ void main() {
           .withAutoConfiguration(springBootStarterDataAutoConfiguration)
           .withPropertyValues([
             'spring.datasources.stats.url=sqlite:file:${temp.path}/stats.db',
-            'spring.datasources.stats.sql.migration.locations=classpath:db/stats',
+            'spring.datasources.stats.sql.migration.locations=resources:db/stats',
             'spring.sql.migration.enabled=false',
           ])
           .runAsync<void>((context) async {

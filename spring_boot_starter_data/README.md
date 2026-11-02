@@ -144,7 +144,7 @@ problem of the interface is one build error:
   from entities are not known to the build. It reads
   `spring.sql.migration.locations` and `spring.sql.init.schema-locations`
   from `application.properties`, `application.yml` and `application.yaml`
-  (`classpath:` only; any other location turns the check off, and so does a
+  (`resources:` only; any other location turns the check off, and so does a
   profile file or a profile-specific YAML document that sets them, a
   `spring.config.import` or the settings of a named data source). With
   `{vendor}` in a location, the migrations of each database are an
@@ -321,7 +321,7 @@ spring.datasource.pool.max-size=4
 
 # A second database: its own beans, qualifier and properties.
 spring.datasources.stats.url=sqlite:file:stats.db
-spring.datasources.stats.sql.migration.locations=classpath:db/stats
+spring.datasources.stats.sql.migration.locations=resources:db/stats
 
 # Migrations: lib/resources/db/migration/V1__books.sql, V2__orders.sql,
 # R__views.sql (applied at startup, before any repository is used).

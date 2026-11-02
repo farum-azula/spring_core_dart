@@ -114,7 +114,7 @@ Into that file it writes:
 - `@Aspect` advice metadata and the AOP proxy classes;
 - generated subclasses of full-mode `@Configuration` classes and of beans
   with `@Lookup` methods;
-- the files of `lib/resources/`, embedded so that `classpath:` locations
+- the files of `lib/resources/`, embedded so that `resources:` locations
   work on every platform without Flutter asset declarations. Text files
   stay text, other files are base64-encoded, and files above 1 MB are
   skipped with a warning. An application whose `main` is outside `lib/`
@@ -323,7 +323,7 @@ file that is not UTF-8 is read only that way), its placeholders resolved
 with their defaults or the files' values) sets a `spring.flutter.web.*`
 key or
 `spring.flutter.security.web.mode`. An import whose name only the running
-app knows (`classpath:${ENV}.conf[.yaml]`) cannot be followed there, so
+app knows (`resources:${ENV}.conf[.yaml]`) cannot be followed there, so
 keys that only its file sets do not count. Without one, the config is not
 loaded: nothing is written, a file generated before is deleted, and
 imports, placeholders or a file that does not parse are left to the app's
@@ -332,7 +332,7 @@ reads that does not parse fails the build and keeps it). With one, the
 config files are read as the app reads them in a browser:
 `application.*`, then `application-web.*`, the profiles that
 `spring.profiles.active` names in them and the files that
-`spring.config.import` names (relative or `classpath:` ones, from
+`spring.config.import` names (relative or `resources:` ones, from
 `lib/resources/`); environment variables and `--dart-define` values do
 not count. A placeholder only they can resolve is unknown at build time,
 never a build error: a profile name with one in `spring.profiles.active`,
@@ -353,7 +353,7 @@ machine's disk, as a browser has none: it is skipped, `optional:` or not;
 when the properties give a file to write, a warning names the first
 required one as written (the web version would fail to start with it).
 An import the build cannot read (`asset:`, `http:`, `https:`, or a
-`classpath:` file missing from `lib/resources/`) is skipped silently, even
+`resources:` file missing from `lib/resources/`) is skipped silently, even
 a required one, as it may exist at run time. An invalid value, or a
 config file the app reads that does not parse, fails the build with the
 error; the generated file is then left as it is.
@@ -378,6 +378,49 @@ changes, not when `web_dev_config.yaml` does: after deleting the file,
 run `dart run build_runner clean` or change a config file.
 See [the starter](https://pub.dev/packages/spring_boot_starter_flutter#the-web-versions-port)
 for the properties.
+
+### Typed keys of the configuration
+
+For an app that depends on `spring_boot_starter_flutter` (or the security
+starter that brings it), the builder `spring_flutter_keys` writes
+`lib/spring_keys.dart` from `lib/resources/`: every `.yml`, `.yaml` and
+`.properties` file, whatever the profile and the theme (the union of the keys,
+as the values are read at run time).
+
+- `context.theme` (`AppTheme`): `colors.<role>` (`Color`), `spacing.<name>`
+  (`double`), `typography.<style>` (`TextStyle`; the 15 Material styles and
+  `code`), `tokens.<group>.<key>` (`Color` for `#RRGGBB` / `0x...`, `double`
+  for numbers, `String` otherwise; a token of different types in two themes is
+  an error), and `AppThemes.<name>` (theme names for `ThemeSelection.select`).
+- `context.messages` (`AppMessages`): from `<basename>.properties` and
+  `<basename>_<locale>.properties` (`spring.messages.basename`, `messages` by
+  default): a getter for a message without arguments, a method with `Object?`
+  parameters for `{0}`...`{N-1}`, one class per key prefix. A key missing in
+  a locale is a warning; a different argument count between locales, a key
+  that is a message and a prefix, or a malformed placeholder is an error.
+- Names: `-`/`_` start a new word (`surface-container-low` ->
+  `surfaceContainerLow`), the first letter becomes lower case, a leading digit
+  gets a `$` before it (`2xl` -> `$2xl`), a Dart keyword or `hashCode`,
+  `toString`, ... a `$` after it. A name with other characters, or two keys
+  with one Dart name, is an error and nothing is written.
+
+```dart
+// lib/spring_keys.dart (generated)
+extension SpringKeys on BuildContext {
+  AppTheme get theme => AppTheme._(ThemeKeyReader(SpringTheme.of(this)));
+  AppMessages get messages => AppMessages._(this);
+}
+final class AppThemeSpacing {
+  double get m => _values.spacing('m');
+}
+final class AppMessagesBasket {
+  String total(Object? arg0) =>
+      _context.message('basket.total', args: [arg0]);
+}
+```
+
+The file holds keys, not values. Without `spring.flutter.theme.*` properties
+and message files nothing is written (a file written earlier stays: delete it).
 
 ## Options
 

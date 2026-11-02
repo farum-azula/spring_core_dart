@@ -112,7 +112,7 @@ class GreetOnStartup implements CommandLineRunner {
 ```
 
 **3. The settings** (`lib/resources/application.properties`). The
-`lib/resources/` folder plays the role of Java's classpath: the generator
+`lib/resources/` folder plays the role of Java's resources: the generator
 embeds its files, so they are found on every platform.
 
 ```properties

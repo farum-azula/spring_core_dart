@@ -6,9 +6,9 @@ import 'dart:typed_data';
 /// asset, bytes in memory.
 ///
 /// It lets code read a template, a data file or a config file without
-/// caring where it comes from: the location string (`classpath:mail.txt`,
+/// caring where it comes from: the location string (`resources:mail.txt`,
 /// `file:./data.csv`, `https://...`) decides, and the code only reads.
-/// Applications receive resources: a `@Value('classpath:...')` parameter
+/// Applications receive resources: a `@Value('resources:...')` parameter
 /// of type `Resource`, or `getResource` on the application context (any
 /// `ResourceLoader`). They implement it only for a new kind of storage,
 /// usually by extending [AbstractResource].
@@ -24,7 +24,7 @@ import 'dart:typed_data';
 ///   // The template ships in lib/resources/templates/, embedded by the
 ///   // generator, so it is found on the server, in Flutter and on the web.
 ///   OrderMailer(
-///     @Value('classpath:templates/order-confirmation.txt') this.template,
+///     @Value('resources:templates/order-confirmation.txt') this.template,
 ///   );
 ///
 ///   final Resource template;
@@ -39,7 +39,7 @@ import 'dart:typed_data';
 /// class OrderMailer {
 ///   private final Resource template;
 ///
-///   OrderMailer(@Value("classpath:templates/order-confirmation.txt")
+///   OrderMailer(@Value("resources:templates/order-confirmation.txt")
 ///       Resource template) {
 ///     this.template = template;
 ///   }

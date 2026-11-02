@@ -214,7 +214,7 @@ Left:
 
 Spring MVC is not only REST: a plain `@Controller` returns a view name
 rendered by a template engine, and Spring Boot serves static files from
-`classpath:static`. Before building it, find out whether it fits Dart:
+`resources:static`. Before building it, find out whether it fits Dart:
 
 - **Static resources** (`/**` from `lib/resources/static/`, Spring's
   `ResourceHttpRequestHandler`): embedded by the generator like the
@@ -249,7 +249,7 @@ gzip (`server.compression.enabled`). Left:
   `@Order` (`FilterRegistrationBean`).
 - **`spring.web.cors.*`** properties.
 - **Static files** from `lib/resources/static/` (Spring Boot's
-  `classpath:static`), embedded by the generator like the config files.
+  `resources:static`), embedded by the generator like the config files.
   `ETag`, `Last-Modified` and `Cache-Control` from `spring.web.resources.*`.
 - **Proxies:** `server.forward-headers-strategy` (`X-Forwarded-*`,
   `Forwarded`) for the scheme, host and client address behind a proxy.

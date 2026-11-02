@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- `resources:` replaces `classpath:` (and `resources*:` replaces `classpath*:`) everywhere a location is read: `ResourceLoader`, `ResourcePatternResolver`, `spring.config.import`, `spring.config.location`, `@PropertySource`, `@Value`, `BeanModule`. The default config locations are `optional:resources:/;optional:resources:/config/`. `classpath:` still works in 0.6.2 and logs one warning per location (`'classpath:x' uses the prefix classpath:, which is now resources: (classpath: is refused in the next minor release)`); the next minor release refuses it. New: `ClasspathResources.migrate` / `migrateOptional`.
+
 ## 0.6.1
 
 ### Changes

@@ -119,7 +119,7 @@ void main() {
   test('other locations are not resolved', () {
     final resolver = AssetProtocolResolver(bundle: _Bundle({}));
     expect(
-      resolver.resolve('classpath:a.txt', DefaultResourceLoader()),
+      resolver.resolve('resources:a.txt', DefaultResourceLoader()),
       isNull,
     );
   });

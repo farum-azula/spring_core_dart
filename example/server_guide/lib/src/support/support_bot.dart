@@ -6,7 +6,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 @Component()
 @ConditionalOnProperty('neon.support.bot.enabled', havingValue: 'true')
-@PropertySource(['classpath:support/bot.properties'])
+@PropertySource(['resources:support/bot.properties'])
 class SupportBot {
   SupportBot(this._environment, this._messages, this._shop);
 

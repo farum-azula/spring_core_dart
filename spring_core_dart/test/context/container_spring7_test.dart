@@ -1012,7 +1012,7 @@ void main() {
                   [configClass('selectedConfig')],
                   propertySources: const [
                     PropertySourceDeclaration([
-                      'classpath:spring7/selected.properties',
+                      'resources:spring7/selected.properties',
                     ]),
                   ],
                   resources: const {
@@ -1197,7 +1197,7 @@ void main() {
           [config('Settings', skipped)],
           propertySources: [
             PropertySourceDeclaration(const [
-              'classpath:spring7/settings.properties',
+              'resources:spring7/settings.properties',
             ], conditions: skipped),
           ],
           resources: const {

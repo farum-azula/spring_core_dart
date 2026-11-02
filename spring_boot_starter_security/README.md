@@ -673,7 +673,7 @@ key id); the **team id**.
   request from the `client-secret-jwt.*` properties (one hour by default,
   `lifetime`; cached until a tenth of it is left); the key is read at the
   first token request, from `private-key-location` (`file:`,
-  `classpath:`) or `private-key` (the PEM itself, from an environment
+  `resources:`) or `private-key` (the PEM itself, from an environment
   variable), and is never logged or shown.
 - **form post and the cookie:** see [above](#the-response-as-a-form-post-response_modeform_post).
 - **Name and e-mail come once**, on the first login, in the posted `user`

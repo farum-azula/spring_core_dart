@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:neon_books_app/spring_keys.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
@@ -55,17 +56,17 @@ class _BookPageState extends SpringState<BookPage, BookPageBeans> {
       basket,
     ) = beans;
     final messenger = ScaffoldMessenger.of(context);
-    final added = context.message('basket.added', args: [book.title]);
+    final added = context.messages.basket.added(book.title);
     await basket.add(book);
     messenger.showSnackBar(SnackBar(content: Text(added)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = SpringTheme.of(context);
+    final theme = context.theme;
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: Text(context.message('book.title'))),
+      appBar: AppBar(title: Text(context.messages.book.title)),
       body: FutureBuilder(
         future: _book,
         builder: (context, snapshot) {
@@ -79,26 +80,26 @@ class _BookPageState extends SpringState<BookPage, BookPageBeans> {
           if (book == null) {
             return Center(
               child: Text(
-                context.message('book.notFound', args: [widget.isbn]),
+                context.messages.book.notFound(widget.isbn),
               ),
             );
           }
           return ListView(
-            padding: EdgeInsets.all(theme.space('m')),
+            padding: EdgeInsets.all(theme.spacing.m),
             children: [
               Center(child: _Cover(_cover)),
-              SizedBox(height: theme.space('m')),
+              SizedBox(height: theme.spacing.m),
               Text(book.title, style: text.headlineMedium),
               Text(book.author, style: text.titleMedium),
-              SizedBox(height: theme.space('s')),
-              Text('ISBN ${book.isbn}', style: theme.textStyle('code')),
+              SizedBox(height: theme.spacing.s),
+              Text('ISBN ${book.isbn}', style: theme.typography.code),
               Text(price(book.price), style: text.titleLarge),
               _Stock(book),
-              SizedBox(height: theme.space('m')),
+              SizedBox(height: theme.spacing.m),
               FilledButton.icon(
                 onPressed: () => _add(book),
                 icon: const Icon(Icons.add_shopping_cart),
-                label: Text(context.message('basket.add')),
+                label: Text(context.messages.basket.add),
               ),
             ],
           );
@@ -144,8 +145,8 @@ class _Stock extends SpringStatelessWidget<(LiveStock,)> {
     final available = stock.available[book.isbn] ?? book.available;
     return Text(
       available > 0
-          ? context.message('book.inStock', args: [available])
-          : context.message('book.soldOut'),
+          ? context.messages.book.inStock(available)
+          : context.messages.book.soldOut,
     );
   }
 }

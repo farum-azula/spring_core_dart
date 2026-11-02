@@ -169,7 +169,7 @@ class ModuleEmitter {
   /// or `application`), [variableName] the generated getter (`$` +
   /// [moduleName]), and [scannedDirectory] only appears in the getter's doc
   /// comment. [extra] declarations are appended after the getter, and
-  /// [resources] are embedded as `classpath:` files.
+  /// [resources] are embedded as `resources:` files.
   ///
   /// Throws `InvalidGenerationSource` when a type, constant or function
   /// cannot be referenced from [output] (a private constant, or a file of

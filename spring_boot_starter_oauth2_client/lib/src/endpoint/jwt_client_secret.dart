@@ -224,7 +224,7 @@ final class JwtClientSecret {
 /// The keys are read at the first token request of their registration,
 /// not at startup, from `private-key` (the PEM itself, from an
 /// environment variable) or `private-key-location` (`file:`,
-/// `classpath:`). A key that cannot be read or is no P-256 key fails
+/// `resources:`). A key that cannot be read or is no P-256 key fails
 /// that request (`invalid_client`), never with the key in the message.
 ///
 /// | Property (`spring.security.oauth2.client.registration.<id>.client-secret-jwt.`) | Meaning |

@@ -161,8 +161,8 @@ final class TestDatabase implements ApplicationContextInitializer {
     ]) {
       final locations = configured.isEmpty
           ? [
-              'optional:classpath:$kind.sql',
-              'optional:classpath:$kind-${init.platform}.sql',
+              'optional:resources:$kind.sql',
+              'optional:resources:$kind-${init.platform}.sql',
             ]
           : [
               for (final location in configured)

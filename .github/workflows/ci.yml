@@ -665,6 +665,13 @@ jobs:
         working-directory: spring_boot_starter_flutter
         run: flutter test
 
+      # FileTemplate's IndexedDB store in a real browser (dart:js_interop;
+      # the runner has Chrome). The run above skips it: @TestOn('browser').
+      - name: Tests of spring_boot_starter_flutter in Chrome
+        if: needs.changes.outputs.flutter_starter == 'true'
+        working-directory: spring_boot_starter_flutter
+        run: flutter test --platform chrome test/file_template_web_test.dart
+
       # The Dart side of the plugin (channels mocked) and the widgets; the
       # platform code runs in the Flutter guide's integration_test/ on a
       # device.

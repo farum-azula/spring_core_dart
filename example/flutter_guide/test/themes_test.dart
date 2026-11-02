@@ -3,6 +3,7 @@
 // one more is loaded at run time, the fonts come from an asset folder.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neon_books_app/spring_keys.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/settings/settings_page.dart';
 import 'package:neon_books_app/src/settings/theme_preview.dart';
@@ -65,6 +66,39 @@ void main() {
     final banner = SpringTheme.of(tester.element(find.byType(ThemeBanner)));
     expect(banner.name, 'sepia');
     expect(banner.tokenColor('brand.accent'), const Color(0xFF8B4513));
+    await stopApp(tester);
+  });
+
+  testWidgets('the generated keys read the active theme: switching changes '
+      'them', (tester) async {
+    final context = await startApp(tester, FakeServer());
+    final themes = context.getBean<SpringThemes>();
+    AppTheme theme() => tester.element(find.byType(HomePage)).theme;
+
+    expect(theme().tokens.brand.accent, const Color(0xFFFF40A0));
+    expect(theme().spacing.m, 16);
+    expect(
+      theme().colors.secondary,
+      themes.data('light').colorScheme.secondary,
+    );
+
+    context.getBean<ThemeSelection>().select(AppThemes.neon);
+    await tester.pumpAndSettle();
+
+    expect(theme().tokens.brand.accent, const Color(0xFF00E5FF));
+    expect(theme().colors.secondary, const Color(0xFF00B8D4));
+    expect(theme().tokens.brand.bannerHeight, 96);
+    await stopApp(tester);
+  });
+
+  testWidgets('the typed messages read the language of the app', (
+    tester,
+  ) async {
+    await startApp(tester, FakeServer());
+    final context = tester.element(find.byType(HomePage));
+    expect(context.messages.basket.empty, 'The basket is empty');
+    expect(context.messages.basket.ordered('A-1'), 'Order A-1 placed');
+    expect(context.messages.catalog.page(1, 3), 'Page 1 of 3');
     await stopApp(tester);
   });
 

@@ -77,11 +77,11 @@ abstract interface class EnvironmentAware implements Aware {
 }
 
 /// Implemented by an object that wants the context's resource loader (to
-/// read files such as `classpath:templates/mail.txt`) handed to it through
+/// read files such as `resources:templates/mail.txt`) handed to it through
 /// a method call.
 ///
 /// A bean can simply inject `ResourceLoader`, or a single file with
-/// `@Value('classpath:...') Resource`. This callback matters for an
+/// `@Value('resources:...') Resource`. This callback matters for an
 /// `ImportSelector` or a registrar, which are not injected. The loader is
 /// the context itself, so custom protocols added to it work.
 ///

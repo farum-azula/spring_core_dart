@@ -383,8 +383,8 @@ class SpringBuilder implements Builder {
   /// The files under `lib/resources/`, keyed by their path below that
   /// directory, to embed in the generated module.
   ///
-  /// They are the application's `classpath:` resources (config files,
-  /// templates, messages). Embedding them makes `classpath:` work on every
+  /// They are the application's `resources:` resources (config files,
+  /// templates, messages). Embedding them makes `resources:` work on every
   /// platform without declaring Flutter assets. Text files are kept as
   /// text, other files are base64-encoded, and files above
   /// [_maxEmbeddedBytes] are skipped, with a warning unless [warn] is

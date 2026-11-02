@@ -176,14 +176,14 @@ application: the generator embeds only `lib/resources/`.
 ```text
 lib/resources/application.properties          # the application's config
 test/resources/application-test.properties    # test-only settings
-test/resources/fixtures/books.json            # classpath:fixtures/books.json in tests
+test/resources/fixtures/books.json            # resources:fixtures/books.json in tests
 ```
 
 ```dart
 final app = springBootTest(
   springApplication,
   profiles: ['test'],                                    // + application-test.properties
-  propertyFiles: ['classpath:payments-test.properties'], // found in test/resources/ first
+  propertyFiles: ['resources:payments-test.properties'], // found in test/resources/ first
 );
 ```
 

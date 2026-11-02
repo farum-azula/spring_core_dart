@@ -8,14 +8,14 @@ import 'package:yaml/yaml.dart';
 /// `lib/resources/`:
 ///
 /// - **migrations**: `*.sql` directly in each location of
-///   `spring.sql.migration.locations` (default `classpath:db/migration`);
+///   `spring.sql.migration.locations` (default `resources:db/migration`);
 ///   the versioned ones (`V2__orders.sql`) by version number, then the
 ///   repeatable ones (`R__views.sql`) by name, as Flyway runs them; any
 ///   other file is not a migration. `{vendor}` in a location stands for the
 ///   directory of one database: when the files are in the directories of
 ///   several, each is an alternative schema ([variants]), as only one runs;
 /// - **init scripts**: the files of `spring.sql.init.schema-locations`
-///   (default `classpath:schema.sql` and `classpath:schema-all.sql`;
+///   (default `resources:schema.sql` and `resources:schema-all.sql`;
 ///   `@@platform@@` is `spring.sql.init.platform`, default `all`), where a
 ///   name may have a `*`.
 ///
@@ -25,7 +25,7 @@ import 'package:yaml/yaml.dart';
 /// what else may set them, so [reliable] is `false`, and the build does not
 /// look for misspelled names, when:
 ///
-/// - a location is not on the classpath (`file:...`) or has a
+/// - a location is not in `lib/resources/` (`file:...`) or has a
 ///   `${placeholder}`;
 /// - a profile file (`application-prod.yml`), a YAML document that is only
 ///   for some profiles (`spring.config.activate.on-profile`), a
@@ -47,14 +47,14 @@ final class SchemaSources {
     var reliable = read.reliable;
     final migrationLocations = _list(
       settings['spring.sql.migration.locations'],
-      const ['classpath:db/migration'],
+      const ['resources:db/migration'],
     );
     final platform = settings['spring.sql.init.platform'] ?? 'all';
     final schemaLocations = _list(
       settings['spring.sql.init.schema-locations'],
       const [
-        'optional:classpath:schema.sql',
-        'optional:classpath:schema-all.sql',
+        'optional:resources:schema.sql',
+        'optional:resources:schema-all.sql',
       ],
     );
 
@@ -68,7 +68,12 @@ final class SchemaSources {
         reliable = false;
         return null;
       }
-      for (final prefix in const ['classpath*:', 'classpath:']) {
+      for (final prefix in const [
+        'resources*:',
+        'resources:',
+        'classpath*:',
+        'classpath:',
+      ]) {
         if (text.startsWith(prefix)) {
           text = text.substring(prefix.length);
           return text.startsWith('/') ? text.substring(1) : text;

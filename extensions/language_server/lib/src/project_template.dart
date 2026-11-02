@@ -131,7 +131,7 @@ During development `dart run build_runner watch` regenerates on every save.
 | `bin/main.dart` | the entry point: `@SpringBootApplication` + `runApplication` |
 | `bin/main.spring.dart` | generated: every bean, the resources, the auto-configuration of the starters |
 | `lib/src/` | your beans: `@Service`, `@Component`, `@Configuration`, ... (found automatically) |
-| `lib/resources/` | the classpath: `application.properties`, `application-{profile}.properties`, templates, ... (embedded into the generated code) |
+| `lib/resources/` | the resources: `application.properties`, `application-{profile}.properties`, templates, ... (embedded into the generated code) |
 | `test/` | tests with `springBootTest` |
 | `test/resources/` | test-only config (`application-test.properties`) and data |
 ''',
@@ -205,7 +205,7 @@ class GreetingRunner implements ApplicationRunner {
 }
 ''',
   'lib/resources/application.properties': '''
-# The application's configuration. lib/resources/ is the classpath: the
+# The application's configuration. lib/resources/ is the resources: the
 # generator embeds these files, so they work in AOT executables too.
 spring.application.name=__NAME__
 

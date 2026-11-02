@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_components.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 
 /// What the properties set for one text style of a theme (font family,
@@ -148,87 +150,6 @@ const colorRoles = [
   'inversesurface', 'oninversesurface', 'inverseprimary', //
   'outline', 'outlinevariant', 'shadow', 'scrim',
 ];
-
-/// The components a theme can adjust under `components.*`, each with the
-/// properties it accepts; anything else fails the start.
-const componentProperties = <String, Set<String>>{
-  'appbar': {
-    'centertitle',
-    'elevation',
-    'scrolledunderelevation',
-    'background',
-    'foreground',
-    'titlestyle',
-    'toolbarheight',
-  },
-  'button': {'shape', 'padding', 'minheight', 'textstyle'},
-  'filledbutton': {
-    'shape',
-    'padding',
-    'minheight',
-    'textstyle',
-    'background',
-    'foreground',
-  },
-  'elevatedbutton': {
-    'shape',
-    'padding',
-    'minheight',
-    'textstyle',
-    'background',
-    'foreground',
-    'elevation',
-  },
-  'outlinedbutton': {
-    'shape',
-    'padding',
-    'minheight',
-    'textstyle',
-    'foreground',
-    'bordercolor',
-  },
-  'textbutton': {'shape', 'padding', 'minheight', 'textstyle', 'foreground'},
-  'card': {'shape', 'elevation', 'color', 'margin'},
-  'input': {'style', 'shape', 'filled', 'fillcolor', 'contentpadding'},
-  'chip': {'shape', 'background', 'labelstyle'},
-  'dialog': {'shape', 'background', 'elevation'},
-  'bottomsheet': {'shape', 'background', 'elevation', 'showdraghandle'},
-  'navigationbar': {
-    'height',
-    'background',
-    'indicatorcolor',
-    'indicatorshape',
-    'labelbehavior',
-    'elevation',
-  },
-  'snackbar': {'behavior', 'shape', 'background', 'elevation'},
-  'tooltip': {'shape', 'background', 'textstyle'},
-  'listtile': {'dense', 'shape', 'tilecolor'},
-  'divider': {'thickness', 'color', 'space'},
-  'floatingactionbutton': {'shape', 'elevation', 'background', 'foreground'},
-  'tabbar': {
-    'indicatorcolor',
-    'labelstyle',
-    'labelcolor',
-    'unselectedlabelcolor',
-  },
-  'popupmenu': {'shape', 'elevation', 'color'},
-};
-
-// The Material 3 shape token of each component, so a changed scale value
-// (`shape.medium: 20`) reaches the components that use it.
-const _componentShapeTokens = <String, String>{
-  'card': 'medium',
-  'dialog': 'extralarge',
-  'bottomsheet': 'extralarge',
-  'chip': 'small',
-  'input': 'extrasmall',
-  'floatingactionbutton': 'large',
-  'snackbar': 'extrasmall',
-  'tooltip': 'extrasmall',
-  'popupmenu': 'extrasmall',
-  'button': 'full',
-};
 
 /// One theme of the app as the `spring.flutter.theme.*` properties
 /// describe it: colors, typography, shapes, elevations, density, motion,
@@ -407,22 +328,13 @@ final class SpringThemeData {
       }
     }
     for (final component in p.children('components')) {
-      final allowed = componentProperties[component];
-      if (allowed == null) {
+      if (!themeComponents.containsKey(component)) {
         throw ThemePropertyException(
           p.propertyName('components.$component'),
           '',
-          'a component: ${componentProperties.keys.join(', ')}',
+          'a component: ${themeComponentNames.join(', ')}'
+              '${didYouMean(component, themeComponentNames)}',
         );
-      }
-      for (final property in p.children('components.$component')) {
-        if (!allowed.contains(property)) {
-          throw ThemePropertyException(
-            p.propertyName('components.$component.$property'),
-            p['components.$component.$property'] ?? '',
-            'a property of $component: ${allowed.join(', ')}',
-          );
-        }
       }
     }
     for (final group in p.children('tokens')) {
@@ -430,13 +342,10 @@ final class SpringThemeData {
         tokens['$group.$key'] = p['tokens.$group.$key'] ?? '';
       }
     }
-    cupertinoPrimaryColor = p.read(
-      'cupertino.primarycolor',
-      ThemeValues.color,
-      _colorFormats,
-    );
+    cupertinoPrimaryColor = _cupertinoReader().color('primaryColor');
     // Checks every component value now, not when a widget needs it.
     toMaterial();
+    toCupertino();
   }
 
   /// The top-level properties a theme may have. Any other key fails the
@@ -479,12 +388,6 @@ final class SpringThemeData {
             p.propertyName(key),
             p.values[key]!,
             'motion.page-transition, motion.duration-<name> or motion.easing-<name>',
-          );
-        case 'cupertino' when second != 'primarycolor':
-          throw ThemePropertyException(
-            p.propertyName(key),
-            p.values[key]!,
-            'cupertino.primary-color',
           );
         case 'typography'
             when segments.length == 3 &&
@@ -783,161 +686,43 @@ final class SpringThemeData {
 
   TextStyle? _style(String name) => textStyles[name]?.toStyle();
 
-  ThemeData _components(ThemeData theme) {
-    final c = _ComponentReader(this, theme);
-    final button = c.buttonStyle('button');
-    ButtonStyle? kind(String name) {
-      final own = c.buttonStyle(name);
-      return own == null ? button : (button?.merge(own) ?? own);
-    }
+  ThemeReader _componentReader(ThemeData theme, ThemeComponent component) =>
+      ThemeReader(
+        theme: this,
+        properties: _properties,
+        root: 'components.${ThemeValues.canonical(component.name)}',
+        label: component.name,
+        namedStyle: (name) => _styleIn(theme.textTheme, name),
+        shapeToken: component.shapeToken,
+        topShape: component.topShape,
+      );
 
-    return theme.copyWith(
-      appBarTheme: c.has('appbar')
-          ? AppBarTheme(
-              centerTitle: c.boolean('appbar', 'centertitle'),
-              elevation: c.elevation('appbar', 'elevation'),
-              scrolledUnderElevation: c.elevation(
-                'appbar',
-                'scrolledunderelevation',
-              ),
-              backgroundColor: c.color('appbar', 'background'),
-              foregroundColor: c.color('appbar', 'foreground'),
-              titleTextStyle: c.text('appbar', 'titlestyle'),
-              toolbarHeight: c.number('appbar', 'toolbarheight'),
-            )
-          : null,
-      filledButtonTheme: _orNull(
-        kind('filledbutton'),
-        (s) => FilledButtonThemeData(style: s),
-      ),
-      elevatedButtonTheme: _orNull(
-        kind('elevatedbutton'),
-        (s) => ElevatedButtonThemeData(style: s),
-      ),
-      outlinedButtonTheme: _orNull(
-        kind('outlinedbutton'),
-        (s) => OutlinedButtonThemeData(style: s),
-      ),
-      textButtonTheme: _orNull(
-        kind('textbutton'),
-        (s) => TextButtonThemeData(style: s),
-      ),
-      cardTheme: c.has('card')
-          ? CardThemeData(
-              shape: c.shape('card'),
-              elevation: c.elevation('card', 'elevation'),
-              color: c.color('card', 'color'),
-              margin: c.insets('card', 'margin'),
-            )
-          : null,
-      inputDecorationTheme: c.has('input') ? c.input() : null,
-      chipTheme: c.has('chip')
-          ? ChipThemeData(
-              shape: c.shape('chip'),
-              backgroundColor: c.color('chip', 'background'),
-              labelStyle: c.text('chip', 'labelstyle'),
-            )
-          : null,
-      dialogTheme: c.has('dialog')
-          ? DialogThemeData(
-              shape: c.shape('dialog'),
-              backgroundColor: c.color('dialog', 'background'),
-              elevation: c.elevation('dialog', 'elevation'),
-            )
-          : null,
-      bottomSheetTheme: c.has('bottomsheet')
-          ? BottomSheetThemeData(
-              shape: c.shape('bottomsheet', top: true),
-              backgroundColor: c.color('bottomsheet', 'background'),
-              elevation: c.elevation('bottomsheet', 'elevation'),
-              showDragHandle: c.boolean('bottomsheet', 'showdraghandle'),
-            )
-          : null,
-      navigationBarTheme: c.has('navigationbar')
-          ? NavigationBarThemeData(
-              height: c.number('navigationbar', 'height'),
-              backgroundColor: c.color('navigationbar', 'background'),
-              indicatorColor: c.color('navigationbar', 'indicatorcolor'),
-              indicatorShape: c.shapeOf('navigationbar', 'indicatorshape'),
-              elevation: c.elevation('navigationbar', 'elevation'),
-              labelBehavior: c.enumValue(
-                'navigationbar',
-                'labelbehavior',
-                NavigationDestinationLabelBehavior.values,
-              ),
-            )
-          : null,
-      snackBarTheme: c.has('snackbar')
-          ? SnackBarThemeData(
-              behavior: c.enumValue(
-                'snackbar',
-                'behavior',
-                SnackBarBehavior.values,
-              ),
-              shape: c.shape('snackbar'),
-              backgroundColor: c.color('snackbar', 'background'),
-              elevation: c.elevation('snackbar', 'elevation'),
-            )
-          : null,
-      tooltipTheme: c.has('tooltip')
-          ? TooltipThemeData(
-              decoration:
-                  c.shape('tooltip') == null &&
-                      c.color('tooltip', 'background') == null
-                  ? null
-                  : ShapeDecoration(
-                      shape:
-                          c.shape('tooltip') ??
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              shape('extrasmall'),
-                            ),
-                          ),
-                      color:
-                          c.color('tooltip', 'background') ??
-                          theme.colorScheme.inverseSurface,
-                    ),
-              textStyle: c.text('tooltip', 'textstyle'),
-            )
-          : null,
-      listTileTheme: c.has('listtile')
-          ? ListTileThemeData(
-              dense: c.boolean('listtile', 'dense'),
-              shape: c.shapeOf('listtile', 'shape'),
-              tileColor: c.color('listtile', 'tilecolor'),
-            )
-          : null,
-      dividerTheme: c.has('divider')
-          ? DividerThemeData(
-              thickness: c.number('divider', 'thickness'),
-              color: c.color('divider', 'color'),
-              space: c.number('divider', 'space'),
-            )
-          : null,
-      floatingActionButtonTheme: c.has('floatingactionbutton')
-          ? FloatingActionButtonThemeData(
-              shape: c.shape('floatingactionbutton'),
-              elevation: c.elevation('floatingactionbutton', 'elevation'),
-              backgroundColor: c.color('floatingactionbutton', 'background'),
-              foregroundColor: c.color('floatingactionbutton', 'foreground'),
-            )
-          : null,
-      tabBarTheme: c.has('tabbar')
-          ? TabBarThemeData(
-              indicatorColor: c.color('tabbar', 'indicatorcolor'),
-              labelStyle: c.text('tabbar', 'labelstyle'),
-              labelColor: c.color('tabbar', 'labelcolor'),
-              unselectedLabelColor: c.color('tabbar', 'unselectedlabelcolor'),
-            )
-          : null,
-      popupMenuTheme: c.has('popupmenu')
-          ? PopupMenuThemeData(
-              shape: c.shape('popupmenu'),
-              elevation: c.elevation('popupmenu', 'elevation'),
-              color: c.color('popupmenu', 'color'),
-            )
-          : null,
-    );
+  // Applies each component the properties mention (or that follows a
+  // shape token the theme changed), then checks its keys.
+  ThemeData _components(ThemeData theme) {
+    ThemeReader other(String name) =>
+        _componentReader(theme, themeComponents[ThemeValues.canonical(name)]!);
+    var result = theme;
+    for (final component in themeComponents.values) {
+      final reader = _componentReader(theme, component);
+      final themed =
+          reader.has || (component.base != null && other(component.base!).has);
+      if (!themed) {
+        continue;
+      }
+      try {
+        result = component.apply(result, reader, other);
+      } on AssertionError catch (e) {
+        // Flutter's own rule for a combination of values.
+        throw ThemePropertyException(
+          _properties.propertyName(reader.root),
+          '',
+          "values Flutter accepts together in ${component.name}: ${e.message ?? e}",
+        );
+      }
+      reader.checkUnknown();
+    }
+    return result;
   }
 
   // ---------------------------------------------------------------------
@@ -951,7 +736,26 @@ final class SpringThemeData {
   /// defaults otherwise.
   CupertinoThemeData toCupertino() => _cupertino ??= _buildCupertino();
 
-  CupertinoThemeData _buildCupertino() {
+  // The reader of `cupertino.*`; its text styles are Material's.
+  ThemeReader _cupertinoReader() => ThemeReader(
+    theme: this,
+    properties: _properties,
+    root: 'cupertino',
+    label: 'cupertino',
+    namedStyle: (name) => _styleIn(toMaterial().textTheme, name),
+  );
+
+  /// The `cupertino.*` properties the theme reads, for the reference
+  /// documentation and tests.
+  @visibleForTesting
+  List<ThemeProperty> get cupertinoProperties {
+    final r = _cupertinoReader();
+    _buildCupertino(r);
+    return r.asked;
+  }
+
+  CupertinoThemeData _buildCupertino([ThemeReader? reader]) {
+    final r = reader ?? _cupertinoReader();
     final defaults = const CupertinoThemeData().textTheme;
     TextStyle text(TextStyle base, String style) {
       final spec = textStyles[style];
@@ -966,40 +770,75 @@ final class SpringThemeData {
         fontFamilyFallback != null ||
         textStyles.isNotEmpty;
     final primary =
-        cupertinoPrimaryColor ??
+        r.color('primaryColor') ??
         colors['primary'] ??
         (seedColor == null ? null : colorScheme.primary);
-    return CupertinoThemeData(
+    final t = r.group('textTheme');
+    // The style written under `text-theme`, over the one made from the
+    // typography, over iOS's own.
+    TextStyle style(String key, TextStyle base, String? from) {
+      final own = t.text(key, base: base);
+      return own ?? (typography && from != null ? text(base, from) : base);
+    }
+
+    final textTheme = CupertinoTextThemeData(
+      primaryColor:
+          t.color('primaryColor') ?? primary ?? CupertinoColors.systemBlue,
+      textStyle: style('textStyle', defaults.textStyle, 'bodylarge'),
+      actionTextStyle: style(
+        'actionTextStyle',
+        defaults.actionTextStyle,
+        'labellarge',
+      ),
+      tabLabelTextStyle: style(
+        'tabLabelTextStyle',
+        defaults.tabLabelTextStyle,
+        'labelsmall',
+      ),
+      navTitleTextStyle: style(
+        'navTitleTextStyle',
+        defaults.navTitleTextStyle,
+        'titlelarge',
+      ),
+      navLargeTitleTextStyle: style(
+        'navLargeTitleTextStyle',
+        defaults.navLargeTitleTextStyle,
+        'displaysmall',
+      ),
+      navActionTextStyle: style(
+        'navActionTextStyle',
+        defaults.navActionTextStyle,
+        'labellarge',
+      ),
+      pickerTextStyle: style(
+        'pickerTextStyle',
+        defaults.pickerTextStyle,
+        'bodylarge',
+      ),
+      dateTimePickerTextStyle: style(
+        'dateTimePickerTextStyle',
+        defaults.dateTimePickerTextStyle,
+        'bodylarge',
+      ),
+    );
+    final result = CupertinoThemeData(
       brightness: brightness,
       primaryColor: primary,
-      scaffoldBackgroundColor: colors['surface'],
-      barBackgroundColor: _ComponentReader(
-        this,
-        null,
-      ).color('appbar', 'background'),
-      textTheme: typography
-          ? CupertinoTextThemeData(
-              primaryColor: primary ?? CupertinoColors.systemBlue,
-              textStyle: text(defaults.textStyle, 'bodylarge'),
-              actionTextStyle: text(defaults.actionTextStyle, 'labellarge'),
-              tabLabelTextStyle: text(defaults.tabLabelTextStyle, 'labelsmall'),
-              navTitleTextStyle: text(defaults.navTitleTextStyle, 'titlelarge'),
-              navLargeTitleTextStyle: text(
-                defaults.navLargeTitleTextStyle,
-                'displaysmall',
-              ),
-              navActionTextStyle: text(
-                defaults.navActionTextStyle,
-                'labellarge',
-              ),
-              pickerTextStyle: text(defaults.pickerTextStyle, 'bodylarge'),
-              dateTimePickerTextStyle: text(
-                defaults.dateTimePickerTextStyle,
-                'bodylarge',
-              ),
-            )
-          : null,
+      primaryContrastingColor: r.color('primaryContrastingColor'),
+      scaffoldBackgroundColor:
+          r.color('scaffoldBackgroundColor') ?? colors['surface'],
+      barBackgroundColor:
+          r.color('barBackgroundColor') ??
+          _componentReader(
+            toMaterial(),
+            themeComponents['appbar']!,
+          ).color('backgroundColor'),
+      selectionHandleColor: r.color('selectionHandleColor'),
+      applyThemeToAll: r.flag('applyThemeToAll'),
+      textTheme: typography || t.has ? textTheme : null,
     );
+    r.checkUnknown();
+    return result;
   }
 
   /// The color the OS uses for the app (in the task switcher): the
@@ -1185,243 +1024,6 @@ final class SpringThemeExtension extends ThemeExtension<SpringThemeExtension> {
   SpringThemeExtension lerp(SpringThemeExtension? other, double t) =>
       t < 0.5 || other == null ? this : other;
 }
-
-// Reads `components.<component>.<property>` values: references to the
-// theme's tokens (`surface`, `title-large`, `medium`, `level2`) or
-// literal values.
-final class _ComponentReader {
-  _ComponentReader(this.theme, this.material);
-
-  final SpringThemeData theme;
-  final ThemeData? material;
-
-  ThemeProperties get _p => theme._properties;
-
-  String? _raw(String component, String property) =>
-      _p['components.$component.$property'];
-
-  // A component is themed when it has properties or uses a shape token
-  // the theme changed.
-  bool has(String component) =>
-      _p.children('components.$component').isNotEmpty ||
-      theme.shapes.containsKey(_componentShapeTokens[component]);
-
-  Color? color(String component, String property) {
-    final raw = _raw(component, property);
-    if (raw == null) {
-      return null;
-    }
-    return theme.role(raw) ??
-        ThemeValues.color(raw) ??
-        (throw ThemePropertyException(
-          _p.propertyName('components.$component.$property'),
-          raw,
-          'a color role (surface, primary, ...) or a color',
-        ));
-  }
-
-  TextStyle? text(String component, String property) {
-    final raw = _raw(component, property);
-    if (raw == null) {
-      return null;
-    }
-    final key = ThemeValues.canonical(raw);
-    if (!textStyleNames.contains(key) && key != 'code') {
-      throw ThemePropertyException(
-        _p.propertyName('components.$component.$property'),
-        raw,
-        'a text style: ${textStyleNames.join(', ')}, code',
-      );
-    }
-    return theme._styleIn(material!.textTheme, key);
-  }
-
-  double? number(String component, String property) => _p.read(
-    'components.$component.$property',
-    ThemeValues.number,
-    'a number',
-  );
-
-  bool? boolean(String component, String property) => _p.read(
-    'components.$component.$property',
-    ThemeValues.boolean,
-    'true or false',
-  );
-
-  T? enumValue<T extends Enum>(
-    String component,
-    String property,
-    List<T> values,
-  ) => _p.read(
-    'components.$component.$property',
-    (v) => ThemeValues.enumValue(values, v),
-    values.map((v) => v.name).join(', '),
-  );
-
-  double? elevation(String component, String property) {
-    final raw = _raw(component, property);
-    if (raw == null) {
-      return null;
-    }
-    final level = ThemeValues.canonical(raw);
-    if (m3Elevations.containsKey(level)) {
-      return theme.elevation(level);
-    }
-    return ThemeValues.number(raw) ??
-        (throw ThemePropertyException(
-          _p.propertyName('components.$component.$property'),
-          raw,
-          'level0 … level5 or a number',
-        ));
-  }
-
-  EdgeInsets? insets(String component, String property) {
-    final raw = _raw(component, property);
-    if (raw == null) {
-      return null;
-    }
-    final parts = [for (final part in raw.split(',')) ThemeValues.number(part)];
-    if (parts.contains(null) ||
-        parts.isEmpty ||
-        parts.length > 4 ||
-        parts.length == 3) {
-      throw ThemePropertyException(
-        _p.propertyName('components.$component.$property'),
-        raw,
-        "'all', 'horizontal, vertical' or 'left, top, right, bottom'",
-      );
-    }
-    return switch (parts) {
-      [final all] => EdgeInsets.all(all!),
-      [final h, final v] => EdgeInsets.symmetric(horizontal: h!, vertical: v!),
-      [final l, final t, final r, final b] => EdgeInsets.fromLTRB(
-        l!,
-        t!,
-        r!,
-        b!,
-      ),
-      _ => null,
-    };
-  }
-
-  // The component's shape: its `shape` property, else its Material 3 token
-  // when the theme changed that token.
-  OutlinedBorder? shape(String component, {bool top = false}) {
-    final explicit = shapeOf(component, 'shape', top: top);
-    if (explicit != null) {
-      return explicit;
-    }
-    final token = _componentShapeTokens[component];
-    if (token != null && theme.shapes.containsKey(token)) {
-      return _border(theme.shape(token), top: top);
-    }
-    return null;
-  }
-
-  OutlinedBorder? shapeOf(
-    String component,
-    String property, {
-    bool top = false,
-  }) {
-    final raw = _raw(component, property);
-    if (raw == null) {
-      return null;
-    }
-    final token = ThemeValues.canonical(raw);
-    final radius = m3ShapeScale.containsKey(token)
-        ? theme.shape(token)
-        : ThemeValues.number(raw) ??
-              (throw ThemePropertyException(
-                _p.propertyName('components.$component.$property'),
-                raw,
-                'a shape token (${m3ShapeScale.keys.join(', ')}) or a radius',
-              ));
-    return _border(radius, top: top);
-  }
-
-  static OutlinedBorder _border(double radius, {bool top = false}) {
-    if (radius.isInfinite) {
-      return const StadiumBorder();
-    }
-    final corner = Radius.circular(radius);
-    return RoundedRectangleBorder(
-      borderRadius: top
-          ? BorderRadius.vertical(top: corner)
-          : BorderRadius.all(corner),
-    );
-  }
-
-  ButtonStyle? buttonStyle(String component) {
-    if (!has(component)) {
-      return null;
-    }
-    final padding = insets(component, 'padding');
-    final minHeight = number(component, 'minheight');
-    final background = color(component, 'background');
-    final foreground = color(component, 'foreground');
-    final border = color(component, 'bordercolor');
-    final level = elevation(component, 'elevation');
-    final textStyle = text(component, 'textstyle');
-    final shape = this.shape(component);
-    return ButtonStyle(
-      shape: shape == null ? null : WidgetStatePropertyAll(shape),
-      padding: padding == null ? null : WidgetStatePropertyAll(padding),
-      minimumSize: minHeight == null
-          ? null
-          : WidgetStatePropertyAll(Size(0, minHeight)),
-      backgroundColor: background == null
-          ? null
-          : WidgetStatePropertyAll(background),
-      foregroundColor: foreground == null
-          ? null
-          : WidgetStatePropertyAll(foreground),
-      side: border == null
-          ? null
-          : WidgetStatePropertyAll(BorderSide(color: border)),
-      elevation: level == null ? null : WidgetStatePropertyAll(level),
-      textStyle: textStyle == null ? null : WidgetStatePropertyAll(textStyle),
-    );
-  }
-
-  InputDecorationThemeData input() {
-    final style = _raw('input', 'style');
-    final kind = style == null ? null : ThemeValues.canonical(style);
-    if (kind != null && !{'outline', 'underline', 'filled'}.contains(kind)) {
-      throw ThemePropertyException(
-        _p.propertyName('components.input.style'),
-        style!,
-        'outline, underline or filled',
-      );
-    }
-    final radius = shape('input') is RoundedRectangleBorder
-        ? (shape('input')! as RoundedRectangleBorder).borderRadius
-              as BorderRadius
-        : shape('input') is StadiumBorder
-        ? BorderRadius.circular(999)
-        : BorderRadius.circular(theme.shape('extrasmall'));
-    final border = switch (kind) {
-      'outline' => OutlineInputBorder(borderRadius: radius),
-      'underline' || 'filled' => UnderlineInputBorder(
-        borderRadius: kind == 'filled'
-            ? BorderRadius.vertical(top: radius.topLeft)
-            : BorderRadius.zero,
-      ),
-      _ =>
-        shape('input') == null
-            ? null
-            : OutlineInputBorder(borderRadius: radius),
-    };
-    return InputDecorationThemeData(
-      border: border,
-      filled: kind == 'filled' || (boolean('input', 'filled') ?? false),
-      fillColor: color('input', 'fillcolor'),
-      contentPadding: insets('input', 'contentpadding'),
-    );
-  }
-}
-
-R? _orNull<T, R>(T? value, R Function(T value) make) =>
-    value == null ? null : make(value);
 
 // `motion.page-transition: platform`: Flutter's own per platform.
 final class _Platform extends PageTransitionsBuilder {

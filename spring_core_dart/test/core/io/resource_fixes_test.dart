@@ -44,22 +44,22 @@ void main() {
         resource.readAsStringSync(),
     ];
 
-    test('classpath: searches the first root with the base directory', () {
-      expect(contents('classpath:i18n/*.properties'), ['a=2']);
-      expect(contents('classpath:other/*.properties'), ['c=2']);
-      expect(contents('classpath:/i18n/**/*.properties'), ['a=2']);
+    test('resources: searches the first root with the base directory', () {
+      expect(contents('resources:i18n/*.properties'), ['a=2']);
+      expect(contents('resources:other/*.properties'), ['c=2']);
+      expect(contents('resources:/i18n/**/*.properties'), ['a=2']);
     });
 
-    test('classpath*: searches every root, embedded resources too', () {
-      expect(contents('classpath*:i18n/**/*.properties'), [
+    test('resources*: searches every root, embedded resources too', () {
+      expect(contents('resources*:i18n/**/*.properties'), [
         'a=2',
         'a=1',
         'b=1',
         'e=1',
       ]);
-      expect(contents('classpath*:i18n/a.properties'), ['a=2', 'a=1']);
-      expect(contents('classpath*:/i18n/embedded.properties'), ['e=1']);
-      expect(contents('classpath*:i18n/none.properties'), isEmpty);
+      expect(contents('resources*:i18n/a.properties'), ['a=2', 'a=1']);
+      expect(contents('resources*:/i18n/embedded.properties'), ['e=1']);
+      expect(contents('resources*:i18n/none.properties'), isEmpty);
     });
   });
 

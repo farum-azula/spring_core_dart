@@ -770,7 +770,7 @@ group by a.id, a.name;
           'lib/resources/sql/extra.sql':
               'create table tags (id int, label text);',
           'lib/resources/application.properties':
-              'spring.sql.init.schema-locations=classpath:sql/extra.sql\n',
+              'spring.sql.init.schema-locations=resources:sql/extra.sql\n',
         };
         final message = await _errors(
           _repository('''
@@ -794,7 +794,7 @@ group by a.id, a.name;
     test('the migrations of several databases are alternatives', () async {
       const files = {
         'lib/resources/application.properties':
-            'spring.sql.migration.locations=classpath:db/{vendor}\n',
+            'spring.sql.migration.locations=resources:db/{vendor}\n',
         'lib/resources/db/sqlite/V1__notes.sql':
             'create table notes (id int, body text);',
         'lib/resources/db/postgres/V1__notes.sql':
@@ -827,7 +827,7 @@ group by a.id, a.name;
   Future<List<Map<String, Object?>>> inSettings(String a);
 ''';
         final yaml = {
-          'lib/resources/application.yml': 'spring:\n  sql:\n    init:\n      schema-locations: classpath:sql/extra.sql\n',
+          'lib/resources/application.yml': 'spring:\n  sql:\n    init:\n      schema-locations: resources:sql/extra.sql\n',
           'lib/resources/sql/extra.sql':
               'create table tags (id int, label text);',
         };
@@ -841,7 +841,7 @@ group by a.id, a.name;
           files: {
             ...yaml,
             'lib/resources/application-prod.yml':
-                'spring.sql.init.schema-locations: classpath:sql/prod.sql\n',
+                'spring.sql.init.schema-locations: resources:sql/prod.sql\n',
           },
         );
       },

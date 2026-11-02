@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neon_books_app/spring_keys.dart';
 import 'package:neon_books_app/src/account/login_page.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/app/messages.dart';
@@ -27,9 +28,9 @@ class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
       orders,
     ) = beans;
     final items = basket.items;
-    final space = SpringTheme.of(context).space('m');
+    final space = context.theme.spacing.m;
     if (items.isEmpty) {
-      return Center(child: Text(context.message('basket.empty')));
+      return Center(child: Text(context.messages.basket.empty));
     }
     return ListView(
       padding: EdgeInsets.all(space),
@@ -44,13 +45,13 @@ class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
                 IconButton(
                   onPressed: () =>
                       basket.setQuantity(item.isbn, item.quantity - 1),
-                  tooltip: context.message('basket.less'),
+                  tooltip: context.messages.basket.less,
                   icon: const Icon(Icons.remove),
                 ),
                 IconButton(
                   onPressed: () =>
                       basket.setQuantity(item.isbn, item.quantity + 1),
-                  tooltip: context.message('basket.more'),
+                  tooltip: context.messages.basket.more,
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -58,7 +59,7 @@ class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
           ),
         const Divider(),
         ListTile(
-          title: Text(context.message('basket.total')),
+          title: Text(context.messages.basket.total),
           trailing: Text(
             price(basket.total),
             style: Theme.of(context).textTheme.titleLarge,
@@ -69,13 +70,13 @@ class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
           FilledButton.icon(
             onPressed: () => _order(context, orders),
             icon: const Icon(Icons.shopping_cart_checkout),
-            label: Text(context.message('basket.order')),
+            label: Text(context.messages.basket.order),
           )
         else
           OutlinedButton.icon(
             onPressed: () => LoginPage.open(context),
             icon: const Icon(Icons.login),
-            label: Text(context.message('basket.loginToOrder')),
+            label: Text(context.messages.basket.loginToOrder),
           ),
       ],
     );
@@ -86,9 +87,7 @@ class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
     String text;
     try {
       final order = await orders.placeOrder();
-      text = context.mounted
-          ? context.message('basket.ordered', args: [order.id])
-          : '';
+      text = context.mounted ? context.messages.basket.ordered(order.id) : '';
     } on FeignException catch (error) {
       text = context.mounted ? errorMessage(context, error) : '';
     }

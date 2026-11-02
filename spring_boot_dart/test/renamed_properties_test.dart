@@ -227,7 +227,7 @@ void main() {
             'server.context-path': '/shop',
             'server.session.cookie.same-site': 'lax',
             'logging.file.rolling-policy.max-file-size': '10MB',
-            'spring.sql.migration.locations': 'classpath:db/migration',
+            'spring.sql.migration.locations': 'resources:db/migration',
           },
         ),
         isNull,

@@ -111,10 +111,18 @@ final class ThemeConfig {
     }
     _merge(result, {
       for (final MapEntry(:key, :value) in own.entries)
-        if (key != 'extends') key: value,
+        if (!_notThemeKeys.contains(key)) key: value,
     });
     return result;
   }
+
+  // Keys of a theme that are about where it comes from, not its look.
+  static const _notThemeKeys = {
+    'extends',
+    'source',
+    'sourcesha256',
+    'refresh',
+  };
 
   static String _canonicalPath(Iterable<String> segments) =>
       segments.map(ThemeValues.canonical).join('.');

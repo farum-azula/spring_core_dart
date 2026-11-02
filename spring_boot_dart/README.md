@@ -181,7 +181,7 @@ The code is published as an `ExitCodeEvent` and returned by
 ## Resources (`lib/resources/` = the classpath)
 
 Configuration files, message bundles and templates go into
-`lib/resources/`, which plays the role of Java's classpath:
+`lib/resources/`, which plays the role of Java's resources:
 
 ```
 lib/resources/
@@ -192,7 +192,7 @@ lib/resources/
 ```
 
 The generator embeds these files into the generated code, so
-`classpath:` works the same with `dart run`, in AOT executables, in
+`resources:` works the same with `dart run`, in AOT executables, in
 Flutter and on the web, with no asset declarations in `pubspec.yaml`.
 Files above 1 MB are skipped with a warning: ship those as assets.
 
@@ -200,7 +200,7 @@ Files above 1 MB are skipped with a warning: ship those as assets.
 // The welcome mail's text, read from lib/resources/templates/welcome.txt.
 @Component()
 class Mailer {
-  Mailer(@Value('classpath:templates/welcome.txt') this.template);
+  Mailer(@Value('resources:templates/welcome.txt') this.template);
   final Resource template;
 }
 ```
@@ -345,7 +345,7 @@ above the OS environment, as in Boot. Handy in containers, where one
 variable is easier to pass than many.
 
 **The banner** is printed at start-up: `SpringBootBanner`, a
-`classpath:banner.txt` or `spring.banner.location`, or
+`resources:banner.txt` or `spring.banner.location`, or
 `SpringApplication(banner:)`. `spring.main.banner-mode` (or `bannerMode:`)
 is `console` (the default), `log` or `off`. With `runAsync`, a
 `banner.txt` that can only be read asynchronously, such as a Flutter
@@ -569,7 +569,7 @@ whose timeout per shutdown phase is
 `spring.lifecycle.timeout-per-shutdown-phase` (30 s by default, as in
 Boot's `LifecycleAutoConfiguration`; without it the context waits 10 s,
 Spring Framework's default), and `MessageSourceAutoConfiguration`. That one registers a `messageSource`
-for `classpath:<spring.messages.basename>` (`messages` by default) when
+for `resources:<spring.messages.basename>` (`messages` by default) when
 the context, not counting a parent, has no bean named `messageSource`.
 It reads `spring.messages.encoding`, `use-code-as-default-message`,
 `always-use-message-format`, `common-messages`,
@@ -985,7 +985,7 @@ starter does this for you and starts the application from a widget.
 | `spring.cloud.openfeign.*`, `spring.jackson.*`, `spring.servlet.multipart.*`, `server.servlet.*`, `logging.logback.rollingpolicy.*`, `spring.flyway.*` | `spring.feign.*`, `spring.json.*`, `spring.web.multipart.*`, `server.*`, `logging.file.rolling-policy.*`, `spring.sql.migration.*`; an old name stops the start and names the new one (`RenamedPropertiesEnvironmentPostProcessor`, in every `SpringApplication`) | Servlet, Jackson, Spring Cloud, Logback and Flyway mean nothing in Dart; `spring-boot-properties-migrator` only warns, and an ignored old name would silently leave a setting at its default |
 | Constructor binding passes `null` for a missing property without `@DefaultValue` | A missing non-nullable scalar stops the start; a missing collection is empty and a missing nested object is created with its own defaults (what Boot does with an empty `@DefaultValue`) | Dart's non-nullable types |
 | `@ConstructorBinding` picks one of several constructors | Constructor binding only for a class whose only public generative constructor has parameters | Not implemented yet |
-| `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1, or name one file's encoding where it is named, `classpath:legacy.properties[encoding=iso-8859-1]`, as in Boot 4.1) | Dart files are UTF-8 |
+| `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1, or name one file's encoding where it is named, `resources:legacy.properties[encoding=iso-8859-1]`, as in Boot 4.1) | Dart files are UTF-8 |
 | YAML 1.1 (SnakeYAML) | YAML 1.2 (`package:yaml`): `on`, `off`, `yes`, `no` stay strings (converting them to `bool` still works), `0777` is 777 | The Dart team's YAML parser |
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
 | `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |

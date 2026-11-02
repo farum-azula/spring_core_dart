@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The banner (`resources:banner.txt`) and the message bundles (`spring.messages.basename`) are looked up with the `resources:` prefix; `classpath:` still works with a warning (see `spring_core_dart`).
+
 ## 0.6.1
 
 - No changes of its own; released with the family version 0.6.1.

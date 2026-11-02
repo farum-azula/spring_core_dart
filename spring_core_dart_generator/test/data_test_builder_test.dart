@@ -176,7 +176,7 @@ class SliceTest {
   replaceDatabase: false,
 )
 @ActiveProfiles(['test'])
-@TestPropertySource(properties: {'c': 3}, locations: ['classpath:x.properties'])
+@TestPropertySource(properties: {'c': 3}, locations: ['resources:x.properties'])
 class ShopTest {
   @DynamicPropertySource()
   static void props(DynamicPropertyRegistry registry) {}
@@ -202,7 +202,7 @@ class ShopTest {
       source,
       _has("properties: {...slice.properties, ...{'b': 2}, ...{'c': 3}},"),
     );
-    expect(source, _has("propertyFiles: ['classpath:x.properties'],"));
+    expect(source, _has("propertyFiles: ['resources:x.properties'],"));
     expect(source, _has("resourceDirectories: ['test/data'],"));
     expect(source, _has("profiles: ['test'],"));
     expect(source, _has('dynamicProperties: ShopTest.props,'));

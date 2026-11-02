@@ -46,7 +46,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// `flutter: assets:` in `pubspec.yaml` and fails the build when the asset
 /// is not declared.
 ///
-/// Spring (Java): a `ClassPathResource` from `@Value("classpath:...")`.
+/// Spring (Java): a `ClassPathResource` from `@Value("resources:...")`.
 final class AssetResource extends AbstractResource {
   /// The asset [key] (`assets/intro.mp4`; a leading `/` is dropped) of
   /// [bundle] (`rootBundle` by default). [manifest], when given, makes

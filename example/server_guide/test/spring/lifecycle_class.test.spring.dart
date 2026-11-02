@@ -27,7 +27,7 @@ void runSpringTests() {
         ...{'test.inline': 'from @SpringBootTest'},
         ...{'test.source': 'from @TestPropertySource'},
       },
-      propertyFiles: ['classpath:lifecycle.properties'],
+      propertyFiles: ['resources:lifecycle.properties'],
       profiles: ['dev', 'test'],
       systemEnvironment: {'TEST_FROM_ENV': 'env'},
       dynamicProperties: LifecycleTest.server,

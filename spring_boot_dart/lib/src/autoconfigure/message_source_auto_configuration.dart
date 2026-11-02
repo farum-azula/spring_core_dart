@@ -69,7 +69,7 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
       final source = ReloadableResourceBundleMessageSource(
         basenames: [
           for (final basename in MessagesBundleCondition.basenames(environment))
-            'classpath:$basename',
+            'resources:$basename',
         ],
       );
       bool flag(String name, {required bool orElse}) =>
@@ -138,7 +138,7 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
 ];
 
 /// A condition that matches when the message bundle exists, that is when
-/// `classpath:<basename>.properties` exists for one of the configured
+/// `resources:<basename>.properties` exists for one of the configured
 /// basenames.
 ///
 /// It keeps the auto-configured `messageSource` out of applications that
@@ -183,7 +183,7 @@ class MessagesBundleCondition implements Condition {
   @override
   bool matches(ConditionContext context) => basenames(context.environment).any(
     (basename) => context.resourceLoader
-        .getResource('classpath:$basename.properties')
+        .getResource('resources:$basename.properties')
         .exists(),
   );
 }

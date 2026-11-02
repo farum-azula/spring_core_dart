@@ -56,8 +56,8 @@ The differences are listed where they apply and again at the
 
 An application keeps its settings in a file named `application.yml`,
 `application.yaml` or `application.properties` in `lib/resources/`. That
-folder is the application's *classpath*, the name Spring uses and the one
-behind every `classpath:` location on this page. For each active
+folder is what Spring calls the *classpath*, and the `resources:` prefix of
+every location on this page points into it. For each active
 [profile](#4-profiles), the file `application-{profile}.*` is read as well,
 and its values win over the plain file.
 
@@ -394,7 +394,7 @@ Spring reads them as ISO-8859-1 (see the
 [differences](#differences-from-spring-boot)); a file that is not valid
 UTF-8 fails the start with a `ConfigDataLoadException` naming it. A file
 in another encoding can say so where it is named, as in Spring Boot 4.1:
-`spring.config.import=classpath:legacy.properties[encoding=iso-8859-1]`
+`spring.config.import=resources:legacy.properties[encoding=iso-8859-1]`
 (see [Location syntax](#location-syntax)). When a key appears twice,
 the last value counts. Trailing spaces of a value are kept.
 
@@ -442,7 +442,7 @@ one entirely:
 
 | Group | Locations | What they are |
 |---|---|---|
-| 1 (packaged) | `classpath:/`, `classpath:/config/` | `lib/resources/` and `lib/resources/config/`, embedded by the generator |
+| 1 (packaged) | `resources:/`, `resources:/config/` | `lib/resources/` and `lib/resources/config/`, embedded by the generator |
 | 2 (next to the program) | `file:./`, `file:./config/`, `file:./config/*/` | Files in the working directory, for desktop and server apps |
 
 So `./application.properties` next to a server binary wins over the
@@ -470,7 +470,7 @@ cannot set them.
 
 ```bash
 # Packaged files, then /etc/shop/ (which wins).
-dart run bin/main.dart --spring.config.location=optional:classpath:/,file:/etc/shop/
+dart run bin/main.dart --spring.config.location=optional:resources:/,file:/etc/shop/
 # The usual locations, then one more file on top.
 dart run bin/main.dart --spring.config.additional-location=file:./override.yml
 ```
@@ -481,7 +481,7 @@ The same forms work in the keys above and in [imports](#5-imports).
 
 | Form | Meaning |
 |---|---|
-| `classpath:config/` | A directory of `lib/resources/`; every file name and extension in it is searched |
+| `resources:config/` | A directory of `lib/resources/`; every file name and extension in it is searched |
 | `file:./config/app.yml` | One file; the start fails when it is missing |
 | `optional:file:./local.yml` | One file that may be missing |
 | `file:./config/*/` | Each subdirectory, in alphabetical order; only for file locations, with one `*` as the last directory (`file:./config/*/app.yml` reads that file in each) |
@@ -511,7 +511,7 @@ always optional.
 As in Spring Boot, whether a location found anything is decided once the
 profile files are read, and its profile variants count:
 `file:./config/*/app.yml` with only `config/eu/app-dev.yml` loads that file
-when `dev` is active, and fails otherwise. A `classpath:` directory counts
+when `dev` is active, and fails otherwise. A `resources:` directory counts
 only when a file is found in it, as Boot cannot see classpath
 directories. A missing single file still fails at once, even when its
 profile variant exists.
@@ -725,7 +725,7 @@ Relative locations are relative to the importing file.
 spring:
   config:
     import:
-      - classpath:themes/ocean.yml
+      - resources:themes/ocean.yml
       - optional:file:./local.yml
       - configtree:/run/secrets/
 ```
@@ -733,7 +733,7 @@ spring:
 </td><td>
 
 ```properties
-spring.config.import=classpath:themes/ocean.yml,optional:file:./local.yml,configtree:/run/secrets/
+spring.config.import=resources:themes/ocean.yml,optional:file:./local.yml,configtree:/run/secrets/
 ```
 
 </td></tr>
@@ -986,7 +986,7 @@ highest:
      place (see [Imports](#5-imports));
    - `spring.config.import` given on the command line or in the
      environment, then `additional-location`, then the locations, with
-     `file:./` above `classpath:/`;
+     `file:./` above `resources:/`;
    - within a group, profile files above plain ones, the last active
      profile highest;
    - `.properties` above `.yml` above `.yaml`;
@@ -1382,7 +1382,7 @@ spring:
     register-shutdown-hook: true
     allow-bean-definition-overriding: false
   banner:
-    location: classpath:banner.txt
+    location: resources:banner.txt
   autoconfigure:
     exclude:
       - cacheAutoConfiguration
@@ -1398,7 +1398,7 @@ spring.main.log-startup-info=true
 spring.main.lazy-initialization=false
 spring.main.register-shutdown-hook=true
 spring.main.allow-bean-definition-overriding=false
-spring.banner.location=classpath:banner.txt
+spring.banner.location=resources:banner.txt
 spring.autoconfigure.exclude=cacheAutoConfiguration
 debug=false
 ```
@@ -1410,7 +1410,7 @@ debug=false
 |---|---|---|---|
 | `spring.application.name` | string | — | The application's name: the context's id, and the name in the startup lines (`application` when not set) |
 | `spring.main.banner-mode` | `console` / `log` / `off` | `console`, or `SpringApplication(bannerMode:)` | Where the startup banner goes: printed, logged, or nowhere |
-| `spring.banner.location` | location | `classpath:banner.txt` | The banner file. `${spring-boot.version}`, `${spring-boot.formatted-version}` and other `${...}` in it are replaced |
+| `spring.banner.location` | location | `resources:banner.txt` | The banner file. `${spring-boot.version}`, `${spring-boot.formatted-version}` and other `${...}` in it are replaced |
 | `spring.main.log-startup-info` | bool | `true` | Logs the "Starting …", active profiles and "Started … in N seconds" lines |
 | `spring.main.lazy-initialization` | bool | `false` | Creates every bean on first use instead of at the start: a faster start, but a broken bean fails later |
 | `spring.main.register-shutdown-hook` | bool | `false` (Spring Boot: `true`) | Closes the context on SIGINT or SIGTERM, so `@PreDestroy` methods run (VM only). Off by default because listening for signals keeps a Dart program alive |
@@ -1442,7 +1442,7 @@ spring:
     use-code-as-default-message: false
     always-use-message-format: false
     default-locale: en
-    common-messages: classpath:common.properties
+    common-messages: resources:common.properties
 ```
 
 </td><td>
@@ -1455,7 +1455,7 @@ spring.messages.fallback-to-system-locale=true
 spring.messages.use-code-as-default-message=false
 spring.messages.always-use-message-format=false
 spring.messages.default-locale=en
-spring.messages.common-messages=classpath:common.properties
+spring.messages.common-messages=resources:common.properties
 ```
 
 </td></tr>
@@ -2287,7 +2287,7 @@ spring.flutter.theme.themes.sepia.splash=none
 `active: system` shows `light` or `dark` following the device's mode;
 `system-light` and `system-dark` pick other themes for each mode. Many
 themes are easier to keep in one file each, imported with
-`spring.config.import: classpath:themes/ocean.yml, classpath:themes/sepia.yml`
+`spring.config.import: resources:themes/ocean.yml, resources:themes/sepia.yml`
 (see [a theme in its own file](#a-theme-in-its-own-file)).
 
 #### Step 6: your own theme properties (tokens), and reading them in Dart
@@ -2367,6 +2367,43 @@ extension BrandTheme on SpringThemeData {
 Outside the widget tree, in a service or a test, take a theme by name
 from the `SpringThemes` bean:
 `themes.data('sepia').tokenColor('brand.accent')`.
+
+##### Typed keys (generated)
+
+The string keys above fail at run time when a property is renamed. With the
+generator (`dart run build_runner build`) the Flutter app gets
+`lib/spring_keys.dart`, where `context.theme` has a getter for every key your
+properties declare under `spring.flutter.theme`, in any theme:
+
+```dart
+context.theme.colors.surfaceContainerLow;      // Color
+context.theme.spacing.gutter;                  // double
+context.theme.typography.titleLarge;           // TextStyle
+context.theme.tokens.brand.accent;             // Color (a #RRGGBB / 0x value)
+context.theme.tokens.brand.bannerHeight;       // double (a number)
+context.theme.tokens.brand.badgeText;          // String (anything else)
+selection.select(AppThemes.sepia);             // the ThemeSelection bean
+```
+
+The values are read from the theme shown now, when the getter is called, so
+a switched or reloaded theme gives its own value and the widget rebuilds.
+Rename `brand.accent` in the properties and `context.theme.tokens.brand.accent`
+no longer compiles. A token that is a color in one theme and a number in
+another fails the build, naming both properties.
+
+- Only what the properties declare is generated; the Material roles computed
+  from the seed stay in `Theme.of(context).colorScheme`. `typography` has
+  the 15 Material styles and `code` (a group such as `display` configures
+  several styles and is not a getter), `tokens` two levels
+  (`tokens.<group>.<key>`).
+- Names: `-` and `_` start a new word (`surface-container-low` is
+  `surfaceContainerLow`), the first letter is lower case, a leading digit gets
+  a `$` in front (`2xl` is `$2xl`), a Dart keyword a `$` behind
+  (`default` is `default$`). A name that cannot be made a Dart name, or two
+  keys that give one name, fail the build.
+- The string API stays for keys added at run time (a theme from a server).
+- The Spring theme is read by `context.theme`; Flutter's own
+  `Theme.of(context)` is untouched.
 
 #### Step 7: switching themes from Dart
 
@@ -2485,6 +2522,41 @@ testWidgets('the dark theme', (tester) async {
   expect(SpringTheme.of(tester.element(find.byType(HomePage))).name, 'dark');
 });
 ```
+
+### Messages in Flutter: typed access
+
+`context.message('basket.total', args: [total])` finds a misspelt key or a
+forgotten argument at run time. The generator reads the same message files
+(`lib/resources/messages.properties`, `messages_ja.properties`, ... or the
+bases of `spring.messages.basename`) and writes `context.messages` into
+`lib/spring_keys.dart`:
+
+```properties
+# messages.properties
+basket.total=Total: {0}
+basket.empty=Your basket is empty
+order.shipped=Order {0} shipped on {1,date,short}
+```
+
+```dart
+Text(context.messages.basket.total(sum));       // a method: {0} is a parameter
+Text(context.messages.basket.empty);            // a getter: no arguments
+Text(context.messages.order.shipped(id, date)); // Object? parameters, one per {n}
+```
+
+The text comes from the existing `MessageSource` in the current language, so
+`context.messages` rebuilds the widget when the language changes. The dots
+nest (`basket.total` is `messages.basket.total`), `-` and `_` start a new
+word as for theme keys.
+
+- A key missing in a language file, or only in one, is a build warning naming
+  the file.
+- The same key with a different number of arguments in two languages, a
+  malformed placeholder (`{0`), a key that is both a message and a prefix of
+  others (`basket` and `basket.total`) and a key that is no Dart name fail the
+  build.
+- `context.message('...')` stays for keys built at run time
+  (`'theme.${name}'`).
 
 ### Themes: every property
 
@@ -2637,34 +2709,186 @@ theme starts from the root, or from the theme it `extends`:
 | `motion.easing-<name>` | four numbers | `standard`: Material's | Curves for the app's animations |
 | `components.<component>.<property>` | see the next table | Material 3's | Adjusts one component |
 | `tokens.<group>.<key>` | any value | — | The app's own values, read with `tokenColor('brand.accent')`, `tokenNumber(...)` or `token(...)` |
-| `cupertino.primary-color` | color | `colors.primary`, else the seed, else iOS blue | The Cupertino theme's primary color |
+| `cupertino.<property>` | see the reference below | iOS's | The `CupertinoThemeData`: `primary-color` (default `colors.primary`, else the seed, else iOS blue), `primary-contrasting-color`, `scaffold-background-color`, `bar-background-color`, `selection-handle-color`, `apply-theme-to-all`, and `text-theme.*` (the text styles) |
 
-**Components.** The values refer to the theme's tokens: a color role or a
-color; a text style name or `code`; a shape token or a radius; an
-elevation level or a number. Insets are written `all`,
-`horizontal, vertical` or `left, top, right, bottom`.
+**Components.** `components.<component>.<property>` adjusts Flutter's own
+component themes (`ThemeData` and its 48 component themes, plus
+Cupertino); the app keeps using Flutter's widgets, and nothing is
+generated. A property is Flutter's own, in kebab case: `AppBarThemeData`'s
+`titleTextStyle` is `components.app-bar.title-text-style`. A key that is
+not a component, or not a property of it, fails the start naming the
+valid ones, with a "did you mean" for a typo (`components.chek-box`).
+The first components also keep their shorter keys (`background`,
+`foreground`, `title-style`), for example `app-bar.background`.
 
-| Component | Properties |
+The values by type:
+
+| Type | Written as |
 |---|---|
-| `app-bar` | `center-title`, `elevation`, `scrolled-under-elevation`, `background`, `foreground`, `title-style`, `toolbar-height` |
-| `button` (all four buttons) | `shape`, `padding`, `min-height`, `text-style` |
-| `filled-button` | `shape`, `padding`, `min-height`, `text-style`, `background`, `foreground` |
-| `elevated-button` | the same as `filled-button`, plus `elevation` |
-| `outlined-button` | `shape`, `padding`, `min-height`, `text-style`, `foreground`, `border-color` |
-| `text-button` | `shape`, `padding`, `min-height`, `text-style`, `foreground` |
-| `card` | `shape`, `elevation`, `color`, `margin` |
-| `input` | `style` (`outline`, `underline`, `filled`), `shape`, `filled`, `fill-color`, `content-padding` |
-| `chip` | `shape`, `background`, `label-style` |
-| `dialog` | `shape`, `background`, `elevation` |
-| `bottom-sheet` | `shape` (the top corners), `background`, `elevation`, `show-drag-handle` |
-| `navigation-bar` | `height`, `background`, `indicator-color`, `indicator-shape`, `label-behavior` (`alwaysShow`, `alwaysHide`, `onlyShowSelected`), `elevation` |
-| `snack-bar` | `behavior` (`fixed`, `floating`), `shape`, `background`, `elevation` |
-| `tooltip` | `shape`, `background`, `text-style` |
-| `list-tile` | `dense`, `shape`, `tile-color` |
-| `divider` | `thickness`, `color`, `space` |
-| `floating-action-button` | `shape`, `elevation`, `background`, `foreground` |
-| `tab-bar` | `indicator-color`, `label-style`, `label-color`, `unselected-label-color` |
-| `popup-menu` | `shape`, `elevation`, `color` |
+| **color** | a role (`primary`, `on-surface`, `surface-container-low`, ...), a `Colors` name (`grey.shade100`), or `#RGB`, `#RRGGBB`, `#AARRGGBB`; add an opacity with `@`: `primary@12%` or `primary@0.12` |
+| **number** | `12`, `1.5`, `infinity` |
+| **elevation** | `level0` … `level5`, or a number |
+| **true / false** | `true`, `false` |
+| **whole number** | `2` |
+| **duration** | `250ms`, `1s`, or plain milliseconds |
+| **choice** | the name of an enum value, as Flutter spells it or in kebab case: `always-show` is `alwaysShow` |
+| **insets** | `8` (all), `16, 8` (horizontal, vertical), `1, 2, 3, 4` (left, top, right, bottom), or a map of `all`, `horizontal`, `vertical`, `left`, `top`, `right`, `bottom` |
+| **size** | `48` (a square), `64, 48` (width, height), or a map of `width`, `height` |
+| **offset** | `x, y` |
+| **constraints** | a map of `min-width`, `max-width`, `min-height`, `max-height` |
+| **shape** | a shape token (`small`, `extra-large`, `full`, ...) or a radius, `stadium`, `circle`; or a map: `type` (`rounded`, `continuous`, `beveled`, `stadium`, `circle`), `radius`, and `side` |
+| **border side** | a color, `none`, or a map of `color`, `width`, `style` (`solid`, `none`), `stroke-align` (`inside`, `center`, `outside`) |
+| **text style** | one of the theme's styles (`display-large` … `label-small`, `code`), or a map of `style` (the base), `color`, `font-family`, `size`, `weight`, `height`, `letter-spacing`, `italic`, `decoration` (`none`, `underline`, `line-through`, `overline`) |
+| **icon theme** | a color, or a map of `color`, `size`, `fill`, `weight`, `grade`, `optical-size`, `opacity` |
+| **mouse cursor** | `basic`, `click`, `forbidden`, `text`, `grab`, `grabbing`, `move`, `wait`, `progress`, `help`, `precise`, `none`, `alias`, `copy`, `cell`, `no-drop`, `all-scroll`, `zoom-in`, `zoom-out`, `vertical-text`, `context-menu`, `resize-column`, `resize-row` |
+| **alignment** | `center`, `top-left`, `top-center`, `top-right`, `center-left`, `center-right`, `bottom-left`, `bottom-center`, `bottom-right`, or `x, y` from -1 to 1 |
+| **corner radius** | a shape token or a radius |
+| **visual density** | `adaptive`, `standard`, `comfortable`, `compact`, or `horizontal, vertical` |
+| **decoration** | a color, or a map of `color`, `radius`, `border` (a border side), `shape` (`rectangle`, `circle`) |
+| **input border** | `outline`, `underline`, `none`, or a map of `type`, `radius`, `side` |
+| **animation** | a map of `duration`, `reverse-duration` |
+
+**A value per state.** A property marked `*` below is a
+`WidgetStateProperty` in Flutter: it takes one value for every state, or a
+map with a value per state. A state without a value, and no `default`,
+keeps Flutter's own value. The states are `default`, `hovered`, `focused`,
+`pressed`, `dragged`, `selected`, `scrolled-under`, `disabled` and `error`.
+When a widget is in several at once, the strongest state that has a value
+wins, in this order: `disabled` > `error` > `pressed` > `dragged` >
+`hovered` > `focused` > `selected` > `scrolled-under` > `default`. A plain
+value next to the states is the `default`. A state's value is of the
+property's type, so a border side per state is a map of maps.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  flutter:
+    theme:
+      components:
+        filled-button:
+          background-color:
+            default: primary
+            hovered: primary@90%
+            pressed: tertiary
+            disabled: on-surface@12%
+          side:
+            default: none
+            focused: { color: secondary, width: 2 }
+          text-style: { style: label-large, weight: bold }
+        checkbox:
+          fill-color: { default: outline, selected: primary, error: error }
+        card: { shape: { type: continuous, radius: large } }
+        bottom-sheet: { constraints: { max-width: 640 } }
+      cupertino:
+        primary-color: secondary
+        scaffold-background-color: '#F2F2F7'
+        text-theme:
+          nav-title-text-style: { style: title-large, weight: 600 }
+```
+
+</td><td>
+
+```properties
+spring.flutter.theme.components.filled-button.background-color.default=primary
+spring.flutter.theme.components.filled-button.background-color.hovered=primary@90%
+spring.flutter.theme.components.filled-button.background-color.pressed=tertiary
+spring.flutter.theme.components.filled-button.background-color.disabled=on-surface@12%
+spring.flutter.theme.components.filled-button.side.default=none
+spring.flutter.theme.components.filled-button.side.focused.color=secondary
+spring.flutter.theme.components.filled-button.side.focused.width=2
+spring.flutter.theme.components.filled-button.text-style.style=label-large
+spring.flutter.theme.components.filled-button.text-style.weight=bold
+spring.flutter.theme.components.checkbox.fill-color.default=outline
+spring.flutter.theme.components.checkbox.fill-color.selected=primary
+spring.flutter.theme.components.checkbox.fill-color.error=error
+spring.flutter.theme.components.card.shape.type=continuous
+spring.flutter.theme.components.card.shape.radius=large
+spring.flutter.theme.components.bottom-sheet.constraints.max-width=640
+spring.flutter.theme.cupertino.primary-color=secondary
+spring.flutter.theme.cupertino.scaffold-background-color=#F2F2F7
+spring.flutter.theme.cupertino.text-theme.nav-title-text-style.style=title-large
+spring.flutter.theme.cupertino.text-theme.nav-title-text-style.weight=600
+```
+
+</td></tr>
+</table>
+
+The buttons (`elevated-button`, `filled-button`, `outlined-button`,
+`text-button`) start from `button`, which holds what they share; a value
+a button sets itself wins. They take every property of Flutter's
+`ButtonStyle`, plus `min-height` and `border-color`. `icon-button`,
+`segmented-button` and `menu-button` take the same, and do not start from
+`button`. `menu` and `menu-bar` take `MenuStyle`'s. `shape` follows the
+theme's shape scale when the scale changes (`shape.medium` reaches `card`).
+`date-picker`, `time-picker` and `dropdown-menu` hold nested groups
+(`input-decoration`, `cancel-button-style`, `confirm-button-style`,
+`menu-style`) with the keys of `input`, a button and `menu`. `cupertino` is
+read from its own root, `spring.flutter.theme.cupertino.*`, not below
+`components`; its text styles start from iOS's, or from the typography
+when the theme has one.
+
+Every component and property of the reference below is generated from the
+mapping the starter reads, and a test keeps it in step.
+
+<!-- theme-components:start -->
+
+| Component | Properties, by the type of their value |
+|---|---|
+| `app-bar` | **color** `background-color`, `foreground-color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`, `scrolled-under-elevation`<br>**shape** `shape`<br>**icon theme** `icon-theme`, `actions-icon-theme`<br>**true / false** `center-title`<br>**number** `title-spacing`, `leading-width`, `toolbar-height`<br>**text style** `toolbar-text-style`, `title-text-style`<br>**choice** `system-overlay-style` (light / dark)<br>**insets** `actions-padding` |
+| `badge` | **color** `background-color`, `text-color`<br>**number** `small-size`, `large-size`<br>**text style** `text-style`<br>**insets** `padding`<br>**alignment** `alignment`<br>**offset** `offset` |
+| `banner` | **color** `background-color`, `surface-tint-color`, `shadow-color`, `divider-color`<br>**text style** `content-text-style`<br>**elevation** `elevation`<br>**insets** `padding`, `leading-padding` |
+| `bottom-app-bar` | **color** `color`, `surface-tint-color`, `shadow-color`<br>**elevation** `elevation`<br>**number** `height`<br>**insets** `padding` |
+| `bottom-navigation-bar` | **color** `background-color`, `selected-item-color`, `unselected-item-color`<br>**elevation** `elevation`<br>**icon theme** `selected-icon-theme`, `unselected-icon-theme`<br>**text style** `selected-label-style`, `unselected-label-style`<br>**true / false** `show-selected-labels`, `show-unselected-labels`, `enable-feedback`<br>**choice** `type` (fixed / shifting), `landscape-layout` (spread / centered / linear)<br>**mouse cursor** `mouse-cursor`* |
+| `bottom-sheet` | **color** `background-color`, `surface-tint-color`, `modal-background-color`, `modal-barrier-color`, `shadow-color`, `drag-handle-color`<br>**elevation** `elevation`, `modal-elevation`<br>**shape** `shape`<br>**true / false** `show-drag-handle`<br>**size** `drag-handle-size`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**constraints** `constraints` |
+| `button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `elevated-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `filled-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `outlined-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `text-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `icon-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `segmented-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `menu-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| `toggle-buttons` | **text style** `text-style`<br>**constraints** `constraints`<br>**color** `color`, `selected-color`, `disabled-color`, `fill-color`, `focus-color`, `highlight-color`, `splash-color`, `hover-color`, `border-color`, `selected-border-color`, `disabled-border-color`<br>**number** `border-width`<br>**corner radius** `border-radius` |
+| `floating-action-button` | **color** `foreground-color`, `background-color`, `focus-color`, `hover-color`, `splash-color`<br>**elevation** `elevation`, `focus-elevation`, `hover-elevation`, `disabled-elevation`, `highlight-elevation`<br>**shape** `shape`<br>**true / false** `enable-feedback`<br>**number** `icon-size`, `extended-icon-label-spacing`<br>**constraints** `size-constraints`, `small-size-constraints`, `large-size-constraints`, `extended-size-constraints`<br>**insets** `extended-padding`<br>**text style** `extended-text-style`<br>**mouse cursor** `mouse-cursor`* |
+| `card` | **choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**color** `color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`<br>**insets** `margin`<br>**shape** `shape` |
+| `carousel-view` | **insets** `padding`<br>**color** `background-color`, `overlay-color`*<br>**elevation** `elevation`<br>**shape** `shape`<br>**choice** `item-clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer) |
+| `checkbox` | **mouse cursor** `mouse-cursor`*<br>**color** `fill-color`*, `check-color`*, `overlay-color`*<br>**number** `splash-radius`<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**visual density** `visual-density`<br>**shape** `shape`<br>**border side** `side` |
+| `chip` | **color** `color`*, `background-color`, `delete-icon-color`, `disabled-color`, `selected-color`, `secondary-selected-color`, `shadow-color`, `surface-tint-color`, `selected-shadow-color`, `checkmark-color`<br>**true / false** `show-checkmark`<br>**insets** `label-padding`, `padding`<br>**border side** `side`<br>**shape** `shape`<br>**text style** `label-style`, `secondary-label-style`<br>**elevation** `elevation`, `press-elevation`<br>**icon theme** `icon-theme`<br>**constraints** `avatar-box-constraints`, `delete-icon-box-constraints` |
+| `data-table` | **decoration** `decoration`<br>**color** `data-row-color`*, `heading-row-color`*<br>**number** `data-row-min-height`, `data-row-max-height`, `heading-row-height`, `horizontal-margin`, `column-spacing`, `divider-thickness`, `checkbox-horizontal-margin`<br>**text style** `data-text-style`, `heading-text-style`<br>**mouse cursor** `heading-cell-cursor`*, `data-row-cursor`*<br>**choice** `heading-row-alignment` (start / end / center / space-between / space-around / space-evenly) |
+| `date-picker` | **color** `background-color`, `shadow-color`, `surface-tint-color`, `header-background-color`, `header-foreground-color`, `day-foreground-color`*, `day-background-color`*, `day-overlay-color`*, `today-foreground-color`*, `today-background-color`*, `year-foreground-color`*, `year-background-color`*, `year-overlay-color`*, `range-picker-background-color`, `range-picker-shadow-color`, `range-picker-surface-tint-color`, `range-picker-header-background-color`, `range-picker-header-foreground-color`, `range-selection-background-color`, `range-selection-overlay-color`*, `divider-color`, `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `cancel-button-style.border-color`, `cancel-button-style.background-color`*, `cancel-button-style.foreground-color`*, `cancel-button-style.overlay-color`*, `cancel-button-style.shadow-color`*, `cancel-button-style.surface-tint-color`*, `cancel-button-style.icon-color`*, `confirm-button-style.border-color`, `confirm-button-style.background-color`*, `confirm-button-style.foreground-color`*, `confirm-button-style.overlay-color`*, `confirm-button-style.shadow-color`*, `confirm-button-style.surface-tint-color`*, `confirm-button-style.icon-color`*, `sub-header-foreground-color`<br>**elevation** `elevation`, `range-picker-elevation`, `cancel-button-style.elevation`*, `confirm-button-style.elevation`*<br>**shape** `shape`, `day-shape`*, `year-shape`*, `range-picker-shape`, `input-decoration.shape`, `cancel-button-style.shape`*, `confirm-button-style.shape`*<br>**text style** `header-headline-style`, `header-help-style`, `weekday-style`, `day-style`, `year-style`, `range-picker-header-headline-style`, `range-picker-header-help-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`, `cancel-button-style.text-style`*, `confirm-button-style.text-style`*, `toggle-button-text-style`<br>**border side** `today-border`, `input-decoration.outline-border`, `input-decoration.active-indicator-border`, `cancel-button-style.side`*, `confirm-button-style.side`*<br>**choice** `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always), `cancel-button-style.icon-alignment` (start / end), `cancel-button-style.tap-target-size` (padded / shrink-wrap), `cancel-button-style.splash-factory` (ripple / sparkle / none), `confirm-button-style.icon-alignment` (start / end), `confirm-button-style.tap-target-size` (padded / shrink-wrap), `confirm-button-style.splash-factory` (ripple / sparkle / none)<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**true / false** `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`, `cancel-button-style.enable-feedback`, `confirm-button-style.enable-feedback`<br>**insets** `input-decoration.content-padding`, `cancel-button-style.padding`*, `confirm-button-style.padding`*<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**duration** `input-decoration.hint-fade-duration`, `cancel-button-style.animation-duration`, `confirm-button-style.animation-duration`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints`<br>**visual density** `input-decoration.visual-density`, `cancel-button-style.visual-density`, `confirm-button-style.visual-density`<br>**number** `cancel-button-style.min-height`, `cancel-button-style.icon-size`*, `confirm-button-style.min-height`, `confirm-button-style.icon-size`*<br>**size** `cancel-button-style.minimum-size`*, `cancel-button-style.fixed-size`*, `cancel-button-style.maximum-size`*, `confirm-button-style.minimum-size`*, `confirm-button-style.fixed-size`*, `confirm-button-style.maximum-size`*<br>**mouse cursor** `cancel-button-style.mouse-cursor`*, `confirm-button-style.mouse-cursor`*<br>**alignment** `cancel-button-style.alignment`, `confirm-button-style.alignment` |
+| `dialog` | **color** `background-color`, `shadow-color`, `surface-tint-color`, `icon-color`, `barrier-color`<br>**elevation** `elevation`<br>**shape** `shape`<br>**alignment** `alignment`<br>**text style** `title-text-style`, `content-text-style`<br>**insets** `actions-padding`, `inset-padding`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**constraints** `constraints` |
+| `divider` | **color** `color`<br>**number** `space`, `thickness`, `indent`, `end-indent`<br>**corner radius** `radius` |
+| `drawer` | **color** `background-color`, `scrim-color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`<br>**shape** `shape`, `end-shape`<br>**number** `width`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer) |
+| `dropdown-menu` | **text style** `text-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`<br>**choice** `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always)<br>**shape** `input-decoration.shape`, `menu-style.shape`*<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**true / false** `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`<br>**color** `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `menu-style.background-color`*, `menu-style.shadow-color`*, `menu-style.surface-tint-color`*, `disabled-color`<br>**insets** `input-decoration.content-padding`, `menu-style.padding`*<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**duration** `input-decoration.hint-fade-duration`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints`<br>**border side** `input-decoration.outline-border`, `input-decoration.active-indicator-border`, `menu-style.side`*<br>**visual density** `input-decoration.visual-density`, `menu-style.visual-density`<br>**elevation** `menu-style.elevation`*<br>**size** `menu-style.minimum-size`*, `menu-style.fixed-size`*, `menu-style.maximum-size`*<br>**mouse cursor** `menu-style.mouse-cursor`*<br>**alignment** `menu-style.alignment` |
+| `expansion-tile` | **color** `background-color`, `collapsed-background-color`, `icon-color`, `collapsed-icon-color`, `text-color`, `collapsed-text-color`<br>**insets** `tile-padding`, `children-padding`<br>**alignment** `expanded-alignment`<br>**shape** `shape`, `collapsed-shape`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**animation** `expansion-animation-style` |
+| `icon` | **color** `color`<br>**number** `size`, `fill`, `weight`, `grade`, `optical-size`, `opacity` |
+| `primary-icon` | **color** `color`<br>**number** `size`, `fill`, `weight`, `grade`, `optical-size`, `opacity` |
+| `input` | **choice** `style` (outline / underline / filled), `floating-label-behavior` (never / auto / always)<br>**shape** `shape`<br>**input border** `border`, `error-border`, `focused-border`, `focused-error-border`, `disabled-border`, `enabled-border`<br>**true / false** `filled`, `is-dense`, `is-collapsed`, `align-label-with-hint`<br>**color** `fill-color`, `icon-color`, `prefix-icon-color`, `suffix-icon-color`, `focus-color`, `hover-color`<br>**insets** `content-padding`<br>**text style** `label-style`, `floating-label-style`, `helper-style`, `hint-style`, `error-style`, `prefix-style`, `suffix-style`, `counter-style`<br>**whole number** `helper-max-lines`, `hint-max-lines`, `error-max-lines`<br>**duration** `hint-fade-duration`<br>**constraints** `prefix-icon-constraints`, `suffix-icon-constraints`, `constraints`<br>**border side** `outline-border`, `active-indicator-border`<br>**visual density** `visual-density` |
+| `list-tile` | **true / false** `dense`, `enable-feedback`, `is-three-line`<br>**shape** `shape`<br>**choice** `style` (list / drawer), `title-alignment` (three-line / title-height / top / center / bottom), `control-affinity` (leading / trailing / platform)<br>**color** `selected-color`, `icon-color`, `text-color`, `tile-color`, `selected-tile-color`<br>**text style** `title-text-style`, `subtitle-text-style`, `leading-and-trailing-text-style`<br>**insets** `content-padding`<br>**number** `horizontal-title-gap`, `min-vertical-padding`, `min-leading-width`, `min-tile-height`<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density` |
+| `menu` | **color** `background-color`*, `shadow-color`*, `surface-tint-color`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**alignment** `alignment` |
+| `menu-bar` | **color** `background-color`*, `shadow-color`*, `surface-tint-color`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**alignment** `alignment` |
+| `navigation-bar` | **number** `height`<br>**color** `background-color`, `shadow-color`, `surface-tint-color`, `indicator-color`, `overlay-color`*<br>**elevation** `elevation`<br>**shape** `indicator-shape`<br>**text style** `label-text-style`*<br>**icon theme** `icon-theme`*<br>**choice** `label-behavior` (always-show / always-hide / only-show-selected)<br>**insets** `label-padding` |
+| `navigation-drawer` | **number** `tile-height`<br>**color** `background-color`, `shadow-color`, `surface-tint-color`, `indicator-color`<br>**elevation** `elevation`<br>**shape** `indicator-shape`<br>**size** `indicator-size`<br>**text style** `label-text-style`*<br>**icon theme** `icon-theme`* |
+| `navigation-rail` | **color** `background-color`, `indicator-color`<br>**elevation** `elevation`<br>**text style** `unselected-label-text-style`, `selected-label-text-style`<br>**icon theme** `unselected-icon-theme`, `selected-icon-theme`<br>**number** `group-alignment`, `min-width`, `min-extended-width`<br>**choice** `label-type` (none / selected / all)<br>**true / false** `use-indicator`<br>**shape** `indicator-shape` |
+| `popup-menu` | **color** `color`, `shadow-color`, `surface-tint-color`, `icon-color`<br>**shape** `shape`<br>**insets** `menu-padding`<br>**elevation** `elevation`<br>**text style** `text-style`, `label-text-style`*<br>**true / false** `enable-feedback`<br>**mouse cursor** `mouse-cursor`*<br>**choice** `position` (over / under)<br>**number** `icon-size` |
+| `progress-indicator` | **color** `color`, `linear-track-color`, `circular-track-color`, `refresh-background-color`, `stop-indicator-color`<br>**number** `linear-min-height`, `stop-indicator-radius`, `stroke-width`, `stroke-align`, `track-gap`<br>**corner radius** `border-radius`<br>**choice** `stroke-cap` (butt / round / square)<br>**constraints** `constraints`<br>**insets** `circular-track-padding` |
+| `radio` | **mouse cursor** `mouse-cursor`*<br>**color** `fill-color`*, `overlay-color`*, `background-color`*<br>**number** `splash-radius`, `inner-radius`*<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**visual density** `visual-density`<br>**border side** `side` |
+| `scrollbar` | **true / false** `thumb-visibility`*, `track-visibility`*, `interactive`<br>**number** `thickness`*, `cross-axis-margin`, `main-axis-margin`, `min-thumb-length`<br>**corner radius** `radius`<br>**color** `thumb-color`*, `track-color`*, `track-border-color`* |
+| `search-bar` | **elevation** `elevation`*<br>**color** `background-color`*, `shadow-color`*, `surface-tint-color`*, `overlay-color`*<br>**border side** `side`*<br>**shape** `shape`*<br>**insets** `padding`*<br>**text style** `text-style`*, `hint-style`*<br>**constraints** `constraints`<br>**choice** `text-capitalization` (words / sentences / characters / none) |
+| `search-view` | **color** `background-color`, `surface-tint-color`, `divider-color`<br>**elevation** `elevation`<br>**border side** `side`<br>**shape** `shape`<br>**number** `header-height`<br>**text style** `header-text-style`, `header-hint-style`<br>**constraints** `constraints`<br>**insets** `padding`, `bar-padding`<br>**true / false** `shrink-wrap` |
+| `slider` | **number** `track-height`, `min-thumb-separation`, `track-gap`<br>**color** `active-track-color`, `inactive-track-color`, `secondary-active-track-color`, `disabled-active-track-color`, `disabled-secondary-active-track-color`, `disabled-inactive-track-color`, `active-tick-mark-color`, `inactive-tick-mark-color`, `disabled-active-tick-mark-color`, `disabled-inactive-tick-mark-color`, `thumb-color`, `overlapping-shape-stroke-color`, `disabled-thumb-color`, `overlay-color`, `value-indicator-color`, `value-indicator-stroke-color`<br>**choice** `show-value-indicator` (only-for-discrete / only-for-continuous / always / on-drag / always-visible / never), `allowed-interaction` (tap-and-slide / tap-only / slide-only / slide-thumb)<br>**text style** `value-indicator-text-style`<br>**mouse cursor** `mouse-cursor`*<br>**insets** `padding`<br>**size** `thumb-size`* |
+| `snack-bar` | **color** `background-color`, `action-text-color`, `disabled-action-text-color`, `close-icon-color`, `action-background-color`, `disabled-action-background-color`<br>**text style** `content-text-style`<br>**elevation** `elevation`<br>**shape** `shape`<br>**choice** `behavior` (fixed / floating), `dismiss-direction` (vertical / horizontal / end-to-start / start-to-end / up / down / none)<br>**number** `width`, `action-overflow-threshold`<br>**insets** `inset-padding`<br>**true / false** `show-close-icon` |
+| `switch` | **color** `thumb-color`*, `track-color`*, `track-outline-color`*, `overlay-color`*<br>**number** `track-outline-width`*, `splash-radius`<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**mouse cursor** `mouse-cursor`*<br>**insets** `padding` |
+| `tab-bar` | **decoration** `indicator`<br>**color** `indicator-color`, `divider-color`, `label-color`, `unselected-label-color`, `overlay-color`*<br>**choice** `indicator-size` (tab / label), `splash-factory` (ripple / sparkle / none), `tab-alignment` (start / start-offset / fill / center), `indicator-animation` (linear / elastic)<br>**number** `divider-height`<br>**insets** `label-padding`<br>**text style** `label-style`, `unselected-label-style`<br>**mouse cursor** `mouse-cursor`*<br>**corner radius** `splash-border-radius` |
+| `text-selection` | **color** `cursor-color`, `selection-color`, `selection-handle-color` |
+| `time-picker` | **color** `background-color`, `cancel-button-style.border-color`, `cancel-button-style.background-color`*, `cancel-button-style.foreground-color`*, `cancel-button-style.overlay-color`*, `cancel-button-style.shadow-color`*, `cancel-button-style.surface-tint-color`*, `cancel-button-style.icon-color`*, `confirm-button-style.border-color`, `confirm-button-style.background-color`*, `confirm-button-style.foreground-color`*, `confirm-button-style.overlay-color`*, `confirm-button-style.shadow-color`*, `confirm-button-style.surface-tint-color`*, `confirm-button-style.icon-color`*, `day-period-color`, `day-period-text-color`, `dial-background-color`, `dial-hand-color`, `dial-text-color`, `entry-mode-icon-color`, `hour-minute-color`, `hour-minute-text-color`, `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `time-selector-separator-color`*<br>**number** `cancel-button-style.min-height`, `cancel-button-style.icon-size`*, `confirm-button-style.min-height`, `confirm-button-style.icon-size`*<br>**text style** `cancel-button-style.text-style`*, `confirm-button-style.text-style`*, `day-period-text-style`, `dial-text-style`, `help-text-style`, `hour-minute-text-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`, `time-selector-separator-text-style`*<br>**elevation** `cancel-button-style.elevation`*, `confirm-button-style.elevation`*, `elevation`<br>**insets** `cancel-button-style.padding`*, `confirm-button-style.padding`*, `input-decoration.content-padding`, `padding`<br>**size** `cancel-button-style.minimum-size`*, `cancel-button-style.fixed-size`*, `cancel-button-style.maximum-size`*, `confirm-button-style.minimum-size`*, `confirm-button-style.fixed-size`*, `confirm-button-style.maximum-size`*<br>**choice** `cancel-button-style.icon-alignment` (start / end), `cancel-button-style.tap-target-size` (padded / shrink-wrap), `cancel-button-style.splash-factory` (ripple / sparkle / none), `confirm-button-style.icon-alignment` (start / end), `confirm-button-style.tap-target-size` (padded / shrink-wrap), `confirm-button-style.splash-factory` (ripple / sparkle / none), `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always)<br>**border side** `cancel-button-style.side`*, `confirm-button-style.side`*, `day-period-border-side`, `input-decoration.outline-border`, `input-decoration.active-indicator-border`<br>**shape** `cancel-button-style.shape`*, `confirm-button-style.shape`*, `day-period-shape`, `hour-minute-shape`, `input-decoration.shape`, `shape`<br>**mouse cursor** `cancel-button-style.mouse-cursor`*, `confirm-button-style.mouse-cursor`*<br>**visual density** `cancel-button-style.visual-density`, `confirm-button-style.visual-density`, `input-decoration.visual-density`<br>**duration** `cancel-button-style.animation-duration`, `confirm-button-style.animation-duration`, `input-decoration.hint-fade-duration`<br>**true / false** `cancel-button-style.enable-feedback`, `confirm-button-style.enable-feedback`, `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`<br>**alignment** `cancel-button-style.alignment`, `confirm-button-style.alignment`<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints` |
+| `tooltip` | **shape** `shape`<br>**color** `background`<br>**decoration** `decoration`<br>**constraints** `constraints`<br>**insets** `padding`, `margin`<br>**number** `vertical-offset`<br>**true / false** `prefer-below`, `exclude-from-semantics`, `enable-feedback`<br>**text style** `text-style`<br>**choice** `text-align` (left / right / center / justify / start / end), `trigger-mode` (manual / long-press / tap)<br>**duration** `wait-duration`, `show-duration`, `exit-duration` |
+| `cupertino` (own root) | **color** `primary-color`, `text-theme.primary-color`, `primary-contrasting-color`, `scaffold-background-color`, `bar-background-color`, `selection-handle-color`<br>**text style** `text-theme.text-style`, `text-theme.action-text-style`, `text-theme.tab-label-text-style`, `text-theme.nav-title-text-style`, `text-theme.nav-large-title-text-style`, `text-theme.nav-action-text-style`, `text-theme.picker-text-style`, `text-theme.date-time-picker-text-style`<br>**true / false** `apply-theme-to-all` |
+
+<!-- theme-components:end -->
 
 **Colors** are a name from Flutter's `Colors` (`deepPurple`,
 `deepPurple.shade200`, `redAccent.shade100`, `black54`; `deep-purple`
@@ -2674,7 +2898,7 @@ that starts with `#`.
 #### A theme in its own file
 
 A custom theme can live in a file of its own, imported from
-`application.yml` with `spring.config.import: classpath:themes/ocean.yml`:
+`application.yml` with `spring.config.import: resources:themes/ocean.yml`:
 
 <table>
 <tr><th>themes/ocean.yml</th><th>themes/ocean.properties</th></tr>
@@ -2704,6 +2928,75 @@ spring.flutter.theme.themes.ocean.components.card.elevation=level0
 Themes can also arrive at run time, from a server, with
 `SpringThemes.loadYaml(yaml)` (see
 [step 8](#step-8-themes-from-a-server)).
+
+#### A theme from a URL
+
+A custom theme can be downloaded from `https` under a name the app chooses,
+whatever the file calls its theme:
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  flutter:
+    theme:
+      active: brand
+      themes:
+        brand:
+          source: https://themes.neon.example/ocean.yml
+          source-sha256: 3f9a1c5e7b2d4a6f8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d1f3a
+          refresh: 1h
+        brand-dark:
+          extends: brand
+          brightness: dark
+```
+
+</td><td>
+
+```properties
+spring.flutter.theme.active=brand
+spring.flutter.theme.themes.brand.source=https://themes.neon.example/ocean.yml
+spring.flutter.theme.themes.brand.source-sha256=3f9a1c5e7b2d4a6f8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d1f3a
+spring.flutter.theme.themes.brand.refresh=1h
+spring.flutter.theme.themes.brand-dark.extends=brand
+spring.flutter.theme.themes.brand-dark.brightness=dark
+```
+
+</td></tr>
+</table>
+
+| Key (under `spring.flutter.theme.themes.<name>.`) | Default | Meaning |
+|---|---|---|
+| `source` | none | where the theme comes from: an `https` URL, or `github:owner/repo/path@ref`, which is `https://raw.githubusercontent.com/owner/repo/ref/path` (`HEAD` without `@ref`). `http` and other schemes stop the start, naming the property |
+| `source-sha256` | none | 64 hexadecimal digits: content with another digest is refused (not shown, not cached). Part of the cache's identity |
+| `refresh` | none (cached for ever) | a duration (`30m`, `1h`, `PT12H`): when the cache is older, the file is read again in the background |
+
+- The file is written like the theme part of `application.yml`: the keys
+  under `spring.flutter.theme`, or at the top, or one `themes.<any name>`
+  block. Only the theme's look is taken and it becomes `<name>`; any other
+  key (`spring.datasource.*`, `active`, `system-light`, `source`, ...) is
+  ignored with a warning. Keys the theme does not know stop that theme
+  (not the app) like in any theme file.
+- The theme is always cached in the `support` place through `FileTemplate`,
+  in `spring/themes/<sha256 of source and pin>/` (`theme.yml`, and
+  `meta.json` with `source`, `sha256`, `fetchedAt`, `etag`,
+  `lastModified`), and the cache survives restarts. Without `refresh` it is
+  downloaded once (the first start that has the network) and read from the
+  cache for ever. With `refresh` the cache is used at once and read again in
+  the background when it is older, with `If-None-Match` and
+  `If-Modified-Since` (a `304` only renews `fetchedAt`); a new theme is
+  shown live, without a restart.
+- The cache belongs to the source: another `source` or `source-sha256`
+  downloads again, and the cache folders of sources no longer configured
+  are removed at start.
+- The start never waits on the network when a cache exists. Without one,
+  the download may take 10 seconds and 1 MiB at most (redirects only to
+  `https`); offline, an error, a timeout or an invalid file leave the theme
+  the app's own files describe for `<name>`, and the next start tries again.
+- The theme keys the generator typed (`context.theme`) come from the build:
+  the file changes values, it does not add keys.
 
 ### Fonts
 
@@ -2786,6 +3079,24 @@ The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
 `linux`, `mobile`, `desktop`) are always active; see
 [Profiles](#profile-files-and-activation).
 
+### Files of the app
+
+`FileTemplate` has no properties: it is a bean (with a `FileStore` under it,
+each only when the app declares none) that writes and reads the app's own
+files in three places, the directories `path_provider` finds.
+
+| Place | In code | What it is |
+|---|---|---|
+| `support` | `files.write(...)` | the app's private data, kept and backed up; the default. The same directory as SQLite's `support` below, except on Android (`files/`, SQLite uses `databases/`); on Windows `%LOCALAPPDATA%\<company>\<product>`, the machine's own, not the roaming directory of `getApplicationSupportDirectory` |
+| `cache` | `files.cache.write(...)` | the system may clear it. On Windows the `cache` folder inside the `support` directory (`path_provider`'s cache directory is that `support` directory itself) |
+| `documents` | `files.documents.write(...)` | the user sees it |
+
+On the web every place is IndexedDB. Temporary files (`temp`, `tempDir`,
+`createTemp`) live in `<system temp>/spring/<run id>/` and are removed after
+their block, when the context closes, and (runs that died) at the next
+start. See the
+[starter's README](https://github.com/farum-azula/spring_core_dart/blob/main/spring_boot_starter_flutter/README.md#files-of-the-app).
+
 ### SQLite databases
 
 A Flutter app has no working directory to keep a database in, and
@@ -2838,7 +3149,7 @@ documents folder. `support` is, per platform:
 | Android | the app's `databases/` directory (where `Context.getDatabasePath` puts databases), next to the `files/` directory of `getApplicationSupportDirectory()` |
 | iOS | `Library/Application Support` (`getApplicationSupportDirectory()`) |
 | macOS | the container's `Application Support/<bundle id>` (`getApplicationSupportDirectory()`) |
-| Windows | `%LOCALAPPDATA%\<company>\<product>`, the machine's own: the roaming directory that `getApplicationSupportDirectory()` returns would copy the file between machines |
+| Windows | `%LOCALAPPDATA%\<company>\<product>`, the machine's own: the roaming directory that `getApplicationSupportDirectory()` returns would copy the file between machines. `cache` is the `cache` folder inside it, so the two never share a folder; `FileTemplate` uses the same directories |
 | Linux | `$XDG_DATA_HOME/<app id>` (`getApplicationSupportDirectory()`) |
 
 The directories come from `path_provider`, read before the application
@@ -2857,12 +3168,12 @@ servers included, so it never fails a build, and says nothing, unless the
 app evidently uses the file: a config file it can read without loading
 the config (any `.properties`, `.yml` or `.yaml` file of
 `lib/resources/`, in any document, for any profile, or a file an import
-names with a file hint, such as `classpath:dev.conf[.yaml]` or
-`classpath:web.properties[encoding=iso-8859-1]` (a file that is not UTF-8
+names with a file hint, such as `resources:dev.conf[.yaml]` or
+`resources:web.properties[encoding=iso-8859-1]` (a file that is not UTF-8
 is read only that way), its placeholders resolved with their defaults or
 the files' values) sets a `spring.flutter.web.*` key or
 `spring.flutter.security.web.mode`. An import whose name only the running
-app knows (`classpath:${ENV}.conf[.yaml]`, `ENV` without a default) cannot
+app knows (`resources:${ENV}.conf[.yaml]`, `ENV` without a default) cannot
 be followed there, so keys that only its file sets do not count. Without
 such a key, the config is not loaded: nothing is written, a file
 generated before is deleted, and imports, placeholders or a file that
@@ -2874,7 +3185,7 @@ that file, as it may hold the keys.
 With such a key, the config is read at build time, as the app reads it
 in a browser: `application.*`, then `application-web.*`, plus the
 files of the profiles `spring.profiles.active` names there and the files
-that `spring.config.import` names (relative or `classpath:` ones, from
+that `spring.config.import` names (relative or `resources:` ones, from
 `lib/resources/`); environment variables and `--dart-define` values do
 not count. A placeholder only they can resolve is unknown at build time,
 and never a build error: a profile name with one in
@@ -2898,7 +3209,7 @@ wildcard or not, is never read from the build machine's disk, and is
 skipped, `optional:` or not; when these keys give a file to
 write, a warning names the first required one as written (the web version
 would fail to start with it, as the app's start reports). An import the
-build cannot read (`asset:`, `http:`, `https:`, or a `classpath:` file
+build cannot read (`asset:`, `http:`, `https:`, or a `resources:` file
 missing from `lib/resources/`) is skipped silently, even a required one,
 as it may exist at run time. An invalid value, or a config file the app
 reads that does not parse, fails the build, and the generated file is
@@ -3230,7 +3541,7 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 
 An invalid `server.port`, `server.shutdown` or `server.ssl.client-auth`,
 or a certificate without its private key, fails the start naming the key.
-The certificate files are paths in the file system, not `classpath:`
+The certificate files are paths in the file system, not `resources:`
 locations. Mappings are logged at debug level under the logger
 `spring.web.mvc` (`logging.level.spring.web.mvc=debug`), and the server
 under `spring.web.server`.
@@ -3527,7 +3838,7 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.sql.init.mode` | `embedded` | `schema.sql` / `data.sql`: `embedded` (in-memory databases only), `always`, `never` |
 | `spring.sql.init.schema-locations`, `data-locations`, `platform`, `continue-on-error`, `separator`, `encoding` | `schema.sql` and `data.sql` (and their `-<platform>` variants), `all`, `false`, `;`, `utf-8` | as in Spring Boot |
 | `spring.sql.migration.enabled` | `true` | run `lib/resources/db/migration/V<version>__<name>.sql` and `R__<name>.sql` (no files: nothing) |
-| `spring.sql.migration.locations` | `classpath:db/migration` | `{vendor}` is the database (`sqlite`, `postgresql`) |
+| `spring.sql.migration.locations` | `resources:db/migration` | `{vendor}` is the database (`sqlite`, `postgresql`) |
 | `spring.sql.migration.table` | `schema_history` | the history table |
 | `spring.sql.migration.validate-on-migrate` | `true` | an applied file that changed, or went missing, stops the start |
 | `spring.sql.migration.baseline-on-migrate`, `baseline-version`, `baseline-description` | `false`, `1`, `<< Baseline >>` | start the history on an existing database |
@@ -3678,7 +3989,7 @@ version, then the `R__` files) and the scripts of
 `{vendor}` standing for the directory of a database (when several have
 files, each is an alternative schema and a column of any is known). The
 build reads these settings from `application.properties`, `application.yml`
-and `application.yaml` (also in `config/`), and only `classpath:` locations:
+and `application.yaml` (also in `config/`), and only `resources:` locations:
 with a `file:` location, a `${placeholder}` in one, a profile file or a
 profile-specific YAML document that sets them, a `spring.config.import`,
 `spring.config.location` or `spring.config.additional-location`, or the
@@ -3728,7 +4039,7 @@ final app = springBootTest(
   springApplication,
   profiles: ['test'],                                   // spring.profiles.active
   properties: {'shop.max-basket-size': 3},              // above every other source
-  propertyFiles: ['classpath:extra.properties'],        // just below properties
+  propertyFiles: ['resources:extra.properties'],        // just below properties
   dynamicProperties: (registry) =>
       registry.add('shop.url', () => server.url),       // read on every access
 );
@@ -3823,6 +4134,18 @@ spring.json.default-property-inclusion`. A forgotten
 `server.servlet.session.*` ignored in silence would leave the sessions on
 their defaults.
 
+`classpath:` is renamed the same way: Dart has no class path, and the prefix
+points into `lib/resources/` (the files the generator embeds), so every
+location is written `resources:` (`resources:config/`, `resources*:i18n/*.properties`
+for the search over every root, `optional:resources:extra.yml`, and the
+defaults of `spring.sql.migration.locations`, `spring.sql.init.*-locations`,
+`spring.messages.basename` and the banner). It works in `spring.config.import`,
+`spring.config.location`, `@PropertySource`, `@Value`, `getResource` and the
+generator's build-time readers. In 0.6.2 `classpath:` and `classpath*:` still
+work, with one warning per location (`'classpath:x' uses the prefix
+classpath:, which is now resources: (classpath: is refused in the next minor
+release)`); the next minor release refuses them like the old property names.
+
 - `.properties` files are read as UTF-8; Spring Boot reads ISO-8859-1. For
   Spring Boot's behaviour use
   `PropertiesPropertySourceLoader(encoding: latin1)`, or name the encoding
@@ -3863,7 +4186,7 @@ their defaults.
   file that reads the same in both.
 - `spring.main.register-shutdown-hook` is `false` by default, because
   listening for signals keeps a Dart program alive.
-- No `env:` imports, no `classpath*:` config locations and no classpath
+- No `env:` imports, no `resources*:` config locations and no classpath
   wildcards.
 - In a `;` group of locations (`spring.config.location`,
   `.additional-location`, `spring.config.import`), spaces around an entry

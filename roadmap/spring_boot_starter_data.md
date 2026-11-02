@@ -939,7 +939,7 @@ model makes cheap.
 - Files in `lib/resources/db/migration/`: `V1__create_books.sql`,
   `V2__add_year.sql` (versioned, run once, in order), `R__views.sql`
   (repeatable, run again when its checksum changes). Per database when
-  needed: `spring.sql.migration.locations=classpath:db/migration/{vendor}`
+  needed: `spring.sql.migration.locations=resources:db/migration/{vendor}`
   (`sqlite`, `postgresql`). Several data sources: `spring.datasources.
   <name>.sql.migration.*`.
 - The generator already embeds `lib/resources/` in the generated module,

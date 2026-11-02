@@ -4,8 +4,8 @@
 spring:
   config:
     import: >-
-      classpath:themes/neon.yml, classpath:themes/neon-night.yml,
-      classpath:themes/sepia.yml, classpath:themes/high-contrast.yml
+      resources:themes/neon.yml, resources:themes/neon-night.yml,
+      resources:themes/sepia.yml, resources:themes/high-contrast.yml
 
   flutter:
     theme:

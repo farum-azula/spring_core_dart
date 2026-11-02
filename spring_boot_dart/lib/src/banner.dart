@@ -96,7 +96,7 @@ final class SpringBootBanner implements Banner {
 /// A banner whose text comes from a file, such as
 /// `lib/resources/banner.txt`.
 ///
-/// `SpringApplication` uses it by itself when `classpath:banner.txt` (or
+/// `SpringApplication` uses it by itself when `resources:banner.txt` (or
 /// the file named by `spring.banner.location`) exists, so applications
 /// only write the file. `${...}` placeholders in the text are resolved
 /// against the environment, and unresolvable ones are printed as they

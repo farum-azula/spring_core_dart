@@ -1169,7 +1169,7 @@ void main() {
         ),
       });
       final source = ReloadableResourceBundleMessageSource(
-        basenames: ['classpath:parity/messages', 'classpath:parity/errors'],
+        basenames: ['resources:parity/messages', 'resources:parity/errors'],
       );
       expect(source.getMessage('title', locale: 'de'), 'Shop');
       expect(source.getMessage('only.errors', locale: 'de'), 'Nur');
