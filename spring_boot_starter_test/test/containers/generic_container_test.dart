@@ -12,6 +12,11 @@ import 'package:test/test.dart';
 import 'support/docker_support.dart';
 
 const _busybox = 'busybox:1.37';
+
+// CI runs this file twice at once (from the root and from the package): the
+// labels the tests look containers up by are unique to this run, so one run
+// never sees the other's containers.
+final _run = '$pid-${DateTime.now().microsecondsSinceEpoch}';
 const _nginx = 'nginx:1.29-alpine';
 
 T _track<T extends GenericContainer>(T container) {
@@ -175,7 +180,7 @@ void main() {
   test('the startup timeout removes the container', () async {
     final container = GenericContainer(_busybox)
         .withCommand(['sleep', '60'])
-        .withLabel('spring.test.owner', 'startup-timeout-test')
+        .withLabel('spring.test.owner', 'startup-timeout-test-$_run')
         .waitingFor(Wait.forLogMessage('never printed'))
         .withStartupTimeout(const Duration(seconds: 2));
     await expectLater(
@@ -191,7 +196,7 @@ void main() {
     final docker = await dockerClient();
     expect(
       await docker.listContainers(
-        labels: ['spring.test.owner=startup-timeout-test'],
+        labels: ['spring.test.owner=startup-timeout-test-$_run'],
         all: true,
       ),
       isEmpty,
@@ -281,13 +286,13 @@ void main() {
     GenericContainer reusable() =>
         GenericContainer(_busybox)
             .withCommand(['sleep', '120'])
-            .withLabel('spring.test.owner', 'reuse-test')
+            .withLabel('spring.test.owner', 'reuse-test-$_run')
             .withReuse(true);
 
     Future<void> removeLeftovers() async {
       final docker = await DockerClient.connect();
       for (final c in await docker.listContainers(
-        labels: ['spring.test.owner=reuse-test'],
+        labels: ['spring.test.owner=reuse-test-$_run'],
         all: true,
       )) {
         await docker.removeContainer(c.id);
@@ -316,7 +321,7 @@ void main() {
           await first.stop();
           expect(
             await docker.listContainers(
-              labels: ['spring.test.owner=reuse-test'],
+              labels: ['spring.test.owner=reuse-test-$_run'],
               all: true,
             ),
             isEmpty,
@@ -342,7 +347,7 @@ void main() {
         await other.stop();
         expect(
           await docker.listContainers(
-            labels: ['spring.test.owner=reuse-test'],
+            labels: ['spring.test.owner=reuse-test-$_run'],
           ),
           hasLength(2),
         );
