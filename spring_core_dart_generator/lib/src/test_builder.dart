@@ -1467,13 +1467,38 @@ final class TestEmitter {
       '$_app.context',
       '() => $instance.${method.name}()',
       if (rollback != 'true') 'rollback: $rollback',
-      if (_transactionManager case final manager?)
+      if (_manager(method, levels) case final manager?)
         'transactionManager: $manager',
       if (before.isNotEmpty) 'before: [${before.join(', ')}]',
       if (after.isNotEmpty) 'after: [${after.join(', ')}]',
     ];
     _usesData = true;
     return '_data.runInTestTransaction(${arguments.join(', ')})';
+  }
+
+  // The transaction manager the test runs in, as source: the innermost
+  // `@Transactional(transactionManager: ...)` that names one (the method's
+  // first, then the `@Nested` group's and the test class's), then the
+  // `transactionManager:` of `@DataTest`; null for every manager.
+  String? _manager(_Method method, List<_Level> levels) {
+    final places = [
+      (method.metadata, method.owner),
+      for (final level in levels.reversed) ...level.annotated,
+    ];
+    for (final (metadata, owner) in places) {
+      final transactional = annotation(metadata, 'Transactional');
+      if (transactional == null) {
+        continue;
+      }
+      final code = _code(
+        namedNode(transactional, 'transactionManager'),
+        scope: _Scope.of(file, owner),
+      );
+      if (code != null && _stringValue(code) != '') {
+        return code;
+      }
+    }
+    return _transactionManager;
   }
 
   // Whether the test's transaction rolls back, as the source of a `bool`:

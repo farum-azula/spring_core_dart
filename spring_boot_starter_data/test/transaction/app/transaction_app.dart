@@ -69,6 +69,11 @@ class Shop {
   @Transactional(noRollbackFor: [OutOfStock], rollbackFor: [Counterfeit])
   Future<void> failWithRules(Object error) async => throw error;
 
+  /// The closest entry decides: [OutOfStock] and [SoldOut] roll back,
+  /// [Counterfeit] (closer to itself than [OutOfStock]) commits.
+  @Transactional(rollbackFor: [OutOfStock], noRollbackFor: [Counterfeit])
+  Future<void> failClosest(Object error) async => throw error;
+
   /// The archive's transaction manager.
   @Transactional(transactionManager: 'archive')
   Future<int?> archived() async => archive.currentId;

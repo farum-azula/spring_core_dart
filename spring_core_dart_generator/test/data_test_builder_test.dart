@@ -338,6 +338,117 @@ class ShopTest {
     },
   );
 
+  group('transaction manager of a test', () {
+    test(
+      '@Transactional(transactionManager:) on a method picks the manager of '
+      'that test, over the class and @DataTest',
+      () async {
+        final source = _squash(
+          await _generated('''
+@DataTest(transactionManager: 'archive')
+@Transactional(transactionManager: 'reports')
+class ShopTest {
+  @Test()
+  @Transactional(transactionManager: 'billing')
+  void onBilling() {}
+
+  @Test()
+  @Transactional(transactionManager: 'billing')
+  @Commit()
+  void committedOnBilling() {}
+
+  @Test()
+  @Transactional()
+  void emptyKeepsTheClass() {}
+
+  @Test()
+  void onTheClassOne() {}
+
+  @Test()
+  @Transactional(transactionManager: managerName)
+  void byConstant() {}
+
+  static const managerName = 'ledger';
+}
+'''),
+        );
+        expect(
+          source,
+          _has(
+            "_sbt.test('on billing', () => _data.runInTestTransaction( "
+            'app.context, () => instance.onBilling(), '
+            "transactionManager: 'billing'));",
+          ),
+        );
+        expect(
+          source,
+          _has(
+            "_sbt.test('committed on billing', () => "
+            '_data.runInTestTransaction( app.context, '
+            '() => instance.committedOnBilling(), rollback: false, '
+            "transactionManager: 'billing'));",
+          ),
+        );
+        expect(
+          source,
+          _has(
+            "_sbt.test('empty keeps the class', () => "
+            '_data.runInTestTransaction( app.context, '
+            '() => instance.emptyKeepsTheClass(), '
+            "transactionManager: 'reports'));",
+          ),
+        );
+        expect(
+          source,
+          _has(
+            "_sbt.test('on the class one', () => _data.runInTestTransaction( "
+            'app.context, () => instance.onTheClassOne(), '
+            "transactionManager: 'reports'));",
+          ),
+        );
+        expect(
+          source,
+          _has(
+            "_sbt.test('by constant', () => _data.runInTestTransaction( "
+            'app.context, () => instance.byConstant(), '
+            'transactionManager: ShopTest.managerName));',
+          ),
+        );
+      },
+    );
+
+    test('a @Nested group and its tests: the innermost wins', () async {
+      final source = _squash(
+        await _generated('''
+@DataTest()
+class ShopTest {
+  @Nested()
+  final withReports = WithReports();
+
+  @Test()
+  void plain() {}
+}
+
+@Transactional(transactionManager: 'reports')
+class WithReports {
+  @Test()
+  void inGroup() {}
+
+  @Test()
+  @Transactional(transactionManager: 'billing')
+  void overridden() {}
+}
+'''),
+      );
+      expect(source, contains("transactionManager: 'reports'"));
+      expect(source, contains("transactionManager: 'billing'"));
+      expect(
+        _squash(source),
+        isNot(contains('instance.plain(), transactionManager')),
+      );
+    });
+  });
+
   group('rollback or commit', () {
     test('@Commit and @Rollback(false) commit, the innermost wins', () async {
       final source = _squash(

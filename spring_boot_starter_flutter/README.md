@@ -113,6 +113,7 @@ explained chapter by chapter.
 - [Platform profiles](#platform-profiles)
 - [Assets](#assets)
 - [SQLite databases](#sqlite-databases)
+- [Desktop window](#desktop-window)
 - [Configuration at build time](#configuration-at-build-time)
 - [The web version's port](#the-web-versions-port)
 - [Hot reload](#hot-reload)
@@ -1010,6 +1011,71 @@ The directory is created when it is missing. Nothing is set on the web
 `path_provider` plugin (install a `PathProviderPlatform` fake to test the
 directories). [Every key](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#sqlite-databases).
 
+## Desktop window
+
+On macOS, Windows and Linux the native window is set from properties,
+before the first frame is shown:
+
+```properties
+# lib/resources/application-desktop.properties
+spring.flutter.desktop.window.title=NEON Books        # the OS's title bar, Dock, taskbar
+spring.flutter.desktop.window.title-bar=transparent   # default | transparent | hidden
+spring.flutter.desktop.window.initial-size=1280x800   # logical pixels, centered
+spring.flutter.desktop.window.min-size=800x600        # the user cannot drag smaller
+spring.flutter.desktop.window.max-size=1920x1080      # ... or larger
+```
+
+- `transparent`: the content is drawn under a transparent title bar and the
+  window buttons stay over it (macOS: `titlebarAppearsTransparent`, hidden
+  title, `.fullSizeContentView`; Windows: the frame extended into the client
+  area, the caption buttons are the system's; Linux: GTK cannot draw under a
+  header bar, so it is a flat header bar of its own with no title).
+- `hidden`: no title bar and no window buttons; the app draws its own.
+- `title` is the window's title, shown by the OS in the title bar (not with
+  `transparent` or `hidden`, which draw none) and in the Dock, taskbar and
+  window switcher; a blank value is the same as none (the runner's title
+  stays).
+- `initial-size`, `min-size` and `max-size` are `<width>x<height>` in
+  logical pixels. A malformed value, or sizes that contradict each other
+  (min <= initial <= max), stops the start naming the values. Maximizing a
+  window with a `max-size`: macOS zoom stops at it, Windows maximizes to the
+  largest allowed size, and a Linux window manager may refuse to maximize
+  past it.
+- Phones and the web ignore the keys.
+
+Two widgets for the title bar the app draws itself:
+
+```dart
+Widget build(BuildContext context) {
+  // Room for the traffic lights (macOS, at the left) or the caption
+  // buttons (Windows, at the right); zero with the default title bar.
+  final insets = DesktopWindow.insetsOf(context);
+  return WindowDragArea(
+    child: Padding(
+      padding: EdgeInsets.only(left: insets.left, right: insets.right),
+      child: const SizedBox(height: 48, child: Text('NEON Books')),
+    ),
+  );
+}
+```
+
+`WindowDragArea` starts the OS's window drag once the pointer moves with
+the primary button down (so a click or a button inside it is not a drag),
+and a double click maximizes or restores the window as the OS does
+(`doubleClickMaximizes: false` leaves it alone). `DesktopWindow.of(context)`
+also tells the title bar style that was applied.
+
+The runners show the window with the first frame, so the starter holds the
+first frame back until the plugin's native side has set the window (at most
+five seconds): the window appears as set, with no flicker. An app without
+these properties pays nothing but that frame waiting for the environment.
+
+The platform code is this package's own (a Flutter plugin, no
+`window_manager` or similar): Swift on macOS, C++ on Windows (the window
+procedure must answer `WM_GETMINMAXINFO` at once), C on Linux (in a `.cc`
+file). Not done yet: `max-size`, the position, a title, restoring the size
+and position the user left.
+
 ## Configuration at build time
 
 A Flutter app has no command line, and on a phone the OS environment
@@ -1270,8 +1336,9 @@ More, and the planned Flutter test starter:
 Android, iOS, macOS, Windows, Linux and the web. On Fuchsia the only
 platform profile is `fuchsia`.
 
-The starter is pure Dart and Flutter: no platform code of its own. The
-one plugin it brings is `path_provider` (flutter.dev), for the directory of
+The starter's own platform code is the [desktop window](#desktop-window)
+(macOS, Windows, Linux; none on the other platforms). The other plugin it
+brings is `path_provider` (flutter.dev), for the directory of
 [SQLite databases](#sqlite-databases). Logins and secrets (the Keychain, the Android Keystore, the
 system's login window, widgets that follow the logged-in user) are
 [`spring_boot_starter_flutter_security`](https://pub.dev/packages/spring_boot_starter_flutter_security),

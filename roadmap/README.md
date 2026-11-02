@@ -10,6 +10,15 @@ Rules every plan follows:
   from Spring (or does not exist there), the docs say so.
 - No reflection: everything is generated at build time, so it works in AOT
   executables, Flutter and minified JavaScript.
+- Property names: Spring Boot's key where Boot has one (renamed only where
+  its name is Java history: see the renamed properties in
+  [docs/configuration.md](../docs/configuration.md)); a key of our own sits
+  under its starter (`spring.flutter.*`, `spring.data.*`). A key that only
+  one kind of platform reads carries it as a segment, so its name says
+  where it applies: `spring.flutter.web.*`, `spring.flutter.desktop.*`,
+  `spring.flutter.security.web.mode`. A value for one OS goes into its
+  platform profile file (`application-macos.properties`), not into a key
+  per OS.
 - Dependencies: the runtime packages use only this repository, the Dart and
   Flutter SDKs and packages of the Dart, Flutter and Google teams. A package
   nothing here should replace (Flutter Scene, signals, a Rust bridge,
@@ -101,6 +110,15 @@ What comes next, in order:
    styles, tokens and theme names (`context.theme.colors.surfaceContainerLow`)
    and for the messages (`context.messages.basket.total(sum)`); then
    assets and routes. A renamed key fails the build, not the app.
+    In 0.7.1 (the owner, November 2026): the theme from a URL or GitHub
+    under a name of the app's choice, and `resources:` in place of
+    `classpath:` (the prefix that points into `lib/resources/`; `classpath`
+    is Java history like `servlet` and `jackson`): `resources:` everywhere a
+    location is read (`spring.config.import`, `@PropertySource`,
+    `spring.sql.migration.locations`, ...), `classpath:` first a warning
+    naming the new prefix, then refused like the renamed properties. Then
+    the theme's states and every Flutter component theme (no generated
+    widgets).
 11. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
    `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
    `@HttpExchange` later.
@@ -183,7 +201,7 @@ What comes next, in order:
 | [spring_boot_starter_test.md](spring_boot_starter_test.md) | `spring_boot_starter_test` | test classes with annotations and containers in tests (Docker client of our own, `@Container`, `@ServiceConnection`, Ryuk; done, [docs/testing.md](../docs/testing.md)); next: editor run buttons and snippets, Windows' named pipe, Docker Compose for development |
 | [spring_boot_starter_flutter_test.md](spring_boot_starter_flutter_test.md) | `spring_boot_starter_flutter_test` | planned: Flutter tests on top of the test starter (`@WidgetTest`, `pumpSpring`, themes, platforms, goldens), spec in [docs/flutter-testing.md](../docs/flutter-testing.md) |
 | [spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md) | `spring_boot_starter_flutter_security` | done: the app login (`OAuth2LoginService`, the login windows) moved out of the OAuth2 client, the platform code of logins and secrets out of the Flutter starter, `SecretStore` / `SecretTemplate`, display-only widgets that follow the user (`PrincipalNotifier`, `PrincipalBuilder`, `PrincipalView`), the web login in server mode (backend-for-frontend, `ServerOAuth2LoginService`) and in spa mode (the browser logs in, `SpaOAuth2LoginService`, a non-extractable WebCrypto DPoP key), DPoP keys of the apps (`PlatformDPoPKey`: Secure Enclave / Keychain, Android Keystore, `SecretStore`); login screens (`LoginForm`, `OAuth2LoginButton`, the Google, Apple, Microsoft and GitHub buttons), the hardening (October 2026); next: its runs on devices (the Windows and Linux stores' first CI run, iOS cancel, https redirects) |
-| [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md) | `spring_boot_starter_flutter` | first version: `SpringApplicationWidget`, beans in widgets, lifecycle, platform profiles; the app widget and themes from properties (done; the secret store and login window moved to `spring_boot_starter_flutter_security`), next: navigation, settings |
+| [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md) | `spring_boot_starter_flutter` | first version: `SpringApplicationWidget`, beans in widgets, lifecycle, platform profiles; the app widget and themes from properties (done; the secret store and login window moved to `spring_boot_starter_flutter_security`), the desktop window from properties (0.6.1: title, transparent or hidden title bar, initial, minimum and maximum size, `DesktopWindow`, `WindowDragArea` on macOS, Windows, Linux), next: navigation, settings |
 | [flutter_spring_signals.md](flutter_spring_signals.md) | `flutter_spring_signals` | planned: `@Signal` fields |
 | [flutter_spring_scene.md](flutter_spring_scene.md) | `flutter_spring_scene` | planned: Flutter Scene (3D) |
 | [flutter_spring_rust.md](flutter_spring_rust.md) | `flutter_spring_rust` | planned: Rust code as beans |

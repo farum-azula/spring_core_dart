@@ -318,6 +318,12 @@ class ModuleEmitter {
           ).closure,
       });
     }
+    if (_annotationTypes.isNotEmpty) {
+      arguments['typeDepths'] = literalMap({
+        for (final (type, element) in _annotationTypes.values)
+          _type(type, element): literalNum(_supertypeDepth(type.element)),
+      });
+    }
     final moduleExpression = _spring('BeanModule').newInstance([
       _str(moduleName),
       definitions,
@@ -537,6 +543,36 @@ class ModuleEmitter {
   // emitted, by name, each with the element it was found on: the module
   // gets a `value is T` test for each (`BeanModule.typeTests`).
   final _annotationTypes = <String, (InterfaceType, Element)>{};
+
+  // The longest chain of supertypes from [element] up to `Object` (which
+  // is 0): a superclass, an interface, a mixin or a constraint each is one
+  // step. Of two types a thrown exception is an instance of, the one that
+  // is the subtype of the other has the greater depth
+  // (`BeanModule.typeDepths`).
+  int _supertypeDepth(InterfaceElement element, [Set<Element>? visiting]) {
+    if (element.thisType.isDartCoreObject) {
+      return 0;
+    }
+    final path = visiting ?? <Element>{};
+    if (!path.add(element)) {
+      return 0;
+    }
+    final supertypes = [
+      ?element.supertype,
+      ...element.interfaces,
+      ...element.mixins,
+      if (element is MixinElement) ...element.superclassConstraints,
+    ];
+    var depth = 0;
+    for (final supertype in supertypes) {
+      final candidate = 1 + _supertypeDepth(supertype.element, path);
+      if (candidate > depth) {
+        depth = candidate;
+      }
+    }
+    path.remove(element);
+    return depth == 0 ? 1 : depth;
+  }
 
   /// The name of the generated `Type _$typeOf<T>() => T;` helper.
   ///

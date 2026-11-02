@@ -132,9 +132,11 @@ class TransactionDefinition {
 /// `Future` completes, and rolls back when it fails.
 ///
 /// Every exception and error rolls back (Dart has no checked exceptions),
-/// unless its type, or a supertype, is in [noRollbackFor] and not in
-/// [rollbackFor]. The types are matched with subtypes: the generator
-/// writes a test for each type written in an annotation.
+/// unless the entry of [rollbackFor] or [noRollbackFor] closest to its
+/// type (the type itself, or the nearest supertype listed) is in
+/// [noRollbackFor]. The types are matched with subtypes: the generator
+/// writes a test and the depth in the type hierarchy for each type written
+/// in an annotation, which is how the closest is found.
 ///
 /// On a class, it applies to each public method without its own
 /// `@Transactional`. It works through the bean's generated proxy: a call
@@ -203,8 +205,9 @@ class Transactional {
   /// Whether a transaction started here only reads.
   final bool readOnly;
 
-  /// Exception types (and their subtypes) that roll back even when listed
-  /// in [noRollbackFor].
+  /// Exception types (and their subtypes) that roll back, also when a
+  /// supertype is in [noRollbackFor]: of the entries matching an exception
+  /// the closest to its class decides, as in Spring.
   final List<Type> rollbackFor;
 
   /// Exception types (and their subtypes) after which the transaction

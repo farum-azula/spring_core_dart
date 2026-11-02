@@ -54,6 +54,15 @@ final class Proxy {
             Hard: (v) => v is Hard,
             Checked: (v) => v is Checked,
             Fatal: (v) => v is Fatal,
+          })
+          // What the generator writes: the longest chain of supertypes up
+          // to Object (Hard extends Soft implements Exception).
+          ..registerTypeDepths({
+            Boom: 2,
+            Soft: 2,
+            Hard: 3,
+            Checked: 2,
+            Fatal: 2,
           }),
       );
 

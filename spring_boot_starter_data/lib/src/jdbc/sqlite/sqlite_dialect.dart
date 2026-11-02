@@ -61,6 +61,10 @@ final class SqliteDialect extends SqlDialect {
   @override
   String lower(String expression) => '$lowerFunction($expression)';
 
+  /// SQLite's default `SQLITE_MAX_VARIABLE_NUMBER` (since 3.32).
+  @override
+  int? get maxBoundParameters => 32766;
+
   @override
   List<String> get beforeDropStatements => const [
     'PRAGMA defer_foreign_keys = ON',

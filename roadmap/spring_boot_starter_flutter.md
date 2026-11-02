@@ -404,6 +404,53 @@ Theme.of(context).colorScheme.primary;   // Flutter's, from the seed
   `spring-boot-configuration-processor` only writes metadata for editor
   completion), so it is an addition, listed as such in the docs.
 
+### The theme from a URL (0.7.1; the owner, November 2026)
+
+A theme loaded from `https` (a raw GitHub link, or a `github:owner/repo/path@ref`
+shorthand) under a name the app chooses, whatever the file calls it:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      active: brand
+      themes:
+        brand:
+          source: https://raw.githubusercontent.com/neon/themes/main/ocean.yml
+          source-sha256: 3f9a…     # optional: refuse other content
+          refresh: 1h              # optional: re-read and apply without a restart
+        brand-dark:
+          extends: brand
+          brightness: dark
+```
+
+- Only the theme's own keys are read from the file (`spring.flutter.theme.*`
+  under that theme); anything else in it is ignored with a warning: a remote
+  file never changes the application's other settings. Not a general
+  `spring.config.import` from URLs (Spring Boot has none either).
+- `https` only; the last good copy is cached in the app's directory; offline,
+  a timeout or an error falls back to the cache, else to the theme in the
+  app's resources: the start never fails or hangs on the network.
+- Typed keys (above) come from the build: a remote file changes values, it
+  does not add keys.
+
+### More of the theme: states and every component (the owner, November 2026)
+
+The theme configures Flutter's own components (`ThemeData` and its component
+themes); the app keeps using Flutter's widgets. **No generated widgets**: the
+generator does not write components of its own.
+
+- States: a property may give a value per state (Flutter's
+  `WidgetStateProperty`): `background: { default: primary, hovered: …,
+  pressed: …, focused: …, disabled: … }`.
+- Every component theme of Flutter (about 50, today 16) with all their
+  properties (borders per state, shadows, icons, overlay), mapped by property
+  type (color, shape, border, text style, value per state) so coverage grows
+  without writing each property by hand; the Cupertino components too.
+- Named variants of a component (a "danger" button) only if they can stay
+  data (a style the theme holds, read by a typed key), never a generated
+  widget — to decide when the rest is done.
+
 ### Typed messages
 
 The same for the message files: today `context.message('basket.total',
@@ -495,6 +542,66 @@ property keys.
 
 `shared_preferences` as a property source, and `@ConfigurationProperties`
 beans written back to it, so user settings are ordinary configuration.
+
+## The window on desktop (0.6.1, a patch right after 0.6.0; the owner, November 2026)
+
+**Done** (November 2026; docs in the starter's README, "Desktop window", and
+[docs/configuration.md](../docs/configuration.md)). `title` and `max-size`
+are done too (blank title = unset; max-size: macOS `contentMaxSize`, Windows
+`ptMaxTrackSize`, GTK `GDK_HINT_MAX_SIZE`; min <= initial <= max or the start
+stops). Left: the position, restoring the size and position the user left. Not yet
+run on real Windows and Linux machines (CI builds them: the `Desktop window`
+job); macOS is checked by `integration_test/desktop_window_test.dart` in the
+Flutter guide. On Linux `transparent` is a flat header bar of its own, since
+GTK draws no content under one.
+
+The native window of a desktop app set up by properties, like the app
+widget: the title bar, as in Zed or VS Code (content drawn under a
+transparent title bar, the window buttons over it), and the window's size:
+
+```properties
+spring.flutter.desktop.window.title=NEON Books        # blank: the runner's
+spring.flutter.desktop.window.title-bar=transparent   # default | transparent | hidden
+spring.flutter.desktop.window.initial-size=1280x800   # the size of a first start
+spring.flutter.desktop.window.min-size=800x600        # the user cannot make it smaller
+spring.flutter.desktop.window.max-size=1920x1080      # ... or larger
+```
+
+- `initial-size`: width x height in logical pixels, the size the window
+  opens with (centered on the screen); without it the runner's default.
+- `min-size`: the smallest size the user can drag the window's edges to
+  (macOS `contentMinSize`, Windows `WM_GETMINMAXINFO`, GTK
+  `gtk_window_set_geometry_hints`); without it no limit. An `initial-size`
+  smaller than `min-size` stops the start with both values named.
+- `title`: the window's title (macOS `NSWindow.title`, Windows
+  `SetWindowTextW`, GTK `gtk_window_set_title`); a blank value is unset.
+- `max-size`: the largest size the user can drag to (macOS `contentMaxSize`,
+  Windows `ptMaxTrackSize` scaled by DPI, GTK `GDK_HINT_MAX_SIZE` with the
+  minimum hint); `max-size` below `min-size` or `initial-size` outside
+  min..max stops the start. Maximize follows the OS: macOS zoom respects
+  it, Windows maximizes to `ptMaxSize` (the same size), GTK is up to the
+  window manager.
+
+The key carries the platform in its name, as the other platform-only keys
+(`spring.flutter.web.*`, `spring.flutter.security.web.mode`): only desktop
+apps read it; another value for one OS goes into its platform profile file
+(`application-macos.properties`, `application-windows.properties`).
+
+- macOS: `titlebarAppearsTransparent`, `titleVisibility = .hidden`,
+  `.fullSizeContentView` on the `NSWindow` (three lines in the runner today,
+  see `MainFlutterWindow.swift`);
+- Windows: the frame extended into the client area (DWM) and a drag area
+  the app marks;
+- Linux (GTK): a header bar of our own (`gtk_window_set_titlebar`);
+- the space the window buttons take reaches Flutter (a padding in
+  `MediaQuery`, or a widget) so layouts leave room for them; a widget marks
+  the area that drags the window.
+
+This needs native code in the Flutter starter (as
+`spring_boot_starter_flutter_security` has); no third-party package
+(`window_manager` and the like are not allowed by the dependency rules).
+Later in the same place: the position, and the size and position the user left restored on the next start (then
+`initial-size` applies to the first start only).
 
 ## Environment of the app
 

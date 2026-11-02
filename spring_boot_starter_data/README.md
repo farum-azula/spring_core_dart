@@ -303,7 +303,6 @@ sides of each):
 | Difference | Why |
 |---|---|
 | Every exception rolls back (Spring commits after a checked one: `rules/checked-exception`) | Dart has no checked exceptions; list the ones to commit in `noRollbackFor` |
-| An exception that matches both `rollbackFor` and `noRollbackFor` rolls back (Spring: the entry closest to the exception's class wins; `rollbackFor: Exception, noRollbackFor: Soft` commits there, not here) | Dart cannot rank two types without reflection; leave out `rollbackFor`, which is the default |
 | A `@Lock` query outside a transaction fails with `IllegalTransactionStateException` (Spring runs it in autocommit: the lock is gone at once) | an unlocked "locking" read is a bug |
 | `40001` is a `CannotSerializeTransactionException`, `40P01` a `DeadlockLoserDataAccessException`, `55P03` a `CannotAcquireLockException`, `25006` an `InvalidDataAccessResourceUsageException` | Spring 7's `JdbcTemplate` translates by SQL state and gives `CannotAcquireLockException`, `PessimisticLockingFailureException`, `UncategorizedSQLException` and `UncategorizedSQLException`; the starter keeps the finer classes of Spring's PostgreSQL error-code table, with the same supertypes for code that retries (the comparison treats them as equal: `equivalentKinds`) |
 | One transaction is not tied to a thread: it follows `await` through a `Zone`, and work started without `await` that outlives it fails | Dart has no thread-bound transactions |
@@ -415,7 +414,12 @@ generator writes a `PostgresBinding` over the package and the
   or `verify-full` outside development, also through
   `SPRING_DATASOURCE_POSTGRESQL_SSLMODE`);
 - text is ordered by the database's collation, not code units as in the
-  in-memory store and SQLite.
+  in-memory store and SQLite;
+- a derived `In` / `NotIn` is one array parameter (`= any($1)`), so a list can
+  have more than the protocol's 65 535 parameters; SQLite refuses a list past
+  its 32 766 with a clear message, and a NUL character in a text is refused
+  before it is sent (`InvalidDataAccessApiUsageException`, on every store for
+  a derived query).
 
 The [configuration reference](../docs/configuration.md#postgresql) has the
 URL parameters and every detail. The tests of the driver, the schema, the
@@ -506,10 +510,28 @@ among the application's dependencies, the generator adds a
 answers an `OptimisticLockingFailureException` or a `DuplicateKeyException`
 with a 409, an `EmptyResultDataAccessException` with a 404, and a
 `PropertyReferenceException` ("Invalid sort property") or an
-`InvalidPagingRequestException` ("Invalid page or sort request") with a 400,
+`InvalidPagingRequestException` ("Invalid page or sort request") or an
+`InvalidDataArgumentException` ("Invalid request value": a text with a NUL
+character, a list longer than a statement binds, a `LIKE` pattern the
+database rejects; the caller's value, not a developer's mistake, so the
+other `InvalidDataAccessApiUsageException`s stay a 500) with a 400,
 with a fixed detail that never shows the exception's message (the web
 starter logs these answers at debug); the starters do not depend on each
 other.
+
+A `Pageable` or `Sort` parameter of a controller method is filled from
+`?page=&size=&sort=title,desc&sort=year` by the same glue (the bean
+`pagingArgumentResolvers`, a `WebMvcConfigurer`), with Spring Data Web's
+rules and Spring Boot's properties `spring.data.web.pageable.default-page-size`
+(20), `max-page-size` (2000), `one-indexed-parameters` (false),
+`page-parameter`, `size-parameter`, `prefix`, `qualifier-delimiter` and
+`spring.data.web.sort.sort-parameter`; `@PageableDefault(size:, page:, sort:,
+direction:)` and `@SortDefault(sort:, direction:)` go on the parameter, and a
+`@Qualifier('x')` reads `x_page`, `x_size`, `x_sort`. A size above the maximum
+is cut, a negative or non-numeric page is 0, a size below one is the default.
+A sort property the entity does not have is a 400. A returned `Page<T>` is
+written as Spring Data 3.3's stable JSON: `{"content": [...], "page": {"size",
+"number", "totalElements", "totalPages"}}`.
 
 Durations are written `500ms`, `30s`, `10m`, `PT30S`, or as milliseconds
 (`spring.datasource.postgresql.connect-timeout` does not take `PT30S`).
@@ -555,7 +577,8 @@ commits instead; `@BeforeEach` and `@AfterEach` run inside the transaction;
 `replaceDatabase: false` keeps the configured database;
 `@DataTest(transactionManager: 'stats')` runs the tests in the transaction of
 that one manager (and no other) instead of every manager the repositories
-use. The in-memory
+use, and `@Transactional(transactionManager: 'stats')` on a test method (or a
+`@Nested` group) does it for that test alone. The in-memory
 database is one connection, so a test cannot start a `requiresNew`
 transaction on it. [Testing, section 19](../docs/testing.md#19-data-tests-datatest)
 has the details; `DataTestSetup` and `runInTestTransaction`
@@ -578,7 +601,8 @@ written as functions.
   Spring Data JDBC leaves the schema to you.
 - `@Transactional(transactionManager: 'x')` instead of a positional value;
   every exception rolls back unless listed in `noRollbackFor` (Dart has
-  no checked exceptions).
+  no checked exceptions); when `rollbackFor` and `noRollbackFor` both match,
+  the entry closest to the exception's class wins, as in Spring.
 - `@DataTest` replaces `@DataJdbcTest` with `@AutoConfigureTestDatabase`: it
   is transactional by itself, and the database is always an in-memory SQLite
   one (`replaceDatabase: false` keeps yours).

@@ -283,6 +283,18 @@ void main() {
       }
     });
 
+    test('a LIKE pattern ending with the escape and a NUL are api misuse', () {
+      for (final state in ['22025', '22021']) {
+        final error = _translate(state);
+        expect(
+          error,
+          isA<InvalidDataArgumentException>(),
+          reason: state,
+        );
+        expect(error, isNot(isA<DataIntegrityViolationException>()));
+      }
+    });
+
     test('concurrency: serialization, deadlock, lock not had, timeout', () {
       expect(
         _translate('40001'),

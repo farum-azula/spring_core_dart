@@ -314,6 +314,87 @@ void _suite(String store) {
     );
 
     test(
+      'a backslash at the end, before a wildcard or doubled is plain text',
+      () => run(() async {
+        await books.saveAll([
+          Book(title: r'end\', year: 3201),
+          Book(title: r'50\%', year: 3202),
+          Book(title: r'50\x', year: 3203),
+          Book(title: r'two\\slashes', year: 3204),
+          Book(title: r'under\_score', year: 3205),
+          Book(title: 'end', year: 3206),
+        ]);
+        // Containing, StartingWith, EndingWith: the argument is text.
+        expect(titles(await books.findByTitleEndingWith(r'\')), [r'end\']);
+        expect(titles(await books.findByTitleContaining(r'd\')), [r'end\']);
+        expect(titles(await books.findByTitleStartingWith(r'end\')), [
+          r'end\',
+        ]);
+        expect(titles(await books.findByTitleContaining(r'\%')), [r'50\%']);
+        expect(titles(await books.findByTitleStartingWith(r'50\')), [
+          r'50\%',
+          r'50\x',
+        ]);
+        expect(titles(await books.findByTitleContaining(r'\\')), [
+          r'two\\slashes',
+        ]);
+        expect(titles(await books.findByTitleContaining(r'\_')), [
+          r'under\_score',
+        ]);
+        expect(
+          titles(await books.findByTitleNotContaining(r'\')),
+          isNot(
+            contains(r'end\'),
+          ),
+        );
+        // The same, ignoring the case.
+        expect(titles(await books.findByTitleEndingWithIgnoreCase(r'D\')), [
+          r'end\',
+        ]);
+        expect(titles(await books.findByTitleContainingIgnoreCase(r'\%')), [
+          r'50\%',
+        ]);
+        // Like: a lone backslash at the end is itself.
+        expect(titles(await books.findByTitleLike(r'end\')), [r'end\']);
+        expect(titles(await books.findByTitleLike(r'%\')), [r'end\']);
+        expect(titles(await books.findByTitleLikeIgnoreCase(r'END\')), [
+          r'end\',
+        ]);
+        expect(titles(await books.findByTitleLike(r'50\\%')), [
+          r'50\%',
+          r'50\x',
+        ]);
+        expect(titles(await books.findByTitleLike(r'50\\\%')), [r'50\%']);
+        expect(
+          titles(await books.findByTitleNotLike(r'%\')),
+          isNot(
+            contains(r'end\'),
+          ),
+        );
+      }),
+    );
+
+    test(
+      'a NUL in a text argument is refused the same way by every store',
+      () => run(() async {
+        final refused = throwsA(
+          isA<InvalidDataArgumentException>().having(
+            (e) => e.toString(),
+            'message',
+            allOf(contains('NUL'), isNot(contains('\u0000'))),
+          ),
+        );
+        expect(books.findByTitle('Du\u0000ne'), refused);
+        expect(books.findByTitleContaining('\u0000'), refused);
+        expect(books.findByTitleStartingWithIgnoreCase('D\u0000'), refused);
+        expect(books.findByTitleLike('%\u0000%'), refused);
+        expect(books.findByTitleIn(['Dune', 'x\u0000']), refused);
+        // The store is fine after it.
+        expect(ids(await books.findByTitle('Dune')), [1]);
+      }),
+    );
+
+    test(
       'case folding of letters outside ASCII',
       () => run(() async {
         await books.save(Book(title: 'Ärger', year: 3010));
@@ -325,6 +406,112 @@ void _suite(String store) {
           titles(await books.findByTitleStartingWithIgnoreCase('ä')),
           ['Ärger'],
         );
+      }),
+    );
+
+    test(
+      'case folding: Cyrillic and German, whole words and parts',
+      () => run(() async {
+        await books.saveAll([
+          Book(title: 'Дюна', year: 3101),
+          Book(title: 'Мастер и Маргарита', year: 3102),
+          Book(title: 'Über die Brücke', year: 3103),
+          Book(title: 'Straße', year: 3104),
+        ]);
+        expect(titles(await books.findByTitleIgnoreCase('ДЮНА')), ['Дюна']);
+        expect(titles(await books.findByTitleIgnoreCase('дюна')), ['Дюна']);
+        expect(
+          titles(await books.findByTitleContainingIgnoreCase('МАРГАРИТ')),
+          ['Мастер и Маргарита'],
+        );
+        expect(
+          titles(await books.findByTitleStartingWithIgnoreCase('МАСТЕР')),
+          ['Мастер и Маргарита'],
+        );
+        expect(
+          titles(await books.findByTitleEndingWithIgnoreCase('МАРГАРИТА')),
+          ['Мастер и Маргарита'],
+        );
+        expect(
+          titles(await books.findByTitleLikeIgnoreCase('дю%')),
+          ['Дюна'],
+        );
+        expect(
+          titles(await books.findByTitleStartingWithIgnoreCase('ÜBER')),
+          ['Über die Brücke'],
+        );
+        expect(
+          titles(await books.findByTitleContainingIgnoreCase('brücke')),
+          ['Über die Brücke'],
+        );
+        expect(
+          titles(await books.findByTitleInIgnoreCase(['ДЮНА', 'STRASSE'])),
+          // ß has no one-letter upper case: lower('STRASSE') is not
+          // 'straße' anywhere.
+          ['Дюна'],
+        );
+        expect(titles(await books.findByTitleContainingIgnoreCase('ß')), [
+          'Straße',
+        ]);
+        // Case sensitive, they stay different.
+        expect(titles(await books.findByTitle('ДЮНА')), isEmpty);
+        expect(titles(await books.findByTitleContaining('ДЮ')), isEmpty);
+      }),
+    );
+  });
+
+  group('long in lists', () {
+    test(
+      'a list of 70 000 values: one array on PostgreSQL, a clear refusal on '
+      'SQLite, a plain match in memory',
+      () => run(() async {
+        final years = List.generate(70000, (i) => i + 1);
+        final titlesList = [for (final y in years) 'title $y', 'Dune'];
+        if (sqlite) {
+          for (final call in [
+            () => books.findByYearIn(years),
+            () => books.findByYearNotIn(years.toSet()),
+            () => books.findByTitleIn(titlesList),
+          ]) {
+            await expectLater(
+              call(),
+              throwsA(
+                isA<InvalidDataArgumentException>().having(
+                  (e) => e.toString(),
+                  'message',
+                  allOf(contains('values'), contains('32766')),
+                ),
+              ),
+            );
+          }
+          // Under the limit it runs.
+          expect(
+            ids(await books.findByYearIn(List.generate(30000, (i) => i))),
+            isNotEmpty,
+          );
+        } else {
+          final all = ids(await books.findAll());
+          final inList = await books.findByYearIn(years);
+          expect(ids(inList), unorderedEquals(all));
+          expect(await books.findByYearNotIn(years.toSet()), isEmpty);
+          expect(ids(await books.findByTitleIn(titlesList)), [1]);
+          expect(
+            ids(
+              await books.findByYearNotIn(
+                List.generate(70000, (i) => i + 100000).toSet(),
+              ),
+            ),
+            unorderedEquals(all),
+          );
+          expect(
+            ids(
+              await books.findByTitleInIgnoreCase(
+                [for (final y in years) 'TITLE $y', 'DUNE'],
+              ),
+            ),
+            [1],
+          );
+        }
       }),
     );
   });

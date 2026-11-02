@@ -583,6 +583,63 @@ void main() {
       );
     });
 
+    test('a NUL in a text value is refused before it is sent', () async {
+      final (_, session, connection) = await _connect('postgresql://h/db');
+      var sent = false;
+      session.answer = (_) {
+        sent = true;
+        return const PostgresResult([], [], 0);
+      };
+      for (final call in <Future<Object?> Function()>[
+        () => connection.query('select ?', ['a\u0000b']),
+        () => connection.update('delete from t where a = ?', ['\u0000']),
+        () => connection.queryStream('select ?', ['x\u0000']).toList(),
+        () => connection.batchUpdate('insert into t values (?)', [
+          ['ok'],
+          ['no\u0000'],
+        ]),
+      ]) {
+        await expectLater(
+          call(),
+          throwsA(
+            isA<InvalidDataArgumentException>().having(
+              (e) => e.toString(),
+              'message',
+              allOf(contains('NUL'), isNot(contains('\u0000'))),
+            ),
+          ),
+        );
+      }
+      expect(sent, isTrue, reason: 'only the batch row before it went');
+      sent = false;
+      await connection.query('select ?', ['fine']);
+      expect(sent, isTrue);
+    });
+
+    test('more values than the protocol counts is refused clearly', () async {
+      final (_, session, connection) = await _connect('postgresql://h/db');
+      var sent = false;
+      session.answer = (_) {
+        sent = true;
+        return const PostgresResult([], [], 0);
+      };
+      const count = 65536;
+      await expectLater(
+        connection.query(
+          'select * from t where a in (${List.filled(count, '?').join(',')})',
+          List.filled(count, 1),
+        ),
+        throwsA(
+          isA<InvalidDataArgumentException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('65535'),
+          ),
+        ),
+      );
+      expect(sent, isFalse);
+    });
+
     test('keep the message of other errors, and add the statement', () async {
       final (_, session, connection) = await _connect('postgresql://h/db');
       session.answer = (_) => throw const SqlError(

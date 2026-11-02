@@ -1994,6 +1994,33 @@ Write `locales`, and in Flutter apps `spring.messages.basename`, as one
 comma-separated value, also in YAML. The app widget reads them as single
 values, so a YAML list (`[en, ja]`) is not seen.
 
+
+The window of a desktop app (macOS, Windows, Linux) has keys of its own.
+They carry `desktop` in their name because only desktop apps read them: a
+phone or the web ignores them, even a malformed value. A value for one OS
+goes into that platform's profile file (`application-macos.properties`).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.desktop.window.title` | text | the runner's (normally the app name) | The window's title: what the OS shows in the title bar when it is visible (not with `title-bar=transparent` or `hidden`) and in the Dock, taskbar and window switcher (macOS `NSWindow.title`, Windows `SetWindowTextW`, GTK `gtk_window_set_title`; any Unicode). Surrounding blanks are trimmed; a blank value is the same as none, so the runner's title stays |
+| `spring.flutter.desktop.window.title-bar` | `default` / `transparent` / `hidden` | `default` | `default`: the OS's title bar, untouched. `transparent`: the content is drawn under a transparent title bar and the window buttons stay over it (macOS: transparent title bar, hidden title, full-size content view; Windows: the frame extended into the client area, the system's caption buttons over the content; Linux: GTK draws no content under a header bar, so it becomes a flat header bar with no title, with the window buttons). `hidden`: no title bar and no window buttons (the app draws its own; macOS and Windows: no caption, Linux: no decoration). `DesktopWindow.insetsOf(context)` says how much room the buttons take (macOS: the traffic lights at the left, Windows: the caption buttons at the right, 0 elsewhere); `WindowDragArea` moves the window |
+| `spring.flutter.desktop.window.initial-size` | `<width>x<height>`, logical pixels | the runner's size | The size of the window's content area when it opens, centered on the screen (not under Wayland, where the compositor places windows). A malformed value (`1280x`, a negative or zero number) stops the start with the expected format |
+| `spring.flutter.desktop.window.min-size` | `<width>x<height>`, logical pixels | none | The smallest content size the user can drag the window to (macOS `contentMinSize`, Windows `WM_GETMINMAXINFO`, GTK `gtk_window_set_geometry_hints`). An `initial-size` smaller than it stops the start naming both values |
+| `spring.flutter.desktop.window.max-size` | `<width>x<height>`, logical pixels | none | The largest content size the user can drag the window to (macOS `contentMaxSize`, Windows `WM_GETMINMAXINFO` `ptMaxTrackSize`, scaled to the monitor's DPI like `min-size`, GTK `GDK_HINT_MAX_SIZE` set together with the minimum). Maximizing: macOS zoom stops at it; Windows maximizes to the largest allowed size, not the whole screen; GTK depends on the window manager, which may refuse to maximize past it. `min-size` larger than `max-size`, or an `initial-size` outside min..max, stops the start naming both values |
+
+```properties
+spring.flutter.desktop.window.title=NEON Books
+spring.flutter.desktop.window.title-bar=transparent
+spring.flutter.desktop.window.initial-size=1280x800
+spring.flutter.desktop.window.min-size=800x600
+spring.flutter.desktop.window.max-size=1920x1080
+```
+
+The properties are applied before the first frame is shown, so the window
+does not open at the runner's size first. The runners show the window with
+the first frame; the starter holds that frame back until the native side has
+answered (at most five seconds), then the window appears already as set.
+
 ### Themes, step by step
 
 The theme can be set entirely from properties: colours, fonts, shapes,
@@ -3253,11 +3280,40 @@ which always comes first):
 | `EmptyResultDataAccessException` | 404 | `Not found` |
 | `PropertyReferenceException` (a sort property that does not exist) | 400 | `Invalid sort property` |
 | `InvalidPagingRequestException` (a negative page, a size below one, an offset past 2^53 - 1, a direction that is not `asc` or `desc`) | 400 | `Invalid page or sort request` |
+| `InvalidDataArgumentException` (a value of the request the database cannot take: a text with a NUL character, a list longer than a statement binds, a `LIKE` pattern ending with its escape character) | 400 | `Invalid request value` |
 
 The answer is a `ProblemDetail` with this fixed detail, never the
 exception's message (it may hold SQL or values); the exception is logged
 at debug level under `spring.web.mvc`. Other data errors stay a 500. See
 [Resolvers](../spring_boot_starter_web/README.md#resolvers-errors-a-library-maps).
+
+### Pageable and Sort parameters
+
+With both starters, a controller parameter of type `Pageable` or `Sort` is
+filled from the query (`?page=2&size=10&sort=title,desc&sort=year`) by the
+bean `pagingArgumentResolvers` the generator adds (declare a bean of that name
+to replace it). The rules are Spring Data Web's; the properties are Spring
+Boot's:
+
+| Property | Default |
+|---|---|
+| `spring.data.web.pageable.default-page-size` | `20` |
+| `spring.data.web.pageable.max-page-size` | `2000` (a larger `size` is cut to it) |
+| `spring.data.web.pageable.one-indexed-parameters` | `false` |
+| `spring.data.web.pageable.page-parameter` | `page` |
+| `spring.data.web.pageable.size-parameter` | `size` |
+| `spring.data.web.pageable.prefix` | empty |
+| `spring.data.web.pageable.qualifier-delimiter` | `_` |
+| `spring.data.web.sort.sort-parameter` | `sort` |
+
+`@PageableDefault(size:, page:, sort:, direction:)` and `@SortDefault(sort:,
+direction:)` on the parameter give the defaults, `@Qualifier('x')` reads
+`x_page`, `x_size` and `x_sort`; a negative or non-numeric page is 0, a size
+below one is the default, `sort=a,b,desc` gives both properties one direction
+and `ignorecase` may end a part. An unknown sort property is a
+`PropertyReferenceException`, answered with a 400. A returned `Page<T>` is
+written as `{"content": [...], "page": {"size", "number", "totalElements",
+"totalPages"}}`, Spring Data 3.3's stable shape.
 
 Not supported:
 
@@ -3566,11 +3622,39 @@ spring.datasource.password=s3cret
   server's own, without the `DETAIL` line (a duplicate key's holds the values)
   and without the rejected value of `invalid input syntax for type integer`;
   a password is never in a message.
+- **Arguments the database refuses.** A derived `Like`, `Containing`,
+  `StartingWith` or `EndingWith` argument is text: `%`, `_` and `\` in it are
+  escaped by the starter (a value ending in `\` is a backslash; in `Like`
+  itself a lone `\` at the end is a backslash too), on every store. A NUL
+  character (`\u0000`) in a text argument of a derived query is an
+  `InvalidDataAccessApiUsageException` before anything is sent, on every
+  store (PostgreSQL cannot hold one, `22021`; SQLite's `LIKE` stops reading at
+  it); a NUL in a `@Query` text or a `save` is refused the same way on
+  PostgreSQL. The message never holds the value. The web glue maps only the
+  exceptions listed in the web starter's data glue (409, 404, 400 for a sort or
+  paging error), so these stay a 500 with the generic body: validate request
+  text (`@Pattern`, no NUL) when it reaches a repository. In a `@Query` the
+  SQL is yours: `like :p` with a value ending in `\` is PostgreSQL's `22025`
+  (an `InvalidDataAccessApiUsageException` saying so; SQLite's `LIKE` has no
+  escape character without `ESCAPE` and matches the backslash).
+- **Long `In` lists.** A derived `In` / `NotIn` binds the list as one array
+  parameter on PostgreSQL (`= any($1)`, `<> all($1)`), so any length works
+  (the protocol allows 65 535 parameters per statement; nulls keep their
+  meaning: ignored in `In`, nothing matches a `NotIn` that holds one). SQLite
+  binds one value per element and has a limit of 32 766 per statement: a
+  longer list is an `InvalidDataAccessApiUsageException` that says so (split
+  the list, or query another way); the starter does not split it, since the
+  limit counts all the values of a statement. A `@Query` `in (:ids)` is
+  expanded to one marker per value on both: past the limit PostgreSQL gets a
+  clear `InvalidDataAccessApiUsageException` before the statement is sent,
+  SQLite the driver's error.
 - **Text order.** `ORDER BY` and the range operators on text use the
   database's collation, as in any Spring Data application: a database made
   with `en_US.UTF-8` puts `a_b` before `Cryptonomicon`, where the in-memory
   store and SQLite compare code units. `ignoreCase` is `lower()`, which folds
-  the letters the locale knows (`C`: ASCII only). `ON DELETE RESTRICT` is
+  the letters the locale knows (`C`: ASCII only); on SQLite it is a `lower` the
+  driver registers (Dart's `toLowerCase`), so `findByTitleIgnoreCase('ДЮНА')`
+  and `ä`/`Ä` match as in the in-memory store. `ON DELETE RESTRICT` is
   looked at when the statement ends, not row by row as in SQLite, so deleting a
   parent and its child in one statement works.
 - **Schema.** `spring.data.jdbc.schema=create` writes the tables above

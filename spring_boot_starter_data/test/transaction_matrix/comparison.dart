@@ -51,12 +51,6 @@ const knownDifferences = <String, KnownDifference>{
     'noRollbackFor lists it (Spring commits after a checked one)',
     starter: {'outer': 'Checked', 'rows': <String>[]},
   ),
-  'rules/noRollbackFor-closer-than-rollbackFor': KnownDifference(
-    'when an exception matches both rollbackFor and noRollbackFor, '
-    'rollbackFor wins (Spring: the entry closest to the exception class '
-    'wins); Dart cannot rank two types without reflection',
-    starter: {'outer': 'Hard', 'rows': <String>[]},
-  ),
   'lock/outside-a-transaction': KnownDifference(
     'a @Lock query outside a transaction never runs unlocked: it fails '
     '(Spring runs it in autocommit, so the lock is gone at once)',

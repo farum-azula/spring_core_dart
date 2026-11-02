@@ -60,6 +60,12 @@ resolves to, and the expression of a named pointcut.
   warning;
 - `@Value('${key}')` in a normal (non-raw) string: an error, because in
   Dart that is string interpolation; write `r'${key}'`;
+- containers in tests (`spring_boot_starter_test/containers.dart`): a
+  `@Container` field that is not `static`, and `@ServiceConnection` on a
+  `GenericContainer` (it cannot say how to connect) are errors; the
+  properties of a `@ServiceConnection` `PostgresContainer` or
+  `KeycloakContainer` count as defined in that test file, and their hover
+  says which container provides them;
 - `@Value('asset:...')` (`spring_boot_starter_flutter`): a missing file,
   or one not declared under `flutter: assets:` in `pubspec.yaml`, is a
   warning with the entry to add, as the generator's build error says.

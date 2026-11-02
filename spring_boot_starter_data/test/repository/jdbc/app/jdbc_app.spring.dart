@@ -5765,6 +5765,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
     _i2.Category: (value) => value is _i2.Category,
     _i2.Folder: (value) => value is _i2.Folder,
   },
+  typeDepths: {
+    _i2.Club: 1,
+    _i2.Player: 1,
+    _i2.Employee: 1,
+    _i2.Category: 1,
+    _i2.Folder: 1,
+  },
 );
 
 final class _$Sqlite3Binding implements _i1.SqliteBinding {
@@ -6101,7 +6108,7 @@ _i12.SpringApplication get springApplication => _i12.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '019acf15',
+  fingerprint: '81c77187',
 );
 
 /// Starts the application: config files, environment, context, runners

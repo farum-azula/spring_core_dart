@@ -1374,6 +1374,15 @@ each other's data, whichever store it is in.
   `@Transactional(transactionManager: ...)`) and no other: the repositories
   of the other databases write for real, so clean up after them. A name no
   manager has fails the test with a `StateError` that says so.
+- **`@Transactional(transactionManager: 'archive')` on a test method** picks
+  the manager of that one test (Spring's `@Transactional(transactionManager =
+  ...)` on a test method); on a `@Nested` group or a test class it picks it
+  for the tests inside. The innermost one that names a manager wins, then
+  `@DataTest(transactionManager:)`; `@Transactional()` without a name keeps
+  the choice of the outer level. The other attributes of `@Transactional` do
+  nothing on a test (the transaction is the test's own; use `@Commit` /
+  `@Rollback` for its end). Without any, the test runs in a transaction of
+  every manager, as before.
 - Callbacks that wait for a commit (`afterCommit`) run only for tests that
   commit.
 - Work the test starts and does not await cannot use the transaction after
@@ -1389,7 +1398,7 @@ each other's data, whichever store it is in.
 | `resourceDirectories` | `['test/resources']` | the test classpath |
 | `include` | `[]` | `@Import`, `includeFilters` |
 | `replaceDatabase` | `true` | `@AutoConfigureTestDatabase(replace = ...)` |
-| `transactionManager` | `''` (every manager the repositories use) | `@Transactional(transactionManager = ...)` |
+| `transactionManager` | `''` (every manager the repositories use); a test method, `@Nested` group or class overrides it with `@Transactional(transactionManager: ...)` | `@Transactional(transactionManager = ...)` |
 
 ### As functions
 

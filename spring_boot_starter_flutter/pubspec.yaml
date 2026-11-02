@@ -11,6 +11,8 @@ topics:
 
 environment:
   sdk: ^3.13.0
+  # The Flutter that ships Dart 3.13; plugins must name one.
+  flutter: '>=3.47.0'
 
 
 dependencies:
@@ -32,3 +34,17 @@ dev_dependencies:
   spring_boot_starter_test: ^0.6.0
   lints: ^6.0.0
   plugin_platform_interface: ^2.1.8
+
+# A Flutter plugin on the desktops only: the window's title bar, size and
+# drag from `spring.flutter.desktop.window.*` (no community plugin such as
+# window_manager). The mobile platforms and the web have no platform code:
+# the starter does not call it there.
+flutter:
+  plugin:
+    platforms:
+      macos:
+        pluginClass: SpringBootStarterFlutterPlugin
+      windows:
+        pluginClass: SpringBootStarterFlutterPluginCApi
+      linux:
+        pluginClass: SpringBootStarterFlutterPlugin

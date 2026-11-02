@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- `BeanModule.typeDepths` and `BeanIntrospector.typeDepth(type)`: for each type of `typeTests`, the length of the longest chain of supertypes up to `Object`. Of two types a value is an instance of, the greater depth is the closer one; `@Transactional(rollbackFor:, noRollbackFor:)` uses it to let the closest entry decide, as Spring does.
+
 ## 0.6.0
 
 ### Breaking

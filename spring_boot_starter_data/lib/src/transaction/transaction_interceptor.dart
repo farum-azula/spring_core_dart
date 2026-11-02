@@ -82,10 +82,13 @@ final class TransactionPlan {
 /// - The transaction manager is the annotation's `transactionManager` (a
 ///   bean name or qualifier) or, when empty, the only (or primary)
 ///   `PlatformTransactionManager` bean.
-/// - An error rolls back, unless its type (or a supertype) is in
-///   `noRollbackFor` and no entry of `rollbackFor` matches it: then the
-///   transaction commits and the error is thrown again. Types are matched
-///   with subtypes through [BeanIntrospector.isInstanceOf].
+/// - An error rolls back, unless the entry of `rollbackFor` or
+///   `noRollbackFor` closest to its class (the type itself or the nearest
+///   supertype listed) is in `noRollbackFor`: then the transaction commits
+///   and the error is thrown again. Types are matched with subtypes through
+///   [BeanIntrospector.isInstanceOf], the closest found with
+///   [BeanIntrospector.typeDepth], as Spring's
+///   `RuleBasedTransactionAttribute` does.
 /// - The transaction is named `Class.method`.
 ///
 /// A call made from inside the same class does not go through the proxy,
@@ -140,15 +143,41 @@ final class TransactionInterceptor implements MethodInterceptor {
     if (annotation == null) {
       return null;
     }
-    bool matches(List<Type> types, Object error) =>
-        types.any((type) => introspector.isInstanceOf(type, error));
     return TransactionPlan._(
       annotation,
       annotation.definition('${signature.targetType}.${signature.name}'),
-      (error) =>
-          matches(annotation.rollbackFor, error) ||
-          !matches(annotation.noRollbackFor, error),
+      (error) => _rollsBackOn(annotation, error),
     );
+  }
+
+  // Spring's RuleBasedTransactionAttribute: of the entries of `rollbackFor`
+  // and `noRollbackFor` that match the error, the one whose type is the
+  // closest to the error's class decides; with none, the error rolls back.
+  // The closest is the deepest in the hierarchy (the generator registers
+  // each listed type's depth, see `BeanModule.typeDepths`: an error is an
+  // instance of both only when one is a subtype of the other, or the
+  // two are the same type). On a tie the first entry wins, `rollbackFor`
+  // before `noRollbackFor`, as in Spring; a type without a registered depth
+  // counts as 0, so `rollbackFor` wins among those.
+  bool _rollsBackOn(Transactional annotation, Object error) {
+    var closest = -1;
+    var rollback = true;
+    void consider(List<Type> types, bool rolls) {
+      for (final type in types) {
+        if (!introspector.isInstanceOf(type, error)) {
+          continue;
+        }
+        final depth = introspector.typeDepth(type) ?? 0;
+        if (depth > closest) {
+          closest = depth;
+          rollback = rolls;
+        }
+      }
+    }
+
+    consider(annotation.rollbackFor, true);
+    consider(annotation.noRollbackFor, false);
+    return rollback;
   }
 
   /// The manager named [name] by `transactionManager` (empty: the primary

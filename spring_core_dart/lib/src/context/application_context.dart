@@ -1288,7 +1288,8 @@ class AnnotationConfigApplicationContext
       );
       introspector
         ..registerAll(module.introspections)
-        ..registerTypeTests(module.typeTests);
+        ..registerTypeTests(module.typeTests)
+        ..registerTypeDepths(module.typeDepths);
     }
 
     for (final component in _components) {

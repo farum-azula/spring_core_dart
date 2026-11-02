@@ -318,6 +318,13 @@ class SliceImpl<T> implements Slice<T> {
 /// The usual [Page]: a list of items, the request that produced it, and the
 /// total count.
 ///
+/// A controller may return it: it is written as JSON the way Spring Data
+/// 3.3's `PagedModel` (`@EnableSpringDataWebSupport(pageSerializationMode:
+/// VIA_DTO)`) writes a `Page`, a shape that stays the same between versions:
+/// `{"content": [...], "page": {"size": 20, "number": 0, "totalElements":
+/// 42, "totalPages": 3}}` ([toJson]). Reading it back is not supported (as
+/// in Spring, a `PageImpl` has no JSON constructor).
+///
 /// Spring (Java): `org.springframework.data.domain.PageImpl`.
 class PageImpl<T> implements Page<T> {
   /// A page holding [content] for [pageable], out of [totalElements] items
@@ -371,6 +378,19 @@ class PageImpl<T> implements Page<T> {
   @override
   Pageable previousPageable() =>
       hasPrevious ? pageable.previousOrFirst() : const Pageable.unpaged();
+
+  /// The page as JSON: the [content] and a `page` object with the [size],
+  /// the page [number], [totalElements] and [totalPages], as Spring Data's
+  /// `PagedModel`. The mapper writes each item of [content] itself.
+  Map<String, Object?> toJson() => {
+    'content': content,
+    'page': {
+      'size': size,
+      'number': number,
+      'totalElements': totalElements,
+      'totalPages': totalPages,
+    },
+  };
 
   @override
   Page<R> map<R>(R Function(T) transform) => PageImpl<R>(

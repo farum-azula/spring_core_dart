@@ -926,7 +926,10 @@ final class SpringWorkspace {
           if (message) '**`$key`** (message)' else '**`$key`**',
           '',
           for (final entry in entries)
-            '- `${entry.fileName}`: `${entry.value}`',
+            if (entry.provider case final provider?)
+              '- provided by `$provider` (`@ServiceConnection`)'
+            else
+              '- `${entry.fileName}`: `${entry.value}`',
         ].join('\n');
       case _DeclarationTarget(:final description, :final declarations):
         if (declarations.isEmpty) {
@@ -2022,6 +2025,15 @@ final class SpringWorkspace {
     _pointcutProblems(file, problems);
     _spelArgumentProblems(file, problems);
     _assetProblems(file, problems);
+    for (final problem in containerProblems(file)) {
+      problems.add(
+        Problem(
+          rangeOf(file, problem.start, problem.end),
+          problem.message,
+          error: true,
+        ),
+      );
+    }
     return problems;
   }
 

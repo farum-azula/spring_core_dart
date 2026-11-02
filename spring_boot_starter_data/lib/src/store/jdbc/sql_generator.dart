@@ -5,6 +5,7 @@ import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree.dart';
+import 'package:spring_boot_starter_data/src/query/query_arguments.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
 
@@ -450,7 +451,12 @@ final class SqlGenerator {
     final column = _q(name);
     final left = ic ? dialect.lower(column) : column;
     final marker = ic ? dialect.lower('?') : '?';
-    Object? argument(int index) => converter.toColumnValue(arguments[index]);
+    Object? argument(int index) {
+      final value = converter.toColumnValue(arguments[index]);
+      rejectNul(value, property.name);
+      return value;
+    }
+
     String compare(String operator) {
       final value = argument(0);
       if (value == null) {
@@ -548,12 +554,20 @@ final class SqlGenerator {
         final elements = [
           for (final element in raw) converter.toColumnValue(element),
         ];
+        for (final element in elements) {
+          rejectNul(element, property.name);
+        }
         final isIn = part.type == PartType.in_;
         if (isIn) {
           // A null never equals anything: it takes no part.
           final values = elements.nonNulls.toList();
           if (values.isEmpty) {
             return _never;
+          }
+          final array = _array(column, ic, false, values.length);
+          if (array != null) {
+            parameters.add(name, values);
+            return array;
           }
           parameters.addAll(name, values);
           return '$left in (${List.filled(values.length, marker).join(', ')})';
@@ -565,10 +579,38 @@ final class SqlGenerator {
           // `x not in (..., null)` is never true.
           return _never;
         }
+        final array = _array(column, ic, true, elements.length);
+        if (array != null) {
+          parameters.add(name, elements);
+          return array;
+        }
         parameters.addAll(name, elements);
         return '$left not in '
             '(${List.filled(elements.length, marker).join(', ')})';
     }
+  }
+
+  // The condition that binds [count] values as one array parameter, or null
+  // when the dialect writes a marker for each; a list a dialect without
+  // arrays cannot bind is refused here, clearly.
+  String? _array(String column, bool ignoreCase, bool negate, int count) {
+    final array = dialect.arrayMembership(
+      column,
+      ignoreCase: ignoreCase,
+      negate: negate,
+    );
+    if (array != null) {
+      return array;
+    }
+    final limit = dialect.maxBoundParameters;
+    if (limit != null && count > limit) {
+      throw InvalidDataArgumentException(
+        'A list of $count values is more than ${dialect.name} binds in one '
+        'statement ($limit): split it into smaller lists, or query by a '
+        'join or a range',
+      );
+    }
+    return null;
   }
 
   // ----------------------------------------------------------------- like

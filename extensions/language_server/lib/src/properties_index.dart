@@ -16,7 +16,12 @@ final class PropertyEntry {
     required this.keyStart,
     required this.keyEnd,
     this.environment = false,
+    this.provider,
   });
+
+  /// For a property a `@ServiceConnection` container provides: which one,
+  /// as `PostgresContainer postgres`. Hovers show it instead of a value.
+  final String? provider;
 
   /// Whether [key] is an environment variable (`SHOP_MAX_BASKET_SIZE`, from
   /// a test's `@TestEnvironment`), matched the way Spring maps property

@@ -57,6 +57,27 @@ final class PostgresDialect extends SqlDialect {
     if (offset != null) 'OFFSET $offset',
   ].join(' ');
 
+  /// The protocol counts the parameters of a statement in 16 bits.
+  @override
+  int? get maxBoundParameters => 65535;
+
+  /// `= any(?)` / `<> all(?)`: a list of any length is one parameter (the
+  /// server infers the array's type from the column).
+  @override
+  String? arrayMembership(
+    String column, {
+    required bool ignoreCase,
+    required bool negate,
+  }) {
+    final operator = negate ? '<> all' : '= any';
+    if (!ignoreCase) {
+      return '$column $operator(?)';
+    }
+    return '${lower(column)} $operator'
+        '(array(select ${lower('element')} '
+        'from unnest(cast(? as text[])) as element))';
+  }
+
   @override
   LockStrategy get lockStrategy => LockStrategy.rowLocks;
 
@@ -424,6 +445,24 @@ final class PostgresDialect extends SqlDialect {
         cause: error,
         sql: statement,
         constraint: error.constraint,
+      );
+    }
+    if (state == '22025') {
+      // A `like` pattern that ends with its escape character: the caller's
+      // pattern is wrong (a derived query escapes its text itself).
+      return InvalidDataArgumentException(
+        r'A LIKE pattern must not end with the escape character \: '
+        r'write \\ for a backslash',
+        cause: error,
+        sql: statement,
+      );
+    }
+    if (state == '22021') {
+      return InvalidDataArgumentException(
+        'A text value contains a character the database encoding cannot '
+        'hold (a NUL, U+0000, or invalid UTF-8)',
+        cause: error,
+        sql: statement,
       );
     }
     if (state.startsWith('22')) {

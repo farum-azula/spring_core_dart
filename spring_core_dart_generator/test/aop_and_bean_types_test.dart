@@ -335,6 +335,43 @@ class Cfg {
     });
   });
 
+  group('type depths', () {
+    test('every type written in an annotation gets its longest chain of '
+        'supertypes up to Object', () async {
+      final output = await _generate('''
+class Soft implements Exception {}
+
+class Hard extends Soft {}
+
+class Mixed extends Hard with _Marker implements Comparable<Mixed> {
+  @override
+  int compareTo(Mixed other) => 0;
+}
+
+mixin _Marker {}
+
+class Rules {
+  const Rules(this.types);
+  final List<Type> types;
+}
+
+@Service()
+class Orders {
+  @Rules([Exception, Soft, Hard, Mixed])
+  void place() {}
+}
+''');
+      final code = output.replaceAll(RegExp(r'\s'), '');
+      expect(code, contains('typeDepths:{'));
+      // Exception: Object (1); Soft: Exception (2); Hard: Soft (3);
+      // Mixed: Hard, a mixin and Comparable, so 4.
+      expect(code, contains('Exception:1'));
+      expect(code, contains('Soft:2'));
+      expect(code, contains('Hard:3'));
+      expect(code, contains('Mixed:4'));
+    });
+  });
+
   group('pointcut metadata', () {
     test('args(Type) gets a runtime type test, @args(A) the annotated '
         'classes', () async {

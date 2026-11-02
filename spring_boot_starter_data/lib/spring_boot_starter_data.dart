@@ -121,3 +121,4 @@ export 'src/transaction/transaction_exceptions.dart';
 export 'src/transaction/transaction_interceptor.dart';
 export 'src/transaction/transaction_synchronization_manager.dart';
 export 'src/transaction/transaction_template.dart' show TransactionTemplate;
+export 'src/web/web_paging.dart';

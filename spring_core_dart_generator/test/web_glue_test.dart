@@ -17,6 +17,10 @@ const _template =
     'spring_boot_starter_data|'
     'lib/src/web/data_access_exception_resolver.dart.tmpl';
 
+const _pagingTemplate =
+    'spring_boot_starter_data|'
+    'lib/src/web/paging_argument_resolver.dart.tmpl';
+
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:pkg/src/beans.spring.dart';
@@ -69,7 +73,9 @@ Future<String> _build(
   // is the one under test.
   await readerWriter.testing.loadIsolateSources();
   if (!template) {
-    readerWriter.testing.delete(AssetId.parse(_template));
+    readerWriter.testing
+      ..delete(AssetId.parse(_template))
+      ..delete(AssetId.parse(_pagingTemplate));
   }
   final result = await testBuilder(
     SpringBuilder(),
@@ -146,6 +152,43 @@ void main() {
       );
     });
 
+    test('the paging resolver is written with its symbols prefixed', () {
+      final web = RegExp(
+        "import 'package:spring_boot_starter_web/"
+        r"spring_boot_starter_web.dart'\s+as (_i\d+);",
+      ).firstMatch(output)![1];
+      final data = RegExp(
+        "import 'package:spring_boot_starter_data/"
+        r"spring_boot_starter_data.dart'\s+as (_i\d+);",
+      ).firstMatch(output)![1];
+      expect(output, contains(r'class _$PagingArgumentResolver'));
+      expect(output, contains('implements $web.HandlerMethodArgumentResolver'));
+      expect(output, contains('with $web.WebMvcConfigurer'));
+      expect(output, contains('== $data.Pageable'));
+      expect(output, contains('== $data.Sort'));
+      expect(output, contains('$data.WebPagingProperties.of(environment)'));
+      expect(output, contains('.whereType<$data.SortDefault>()'));
+      expect(output, contains('annotation<$data.PageableDefault>()'));
+      expect(output, isNot(contains('{{')));
+      expect(output, isNot(contains('NOT a Dart library')));
+    });
+
+    test('a WebMvcConfigurer bean for it, once, reading the environment, '
+        'replaceable by name', () {
+      final code = _normalize(output);
+      expect(code, contains("name:r'pagingArgumentResolvers'"));
+      expect(
+        code,
+        contains(
+          r'create:(r)=>_$pagingArgumentResolvers('
+          'r.dependency<_i',
+        ),
+      );
+      expect(code, contains(".named(r'pagingArgumentResolvers')"));
+      expect(code, contains('WebMvcConfigurer],'));
+      expect(RegExp(r'WebMvcConfigurer>\(').allMatches(output), hasLength(1));
+    });
+
     test('no database driver glue: no sqlite3 among the dependencies', () {
       expect(output, isNot(contains('sqlite3')));
       expect(output, isNot(contains('JdbcDriver')));
@@ -197,6 +240,8 @@ void main() {
       expect(output, isNot(contains('HandlerExceptionResolver')));
       expect(output, isNot(contains('DataAccessException')));
       expect(output, isNot(contains('ResponseStatusException')));
+      expect(output, isNot(contains('WebMvcConfigurer')));
+      expect(output, isNot(contains('WebPaging')));
     }
 
     test('without the web starter among the dependencies', () async {

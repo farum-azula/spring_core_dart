@@ -448,11 +448,28 @@ void main() {
     late DockerClient docker;
     var status = 204;
     var message = '';
+    // How many inspections still find the container before it is gone.
+    var stillThere = 0;
 
     setUp(() async {
       daemon = await HttpServer.bind(InternetAddress.loopbackIPv4, 0)
         ..listen((request) async {
           await request.drain<void>();
+          if (request.method == 'GET') {
+            final response = request.response;
+            if (stillThere > 0) {
+              stillThere--;
+              response
+                ..headers.contentType = ContentType.json
+                ..write(
+                  jsonEncode({'Id': 'abc', 'State': <String, Object?>{}}),
+                );
+            } else {
+              response.statusCode = 404;
+            }
+            await response.close();
+            return;
+          }
           final response = request.response..statusCode = status;
           if (message.isNotEmpty) {
             response
@@ -477,6 +494,14 @@ void main() {
       status = 409;
       message = 'removal of container abc is already in progress';
       expect(docker.removeContainer('abc'), completes);
+    });
+
+    test('it returns once the daemon has finished removing', () async {
+      status = 409;
+      message = 'removal of container abc is already in progress';
+      stillThere = 3;
+      await docker.removeContainer('abc');
+      expect(stillThere, 0);
     });
 
     test('a container that is gone is not an error', () {

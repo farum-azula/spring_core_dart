@@ -50,6 +50,8 @@ export 'src/asset_resource.dart';
 export 'src/bean_reads.dart' show BeanReadsPointcut, BeanReadsInterceptor;
 export 'src/app_lifecycle.dart';
 export 'src/context_extensions.dart';
+export 'src/desktop_window/desktop_window.dart';
+export 'src/desktop_window/desktop_window_settings.dart';
 export 'src/notify_listeners.dart';
 export 'src/platform_profiles.dart';
 export 'src/spring_app.dart';
