@@ -127,14 +127,14 @@ explained chapter by chapter.
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_starter_flutter: ^0.6.0
+  spring_boot_starter_flutter: ^0.6.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.6.0
+  spring_core_dart_generator: ^0.6.1
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.6.0   # springBootTest, BeanOverride
+  spring_boot_starter_test: ^0.6.1   # springBootTest, BeanOverride
 ```
 
 Then:

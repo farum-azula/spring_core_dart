@@ -1,3 +1,8 @@
+## 0.6.1
+
+- test(containers): labels unique per run — CI runs the docker tests twice at once and one run saw the (#19)
+- feat(flutter): the desktop window from properties — title bar, initia… (#18)
+
 ## 0.6.0
 
 ### Changes

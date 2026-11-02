@@ -1,3 +1,7 @@
+## 0.6.1
+
+- feat(flutter): the desktop window from properties — title bar, initia… (#18)
+
 ## 0.6.0
 
 ### Breaking
