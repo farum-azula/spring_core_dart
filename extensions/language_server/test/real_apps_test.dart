@@ -42,6 +42,9 @@ void main() {
   test(
     'injection points: no false "No bean" with the whole repository open',
     () {
+      if (_unresolved('${examples.path}/themes/neon')) {
+        return;
+      }
       final repository = Directory('${examples.path}/..')
           .resolveSymbolicLinksSync();
       final workspace = SpringWorkspace([repository])..refresh(force: true);
@@ -84,6 +87,9 @@ void main() {
     test('$app: no false diagnostics on its configuration', () {
       final root = Directory('${examples.path}/$app')
           .resolveSymbolicLinksSync();
+      if (_unresolved(root)) {
+        return;
+      }
       final workspace = SpringWorkspace([root])..refresh(force: true);
       final resources = Directory('$root/lib/resources');
       final files = [
@@ -196,3 +202,40 @@ final String _repository = () {
     directory = parent;
   }
 }();
+
+// Whether the app at [root] has no `.dart_tool/package_config.json`: then
+// the editor cannot find its dependencies and their metadata, so the test
+// is skipped. That is the case of the Flutter apps in the Dart-only CI job
+// (no Flutter SDK, no `flutter pub get`); the Flutter job runs this test
+// after `flutter pub get` with REAL_APPS_REQUIRED=true, where a missing
+// resolution fails instead.
+bool _unresolved(String root) {
+  // A package of the pub workspace has it at the workspace's root.
+  for (
+    var directory = Directory(root);
+    directory.path.startsWith(_repository);
+    directory = directory.parent
+  ) {
+    if (File('${directory.path}/.dart_tool/package_config.json').existsSync()) {
+      final workspace = directory.path != root;
+      // A Flutter app has its own resolution; the root one does not cover it.
+      if (!workspace ||
+          !File('$root/pubspec.yaml')
+              .readAsStringSync()
+              .contains('sdk: flutter')) {
+        return false;
+      }
+      break;
+    }
+    if (directory.parent.path == directory.path) {
+      break;
+    }
+  }
+  final reason =
+      '${root.split('/').last} is not resolved (run `flutter pub get` there)';
+  if (Platform.environment['REAL_APPS_REQUIRED'] == 'true') {
+    fail(reason);
+  }
+  markTestSkipped(reason);
+  return true;
+}

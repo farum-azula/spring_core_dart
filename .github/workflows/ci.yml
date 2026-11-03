@@ -702,6 +702,14 @@ jobs:
         working-directory: spring_boot_starter_flutter_security
         run: flutter test
 
+      # The editor against the Flutter apps with their real metadata: the
+      # Dart jobs skip them (no Flutter SDK, so no `flutter pub get`); here
+      # they are resolved, and a missing resolution fails.
+      - name: Language server against the Flutter apps
+        env:
+          REAL_APPS_REQUIRED: 'true'
+        run: dart test extensions/language_server/test/real_apps_test.dart
+
       # The app's tests, the end-to-end ones (tag e2e) against the server
       # guide running here.
       - name: Tests of the Flutter guide, against the server guide
