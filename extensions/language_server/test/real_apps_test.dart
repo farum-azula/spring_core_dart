@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 import 'support/editor_fixture.dart';
 
 void main() {
-  final examples = Directory('${Directory.current.path}/../../example');
+  final examples = Directory('$_repository/example');
   const apps = [
     'server_guide',
     'flutter_guide',
@@ -122,7 +122,7 @@ void main() {
       // The generated file is not there: its import is left out.
       source =
           File(
-            '${Directory.current.path}/../../spring_boot_starter_data/example/'
+            '$_repository/spring_boot_starter_data/example/'
             'example.dart',
           ).readAsStringSync().replaceAll(
             "import 'spring_gen/example.spring.dart';",
@@ -131,7 +131,7 @@ void main() {
       fixture.open(
         'lib/spring_gen/spring_metadata.json',
         File(
-          '${Directory.current.path}/test/fixtures/data_example_metadata.json',
+          '$_repository/extensions/language_server/test/fixtures/data_example_metadata.json',
         ).readAsStringSync().replaceAll('neon_data', 'app'),
       );
       path = fixture.open('lib/example.dart', source);
@@ -179,3 +179,20 @@ bool _isConfig(String path) {
       name.endsWith('.yaml') ||
       name.endsWith('.properties');
 }
+
+// The repository's root, from the package's folder or from the workspace
+// root (CI runs the tests from both).
+final String _repository = () {
+  var directory = Directory.current.absolute;
+  while (true) {
+    if (Directory('${directory.path}/extensions/language_server')
+        .existsSync()) {
+      return directory.resolveSymbolicLinksSync();
+    }
+    final parent = directory.parent;
+    if (parent.path == directory.path) {
+      throw StateError('Not inside the repository: ${Directory.current.path}');
+    }
+    directory = parent;
+  }
+}();
