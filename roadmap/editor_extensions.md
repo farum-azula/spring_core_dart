@@ -96,3 +96,30 @@ the language server loads it from there for completion, hover and checks of
 Until that file has the section, the components are accepted as written and
 the server keeps a built-in table for the top-level theme keys (brightness,
 colors, shape, ...), which the metadata overrides when it lists the same key.
+
+## VS Code and JetBrains (the owner, November 2026)
+
+**Planned, after 0.6.3** (first VS Code, then JetBrains; it may run next
+to the navigation starter, they do not touch each other). Everything the
+editor does lives in the `dart_spring` language server (config and theme
+checks, `$` references, `${key}`, SpEL, injection points, `@Query` SQL and
+derived queries, semantic tokens), so both are thin clients like the Zed
+extension: start the server, add the snippets.
+
+- **VS Code** (`extensions/vscode`, TypeScript, `vscode-languageclient`):
+  the server from `lsp.dart-spring` settings, else `dart_spring_lsp` on
+  the PATH, else the binary of the extension's version downloaded from the
+  GitHub release (the same order as Zed); the snippets of
+  `extensions/zed/dart_spring/snippets` converted; `.properties` support;
+  colours for the server's token types (`closureParameter`, SQL
+  `comment`). Published to the VS Code Marketplace and Open VSX (Cursor
+  reads it) — the publisher accounts are the owner's. About a day.
+- **JetBrains** (`extensions/jetbrains`, Kotlin, Gradle): through Red Hat's
+  LSP4IJ, so it works in every IntelliJ IDE including the free ones and
+  Android Studio (where many Flutter developers are), not only where the
+  platform's own LSP API exists; settings page for the server path;
+  plugin verifier against the supported IDE versions. Published to the
+  JetBrains Marketplace (the owner's account). Two to three days.
+- Both get their version from `tool/version.dart` like the Zed extension,
+  are built and tested in CI, and their packages are attached to the
+  GitHub release next to the language server binaries.

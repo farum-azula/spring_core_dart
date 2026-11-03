@@ -246,4 +246,4 @@ What comes next, in order:
 | [flutter_spring_signals.md](flutter_spring_signals.md) | `flutter_spring_signals` | planned: `@Signal` fields |
 | [flutter_spring_scene.md](flutter_spring_scene.md) | `flutter_spring_scene` | planned: Flutter Scene (3D) |
 | [flutter_spring_rust.md](flutter_spring_rust.md) | `flutter_spring_rust` | planned: Rust code as beans |
-| [editor_extensions.md](editor_extensions.md) | Zed extensions | next steps of `dart_spring`, the Flutter extension |
+| [editor_extensions.md](editor_extensions.md) | Zed extensions, VS Code and JetBrains (planned) | next steps of `dart_spring`, the Flutter extension; VS Code and JetBrains clients of the same language server after 0.6.3 |

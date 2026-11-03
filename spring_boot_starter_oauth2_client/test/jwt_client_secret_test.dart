@@ -19,6 +19,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
+
 import 'support/client_properties.dart';
 
 // A P-256 test key in PKCS #8 (made with `openssl ecparam -name
