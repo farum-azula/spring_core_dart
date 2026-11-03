@@ -147,6 +147,51 @@ void main() {
     });
   });
 
+  group('bean references that cannot be resolved stop the application', () {
+    String failureOf(ApplicationContextRunner runner) {
+      late String message;
+      runner.run((context) {
+        expect(context, hasFailed());
+        message = '${context.startupFailure}';
+      });
+      return message;
+    }
+
+    test('a bean of another type', () {
+      final message = failureOf(
+        runner
+            .withBean<RequestInterceptor>(AuditInterceptor.new, name: 'audit')
+            .withPropertyValues([
+              'spring.feign.client.config.plain.retryer=audit',
+            ]),
+      );
+      expect(message, contains('spring.feign.client.config.plain.retryer'));
+      expect(message, contains("the bean 'audit' is not a Retryer"));
+    });
+
+    test('a class name that several beans have', () {
+      final message = failureOf(
+        runner
+            .withBean<Retryer>(FastRetryer.new, name: 'fast')
+            .withBean<Retryer>(FastRetryer.new, name: 'faster')
+            .withPropertyValues([
+              'spring.feign.client.config.plain.retryer=FastRetryer',
+            ]),
+      );
+      expect(message, contains('several beans of this class: fast, faster'));
+    });
+
+    test('two application beans of one type without a choice', () {
+      final message = failureOf(
+        runner
+            .withBean<Retryer>(FastRetryer.new, name: 'fast')
+            .withBean<Retryer>(FastRetryer.new, name: 'faster'),
+      );
+      expect(message, contains('several application beans of one type'));
+      expect(message, contains('fast, faster'));
+    });
+  });
+
   group('URLs', () {
     test('a url without a scheme gets http://', () async {
       server.when(HttpMethod.get, '/ping').respond(200, body: 'ok');

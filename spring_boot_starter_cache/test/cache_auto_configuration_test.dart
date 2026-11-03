@@ -513,4 +513,103 @@ spring:
       expect(context, hasFailed());
     });
   });
+
+  group('an environment that cannot be configured', () {
+    // Only the limits of the properties object count; nothing is read from
+    // the environment.
+    final environment = _ReadOnlyEnvironment(StandardEnvironment());
+
+    CacheManager manager(CacheProperties properties) =>
+        cacheManagerFromProperties(properties, environment);
+
+    test('the limits of single caches come from the bound map', () {
+      final properties = CacheProperties()
+        ..simple.maxSize = 100
+        ..simple.caches['prices'] = (CacheLimits()
+          ..timeToLive = const Duration(seconds: 30)
+          ..maxSize = 5);
+      final caches = manager(properties);
+      final prices = caches.getCache('prices')! as InMemoryCache;
+      expect(prices.spec.timeToLive, const Duration(seconds: 30));
+      expect(prices.spec.maxSize, 5);
+      final books = caches.getCache('books')! as InMemoryCache;
+      expect(books.spec.maxSize, 100);
+    });
+
+    test('a negative limit names the property of the cache', () {
+      expect(
+        () => manager(
+          CacheProperties()
+            ..simple.caches['prices'] = (CacheLimits()..maxSize = -1),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.name,
+            'name',
+            'spring.cache.simple.caches.prices.max-size',
+          ),
+        ),
+      );
+      expect(
+        () => manager(
+          CacheProperties()
+            ..simple.caches['prices'] = (CacheLimits()
+              ..timeToLive = const Duration(seconds: -1)),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.name,
+            'name',
+            'spring.cache.simple.caches.prices.time-to-live',
+          ),
+        ),
+      );
+    });
+  });
+}
+
+// An Environment that is not a ConfigurableEnvironment, as another
+// implementation of the interface would be.
+final class _ReadOnlyEnvironment implements Environment {
+  _ReadOnlyEnvironment(this._inner);
+
+  final StandardEnvironment _inner;
+
+  @override
+  List<String> get activeProfiles => _inner.activeProfiles;
+
+  @override
+  List<String> get defaultProfiles => _inner.defaultProfiles;
+
+  @override
+  bool acceptsProfiles(Profiles profiles) => _inner.acceptsProfiles(profiles);
+
+  @override
+  bool matchesProfiles(List<String> profileExpressions) =>
+      _inner.matchesProfiles(profileExpressions);
+
+  @override
+  bool containsProperty(String key) => _inner.containsProperty(key);
+
+  @override
+  String? getProperty(String key, {String? defaultValue}) =>
+      _inner.getProperty(key, defaultValue: defaultValue);
+
+  @override
+  T? getPropertyAs<T>(String key, {T? defaultValue}) =>
+      _inner.getPropertyAs<T>(key, defaultValue: defaultValue);
+
+  @override
+  String getRequiredProperty(String key) => _inner.getRequiredProperty(key);
+
+  @override
+  T getRequiredPropertyAs<T>(String key) =>
+      _inner.getRequiredPropertyAs<T>(key);
+
+  @override
+  String resolvePlaceholders(String text) => _inner.resolvePlaceholders(text);
+
+  @override
+  String resolveRequiredPlaceholders(String text) =>
+      _inner.resolveRequiredPlaceholders(text);
 }
