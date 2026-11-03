@@ -259,21 +259,49 @@ final class WindowsDpapiSecretStore implements SecretStore {
       return _moveLeftovers(legacy, recorded);
     }
     final spent = Stopwatch()..start();
-    final left = <String, _Left>{};
+    // Every old file, sorted so a run does not depend on the order the
+    // file system lists them in.
+    final pending = <File, ({String key, bool copy})>{};
     if (legacy.existsSync()) {
-      await for (final entry in legacy.list()) {
-        if (entry is! File) {
-          continue;
-        }
-        final key = _keyOf(entry, anyLength: true);
-        if (key == null || !entry.existsSync()) {
-          continue;
-        }
-        final state = await _moveFile(entry, key, budget: spent);
-        if (state != null) {
-          left[_name(entry)] = state;
+      final files = [
+        await for (final entry in legacy.list())
+          if (entry is File) entry,
+      ]..sort((a, b) => _name(a).compareTo(_name(b)));
+      for (final file in files) {
+        final key = _keyOf(file, anyLength: true);
+        if (key != null && file.existsSync()) {
+          pending[file] = (key: key, copy: true);
         }
       }
+    }
+    // In rounds: each file still in use gets one try per round, then the
+    // round waits a little longer, so the budget is shared by all of them
+    // and one busy file cannot use it up before the others are tried.
+    final left = <String, _Left>{};
+    for (var delay = const Duration(milliseconds: 50); ; delay *= 2) {
+      final busy = <File, ({String key, bool copy})>{};
+      for (final MapEntry(key: file, value: move) in pending.entries) {
+        final (state, inUse) = await _moveFile(
+          file,
+          move.key,
+          copy: move.copy,
+        );
+        if (state == null) {
+          left.remove(_name(file));
+          continue;
+        }
+        left[_name(file)] = state;
+        if (inUse) {
+          busy[file] = (key: move.key, copy: state == _Left.copy);
+        }
+      }
+      if (busy.isEmpty || spent.elapsed + delay > _moveRetryBudget) {
+        break;
+      }
+      await Future<void>.delayed(delay);
+      pending
+        ..clear()
+        ..addAll(busy);
     }
     await _writeRecord(legacy, left);
     _copiesLeft[_folderKey] = _copies(left);
@@ -306,7 +334,7 @@ final class WindowsDpapiSecretStore implements SecretStore {
       if (key == null) {
         continue;
       }
-      final now = await _moveFile(old, key, copy: state == _Left.copy);
+      final (now, _) = await _moveFile(old, key, copy: state == _Left.copy);
       if (now != null) {
         left[name] = now;
       }
@@ -338,18 +366,18 @@ final class WindowsDpapiSecretStore implements SecretStore {
       if (value == _Left.copy) key,
   };
 
-  // Copies [old] here ([copy]) and deletes it; `null` when done, else
-  // what is left of it. With a [budget], a file in use is tried again
-  // within it (the first move); without, once.
-  Future<_Left?> _moveFile(
+  // Copies [old] here ([copy]) and deletes it, each step tried once. The
+  // state is `null` when done, else what is left of the file; `inUse` is
+  // whether the step failed because another process has the file open
+  // (worth trying again soon).
+  Future<(_Left?, bool inUse)> _moveFile(
     File old,
     String key, {
-    Stopwatch? budget,
     bool copy = true,
   }) async {
     if (copy) {
       final target = _file(_folder, key);
-      final copied = await _attempt(budget, () async {
+      final copied = await _attempt(() async {
         if (target.existsSync() || !old.existsSync()) {
           return;
         }
@@ -362,42 +390,32 @@ final class WindowsDpapiSecretStore implements SecretStore {
           _hashed(key) ? [..._header(key), ...sealed] : sealed,
         );
       });
-      if (!copied) {
-        return _Left.copy;
+      if (copied != _Outcome.done) {
+        return (_Left.copy, copied == _Outcome.inUse);
       }
     }
-    final deleted = await _attempt(budget, () async {
+    final deleted = await _attempt(() async {
       if (old.existsSync()) {
         debugMoveOperation?.call('delete', old);
         await old.delete();
       }
     });
-    return deleted ? null : _Left.delete;
+    return deleted == _Outcome.done
+        ? (null, false)
+        : (_Left.delete, deleted == _Outcome.inUse);
   }
 
-  // Runs [step], one operation of the move, again while it fails because
-  // the file is in use, within [_moveRetryBudget] for the whole move
-  // ([spent] so far); once without [spent]. `false` when it failed.
-  static Future<bool> _attempt(
-    Stopwatch? spent,
-    Future<void> Function() step,
-  ) async {
-    for (var delay = const Duration(milliseconds: 50); ; delay *= 2) {
-      try {
-        await step();
-        return true;
-      } on PathNotFoundException {
-        // Another mover (another isolate, engine or instance of the app
-        // at the first start after the update) took the file first.
-        return true;
-      } on FileSystemException catch (error) {
-        if (spent == null ||
-            !_inUse(error) ||
-            spent.elapsed + delay > _moveRetryBudget) {
-          return false;
-        }
-        await Future<void>.delayed(delay);
-      }
+  // Runs [step], one operation of the move, once.
+  static Future<_Outcome> _attempt(Future<void> Function() step) async {
+    try {
+      await step();
+      return _Outcome.done;
+    } on PathNotFoundException {
+      // Another mover (another isolate, engine or instance of the app at
+      // the first start after the update) took the file first.
+      return _Outcome.done;
+    } on FileSystemException catch (error) {
+      return _inUse(error) ? _Outcome.inUse : _Outcome.failed;
     }
   }
 
@@ -894,3 +912,6 @@ abstract final class _VersionInfo {
     return pointer;
   }
 }
+
+// How one step of the move went.
+enum _Outcome { done, inUse, failed }
