@@ -2,7 +2,7 @@
 // (chapter 6), shipping scheduled in code with the TaskScheduler
 // (chapter 8), log fields for everything logged while placing an order
 // (chapter 11).
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/orders/basket_service.dart';
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:neon_books_server/src/orders/order_repository.dart';

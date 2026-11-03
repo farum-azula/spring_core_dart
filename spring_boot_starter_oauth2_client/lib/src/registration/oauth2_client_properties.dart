@@ -1,7 +1,5 @@
-// The documentation has Markdown table rows, which cannot be wrapped.
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration_repository.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registrations.dart';
@@ -9,265 +7,6 @@ import 'package:spring_boot_starter_oauth2_client/src/registration/common_oauth2
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.security.oauth2.client.registration');
-
-const _registrationPrefix = 'spring.security.oauth2.client.registration';
-const _providerPrefix = 'spring.security.oauth2.client.provider';
-
-/// The `spring.security.oauth2.client.registration.<id>.*` properties of
-/// one registration.
-///
-/// | Property | Meaning |
-/// |---|---|
-/// | `provider` | the provider id when it differs from the registration id |
-/// | `client-id` | required |
-/// | `client-secret` | none for an app |
-/// | `client-authentication-method` | `client_secret_basic`, `client_secret_post`, `none` |
-/// | `authorization-grant-type` | `authorization_code`, `client_credentials` |
-/// | `redirect-uri` | a template, such as `neonbooks:/oauth2/callback` |
-/// | `scope` | a comma list or a YAML list |
-/// | `client-name` | shown to users |
-/// | `dpop` | `auto` (default), `true`, `false`: DPoP-bound tokens ([DPoPMode]; not in Spring Boot) |
-/// | `response-mode` | `query` (default), `form_post`: how the authorization response comes back ([ResponseMode]; not in Spring Boot) |
-///
-/// Spring Boot (Java): `OAuth2ClientProperties.Registration`, plus `dpop`
-/// and `response-mode`.
-final class OAuth2ClientRegistrationProperties {
-  /// The properties of one registration, as read.
-  const OAuth2ClientRegistrationProperties({
-    this.provider,
-    this.clientId,
-    this.clientSecret,
-    this.clientAuthenticationMethod,
-    this.authorizationGrantType,
-    this.redirectUri,
-    this.scope,
-    this.clientName,
-    this.dpop,
-    this.responseMode,
-  });
-
-  /// `provider`.
-  final String? provider;
-
-  /// `client-id`.
-  final String? clientId;
-
-  /// `client-secret`; a credential, never log it.
-  final String? clientSecret;
-
-  /// `client-authentication-method`.
-  final String? clientAuthenticationMethod;
-
-  /// `authorization-grant-type`.
-  final String? authorizationGrantType;
-
-  /// `redirect-uri`.
-  final String? redirectUri;
-
-  /// `scope`; `null` when not set.
-  final Set<String>? scope;
-
-  /// `client-name`.
-  final String? clientName;
-
-  /// `dpop`: `auto`, `true` or `false`; `null` when not set (`auto`). Not
-  /// in Spring Boot.
-  final String? dpop;
-
-  /// `response-mode`: `query` or `form_post`; `null` when not set
-  /// (`query`, or the common provider's). Not in Spring Boot.
-  final String? responseMode;
-}
-
-/// The `spring.security.oauth2.client.provider.<id>.*` properties of one
-/// provider.
-///
-/// | Property | Meaning |
-/// |---|---|
-/// | `issuer-uri` | the endpoints come from the provider's metadata |
-/// | `authorization-uri` | the login page |
-/// | `token-uri` | the token endpoint |
-/// | `user-info-uri` | the user-info endpoint |
-/// | `user-info-authentication-method` | `header` (default), `form`, `query` |
-/// | `user-name-attribute` | the attribute naming the user |
-/// | `jwk-set-uri` | the provider's keys |
-///
-/// Spring Boot (Java): `OAuth2ClientProperties.Provider`.
-final class OAuth2ClientProviderProperties {
-  /// The properties of one provider, as read.
-  const OAuth2ClientProviderProperties({
-    this.authorizationUri,
-    this.tokenUri,
-    this.userInfoUri,
-    this.userInfoAuthenticationMethod,
-    this.userNameAttribute,
-    this.jwkSetUri,
-    this.issuerUri,
-  });
-
-  /// `authorization-uri`.
-  final String? authorizationUri;
-
-  /// `token-uri`.
-  final String? tokenUri;
-
-  /// `user-info-uri`.
-  final String? userInfoUri;
-
-  /// `user-info-authentication-method`.
-  final String? userInfoAuthenticationMethod;
-
-  /// `user-name-attribute`.
-  final String? userNameAttribute;
-
-  /// `jwk-set-uri`.
-  final String? jwkSetUri;
-
-  /// `issuer-uri`.
-  final String? issuerUri;
-}
-
-/// The `spring.security.oauth2.client.*` properties: the registrations
-/// and the providers, by id.
-///
-/// The starter reads them to build the `ClientRegistrationRepository`;
-/// applications set them and rarely use this class.
-///
-/// ```properties
-/// spring.security.oauth2.client.registration.keycloak.client-id=neon-app
-/// spring.security.oauth2.client.registration.keycloak.scope=openid,profile,email
-/// spring.security.oauth2.client.registration.keycloak.redirect-uri=neonbooks:/oauth2/callback
-/// spring.security.oauth2.client.provider.keycloak.issuer-uri=https://sso.example.com/realms/neon
-/// ```
-///
-/// Spring Boot (Java): `OAuth2ClientProperties`, with the same names.
-final class OAuth2ClientProperties {
-  /// The properties [registration] and [provider], by id.
-  const OAuth2ClientProperties({
-    this.registration = const {},
-    this.provider = const {},
-  });
-
-  /// Reads the properties of [environment].
-  factory OAuth2ClientProperties.of(Environment environment) {
-    String? text(String key) {
-      final value = environment.getProperty(key)?.trim();
-      return value == null || value.isEmpty ? null : value;
-    }
-
-    final binder = environment is ConfigurableEnvironment
-        ? Binder.get(environment)
-        : null;
-    Set<String>? scopes(String key) {
-      final List<String>? values;
-      if (binder != null) {
-        values = binder
-            .bind(key, const ListType<String>(ClassType<String>()))
-            .map<List<String>?>((values) => values)
-            .orElse(null);
-      } else {
-        values = environment.getProperty(key)?.split(',');
-      }
-      if (values == null) {
-        return null;
-      }
-      return {
-        for (final value in values)
-          if (value.trim().isNotEmpty) value.trim(),
-      };
-    }
-
-    final registrations = {
-      for (final id in _ids(environment, binder, _registrationPrefix))
-        id: OAuth2ClientRegistrationProperties(
-          provider: text('$_registrationPrefix.$id.provider'),
-          clientId: text('$_registrationPrefix.$id.client-id'),
-          clientSecret: text('$_registrationPrefix.$id.client-secret'),
-          clientAuthenticationMethod: text(
-            '$_registrationPrefix.$id.client-authentication-method',
-          ),
-          authorizationGrantType: text(
-            '$_registrationPrefix.$id.authorization-grant-type',
-          ),
-          redirectUri: text('$_registrationPrefix.$id.redirect-uri'),
-          scope: scopes('$_registrationPrefix.$id.scope'),
-          clientName: text('$_registrationPrefix.$id.client-name'),
-          dpop: text('$_registrationPrefix.$id.dpop'),
-          responseMode: text('$_registrationPrefix.$id.response-mode'),
-        ),
-    };
-    final providers = {
-      for (final id in _ids(environment, binder, _providerPrefix))
-        id: OAuth2ClientProviderProperties(
-          authorizationUri: text('$_providerPrefix.$id.authorization-uri'),
-          tokenUri: text('$_providerPrefix.$id.token-uri'),
-          userInfoUri: text('$_providerPrefix.$id.user-info-uri'),
-          userInfoAuthenticationMethod: text(
-            '$_providerPrefix.$id.user-info-authentication-method',
-          ),
-          userNameAttribute: text('$_providerPrefix.$id.user-name-attribute'),
-          jwkSetUri: text('$_providerPrefix.$id.jwk-set-uri'),
-          issuerUri: text('$_providerPrefix.$id.issuer-uri'),
-        ),
-    };
-    return OAuth2ClientProperties(
-      registration: registrations,
-      provider: providers,
-    );
-  }
-
-  /// Whether [environment] has at least one registration property: the
-  /// condition of the starter's repository.
-  static bool hasRegistrations(Environment environment) => _ids(
-    environment,
-    environment is ConfigurableEnvironment ? Binder.get(environment) : null,
-    _registrationPrefix,
-  ).isNotEmpty;
-
-  // The ids under [prefix]: the first element of every property name
-  // below it (relaxed names, YAML lists and environment variables
-  // included).
-  static Set<String> _ids(
-    Environment environment,
-    Binder? binder,
-    String prefix,
-  ) {
-    if (binder == null) {
-      return const {};
-    }
-    final entries = binder
-        .bind(
-          prefix,
-          const MapType<String, String>(
-            ClassType<String>(),
-            ClassType<String>(),
-          ),
-        )
-        .orElse(const {});
-    return {
-      for (final key in entries.keys)
-        if (key.split('.').first.trim().isNotEmpty) key.split('.').first,
-    };
-  }
-
-  /// The registrations, by id.
-  final Map<String, OAuth2ClientRegistrationProperties> registration;
-
-  /// The providers, by id.
-  final Map<String, OAuth2ClientProviderProperties> provider;
-
-  /// Checks that every registration has a client id.
-  ///
-  /// Throws a [StateError] (`Client id of registration 'x' must not be
-  /// empty.`) otherwise.
-  void validate() {
-    for (final MapEntry(key: id, :value) in registration.entries) {
-      if (value.clientId == null || value.clientId!.isEmpty) {
-        throw StateError("Client id of registration '$id' must not be empty.");
-      }
-    }
-  }
-}
 
 /// Turns [OAuth2ClientProperties] into registrations, as Spring Boot
 /// does.
@@ -326,9 +65,49 @@ final class OAuth2ClientPropertiesMapper {
     properties.validate();
     return {
       for (final MapEntry(key: id, :value) in properties.registration.entries)
-        id: _supplier(id, value),
+        id: _supplier(id, _clean(value)),
     };
   }
+
+  // Blank is unset, and values are trimmed, as property values were read
+  // before they were bound.
+  static String? _text(String? value) {
+    final text = value?.trim();
+    return text == null || text.isEmpty ? null : text;
+  }
+
+  static OAuth2ClientRegistrationProperties _clean(
+    OAuth2ClientRegistrationProperties registration,
+  ) => OAuth2ClientRegistrationProperties(
+    provider: _text(registration.provider),
+    clientId: _text(registration.clientId),
+    clientSecret: _text(registration.clientSecret),
+    clientAuthenticationMethod: _text(registration.clientAuthenticationMethod),
+    authorizationGrantType: _text(registration.authorizationGrantType),
+    redirectUri: _text(registration.redirectUri),
+    scope: registration.scope == null
+        ? null
+        : {
+            for (final value in registration.scope!)
+              if (value.trim().isNotEmpty) value.trim(),
+          },
+    clientName: _text(registration.clientName),
+    dpop: _text(registration.dpop),
+    responseMode: _text(registration.responseMode),
+    nativeSignIn: _text(registration.nativeSignIn),
+  );
+
+  static OAuth2ClientProviderProperties _cleanProvider(
+    OAuth2ClientProviderProperties provider,
+  ) => OAuth2ClientProviderProperties(
+    authorizationUri: _text(provider.authorizationUri),
+    tokenUri: _text(provider.tokenUri),
+    userInfoUri: _text(provider.userInfoUri),
+    userInfoAuthenticationMethod: _text(provider.userInfoAuthenticationMethod),
+    userNameAttribute: _text(provider.userNameAttribute),
+    jwkSetUri: _text(provider.jwkSetUri),
+    issuerUri: _text(provider.issuerUri),
+  );
 
   ClientRegistrationSupplier _supplier(
     String registrationId,
@@ -341,7 +120,10 @@ final class OAuth2ClientPropertiesMapper {
       ResponseMode.parse(mode);
     }
     final providerId = registration.provider ?? registrationId;
-    final provider = properties.provider[providerId];
+    final provider = switch (properties.provider[providerId]) {
+      final bound? => _cleanProvider(bound),
+      null => null,
+    };
     final issuer = provider?.issuerUri;
     if (provider != null && issuer != null) {
       return () async {

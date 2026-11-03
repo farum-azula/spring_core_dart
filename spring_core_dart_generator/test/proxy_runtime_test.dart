@@ -84,7 +84,7 @@ import 'dart:convert';
 import 'package:pkg/app.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 Future<void> main(List<String> args) async {

@@ -1,8 +1,8 @@
-import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
+import 'package:spring_core_dart/src/core/io/resources.dart';
 import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
 /// Turns a location string such as `resources:mail.txt`,
@@ -14,7 +14,7 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 /// constructor parameter of type `ResourceLoader` receives it
 /// (`ResourceLoaderAware` works too). For a fixed location,
 /// `@Value('resources:...') Resource` is simpler. `resources:` reads
-/// `lib/resources/` (see [ClasspathResources]); a [ProtocolResolver] adds
+/// `lib/resources/` (see [Resources]); a [ProtocolResolver] adds
 /// other prefixes, such as Flutter assets.
 ///
 /// ```dart
@@ -208,7 +208,7 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 ///
 /// 1. Registered [ProtocolResolver]s, in order.
 /// 2. `resources:`: the files of `lib/resources/` (see
-///    [ClasspathResources]).
+///    [Resources]).
 /// 3. `file:`: a [FileSystemResource], percent-decoded (see
 ///    [FileSystemResource.fromFileUrl]).
 /// 4. `http:` and `https:`: a [UrlResource].
@@ -259,19 +259,14 @@ class DefaultResourceLoader implements ResourceLoader {
 
   @override
   Resource getResource(String location) {
-    final resolved = ClasspathResources.migrate(location);
-    return _resource(resolved);
-  }
-
-  Resource _resource(String location) {
     for (final resolver in _resolvers) {
       final resource = resolver.resolve(location, this);
       if (resource != null) {
         return resource;
       }
     }
-    if (location.startsWith(ClasspathResources.prefix)) {
-      return ClasspathResources.resolve(location);
+    if (location.startsWith(Resources.prefix)) {
+      return Resources.resolve(location);
     }
     if (location.startsWith(ResourceLoader.filePrefix)) {
       return FileSystemResource.fromFileUrl(location);
@@ -292,7 +287,7 @@ class DefaultResourceLoader implements ResourceLoader {
     }
     // A plain path is a classpath resource, like Spring's getResourceByPath
     // (a leading `/` is ignored).
-    return ClasspathResources.resolve(location);
+    return Resources.resolve(location);
   }
 
   /// The prefix of a Dart package URI, `package:`, as in

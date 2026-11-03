@@ -8,7 +8,7 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 import '../../example/example.dart';
-import '../../example/example.spring.dart';
+import '../../example/spring_gen/example.spring.dart';
 
 export '../../example/example.dart';
 

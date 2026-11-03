@@ -2,6 +2,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/source/line_info.dart';
+import 'package:dart_spring_language_server/src/metadata.dart';
 
 /// The annotations that make a class a bean, by name.
 ///
@@ -179,6 +180,12 @@ final class BeanInfo {
     this.profiles = const [],
     this.owner,
     this.contextGetter,
+    this.line,
+    this.members = const [],
+    this.fromMetadata = false,
+    this.scope = 'singleton',
+    this.origin,
+    this.backsOff = false,
   });
 
   /// The bean name: the one given in the annotation, else the class name in
@@ -220,6 +227,31 @@ final class BeanInfo {
   /// the generated `BuildContext` getter (`context.basket`).
   final String? contextGetter;
 
+  /// For a bean from the metadata: the zero-based line of its declaration
+  /// ([offset] is not known).
+  final int? line;
+
+  /// The members SpEL can reach, from the metadata (empty for a bean found
+  /// in the source only).
+  List<MetaMember> members;
+
+  /// Whether the bean comes from a metadata file rather than the source.
+  final bool fromMetadata;
+
+  /// Whether another bean of its type takes its place: `@Fallback` or
+  /// `@ConditionalOnMissingBean`. Such a bean does not make an injection
+  /// point ambiguous.
+  final bool backsOff;
+
+  /// For a bean from the metadata: where it is declared as a `package:` URI.
+  final String? origin;
+
+  /// More type names the metadata says the bean can be injected as.
+  Set<String> extraTypes = const {};
+
+  /// `singleton` or `prototype`, from the metadata.
+  final String scope;
+
   /// Every type name the bean can be injected as: its type and that type's
   /// supertypes known to the workspace. Set by the index once all beans are
   /// found.
@@ -239,7 +271,8 @@ final class BeanInfo {
       "${kind == BeanKind.component ? 'bean' : '@Bean'} '$name': $typeName"
       '${owner == null ? '' : ' (in $owner)'}'
       '${primary ? ' @Primary' : ''}'
-      '${profiles.isEmpty ? '' : ' @Profile($profiles)'}';
+      '${profiles.isEmpty ? '' : ' @Profile($profiles)'}'
+      '${scope == 'singleton' ? '' : ' ($scope)'}';
 }
 
 /// The name of an annotation's type: `Service` for `@Service()` and for

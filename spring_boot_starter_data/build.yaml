@@ -1,7 +1,8 @@
-# The generator writes the example's application (example/example.spring.dart),
+# The generator writes the example's application (example/spring_gen/example.spring.dart),
 # the applications of the tests, and the bootstrap of the @DataTest classes
-# (test/spring/data_test/*.test.spring.dart); the package itself is written by
-# hand.
+# (test/spring_gen/data_test/*.test.spring.dart); the package itself is written by
+# hand, except the binding of its typed properties (lib/src/properties/, the
+# `spring_properties` builder).
 targets:
   $default:
     builders:
@@ -19,6 +20,9 @@ targets:
           - test/data_test/memory_app/**
           - test/data_test/mixed_app/**
           - test/data_test/postgres_app/**
+      spring_core_dart_generator:spring_properties:
+        enabled: true
+        generate_for: [lib/src/properties/**]
       spring_core_dart_generator:spring_test:
         generate_for:
           - test/data_test/**

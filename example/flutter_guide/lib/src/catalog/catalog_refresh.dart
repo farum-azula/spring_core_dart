@@ -1,4 +1,4 @@
-import 'package:neon_books_app/main.spring.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/catalog/catalog.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart';

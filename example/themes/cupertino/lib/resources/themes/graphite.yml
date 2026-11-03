@@ -1,0 +1,45 @@
+# GRAPHITE: `dark` with a warm orange instead of blue, grey cards, a bar
+# that lets the page through, and a gradient background. `extends` copies
+# the theme `dark` (which itself extends `light`) and this one changes only
+# what is different; every reference ($colors.primary...) follows.
+spring:
+  flutter:
+    theme:
+      themes:
+        graphite:
+          extends: dark
+          colors:
+            primary: '#FF9F0A'
+            on-primary: '#1C1C1E'
+            secondary: '#64D2FF'
+            tertiary: '#FF375F'
+            surface: '#141416'
+            surface-container-lowest: '#232326'
+            surface-container-high: '#323236'
+            outline: '#48484A'
+          cupertino:
+            # The scaffolds let the gradient behind them show.
+            scaffold-background-color: transparent
+            bar-background-color: { color: $colors.surface, alpha: 70% }
+            text-theme:
+              nav-large-title-text-style: { size: 34, weight: 800, letter-spacing: 0.4 }
+          tokens:
+            brand:
+              name: Graphite
+              tagline: Dark grey with an orange tint
+          # The page behind everything: a color, and a gradient over it. The
+          # Cupertino scaffolds are made transparent, so it shows through.
+          background:
+            color: $colors.surface
+            overlay:
+              gradient:
+                type: linear
+                begin: top
+                end: bottom
+                colors: [transparent, { color: $colors.primary, alpha: 14% }]
+            transition: 400ms ease-out
+            # ThemeBackground.screen('showcase') shows this over the background.
+            screens:
+              showcase:
+                overlay:
+                  gradient: { type: radial, begin: center, colors: [{ color: $colors.secondary, alpha: 24% }, transparent] }

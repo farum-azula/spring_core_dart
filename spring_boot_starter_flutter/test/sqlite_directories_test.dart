@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart';
 
 const _baseDirectory = 'spring.datasource.sqlite.base-directory';
@@ -122,17 +123,26 @@ void main() {
   }
 
   group('location', () {
+    FlutterDataSourceProperties bind(String value) =>
+        boundProperties<FlutterDataSourceProperties>(
+          StandardEnvironment()
+            ..propertySources.addFirst(
+              MapPropertySource('test', {_location: value}),
+            ),
+          'flutterDataSourceProperties',
+        );
+
     test('names the three directories, in any case', () {
-      expect(SqliteLocation.parse('support'), SqliteLocation.support);
-      expect(SqliteLocation.parse('Cache'), SqliteLocation.cache);
-      expect(SqliteLocation.parse(' DOCUMENTS '), SqliteLocation.documents);
+      expect(bind('support').sqlite.location, SqliteLocation.support);
+      expect(bind('Cache').sqlite.location, SqliteLocation.cache);
+      expect(bind(' DOCUMENTS ').sqlite.location, SqliteLocation.documents);
     });
 
     test('an unknown one names the allowed values', () {
       expect(
-        () => SqliteLocation.parse('downloads'),
+        () => bind('downloads'),
         throwsA(
-          isA<ArgumentError>().having(
+          isA<ConfigurationPropertiesBindException>().having(
             (e) => e.toString(),
             'message',
             allOf(
@@ -428,7 +438,7 @@ spring.datasource.sqlite.isolate=false
       await expectLater(
         start(directories, [_urlArg, '--$_location=downloads']),
         throwsA(
-          isA<ArgumentError>().having(
+          isA<ConfigurationPropertiesBindException>().having(
             (e) => e.toString(),
             'message',
             allOf(

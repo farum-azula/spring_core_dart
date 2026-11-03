@@ -9,7 +9,7 @@
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 /// Several implementations can stand behind one interface.
 abstract interface class Greeter {

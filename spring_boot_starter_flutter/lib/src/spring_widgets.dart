@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// A stateless widget that receives the beans it needs: the record type
 /// `B` lists them, and `build` reads them from [beans].

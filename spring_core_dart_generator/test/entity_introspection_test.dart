@@ -16,7 +16,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -55,7 +55,7 @@ Future<String> _generate(String model) async {
   });
   expect(result.errors, isEmpty);
   return result.readerWriter.testing.readString(
-    AssetId('pkg', 'lib/src/beans.spring.dart'),
+    AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
   );
 }
 
@@ -65,11 +65,11 @@ Future<List<String>> _compileErrors(String model, String generated) =>
       {
         'pkg|lib/src/beans.dart': _scan,
         'pkg|lib/src/model.dart': '$_header$model',
-        'pkg|lib/src/beans.spring.dart': generated,
+        'pkg|lib/spring_gen/src/beans.spring.dart': generated,
       },
       (resolver) async {
         final library = await resolver.libraryFor(
-          AssetId('pkg', 'lib/src/beans.spring.dart'),
+          AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
         );
         final result = await library.session.getErrors(
           library.firstFragment.source.fullName,
@@ -81,7 +81,7 @@ Future<List<String>> _compileErrors(String model, String generated) =>
         ];
       },
       rootPackage: 'pkg',
-      resolverFor: 'pkg|lib/src/beans.spring.dart',
+      resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
       readAllSourcesFromFilesystem: true,
     );
 
@@ -684,7 +684,7 @@ abstract interface class FilterRepository
       final result = await _build({
         'lib/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -703,10 +703,10 @@ void main(List<String> args) => runApplication(args);
       });
       expect(result.errors, isEmpty);
       final application = result.readerWriter.testing.readString(
-        AssetId('pkg', 'lib/main.spring.dart'),
+        AssetId('pkg', 'lib/spring_gen/main.spring.dart'),
       );
       final library = result.readerWriter.testing.readString(
-        AssetId('pkg', 'lib/library/scan.spring.dart'),
+        AssetId('pkg', 'lib/spring_gen/library/scan.spring.dart'),
       );
       expect(application, contains("r'entityIntrospections#application'"));
       expect(application, contains('EntityIntrospection<_i'));

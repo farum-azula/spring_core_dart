@@ -1,0 +1,43 @@
+# The network profile: NOT active by default (the app never goes online on
+# its own). Start it with
+#
+#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=network
+#
+# It points the neon background and the badge token at https images. Each
+# is downloaded once, cached in the app's files (IndexedDB on the web) and
+# shown at once on the next start; until then, and offline, the asset named
+# by `fallback` is shown. Replace the hosts with your own.
+# (On the web the server must allow this origin with CORS headers.)
+spring:
+  flutter:
+    theme:
+      themes:
+        neon:
+          background:
+            image:
+              source: https://cdn.example.com/theme-showcase-material/neon-grid.png
+              fallback: assets/images/neon-grid.png
+              refresh: 1d
+              timeout: 10s
+              # source-sha256: <64 hexadecimal digits>   pins the content
+              # headers: { Authorization: 'Bearer ${cdn.token}' }
+      tokens:
+        brand:
+          badge:
+            source: https://cdn.example.com/theme-showcase-material/badge.png
+            fallback: assets/images/badge.png
+            refresh: 1d
+
+      # A whole theme from a URL works the same way: it is downloaded,
+      # cached, and replaced in the background every `refresh`. The file is
+      # written like a theme of themes/*.yml. Uncomment, and add the name
+      # to the lists of the Themes page if you want a button for it.
+      #
+      # themes:
+      #   brand:
+      #     source: https://themes.example.com/theme-showcase-material/brand.yml
+      #     source-sha256: 3f9a1c5e7b2d4a6f8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d1f3a
+      #     refresh: 1h
+      #   brand-dark:
+      #     extends: brand
+      #     brightness: dark

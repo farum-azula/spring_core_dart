@@ -1,6 +1,8 @@
 // The component reference in docs/configuration.md is generated from the
 // mapping, so it cannot drift: this test fails when it differs. To
-// rewrite it: UPDATE_THEME_DOCS=1 flutter test test/theme_reference_test.dart
+// rewrite it: dart run tool/theme_docs.dart (which also writes the pages
+// under docs/flutter/theme/components), or UPDATE_THEME_DOCS=1 flutter test
+// test/theme_reference_test.dart
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';

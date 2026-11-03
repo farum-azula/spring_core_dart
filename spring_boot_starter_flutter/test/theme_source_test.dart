@@ -549,6 +549,21 @@ spring.flutter.theme.seed-color: '#0000FF'
       expect(themes.config.active, 'ocean');
       expect(ThemeSelection(themes).active, 'ocean');
     });
+
+    test('the file does not extend another theme', () async {
+      server.handler = (_) => _ok('''
+spring.flutter.theme.extends: dark
+spring.flutter.theme.seed-color: '#0000FF'
+''');
+      final (themes, _) = await start(once);
+      final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
+      expect(_primary(themes, 'ocean'), blue.primary);
+      final ignored = ThemeSourceContent.parse(
+        'spring.flutter.theme.extends: dark',
+        'brand',
+      ).ignored;
+      expect(ignored, contains('spring.flutter.theme.extends'));
+    });
   });
 
   group('names and extends', () {

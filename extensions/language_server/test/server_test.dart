@@ -139,6 +139,7 @@ class Shop {
     final capabilities = init['capabilities'] as Map;
     expect(capabilities['definitionProvider'], isTrue);
     expect(capabilities['semanticTokensProvider'], isNotNull);
+    expect(capabilities['completionProvider'], isNotNull);
     client.notify('initialized', {});
 
     final diagnostics = client.notifications.stream.firstWhere(
@@ -215,6 +216,20 @@ class Shop {
       }),
       isNull,
     );
+
+    // Completion inside a placeholder: the keys the project uses.
+    final completion =
+        (await client.request('textDocument/completion', {
+              'textDocument': {'uri': uri},
+              'position': position(r'${shop.unknown}', 8),
+            }))!
+            as Map;
+    expect(
+      [for (final item in completion['items'] as List) (item as Map)['label']],
+      contains('shop.name'),
+    );
+    final edit = (completion['items'] as List).first as Map;
+    expect((edit['textEdit'] as Map)['range'], isNotNull);
 
     expect(await client.request('shutdown', {}), isNull);
     client.notify('exit', {});

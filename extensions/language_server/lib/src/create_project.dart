@@ -125,7 +125,7 @@ Future<int> _create(
       err.writeln('dart pub get failed; fix the problem and run it again.');
       return 1;
     }
-    out.writeln('\nGenerating bin/main.spring.dart ...');
+    out.writeln('\nGenerating bin/spring_gen/main.spring.dart ...');
     final built = await run('dart', [
       'run',
       'build_runner',

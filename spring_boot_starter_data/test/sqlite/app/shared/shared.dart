@@ -3,7 +3,7 @@
 // into the application's module, and the context must still hold one driver.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'shared.spring.dart';
+import '../../../spring_gen/sqlite/app/shared/shared.spring.dart';
 
 /// A bean of the shared module.
 @Component()

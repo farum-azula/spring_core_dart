@@ -5,7 +5,7 @@
 // `dart run build_runner build`).
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'mixed_app.spring.dart';
+import '../../spring_gen/data_test/mixed_app/mixed_app.spring.dart';
 
 /// In the primary database.
 @Table('books')

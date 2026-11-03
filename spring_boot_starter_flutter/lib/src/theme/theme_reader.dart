@@ -478,31 +478,15 @@ final class ThemeReader {
   // The parsers by type, each from a full path
   // ---------------------------------------------------------------------
 
-  static const _colorFormats =
-      'a color role (surface, primary, ...) or a color: a Colors name like '
-      "'deepPurple.shade200', #RRGGBB, with an optional opacity "
-      "('primary@12%')";
-
-  Color? _colorAt(String path) => _leaf(path, (raw) {
-    final match = RegExp(
-      r'^(.*?)\s*@\s*(\d+(?:\.\d+)?)\s*(%?)$',
-    ).firstMatch(raw);
-    var base = raw;
-    double? opacity;
-    if (match != null) {
-      base = match[1]!;
-      final amount = double.parse(match[2]!);
-      opacity = match[3] == '%' ? amount / 100 : amount;
-      if (opacity > 1) {
-        return null;
-      }
+  Color? _colorAt(String path) {
+    // An object { color, mix, alpha }; a map of states is read per state.
+    final kids = _kids(path);
+    if (properties[path] == null &&
+        kids.any(const {'color', 'mix', 'alpha'}.contains)) {
+      return properties.colorObject(path);
     }
-    final color = theme.role(base) ?? ThemeValues.color(base);
-    if (color == null || opacity == null) {
-      return color;
-    }
-    return color.withValues(alpha: color.a * opacity);
-  }, _colorFormats);
+    return _leaf(path, ThemeValues.color, ThemeProperties.colorFormats);
+  }
 
   static double? _number(String raw) {
     final text = raw.trim().toLowerCase();

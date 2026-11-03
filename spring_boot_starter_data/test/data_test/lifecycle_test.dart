@@ -1,11 +1,11 @@
 // @BeforeEach and @AfterEach run in the transaction of the test, the
 // @Nested groups' ones too, and the @BeforeAll one outside it. The
-// generator writes spring/data_test/lifecycle.test.spring.dart.
+// generator writes spring_gen/data_test/lifecycle.test.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/lifecycle.test.spring.dart';
+import '../spring_gen/data_test/lifecycle.test.spring.dart';
 import 'app/data_test_app.dart';
 
 @DataTest(

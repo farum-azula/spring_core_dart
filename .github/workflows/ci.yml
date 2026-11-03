@@ -33,6 +33,9 @@ jobs:
       flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
       flutter_security: ${{ steps.affected.outputs.flutter_security }}
       flutter_guide: ${{ steps.affected.outputs.flutter_guide }}
+      theme_showcase_neon: ${{ steps.affected.outputs.theme_showcase_neon }}
+      theme_showcase_material: ${{ steps.affected.outputs.theme_showcase_material }}
+      theme_showcase_cupertino: ${{ steps.affected.outputs.theme_showcase_cupertino }}
       family: ${{ steps.affected.outputs.family }}
     steps:
       - uses: actions/checkout@v7
@@ -73,12 +76,13 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
-      # The Flutter guide is formatted in the `flutter` job: its
+      # The Flutter guide and the NEON showcase are formatted in the
+      # `flutter` job: its
       # analysis_options.yaml includes flutter_lints, which only resolves
       # after `flutter pub get`; unresolved, the formatter drops the whole
       # file (trailing_commas: preserve too) and joins the bean columns.
       - name: Format
-        run: dart format --output=none --set-exit-if-changed $(git ls-files '*.dart' ':!:example/flutter_guide/**')
+        run: dart format --output=none --set-exit-if-changed $(git ls-files '*.dart' ':!:example/flutter_guide/**' ':!:example/themes/**')
 
       # The workspace packages (the Flutter ones resolve outside it and are
       # analyzed by the `flutter` job).
@@ -623,6 +627,10 @@ jobs:
           (cd spring_boot_starter_flutter && flutter pub get)
           (cd spring_boot_starter_flutter_security && flutter pub get)
           (cd example/flutter_guide && flutter pub get)
+          (cd example/themes/neon_ui && flutter pub get)
+          (cd example/themes/neon && flutter pub get)
+          (cd example/themes/material && flutter pub get)
+          (cd example/themes/cupertino && flutter pub get)
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
@@ -642,22 +650,36 @@ jobs:
           (cd example/flutter_guide/android && ./gradlew -q -I ../../../tool/gradle/build_classpath.init.gradle help) > "$RUNNER_TEMP/classpath.txt"
           dart run tool/check_vulnerabilities.dart --maven "$RUNNER_TEMP/classpath.txt"
 
-      - name: Generated code is up to date (Flutter guide and packages)
+      - name: Generated code is up to date (Flutter guide, theme examples and packages)
         run: |
-          for example in example/flutter_guide spring_boot_starter_flutter spring_boot_starter_flutter_security; do
+          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino spring_boot_starter_flutter spring_boot_starter_flutter_security; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
           done
 
-      - name: Format (Flutter guide; the rest in the `quality` job)
-        run: dart format --output=none --set-exit-if-changed example/flutter_guide
+      - name: Format (Flutter apps; the rest in the `quality` job)
+        run: dart format --output=none --set-exit-if-changed example/flutter_guide example/themes
 
       - name: Analyze
         run: |
           (cd spring_boot_starter_flutter && flutter analyze --fatal-infos)
           (cd spring_boot_starter_flutter_security && flutter analyze --fatal-infos)
           (cd example/flutter_guide && flutter analyze --fatal-infos)
+          (cd example/themes/neon_ui && flutter analyze --fatal-infos)
+          (cd example/themes/neon && flutter analyze --fatal-infos)
+          (cd example/themes/material && flutter analyze --fatal-infos)
+          (cd example/themes/cupertino && flutter analyze --fatal-infos)
+
+      # The component pages and the table in docs/configuration.md are made
+      # from tool/theme_metadata.json: regenerate them and fail on a change.
+      - name: Theme docs are up to date
+        if: needs.changes.outputs.flutter_starter == 'true'
+        working-directory: spring_boot_starter_flutter
+        run: |
+          dart run tool/theme_docs.dart
+          git diff --exit-code -- ../docs/flutter/theme/components ../docs/configuration.md
+          test -z "$(git status --porcelain -- ../docs/flutter/theme/components)"
 
       # The golden screenshots run in the `goldens` job (macOS).
       - name: Tests of spring_boot_starter_flutter
@@ -696,6 +718,44 @@ jobs:
       - name: The Flutter guide builds for the web (release)
         if: needs.changes.outputs.flutter_guide == 'true'
         working-directory: example/flutter_guide
+        run: flutter build web --release
+
+      # The theme examples (example/themes/): the NEON design system (a
+      # library) with its showcase app of type widgets, and the Material and
+      # Cupertino showcases.
+      - name: Tests of neon_ui
+        if: needs.changes.outputs.theme_showcase_neon == 'true'
+        working-directory: example/themes/neon_ui
+        run: flutter test
+
+      - name: Tests of the NEON theme showcase
+        if: needs.changes.outputs.theme_showcase_neon == 'true'
+        working-directory: example/themes/neon
+        run: flutter test --exclude-tags golden
+
+      - name: The NEON theme showcase builds for the web (release)
+        if: needs.changes.outputs.theme_showcase_neon == 'true'
+        working-directory: example/themes/neon
+        run: flutter build web --release
+
+      - name: Tests of the Material theme showcase
+        if: needs.changes.outputs.theme_showcase_material == 'true'
+        working-directory: example/themes/material
+        run: flutter test --exclude-tags golden
+
+      - name: The Material theme showcase builds for the web (release)
+        if: needs.changes.outputs.theme_showcase_material == 'true'
+        working-directory: example/themes/material
+        run: flutter build web --release
+
+      - name: Tests of the Cupertino theme showcase
+        if: needs.changes.outputs.theme_showcase_cupertino == 'true'
+        working-directory: example/themes/cupertino
+        run: flutter test --exclude-tags golden
+
+      - name: The Cupertino theme showcase builds for the web (release)
+        if: needs.changes.outputs.theme_showcase_cupertino == 'true'
+        working-directory: example/themes/cupertino
         run: flutter build web --release
 
   # The secret stores of Windows (DPAPI) and Linux (libsecret) against the
@@ -808,12 +868,13 @@ jobs:
         working-directory: example/flutter_guide
         run: flutter build ${{ matrix.target }} --debug
 
-  # The golden screenshots of the Flutter guide (test/golden_test.dart):
+  # The golden screenshots of the Flutter guide and of the theme showcases
+  # (test/golden_test.dart of each):
   # made on macOS, so compared on macOS; Linux draws the letters
   # differently (0.5–3% of the pixels of a screen with text).
   goldens:
     needs: changes
-    if: needs.changes.outputs.flutter_guide == 'true'
+    if: needs.changes.outputs.flutter_guide == 'true' || needs.changes.outputs.theme_showcase_neon == 'true' || needs.changes.outputs.theme_showcase_material == 'true' || needs.changes.outputs.theme_showcase_cupertino == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
@@ -828,9 +889,29 @@ jobs:
           flutter --version
           dart pub get
           (cd example/flutter_guide && flutter pub get)
+          (cd example/themes/neon_ui && flutter pub get)
+          (cd example/themes/neon && flutter pub get)
+          (cd example/themes/material && flutter pub get)
+          (cd example/themes/cupertino && flutter pub get)
 
       - name: Golden screenshots of the Flutter guide
+        if: needs.changes.outputs.flutter_guide == 'true'
         working-directory: example/flutter_guide
+        run: flutter test --tags golden
+
+      - name: Golden screenshots of the NEON theme showcase
+        if: needs.changes.outputs.theme_showcase_neon == 'true'
+        working-directory: example/themes/neon
+        run: flutter test --tags golden
+
+      - name: Golden screenshots of the Material theme showcase
+        if: needs.changes.outputs.theme_showcase_material == 'true'
+        working-directory: example/themes/material
+        run: flutter test --tags golden
+
+      - name: Golden screenshots of the Cupertino theme showcase
+        if: needs.changes.outputs.theme_showcase_cupertino == 'true'
+        working-directory: example/themes/cupertino
         run: flutter test --tags golden
 
       # The screenshots that no longer match: the expected and actual images
@@ -840,7 +921,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: golden-failures
-          path: example/flutter_guide/test/failures/
+          path: |
+            example/flutter_guide/test/failures/
+            example/themes/neon/test/failures/
+            example/themes/material/test/failures/
+            example/themes/cupertino/test/failures/
           if-no-files-found: ignore
 
   # The lowest versions allowed by our constraints must still work: resolve

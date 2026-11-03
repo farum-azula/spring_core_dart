@@ -8,7 +8,7 @@
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 /// The `greeting.*` properties: command line, environment variables,
 /// `application.properties` / `application.yml`.

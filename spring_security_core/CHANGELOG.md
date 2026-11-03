@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `spring.security.password-checks.*` is made from code and the package reads the same class: `PasswordChecksProperties` is bound by the Binder. The hand-written `spring_metadata_additional.json` is gone.
+
 ## 0.6.2
 
 - No changes of its own; released with the family version 0.6.2.

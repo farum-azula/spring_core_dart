@@ -43,7 +43,7 @@ dev_dependencies:
 // bin/main.dart (or lib/main.dart in Flutter)
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.spring.dart'; // generated next to this file
+import 'spring_gen/main.spring.dart'; // generated, in spring_gen/
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -52,7 +52,7 @@ void main(List<String> args) => runApplication(args);
 Dart has no runtime reflection, so `dart run build_runner build` does
 the scanning at build time. It reads the whole package (`lib/` and the
 directory of `main`; no `@ComponentScan`, no lists of classes) and
-writes `main.spring.dart` with the beans, the files of `lib/resources/`,
+writes `spring_gen/main.spring.dart` with the beans, the files of `lib/resources/`,
 the auto-configuration of the dependencies, and the `runApplication` and
 `runApplicationAsync` functions.
 
@@ -453,7 +453,7 @@ the Dart counterpart of Spring Boot's
 ```dart
 // lib/spring_auto_configuration.dart of package `neon_cache`
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'src/cache.spring.dart';
+import 'spring_gen/src/cache.spring.dart';
 
 @AutoConfigurationModule()
 final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
@@ -605,7 +605,7 @@ with `@AutoConfigurationModule`.
 ```dart
 // lib/spring_auto_configuration.dart of package `neon_cache`
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'src/cache.spring.dart';
+import 'spring_gen/src/cache.spring.dart';
 
 @AutoConfigurationModule(requires: '^0.1.0') // compatible spring_boot_dart versions
 final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
@@ -644,7 +644,7 @@ there is one, and lists the annotated modules in the generated
 order, see [Order](#order)):
 
 ```dart
-// generated bin/main.spring.dart of the application
+// generated bin/spring_gen/main.spring.dart of the application
 final springApplication = SpringApplication(
   [$application],
   autoConfigurations: [
@@ -865,7 +865,7 @@ class _AppState extends State<App> {
   @override
   void reassemble() {
     super.reassemble();
-    context = reloadApplication(context); // generated next to main
+    context = reloadApplication(context); // generated, in spring_gen/
   }
 
   @override

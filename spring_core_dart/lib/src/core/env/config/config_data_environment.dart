@@ -12,12 +12,12 @@ import 'package:spring_core_dart/src/core/env/mutable_property_sources.dart';
 import 'package:spring_core_dart/src/core/env/profiles.dart';
 import 'package:spring_core_dart/src/core/env/property_resolver.dart';
 import 'package:spring_core_dart/src/core/env/property_source.dart';
-import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
+import 'package:spring_core_dart/src/core/io/resources.dart';
 import 'package:spring_core_dart/src/core/io/url_resource.dart';
 import 'package:spring_core_dart/src/core/log.dart';
 import 'package:spring_core_dart/src/core/log_format.dart';
@@ -239,7 +239,7 @@ class ConfigDataEnvironment {
   /// Where config files are looked for unless configured otherwise, as in
   /// Spring Boot: two groups of `;`-separated locations, the packaged one
   /// first and the working directory second (which wins). `resources:` is
-  /// `lib/resources/` (see `ClasspathResources`); `config/*/` searches each
+  /// `lib/resources/` (see `Resources`); `config/*/` searches each
   /// subdirectory of `./config/`.
   static const defaultSearchLocations = [
     'optional:resources:/;optional:resources:/config/',
@@ -518,8 +518,7 @@ final class _Group {
   // `a.yaml; b.yaml` names ` b.yaml` there).
   static _Group? of(String value) {
     final locations = [
-      for (final location in _Run._split(value, ';'))
-        ClasspathResources.migrateOptional(location),
+      ..._Run._split(value, ';'),
     ];
     if (locations.isEmpty) {
       return null;
@@ -1650,7 +1649,7 @@ final class _Run {
   // Boot, whose classpath directories cannot be checked (even one that
   // `lib/resources/` on disk holds).
   bool _isDirectory(String location) {
-    if (location.startsWith(ClasspathResources.prefix)) {
+    if (location.startsWith(Resources.prefix)) {
       return false;
     }
     final resource = owner.resourceLoader.getResource(
@@ -1666,7 +1665,7 @@ final class _Run {
   // name, without hidden `..x` ones (Kubernetes' `..data`), like Boot's
   // LocationResourceLoader. Only file system locations may use `*`.
   List<String> _subdirectories(String pattern, String location) {
-    if (location.startsWith(ClasspathResources.prefix)) {
+    if (location.startsWith(Resources.prefix)) {
       throw ConfigDataLoadException(
         location,
         'classpath wildcard locations are not supported',

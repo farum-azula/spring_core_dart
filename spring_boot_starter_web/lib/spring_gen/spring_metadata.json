@@ -1,0 +1,1453 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_web",
+  "properties": [
+    {
+      "name": "local.server.port",
+      "type": "int?",
+      "description": "The port the server listens on, set once it listens (also in `WebServerInitializedEvent`). Nothing reads it from configuration: it is put there for the application to read.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 297,
+      "class": "LocalServerSettings"
+    },
+    {
+      "name": "server.address",
+      "type": "String?",
+      "description": "The address to listen on. `localhost` is `127.0.0.1`; a host name is looked up. Default: all interfaces; **127.0.0.1 in Flutter apps**.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 39,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.compression.enabled",
+      "type": "bool",
+      "description": "Gzip of the responses of `mime-types`, from `min-response-size` on (or of unknown length), for clients that send `Accept-Encoding: gzip`; never partial content, nor an answer with a strong `ETag` (as Tomcat).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 125,
+      "class": "ServerCompressionSettings"
+    },
+    {
+      "name": "server.compression.mime-types",
+      "type": "List<String>",
+      "description": "The media types compressed, as in Spring Boot; add `text/event-stream` to compress event streams.",
+      "default": [
+        "text/html",
+        "text/xml",
+        "text/plain",
+        "text/css",
+        "text/javascript",
+        "application/javascript",
+        "application/json",
+        "application/xml"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 129,
+      "class": "ServerCompressionSettings"
+    },
+    {
+      "name": "server.compression.min-response-size",
+      "type": "DataSize",
+      "description": "The smallest `Content-Length` compressed.",
+      "default": "2KB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 141,
+      "class": "ServerCompressionSettings"
+    },
+    {
+      "name": "server.connection-timeout",
+      "type": "Duration",
+      "description": "How long a request body may send nothing while it is read: then the answer is 408 and the connection closes. `-1`, `0` or less: no timeout. Also how long an idle connection stays open.",
+      "default": "60s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 56,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.context-path",
+      "type": "String?",
+      "description": "A prefix of every mapping, such as `/shop`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 47,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.forward-headers-strategy",
+      "type": "ForwardHeadersStrategy",
+      "description": "Behind a reverse proxy: apply its `Forwarded` or `X-Forwarded-Proto`, `-Host`, `-Port`, `-For` headers (the scheme, so cookies get `Secure` behind TLS; the host and port; the client's address), from trusted proxies only.",
+      "default": "none",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 67,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.forward-headers.trusted-proxies",
+      "type": "List<String>?",
+      "description": "Whose forwarded headers are believed (Tomcat's `internalProxies`): IP addresses and CIDR ranges, as a comma list or a YAML list. A client reaching the server from elsewhere cannot set them. Default: loopback and private networks.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 92,
+      "class": "ForwardHeadersSettings"
+    },
+    {
+      "name": "server.max-http-request-body-size",
+      "type": "DataSize",
+      "description": "A larger request body is answered with 413, whatever its `Content-Type`; `-1` means no limit.",
+      "default": "10MB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 51,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.port",
+      "type": "int",
+      "description": "The port. `0` picks a free one; the real port is then in `local.server.port`.",
+      "default": 8080,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 35,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.request-timeout",
+      "type": "Duration?",
+      "description": "The longest a request's filters and handler may take to answer, else a 503; also a deadline for the calls the request makes. Default: no limit (`0` or less: none). Not in Spring Boot.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 61,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.session.cookie.domain",
+      "type": "String?",
+      "description": "The domain of the session cookie. Default: none, so the cookie goes back only to the host that set it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 189,
+      "class": "ServerSessionCookieSettings"
+    },
+    {
+      "name": "server.session.cookie.http-only",
+      "type": "bool",
+      "description": "Whether the session cookie is hidden from scripts.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 195,
+      "class": "ServerSessionCookieSettings"
+    },
+    {
+      "name": "server.session.cookie.name",
+      "type": "String",
+      "description": "The name of the session cookie.",
+      "default": "JSESSIONID",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 185,
+      "class": "ServerSessionCookieSettings"
+    },
+    {
+      "name": "server.session.cookie.path",
+      "type": "String?",
+      "description": "The path of the session cookie. Default: the context path, or `/`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 192,
+      "class": "ServerSessionCookieSettings"
+    },
+    {
+      "name": "server.session.cookie.same-site",
+      "type": "SessionSameSite",
+      "description": "The `SameSite` attribute of the session cookie; `unset` sends none.",
+      "default": "lax",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 202,
+      "class": "ServerSessionCookieSettings"
+    },
+    {
+      "name": "server.session.cookie.secure",
+      "type": "bool?",
+      "description": "Whether the session cookie is sent over HTTPS only. Default: not set: it is secure when the request was.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 199,
+      "class": "ServerSessionCookieSettings"
+    },
+    {
+      "name": "server.session.max-sessions",
+      "type": "int",
+      "description": "The most sessions kept at once; `-1` for no limit.",
+      "default": 10000,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 175,
+      "class": "ServerSessionSettings"
+    },
+    {
+      "name": "server.session.timeout",
+      "type": "Duration",
+      "description": "How long a session lives without a request; a number without a unit is seconds.",
+      "default": "30m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 172,
+      "class": "ServerSessionSettings"
+    },
+    {
+      "name": "server.shutdown",
+      "type": "Shutdown",
+      "description": "What happens to running requests when the server stops: `graceful` accepts no new connections and lets them finish, `immediate` cuts them.",
+      "default": "graceful",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 44,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.ssl.certificate",
+      "type": "String?",
+      "description": "The certificate chain (a PEM file); TLS is on when it is set.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 102,
+      "class": "ServerSslSettings"
+    },
+    {
+      "name": "server.ssl.certificate-private-key",
+      "type": "String?",
+      "description": "The private key (a PEM file); required with `certificate`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 105,
+      "class": "ServerSslSettings"
+    },
+    {
+      "name": "server.ssl.client-auth",
+      "type": "ClientAuth",
+      "description": "Asks clients for a certificate; with `need`, a request without one is answered with 403.",
+      "default": "none",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 115,
+      "class": "ServerSslSettings"
+    },
+    {
+      "name": "server.ssl.enabled",
+      "type": "bool",
+      "description": "`false` ignores the other `server.ssl.*` keys.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 99,
+      "class": "ServerSslSettings"
+    },
+    {
+      "name": "server.ssl.key-password",
+      "type": "String?",
+      "description": "The password of an encrypted private key.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 108,
+      "class": "ServerSslSettings"
+    },
+    {
+      "name": "server.ssl.trust-certificate",
+      "type": "String?",
+      "description": "The certificates of trusted clients (a PEM file), for `client-auth`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 111,
+      "class": "ServerSslSettings"
+    },
+    {
+      "name": "server.websocket.max-binary-message-size",
+      "type": "DataSize",
+      "description": "The same for binary messages. `-1` for no limit.",
+      "default": "8KB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 153,
+      "class": "ServerWebSocketSettings"
+    },
+    {
+      "name": "server.websocket.max-text-message-size",
+      "type": "DataSize",
+      "description": "The largest text message a WebSocket session reads, in UTF-8 bytes (Tomcat counts characters); a larger one closes the session with 1009. `-1` for no limit.",
+      "default": "8KB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 150,
+      "class": "ServerWebSocketSettings"
+    },
+    {
+      "name": "server.websocket.send-buffer-size-limit",
+      "type": "DataSize",
+      "description": "How much a WebSocket session may keep waiting to be sent to a client that reads slowly or not at all (pongs included); past it the connection is dropped and the session's close status is 4500 (`sessionNotReliable`). `-1` for no limit.",
+      "default": "512KB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 159,
+      "class": "ServerWebSocketSettings"
+    },
+    {
+      "name": "server.websocket.send-time-limit",
+      "type": "Duration",
+      "description": "How long what a session sent may take to leave; past it the connection is dropped the same way. `-1` for no limit.",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 163,
+      "class": "ServerWebSocketSettings"
+    },
+    {
+      "name": "spring.main.web-application-type",
+      "type": "String?",
+      "description": "`none`: the beans (and `MockMvc`) exist, but no server starts. Any other value starts the server.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 276,
+      "class": "WebMainSettings"
+    },
+    {
+      "name": "spring.mvc.async.request-timeout",
+      "type": "Duration?",
+      "description": "The timeout of an `SseEmitter` created without one; when it passes, the emitter completes after running its `onTimeout` callbacks. Default: no limit.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 259,
+      "class": "MvcAsyncSettings"
+    },
+    {
+      "name": "spring.mvc.log-request-details",
+      "type": "bool",
+      "description": "Shows the parameters and headers of requests in the logs (credentials stay `masked`). Off by default, as they may hold secrets.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 244,
+      "class": "MvcSettings"
+    },
+    {
+      "name": "spring.mvc.sse.heartbeat-interval",
+      "type": "Duration?",
+      "description": "Sends a comment line in every open event stream at this interval, so proxies keep idle streams open. Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 267,
+      "class": "MvcSseSettings"
+    },
+    {
+      "name": "spring.test.web-environment",
+      "type": "String?",
+      "description": "Set by `springBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`): `mock` has no server (`MockMvc` calls the dispatcher in memory), `random-port` a real server on a free port, `defined-port` one on `server.port`, `none` no server. Default: not set: a server starts. Another value starts no server either.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 288,
+      "class": "WebTestSettings"
+    },
+    {
+      "name": "spring.web.multipart.enabled",
+      "type": "bool",
+      "description": "`false`: `multipart/*` requests are not parsed, and `@RequestPart` parameters answer 400.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 212,
+      "class": "MultipartSettings"
+    },
+    {
+      "name": "spring.web.multipart.file-size-threshold",
+      "type": "DataSize",
+      "description": "Files above this size are written to a temporary file; smaller ones stay in memory.",
+      "default": "0B",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 229,
+      "class": "MultipartSettings"
+    },
+    {
+      "name": "spring.web.multipart.location",
+      "type": "String?",
+      "description": "Where the private directory (`0700`) of the uploads' temporary files is made; the files have random names and are deleted when the request ends or fails. Default: the system's temporary directory.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 234,
+      "class": "MultipartSettings"
+    },
+    {
+      "name": "spring.web.multipart.max-file-size",
+      "type": "DataSize",
+      "description": "The largest file (or other part) of an upload; above it the answer is 413 (`MaxUploadSizeExceededException`). `-1` for no limit.",
+      "default": "1MB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 216,
+      "class": "MultipartSettings"
+    },
+    {
+      "name": "spring.web.multipart.max-part-count",
+      "type": "int",
+      "description": "The most parts (files and fields) of a multipart request; above it the answer is 413. `-1` for no limit. Spring Boot sets the same limit with `server.tomcat.max-part-count`.",
+      "default": 50,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 225,
+      "class": "MultipartSettings"
+    },
+    {
+      "name": "spring.web.multipart.max-request-size",
+      "type": "DataSize",
+      "description": "The largest multipart request as a whole; above it the answer is 413. `-1` for no limit.",
+      "default": "10MB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 220,
+      "class": "MultipartSettings"
+    }
+  ],
+  "hints": [
+    {
+      "name": "server.forward-headers-strategy",
+      "values": [
+        {
+          "value": "none",
+          "description": "The headers are ignored, the default: the request is what reached the server."
+        },
+        {
+          "value": "native",
+          "description": "The headers of trusted proxies are applied (Spring Boot: the container's own support, Tomcat's `RemoteIpValve`)."
+        },
+        {
+          "value": "framework",
+          "description": "The same here (Spring Boot: Spring's `ForwardedHeaderFilter`)."
+        }
+      ]
+    },
+    {
+      "name": "server.session.cookie.same-site",
+      "values": [
+        {
+          "value": "lax",
+          "description": "`SameSite=Lax`. The default."
+        },
+        {
+          "value": "strict",
+          "description": "`SameSite=Strict`."
+        },
+        {
+          "value": "none",
+          "description": "`SameSite=None` (browsers want `Secure` with it)."
+        },
+        {
+          "value": "unset",
+          "description": "No `SameSite` attribute."
+        }
+      ]
+    },
+    {
+      "name": "server.shutdown",
+      "values": [
+        {
+          "value": "graceful",
+          "description": "Stop accepting connections and let running requests finish, for up to `spring.lifecycle.timeout-per-shutdown-phase` (30 seconds by default); then close what is left. The default."
+        },
+        {
+          "value": "immediate",
+          "description": "Close every connection right away, cutting running requests."
+        }
+      ]
+    },
+    {
+      "name": "server.ssl.client-auth",
+      "values": [
+        {
+          "value": "none",
+          "description": "No client certificate is asked for. The default."
+        },
+        {
+          "value": "want",
+          "description": "A client certificate is asked for; a client without one is served anyway."
+        },
+        {
+          "value": "need",
+          "description": "A client certificate is required; a request without one gets a 403."
+        }
+      ]
+    },
+    {
+      "name": "spring.main.web-application-type",
+      "values": [
+        {
+          "value": "none",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.test.web-environment",
+      "values": [
+        {
+          "value": "mock",
+          "description": null
+        },
+        {
+          "value": "random-port",
+          "description": null
+        },
+        {
+          "value": "defined-port",
+          "description": null
+        },
+        {
+          "value": "none",
+          "description": null
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "dispatcherHandler",
+      "type": "DispatcherHandler",
+      "types": [
+        "DispatcherHandler",
+        "HttpHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 243,
+      "injects": [],
+      "members": [
+        {
+          "name": "contextPath",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "corsConfigurationFor",
+          "kind": "method",
+          "type": "Future<CorsConfiguration?>",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "filters",
+          "kind": "field",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "handle",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "handlerMappings",
+          "kind": "field",
+          "type": "List<HandlerMapping>"
+        },
+        {
+          "name": "logRequestDetails",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "requestMapping",
+          "kind": "field",
+          "type": "RequestMappingHandlerMapping"
+        },
+        {
+          "name": "requestTimeout",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "writer",
+          "kind": "field",
+          "type": "ResponseWriter"
+        }
+      ]
+    },
+    {
+      "name": "forwardedHeaderFilter",
+      "type": "ForwardedHeaderFilter",
+      "types": [
+        "ForwardedHeaderFilter",
+        "WebFilter",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnForwardHeaders()"
+      ],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 218,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "isTrusted",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String? address"
+          ]
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "httpSessionFilter",
+      "type": "HttpSessionFilter",
+      "types": [
+        "HttpSessionFilter",
+        "WebFilter",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 237,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "manager",
+          "kind": "field",
+          "type": "HttpSessionManager"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "httpSessionManager",
+      "type": "HttpSessionManager",
+      "types": [
+        "HttpSessionManager"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 207,
+      "injects": [],
+      "members": [
+        {
+          "name": "attach",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "HttpSessionProperties"
+        },
+        {
+          "name": "repository",
+          "kind": "field",
+          "type": "HttpSessionRepository"
+        }
+      ]
+    },
+    {
+      "name": "httpSessionRepository",
+      "type": "HttpSessionRepository",
+      "types": [
+        "HttpSessionRepository"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(HttpSessionRepository)"
+      ],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 188,
+      "injects": [],
+      "members": [
+        {
+          "name": "changeSessionId",
+          "kind": "method",
+          "type": "FutureOr<void>",
+          "parameters": [
+            "StoredHttpSession session"
+          ]
+        },
+        {
+          "name": "createSession",
+          "kind": "method",
+          "type": "FutureOr<StoredHttpSession>",
+          "parameters": []
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "FutureOr<void>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "FutureOr<StoredHttpSession?>",
+          "parameters": [
+            "String id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "localServerSettings",
+      "type": "LocalServerSettings",
+      "types": [
+        "LocalServerSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 293,
+      "injects": [],
+      "members": [
+        {
+          "name": "port",
+          "kind": "field",
+          "type": "int?"
+        }
+      ]
+    },
+    {
+      "name": "multipartResolver",
+      "type": "MultipartResolver",
+      "types": [
+        "MultipartResolver"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(MultipartResolver)"
+      ],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 136,
+      "injects": [],
+      "members": [
+        {
+          "name": "cleanup",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "isMultipart",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "MultipartProperties"
+        },
+        {
+          "name": "resolve",
+          "kind": "method",
+          "type": "Future<MultipartRequest>",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "multipartSettings",
+      "type": "MultipartSettings",
+      "types": [
+        "MultipartSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 209,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "fileSizeThreshold",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "location",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "maxFileSize",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "maxPartCount",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "maxRequestSize",
+          "kind": "field",
+          "type": "DataSize"
+        }
+      ]
+    },
+    {
+      "name": "mvcSettings",
+      "type": "MvcSettings",
+      "types": [
+        "MvcSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 241,
+      "injects": [],
+      "members": [
+        {
+          "name": "async",
+          "kind": "field",
+          "type": "MvcAsyncSettings"
+        },
+        {
+          "name": "logRequestDetails",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "sse",
+          "kind": "field",
+          "type": "MvcSseSettings"
+        }
+      ]
+    },
+    {
+      "name": "portInUseFailureAnalyzer",
+      "type": "PortInUseFailureAnalyzer",
+      "types": [
+        "PortInUseFailureAnalyzer",
+        "FailureAnalyzer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 286,
+      "injects": [],
+      "members": [
+        {
+          "name": "analyze",
+          "kind": "method",
+          "type": "FailureAnalysis?",
+          "parameters": [
+            "Object failure"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "requestMappingHandlerMapping",
+      "type": "RequestMappingHandlerMapping",
+      "types": [
+        "RequestMappingHandlerMapping",
+        "HandlerMapping",
+        "Ordered",
+        "SmartInitializingSingleton"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 150,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterSingletonsInstantiated",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "argumentResolvers",
+          "kind": "field",
+          "type": "List<HandlerMethodArgumentResolver>"
+        },
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "ListableBeanFactory"
+        },
+        {
+          "name": "corsConfigurationFor",
+          "kind": "method",
+          "type": "CorsConfiguration?",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "corsConfigurationSource",
+          "kind": "field",
+          "type": "CorsConfigurationSource?"
+        },
+        {
+          "name": "corsSource",
+          "kind": "field",
+          "type": "CorsConfigurationSource?"
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "PropertyResolver"
+        },
+        {
+          "name": "exceptionHandlerFor",
+          "kind": "method",
+          "type": "ExceptionHandlerMethod?",
+          "parameters": [
+            "Object error",
+            "{HandlerMethod? handler}"
+          ]
+        },
+        {
+          "name": "exceptionResolvers",
+          "kind": "field",
+          "type": "List<HandlerExceptionResolver>"
+        },
+        {
+          "name": "getHandler",
+          "kind": "method",
+          "type": "HttpHandler?",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "handleException",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "Object error",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "{HandlerMethod? handler}"
+          ]
+        },
+        {
+          "name": "initialize",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "interceptors",
+          "kind": "field",
+          "type": "List<InterceptorRegistration>"
+        },
+        {
+          "name": "mappings",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "multipartResolver",
+          "kind": "field",
+          "type": "MultipartResolver"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "validator",
+          "kind": "field",
+          "type": "Validator?"
+        },
+        {
+          "name": "writer",
+          "kind": "field",
+          "type": "ResponseWriter"
+        }
+      ]
+    },
+    {
+      "name": "responseWriter",
+      "type": "ResponseWriter",
+      "types": [
+        "ResponseWriter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 121,
+      "injects": [],
+      "members": [
+        {
+          "name": "asyncTimeout",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "clock",
+          "kind": "field",
+          "type": "DateTime Function()"
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "messageSource",
+          "kind": "field",
+          "type": "MessageSource?"
+        },
+        {
+          "name": "sseHeartbeat",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "writeError",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object error",
+            "StackTrace stackTrace",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "writeErrorResponse",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ErrorResponse error",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "writeProblem",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ProblemDetail problem",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "writeResource",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Resource resource",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "writeResult",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object? result",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "{HandlerMethod? handler}",
+            "{List<MediaType> produces}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "serverSettings",
+      "type": "ServerSettings",
+      "types": [
+        "ServerSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 32,
+      "injects": [],
+      "members": [
+        {
+          "name": "address",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "compression",
+          "kind": "field",
+          "type": "ServerCompressionSettings"
+        },
+        {
+          "name": "connectionTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "contextPath",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "forwardHeaders",
+          "kind": "field",
+          "type": "ForwardHeadersSettings"
+        },
+        {
+          "name": "forwardHeadersStrategy",
+          "kind": "field",
+          "type": "ForwardHeadersStrategy"
+        },
+        {
+          "name": "maxHttpRequestBodySize",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "port",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "requestTimeout",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "session",
+          "kind": "field",
+          "type": "ServerSessionSettings"
+        },
+        {
+          "name": "shutdown",
+          "kind": "field",
+          "type": "Shutdown"
+        },
+        {
+          "name": "ssl",
+          "kind": "field",
+          "type": "ServerSslSettings"
+        },
+        {
+          "name": "websocket",
+          "kind": "field",
+          "type": "ServerWebSocketSettings"
+        }
+      ]
+    },
+    {
+      "name": "webMainSettings",
+      "type": "WebMainSettings",
+      "types": [
+        "WebMainSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 272,
+      "injects": [],
+      "members": [
+        {
+          "name": "webApplicationType",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "webServerFactory",
+      "type": "WebServerFactory",
+      "types": [
+        "WebServerFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(WebServerFactory)"
+      ],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 99,
+      "injects": [],
+      "members": [
+        {
+          "name": "getWebServer",
+          "kind": "method",
+          "type": "WebServer",
+          "parameters": [
+            "HttpHandler handler"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webServerStartStopLifecycle",
+      "type": "WebServerStartStopLifecycle",
+      "types": [
+        "WebServerStartStopLifecycle",
+        "ApplicationContextAware",
+        "Aware",
+        "AsyncStartup",
+        "SmartLifecycle",
+        "Lifecycle"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 264,
+      "injects": [],
+      "members": [
+        {
+          "name": "awaitStartup",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "factory",
+          "kind": "field",
+          "type": "WebServerFactory"
+        },
+        {
+          "name": "handler",
+          "kind": "field",
+          "type": "HttpHandler"
+        },
+        {
+          "name": "isAutoStartup",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isEnabled",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isPauseable",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isRunning",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "main",
+          "kind": "field",
+          "type": "WebMainSettings"
+        },
+        {
+          "name": "phase",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "serverSettings",
+          "kind": "field",
+          "type": "ServerSettings"
+        },
+        {
+          "name": "setApplicationContext",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationContext context"
+          ]
+        },
+        {
+          "name": "shutdownTimeout",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "started",
+          "kind": "getter",
+          "type": "Future<WebServer?>"
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stopWithCallback",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() callback"
+          ]
+        },
+        {
+          "name": "test",
+          "kind": "field",
+          "type": "WebTestSettings"
+        },
+        {
+          "name": "webServer",
+          "kind": "getter",
+          "type": "WebServer?"
+        }
+      ]
+    },
+    {
+      "name": "webTestSettings",
+      "type": "WebTestSettings",
+      "types": [
+        "WebTestSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 281,
+      "injects": [],
+      "members": [
+        {
+          "name": "webEnvironment",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

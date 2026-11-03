@@ -39,6 +39,8 @@ import 'package:spring_core_dart_generator/src/data_schema.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/metadata_locations.dart'
+    show lineOf, sourceOf;
 import 'package:spring_core_dart_generator/src/part_tree.dart';
 import 'package:spring_core_dart_generator/src/part_tree_parser.dart';
 import 'package:spring_core_dart_generator/src/query_expressions.dart';
@@ -49,6 +51,7 @@ import 'package:spring_core_dart_generator/src/spel_compiler.dart';
 part 'advisor_pointcuts.dart';
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
+part 'data_metadata.dart';
 part 'entity_scanning.dart';
 part 'field_initializers.dart';
 part 'introspection_needs.dart';
@@ -106,10 +109,10 @@ final TypeChecker _jsonAnySetter = _spring('JsonAnySetter');
 final TypeChecker _each = _spring('Each');
 final TypeChecker _eachKey = _spring('EachKey');
 
-// `@ConfigurationProperties` from spring_boot_dart (matched by URL, so the
+// `@ConfigurationProperties` from spring_core_dart (matched by URL, so the
 // generator does not depend on that package): constructor binding.
 const _configurationProperties = TypeChecker.fromUrl(
-  'package:spring_boot_dart/src/annotations.dart#ConfigurationProperties',
+  'package:spring_core_dart/src/context/property_annotations.dart#ConfigurationProperties',
 );
 final TypeChecker _interfaceProxy = _spring('InterfaceProxy');
 final TypeChecker _factoryBean = _spring('FactoryBean');

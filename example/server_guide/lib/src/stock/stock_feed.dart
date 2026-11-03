@@ -2,7 +2,7 @@
 // connection come back with `Last-Event-ID` and get what they missed.
 import 'dart:async';
 
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/stock/stock_changed.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 

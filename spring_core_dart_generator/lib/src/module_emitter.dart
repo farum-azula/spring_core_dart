@@ -127,7 +127,7 @@ class ModuleEmitter {
   /// `pruneProxies: false` (any module may import it).
   ///
   /// ```dart
-  /// final emitter = ModuleEmitter(input.changeExtension('.spring.dart'));
+  /// final emitter = ModuleEmitter(generatedId(input));
   /// ```
   ModuleEmitter(
     this.output, {
@@ -202,6 +202,8 @@ class ModuleEmitter {
     List<Spec> extra = const [],
     List<Expression> extraDefinitions = const [],
     Map<String, ({String? text, String? base64})> resources = const {},
+    List<String> parts = const [],
+    List<String> partImports = const [],
   }) {
     _module = module;
     _usesTypeOf = false;
@@ -333,6 +335,12 @@ class ModuleEmitter {
         : _contextAccessExtension();
     final library = Library(
       (b) => b
+        // The generated files that are `part of` this one (the typed keys),
+        // and the imports they need, as a part has none of its own.
+        ..directives.addAll([
+          for (final url in partImports) Directive.import(url),
+          for (final url in parts) Directive.part(url),
+        ])
         ..body.addAll(classes)
         ..body.addAll([
           if (_usesTypeOf)
@@ -385,7 +393,8 @@ class ModuleEmitter {
         '// ignore_for_file: deprecated_member_use, '
         'invalid_use_of_visible_for_testing_member\n'
         '// ignore_for_file: invalid_use_of_internal_member, '
-        'invalid_use_of_protected_member\n\n'
+        'invalid_use_of_protected_member\n'
+        '${parts.isEmpty ? '' : '// ignore_for_file: unused_import\n'}\n'
         '${library.accept(emitter)}';
     return DartFormatter(languageVersion: DartFormatter.latestLanguageVersion)
         .format(source);

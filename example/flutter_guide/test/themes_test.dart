@@ -3,7 +3,7 @@
 // one more is loaded at run time, the fonts come from an asset folder.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neon_books_app/spring_keys.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/settings/settings_page.dart';
 import 'package:neon_books_app/src/settings/theme_preview.dart';

@@ -158,10 +158,21 @@ void main() {
     final environment = StandardEnvironment(systemEnvironment: system)
       ..propertySources.addFirst(MapPropertySource('test', properties));
     final context = AnnotationConfigApplicationContext(
-      [BeanModule('app', definitions)],
+      [
+        BeanModule('app', definitions, imports: [bootPropertiesBeans]),
+      ],
       parent: parent,
       environment: environment,
-    )..refresh();
+    );
+    // What SpringApplication does: binds the @ConfigurationProperties.
+    context.beanFactory.addBeanPostProcessor(
+      ConfigurationPropertiesBinder(
+        environment,
+        context.introspector,
+        beanFactory: context.beanFactory,
+      ),
+    );
+    context.refresh();
     addTearDown(context.close);
     return context;
   }
@@ -308,7 +319,7 @@ void main() {
 
     test('a parent messageSource does not stop the auto-configured one '
         '(SearchStrategy.current)', () {
-      ClasspathResources.registerAll(const {
+      Resources.registerAll(const {
         'conditions_test/messages.properties': EmbeddedResource.text(
           'greeting=Hello',
         ),

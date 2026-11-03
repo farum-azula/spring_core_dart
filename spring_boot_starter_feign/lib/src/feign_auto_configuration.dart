@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_feign/src/config/feign_properties.dart';
 import 'package:spring_boot_starter_feign/src/feign_client_config.dart';
 import 'package:spring_boot_starter_feign/src/feign_client_factory.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
@@ -31,7 +32,7 @@ final feignAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) => platformHttpTransport(
       connectTimeout: FeignClientConfig.connectTimeout(
-        r.dependency<Environment>(),
+        r.dependency<FeignProperties>(),
       ),
     ),
     destroyMethod: (transport) => transport.close(),
@@ -45,6 +46,7 @@ final feignAutoConfiguration = <BeanDefinition<Object>>[
     // `configuration:` classes belong to that client only.
     create: (r) => FeignClientFactory(
       environment: r.dependency<Environment>(),
+      properties: r.dependency<FeignProperties>(),
       mapper:
           r.optionalDependency<ObjectMapper>() ??
           ObjectMapper(introspector: r.dependency<BeanIntrospector>()),

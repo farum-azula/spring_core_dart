@@ -6,7 +6,7 @@
 // no test may create: a slice replaces it with an in-memory SQLite one.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'data_test_app.spring.dart';
+import '../../spring_gen/data_test/app/data_test_app.spring.dart';
 
 /// A book; the audit properties are filled on save.
 @Table('books')

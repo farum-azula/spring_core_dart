@@ -5,8 +5,8 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import '../spring_gen/postgres/app/postgres_app.spring.dart';
 import 'app/postgres_app.dart';
-import 'app/postgres_app.spring.dart';
 
 void main() {
   test('the glue makes the PostgreSQL driver bean', () async {

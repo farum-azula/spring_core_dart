@@ -13,6 +13,8 @@ import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/hot_reload.dart';
+import 'package:spring_boot_dart/src/properties/boot_properties.dart';
+import 'package:spring_boot_dart/src/properties/properties.dart';
 import 'package:spring_boot_dart/src/renamed_properties.dart';
 import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
@@ -313,26 +315,21 @@ class SpringApplication {
   /// `spring.main.banner-mode` (`off`, `console` or `log`) wins when set.
   final BannerMode bannerMode;
 
+  // `spring.main.*`; the constructor's banner mode and shutdown hook are
+  // what the properties change.
+  MainProperties _mainProperties(Environment environment) => bindBootProperties(
+    environment,
+    MainProperties()
+      ..bannerMode = bannerMode
+      ..registerShutdownHook = registerShutdownHook,
+  );
+
   // Boot's printBanner: after the environment is prepared, before the
   // context is created. [preloaded] is the banner file read
   // asynchronously (runAsync: Flutter assets).
   void _printBanner(StandardEnvironment environment, [Resource? preloaded]) {
-    final property = environment
-        .getProperty('spring.main.banner-mode')
-        ?.trim()
-        .toLowerCase();
-    final mode = switch (property) {
-      null || '' => bannerMode,
-      'off' || 'false' => BannerMode.off,
-      'console' => BannerMode.console,
-      'log' => BannerMode.log,
-      _ => throw ConfigurationPropertiesBindException('spring.main', null, [
-        // One element, split for the line width.
-        // ignore: no_adjacent_strings_in_list
-        'spring.main.banner-mode: failed to convert to BannerMode (one of '
-            'off, console, log) (was "$property")',
-      ]),
-    };
+    // `false` (YAML's `off`) is `off` too: the binder's enum conversion.
+    final mode = _mainProperties(environment).bannerMode;
     if (mode == BannerMode.off) {
       return;
     }
@@ -348,8 +345,7 @@ class SpringApplication {
 
   Resource _bannerResource(Environment environment) =>
       (resourceLoader ?? DefaultResourceLoader()).getResource(
-        environment.getProperty('spring.banner.location') ??
-            'resources:banner.txt',
+        bindBootProperties(environment, BannerProperties()).location,
       );
 
   // The banner file when it can only be read asynchronously (a Flutter
@@ -1007,7 +1003,9 @@ class SpringApplication {
     ConfigurableApplicationContext context, {
     bool crash = false,
   }) {
-    if (_isSet(context.environment, 'debug')) {
+    if (_isSet(
+      bindBootProperties(context.environment, DebugProperties()).debug,
+    )) {
       _reportLog.info('${ConditionEvaluationReport.of(context)}');
     } else if (crash) {
       _reportLog.info(
@@ -1041,9 +1039,12 @@ class SpringApplication {
     (Map<String, String>?, Map<String, Object?>, List<String>) launch,
   ) {
     // Spring Boot's ContextIdApplicationContextInitializer.
-    final applicationName = environment
-        .getProperty('spring.application.name')
-        ?.trim();
+    final main = _mainProperties(environment);
+    final application = bindBootProperties(
+      environment,
+      ApplicationProperties(),
+    );
+    final applicationName = application.name?.trim();
     final context = AnnotationConfigApplicationContext(
       [...modules, ..._selectedAutoConfigurations(environment)],
       environment: environment,
@@ -1060,16 +1061,11 @@ class SpringApplication {
       launch.$3,
     );
     final arguments = ApplicationArguments(args);
-    final logStartupInfo =
-        environment.getPropertyAs<bool>('spring.main.log-startup-info') ?? true;
-    final name =
-        environment.getProperty('spring.application.name') ?? 'application';
+    final logStartupInfo = main.logStartupInfo;
+    final name = application.name ?? 'application';
     (context.beanFactory as DefaultListableBeanFactory)
             .allowBeanDefinitionOverriding =
-        environment.getPropertyAs<bool>(
-          'spring.main.allow-bean-definition-overriding',
-        ) ??
-        false;
+        main.allowBeanDefinitionOverriding;
     context.beanFactory
       ..registerSingleton(
         'springApplicationArguments',
@@ -1088,8 +1084,7 @@ class SpringApplication {
           beanFactory: context.beanFactory,
         ),
       );
-    if (environment.getPropertyAs<bool>('spring.main.lazy-initialization') ??
-        false) {
+    if (main.lazyInitialization) {
       context.addBeanFactoryPostProcessor(
         LazyInitializationBeanFactoryPostProcessor(),
       );
@@ -1124,8 +1119,7 @@ class SpringApplication {
     StandardEnvironment environment,
     ConfigurableApplicationContext context,
   ) {
-    if (environment.getPropertyAs<bool>('spring.main.register-shutdown-hook') ??
-        registerShutdownHook) {
+    if (_mainProperties(environment).registerShutdownHook) {
       context.registerShutdownHook();
     }
   }
@@ -1360,8 +1354,7 @@ class SpringApplication {
 
   // Boot's LoggingApplicationListener.isSet: `debug` and `trace` are on
   // when present, unless `false` (`--debug` alone has an empty value).
-  static bool _isSet(Environment environment, String property) {
-    final value = environment.getProperty(property);
+  static bool _isSet(String? value) {
     return value != null && value.trim().toLowerCase() != 'false';
   }
 
@@ -1493,11 +1486,12 @@ class SpringApplication {
     SpringLog.resetLevels();
     // `--debug` and `--trace` come first: the levels of the properties win,
     // as in Boot's LoggingApplicationListener.
-    for (final (property, level, loggers) in [
-      ('debug', SpringLogLevel.debug, debugLoggers),
-      ('trace', SpringLogLevel.trace, traceLoggers),
+    final debug = bindBootProperties(environment, DebugProperties());
+    for (final (value, level, loggers) in [
+      (debug.debug, SpringLogLevel.debug, debugLoggers),
+      (debug.trace, SpringLogLevel.trace, traceLoggers),
     ]) {
-      if (_isSet(environment, property)) {
+      if (_isSet(value)) {
         for (final name in loggers) {
           SpringLog.setLevel(name, level);
         }

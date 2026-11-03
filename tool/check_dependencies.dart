@@ -55,6 +55,10 @@ const flutterPackages = [
   'spring_boot_starter_flutter',
   'spring_boot_starter_flutter_security',
   'example/flutter_guide',
+  'example/themes/neon_ui',
+  'example/themes/neon',
+  'example/themes/material',
+  'example/themes/cupertino',
 ];
 
 /// Dart-team packages that [repositoryOnly] packages may depend on anyway,
@@ -145,6 +149,10 @@ const allowedPackages = {
       'spring_boot_starter_flutter',
       'spring_boot_starter_flutter_security',
       'neon_books_app',
+      'neon_ui',
+      'theme_showcase_neon',
+      'theme_showcase_material',
+      'theme_showcase_cupertino',
     },
   ),
   'pointycastle': AllowedPackage(

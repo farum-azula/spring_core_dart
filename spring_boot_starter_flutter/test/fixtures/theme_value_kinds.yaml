@@ -1,0 +1,178 @@
+# The single truth of how a theme value is classified. The runtime
+# (ThemeValues.kindOf, used by StateStyle and the tokens) and the generator
+# (typed keys) must agree with it; both read this file in their tests.
+#
+# Order of the rules, first match wins (a value is trimmed first):
+#   1. number   [+-]? digits, optional fraction, optional exponent
+#               (12, -3, +5, .5, 1e3, 2.), or the word Infinity (any case).
+#   2. duration digits (or .digits) + optional spaces + ms|s|m|h|d, any case
+#               (250ms, 250 ms, 4s, 1.5s, 2m, 1h, 0.5d). A bare number is a
+#               number. One syntax for motion, animations, styles, tokens,
+#               transition, refresh and timeout.
+#   3. insets   two, four (or a YAML list of one, two, four) numbers
+#               separated by commas. Three or five numbers, or any other
+#               count, are an error at runtime and are not classified.
+#   4. color    a plain string ThemeValues.color accepts: #RGB, #RRGGBB,
+#               #AARRGGBB, or a Colors name (camelCase, kebab-case or
+#               snake_case, names are case sensitive: Red is text). Nothing
+#               else is a one-line color: no `0x`, no `alpha`, `mix` or `@`
+#               forms, no bare role names. A color with changes is an OBJECT
+#               (see `color-objects` below).
+#   5. text     everything else.
+
+# The keys that start a theme: `$<root>.x` is a path from the root when the
+# first segment is one of these, else a token shorthand ($tokens.<path>).
+# Exactly SpringThemeData.themeProperties.
+root-sections:
+  - brightness
+  - seed-color
+  - scheme-variant
+  - contrast
+  - colors
+  - typography
+  - shape
+  - elevation
+  - spacing
+  - visual-density
+  - tap-target-size
+  - splash
+  - motion
+  - components
+  - tokens
+  - cupertino
+  - styles
+  - animations
+  - background
+
+# An image token is a node at least tokens.<group>.<key> deep that has
+# `source` and whose children are ALL among these keys (kebab case; the
+# runtime compares them in canonical form, without - and _ and in lower
+# case). A node with another child is a group of tokens, not an image.
+image-keys:
+  - source
+  - refresh
+  - source-sha256
+  - headers
+  - timeout
+  - fallback
+  - allow-http
+
+values:
+  # numbers
+  - {value: "12", kind: number}
+  - {value: "-3", kind: number}
+  - {value: "+5", kind: number}
+  - {value: ".5", kind: number}
+  - {value: "2.", kind: number}
+  - {value: "1.5", kind: number}
+  - {value: "0", kind: number}
+  - {value: "1e3", kind: number}
+  - {value: "1E3", kind: number}
+  - {value: "-2.5e-2", kind: number}
+  - {value: "Infinity", kind: number}
+  - {value: "infinity", kind: number}
+  - {value: "  7  ", kind: number}
+  # durations
+  - {value: "250ms", kind: duration}
+  - {value: "250 ms", kind: duration}
+  - {value: "250MS", kind: duration}
+  - {value: "4s", kind: duration}
+  - {value: "1.5s", kind: duration}
+  - {value: ".5s", kind: duration}
+  - {value: "2m", kind: duration}
+  - {value: "1h", kind: duration}
+  - {value: "1 H", kind: duration}
+  - {value: "2d", kind: duration}
+  - {value: "0.5d", kind: duration}
+  - {value: "1.5h", kind: duration}
+  - {value: "0s", kind: duration}
+  # insets
+  - {value: "12, 6", kind: insets}
+  - {value: "12,6", kind: insets}
+  - {value: "8, 4, 8, 4", kind: insets}
+  - {value: "1.5, -2, +3, .5", kind: insets}
+  # colors: hex
+  - {value: "#F00", kind: color}
+  - {value: "#f00", kind: color}
+  - {value: "#FF0000", kind: color}
+  - {value: "#80FF0000", kind: color}
+  # colors: names
+  - {value: "white", kind: color}
+  - {value: "black", kind: color}
+  - {value: "transparent", kind: color}
+  - {value: "grey", kind: color}
+  - {value: "red", kind: color}
+  - {value: "red.shade200", kind: color}
+  - {value: "deepPurple", kind: color}
+  - {value: "deep-purple", kind: color}
+  - {value: "deep_purple", kind: color}
+  - {value: "deepPurple.shade200", kind: color}
+  - {value: "redAccent.shade100", kind: color}
+  - {value: "black54", kind: color}
+  - {value: "white70", kind: color}
+  # text
+  - {value: "hello", kind: text}
+  - {value: "ease-out", kind: text}
+  - {value: "bold", kind: text}
+  - {value: "Red", kind: text}
+  - {value: "WHITE", kind: text}
+  - {value: "#GGG", kind: text}
+  - {value: "#ABCD", kind: text}
+  - {value: "#FF00", kind: text}
+  - {value: "0x10", kind: text}
+  - {value: "0xFF0000", kind: text}
+  - {value: "0xFFFF0000", kind: text}
+  - {value: "primary", kind: text}
+  - {value: "on-surface", kind: text}
+  - {value: "primary@38%", kind: text}
+  - {value: "2w", kind: text}
+  - {value: "red.shade999", kind: text}
+  - {value: "#F00 alpha 12%", kind: text}
+  - {value: "#F00 mix white 14%", kind: text}
+  - {value: "#F00 mix white 50% alpha 80%", kind: text}
+  - {value: "white alpha 100%", kind: text}
+  - {value: "12px", kind: text}
+  - {value: "- 3", kind: text}
+  - {value: "-5s", kind: text}
+  - {value: "250 sec", kind: text}
+  - {value: "NaN", kind: text}
+  - {value: "1,5,", kind: text}
+  - {value: "a, b", kind: text}
+  - {value: "12, red", kind: text}
+  - {value: "https://example.com/a.png", kind: text}
+
+# A token or a style value that is a map with `color` is a color: the node's
+# children are `color` (required), `mix` (an object with `with` and
+# `amount`) and `alpha`; `mix` is applied first, then `alpha`. A percent is
+# `0%..100%` or `0..1`. `props` are the keys below the node, joined by ` | `.
+# `kind: color` is valid; `error` is a text both sides' messages contain.
+color-objects:
+  - {props: "color=#F00", kind: color}
+  - {props: "color=red | alpha=12%", kind: color}
+  - {props: "color=#F00 | alpha=0.5", kind: color}
+  - {props: "color=#F00 | alpha=0%", kind: color}
+  - {props: "color=#F00 | alpha=100%", kind: color}
+  - {props: "color=#F00 | alpha=1", kind: color}
+  - {props: "color=#F00 | mix.with=white | mix.amount=14%", kind: color}
+  - {props: "color=#F00 | mix.with=#00F | mix.amount=0.25 | alpha=80%", kind: color}
+  - {props: "color=deepPurple.shade200 | mix.with=black54 | mix.amount=10%", kind: color}
+  - {props: "color=$colors.primary | alpha=12%", kind: color}
+  - {props: "color=$colors.primary | mix.with=$colors.surface | mix.amount=50%", kind: color}
+  - {props: "color.color=#F00 | color.alpha=50% | alpha=50%", kind: color}
+  - {props: "color=#F00 | alfa=12%", error: "did you mean 'alpha'"}
+  - {props: "color=#F00 | size=4", error: "a key of a color object"}
+  - {props: "alpha=12%", error: "a color object with a 'color'"}
+  - {props: "mix.with=white | mix.amount=10%", error: "a color object with a 'color'"}
+  - {props: "color=#F00 | alpha=12", error: "a percent"}
+  - {props: "color=#F00 | alpha=120%", error: "a percent"}
+  - {props: "color=#F00 | alpha=-5%", error: "a percent"}
+  - {props: "color=#F00 | alpha=half", error: "a percent"}
+  - {props: "color=#F00 | mix=white 10%", error: "mix as an object"}
+  - {props: "color=#F00 | mix.with=white", error: "mix as an object"}
+  - {props: "color=#F00 | mix.amount=10%", error: "mix as an object"}
+  - {props: "color=#F00 | mix.with=white | mix.amout=10%", error: "did you mean 'amount'"}
+  - {props: "color=#F00 | mix.with=white | mix.amount=150%", error: "a percent"}
+  - {props: "color=#F00 | mix.with=nope | mix.amount=10%", error: "a color"}
+  - {props: "color=nope", error: "a color"}
+  - {props: "color=primary", error: "a color"}
+  - {props: "color=#F00 alpha 10%", error: "a color"}

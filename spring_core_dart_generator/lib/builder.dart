@@ -13,10 +13,14 @@
 ///   `spring_boot_dart`) gets the same for the whole package, plus
 ///   `springApplication` and `runApplication(args)`.
 /// - A test file with `@SpringBootTest` classes gets a
-///   `test/spring/<name>.test.spring.dart` file with `runSpringTests()`.
+///   `test/spring_gen/<name>.test.spring.dart` file with `runSpringTests()`.
 /// - A Flutter app with `spring.flutter.theme.*` properties or message
-///   files in `lib/resources/` gets `lib/spring_keys.dart`, with the typed
-///   `context.theme` and `context.messages`.
+///   files in `lib/resources/` gets `lib/spring_gen/theme.spring.dart` and
+///   `lib/spring_gen/messages.spring.dart`, parts of the `@ComponentScan`
+///   library's `.spring.dart` with the typed `context.theme` and
+///   `context.messages`.
+/// - Every package with Spring code gets `lib/spring_gen/spring_metadata.json`:
+///   properties, beans, profiles and hints for editors.
 /// - A Flutter app with `spring.flutter.web.*` properties in
 ///   `lib/resources/` gets a `web_dev_config.yaml`, which sets the host,
 ///   port, headers and proxy of `flutter run` on the web.
@@ -35,7 +39,7 @@
 /// ```dart
 /// // lib/src/beans.dart
 /// import 'package:spring_core_dart/spring_core_dart.dart';
-/// import 'package:my_app/src/beans.spring.dart';
+/// import 'package:my_app/spring_gen/src/beans.spring.dart';
 ///
 /// // Every bean class under lib/src/ ends up in this module.
 /// @ComponentScan()
@@ -64,6 +68,7 @@ import 'package:build/build.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/spring_metadata_builder.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
 
@@ -124,11 +129,22 @@ Builder springCoreDartBuilder(BuilderOptions options) {
   );
 }
 
+/// Creates the main builder for the `lib/` of a package whose example
+/// imports what it writes ([SpringPropertiesBuilder]); `build.yaml` names
+/// it `spring_properties`. It takes the options of [springCoreDartBuilder].
+Builder springPropertiesBuilder(BuilderOptions options) {
+  final builder = springCoreDartBuilder(options) as SpringBuilder;
+  return SpringPropertiesBuilder(
+    proxyMode: builder.proxyMode,
+    pruneProxies: builder.pruneProxies,
+  );
+}
+
 /// Creates the test builder ([SpringTestBuilder]), registered in
 /// `build.yaml` as `spring_test`.
 ///
 /// For every `test/<name>_test.dart` that declares `@SpringBootTest`
-/// classes it writes `test/spring/<name>.test.spring.dart` with a
+/// classes it writes `test/spring_gen/<name>.test.spring.dart` with a
 /// `runSpringTests()` function, which the test's `main` calls to register
 /// the tests of those classes. It takes no options.
 Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();
@@ -153,17 +169,19 @@ Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();
 Builder springFlutterWebBuilder(BuilderOptions options) =>
     WebDevConfigBuilder();
 
-/// Creates the builder of `lib/spring_keys.dart` ([FlutterKeysBuilder]),
+/// Creates the builder of the typed keys, `lib/spring_gen/theme.spring.dart`
+/// and `lib/spring_gen/messages.spring.dart` ([FlutterKeysBuilder]),
 /// registered in `build.yaml` as `spring_flutter_keys`.
 ///
 /// For an app that depends on `spring_boot_starter_flutter` it writes the
 /// typed keys of the configuration: `context.theme.colors.surface`,
 /// `context.theme.spacing.m`, `context.messages.basket.total(price)`. A key
 /// renamed in `lib/resources/` is then a compile error in the widgets that
-/// use it. It takes no options.
+/// use it. The files are parts of the `.spring.dart` of the package's
+/// `@ComponentScan` library, which a widget imports. It takes no options.
 ///
 /// ```dart
-/// import 'package:my_app/spring_keys.dart';
+/// import 'package:my_app/spring_gen/main.spring.dart';
 ///
 /// Padding(
 ///   padding: EdgeInsets.all(context.theme.spacing.m),
@@ -172,3 +190,25 @@ Builder springFlutterWebBuilder(BuilderOptions options) =>
 /// ```
 Builder springFlutterKeysBuilder(BuilderOptions options) =>
     FlutterKeysBuilder();
+
+/// Creates the builder of `lib/spring_gen/spring_metadata.json`
+/// ([SpringMetadataBuilder]), registered in `build.yaml` as
+/// `spring_metadata`.
+///
+/// For a package with Spring code it writes the configuration properties
+/// (`@ConfigurationProperties` classes with their `///` descriptions and
+/// literal defaults), the beans (with types, conditions, injection points
+/// and the members SpEL can reach), the profiles, value hints (enum
+/// constants, `@Range`, `@WarnValues` and `@PropertyValues`) and, for
+/// `spring_boot_starter_flutter`, the theme schema. The language server reads the file, and `tool/spring_schema.dart` makes a
+/// JSON Schema for `application.yml` from it. It takes no options.
+///
+/// ```json
+/// {
+///   "version": 1,
+///   "package": "my_app",
+///   "properties": [{"name": "api.host", "type": "String"}]
+/// }
+/// ```
+Builder springMetadataBuilder(BuilderOptions options) =>
+    SpringMetadataBuilder();

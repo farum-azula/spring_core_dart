@@ -20,7 +20,7 @@ import 'dart:convert';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:pkg/app.dart';
 
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) {
@@ -96,7 +96,9 @@ Future<(Map<String, String>, String)> _build() async {
   );
   expect(result.errors, isEmpty);
   final output = readerWriter.testing.readString(
-    result.outputs.singleWhere((o) => o.path == 'bin/main.spring.dart'),
+    result.outputs.singleWhere(
+      (o) => o.path == 'bin/spring_gen/main.spring.dart',
+    ),
   );
   return (sources, output);
 }
@@ -190,7 +192,7 @@ void main() {
     final (sources, output) = await _build();
     final directory = await Directory.systemTemp.createTemp('spring_define_');
     addTearDown(() => directory.delete(recursive: true));
-    final files = {...sources, 'bin/main.spring.dart': output};
+    final files = {...sources, 'bin/spring_gen/main.spring.dart': output};
     for (final MapEntry(:key, :value) in files.entries) {
       final file = File('${directory.path}/$key');
       await file.parent.create(recursive: true);

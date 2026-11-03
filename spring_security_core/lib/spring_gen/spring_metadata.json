@@ -1,0 +1,408 @@
+{
+  "version": 1,
+  "package": "spring_security_core",
+  "properties": [
+    {
+      "name": "spring.security.password-checks.max-concurrent",
+      "type": "int?",
+      "description": "The most password hash checks running at once; more wait in the queue. Default: half the processors.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_security_core/src/config/security_core_properties.dart",
+      "line": 9,
+      "class": "PasswordChecksProperties"
+    },
+    {
+      "name": "spring.security.password-checks.max-queued",
+      "type": "int?",
+      "description": "The most password checks waiting; more are refused at once. Default: eight times the checks running at once.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_security_core/src/config/security_core_properties.dart",
+      "line": 13,
+      "class": "PasswordChecksProperties"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "authenticationEventPublisher",
+      "type": "AuthenticationEventPublisher",
+      "types": [
+        "AuthenticationEventPublisher"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(AuthenticationEventPublisher)"
+      ],
+      "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
+      "line": 174,
+      "injects": [],
+      "members": [
+        {
+          "name": "publishAuthenticationFailure",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "AuthenticationException exception",
+            "Authentication authentication"
+          ]
+        },
+        {
+          "name": "publishAuthenticationSuccess",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Authentication authentication"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "authenticationManager",
+      "type": "AuthenticationManager",
+      "types": [
+        "AuthenticationManager"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(AuthenticationManager)",
+        "@_OnAuthenticationSources()"
+      ],
+      "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
+      "line": 187,
+      "injects": [],
+      "members": [
+        {
+          "name": "authenticate",
+          "kind": "method",
+          "type": "Future<Authentication>",
+          "parameters": [
+            "Authentication authentication"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "methodSecurityAdvisor",
+      "type": "DefaultPointcutAdvisor",
+      "types": [
+        "DefaultPointcutAdvisor",
+        "PointcutAdvisor",
+        "Advisor",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
+      "line": 164,
+      "injects": [],
+      "members": [
+        {
+          "name": "advice",
+          "kind": "field",
+          "type": "MethodInterceptor"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "pointcut",
+          "kind": "field",
+          "type": "AopPointcut"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "methodSecurityExpressionHandler",
+      "type": "MethodSecurityExpressionHandler",
+      "types": [
+        "MethodSecurityExpressionHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(MethodSecurityExpressionHandler)"
+      ],
+      "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
+      "line": 115,
+      "injects": [],
+      "members": [
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "BeanFactory?"
+        },
+        {
+          "name": "createEvaluationContext",
+          "kind": "method",
+          "type": "StandardEvaluationContext",
+          "parameters": [
+            "MethodSecurityExpressionRoot root",
+            "MethodSignature signature",
+            "List<Object?> args"
+          ]
+        },
+        {
+          "name": "createRoot",
+          "kind": "method",
+          "type": "MethodSecurityExpressionRoot",
+          "parameters": [
+            "Authentication? Function() authentication",
+            "{Object? target}"
+          ]
+        },
+        {
+          "name": "customizers",
+          "kind": "field",
+          "type": "List<SecurityExpressionContextCustomizer>"
+        },
+        {
+          "name": "defaultRolePrefix",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "evaluate",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String text",
+            "StandardEvaluationContext context"
+          ]
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector?"
+        },
+        {
+          "name": "parse",
+          "kind": "method",
+          "type": "Expression",
+          "parameters": [
+            "String text"
+          ]
+        },
+        {
+          "name": "permissionEvaluator",
+          "kind": "field",
+          "type": "PermissionEvaluator"
+        },
+        {
+          "name": "roleHierarchy",
+          "kind": "field",
+          "type": "RoleHierarchy"
+        },
+        {
+          "name": "trustResolver",
+          "kind": "field",
+          "type": "AuthenticationTrustResolver"
+        }
+      ]
+    },
+    {
+      "name": "methodSecurityInterceptor",
+      "type": "MethodSecurityInterceptor",
+      "types": [
+        "MethodSecurityInterceptor",
+        "MethodInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
+      "line": 140,
+      "injects": [],
+      "members": [
+        {
+          "name": "attributesOf",
+          "kind": "method",
+          "type": "MethodSecurityAttributes",
+          "parameters": [
+            "MethodSignature signature"
+          ]
+        },
+        {
+          "name": "expressionHandler",
+          "kind": "field",
+          "type": "MethodSecurityExpressionHandler"
+        },
+        {
+          "name": "holderStrategy",
+          "kind": "field",
+          "type": "SecurityContextHolderStrategy?"
+        },
+        {
+          "name": "invoke",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "MethodInvocation invocation"
+          ]
+        },
+        {
+          "name": "validate",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "MethodSignature signature"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "methodSecurityValidator",
+      "type": "MethodSecurityValidator",
+      "types": [
+        "MethodSecurityValidator",
+        "BeanPostProcessor",
+        "BeanFactoryAware",
+        "Aware",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
+      "line": 148,
+      "injects": [],
+      "members": [
+        {
+          "name": "interceptor",
+          "kind": "field",
+          "type": "MethodSecurityInterceptor"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "passwordCheckLimiter",
+      "type": "PasswordCheckLimiter",
+      "types": [
+        "PasswordCheckLimiter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(PasswordCheckLimiter)"
+      ],
+      "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
+      "line": 98,
+      "injects": [],
+      "members": [
+        {
+          "name": "maxConcurrent",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "maxQueued",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "Future<T> Function() check"
+          ]
+        },
+        {
+          "name": "running",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "waiting",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "passwordChecksProperties",
+      "type": "PasswordChecksProperties",
+      "types": [
+        "PasswordChecksProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_security_core/src/config/security_core_properties.dart",
+      "line": 6,
+      "injects": [],
+      "members": [
+        {
+          "name": "maxConcurrent",
+          "kind": "field",
+          "type": "int?"
+        },
+        {
+          "name": "maxQueued",
+          "kind": "field",
+          "type": "int?"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

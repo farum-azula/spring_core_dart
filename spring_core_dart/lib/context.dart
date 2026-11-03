@@ -49,4 +49,5 @@ export 'package:spring_core_dart/src/context/message/message_format.dart';
 export 'package:spring_core_dart/src/context/message/message_source.dart';
 export 'package:spring_core_dart/src/context/message/message_source_accessor.dart';
 export 'package:spring_core_dart/src/context/message/reloadable_resource_bundle_message_source.dart';
+export 'package:spring_core_dart/src/context/property_annotations.dart';
 export 'package:spring_core_dart/src/context/task_executor.dart';

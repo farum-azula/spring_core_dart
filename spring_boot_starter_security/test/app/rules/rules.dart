@@ -1,7 +1,7 @@
 // A security configuration with rules, users and both logins.
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
-import 'rules.spring.dart';
+import '../../spring_gen/app/rules/rules.spring.dart';
 
 @ComponentScan()
 final BeanModule rulesSecurityBeans = $rulesSecurityBeans;

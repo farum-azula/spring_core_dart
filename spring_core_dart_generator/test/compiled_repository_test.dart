@@ -19,7 +19,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -135,7 +135,7 @@ Future<String> _generate(
   );
   expect(result.errors, isEmpty);
   return result.readerWriter.testing.readString(
-    AssetId('pkg', 'lib/src/beans.spring.dart'),
+    AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
   );
 }
 
@@ -841,11 +841,11 @@ Future<Page<Book>> findByTitle(String title, Pageable operations) =>
         {
           'pkg|lib/src/beans.dart': _scan,
           'pkg|lib/src/model.dart': '$_header$_entities$model',
-          'pkg|lib/src/beans.spring.dart': raw,
+          'pkg|lib/spring_gen/src/beans.spring.dart': raw,
         },
         (resolver) async {
           final library = await resolver.libraryFor(
-            AssetId('pkg', 'lib/src/beans.spring.dart'),
+            AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
           final result = await library.session.getErrors(
             library.firstFragment.source.fullName,
@@ -857,7 +857,7 @@ Future<Page<Book>> findByTitle(String title, Pageable operations) =>
           ];
         },
         rootPackage: 'pkg',
-        resolverFor: 'pkg|lib/src/beans.spring.dart',
+        resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
         readAllSourcesFromFilesystem: true,
       );
       expect(errors, isEmpty);
@@ -1133,11 +1133,11 @@ Future<List<Book>> findByTitleContaining(String part) =>
         {
           'pkg|lib/src/beans.dart': _scan,
           'pkg|lib/src/model.dart': '$_header$_entities$model',
-          'pkg|lib/src/beans.spring.dart': raw,
+          'pkg|lib/spring_gen/src/beans.spring.dart': raw,
         },
         (resolver) async {
           final library = await resolver.libraryFor(
-            AssetId('pkg', 'lib/src/beans.spring.dart'),
+            AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
           final result = await library.session.getErrors(
             library.firstFragment.source.fullName,
@@ -1149,7 +1149,7 @@ Future<List<Book>> findByTitleContaining(String part) =>
           ];
         },
         rootPackage: 'pkg',
-        resolverFor: 'pkg|lib/src/beans.spring.dart',
+        resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
         readAllSourcesFromFilesystem: true,
       );
       expect(errors, isEmpty);

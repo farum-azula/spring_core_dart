@@ -1,11 +1,11 @@
 // @Commit and @Rollback(false): what commits stays for the tests after it,
 // in the context's database; a failing test is rolled back even so. The
-// generator writes spring/data_test/commit.test.spring.dart.
+// generator writes spring_gen/data_test/commit.test.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/commit.test.spring.dart';
+import '../spring_gen/data_test/commit.test.spring.dart';
 import 'app/data_test_app.dart';
 
 @DataTest(application: 'test/data_test/app/data_test_app.dart')

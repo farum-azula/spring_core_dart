@@ -19,19 +19,7 @@ enum SqlInitMode {
   always,
 
   /// Never.
-  never;
-
-  /// The mode written [value] (`embedded`, `always`, `never`).
-  static SqlInitMode parse(String value) {
-    for (final mode in values) {
-      if (mode.name == value.toLowerCase()) {
-        return mode;
-      }
-    }
-    throw SchemaException(
-      "spring.sql.init.mode must be embedded, always or never, not '$value'",
-    );
-  }
+  never,
 }
 
 /// The settings of the script initialization, `spring.sql.init.*`.
@@ -50,27 +38,8 @@ final class SqlInitSettings {
     this.encoding = 'utf-8',
   });
 
-  /// Reads `<prefix>sql.init.*` from [environment]: `mode`,
-  /// `schema-locations`, `data-locations`, `platform`, `continue-on-error`,
-  /// `separator` and `encoding`.
-  factory SqlInitSettings.fromEnvironment(
-    Environment environment, [
-    String prefix = 'spring.',
-  ]) {
-    final reader = SettingsReader(environment, '${prefix}sql.init.');
-    final mode = reader.string('mode');
-    return SqlInitSettings(
-      mode: mode == null ? SqlInitMode.embedded : SqlInitMode.parse(mode),
-      schemaLocations: reader.list('schema-locations'),
-      dataLocations: reader.list('data-locations'),
-      platform: reader.string('platform') ?? 'all',
-      continueOnError: reader.boolean('continue-on-error', fallback: false),
-      separator: reader.raw('separator') ?? ';',
-      encoding: reader.string('encoding') ?? 'utf-8',
-    );
-  }
-
-  /// When the scripts run (`mode`).
+  /// When `schema.sql` / `data.sql` run: `embedded` (in-memory databases
+  /// only), `always`, `never`.
   final SqlInitMode mode;
 
   /// The locations of the schema scripts (`schema-locations`); empty for

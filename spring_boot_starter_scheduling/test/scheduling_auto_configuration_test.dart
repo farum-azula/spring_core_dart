@@ -507,10 +507,18 @@ void main() {
         Map<String, Object?> properties,
         Completer<void> finished,
       ) async {
-        final context = AnnotationConfigApplicationContext(
-          [springBootStarterSchedulingAutoConfiguration],
-          environment: StandardEnvironment(systemEnvironment: {})
-            ..propertySources.addFirst(MapPropertySource('test', properties)),
+        final environment = StandardEnvironment(systemEnvironment: {})
+          ..propertySources.addFirst(MapPropertySource('test', properties));
+        final context = AnnotationConfigApplicationContext([
+          springBootStarterSchedulingAutoConfiguration,
+        ], environment: environment);
+        // What SpringApplication does: binds the @ConfigurationProperties.
+        context.beanFactory.addBeanPostProcessor(
+          ConfigurationPropertiesBinder(
+            environment,
+            context.introspector,
+            beanFactory: context.beanFactory,
+          ),
         );
         await context.refreshAsync();
         final scheduler =

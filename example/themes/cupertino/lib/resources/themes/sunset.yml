@@ -1,0 +1,45 @@
+# SUNSET: `light` in warm colors. Cards and bars are see-through white, so
+# the picture behind them (a sky that drifts slowly) shows. The page is
+# transparent because the theme has a `background`.
+spring:
+  flutter:
+    theme:
+      themes:
+        sunset:
+          extends: light
+          colors:
+            primary: '#FF5E3A'
+            on-primary: '#FFFFFF'
+            secondary: '#AF52DE'
+            tertiary: '#FF2D55'
+            surface: '#FFF1E6'
+            on-surface-variant: '#6B5A57'
+            # An 8 digit color is #AARRGGBB: 80% white.
+            surface-container-lowest: '#CCFFFFFF'
+            surface-container-high: '#FFFFFF'
+            outline: '#E0C9C0'
+          cupertino:
+            # The scaffolds let the picture behind them show.
+            scaffold-background-color: transparent
+            bar-background-color: '#B3FFF1E6'
+          tokens:
+            brand:
+              name: Sunset
+              tagline: Warm, see-through, glowing
+          background:
+            color: $colors.surface
+            image:
+              source: assets/images/sunset-sky.png
+              fit: cover
+              alignment: center
+              opacity: 0.9
+            overlay:
+              gradient: { type: linear, begin: top, end: bottom, colors: ['#66FFF1E6', transparent] }
+            animation: background-drift
+            effect: drift
+            transition: 400ms ease-out
+            # ThemeBackground.screen('showcase') shows this over the background.
+            screens:
+              showcase:
+                overlay:
+                  gradient: { type: radial, begin: center, colors: [{ color: $colors.tertiary, alpha: 30% }, transparent] }

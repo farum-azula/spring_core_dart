@@ -507,7 +507,8 @@ extension _QueryScanning on BeanScanner {
       ..addEntities(
         [
           for (final entity in module.entities)
-            if (_table.hasAnnotationOf(entity.element)) _description(entity),
+            if (_table.hasAnnotationOf(entity.element))
+              _entityDescription(entity),
         ],
         customNaming: module.beans.any(
           (bean) => _namingStrategy.isAssignableFromType(bean.type),
@@ -515,7 +516,7 @@ extension _QueryScanning on BeanScanner {
       );
   }
 
-  EntityDescription _description(EntityModel entity) {
+  EntityDescription _entityDescription(EntityModel entity) {
     final table = ConstantReader(_table.firstAnnotationOf(entity.element));
     DartObject? annotation(EntityPropertyModel property, TypeChecker checker) {
       for (final a in property.annotations) {

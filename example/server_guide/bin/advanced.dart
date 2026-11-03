@@ -14,7 +14,7 @@ import 'package:neon_books_server/src/catalog/catalog_service.dart';
 import 'package:neon_books_server/src/stock/stock_feed.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 /// The tool's output goes through a logger, not `print`; `main` raises its
 /// level to info below, while the application's own loggers stay quiet.

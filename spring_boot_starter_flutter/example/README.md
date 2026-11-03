@@ -18,7 +18,7 @@ a bean (an object the framework creates and shares) instead of a
   `CounterText` reads `counter.value`, so it rebuilds after each tap.
   `CounterPage` only calls `counter.increment`, so it does not.
 
-The generator writes `example.spring.dart` from it
+The generator writes `spring_gen/example.spring.dart` from it
 (`dart run build_runner build`).
 
 ## Run it
@@ -31,7 +31,7 @@ flutter create counter && cd counter
 flutter pub add spring_boot_starter_flutter
 flutter pub add dev:build_runner dev:spring_core_dart_generator
 # copy example.dart to lib/main.dart, and change its import
-# 'example.spring.dart' to 'main.spring.dart'
+# 'spring_gen/example.spring.dart' to 'spring_gen/main.spring.dart'
 dart run build_runner build
 flutter run
 ```
@@ -64,7 +64,7 @@ dev_dependencies:
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
-import 'main.spring.dart'; // generated
+import 'spring_gen/main.spring.dart'; // generated
 
 @SpringBootApplication()
 void main() => runApp(
@@ -84,7 +84,7 @@ spring.flutter.app.type=material
 spring.flutter.app.title=${counter.title}
 ```
 
-Run the generator; it writes `lib/main.spring.dart` and embeds the files
+Run the generator; it writes `lib/spring_gen/main.spring.dart` and embeds the files
 of `lib/resources/`:
 
 ```bash
@@ -213,7 +213,7 @@ the app widget of the properties around it.
 ```dart
 // test/counter_test.dart
 import 'package:counter/main.dart';
-import 'package:counter/main.spring.dart';
+import 'package:counter/spring_gen/main.spring.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';

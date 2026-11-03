@@ -1,4 +1,4 @@
-import 'package:neon_books_app/main.spring.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Logs the app's lifecycle, which arrives as application events: the

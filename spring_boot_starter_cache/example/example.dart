@@ -8,7 +8,7 @@ import 'dart:convert';
 
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 class Book {
   const Book(this.isbn, this.title);

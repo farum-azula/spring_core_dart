@@ -149,4 +149,39 @@ void main() {
       );
     });
   });
+
+  test('a header name under headers keeps its spelling', () {
+    final config = ThemeConfig(const {
+      'Background.Image.Headers.X-Api-Key': 'k',
+      'tokens.logo.headers.Authorization': 'a',
+    });
+    final values = config.resolve('light');
+    expect(values['background.image.headers.X-Api-Key'], 'k');
+    expect(values['tokens.logo.headers.Authorization'], 'a');
+  });
+
+  test('a style property: a list in the base, states in the extender', () {
+    final config = ThemeConfig(const {
+      'styles.chip.padding.0': '8',
+      'styles.chip.padding.1': '4',
+      'styles.chip.fill.default': 'white',
+      'styles.chip.fill.hovered': 'grey',
+      'themes.a.extends': 'light',
+      'themes.a.styles.chip.padding.default': '2',
+      'themes.a.styles.chip.padding.pressed': '3',
+      'themes.a.styles.chip.fill': 'black',
+      'themes.b.styles.chip.fill.hovered': 'red',
+    });
+    final a = config.resolve('a');
+    expect(a.keys.where((k) => k.startsWith('styles.chip.padding')).toSet(), {
+      'styles.chip.padding.default',
+      'styles.chip.padding.pressed',
+    });
+    expect(a['styles.chip.fill'], 'black');
+    expect(a.containsKey('styles.chip.fill.default'), isFalse);
+    // States of the same shape merge state by state.
+    final b = config.resolve('b');
+    expect(b['styles.chip.fill.default'], 'white');
+    expect(b['styles.chip.fill.hovered'], 'red');
+  });
 }

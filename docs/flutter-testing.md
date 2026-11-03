@@ -80,7 +80,7 @@ every screen this way.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/main.dart';
-import 'package:my_app/main.spring.dart';
+import 'package:my_app/spring_gen/main.spring.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
@@ -127,7 +127,7 @@ void main() {
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter_test/spring_boot_starter_flutter_test.dart';
 
-import 'spring/counter_page.test.spring.dart';
+import 'spring_gen/counter_page.test.spring.dart';
 
 @SpringBootTest(properties: {'counter.step': 2})
 @DirtiesContext() // a fresh Counter for every test
@@ -385,7 +385,7 @@ is better kept in its own Dart package, tested with
 
 *Planned.* The test classes become the same generated file as in
 [Testing](testing.md#15-what-the-generator-writes):
-`test/spring/counter_page.test.spring.dart`, with `runSpringTests()`.
+`test/spring_gen/counter_page.test.spring.dart`, with `runSpringTests()`.
 The Flutter starter adds:
 
 - each `@WidgetTest` method as `testWidgets(name, (tester) =>

@@ -145,7 +145,7 @@ spring:
     });
 
     test('embedded classpath YAML is found by the default locations', () {
-      ClasspathResources.registerAll({
+      Resources.registerAll({
         'application.yml': const EmbeddedResource.text(
           'embedded:\n  greeting: hello\n',
         ),
@@ -159,7 +159,7 @@ spring:
         expect(e.getProperty('embedded.greeting'), 'hello');
         expect(e.getProperty('embedded.extra'), 'config');
       } finally {
-        ClasspathResources.registerAll(const {}, owner: 'yamlDefaultTest');
+        Resources.registerAll(const {}, owner: 'yamlDefaultTest');
       }
     });
 

@@ -8,7 +8,7 @@
 
 import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 /// `@Log` generates the `log` getter (in example.spring.dart), like
 /// Lombok's `@Slf4j`; without `topic` the logger would be

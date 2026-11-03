@@ -66,7 +66,7 @@ const _main = '''
 import 'package:pkg/app.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -80,7 +80,7 @@ import 'package:pkg/app.dart' as p;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'spring/shop.test.spring.dart';
+import 'spring_gen/shop.test.spring.dart';
 
 // A dart:core supertype: the generated file imported dart:core with a
 // prefix only and did not compile ('dynamic' isn't a type).
@@ -333,7 +333,7 @@ import 'package:pkg/app.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'spring/io.test.spring.dart';
+import 'spring_gen/io.test.spring.dart';
 
 class FakeHttpClient implements HttpClient {
   @override

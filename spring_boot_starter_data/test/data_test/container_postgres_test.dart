@@ -6,13 +6,13 @@ library;
 // (replaceDatabase: false keeps it from being swapped for SQLite), the
 // migrations run on it, and each test still rolls back. Skipped without Docker
 // (a failure with CONTAINERS_REQUIRED=true). The generator writes
-// spring/data_test/container_postgres.test.spring.dart.
+// spring_gen/data_test/container_postgres.test.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/containers.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/container_postgres.test.spring.dart';
+import '../spring_gen/data_test/container_postgres.test.spring.dart';
 import 'postgres_app/postgres_data_app.dart';
 
 @DataTest(

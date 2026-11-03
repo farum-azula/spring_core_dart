@@ -1,5 +1,5 @@
 import 'package:spring_boot_starter_flutter_security/src/web/browser_page.dart';
-import 'package:spring_boot_starter_flutter_security/src/web/flutter_web_security_properties.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 /// An [HttpTransport] for a web app whose server is on another origin than

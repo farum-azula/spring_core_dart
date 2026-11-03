@@ -1,7 +1,7 @@
 // Choosing between beans of one type (chapter 1): a gateway per profile,
 // a @Fallback for when neither profile is active, a @Qualifier to get
 // the fallback on purpose.
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 

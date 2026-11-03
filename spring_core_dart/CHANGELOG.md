@@ -1,3 +1,11 @@
+## Unreleased
+
+### Changes
+
+- Test: `core_properties_drift_test.dart` keeps the properties classes of `core_properties.dart` (`spring.config.*`, `spring.profiles.*`, `spring.main.cloud-platform`) and the code that reads them by name together: same keys, same defaults. The generated metadata now names the map keys `spring.profiles.group.*`.
+- Removed: `classpath:` and `classpath*:` are gone (use `resources:` and `resources*:`); a `classpath:` location is an unsupported protocol like any other unknown prefix. `ClasspathResources.migrate`, `migrateOptional`, `legacyPrefix`, `legacyAllPrefix` and `resetLegacyWarnings` are gone with the warning.
+- Renamed: `ClasspathResources` is now `Resources` (file `resources.dart`).
+
 ## 0.6.2
 
 ### Changes

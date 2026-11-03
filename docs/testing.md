@@ -105,7 +105,7 @@ payment gateway in place of the real one:
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/shop.spring.dart'; // springApplication
+import '../bin/spring_gen/shop.spring.dart'; // springApplication
 
 class FakeGateway implements PaymentGateway {
   final charged = <double>[];
@@ -156,7 +156,7 @@ The same test as a class:
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'spring/checkout.test.spring.dart'; // generated, in test/spring/
+import 'spring_gen/checkout.test.spring.dart'; // generated, in test/spring_gen/
 
 @SpringBootTest(args: ['--shop.name=Night Books'])
 @ActiveProfiles(['dev', 'test'])
@@ -191,7 +191,7 @@ void main() => runSpringTests();
   annotations above it say how the application starts.
 - **`main` stays.** `dart test` runs a file's `main`, and the generator
   cannot write into your file. `runSpringTests()` comes from the generated
-  `test/spring/checkout.test.spring.dart` and runs every test class of the
+  `test/spring_gen/checkout.test.spring.dart` and runs every test class of the
   file.
 - **Plain tests** that need no context can sit next to it in `main`:
 
@@ -246,7 +246,7 @@ Spring's:
 ## 4. Which application
 
 A test class starts the application of its own package: the one generated
-into `bin/<name>.spring.dart` or `lib/main.spring.dart`. With one
+into `bin/<name>.spring.dart` or `lib/spring_gen/main.spring.dart`. With one
 application in the package, nothing needs saying. With several (two
 executables in `bin/`, say), name the entry point:
 
@@ -731,7 +731,7 @@ the context did not start.
 
 ## 15. What the generator writes
 
-The generated files go to their own folder, `test/spring/`, which mirrors
+The generated files go to their own folder, `test/spring_gen/`, which mirrors
 the structure of `test/`:
 
 ```
@@ -739,7 +739,7 @@ test/
   checkout_test.dart
   orders/
     basket_test.dart
-  spring/                              generated, do not edit
+  spring_gen/                          generated, do not edit
     checkout.test.spring.dart
     orders/basket.test.spring.dart
 ```
@@ -764,7 +764,7 @@ import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 import '../checkout_test.dart';
 import 'package:spring_boot_starter_test/generated.dart' as _sbt;
-import '../../bin/shop.spring.dart' as _app0;
+import '../../bin/spring_gen/shop.spring.dart' as _app0;
 
 /// Declares the tests of the `@SpringBootTest` classes of `checkout_test.dart`.
 void runSpringTests() {
@@ -804,7 +804,7 @@ _sbt.BeanOverride<Object> _$named<T extends Object>(
   (below). The
   generated file imports what the test file imports (same prefixes,
   `show` and `hide`) plus the test file itself; relative imports, conditional ones included,
-  are re-pointed from `test/spring/`. So every type and constant in the
+  are re-pointed from `test/spring_gen/`. So every type and constant in the
   annotations means the same there. A static constant of the class used in
   a member's annotation (`@Tag(slow)`) is written `ShopTest.slow`, and a
   private name fails the build, since another library cannot reach it.
@@ -905,7 +905,7 @@ starts with the place (`test/checkout_test.dart:12:3: ...`):
 | `@Container field 'db' in a @Nested class` | move it to the test class (one context) |
 | `@ServiceConnection on 'db' needs @Container` | put both on the field |
 | `@Container field 'db' needs a value` | `static final db = PostgresContainer();` (or `static late`, assigned in `@BeforeAll`) |
-| `test/checkout_test.dart does not import 'spring/checkout.test.spring.dart'` (a warning) | add the import and `void main() => runSpringTests();` |
+| `test/checkout_test.dart does not import 'spring_gen/checkout.test.spring.dart'` (a warning) | add the import and `void main() => runSpringTests();` |
 
 A missing bean is not a build error: the test fails when the context
 starts, with the same report as the application (`No bean of type
@@ -1227,7 +1227,7 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'spring/book_repository.test.spring.dart'; // generated
+import 'spring_gen/book_repository.test.spring.dart'; // generated
 
 @DataTest()
 class BookRepositoryTest {

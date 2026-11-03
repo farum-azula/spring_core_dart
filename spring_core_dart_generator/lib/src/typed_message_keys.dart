@@ -79,7 +79,7 @@ final class TypedMessageKeys {
   }
 
   static String _withoutScheme(String base) {
-    for (final scheme in const ['classpath:', 'resources:']) {
+    for (final scheme in const ['resources:']) {
       if (base.startsWith(scheme)) {
         return base.substring(scheme.length);
       }

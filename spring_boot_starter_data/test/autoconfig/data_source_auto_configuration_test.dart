@@ -9,8 +9,8 @@ import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:test/test.dart';
 
+import '../spring_gen/autoconfig/app/autoconfig_app.spring.dart';
 import 'app/autoconfig_app.dart';
-import 'app/autoconfig_app.spring.dart';
 
 void main() {
   late Directory temp;

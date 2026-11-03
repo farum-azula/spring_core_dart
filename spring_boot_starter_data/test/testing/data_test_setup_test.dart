@@ -14,7 +14,7 @@ import 'package:spring_boot_starter_data/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../sqlite/app/sqlite_app.spring.dart' as sqlite;
+import '../spring_gen/sqlite/app/sqlite_app.spring.dart' as sqlite;
 import '../sqlite/support.dart' show startDriver;
 
 /// A service: not a data bean.

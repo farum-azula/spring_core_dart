@@ -1,0 +1,872 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_oauth2_client",
+  "properties": [
+    {
+      "name": "spring.feign.oauth2.client-registration-id",
+      "type": "String?",
+      "description": "The registration whose token Feign clients send; without it the Feign client's name is the registration id.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart",
+      "line": 13,
+      "class": "FeignOAuth2Properties"
+    },
+    {
+      "name": "spring.feign.oauth2.enabled",
+      "type": "bool",
+      "description": "Whether Feign clients send the access token of an OAuth2 client registration.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart",
+      "line": 9,
+      "class": "FeignOAuth2Properties"
+    },
+    {
+      "name": "spring.security.oauth2.client.provider.*.authorization-uri",
+      "type": "String?",
+      "description": "The provider's login page. Default: from the metadata.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 165,
+      "class": "OAuth2ClientProviderProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.provider.*.issuer-uri",
+      "type": "String?",
+      "description": "The provider; the other endpoints come from its OpenID (or OAuth 2.0) metadata, whose `issuer` must equal it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 187,
+      "class": "OAuth2ClientProviderProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.provider.*.jwk-set-uri",
+      "type": "String?",
+      "description": "The provider's public keys; a server checks ID token signatures with them. Default: from the metadata.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 183,
+      "class": "OAuth2ClientProviderProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.provider.*.token-uri",
+      "type": "String?",
+      "description": "The token endpoint. Default: from the metadata.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 168,
+      "class": "OAuth2ClientProviderProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.provider.*.user-info-authentication-method",
+      "type": "String?",
+      "description": "How the access token is sent to the user-info endpoint. Default: `header`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 176,
+      "class": "OAuth2ClientProviderProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.provider.*.user-info-uri",
+      "type": "String?",
+      "description": "The user-info endpoint. Default: from the metadata.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 171,
+      "class": "OAuth2ClientProviderProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.provider.*.user-name-attribute",
+      "type": "String?",
+      "description": "The attribute that names the user. Default: `sub` with `issuer-uri`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 179,
+      "class": "OAuth2ClientProviderProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.authorization-grant-type",
+      "type": "String?",
+      "description": "A user's login, or the client's own tokens (server to server). Default: `authorization_code` with an `issuer-uri` or a known provider; required otherwise.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 50,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-authentication-method",
+      "type": "String?",
+      "description": "How the client proves who it is at the token endpoint. Default: `none` without a secret for `authorization_code`, else `client_secret_basic`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 44,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-id",
+      "type": "String?",
+      "description": "The client's id at the provider. Required.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 34,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-name",
+      "type": "String?",
+      "description": "The name on the login page. Default: the issuer, or the known provider's name.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 64,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-secret",
+      "type": "String?",
+      "description": "The client's secret; none for an app (a public client). A credential, never log it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 38,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-secret-jwt.audience",
+      "type": "String?",
+      "description": "The JWT's `aud`. Default: the provider's issuer-uri.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 131,
+      "class": "OAuth2ClientSecretJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-secret-jwt.issuer",
+      "type": "String?",
+      "description": "The JWT's `iss` (Apple: the team id). Required.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 116,
+      "class": "OAuth2ClientSecretJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-secret-jwt.key-id",
+      "type": "String?",
+      "description": "The JWT's `kid` (Apple: the key id). Required.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 119,
+      "class": "OAuth2ClientSecretJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-secret-jwt.lifetime",
+      "type": "Duration",
+      "description": "How long each JWT is valid (at most `180d`, at least `1m`); made again when a tenth is left.",
+      "default": "1h",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 135,
+      "class": "OAuth2ClientSecretJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-secret-jwt.private-key",
+      "type": "String?",
+      "description": "The PKCS #8 PEM itself instead of a location (from an environment variable; `\\n` escapes allowed). A credential, never log it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 123,
+      "class": "OAuth2ClientSecretJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-secret-jwt.private-key-location",
+      "type": "String?",
+      "description": "The PKCS #8 private key (Apple's `.p8`), such as `file:/run/secrets/apple.p8`; read at the first token request, never logged. Either this or `private-key` is required.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 128,
+      "class": "OAuth2ClientSecretJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.dpop",
+      "type": "String?",
+      "description": "DPoP (RFC 9449): the tokens are bound to the app's `DPoPKey` and every request carries a proof signed by it. `auto` (the default) binds them when the provider announces DPoP and the app has a key kept outside the program. Not in Spring Boot.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 71,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.native-sign-in",
+      "type": "String?",
+      "description": "Apps (`spring_boot_starter_flutter_security`): `apple` signs in with Sign in with Apple's sheet on iOS and macOS instead of the browser; the code then goes to the registration's `token-uri`, the app's server. Default: `apple` for the apple provider, else `none`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 86,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.provider",
+      "type": "String?",
+      "description": "The provider of the `provider.*` keys, or a known one (`google`, `github`, `facebook`, `okta`, `apple`). Default: the registration's id.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 31,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.redirect-uri",
+      "type": "String?",
+      "description": "Where the provider sends the browser back (a template such as `{baseUrl}/login/oauth2/code/{registrationId}`, or `neonbooks:/oauth2/callback`); the provider must accept it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 55,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.response-mode",
+      "type": "String?",
+      "description": "How the provider returns the authorization response: in the redirect URI (`query`, the default), or posted as a form to it (`form_post`; only a server's `oauth2Login()` receives it, over HTTPS only: its authorization request cookie is then `SameSite=None; Secure`). `form_post` is the default of the apple provider. Not in Spring Boot.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 79,
+      "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.scope",
+      "type": "Set<String>?",
+      "description": "The scopes asked for (a comma list or a YAML list); `openid` makes it an OpenID Connect login (an ID token, checked). Default: none; the provider's defaults for the known providers.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 60,
+      "class": "OAuth2ClientRegistrationProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.security.oauth2.client.provider.*.user-info-authentication-method",
+      "values": [
+        {
+          "value": "header",
+          "description": null
+        },
+        {
+          "value": "form",
+          "description": null
+        },
+        {
+          "value": "query",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.authorization-grant-type",
+      "values": [
+        {
+          "value": "authorization_code",
+          "description": null
+        },
+        {
+          "value": "client_credentials",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.client-authentication-method",
+      "values": [
+        {
+          "value": "client_secret_basic",
+          "description": null
+        },
+        {
+          "value": "client_secret_post",
+          "description": null
+        },
+        {
+          "value": "none",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.dpop",
+      "values": [
+        {
+          "value": "auto",
+          "description": null
+        },
+        {
+          "value": "true",
+          "description": null
+        },
+        {
+          "value": "false",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.native-sign-in",
+      "values": [
+        {
+          "value": "none",
+          "description": null
+        },
+        {
+          "value": "apple",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.security.oauth2.client.registration.*.response-mode",
+      "values": [
+        {
+          "value": "query",
+          "description": null
+        },
+        {
+          "value": "form_post",
+          "description": null
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "OAuth2ClientProperties",
+      "type": "OAuth2ClientProperties",
+      "types": [
+        "OAuth2ClientProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
+      "line": 205,
+      "injects": [],
+      "members": [
+        {
+          "name": "provider",
+          "kind": "field",
+          "type": "Map<String, OAuth2ClientProviderProperties>"
+        },
+        {
+          "name": "registration",
+          "kind": "field",
+          "type": "Map<String, OAuth2ClientRegistrationProperties>"
+        },
+        {
+          "name": "validate",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "authorizationCodeTokenResponseClient",
+      "type": "OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>",
+      "types": [
+        "OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 188,
+      "injects": [],
+      "members": [
+        {
+          "name": "getTokenResponse",
+          "kind": "method",
+          "type": "Future<OAuth2AccessTokenResponse>",
+          "parameters": [
+            "OAuth2AuthorizationCodeGrantRequest grantRequest"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "authorizedClientManager",
+      "type": "OAuth2AuthorizedClientManager",
+      "types": [
+        "OAuth2AuthorizedClientManager"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OAuth2AuthorizedClientManager)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 293,
+      "injects": [],
+      "members": [
+        {
+          "name": "authorize",
+          "kind": "method",
+          "type": "Future<OAuth2AuthorizedClient?>",
+          "parameters": [
+            "OAuth2AuthorizeRequest authorizeRequest"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "authorizedClientService",
+      "type": "OAuth2AuthorizedClientService",
+      "types": [
+        "OAuth2AuthorizedClientService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OAuth2AuthorizedClientService)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 140,
+      "injects": [],
+      "members": [
+        {
+          "name": "loadAuthorizedClient",
+          "kind": "method",
+          "type": "Future<OAuth2AuthorizedClient?>",
+          "parameters": [
+            "String clientRegistrationId",
+            "String principalName"
+          ]
+        },
+        {
+          "name": "removeAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String clientRegistrationId",
+            "String principalName"
+          ]
+        },
+        {
+          "name": "saveAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "OAuth2AuthorizedClient authorizedClient",
+            "Authentication principal"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "clientCredentialsTokenResponseClient",
+      "type": "OAuth2AccessTokenResponseClient<OAuth2ClientCredentialsGrantRequest>",
+      "types": [
+        "OAuth2AccessTokenResponseClient<OAuth2ClientCredentialsGrantRequest>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OAuth2AccessTokenResponseClient<OAuth2ClientCredentialsGrantRequest>)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 228,
+      "injects": [],
+      "members": [
+        {
+          "name": "getTokenResponse",
+          "kind": "method",
+          "type": "Future<OAuth2AccessTokenResponse>",
+          "parameters": [
+            "OAuth2ClientCredentialsGrantRequest grantRequest"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "clientRegistrationRepository",
+      "type": "ClientRegistrationRepository",
+      "types": [
+        "ClientRegistrationRepository"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnClientsConfigured()",
+        "@ConditionalOnMissingBean(ClientRegistrationRepository)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 112,
+      "injects": [],
+      "members": [
+        {
+          "name": "findByRegistrationId",
+          "kind": "method",
+          "type": "Future<ClientRegistration?>",
+          "parameters": [
+            "String registrationId"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "clientSecretResolver",
+      "type": "OAuth2ClientSecretResolver",
+      "types": [
+        "OAuth2ClientSecretResolver"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@_OnClientSecretJwt()",
+        "@ConditionalOnMissingBean(OAuth2ClientSecretResolver)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 171,
+      "injects": [],
+      "members": [
+        {
+          "name": "resolve",
+          "kind": "method",
+          "type": "FutureOr<String?>",
+          "parameters": [
+            "ClientRegistration registration"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dPoPKey",
+      "type": "DPoPKey",
+      "types": [
+        "DPoPKey"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(DPoPKey)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 158,
+      "injects": [],
+      "members": [
+        {
+          "name": "algorithm",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "persistent",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "publicJwk",
+          "kind": "getter",
+          "type": "Map<String, Object?>"
+        },
+        {
+          "name": "sign",
+          "kind": "method",
+          "type": "Future<Uint8List>",
+          "parameters": [
+            "Uint8List input"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "feignOAuth2Properties",
+      "type": "FeignOAuth2Properties",
+      "types": [
+        "FeignOAuth2Properties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart",
+      "line": 6,
+      "injects": [],
+      "members": [
+        {
+          "name": "clientRegistrationId",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "oauth2AccessTokenErrorDecoder",
+      "type": "OAuth2AccessTokenErrorDecoder",
+      "types": [
+        "OAuth2AccessTokenErrorDecoder",
+        "ErrorDecoder"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBooleanProperty('spring.feign.oauth2.enabled')",
+        "@ConditionalOnBean(OAuth2AccessTokenInterceptor)",
+        "@ConditionalOnMissingBean(ErrorDecoder)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 354,
+      "injects": [],
+      "members": [
+        {
+          "name": "decode",
+          "kind": "method",
+          "type": "Exception",
+          "parameters": [
+            "String methodKey",
+            "HttpResponse response"
+          ]
+        },
+        {
+          "name": "delegate",
+          "kind": "field",
+          "type": "ErrorDecoder"
+        },
+        {
+          "name": "interceptor",
+          "kind": "field",
+          "type": "OAuth2AccessTokenInterceptor"
+        }
+      ]
+    },
+    {
+      "name": "oauth2AccessTokenInterceptor",
+      "type": "OAuth2AccessTokenInterceptor",
+      "types": [
+        "OAuth2AccessTokenInterceptor",
+        "RequestInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBooleanProperty('spring.feign.oauth2.enabled')",
+        "@ConditionalOnBean(OAuth2AuthorizedClientManager)",
+        "@ConditionalOnMissingBean(OAuth2AccessTokenInterceptor)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 332,
+      "injects": [],
+      "members": [
+        {
+          "name": "apply",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "RequestTemplate template"
+          ]
+        },
+        {
+          "name": "authorizedClientManager",
+          "kind": "field",
+          "type": "OAuth2AuthorizedClientManager"
+        },
+        {
+          "name": "authorizedClientService",
+          "kind": "field",
+          "type": "OAuth2AuthorizedClientService?"
+        },
+        {
+          "name": "clientRegistrationId",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "dPoPKey",
+          "kind": "field",
+          "type": "DPoPKey?"
+        },
+        {
+          "name": "invalidate",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String tokenValue"
+          ]
+        },
+        {
+          "name": "rememberDPoPNonce",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "HttpResponse response"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "oauth2UserService",
+      "type": "OAuth2UserService<OAuth2UserRequest, OAuth2User>",
+      "types": [
+        "OAuth2UserService<OAuth2UserRequest, OAuth2User>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OAuth2UserService<OAuth2UserRequest, OAuth2User>)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 261,
+      "injects": [],
+      "members": [
+        {
+          "name": "loadUser",
+          "kind": "method",
+          "type": "Future<OAuth2User>",
+          "parameters": [
+            "OAuth2UserRequest userRequest"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "oidcIdTokenDecoder",
+      "type": "OidcIdTokenDecoder",
+      "types": [
+        "OidcIdTokenDecoder"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OidcIdTokenDecoder)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 248,
+      "injects": [],
+      "members": [
+        {
+          "name": "decode",
+          "kind": "method",
+          "type": "Future<OidcIdToken>",
+          "parameters": [
+            "ClientRegistration registration",
+            "String tokenValue"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "oidcUserService",
+      "type": "OAuth2UserService<OidcUserRequest, OidcUser>",
+      "types": [
+        "OAuth2UserService<OidcUserRequest, OidcUser>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OAuth2UserService<OidcUserRequest, OidcUser>)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 278,
+      "injects": [],
+      "members": [
+        {
+          "name": "loadUser",
+          "kind": "method",
+          "type": "Future<OidcUser>",
+          "parameters": [
+            "OidcUserRequest userRequest"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "refreshTokenTokenResponseClient",
+      "type": "OAuth2AccessTokenResponseClient<OAuth2RefreshTokenGrantRequest>",
+      "types": [
+        "OAuth2AccessTokenResponseClient<OAuth2RefreshTokenGrantRequest>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ClientRegistrationRepository)",
+        "@ConditionalOnMissingBean(OAuth2AccessTokenResponseClient<OAuth2RefreshTokenGrantRequest>)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 208,
+      "injects": [],
+      "members": [
+        {
+          "name": "getTokenResponse",
+          "kind": "method",
+          "type": "Future<OAuth2AccessTokenResponse>",
+          "parameters": [
+            "OAuth2RefreshTokenGrantRequest grantRequest"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

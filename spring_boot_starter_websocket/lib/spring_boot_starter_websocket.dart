@@ -42,6 +42,7 @@ library;
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 export 'package:spring_web_dart/spring_web_dart.dart';
 
+export 'src/config/web_socket_properties.dart';
 export 'src/server/web_socket_endpoint.dart';
 export 'src/server/web_socket_handler.dart';
 export 'src/server/web_socket_handler_mapping.dart';

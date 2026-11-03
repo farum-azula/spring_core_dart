@@ -7,6 +7,8 @@ import 'package:spring_boot_starter_logging/src/file_appender.dart';
 import 'package:spring_boot_starter_logging/src/log_buffer.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
+import 'package:spring_boot_starter_logging/src/properties/logging_properties.dart';
+import 'package:spring_boot_starter_logging/src/properties/properties_beans.dart';
 
 const _log = SpringLog('spring_boot_starter_logging');
 
@@ -262,101 +264,105 @@ final class LoggingSystem {
   /// ([LogPattern.defaultConsolePattern]). An open log file is closed and
   /// a new one is opened from the current `logging.file.*` values.
   ///
-  /// Throws a [FormatException] for a value it cannot read: a pattern, a
-  /// level, a number, a size, a charset, an on/off value or
-  /// `spring.output.ansi.enabled`. In an application that fails the
-  /// start. A log file that cannot be opened (a read-only directory) does
-  /// not: the error is logged and the application runs without the file,
-  /// as with Logback.
-  void configure(PropertyResolver environment) {
+  /// The properties are bound like any `@ConfigurationProperties` class
+  /// ([LoggingProperties]): a value that cannot be read (a level, a
+  /// number, a size, an on/off value, `spring.output.ansi.enabled`) throws
+  /// a [ConfigurationPropertiesBindException], and so do a pattern or a
+  /// charset that is invalid (a [FormatException]). In an application that
+  /// fails the start. A log file that cannot be opened (a read-only
+  /// directory) does not: the error is logged and the application runs
+  /// without the file, as with Logback.
+  void configure(ConfigurableEnvironment environment) {
     if (_uninstallPending) {
       uninstall();
     }
-    // Validated like Boot's binding, though only its condition reads it.
-    _flag(environment, 'logging.enabled');
-    if (!_rootLevelConfigured(environment)) {
+    final logging = _bind(environment, LoggingProperties());
+    if (!_rootLevelConfigured(environment, logging)) {
       SpringLog.level = SpringLogLevel.info;
     }
     final consolePattern =
-        _rawProperty(environment, 'logging.pattern.console') ??
-        LogPattern.defaultConsolePattern;
+        logging.pattern.console ?? LogPattern.defaultConsolePattern;
     // An empty pattern turns the console off, as Logback's appender does
     // not start without one.
     consoleEnabled =
-        _flag(environment, 'logging.console.enabled') &&
-        consolePattern.trim().isNotEmpty;
-    bufferEnabled = _flag(environment, 'logging.buffer.enabled');
-    final variables = _variables(environment);
+        logging.console.enabled && consolePattern.trim().isNotEmpty;
+    bufferEnabled = logging.buffer.enabled;
+    final variables = _variables(environment, logging);
     String? lookup(String name) => environment.getProperty(name);
-    _charset(environment, 'logging.charset.console');
+    _charset(logging.charset.console, 'logging.charset.console');
     console.pattern = LogPattern(
       consolePattern.trim().isEmpty ? '%m' : consolePattern,
       variables: variables,
       lookup: lookup,
-      ansi: _ansi(environment),
+      ansi: _ansi(_bind(environment, AnsiProperties()).enabled),
     );
-    console.threshold = _threshold(environment, 'logging.threshold.console');
-    _consoleTarget(environment);
-    buffer.threshold = _threshold(environment, 'logging.threshold.buffer');
-    if (_int(environment, 'logging.buffer.capacity') case final capacity?) {
-      buffer.capacity = capacity;
-    }
-    _configureFile(environment, variables, lookup);
+    console.threshold = _level(
+      logging.threshold.console,
+      'logging.threshold.console',
+    );
+    _consoleTarget(logging.console.target);
+    buffer
+      ..threshold = _level(logging.threshold.buffer, 'logging.threshold.buffer')
+      ..capacity = logging.buffer.capacity;
+    _configureFile(environment, logging, variables, lookup);
   }
 
-  // `logging.level.root`, `logging.level.ROOT`, ... or `logging.level`.
-  static bool _rootLevelConfigured(PropertyResolver environment) {
-    if (environment.getProperty('logging.level.root') != null ||
-        environment.getProperty('logging.level') != null) {
-      return true;
-    }
-    if (environment is! ConfigurableEnvironment) {
-      return false;
-    }
-    return environment.propertySources.any(
-      (source) =>
-          source is EnumerablePropertySource<Object> &&
-          source.propertyNames.any(
-            (name) => name.toLowerCase() == 'logging.level.root',
-          ),
-    );
+  // The introspections of the classes `configure` binds: this starter's
+  // and `spring.application.name` of Boot's.
+  static final _introspector = BeanIntrospector(
+    introspections: [
+      ...loggingConfigBeans.introspections,
+      ...bootPropertiesBeans.introspections,
+    ],
+  );
+
+  // [properties] filled from [environment]: the binding of a bean, which
+  // the context cannot do yet (this runs before the beans are created).
+  static T _bind<T extends Object>(
+    ConfigurableEnvironment environment,
+    T properties,
+  ) {
+    final name = '${properties.runtimeType}';
+    return ConfigurationPropertiesBinder(
+          environment,
+          _introspector,
+        ).postProcessBeforeInitialization(
+          properties,
+          '${name[0].toLowerCase()}${name.substring(1)}',
+        )
+        as T;
   }
+
+  // `logging.level.root` (in any case) or the scalar `logging.level`.
+  static bool _rootLevelConfigured(
+    ConfigurableEnvironment environment,
+    LoggingProperties logging,
+  ) =>
+      logging.level.keys.any((name) => name.toLowerCase() == 'root') ||
+      environment.getProperty('logging.level') != null;
 
   // The values of Spring Boot's logging system properties, as pattern
   // variables (`${LOG_LEVEL_PATTERN:-%5p}` in the default patterns).
-  static Map<String, String> _variables(PropertyResolver environment) {
-    String? raw(String key) => _blankToNull(_rawProperty(environment, key));
-    String? value(String key) => _blankToNull(environment.getProperty(key));
-    bool include(String key) => _flag(environment, key);
+  static Map<String, String> _variables(
+    ConfigurableEnvironment environment,
+    LoggingProperties logging,
+  ) {
+    final application = _bind(environment, ApplicationProperties());
+    final group = _bind(environment, ApplicationGroupProperties());
     return {
-      'LOG_LEVEL_PATTERN': ?raw('logging.pattern.level'),
-      'LOG_DATEFORMAT_PATTERN': ?raw('logging.pattern.dateformat'),
-      'LOG_EXCEPTION_CONVERSION_WORD': ?raw(
-        'logging.exception-conversion-word',
+      'LOG_LEVEL_PATTERN': ?_blankToNull(logging.pattern.level),
+      'LOG_DATEFORMAT_PATTERN': ?_blankToNull(logging.pattern.dateformat),
+      'LOG_EXCEPTION_CONVERSION_WORD': ?_blankToNull(
+        logging.exceptionConversionWord,
       ),
-      'LOG_CORRELATION_PATTERN': ?raw('logging.pattern.correlation'),
-      if (include('logging.include-application-name'))
-        'APPLICATION_NAME': ?value('spring.application.name'),
-      if (include('logging.include-application-group'))
-        'APPLICATION_GROUP': ?value('spring.application.group'),
-      'LOG_FILE': ?value('logging.file.name'),
-      'LOG_PATH': ?value('logging.file.path'),
+      'LOG_CORRELATION_PATTERN': ?_blankToNull(logging.pattern.correlation),
+      if (logging.includeApplicationName)
+        'APPLICATION_NAME': ?_blankToNull(application.name),
+      if (logging.includeApplicationGroup)
+        'APPLICATION_GROUP': ?_blankToNull(group.group),
+      'LOG_FILE': ?_blankToNull(logging.file.name),
+      'LOG_PATH': ?_blankToNull(logging.file.path),
     };
-  }
-
-  // A pattern property as written: Spring's placeholder resolution would
-  // reject `${PID}` and read `${LOG_LEVEL_PATTERN:-%5p}` as a default of
-  // `-%5p`; LogPattern resolves the variables itself, as Logback does.
-  static String? _rawProperty(PropertyResolver environment, String key) {
-    if (environment is ConfigurableEnvironment) {
-      for (final source in environment.propertySources) {
-        if (source.getProperty(key) case final value?) {
-          return '$value';
-        }
-      }
-      return null;
-    }
-    return environment.getProperty(key);
   }
 
   // The out set by logging.console.target, to tell it from one the
@@ -367,16 +373,11 @@ final class LoggingSystem {
   // `System.out`) or `stderr` (`System.err`). Logback's ConsoleAppender
   // has the setting; Spring Boot has no property for it. In Flutter and
   // on the web both are `print`.
-  void _consoleTarget(PropertyResolver environment) {
-    final value = environment.getProperty('logging.console.target');
-    final stderr = switch (value?.trim().toLowerCase()) {
-      null || '' => null,
-      'stdout' || 'system.out' => false,
-      'stderr' || 'system.err' => true,
-      _ => throw FormatException(
-        'logging.console.target must be stdout or stderr',
-        value,
-      ),
+  void _consoleTarget(ConsoleTarget? target) {
+    final stderr = switch (target) {
+      null => null,
+      ConsoleTarget.stdout || ConsoleTarget.systemOut => false,
+      ConsoleTarget.stderr || ConsoleTarget.systemErr => true,
     };
     if (stderr == null) {
       if (_targetOut != null && identical(console.out, _targetOut)) {
@@ -390,18 +391,14 @@ final class LoggingSystem {
 
   // `spring.output.ansi.enabled`: the console's colours. On by default
   // (Spring Boot detects a terminal: `detect`); `never` for plain text.
-  static bool _ansi(PropertyResolver environment) {
-    final value = environment.getProperty('spring.output.ansi.enabled');
-    return switch (value?.trim().toLowerCase()) {
-      'detect' => platform.stdoutSupportsAnsi,
-      null || '' || 'always' => true,
-      'never' => false,
-      _ => throw FormatException(
-        'spring.output.ansi.enabled must be detect, always or never',
-        value,
-      ),
-    };
-  }
+  static bool _ansi(AnsiOutput? value) => switch (value) {
+    AnsiOutput.detect => platform.stdoutSupportsAnsi,
+    // On by default, but not where the console escapes the codes
+    // (a Flutter app on iOS: its system log shows `\^[[32m`).
+    null => !platform.consoleEscapesAnsi,
+    AnsiOutput.always => true,
+    AnsiOutput.never => false,
+  };
 
   // The names from before Spring Boot 2.4, which this project never read.
   static const _removedProperties = {
@@ -413,7 +410,8 @@ final class LoggingSystem {
   };
 
   void _configureFile(
-    PropertyResolver environment,
+    ConfigurableEnvironment environment,
+    LoggingProperties logging,
     Map<String, String> variables,
     String? Function(String name) lookup,
   ) {
@@ -424,10 +422,8 @@ final class LoggingSystem {
       }
     }
     _closeFile();
-    final name = _blankToNull(environment.getProperty('logging.file.name'));
-    final directory = _blankToNull(
-      environment.getProperty('logging.file.path'),
-    );
+    final name = _blankToNull(logging.file.name);
+    final directory = _blankToNull(logging.file.path);
     if (name == null && directory == null) {
       return;
     }
@@ -445,9 +441,7 @@ final class LoggingSystem {
         'over by size only, to <file>.1, <file>.2, ...',
       );
     }
-    final filePattern =
-        _rawProperty(environment, 'logging.pattern.file') ??
-        LogPattern.defaultFilePattern;
+    final filePattern = logging.pattern.file ?? LogPattern.defaultFilePattern;
     // An empty pattern: no file, as Logback's appender does not start.
     if (filePattern.trim().isEmpty) {
       return;
@@ -457,25 +451,18 @@ final class LoggingSystem {
       variables: variables,
       lookup: lookup,
     );
-    final encoding = _charset(environment, 'logging.charset.file') ?? utf8;
-    final maxFileSize = parseDataSize(
-      environment.getProperty('$policy.max-file-size') ?? '10MB',
-    );
-    final maxHistory = _int(environment, '$policy.max-history') ?? 7;
-    final totalSizeCap = parseDataSize(
-      environment.getProperty('$policy.total-size-cap') ?? '0B',
-    );
-    final cleanHistoryOnStart = _flag(
-      environment,
-      '$policy.clean-history-on-start',
-      defaultValue: false,
-    );
-    final threshold = _threshold(environment, 'logging.threshold.file');
+    final encoding = _charset(logging.charset.file, 'logging.charset.file');
+    final rolling = logging.file.rollingPolicy;
+    final maxFileSize = rolling.maxFileSize.toBytes();
+    final maxHistory = rolling.maxHistory;
+    final totalSizeCap = rolling.totalSizeCap?.toBytes() ?? 0;
+    final cleanHistoryOnStart = rolling.cleanHistoryOnStart;
+    final threshold = _level(logging.threshold.file, 'logging.threshold.file');
     try {
       _file = FileAppender(
         path,
         pattern: pattern,
-        encoding: encoding,
+        encoding: encoding ?? utf8,
         maxFileSize: maxFileSize,
         maxHistory: maxHistory,
         totalSizeCap: totalSizeCap,
@@ -512,15 +499,6 @@ final class LoggingSystem {
   static String? _blankToNull(String? value) =>
       value == null || value.trim().isEmpty ? null : value.trim();
 
-  static int? _int(PropertyResolver environment, String key) {
-    final value = environment.getProperty(key);
-    if (value == null) {
-      return null;
-    }
-    return int.tryParse(value.trim()) ??
-        (throw FormatException('$key must be a number', value));
-  }
-
   void _closeFile() {
     final file = _file;
     _file = null;
@@ -531,12 +509,12 @@ final class LoggingSystem {
     }
   }
 
-  static SpringLogLevel _threshold(PropertyResolver environment, String key) {
-    final value = environment.getProperty(key);
-    if (value == null || value.trim().isEmpty) {
+  // A threshold: a level name (`warn` and `fatal` too), or `false`, which
+  // is YAML's `off`, like Boot's lenient enum conversion.
+  static SpringLogLevel _level(String value, String key) {
+    if (value.trim().isEmpty) {
       return SpringLogLevel.trace;
     }
-    // `false` is YAML's `off`, like Boot's lenient enum conversion.
     if (value.trim().toLowerCase() == 'false') {
       return SpringLogLevel.off;
     }
@@ -544,30 +522,11 @@ final class LoggingSystem {
         (throw FormatException('$key: unknown level', value));
   }
 
-  // A boolean property like Boot's binding: true / false (also on / off,
-  // yes / no, 1 / 0) in any case; anything else fails the start.
-  static bool _flag(
-    PropertyResolver environment,
-    String key, {
-    bool defaultValue = true,
-  }) {
-    final value = environment.getProperty(key);
-    return switch (value?.trim().toLowerCase()) {
-      null || '' => defaultValue,
-      'true' || 'on' || 'yes' || '1' => true,
-      'false' || 'off' || 'no' || '0' => false,
-      _ => throw FormatException(
-        '$key: failed to convert to boolean (was "$value")',
-        value,
-      ),
-    };
-  }
-
   // `logging.charset.*`: an encoding Dart knows (UTF-8, ISO-8859-1,
   // US-ASCII and their IANA or Java aliases, `Charset.forName`), or a
   // failed start.
-  static Encoding? _charset(PropertyResolver environment, String key) {
-    final value = _blankToNull(environment.getProperty(key));
+  static Encoding? _charset(String? raw, String key) {
+    final value = _blankToNull(raw);
     if (value == null) {
       return null;
     }
@@ -696,7 +655,7 @@ final class LoggingSystemInitializer
     : system = system ?? LoggingSystem.instance;
 
   /// Where the `logging.*` properties are read.
-  final Environment environment;
+  final ConfigurableEnvironment environment;
 
   /// The logging system it configures and installs.
   final LoggingSystem system;

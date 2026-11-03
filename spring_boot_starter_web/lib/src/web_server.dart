@@ -4,6 +4,8 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/src/config/config.dart';
+import 'package:spring_boot_starter_web/src/config/web_properties.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 /// An HTTP server that listens on a port and hands every request to an
@@ -260,49 +262,46 @@ final class ServerProperties {
     this.requestTimeout,
   });
 
-  /// Reads `server.*` from [environment]. [defaultAddress] applies when
-  /// `server.address` is not set; the starter passes `127.0.0.1` in
-  /// Flutter apps, so they open no port to the network by accident.
+  /// Reads `server.*` from [environment] (binding [ServerSettings]).
+  /// [defaultAddress] applies when `server.address` is not set; the starter
+  /// passes `127.0.0.1` in Flutter apps, so they open no port to the network
+  /// by accident.
+  ///
+  /// Throws a [ConfigurationPropertiesBindException] for a value that does
+  /// not fit (a port that is not a number, an unknown `server.shutdown` or
+  /// `server.ssl.client-auth`), and an [ArgumentError] for a certificate
+  /// without its private key. See [ServerProperties.from].
+  factory ServerProperties.of(
+    PropertyResolver environment, {
+    String? defaultAddress,
+  }) => ServerProperties.from(
+    bindServerSettings(environment),
+    defaultAddress: defaultAddress,
+  );
+
+  /// The settings of the bound [settings] (`server.*`), as
+  /// [ServerProperties.of] reads them.
   ///
   /// TLS is on when `server.ssl.certificate` is set and
   /// `server.ssl.enabled` is not `false`. A context path
   /// (`server.context-path`) gets a leading `/` and loses a trailing
   /// one. Durations are written as `10s`, `500ms` (a bare number is
-  /// milliseconds) or `PT10S`. Throws an
-  /// [ArgumentError] for a port that is not a number, an unknown
-  /// `server.shutdown` or `server.ssl.client-auth`, or a certificate
-  /// without its private key.
-  factory ServerProperties.of(
-    PropertyResolver environment, {
+  /// milliseconds) or `PT10S`, sizes as `512KB`; `-1` means no limit.
+  /// Throws an [ArgumentError] for a certificate without its private
+  /// key.
+  factory ServerProperties.from(
+    ServerSettings settings, {
     String? defaultAddress,
   }) {
-    String? text(String name) {
-      final value = environment.getProperty(name)?.trim();
-      return value == null || value.isEmpty ? null : value;
+    String? text(String? value) {
+      final trimmed = value?.trim();
+      return trimmed == null || trimmed.isEmpty ? null : trimmed;
     }
 
-    final port = switch (text('server.port')) {
-      final value? =>
-        int.tryParse(value) ??
-            (throw ArgumentError.value(value, 'server.port', 'not a number')),
-      null => 8080,
-    };
-    final shutdown = switch (text('server.shutdown')?.toLowerCase()) {
-      null || 'graceful' => Shutdown.graceful,
-      'immediate' => Shutdown.immediate,
-      final other => throw ArgumentError.value(
-        other,
-        'server.shutdown',
-        'expected graceful or immediate',
-      ),
-    };
-    final sslEnabled = switch (text('server.ssl.enabled')?.toLowerCase()) {
-      'false' => false,
-      _ => true,
-    };
-    final certificate = text('server.ssl.certificate');
-    final privateKey = text('server.ssl.certificate-private-key');
-    final ssl = sslEnabled && certificate != null
+    final ssl = settings.ssl;
+    final certificate = text(ssl.certificate);
+    final privateKey = text(ssl.certificatePrivateKey);
+    final tls = ssl.enabled && certificate != null
         ? SslSettings(
             certificate: certificate,
             privateKey:
@@ -311,21 +310,12 @@ final class ServerProperties {
                   'server.ssl.certificate needs '
                   'server.ssl.certificate-private-key',
                 )),
-            privateKeyPassword: text('server.ssl.key-password'),
-            trustCertificate: text('server.ssl.trust-certificate'),
-            clientAuth: switch (text('server.ssl.client-auth')?.toLowerCase()) {
-              null || 'none' => ClientAuth.none,
-              'want' => ClientAuth.want,
-              'need' => ClientAuth.need,
-              final other => throw ArgumentError.value(
-                other,
-                'server.ssl.client-auth',
-                'expected none, want or need',
-              ),
-            },
+            privateKeyPassword: text(ssl.keyPassword),
+            trustCertificate: text(ssl.trustCertificate),
+            clientAuth: ssl.clientAuth,
           )
         : null;
-    var contextPath = text('server.context-path');
+    var contextPath = text(settings.contextPath);
     if (contextPath != null) {
       if (!contextPath.startsWith('/')) {
         contextPath = '/$contextPath';
@@ -334,69 +324,40 @@ final class ServerProperties {
         contextPath = contextPath.substring(0, contextPath.length - 1);
       }
     }
-    int size(String name, int fallback) => switch (text(name)) {
-      null => fallback,
-      '-1' => -1,
-      final value => DataSize.parse(value).toBytes(),
-    };
-    Duration? duration(String name, Duration fallback) => switch (text(name)) {
-      null => fallback,
-      '-1' => null,
-      final value => DurationStyle.parse(value),
-    };
-    final mimeTypes = text('server.compression.mime-types');
-    final requestTimeoutText = text('server.request-timeout');
-    final requestTimeout = requestTimeoutText == null
-        ? null
-        : DurationStyle.parse(requestTimeoutText);
+    // A negative duration (`-1`) is no limit.
+    Duration? limit(Duration? value) =>
+        value == null || value.isNegative ? null : value;
+    final mimeTypes = [
+      for (final type in settings.compression.mimeTypes)
+        if (type.trim().isNotEmpty) type.trim().toLowerCase(),
+    ];
+    final websocket = settings.websocket;
     return ServerProperties(
-      port: port,
-      address: text('server.address') ?? defaultAddress,
-      shutdown: shutdown,
-      ssl: ssl,
+      port: settings.port,
+      address: text(settings.address) ?? defaultAddress,
+      shutdown: settings.shutdown,
+      ssl: tls,
       contextPath: contextPath ?? '',
-      maxRequestBodySize: size(
-        'server.max-http-request-body-size',
-        10 * 1024 * 1024,
-      ),
-      compression: text('server.compression.enabled')?.toLowerCase() == 'true',
-      compressionMimeTypes: mimeTypes == null
+      maxRequestBodySize: settings.maxHttpRequestBodySize.toBytes(),
+      compression: settings.compression.enabled,
+      compressionMimeTypes: mimeTypes.isEmpty
           ? defaultCompressionMimeTypes
-          : [
-              for (final type in mimeTypes.split(','))
-                if (type.trim().isNotEmpty) type.trim().toLowerCase(),
-            ],
-      compressionMinResponseSize: size(
-        'server.compression.min-response-size',
-        2048,
-      ),
-      webSocketMaxTextMessageSize: size(
-        'server.websocket.max-text-message-size',
-        8192,
-      ),
-      webSocketMaxBinaryMessageSize: size(
-        'server.websocket.max-binary-message-size',
-        8192,
-      ),
-      webSocketSendBufferSizeLimit: size(
-        'server.websocket.send-buffer-size-limit',
-        512 * 1024,
-      ),
-      webSocketSendTimeLimit: duration(
-        'server.websocket.send-time-limit',
-        const Duration(seconds: 10),
-      ),
+          : mimeTypes,
+      compressionMinResponseSize: settings.compression.minResponseSize
+          .toBytes(),
+      webSocketMaxTextMessageSize: websocket.maxTextMessageSize.toBytes(),
+      webSocketMaxBinaryMessageSize: websocket.maxBinaryMessageSize.toBytes(),
+      webSocketSendBufferSizeLimit: websocket.sendBufferSizeLimit.toBytes(),
+      webSocketSendTimeLimit: limit(websocket.sendTimeLimit),
       // As Tomcat, whose connectionTimeout is a timeout only above 0.
-      connectionTimeout: switch (duration(
-        'server.connection-timeout',
-        const Duration(seconds: 60),
-      )) {
+      connectionTimeout: switch (limit(settings.connectionTimeout)) {
         final timeout? when timeout > Duration.zero => timeout,
         _ => null,
       },
-      requestTimeout: requestTimeout != null && requestTimeout > Duration.zero
-          ? requestTimeout
-          : null,
+      requestTimeout: switch (settings.requestTimeout) {
+        final timeout? when timeout > Duration.zero => timeout,
+        _ => null,
+      },
     );
   }
 

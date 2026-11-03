@@ -8,7 +8,7 @@
 
 import 'package:spring_security_core/spring_security_core.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 class Order {
   const Order(this.id, this.owner);

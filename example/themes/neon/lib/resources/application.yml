@@ -1,0 +1,63 @@
+# THEME SHOWCASE NEON: a custom design system on the theme, with no
+# Material and no Cupertino. The look of every widget is in neon_ui's
+# themes/neon.yml (imported below); this file holds the app and a second theme
+# of its own that extends it. The pages quote lines of these two files in
+# their code boxes (a test checks that they do).
+spring:
+   config:
+      # The theme of the library: `neon_ui` embeds its lib/resources/, so the
+      # file is found as if it were ours.
+      import: resources:themes/neon.yml
+
+   flutter:
+      web:
+         port: 1010
+      app:
+         # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino
+         # widgets. Everything on screen is a neon_ui widget or our own.
+         type: widgets
+         title: Theme Showcase NEON
+         debug-banner: false
+
+      theme:
+         # The theme shown at the start. `neon` is the library's.
+         active: neon
+
+         themes:
+            # A theme of our own: neon with cyan as its primary color. Only
+            # what changes is written; `extends` brings the rest. The accent,
+            # the glow, the button fills and the modal border all say
+            # `$colors.primary` or `$neon.accent`, so they turn cyan too.
+            neon-ice:
+               extends: neon
+               colors:
+                  primary: $neon.cyan
+                  secondary: $neon.yellow
+               tokens:
+                  neon:
+                     panel: "#CC0B1218"
+                     input-fill: "#B3081016"
+
+         # The tokens of this app (the library's are neon_ui's).
+         tokens:
+            showcase:
+               content-width: 980
+               tile-height: 150
+               tagline: Yellow, cyan and pink after dark
+         styles:
+            # A tile of the theme switcher: our own style, per state, made with
+            # the same ThemeStates as the library's widgets.
+            showcase-tile:
+               padding: [16, 14]
+               radius: $shape.extra-small
+               border:
+                  default: $colors.outline
+                  hovered: $colors.secondary
+                  focused: $colors.secondary
+                  selected: $colors.primary
+               fill:
+                  default: { color: $colors.surface-container-low, alpha: 80% }
+                  hovered: { color: $colors.surface-container, alpha: 90% }
+                  selected: { color: $colors.primary, alpha: 12% }
+               glow: { default: 0, hovered: 8, selected: 14 }
+               transition: 160ms ease-out

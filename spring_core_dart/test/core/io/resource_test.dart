@@ -131,7 +131,7 @@ void main() {
 
     test('plain paths are classpath resources, like Spring', () {
       write('cp/app.properties', 'a=1');
-      final remove = ClasspathResources.addDirectory('${temp.path}/cp');
+      final remove = Resources.addDirectory('${temp.path}/cp');
       try {
         final loader = DefaultResourceLoader();
         for (final location in ['app.properties', '/app.properties']) {

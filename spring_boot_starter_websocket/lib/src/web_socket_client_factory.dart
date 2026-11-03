@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client_config.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
@@ -22,18 +23,21 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// beans yourself.
 final class WebSocketClientFactory
     implements InvocationHandlerFactory, DisposableBean {
-  /// A factory reading the client settings from [environment], with the
+  /// A factory reading the client settings from [properties], with the
   /// given [mapper], [transport] and [interceptors].
   WebSocketClientFactory({
     required this.environment,
+    required this.properties,
     required this.mapper,
     required this.transport,
     this.interceptors = const [],
   });
 
-  /// Where the `spring.websocket.client.config.*` properties and the
-  /// `${...}` of the URLs are read.
+  /// Where the `${...}` of the URLs are resolved.
   final Environment environment;
+
+  /// The bound `spring.websocket.client.*` properties.
+  final WebSocketProperties properties;
 
   /// Reads and writes the JSON messages.
   final ObjectMapper mapper;
@@ -56,7 +60,7 @@ final class WebSocketClientFactory
     final handler = WebSocketInvocationHandler(
       metadata: metadata,
       client: client,
-      config: WebSocketClientConfig.of(environment, client.name),
+      config: WebSocketClientConfig.of(properties, client.name),
       environment: environment,
       mapper: mapper,
       transport: transport,

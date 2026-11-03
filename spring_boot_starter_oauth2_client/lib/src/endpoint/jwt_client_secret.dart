@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/crypto_primitives.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/oauth2_error.dart';
+import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration.dart';
 
 const _log = SpringLog('spring.security.oauth2.client.endpoint');
@@ -245,45 +246,45 @@ final class JwtClientSecretResolver implements OAuth2ClientSecretResolver {
           key: () async => value,
       };
 
-  /// A resolver of the `client-secret-jwt.*` properties of
-  /// [environment]; [resourceLoader] reads `private-key-location`.
+  /// A resolver of the `client-secret-jwt.*` properties of [properties];
+  /// [resourceLoader] reads `private-key-location`.
   ///
   /// Throws an [ArgumentError] at once when a registration with these
-  /// properties lacks `issuer`, `key-id` or a key, or has a malformed
-  /// `lifetime`.
-  factory JwtClientSecretResolver.fromEnvironment(
-    Environment environment, {
+  /// properties lacks `issuer`, `key-id` or a key, or has a `lifetime` out
+  /// of range.
+  factory JwtClientSecretResolver.fromProperties(
+    OAuth2ClientProperties properties, {
     ResourceLoader? resourceLoader,
   }) {
     final loader = resourceLoader ?? DefaultResourceLoader();
     final resolver = JwtClientSecretResolver(const {});
-    for (final id in registrationIds(environment)) {
-      String? text(String name) {
-        final value = environment
-            .getProperty('$_prefix.$id.client-secret-jwt.$name')
-            ?.trim();
-        return value == null || value.isEmpty ? null : value;
+    for (final MapEntry(key: id, value: registration)
+        in properties.registration.entries) {
+      final jwt = registration.clientSecretJwt;
+      if (jwt == null || !jwt.isSet) {
+        continue;
+      }
+      String? text(String? value) {
+        final trimmed = value?.trim();
+        return trimmed == null || trimmed.isEmpty ? null : trimmed;
       }
 
-      String required(String name) =>
-          text(name) ??
+      String required(String? value, String name) =>
+          text(value) ??
           (throw ArgumentError(
             '$_prefix.$id.client-secret-jwt.$name must be set',
           ));
-      final issuer = required('issuer');
-      final keyId = required('key-id');
-      final pem = text('private-key');
-      final location = text('private-key-location');
+      final issuer = required(jwt.issuer, 'issuer');
+      final keyId = required(jwt.keyId, 'key-id');
+      final pem = text(jwt.privateKey);
+      final location = text(jwt.privateKeyLocation);
       if (pem == null && location == null) {
         throw ArgumentError(
           '$_prefix.$id.client-secret-jwt.private-key or '
           '.private-key-location must be set',
         );
       }
-      final lifetime = switch (text('lifetime')) {
-        final value? => DurationStyle.parse(value),
-        null => const Duration(hours: 1),
-      };
+      final lifetime = jwt.lifetime;
       if (lifetime < const Duration(minutes: 1) ||
           lifetime > const Duration(days: 180)) {
         throw ArgumentError(
@@ -291,7 +292,7 @@ final class JwtClientSecretResolver implements OAuth2ClientSecretResolver {
           'minute and 180 days',
         );
       }
-      final audience = text('audience');
+      final audience = text(jwt.audience);
       JwtClientSecret? made;
       resolver._sources[id] = () async => made ??= JwtClientSecret.fromPem(
         issuer: issuer,

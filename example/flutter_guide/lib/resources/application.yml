@@ -33,7 +33,7 @@ spring:
           scrolled-under-elevation: level2
         card:
           shape: large
-          color: surface-container-low
+          color: $colors.surface-container-low
         input:
           style: outline
           shape: small
@@ -46,10 +46,32 @@ spring:
       tokens:
         brand:
           accent: '#FF40A0'
+          # A reference with a color object: follows a theme that
+          # changes brand.accent.
+          accent-soft: { color: $brand.accent, alpha: 16% }
           banner-height: 96
+          # A nested group with a list: context.theme.tokens.brand.tag.
+          tag:
+            radius: 14
+            labels: [New, Staff pick, Sale]
+      motion:
+        durations: { fast: 120ms, medium: 300ms }
+      # A look per widget state for the app's own widgets (ThemeTag).
+      styles:
+        tag:
+          padding: [12, 6]
+          radius: $brand.tag.radius
+          fill:
+            default: $brand.accent-soft
+            hovered: { color: $brand.accent, alpha: 28% }
+            selected: $brand.accent
+          transition: $motion.durations.fast ease-out
+      # Played by ThemeAnimation (the tags rise into place).
+      animations:
+        rise: { duration: $motion.durations.medium, curve: ease-out }
 
       themes:
         dark:
           seed-color: deepPurple.shade200
           components:
-            card: { color: surface-container }
+            card: { color: $colors.surface-container }

@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -70,10 +70,10 @@ void main() {
     expect(compact, contains('Validated('));
 
     final errors = await resolveSources<List<String>>(
-      {...sources, 'pkg|lib/src/beans.spring.dart': output},
+      {...sources, 'pkg|lib/spring_gen/src/beans.spring.dart': output},
       (resolver) async {
         final library = await resolver.libraryFor(
-          AssetId('pkg', 'lib/src/beans.spring.dart'),
+          AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
         );
         final errors = await library.session.getErrors(
           library.firstFragment.source.fullName,
@@ -85,7 +85,7 @@ void main() {
         ];
       },
       rootPackage: 'pkg',
-      resolverFor: 'pkg|lib/src/beans.spring.dart',
+      resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
       readAllSourcesFromFilesystem: true,
     );
     expect(errors, isEmpty);

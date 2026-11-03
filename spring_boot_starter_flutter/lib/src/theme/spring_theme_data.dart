@@ -1,8 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_background.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_components.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_styles.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 
 /// What the properties set for one text style of a theme (font family,
@@ -184,7 +188,7 @@ final class SpringThemeData {
         (v) => ThemeValues.enumValue(Brightness.values, v),
         'light or dark',
       )!,
-      seedColor = p.read('seedcolor', ThemeValues.color, _colorFormats),
+      seedColor = p.color('seedcolor'),
       schemeVariant = p.read(
         'schemevariant',
         (v) => ThemeValues.enumValue(DynamicSchemeVariant.values, v),
@@ -192,7 +196,10 @@ final class SpringThemeData {
       ),
       contrast = p.read(
         'contrast',
-        ThemeValues.number,
+        (v) {
+          final n = ThemeValues.number(v);
+          return n != null && n >= -1 && n <= 1 ? n : null;
+        },
         'a number from -1 to 1',
       ),
       _properties = p {
@@ -204,7 +211,7 @@ final class SpringThemeData {
           'a color role: ${colorRoles.join(', ')}',
         );
       }
-      colors[role] = p.read('colors.$role', ThemeValues.color, _colorFormats)!;
+      colors[role] = p.color('colors.$role')!;
     }
     fontFamily = p['typography.fontfamily'];
     fontFamilyFallback = p.list('typography.fontfamilyfallback');
@@ -313,19 +320,36 @@ final class SpringThemeData {
       'platform, fadeUpwards, zoom, cupertino or none',
     );
     for (final key in p.children('motion')) {
-      if (key.startsWith('duration')) {
-        durations[key.substring('duration'.length)] = p.read(
-          'motion.$key',
-          ThemeValues.duration,
-          'a duration like 250ms',
-        )!;
-      } else if (key.startsWith('easing')) {
-        curves[key.substring('easing'.length)] = p.read(
-          'motion.$key',
-          ThemeValues.curve,
-          'four numbers like 0.2, 0, 0, 1',
-        )!;
+      if (key == 'durations') {
+        for (final name in p.children('motion.durations')) {
+          durations[name] = p.read(
+            'motion.durations.$name',
+            ThemeValues.duration,
+            'a duration like 250ms',
+          )!;
+        }
+      } else if (key == 'curves') {
+        for (final name in p.children('motion.curves')) {
+          final path = 'motion.curves.$name';
+          // Four numbers are one text (`0.2, 0, 0, 1`) or a YAML list.
+          final text = p[path] ?? p.list(path)?.join(', ') ?? '';
+          curves[name] =
+              ThemeValues.anyCurve(text) ??
+              (throw ThemePropertyException(
+                p.propertyName(path),
+                text,
+                _curveFormats,
+              ));
+        }
       }
+    }
+    for (final name in p.children('animations')) {
+      animations[name] = AnimationSpec.parse(p, name);
+    }
+    background = ThemeBackgroundData.parse(p);
+    _readImageTokens(p);
+    for (final name in p.children('styles')) {
+      styles[name] = StateStyle.parse(p, name);
     }
     for (final component in p.children('components')) {
       if (!themeComponents.containsKey(component)) {
@@ -337,15 +361,37 @@ final class SpringThemeData {
         );
       }
     }
-    for (final group in p.children('tokens')) {
-      for (final key in p.children('tokens.$group')) {
-        tokens['$group.$key'] = p['tokens.$group.$key'] ?? '';
+    for (final MapEntry(:key, :value) in p.values.entries) {
+      if (key.startsWith('tokens.')) {
+        tokens[key.substring('tokens.'.length)] = value.trim();
       }
     }
+    _checkColorTokens(p);
     cupertinoPrimaryColor = _cupertinoReader().color('primaryColor');
     // Checks every component value now, not when a widget needs it.
     toMaterial();
     toCupertino();
+  }
+
+  // A token that is a map with a `color` is a color object: it may have
+  // `mix` and `alpha` and nothing else. Checked at the start.
+  static void _checkColorTokens(ThemeProperties p) {
+    final nodes = <String>{};
+    for (final key in p.values.keys) {
+      if (!key.startsWith('tokens.')) {
+        continue;
+      }
+      final segments = key.split('.');
+      for (var i = 2; i < segments.length; i++) {
+        if (segments[i] == 'color' &&
+            !(segments[i - 1] == 'headers' || segments.contains('headers'))) {
+          nodes.add(segments.take(i).join('.'));
+        }
+      }
+    }
+    for (final node in nodes) {
+      p.colorObject(node);
+    }
   }
 
   /// The top-level properties a theme may have. Any other key fails the
@@ -353,7 +399,15 @@ final class SpringThemeData {
   static const themeProperties = [
     'brightness', 'seed-color', 'scheme-variant', 'contrast', 'colors', //
     'typography', 'shape', 'elevation', 'spacing', 'visual-density', //
-    'tap-target-size', 'splash', 'motion', 'components', 'tokens', 'cupertino',
+    'tap-target-size',
+    'splash',
+    'motion',
+    'components',
+    'tokens',
+    'cupertino',
+    'styles', //
+    'animations',
+    'background',
   ];
 
   static const _textSpecProperties = {
@@ -382,12 +436,13 @@ final class SpringThemeData {
       switch (segments.first) {
         case 'motion'
             when second != 'pagetransition' &&
-                !(second?.startsWith('duration') ?? false) &&
-                !(second?.startsWith('easing') ?? false):
+                second != 'durations' &&
+                second != 'curves':
           throw ThemePropertyException(
             p.propertyName(key),
             p.values[key]!,
-            'motion.page-transition, motion.duration-<name> or motion.easing-<name>',
+            'motion.page-transition, motion.durations.<name> or '
+            'motion.curves.<name>',
           );
         case 'typography'
             when segments.length == 3 &&
@@ -423,8 +478,9 @@ final class SpringThemeData {
     );
   }
 
-  static const _colorFormats =
-      "a Colors name like 'deepPurple' or 'deepPurple.shade200', or #RRGGBB";
+  static final _curveFormats =
+      'a curve: ${ThemeValues.curveNames.join(', ')}, or four numbers like '
+      '0.2, 0, 0, 1';
 
   final ThemeProperties _properties;
 
@@ -493,17 +549,72 @@ final class SpringThemeData {
   /// The page transition used on every platform; `null` when not set.
   late final PageTransitionsBuilder? pageTransition;
 
-  /// The motion durations the properties set (`motion.duration-medium`),
+  /// The motion durations the properties set (`motion.durations.medium`),
   /// by canonical name.
   final Map<String, Duration> durations = {};
 
-  /// The motion curves the properties set (`motion.easing-standard`), by
+  /// The motion curves the properties set (`motion.curves.standard`), by
   /// canonical name.
   final Map<String, Curve> curves = {};
 
-  /// The app's own values under `tokens.*`, as text by `group.key` in
-  /// canonical form (`brand.accent`). Read them with [token],
-  /// [tokenColor] and [tokenNumber].
+  /// The animations of `animations.*` by canonical name
+  /// (`borderspin`).
+  final Map<String, AnimationSpec> animations = {};
+
+  /// The `background` of the theme (a color, an image, an overlay, an
+  /// animation, per-screen overrides); `null` when the theme has none.
+  late final ThemeBackgroundData? background;
+
+  final Map<String, ThemeImage> _tokenImages = {};
+
+  /// The image token `tokens.<path>` (a token that is a map with
+  /// `source`); `null` when there is none.
+  ThemeImage? tokenImage(String path) => _tokenImages[_tokenKey(path)];
+
+  /// Every image the theme names: the background's, the screens' and the
+  /// image tokens'; the starter loads those from the network.
+  Iterable<ThemeImage> get images => [
+    ...?background?.images,
+    ..._tokenImages.values,
+  ];
+
+  // A token that is a map with `source` (and only image keys) is an image.
+  void _readImageTokens(ThemeProperties p) {
+    const imageKeys = {
+      'source',
+      'refresh',
+      'sourcesha256',
+      'headers',
+      'timeout',
+      'fallback',
+      'allowhttp',
+    };
+    for (final key in p.values.keys.toList()) {
+      if (!key.startsWith('tokens.') || !key.endsWith('.source')) {
+        continue;
+      }
+      final path = key.substring(0, key.length - '.source'.length);
+      if (path == 'tokens' || path.split('.').length < 3) {
+        continue;
+      }
+      if (p.children(path).every(imageKeys.contains)) {
+        _tokenImages[path.substring('tokens.'.length)] = ThemeImage.parse(
+          p,
+          path,
+        );
+      }
+    }
+  }
+
+  /// The styles of the app's own widgets, `styles.*`, by canonical name
+  /// (`neonchip`).
+  final Map<String, StateStyle> styles = {};
+
+  /// The app's own values under `tokens.*`, as text by full path in
+  /// canonical form (`brand.accent`, `neon.modal.border.width`); the
+  /// items of a list have their index as the last segment
+  /// (`neon.modal.border.colors.0`). Read them with [token],
+  /// [tokenColor], [tokenNumber], [tokenDuration] and the list reads.
   final Map<String, String> tokens = {};
 
   /// The primary color of the Cupertino theme; `null` when not set.
@@ -515,17 +626,36 @@ final class SpringThemeData {
   /// algorithm (or Flutter's baseline when nothing is set), with the roles
   /// of [colors] over it.
   ColorScheme get colorScheme => _scheme ??= _withColors(
-    seedColor == null && schemeVariant == null && contrast == null
-        // Flutter's own Material 3 baseline (not quite the seed's).
-        ? ThemeData(brightness: brightness).colorScheme
-        : ColorScheme.fromSeed(
-            seedColor: seedColor ?? const Color(0xFF6750A4),
-            brightness: brightness,
-            dynamicSchemeVariant:
-                schemeVariant ?? DynamicSchemeVariant.tonalSpot,
-            contrastLevel: contrast ?? 0,
-          ),
+    baseScheme(
+      brightness: brightness,
+      seedColor: seedColor,
+      schemeVariant: schemeVariant,
+      contrast: contrast,
+    ),
   );
+
+  /// The palette before the explicit `colors.*` roles: made from the seed
+  /// by Material 3's algorithm, or Flutter's own baseline when no seed,
+  /// variant or contrast is set. The theme's [colorScheme] and the
+  /// references to undeclared roles (`$colors.outline`) both come from it.
+  static ColorScheme baseScheme({
+    required Brightness brightness,
+    Color? seedColor,
+    DynamicSchemeVariant? schemeVariant,
+    double? contrast,
+  }) => seedColor == null && schemeVariant == null && contrast == null
+      // Flutter's own Material 3 baseline (not quite the seed's).
+      ? ThemeData(brightness: brightness).colorScheme
+      : ColorScheme.fromSeed(
+          seedColor: seedColor ?? const Color(0xFF6750A4),
+          brightness: brightness,
+          dynamicSchemeVariant: schemeVariant ?? DynamicSchemeVariant.tonalSpot,
+          contrastLevel: contrast ?? 0,
+        );
+
+  /// The color of [role] (canonical name) in [scheme]; `null` for an
+  /// unknown role.
+  static Color? roleIn(ColorScheme scheme, String role) => _role(scheme, role);
 
   /// The corner radius of shape token [token] (`medium`,
   /// `extra-large`), as the properties set it or Material 3's;
@@ -561,15 +691,15 @@ final class SpringThemeData {
         (throw ArgumentError.value(size, 'size'));
   }
 
-  /// The motion duration [name], as the properties set it; otherwise
-  /// 100 ms for `short`, 250 ms for `medium` and 450 ms for any other name.
-  Duration duration(String name) =>
-      durations[ThemeValues.canonical(name)] ??
-      switch (ThemeValues.canonical(name)) {
-        'short' => const Duration(milliseconds: 100),
-        'medium' => const Duration(milliseconds: 250),
-        _ => const Duration(milliseconds: 450),
-      };
+  /// The durations `short`, `medium` and `long` have when the properties
+  /// do not set them. Read a motion duration with
+  /// `ThemeKeyReader.motionDuration`, which fails for an unknown name and
+  /// follows the reduce-motion setting.
+  static const defaultDurations = <String, Duration>{
+    'short': Duration(milliseconds: 100),
+    'medium': Duration(milliseconds: 250),
+    'long': Duration(milliseconds: 450),
+  };
 
   /// The motion curve [name] (`standard`, `emphasized`), as the
   /// properties set it; otherwise Material's standard easing.
@@ -614,10 +744,16 @@ final class SpringThemeData {
 
   /// The app's token [key] (`brand.accent`) read as a color; `null` when
   /// it is not set or is no color.
-  Color? tokenColor(String key) => switch (tokens[_tokenKey(key)]) {
-    final value? => ThemeValues.color(value),
-    null => null,
-  };
+  Color? tokenColor(String key) {
+    final path = _tokenKey(key);
+    return switch (tokens[path]) {
+      final value? => ThemeValues.color(value),
+      null =>
+        _properties.children('tokens.$path').contains('color')
+            ? _properties.colorObject('tokens.$path')
+            : null,
+    };
+  }
 
   /// The app's token [key] (`brand.hero-height`) read as a number; `null`
   /// when it is not set or is no number.
@@ -626,9 +762,74 @@ final class SpringThemeData {
     null => null,
   };
 
+  /// The app's token [key] (`neon.modal.open`) read as a duration; `null`
+  /// when it is not set or is no duration.
+  Duration? tokenDuration(String key) => switch (tokens[_tokenKey(key)]) {
+    final value? => ThemeValues.duration(value),
+    null => null,
+  };
+
   /// The app's token [key] as written in the properties; `null` when it is
   /// not set.
   String? token(String key) => tokens[_tokenKey(key)];
+
+  /// The items of the list token [key], as text: a YAML list, or one
+  /// comma-separated value; `null` when it is not set.
+  List<String>? tokenTexts(String key) {
+    final path = _tokenKey(key);
+    final indexed = <int, String>{};
+    for (final MapEntry(key: other, :value) in tokens.entries) {
+      if (other.startsWith('$path.')) {
+        final index = int.tryParse(other.substring(path.length + 1));
+        if (index != null) {
+          indexed[index] = value;
+        }
+      }
+    }
+    if (indexed.isNotEmpty) {
+      return [
+        for (final index in indexed.keys.toList()..sort()) indexed[index]!,
+      ];
+    }
+    final value = tokens[path];
+    return value == null
+        ? null
+        : [
+            for (final part in value.split(','))
+              if (part.trim().isNotEmpty) part.trim(),
+          ];
+  }
+
+  /// The list token [key] read as colors, each an item of a YAML list
+  /// (a color or a color object) or of one comma-separated value; `null`
+  /// when it is not set or an item is no color.
+  List<Color>? tokenColors(String key) {
+    final path = _tokenKey(key);
+    final indexes = <int>{
+      for (final child in _properties.children('tokens.$path'))
+        ?int.tryParse(child),
+    };
+    if (indexes.isEmpty) {
+      return _parsed(key, ThemeValues.color);
+    }
+    final colors = [
+      for (final index in indexes.toList()..sort()) tokenColor('$key.$index'),
+    ];
+    return colors.contains(null) ? null : List<Color>.from(colors);
+  }
+
+  /// The list token [key] read as numbers; `null` when it is not set or an
+  /// item is no number.
+  List<double>? tokenNumbers(String key) => _parsed(key, ThemeValues.number);
+
+  List<T>? _parsed<T>(String key, T? Function(String) parse) {
+    final items = tokenTexts(key);
+    if (items == null) {
+      return null;
+    }
+    final result = [for (final item in items) parse(item)];
+    return result.contains(null) ? null : List<T>.from(result);
+  }
 
   static String _tokenKey(String key) =>
       key.split('.').map(ThemeValues.canonical).join('.');
@@ -679,6 +880,8 @@ final class SpringThemeData {
           },
         ),
       },
+      // A background shows through the screens.
+      scaffoldBackgroundColor: background == null ? null : Colors.transparent,
       extensions: [SpringThemeExtension(this)],
     );
     return _components(theme);
@@ -756,7 +959,15 @@ final class SpringThemeData {
 
   CupertinoThemeData _buildCupertino([ThemeReader? reader]) {
     final r = reader ?? _cupertinoReader();
-    final defaults = const CupertinoThemeData().textTheme;
+    // iOS's own styles, with this theme's primary color in the ones that
+    // carry it (actions, nav actions), not iOS blue.
+    final defaults = CupertinoTextThemeData(
+      primaryColor:
+          r.color('primaryColor') ??
+          colors['primary'] ??
+          (seedColor == null ? null : colorScheme.primary) ??
+          CupertinoColors.systemBlue,
+    );
     TextStyle text(TextStyle base, String style) {
       final spec = textStyles[style];
       return (spec?.applyTo(base) ?? base).copyWith(
@@ -826,7 +1037,8 @@ final class SpringThemeData {
       primaryColor: primary,
       primaryContrastingColor: r.color('primaryContrastingColor'),
       scaffoldBackgroundColor:
-          r.color('scaffoldBackgroundColor') ?? colors['surface'],
+          r.color('scaffoldBackgroundColor') ??
+          (background == null ? colors['surface'] : Colors.transparent),
       barBackgroundColor:
           r.color('barBackgroundColor') ??
           _componentReader(

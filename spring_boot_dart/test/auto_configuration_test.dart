@@ -81,7 +81,7 @@ final _orderIntrospection = BeanIntrospection<Order>(
 );
 
 void main() {
-  ClasspathResources.registerAll(const {
+  Resources.registerAll(const {
     'i18n/messages.properties': EmbeddedResource.text('hello=Hello {0}'),
     'i18n/messages_ru.properties': EmbeddedResource.text('hello=Привет {0}'),
   });

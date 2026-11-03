@@ -2,6 +2,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
+import 'package:spring_boot_starter_data/src/properties/data_properties.dart'
+    show DataSourceConfigProperties;
+import 'package:spring_boot_starter_data/src/properties_binding.dart';
 
 /// What is wrong with the configuration of a data source: no driver for
 /// the URL, two drivers for it, a missing URL, a value that is not valid.
@@ -70,8 +73,29 @@ final class DataSourceProperties {
     String prefix = primaryPrefix,
     String name = primaryName,
   }) {
-    final reader = _Reader(environment, prefix);
-    final text = reader.text('url');
+    final config = bindSettings<DataSourceConfigProperties>(
+      environment,
+      // The prefix ends with a dot, the name bound does not.
+      prefix.substring(0, prefix.length - 1),
+      fallback: const DataSourceConfigProperties(),
+      onInvalid: (failure) {
+        // The driver's settings are checked by the driver, with its own
+        // words.
+        final rest = failure.property.substring(prefix.length);
+        if (rest.startsWith('sqlite.') || rest.startsWith('postgresql.')) {
+          return;
+        }
+        throw _invalid(
+          prefix,
+          rest,
+          failure.value,
+          failure.type == 'Duration'
+              ? 'a duration such as 500ms, 30s or 10m'
+              : failure.expected,
+        );
+      },
+    );
+    final text = _text(config.url);
     if (text == null) {
       throw DataSourceConfigurationException(
         'The data source $name has no URL: ${prefix}url is not set',
@@ -83,37 +107,48 @@ final class DataSourceProperties {
       );
     }
     final url = _parseUrl(text, '${prefix}url');
-    const defaults = PoolSettings();
-    final maxSize = reader.integer('pool.max-size') ?? defaults.maxSize;
-    final minIdle = reader.integer('pool.min-idle') ?? defaults.minIdle;
-    if (maxSize < 1) {
-      throw reader.invalid('pool.max-size', '$maxSize', 'at least 1');
+    final pool = config.pool;
+    if (pool.maxSize < 1) {
+      throw _invalid(prefix, 'pool.max-size', '${pool.maxSize}', 'at least 1');
     }
-    if (minIdle < 0 || minIdle > maxSize) {
-      throw reader.invalid(
+    if (pool.minIdle < 0 || pool.minIdle > pool.maxSize) {
+      throw _invalid(
+        prefix,
         'pool.min-idle',
-        '$minIdle',
-        'between 0 and pool.max-size ($maxSize)',
+        '${pool.minIdle}',
+        'between 0 and pool.max-size (${pool.maxSize})',
       );
     }
+    for (final (key, value) in [
+      ('pool.connection-timeout', pool.connectionTimeout),
+      ('pool.idle-timeout', pool.idleTimeout),
+      ('pool.max-lifetime', pool.maxLifetime),
+    ]) {
+      if (value.isNegative) {
+        throw _invalid(
+          prefix,
+          key,
+          environment.getProperty('$prefix$key') ?? '$value',
+          'a duration such as 500ms, 30s or 10m',
+        );
+      }
+    }
+    final password = config.password;
     return DataSourceProperties._(
       name: name,
       prefix: prefix,
       url: url,
-      username: reader.text('username'),
-      password: reader.raw('password'),
-      driver: reader.text('driver'),
+      username: _text(config.username),
+      // As written, spaces kept: a password may have them.
+      password: password == null || password.isEmpty ? null : password,
+      driver: _text(config.driver),
       pool: PoolSettings(
-        maxSize: maxSize,
-        minIdle: minIdle,
-        connectionTimeout:
-            reader.duration('pool.connection-timeout') ??
-            defaults.connectionTimeout,
-        idleTimeout:
-            reader.duration('pool.idle-timeout') ?? defaults.idleTimeout,
-        maxLifetime:
-            reader.duration('pool.max-lifetime') ?? defaults.maxLifetime,
-        validation: reader.boolean('pool.validation') ?? defaults.validation,
+        maxSize: pool.maxSize,
+        minIdle: pool.minIdle,
+        connectionTimeout: pool.connectionTimeout,
+        idleTimeout: pool.idleTimeout,
+        maxLifetime: pool.maxLifetime,
+        validation: pool.validation,
       ),
       environment: environment,
     );
@@ -177,7 +212,17 @@ final class DataSourceProperties {
   /// Whether the primary data source is configured: `spring.datasource.url`
   /// is set.
   static bool hasPrimary(Environment environment) =>
-      (environment.getProperty('${primaryPrefix}url') ?? '').trim().isNotEmpty;
+      hasUrl(environment, primaryPrefix);
+
+  /// Whether `<prefix>url` is set.
+  static bool hasUrl(Environment environment, String prefix) =>
+      _text(
+        bindSettingsOrNull<DataSourceConfigProperties>(
+          environment,
+          prefix.substring(0, prefix.length - 1),
+        )?.url,
+      ) !=
+      null;
 
   /// The name in logs: `default`, or the name of `spring.datasources.<name>`.
   final String name;
@@ -309,6 +354,24 @@ final class DataSourceProperties {
   @override
   String toString() => 'DataSourceProperties($name, $safeUrl)';
 
+  // The value trimmed; null when it is not set or empty.
+  static String? _text(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  static DataSourceConfigurationException _invalid(
+    String prefix,
+    String key,
+    String value,
+    String expected,
+  ) => DataSourceConfigurationException(
+    // The value of a key about a pool or a duration is not a secret.
+    '$prefix$key is "$value", but it must be $expected',
+    property: '$prefix$key',
+    action: 'Set $prefix$key to $expected.',
+  );
+
   static Uri _parseUrl(String text, String property) {
     var value = text;
     if (value.toLowerCase().startsWith('jdbc:')) {
@@ -339,70 +402,14 @@ final class DataSourceProperties {
   }
 }
 
-// Reads the values of one prefix, turning a bad value into a configuration
-// exception that names the key.
+// Reads the driver's settings of one prefix: they are the keys the driver
+// lists, not fields of a class (`DataSourceConfigProperties` describes them,
+// and a test keeps it equal to the drivers).
 final class _Reader {
   const _Reader(this.environment, this.prefix);
 
   final Environment environment;
   final String prefix;
-
-  String? text(String key) {
-    final value = environment.getProperty('$prefix$key');
-    return value == null || value.trim().isEmpty ? null : value.trim();
-  }
-
-  // The value as it is written, spaces kept: a password may have them.
-  String? raw(String key) {
-    final value = environment.getProperty('$prefix$key');
-    return value == null || value.isEmpty ? null : value;
-  }
-
-  int? integer(String key) {
-    final value = text(key);
-    if (value == null) {
-      return null;
-    }
-    return int.tryParse(value) ?? (throw invalid(key, value, 'a number'));
-  }
-
-  bool? boolean(String key) {
-    final value = text(key)?.toLowerCase();
-    return switch (value) {
-      null => null,
-      'true' => true,
-      'false' => false,
-      _ => throw invalid(key, value, 'true or false'),
-    };
-  }
-
-  Duration? duration(String key) {
-    final value = text(key);
-    if (value == null) {
-      return null;
-    }
-    final Duration? parsed;
-    try {
-      parsed = environment.getPropertyAs<Duration>('$prefix$key');
-    } on Object {
-      throw invalid(key, value, 'a duration such as 500ms, 30s or 10m');
-    }
-    if (parsed == null || parsed.isNegative) {
-      throw invalid(key, value, 'a duration such as 500ms, 30s or 10m');
-    }
-    return parsed;
-  }
-
-  DataSourceConfigurationException invalid(
-    String key,
-    String value,
-    String expected,
-  ) => DataSourceConfigurationException(
-    // The value of a key about a pool or a duration is not a secret.
-    '$prefix$key is "$value", but it must be $expected',
-    property: '$prefix$key',
-    action: 'Set $prefix$key to $expected.',
-  );
 
   // The driver's properties below `<prefix><key>.`, by the rest of their
   // name. Each of the [known] names is read through the environment, which

@@ -2,13 +2,29 @@ builders:
   spring_core_dart:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springCoreDartBuilder"]
-    build_extensions: {".dart": [".spring.dart"]}
+    build_extensions:
+      "^lib/{{}}.dart": ["lib/spring_gen/{{}}.spring.dart"]
+      "^bin/{{}}.dart": ["bin/spring_gen/{{}}.spring.dart"]
+      "^test/{{}}.dart": ["test/spring_gen/{{}}.spring.dart"]
+      "^example/{{}}.dart": ["example/spring_gen/{{}}.spring.dart"]
     auto_apply: dependents
     build_to: source
+  # The same builder for lib/ only, in a phase of its own before the main one.
+  # A starter written by hand turns it on (and limits spring_core_dart to its
+  # example) to generate the binding of its typed properties: its example
+  # imports lib/, which imports the generated file.
+  spring_properties:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springPropertiesBuilder"]
+    build_extensions:
+      "^lib/{{}}.dart": ["lib/spring_gen/{{}}.spring.dart"]
+    auto_apply: none
+    build_to: source
+    runs_before: ["spring_core_dart_generator:spring_core_dart"]
   spring_test:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springTestBuilder"]
-    build_extensions: {"^test/{{}}_test.dart": ["test/spring/{{}}.test.spring.dart"]}
+    build_extensions: {"^test/{{}}_test.dart": ["test/spring_gen/{{}}.test.spring.dart"]}
     auto_apply: dependents
     build_to: source
   # Writes web_dev_config.yaml (read by `flutter run` on the web) from the
@@ -21,12 +37,24 @@ builders:
     build_extensions: {"$package$": []}
     auto_apply: dependents
     build_to: source
-  # Writes lib/spring_keys.dart: context.theme and context.messages, the
-  # typed keys of spring.flutter.theme.* and messages*.properties. Only for
-  # a package that depends on spring_boot_starter_flutter.
+  # Writes lib/spring_gen/theme.spring.dart (context.theme) and
+  # lib/spring_gen/messages.spring.dart
+  # (context.messages), the typed keys of spring.flutter.theme.* and
+  # messages*.properties, as parts of the .spring.dart of the package's
+  # @ComponentScan library. Only for a package that depends on
+  # spring_boot_starter_flutter.
   spring_flutter_keys:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springFlutterKeysBuilder"]
-    build_extensions: {"$package$": ["lib/spring_keys.dart"]}
+    build_extensions: {"$package$": ["lib/spring_gen/theme.spring.dart", "lib/spring_gen/messages.spring.dart"]}
+    auto_apply: dependents
+    build_to: source
+  # Writes lib/spring_gen/spring_metadata.json (properties, beans, profiles,
+  # hints; the theme for spring_boot_starter_flutter) for a package with
+  # Spring code. The language server and tool/spring_schema.dart read it.
+  spring_metadata:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springMetadataBuilder"]
+    build_extensions: {"$package$": ["lib/spring_gen/spring_metadata.json"]}
     auto_apply: dependents
     build_to: source

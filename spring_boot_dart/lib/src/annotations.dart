@@ -1,5 +1,10 @@
 import 'package:spring_core_dart/spring_core_dart.dart';
 
+// Moved to spring_core_dart so its own settings can be described the same
+// way; still available from this library.
+export 'package:spring_core_dart/spring_core_dart.dart'
+    show ConfigurationProperties, Name, PropertyValues, Range, WarnValues;
+
 /// Marks the `main` function of an application, so that the generator
 /// writes everything needed to start it.
 ///
@@ -17,7 +22,7 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// // bin/main.dart (lib/main.dart in Flutter)
 /// import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
-/// import 'main.spring.dart'; // generated
+/// import 'spring_gen/main.spring.dart'; // generated
 ///
 /// @SpringBootApplication()
 /// void main(List<String> args) => runApplication(args);
@@ -56,116 +61,6 @@ class SpringBootApplication {
   /// removes everything the starter adds. Unknown names are ignored, so a
   /// name can stay after the starter is removed.
   final List<String> excludeName;
-}
-
-/// Turns a class into a typed view of a group of settings: every field is
-/// filled from the property of the same name under [prefix].
-///
-/// Reading settings one by one with `@Value(r'${db.url}')` spreads property
-/// names and conversions over the code. With this annotation the settings
-/// of one area (a database pool, an API client) live in one class with
-/// typed fields and defaults, and other beans inject that class. The class
-/// becomes a bean and gets introspection metadata by itself, without
-/// `@Component()` or `@Introspected()`.
-///
-/// Field `maxSize` is read from `prefix.max-size` in any relaxed spelling
-/// (`prefix.maxSize`, `prefix.max_size`, the environment variable
-/// `PREFIX_MAXSIZE`), from the first property source that has it, and
-/// converted to the field's type. Lists and sets bind from a comma list
-/// or indexed keys (`prefix.hosts[0]`, YAML lists, `PREFIX_HOSTS_0_`),
-/// maps from the keys below them (`prefix.headers.x-a`,
-/// `prefix.headers[x.y]`), nested `@Introspected` objects from
-/// `prefix.nested.*`, also inside lists and maps
-/// (`prefix.servers[0].name`, `prefix.backends.eu.url`). A list from a
-/// higher-precedence source replaces the whole list; map entries are
-/// merged per key. `Binder` describes these rules in full.
-///
-/// A mutable class is bound through its setters:
-///
-/// ```dart
-/// // From db.url, db.max-size, db.timeout and db.hosts.
-/// @ConfigurationProperties('db')
-/// @Validated()
-/// class DbProperties {
-///   @NotBlank()
-///   String url = '';
-///   int maxSize = 10;
-///   Duration timeout = const Duration(seconds: 5);
-///   List<String> hosts = [];
-/// }
-///
-/// @Component()
-/// class ConnectionPool {
-///   ConnectionPool(this.properties); // already bound and validated
-///   final DbProperties properties;
-/// }
-/// ```
-///
-/// A class whose only constructor has parameters is created through that
-/// constructor instead (constructor binding), which suits immutable
-/// classes. A parameter without a property takes its [DefaultValue], else
-/// its Dart default value, else `null` when it is nullable; otherwise the
-/// start fails naming the property.
-///
-/// ```dart
-/// @ConfigurationProperties('db')
-/// class DbProperties {
-///   const DbProperties(this.url, {@DefaultValue('10') required this.maxSize,
-///       this.timeout = const Duration(seconds: 5)});
-///   final String url;
-///   final int maxSize;
-///   final Duration timeout;
-/// }
-/// ```
-///
-/// With `@Validated()` on the class, the constraint annotations
-/// (`@NotBlank()`, `@Min(1)`, ...) are checked after binding, and a
-/// violation fails the start with a message naming the property.
-///
-/// The annotation can also go on a `@Bean` method, to bind the object the
-/// method returns, for example a class of another package.
-///
-/// Spring (Java):
-/// ```java
-/// @ConfigurationProperties("db") @Validated
-/// public class DbProperties {
-///   String url; int maxSize = 10; Duration timeout;
-/// }
-///
-/// @ConfigurationProperties("db")
-/// public record DbProperties(String url, @DefaultValue("10") int maxSize) {}
-/// ```
-class ConfigurationProperties extends Component implements Introspected {
-  /// Binds the properties under [prefix]. [name] sets the bean name
-  /// instead of the one derived from the class.
-  const ConfigurationProperties(
-    this.prefix, {
-    String? name,
-    this.ignoreInvalidFields = false,
-    this.ignoreUnknownFields = true,
-  }) : super(name);
-
-  /// The common start of the property names, in canonical form (lower
-  /// case, `-` between words): `db` for `db.url`, or `my-app`.
-  final String prefix;
-
-  /// Whether a value that cannot be converted is ignored, so the field
-  /// keeps its default, instead of failing the start. Off by default:
-  /// a typo in a value should be noticed.
-  final bool ignoreInvalidFields;
-
-  /// Whether properties under [prefix] that match no field are ignored,
-  /// which is the default.
-  ///
-  /// Set it to `false` to catch misspelled property names: the start then
-  /// fails with `The elements [db.urll] were left unbound.` OS environment
-  /// variables are not checked.
-  final bool ignoreUnknownFields;
-
-  /// No other class is introspected because of this annotation: only the
-  /// annotated class gets metadata (`Introspected.classes` is empty).
-  @override
-  List<Type> get classes => const [];
 }
 
 /// The value a constructor parameter of a `@ConfigurationProperties` class
@@ -270,7 +165,7 @@ class AutoConfiguration extends Configuration {
 /// ```dart
 /// // lib/spring_auto_configuration.dart of package `neon_cache`
 /// import 'package:spring_boot_dart/spring_boot_dart.dart';
-/// import 'src/cache.spring.dart';
+/// import 'spring_gen/src/cache.spring.dart';
 ///
 /// @AutoConfigurationModule(requires: '^0.4.0')
 /// final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
@@ -324,35 +219,6 @@ class AutoConfigurationModule {
   final String? requires;
 }
 
-/// Gives a `@ConfigurationProperties` field or constructor parameter a
-/// property name other than its Dart name.
-///
-/// Needed when the property name is a Dart keyword (`import`, `default`)
-/// or when the field should have a clearer name than the property. The
-/// value is one element of the name, turned to dashed form like a Dart
-/// name (`maxSize` reads `max-size`).
-///
-/// ```dart
-/// @ConfigurationProperties('app')
-/// class AppProperties {
-///   AppProperties(@Name('import') this.importSettings);
-///   final String importSettings; // app.import
-/// }
-/// ```
-///
-/// Spring (Java):
-/// ```java
-/// public record AppProperties(@Name("import") String importSettings) {}
-/// ```
-class Name {
-  /// Binds the field from the property [value] under the prefix.
-  const Name(this.value);
-
-  /// The property name, one element without dots, such as `import` or
-  /// `max-size`.
-  final String value;
-}
-
 /// The unit of a `Duration` property written as a plain number.
 ///
 /// A `Duration` property can be written with a unit (`30s`, `5m`) or in
@@ -377,6 +243,24 @@ class DurationUnit {
 
   /// The unit a plain number is read in.
   final ChronoUnit value;
+}
+
+/// Marks a string property whose value is bound as written, without
+/// resolving `${...}` placeholders.
+///
+/// For text that has placeholders of its own, such as a log pattern
+/// (`%d ${PID:-?} %m`), which the receiver resolves itself.
+///
+/// ```dart
+/// @ConfigurationProperties('app')
+/// class AppProperties {
+///   @RawValue()
+///   String? template; // app.template=Hello ${name:-you} stays as written
+/// }
+/// ```
+class RawValue {
+  /// Marks a field.
+  const RawValue();
 }
 
 /// The unit of a `DataSize` property written as a plain number.

@@ -1,9 +1,8 @@
 // Typed keys of the configuration: context.theme and context.messages
-// (lib/spring_keys.dart).
+// (lib/spring_gen/theme.spring.dart, lib/spring_gen/messages.spring.dart).
 
-import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/dart_names.dart';
-import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
+import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/typed_message_keys.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 import 'package:test/test.dart';
@@ -12,7 +11,10 @@ import 'package:test/test.dart';
   Map<String, String> resources,
 ) {
   final diagnostics = KeysDiagnostics();
-  final code = FlutterKeysBuilder.generate(resources, diagnostics);
+  final parts = SpringKeyFiles.generate(resources, diagnostics);
+  final code = parts.theme == null && parts.messages == null
+      ? null
+      : '${parts.theme ?? ''}\n${parts.messages ?? ''}';
   return (code: code, diagnostics: diagnostics);
 }
 
@@ -72,12 +74,13 @@ spring:
       final (:code, :diagnostics) = _generate({'application.yml': yaml});
       expect(diagnostics.errors, isEmpty);
       expect(diagnostics.warnings, isEmpty);
-      expect(code, startsWith('// GENERATED CODE - DO NOT MODIFY BY HAND'));
+      expect(code, contains('extension SpringThemeKeys on BuildContext'));
       expect(
         code,
         contains(
-          'AppTheme get theme => '
-          'AppTheme._(ThemeKeyReader(SpringTheme.of(this)));',
+          'ThemeKeyReader(\n      SpringTheme.of(this),\n'
+          '      reduceMotion: '
+          'MediaQuery.maybeDisableAnimationsOf(this) ?? false,',
         ),
       );
       expect(code, isNot(contains('AppMessages')));
@@ -194,19 +197,9 @@ spring.flutter.theme:
         allOf(
           contains('tokens.brand.hero-height'),
           contains('number in spring.flutter.theme.tokens.brand.hero-height'),
-          contains(
-            'string in $_oceanToken',
-          ),
+          contains('text in $_oceanToken'),
         ),
       );
-    });
-
-    test('a token more than two levels deep is an error', () {
-      final (:code, :diagnostics) = _generate({
-        'application.yml': 'spring.flutter.theme.tokens.brand.deep.value: 1\n',
-      });
-      expect(code, isNull);
-      expect(diagnostics.errors.single, contains('tokens.brand.deep.value'));
     });
 
     test('names that are no Dart name or collide are errors', () {
@@ -405,60 +398,6 @@ title=店
       expect(diagnostics.errors, isEmpty);
       expect(code, contains('AppTheme get theme'));
       expect(code, contains('AppMessages get messages'));
-    });
-  });
-
-  group('builder', () {
-    const files = {
-      'app|lib/resources/application.properties':
-          'spring.flutter.theme.spacing.m=16\n',
-      'app|lib/resources/messages.properties': 'a=A\n',
-    };
-
-    test('writes lib/spring_keys.dart for an app with the Flutter starter', () {
-      return testBuilder(
-        FlutterKeysBuilder(),
-        {
-          ...files,
-          'app|pubspec.yaml':
-              'name: app\ndependencies:\n  spring_boot_starter_flutter: any\n',
-        },
-        rootPackage: 'app',
-        outputs: {
-          'app|lib/spring_keys.dart': decodedMatches(
-            allOf(contains('AppTheme get theme'), contains('AppMessages')),
-          ),
-        },
-      );
-    });
-
-    test('also for a package that brings the starter', () {
-      return testBuilder(
-        FlutterKeysBuilder(),
-        {
-          ...files,
-          'app|pubspec.yaml':
-              'name: app\ndependencies:\n'
-              '  spring_boot_starter_flutter_security: any\n',
-        },
-        rootPackage: 'app',
-        outputs: {
-          'app|lib/spring_keys.dart': decodedMatches(contains('AppTheme')),
-        },
-      );
-    });
-
-    test('nothing for a package without the Flutter starter', () {
-      return testBuilder(
-        FlutterKeysBuilder(),
-        {
-          ...files,
-          'app|pubspec.yaml':
-              'name: app\ndependencies:\n  spring_boot_dart: any\n',
-        },
-        rootPackage: 'app',
-        outputs: {},
-      );
     });
   });
 }

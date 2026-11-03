@@ -1,20 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
+import 'package:spring_boot_starter_flutter/src/files/remote_cache.dart';
 import 'package:spring_boot_starter_flutter/src/files/sha256.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 import 'package:spring_web_dart/spring_web_dart.dart'
-    show
-        HttpHeaders,
-        HttpMethod,
-        HttpRequest,
-        HttpTransport,
-        platformHttpTransport;
+    show HttpHeaders, HttpTransport;
 
 /// A theme that comes from a URL: the keys `source`, `source-sha256` and
 /// `refresh` of `spring.flutter.theme.themes.<name>`.
@@ -160,7 +155,12 @@ final class ThemeSource {
           sha256: pin == null || pin.isEmpty ? null : pin,
           refresh: refreshText == null || refreshText.isEmpty
               ? null
-              : DurationStyle.parse(refreshText),
+              : ThemeValues.duration(refreshText) ??
+                    (throw ArgumentError.value(
+                      refreshText,
+                      '$property.refresh',
+                      'is not a duration like 10s, 1h or 1.5d',
+                    )),
         ),
       );
     }
@@ -186,7 +186,7 @@ final class ThemeSourceContent {
   /// `spring.flutter.theme` (the keys of one theme, or `themes.<any
   /// name>.*` of one), or with those keys at the top. Only the theme's
   /// look is taken, and put under [name], whatever the file calls it; every
-  /// other key (another `spring.*` setting, `active`, `source`, `refresh`)
+  /// other key (another `spring.*` setting, `active`, `extends`, `source`, `refresh`)
   /// is [ignored]: a remote file never changes the application's other
   /// settings, picks the theme shown or points to more downloads.
   /// Throws a `FormatException` for text that is no YAML.
@@ -244,6 +244,7 @@ final class ThemeSourceContent {
       if (path.length == 1 &&
           const {
             'active',
+            'extends',
             'systemlight',
             'systemdark',
             'source',
@@ -305,8 +306,11 @@ final class ThemeSourceLoader implements ApplicationRunner {
     this.timeout = defaultTimeout,
     DateTime Function()? clock,
     // ignore: prefer_initializing_formals, named parameters cannot be private
-  }) : _transport = transport,
-       _ownsTransport = false,
+  }) : _fetcher = RemoteFetcher(
+         transport: transport,
+         timeout: timeout,
+         maxBytes: maxBytes,
+       ),
        _clock = clock ?? DateTime.now;
 
   /// The sources of [environment]'s `spring.flutter.theme.themes.*`.
@@ -355,19 +359,10 @@ final class ThemeSourceLoader implements ApplicationRunner {
   final Duration timeout;
 
   final DateTime Function() _clock;
-  HttpTransport? _transport;
-  bool _ownsTransport;
+  final RemoteFetcher _fetcher;
   bool _disposed = false;
   final _timers = <String, Timer>{};
   final _inFlight = <String, Future<void>>{};
-
-  HttpTransport get _http {
-    if (_transport == null) {
-      _transport = platformHttpTransport(connectTimeout: timeout);
-      _ownsTransport = true;
-    }
-    return _transport!;
-  }
 
   /// Completes when no download is running; for tests and for code that
   /// waits for a refresh.
@@ -476,12 +471,13 @@ final class ThemeSourceLoader implements ApplicationRunner {
   Future<void> _download(ThemeSource source) async {
     final cached = await _readCache(source);
     final meta = cached?.meta;
-    final headers = <String, String>{
-      if (meta?.etag != null) HttpHeaders.ifNoneMatchHeader: meta!.etag!,
-      if (meta?.lastModified != null)
-        HttpHeaders.ifModifiedSinceHeader: meta!.lastModified!,
-    };
-    final response = await _get(source.uri, headers).timeout(timeout);
+    final response = await _fetcher
+        .get(
+          source.uri,
+          meta?.conditionalHeaders ?? const {},
+          accept: 'application/yaml, text/yaml, text/plain',
+        )
+        .timeout(timeout);
     final now = _clock();
     if (response == null) {
       // 304: the cache is current.
@@ -511,7 +507,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
     await files.write('${source.cacheFolder}/theme.yml', text);
     await _writeMeta(
       source,
-      _Meta(
+      RemoteMeta(
         source: source.configured,
         sha256: digest,
         fetchedAt: now,
@@ -521,65 +517,6 @@ final class ThemeSourceLoader implements ApplicationRunner {
     );
     _log.info(() => 'theme ${source.name} loaded from ${source.configured}');
     _afterLoad(source, now);
-  }
-
-  // The response to a GET following redirects to https only; `null` for
-  // 304.
-  Future<({Uint8List bytes, HttpHeaders headers})?> _get(
-    Uri uri,
-    Map<String, String> headers,
-  ) async {
-    var current = uri;
-    for (var hops = 0; hops <= 5; hops++) {
-      final response = await _http.stream(
-        HttpRequest(
-          method: HttpMethod.get,
-          url: current,
-          headers: HttpHeaders({
-            HttpHeaders.acceptHeader: 'application/yaml, text/yaml, text/plain',
-            ...headers,
-          }),
-          timeout: timeout,
-          readTimeout: timeout,
-          followRedirects: false,
-        ),
-      );
-      final status = response.statusCode;
-      if (status == 304) {
-        await response.body.drain<void>();
-        return null;
-      }
-      if (const {301, 302, 303, 307, 308}.contains(status.value)) {
-        await response.body.drain<void>();
-        final location = response.headers[HttpHeaders.locationHeader];
-        final next = location == null ? null : current.resolve(location);
-        if (next == null || next.scheme != 'https') {
-          throw StateError('redirected to ${location ?? 'nowhere'}, not https');
-        }
-        current = next;
-        continue;
-      }
-      if (status.value < 200 || status.value > 299) {
-        await response.body.drain<void>();
-        throw StateError('the server answered $status');
-      }
-      final length = int.tryParse(
-        response.headers[HttpHeaders.contentLengthHeader] ?? '',
-      );
-      if (length != null && length > maxBytes) {
-        await response.body.drain<void>();
-        throw StateError('the file is $length bytes; the limit is $maxBytes');
-      }
-      final builder = BytesBuilder(copy: false);
-      await for (final chunk in response.body) {
-        builder.add(chunk);
-        if (builder.length > maxBytes) {
-          throw StateError('the file is over the limit of $maxBytes bytes');
-        }
-      }
-      return (bytes: builder.takeBytes(), headers: response.headers);
-    }
-    throw StateError('too many redirects');
   }
 
   // Shows the theme in [text] as [source]'s; false when it cannot (and
@@ -607,7 +544,9 @@ final class ThemeSourceLoader implements ApplicationRunner {
     }
   }
 
-  Future<({String text, _Meta meta})?> _readCache(ThemeSource source) async {
+  Future<({String text, RemoteMeta meta})?> _readCache(
+    ThemeSource source,
+  ) async {
     try {
       final text = await files.read<String>('${source.cacheFolder}/theme.yml');
       final metaText = await files.read<String>(
@@ -616,7 +555,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
       if (text == null || metaText == null) {
         return null;
       }
-      final meta = _Meta.fromJson(jsonDecode(metaText));
+      final meta = RemoteMeta.fromJson(jsonDecode(metaText));
       if (meta.source != source.configured ||
           meta.sha256 != sha256HexOfString(text) ||
           (source.sha256 != null && meta.sha256 != source.sha256)) {
@@ -629,7 +568,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
     }
   }
 
-  Future<void> _writeMeta(ThemeSource source, _Meta meta) =>
+  Future<void> _writeMeta(ThemeSource source, RemoteMeta meta) =>
       files.write('${source.cacheFolder}/meta.json', jsonEncode(meta.toJson()));
 
   /// Stops the timers and closes the HTTP client if the loader made it.
@@ -639,53 +578,6 @@ final class ThemeSourceLoader implements ApplicationRunner {
       timer.cancel();
     }
     _timers.clear();
-    if (_ownsTransport) {
-      _transport?.close();
-      _transport = null;
-      _ownsTransport = false;
-    }
+    _fetcher.close();
   }
-}
-
-final class _Meta {
-  const _Meta({
-    required this.source,
-    required this.sha256,
-    required this.fetchedAt,
-    this.etag,
-    this.lastModified,
-  });
-
-  factory _Meta.fromJson(Object? json) {
-    final map = json as Map<String, Object?>;
-    return _Meta(
-      source: map['source']! as String,
-      sha256: map['sha256']! as String,
-      fetchedAt: DateTime.parse(map['fetchedAt']! as String),
-      etag: map['etag'] as String?,
-      lastModified: map['lastModified'] as String?,
-    );
-  }
-
-  final String source;
-  final String sha256;
-  final DateTime fetchedAt;
-  final String? etag;
-  final String? lastModified;
-
-  _Meta copyWith({required DateTime fetchedAt}) => _Meta(
-    source: source,
-    sha256: sha256,
-    fetchedAt: fetchedAt,
-    etag: etag,
-    lastModified: lastModified,
-  );
-
-  Map<String, Object?> toJson() => {
-    'source': source,
-    'sha256': sha256,
-    'fetchedAt': fetchedAt.toUtc().toIso8601String(),
-    'etag': ?etag,
-    'lastModified': ?lastModified,
-  };
 }

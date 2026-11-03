@@ -1,6 +1,8 @@
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 import 'package:test/test.dart';
 
+import 'support/client_config.dart';
+
 // `spring.websocket.client.config.*` with Boot's relaxed names, as in an
 // environment prepared by SpringApplication.
 void main() {
@@ -11,7 +13,7 @@ void main() {
     final environment = StandardEnvironment(systemEnvironment: system)
       ..propertySources.addFirst(MapPropertySource('test', properties));
     ConfigurationPropertySources.attach(environment);
-    return WebSocketClientConfig.of(environment, 'feed');
+    return configOf(environment, 'feed');
   }
 
   test('camelCase keys: connectTimeout, reconnect.maxRetries, '

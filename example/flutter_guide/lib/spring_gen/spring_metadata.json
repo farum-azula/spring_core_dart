@@ -1,0 +1,1842 @@
+{
+  "version": 1,
+  "package": "neon_books_app",
+  "properties": [
+    {
+      "name": "api.base-url",
+      "type": "String",
+      "description": "`http://${api.host}`: the Feign clients' URL.",
+      "default": "http://localhost:8080",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/api/api_properties.dart",
+      "line": 20,
+      "class": "ApiProperties"
+    },
+    {
+      "name": "api.connect-timeout",
+      "type": "String",
+      "description": null,
+      "default": "5s",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/api/api_config.dart",
+      "line": 19,
+      "class": "networkTransport"
+    },
+    {
+      "name": "api.host",
+      "type": "String",
+      "description": "`localhost:8080`: host and port of the server guide.",
+      "default": "localhost:8080",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/api/api_properties.dart",
+      "line": 16,
+      "class": "ApiProperties"
+    },
+    {
+      "name": "api.ws-url",
+      "type": "String",
+      "description": "`ws://${api.host}`: the support chat's URL.",
+      "default": "ws://localhost:8080",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/api/api_properties.dart",
+      "line": 24,
+      "class": "ApiProperties"
+    },
+    {
+      "name": "app.navigation",
+      "type": "NavigationStyle",
+      "description": "`bar` on phones, `rail` on wide screens.",
+      "default": "bar",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/app/app_properties.dart",
+      "line": 22,
+      "class": "AppProperties"
+    },
+    {
+      "name": "app.title",
+      "type": "String",
+      "description": "The app bar's title.",
+      "default": "NEON Books",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/app/app_properties.dart",
+      "line": 19,
+      "class": "AppProperties"
+    },
+    {
+      "name": "catalog.refresh-interval",
+      "type": "String",
+      "description": null,
+      "default": "5m",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/catalog/catalog_refresh.dart",
+      "line": 25,
+      "class": "CatalogRefresh"
+    },
+    {
+      "name": "neon.sso.enabled",
+      "type": "bool",
+      "description": "Whether the Login screen offers \"Sign in with Keycloak\" instead of the name and password form; `true` with the `sso` profile.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:neon_books_app/src/account/sso_properties.dart",
+      "line": 8,
+      "class": "SsoProperties"
+    },
+    {
+      "name": "neon.sso.post-logout-redirect-uri",
+      "type": "String?",
+      "description": "Where Keycloak sends the login window after a native app's logout ended the Keycloak session; Keycloak must allow it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:neon_books_app/src/account/sso_properties.dart",
+      "line": 18,
+      "class": "SsoProperties"
+    },
+    {
+      "name": "neon.sso.registration-id",
+      "type": "String",
+      "description": "The registration of the native apps (`spring.security.oauth2.client.registration.keycloak.*`), and the one the server's `/oauth2/authorization/{id}` logs the web app in with.",
+      "default": "keycloak",
+      "deprecated": null,
+      "source": "package:neon_books_app/src/account/sso_properties.dart",
+      "line": 14,
+      "class": "SsoProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "app.navigation",
+      "values": [
+        {
+          "value": "bar",
+          "description": "A `NavigationBar` at the bottom: phones."
+        },
+        {
+          "value": "rail",
+          "description": "A `NavigationRail` at the side: desktops and browsers."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "accountClient",
+      "type": "AccountClient",
+      "types": [
+        "AccountClient"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/account_client.dart",
+      "line": 7,
+      "injects": [],
+      "members": [
+        {
+          "name": "login",
+          "kind": "method",
+          "type": "Future<ResponseEntity<void>>",
+          "parameters": [
+            "Map<String, String> form"
+          ]
+        },
+        {
+          "name": "logout",
+          "kind": "method",
+          "type": "Future<ResponseEntity<void>>",
+          "parameters": []
+        },
+        {
+          "name": "me",
+          "kind": "method",
+          "type": "Future<Me>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "adminClient",
+      "type": "AdminClient",
+      "types": [
+        "AdminClient"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/admin_client.dart",
+      "line": 7,
+      "injects": [],
+      "members": [
+        {
+          "name": "addBook",
+          "kind": "method",
+          "type": "Future<ResponseEntity<Book>>",
+          "parameters": [
+            "NewBook book"
+          ]
+        },
+        {
+          "name": "deleteBook",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "serverLogs",
+          "kind": "method",
+          "type": "Future<List<Object?>>",
+          "parameters": []
+        },
+        {
+          "name": "uploadCover",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn",
+            "MultipartFile file"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "adminService",
+      "type": "AdminService",
+      "types": [
+        "AdminService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/admin/admin_service.dart",
+      "line": 16,
+      "injects": [
+        {
+          "parameter": "_admin",
+          "type": "AdminClient",
+          "qualifier": null
+        },
+        {
+          "parameter": "_catalog",
+          "type": "CatalogService",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "addBook",
+          "kind": "method",
+          "type": "Future<Book>",
+          "parameters": [
+            "NewBook book"
+          ]
+        },
+        {
+          "name": "deleteBook",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "serverLogs",
+          "kind": "method",
+          "type": "Future<List<String>>",
+          "parameters": []
+        },
+        {
+          "name": "uploadCover",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn",
+            "Uint8List png"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "apiConfig",
+      "type": "ApiConfig",
+      "types": [
+        "ApiConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/api_config.dart",
+      "line": 13,
+      "injects": [],
+      "members": [
+        {
+          "name": "networkTransport",
+          "kind": "method",
+          "type": "HttpTransport",
+          "parameters": [
+            "Duration connectTimeout"
+          ]
+        },
+        {
+          "name": "retryer",
+          "kind": "method",
+          "type": "Retryer",
+          "parameters": []
+        },
+        {
+          "name": "sessionTransport",
+          "kind": "method",
+          "type": "HttpTransport",
+          "parameters": [
+            "HttpTransport network",
+            "CookieJar cookies",
+            "ApiProperties api"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "apiProperties",
+      "type": "ApiProperties",
+      "types": [
+        "ApiProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/api_properties.dart",
+      "line": 13,
+      "injects": [],
+      "members": [
+        {
+          "name": "baseUrl",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "host",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "wsUrl",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "appAssets",
+      "type": "AppAssets",
+      "types": [
+        "AppAssets"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/about/app_assets.dart",
+      "line": 11,
+      "injects": [],
+      "members": [
+        {
+          "name": "about",
+          "kind": "field",
+          "type": "Resource"
+        },
+        {
+          "name": "aboutText",
+          "kind": "method",
+          "type": "Future<String>",
+          "parameters": [
+            "Locale locale"
+          ]
+        },
+        {
+          "name": "logo",
+          "kind": "field",
+          "type": "Resource"
+        },
+        {
+          "name": "logoImage",
+          "kind": "getter",
+          "type": "ImageProvider<Object>"
+        },
+        {
+          "name": "sampleCover",
+          "kind": "field",
+          "type": "Resource"
+        },
+        {
+          "name": "sampleCoverBytes",
+          "kind": "method",
+          "type": "Future<Uint8List>",
+          "parameters": []
+        },
+        {
+          "name": "winterTheme",
+          "kind": "field",
+          "type": "Resource"
+        }
+      ]
+    },
+    {
+      "name": "appProperties",
+      "type": "AppProperties",
+      "types": [
+        "AppProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/app/app_properties.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "navigation",
+          "kind": "field",
+          "type": "NavigationStyle"
+        },
+        {
+          "name": "title",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "basket",
+      "type": "Basket",
+      "types": [
+        "Basket"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/basket/basket.dart",
+      "line": 31,
+      "injects": [
+        {
+          "parameter": "_shop",
+          "type": "ShopClient",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Book book"
+          ]
+        },
+        {
+          "name": "clear",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "count",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "items",
+          "kind": "getter",
+          "type": "List<BasketItem>"
+        },
+        {
+          "name": "onLogin",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "LoggedIn event"
+          ]
+        },
+        {
+          "name": "onLogout",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "LoggedOut event"
+          ]
+        },
+        {
+          "name": "setQuantity",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn",
+            "int quantity",
+            "{Book? book}"
+          ]
+        },
+        {
+          "name": "total",
+          "kind": "getter",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "bookForm",
+      "type": "BookForm",
+      "types": [
+        "BookForm"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/admin/book_form.dart",
+      "line": 11,
+      "injects": [
+        {
+          "parameter": "_validator",
+          "type": "BeanValidator",
+          "qualifier": null
+        },
+        {
+          "parameter": "_introspector",
+          "type": "BeanIntrospector",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "bind",
+          "kind": "method",
+          "type": "(NewBook?, BindingResult)",
+          "parameters": [
+            "Map<String, String> fields"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalog",
+      "type": "Catalog",
+      "types": [
+        "Catalog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/catalog/catalog.dart",
+      "line": 10,
+      "injects": [
+        {
+          "parameter": "_service",
+          "type": "CatalogService",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "books",
+          "kind": "getter",
+          "type": "PageOfBooks?"
+        },
+        {
+          "name": "error",
+          "kind": "getter",
+          "type": "Object?"
+        },
+        {
+          "name": "page",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "query",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "reload",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "search",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String query"
+          ]
+        },
+        {
+          "name": "showPage",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int page"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalogClient",
+      "type": "CatalogClient",
+      "types": [
+        "CatalogClient"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/catalog_client.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "cover",
+          "kind": "method",
+          "type": "Future<Uint8List>",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "Future<Book>",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "page",
+          "kind": "method",
+          "type": "Future<PageOfBooks>",
+          "parameters": [
+            "{String? query}",
+            "{int? page}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalogRefresh",
+      "type": "CatalogRefresh",
+      "types": [
+        "CatalogRefresh"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/catalog/catalog_refresh.dart",
+      "line": 15,
+      "injects": [
+        {
+          "parameter": "_service",
+          "type": "CatalogService",
+          "qualifier": null
+        },
+        {
+          "parameter": "_catalog",
+          "type": "Catalog",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "refresh",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "catalogService",
+      "type": "CatalogService",
+      "types": [
+        "CatalogService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/catalog/catalog_service.dart",
+      "line": 14,
+      "injects": [
+        {
+          "parameter": "_client",
+          "type": "CatalogClient",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "cover",
+          "kind": "method",
+          "type": "Future<Uint8List?>",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "coverChanged",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "Future<Book?>",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "page",
+          "kind": "method",
+          "type": "Future<PageOfBooks>",
+          "parameters": [
+            "String query",
+            "int page"
+          ]
+        },
+        {
+          "name": "refresh",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "cookieJar",
+      "type": "CookieJar",
+      "types": [
+        "CookieJar"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/cookie_jar.dart",
+      "line": 10,
+      "injects": [],
+      "members": [
+        {
+          "name": "[]",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "clear",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "header",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "store",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Iterable<String> setCookies"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "errorDecoder",
+      "type": "OAuth2AccessTokenErrorDecoder",
+      "types": [
+        "OAuth2AccessTokenErrorDecoder",
+        "ErrorDecoder"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "sso & !web"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_app/src/account/keycloak.dart",
+      "line": 41,
+      "injects": [
+        {
+          "parameter": "tokens",
+          "type": "KeycloakTokenInterceptor",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "decode",
+          "kind": "method",
+          "type": "Exception",
+          "parameters": [
+            "String methodKey",
+            "HttpResponse response"
+          ]
+        },
+        {
+          "name": "delegate",
+          "kind": "field",
+          "type": "ErrorDecoder"
+        },
+        {
+          "name": "interceptor",
+          "kind": "field",
+          "type": "OAuth2AccessTokenInterceptor"
+        }
+      ]
+    },
+    {
+      "name": "keycloakConfig",
+      "type": "KeycloakConfig",
+      "types": [
+        "KeycloakConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "sso & !web"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_app/src/account/keycloak.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "errorDecoder",
+          "kind": "method",
+          "type": "ErrorDecoder",
+          "parameters": [
+            "KeycloakTokenInterceptor tokens"
+          ]
+        },
+        {
+          "name": "keycloakRoles",
+          "kind": "method",
+          "type": "GrantedAuthoritiesMapper",
+          "parameters": []
+        },
+        {
+          "name": "keycloakTokens",
+          "kind": "method",
+          "type": "KeycloakTokenInterceptor",
+          "parameters": [
+            "OAuth2AuthorizedClientManager manager",
+            "OAuth2AuthorizedClientService clients",
+            "SsoProperties sso",
+            "DPoPKey? dPoPKey"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keycloakRoles",
+      "type": "KeycloakRolesMapper",
+      "types": [
+        "KeycloakRolesMapper",
+        "GrantedAuthoritiesMapper"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "sso & !web"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_app/src/account/keycloak.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "mapAuthorities",
+          "kind": "method",
+          "type": "List<GrantedAuthority>",
+          "parameters": [
+            "Iterable<GrantedAuthority> authorities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keycloakTokens",
+      "type": "KeycloakTokenInterceptor",
+      "types": [
+        "KeycloakTokenInterceptor",
+        "RequestInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "sso & !web"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_app/src/account/keycloak.dart",
+      "line": 23,
+      "injects": [
+        {
+          "parameter": "manager",
+          "type": "OAuth2AuthorizedClientManager",
+          "qualifier": null
+        },
+        {
+          "parameter": "clients",
+          "type": "OAuth2AuthorizedClientService",
+          "qualifier": null
+        },
+        {
+          "parameter": "sso",
+          "type": "SsoProperties",
+          "qualifier": null
+        },
+        {
+          "parameter": "dPoPKey",
+          "type": "DPoPKey",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "apply",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "RequestTemplate template"
+          ]
+        },
+        {
+          "name": "tokens",
+          "kind": "field",
+          "type": "OAuth2AccessTokenInterceptor"
+        }
+      ]
+    },
+    {
+      "name": "languageCustomizer",
+      "type": "LanguageCustomizer",
+      "types": [
+        "LanguageCustomizer",
+        "FlutterAppCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/app/language.dart",
+      "line": 23,
+      "injects": [
+        {
+          "parameter": "_selection",
+          "type": "LanguageSelection",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "FlutterAppSettings app"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "languageSelection",
+      "type": "LanguageSelection",
+      "types": [
+        "LanguageSelection"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/app/language.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "languageCode",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "select",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String? languageCode"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lifecycleLog",
+      "type": "LifecycleLog",
+      "types": [
+        "LifecycleLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/app/lifecycle_log.dart",
+      "line": 14,
+      "injects": [],
+      "members": [
+        {
+          "name": "onPaused",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ContextPausedEvent event"
+          ]
+        },
+        {
+          "name": "onRestarted",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ContextRestartedEvent event"
+          ]
+        },
+        {
+          "name": "onState",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "AppLifecycleStateEvent event"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "liveStock",
+      "type": "LiveStock",
+      "types": [
+        "LiveStock",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/stock/live_stock.dart",
+      "line": 21,
+      "injects": [
+        {
+          "parameter": "_client",
+          "type": "StockClient",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "available",
+          "kind": "getter",
+          "type": "Map<String, int>"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "live",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "recent",
+          "kind": "getter",
+          "type": "List<StockChanged>"
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "networkTransport",
+      "type": "HttpTransport",
+      "types": [
+        "HttpTransport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "!web"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/api_config.dart",
+      "line": 18,
+      "injects": [],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<HttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        },
+        {
+          "name": "stream",
+          "kind": "method",
+          "type": "Future<StreamedHttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "orderService",
+      "type": "OrderService",
+      "types": [
+        "OrderService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/orders/order_service.dart",
+      "line": 13,
+      "injects": [
+        {
+          "parameter": "_shop",
+          "type": "ShopClient",
+          "qualifier": null
+        },
+        {
+          "parameter": "_basket",
+          "type": "Basket",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "orders",
+          "kind": "method",
+          "type": "Future<List<ShopOrder>>",
+          "parameters": []
+        },
+        {
+          "name": "placeOrder",
+          "kind": "method",
+          "type": "Future<ShopOrder>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "retryer",
+      "type": "DefaultRetryer",
+      "types": [
+        "DefaultRetryer",
+        "Retryer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/api_config.dart",
+      "line": 36,
+      "injects": [],
+      "members": [
+        {
+          "name": "maxAttempts",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "maxPeriod",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "nextDelay",
+          "kind": "method",
+          "type": "Duration?",
+          "parameters": [
+            "int attempt",
+            "RetryableException error"
+          ]
+        },
+        {
+          "name": "period",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
+      "name": "routeLog",
+      "type": "RouteLog",
+      "types": [
+        "RouteLog",
+        "NavigatorObserver"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/app/route_log.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "didChangeTop",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> topRoute",
+            "Route<dynamic>? previousTopRoute"
+          ]
+        },
+        {
+          "name": "didPop",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didPush",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didRemove",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didReplace",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "{Route<dynamic>? newRoute}",
+            "{Route<dynamic>? oldRoute}"
+          ]
+        },
+        {
+          "name": "didStartUserGesture",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didStopUserGesture",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "navigator",
+          "kind": "getter",
+          "type": "NavigatorState?"
+        }
+      ]
+    },
+    {
+      "name": "serverAuthenticationProvider",
+      "type": "ServerAuthenticationProvider",
+      "types": [
+        "ServerAuthenticationProvider",
+        "AuthenticationProvider"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/account/server_authentication_provider.dart",
+      "line": 15,
+      "injects": [
+        {
+          "parameter": "_account",
+          "type": "AccountClient",
+          "qualifier": null
+        },
+        {
+          "parameter": "_cookies",
+          "type": "CookieJar",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "authenticate",
+          "kind": "method",
+          "type": "Future<Authentication?>",
+          "parameters": [
+            "Authentication authentication"
+          ]
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Authentication authentication"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "session",
+      "type": "Session",
+      "types": [
+        "Session"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/account/session.dart",
+      "line": 45,
+      "injects": [
+        {
+          "parameter": "_authenticationManager",
+          "type": "AuthenticationManager",
+          "qualifier": null
+        },
+        {
+          "parameter": "_account",
+          "type": "AccountClient",
+          "qualifier": null
+        },
+        {
+          "parameter": "_cookies",
+          "type": "CookieJar",
+          "qualifier": null
+        },
+        {
+          "parameter": "_events",
+          "type": "ApplicationEventPublisher",
+          "qualifier": null
+        },
+        {
+          "parameter": "_sso",
+          "type": "SsoProperties",
+          "qualifier": null
+        },
+        {
+          "parameter": "_login",
+          "type": "OAuth2LoginService",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "isAdmin",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isLoggedIn",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "login",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String username",
+            "String password"
+          ]
+        },
+        {
+          "name": "logout",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{bool endSession}"
+          ]
+        },
+        {
+          "name": "restore",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ApplicationReadyEvent event"
+          ]
+        },
+        {
+          "name": "restored",
+          "kind": "getter",
+          "type": "Future<void>"
+        },
+        {
+          "name": "signInWithKeycloak",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "user",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "usesKeycloak",
+          "kind": "getter",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "sessionTransport",
+      "type": "SessionTransport",
+      "types": [
+        "SessionTransport",
+        "HttpTransport"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [
+        "!web"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/api_config.dart",
+      "line": 26,
+      "injects": [
+        {
+          "parameter": "network",
+          "type": "HttpTransport",
+          "qualifier": "networkTransport"
+        },
+        {
+          "parameter": "cookies",
+          "type": "CookieJar",
+          "qualifier": null
+        },
+        {
+          "parameter": "api",
+          "type": "ApiProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<HttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        },
+        {
+          "name": "stream",
+          "kind": "method",
+          "type": "Future<StreamedHttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shopClient",
+      "type": "ShopClient",
+      "types": [
+        "ShopClient"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/shop_client.dart",
+      "line": 7,
+      "injects": [],
+      "members": [
+        {
+          "name": "basket",
+          "kind": "method",
+          "type": "Future<ServerBasket>",
+          "parameters": []
+        },
+        {
+          "name": "orders",
+          "kind": "method",
+          "type": "Future<List<ShopOrder>>",
+          "parameters": []
+        },
+        {
+          "name": "placeOrder",
+          "kind": "method",
+          "type": "Future<ResponseEntity<ShopOrder>>",
+          "parameters": []
+        },
+        {
+          "name": "setQuantity",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn",
+            "Quantity quantity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ssoProperties",
+      "type": "SsoProperties",
+      "types": [
+        "SsoProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/account/sso_properties.dart",
+      "line": 5,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "postLogoutRedirectUri",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "registrationId",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "stockClient",
+      "type": "StockClient",
+      "types": [
+        "StockClient"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/stock_client.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "events",
+          "kind": "method",
+          "type": "EventStream<StockChanged>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "supportChat",
+      "type": "SupportChat",
+      "types": [
+        "SupportChat",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/support/support_chat.dart",
+      "line": 15,
+      "injects": [
+        {
+          "parameter": "_socket",
+          "type": "SupportSocket",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "join",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "messages",
+          "kind": "getter",
+          "type": "List<ChatMessage>"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "onLogin",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "LoggedIn event"
+          ]
+        },
+        {
+          "name": "onLogout",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "LoggedOut event"
+          ]
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String text"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supportHandshake",
+      "type": "SupportHandshake",
+      "types": [
+        "SupportHandshake",
+        "WebSocketHandshakeInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "!web"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/support_handshake.dart",
+      "line": 23,
+      "injects": [
+        {
+          "parameter": "_cookies",
+          "type": "CookieJar",
+          "qualifier": null
+        },
+        {
+          "parameter": "_sso",
+          "type": "SsoProperties",
+          "qualifier": null
+        },
+        {
+          "parameter": "_tokens",
+          "type": "OAuth2AuthorizedClientManager",
+          "qualifier": null
+        },
+        {
+          "parameter": "_dPoPKey",
+          "type": "DPoPKey",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "apply",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "WebSocketHandshake handshake"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supportSocket",
+      "type": "SupportSocket",
+      "types": [
+        "SupportSocket"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_app/src/api/support_socket.dart",
+      "line": 10,
+      "injects": [],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "messages",
+          "kind": "method",
+          "type": "Stream<ChatMessage>",
+          "parameters": []
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ChatMessage message"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    "android",
+    "desktop",
+    "mobile",
+    "spa",
+    "sso",
+    "web"
+  ]
+}

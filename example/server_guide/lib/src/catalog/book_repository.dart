@@ -1,7 +1,7 @@
 // Data access stand-in: there is no database package yet, so the books
 // live in memory behind a repository interface, where a Spring Data
 // repository would be. (No @Transactional either: it does not exist.)
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 

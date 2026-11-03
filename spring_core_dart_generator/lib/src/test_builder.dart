@@ -12,6 +12,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart_generator/src/bean_model.dart'
     show exposedBeanTypes, publicSdkLibrary;
+import 'package:spring_core_dart_generator/src/generated_path.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 
 /// The builder that turns the `@SpringBootTest` and `@DataTest` classes of
@@ -22,7 +23,7 @@ import 'package:spring_core_dart_generator/src/package_directory.dart';
 /// methods to run against them. `package:test` only runs functions
 /// registered with `test` and `group`, and Dart has no reflection to find
 /// the annotated methods. So for every `test/<name>_test.dart` with such
-/// classes this builder writes `test/spring/<name>.test.spring.dart` with
+/// classes this builder writes `test/spring_gen/<name>.test.spring.dart` with
 /// a `runSpringTests()` function that registers them. It uses
 /// `springBootTest`, `group`, `test`, `setUp` and `tearDown` from
 /// `spring_boot_starter_test`. `springTestBuilder` creates it for
@@ -70,7 +71,7 @@ import 'package:spring_core_dart_generator/src/package_directory.dart';
 ///
 /// ```dart
 /// // test/checkout_test.dart
-/// import 'spring/checkout.test.spring.dart';
+/// import 'spring_gen/checkout.test.spring.dart';
 ///
 /// @SpringBootTest()
 /// class CheckoutTest {
@@ -83,7 +84,7 @@ import 'package:spring_core_dart_generator/src/package_directory.dart';
 ///
 /// void main() => runSpringTests();
 ///
-/// // test/spring/checkout.test.spring.dart (generated)
+/// // test/spring_gen/checkout.test.spring.dart (generated)
 /// void runSpringTests() {
 ///   _sbt.group('CheckoutTest', () {
 ///     final instance = CheckoutTest();
@@ -109,7 +110,7 @@ class SpringTestBuilder implements Builder {
 
   @override
   Map<String, List<String>> get buildExtensions => const {
-    '^test/{{}}_test.dart': ['test/spring/{{}}.test.spring.dart'],
+    '^test/{{}}_test.dart': ['test/spring_gen/{{}}.test.spring.dart'],
   };
 
   @override
@@ -317,16 +318,16 @@ bool _isEntryPoint(String path, String source) {
 }
 
 /// The generated file of the test [input]: the same path under
-/// `test/spring/`, with `_test.dart` replaced by `.test.spring.dart`.
+/// `test/spring_gen/`, with `_test.dart` replaced by `.test.spring.dart`.
 ///
 /// Keeping generated files in their own folder stops `dart test` from
 /// taking them for tests. For example `test/orders/basket_test.dart` gives
-/// `test/spring/orders/basket.test.spring.dart`.
+/// `test/spring_gen/orders/basket.test.spring.dart`.
 AssetId springTestOutput(AssetId input) {
   final inTest = input.path.substring('test/'.length);
   return AssetId(
     input.package,
-    'test/spring/'
+    'test/spring_gen/'
     '${inTest.substring(0, inTest.length - '_test.dart'.length)}'
     '.test.spring.dart',
   );
@@ -683,7 +684,7 @@ final class TestEmitter {
       )
       ..writeln();
     // The test file's imports; relative ones (and those of conditional
-    // imports) re-pointed from test/spring/.
+    // imports) re-pointed from test/spring_gen/.
     for (final directive in file.imports) {
       if (file.resolve(directive) == output.path) {
         continue;
@@ -784,7 +785,7 @@ final class TestEmitter {
   }
 
   String _applicationImport(String entry) {
-    final generated = '${entry.substring(0, entry.length - 5)}.spring.dart';
+    final generated = generatedPath(entry);
     if (generated.startsWith('lib/')) {
       return 'package:$package/${generated.substring(4)}';
     }

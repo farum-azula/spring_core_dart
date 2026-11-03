@@ -20,6 +20,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
+import 'support/client_properties.dart';
 
 const _tokenUri = 'https://sso.test/token';
 
@@ -565,7 +566,7 @@ void main() {
         );
       ConfigurationPropertySources.attach(environment);
       final suppliers = OAuth2ClientPropertiesMapper(
-        OAuth2ClientProperties.of(environment),
+        boundClientProperties(environment),
       ).asClientRegistrations();
       expect((await suppliers['a']!()).dpop, DPoPMode.enabled);
       expect((await suppliers['b']!()).dpop, DPoPMode.disabled);
@@ -577,7 +578,7 @@ void main() {
       );
       expect(
         () => OAuth2ClientPropertiesMapper(
-          OAuth2ClientProperties.of(environment),
+          boundClientProperties(environment),
         ).asClientRegistrations(),
         throwsArgumentError,
       );

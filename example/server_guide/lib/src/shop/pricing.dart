@@ -1,7 +1,7 @@
 // Collection injection (chapter 1): every PriceRule bean, as a List
 // sorted by @Order and as a Map by bean name; a @Primary composite that
 // is itself a PriceRule wins where one rule is injected.
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 

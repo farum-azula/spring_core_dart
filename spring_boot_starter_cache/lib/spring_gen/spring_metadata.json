@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_cache",
+  "properties": [
+    {
+      "name": "spring.cache.cache-names",
+      "type": "List<String>",
+      "description": "A fixed set of caches (`books,authors`, or a YAML list); an annotation that names another cache then fails. Default: empty (caches are created on demand).",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 27,
+      "class": "CacheProperties"
+    },
+    {
+      "name": "spring.cache.simple.caches.*.max-size",
+      "type": "int?",
+      "description": "The same as `spring.cache.simple.max-size`, for this cache. A negative value fails the start. Default: the global one.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 62,
+      "class": "CacheLimits"
+    },
+    {
+      "name": "spring.cache.simple.caches.*.time-to-live",
+      "type": "Duration?",
+      "description": "The same as `spring.cache.simple.time-to-live`, for this cache. A negative value fails the start. Default: the global one.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 58,
+      "class": "CacheLimits"
+    },
+    {
+      "name": "spring.cache.simple.max-size",
+      "type": "int?",
+      "description": "The most entries per cache; when full, the least recently used entry goes. Default: none; `0` keeps nothing; a negative value fails the start.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 45,
+      "class": "SimpleCacheProperties"
+    },
+    {
+      "name": "spring.cache.simple.time-to-live",
+      "type": "Duration?",
+      "description": "An entry expires this long after it was written (`10m`, `30s`, `PT1H`, or milliseconds), measured on a monotonic clock as Caffeine's ticker (setting the system clock moves no expiry). Default: none; `0` keeps nothing; a negative value fails the start.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 40,
+      "class": "SimpleCacheProperties"
+    },
+    {
+      "name": "spring.cache.type",
+      "type": "CacheType?",
+      "description": "The kind of cache manager. Default: `generic` when the application has `Cache` beans, else `simple`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 22,
+      "class": "CacheProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.cache.type",
+      "values": [
+        {
+          "value": "generic",
+          "description": "Uses the application's `Cache` beans (a `SimpleCacheManager`)."
+        },
+        {
+          "value": "simple",
+          "description": "Keeps entries in memory (an `InMemoryCacheManager`)."
+        },
+        {
+          "value": "none",
+          "description": "Caches nothing, so the methods always run (a `NoOpCacheManager`)."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "cacheAdvisor",
+      "type": "DefaultPointcutAdvisor",
+      "types": [
+        "DefaultPointcutAdvisor",
+        "PointcutAdvisor",
+        "Advisor",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
+      "line": 312,
+      "injects": [],
+      "members": [
+        {
+          "name": "advice",
+          "kind": "field",
+          "type": "MethodInterceptor"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "pointcut",
+          "kind": "field",
+          "type": "AopPointcut"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "cacheInterceptor",
+      "type": "CacheInterceptor",
+      "types": [
+        "CacheInterceptor",
+        "MethodInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
+      "line": 292,
+      "injects": [],
+      "members": [
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "BeanFactory?"
+        },
+        {
+          "name": "cacheManager",
+          "kind": "getter",
+          "type": "CacheManager"
+        },
+        {
+          "name": "cacheOperationSource",
+          "kind": "field",
+          "type": "AnnotationCacheOperationSource"
+        },
+        {
+          "name": "cacheOperations",
+          "kind": "method",
+          "type": "List<CacheOperation>",
+          "parameters": [
+            "MethodSignature signature"
+          ]
+        },
+        {
+          "name": "cacheResolver",
+          "kind": "getter",
+          "type": "CacheResolver"
+        },
+        {
+          "name": "errorHandler",
+          "kind": "getter",
+          "type": "CacheErrorHandler"
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector"
+        },
+        {
+          "name": "invoke",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "MethodInvocation invocation"
+          ]
+        },
+        {
+          "name": "keyGenerator",
+          "kind": "getter",
+          "type": "KeyGenerator"
+        }
+      ]
+    },
+    {
+      "name": "cacheManager",
+      "type": "CacheManager",
+      "types": [
+        "CacheManager"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(CacheManager)",
+        "@ConditionalOnMissingBean.named('cacheResolver')"
+      ],
+      "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
+      "line": 273,
+      "injects": [],
+      "members": [
+        {
+          "name": "cacheNames",
+          "kind": "getter",
+          "type": "Iterable<String>"
+        },
+        {
+          "name": "getCache",
+          "kind": "method",
+          "type": "Cache?",
+          "parameters": [
+            "String name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cacheOperationValidator",
+      "type": "CacheOperationValidator",
+      "types": [
+        "CacheOperationValidator",
+        "BeanPostProcessor",
+        "BeanFactoryAware",
+        "Aware"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
+      "line": 301,
+      "injects": [],
+      "members": [
+        {
+          "name": "interceptor",
+          "kind": "field",
+          "type": "CacheInterceptor"
+        },
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cacheProperties",
+      "type": "CacheProperties",
+      "types": [
+        "CacheProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 19,
+      "injects": [],
+      "members": [
+        {
+          "name": "cacheNames",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "simple",
+          "kind": "field",
+          "type": "SimpleCacheProperties"
+        },
+        {
+          "name": "type",
+          "kind": "field",
+          "type": "CacheType?"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

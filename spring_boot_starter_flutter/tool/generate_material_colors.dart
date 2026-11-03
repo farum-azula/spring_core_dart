@@ -24,7 +24,7 @@ void main(List<String> args) {
     colors[m[1]!] = m[2]!;
   }
   for (final m in RegExp(
-    r'static const Material(?:Accent)?Color (\w+) = Material(?:Accent)?Color\(\s*(_\w+),\s*<int, Color>\{([^}]*)\}',
+    r'static const Material(?:Accent)?Color (\w+) =\s*Material(?:Accent)?Color\(\s*(_\w+),\s*<int, Color>\{([^}]*)\}',
   ).allMatches(text)) {
     final name = m[1]!;
     colors[name] = primaries[m[2]!]!;

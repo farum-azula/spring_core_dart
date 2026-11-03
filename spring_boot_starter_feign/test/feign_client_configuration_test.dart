@@ -10,6 +10,7 @@ import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
 import 'client_configuration.dart';
+import 'support/feign_properties.dart';
 
 void main() {
   late MockHttpTransport server;
@@ -211,7 +212,7 @@ void main() {
           expect(request.headers.contains('X-List.0'), isFalse);
           expect(request.url.queryParametersAll['q'], ['x']);
           final config = FeignClientConfig.of(
-            context.getBean<Environment>(),
+            context.getBean<FeignProperties>(),
             'plain',
           );
           expect(config.defaultRequestHeaders, {
@@ -255,8 +256,10 @@ void main() {
   group('on/off properties bind like Boot booleans', () {
     FeignClientConfig config(Map<String, Object> properties) =>
         FeignClientConfig.of(
-          StandardEnvironment(systemEnvironment: const {})
-            ..propertySources.addFirst(MapPropertySource('p', properties)),
+          bindFeignProperties(
+            StandardEnvironment(systemEnvironment: const {})
+              ..propertySources.addFirst(MapPropertySource('p', properties)),
+          ),
           'plain',
         );
     const prefix = 'spring.feign.client.config.';
@@ -297,10 +300,10 @@ void main() {
         expect(
           () => config({key: value}),
           throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
+            isA<ConfigurationPropertiesBindException>().having(
+              (e) => e.toString(),
               'message',
-              contains(key),
+              contains(key.replaceFirst('spring.feign.client.', '')),
             ),
           ),
           reason: key,

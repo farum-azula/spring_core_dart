@@ -28,7 +28,8 @@ Map<String, String> expanded(String file) {
             (m) => m[1]!,
           );
         }
-        return text.replaceAll(RegExp(r'\$\d+'), '');
+        // `\$` is a literal dollar in the snippet syntax.
+        return text.replaceAll(RegExp(r'\$\d+'), '').replaceAll(r'\$', r'$');
       }(),
   };
 }

@@ -33,7 +33,7 @@ dependencies:
   spring_security_core: ^0.6.2
 
 dev_dependencies:
-  # For example/: the generator writes example/example.spring.dart.
+  # For example/: the generator writes example/spring_gen/example.spring.dart.
   build_runner: ^2.17.0
   spring_core_dart_generator: ^0.6.2
   flutter_test:

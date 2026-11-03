@@ -115,7 +115,7 @@ A Spring Boot application in Dart
 ([spring_boot_dart](https://pub.dev/packages/spring_boot_dart)).
 
 ```sh
-dart run build_runner build     # generate bin/main.spring.dart (after changing beans)
+dart run build_runner build     # generate bin/spring_gen/main.spring.dart (after changing beans)
 dart run bin/main.dart          # Hello, world!
 dart run bin/main.dart Dart --app.greeting=Hi
 dart run bin/main.dart --spring.profiles.active=dev
@@ -129,7 +129,7 @@ During development `dart run build_runner watch` regenerates on every save.
 | Path | What |
 |---|---|
 | `bin/main.dart` | the entry point: `@SpringBootApplication` + `runApplication` |
-| `bin/main.spring.dart` | generated: every bean, the resources, the auto-configuration of the starters |
+| `bin/spring_gen/main.spring.dart` | generated: every bean, the resources, the auto-configuration of the starters |
 | `lib/src/` | your beans: `@Service`, `@Component`, `@Configuration`, ... (found automatically) |
 | `lib/resources/` | the resources: `application.properties`, `application-{profile}.properties`, templates, ... (embedded into the generated code) |
 | `test/` | tests with `springBootTest` |
@@ -138,7 +138,7 @@ During development `dart run build_runner watch` regenerates on every save.
   'bin/main.dart': '''
 import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
-import 'main.spring.dart'; // generated: dart run build_runner build
+import 'spring_gen/main.spring.dart'; // generated: dart run build_runner build
 
 /// Starts the application: config, beans, runners.
 ///
@@ -223,7 +223,7 @@ import 'package:__NAME__/src/greeting/greeting_service.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/main.spring.dart';
+import '../bin/spring_gen/main.spring.dart';
 
 void main() {
   // The whole application, started once for the tests below, with

@@ -6,9 +6,9 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import '../spring_gen/sqlite/app/sqlite_app.spring.dart';
 import 'app/shared/shared.dart';
 import 'app/sqlite_app.dart';
-import 'app/sqlite_app.spring.dart';
 
 // The SQLite driver beans: the names the glue gives its bean.
 List<String> _sqliteDrivers(AssertableApplicationContext context) => [

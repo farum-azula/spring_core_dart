@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -81,7 +81,7 @@ Future<String> _generateApp(
     {
       'bin/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -95,7 +95,9 @@ void main(List<String> args) => runApplication(args);
   expect(result.errors, isEmpty);
   return _normalize(
     result.readerWriter.testing.readString(
-      result.outputs.singleWhere((o) => o.path == 'bin/main.spring.dart'),
+      result.outputs.singleWhere(
+        (o) => o.path == 'bin/spring_gen/main.spring.dart',
+      ),
     ),
   );
 }
@@ -130,11 +132,11 @@ Future<List<String>> _compileErrors(
   return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/src/beans.spring.dart': output,
+      'pkg|lib/spring_gen/src/beans.spring.dart': output,
     },
     (resolver) async {
       final library = await resolver.libraryFor(
-        AssetId('pkg', 'lib/src/beans.spring.dart'),
+        AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
       final errors = await library.session.getErrors(
         library.firstFragment.source.fullName,
@@ -146,7 +148,7 @@ Future<List<String>> _compileErrors(
       ];
     },
     rootPackage: 'pkg',
-    resolverFor: 'pkg|lib/src/beans.spring.dart',
+    resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
 }
@@ -155,7 +157,10 @@ void main() {
   test('builder factory', () {
     expect(springCoreDartBuilder(BuilderOptions.empty), isA<SpringBuilder>());
     expect(SpringBuilder().buildExtensions, {
-      '.dart': ['.spring.dart'],
+      '^lib/{{}}.dart': ['lib/spring_gen/{{}}.spring.dart'],
+      '^bin/{{}}.dart': ['bin/spring_gen/{{}}.spring.dart'],
+      '^test/{{}}.dart': ['test/spring_gen/{{}}.spring.dart'],
+      '^example/{{}}.dart': ['example/spring_gen/{{}}.spring.dart'],
     });
   });
 
@@ -1562,7 +1567,7 @@ class B {}
       final result = await _build({
         'test/fixtures/beans.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'beans.spring.dart';
+import '../spring_gen/fixtures/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule testBeans = $testBeans;
@@ -1575,7 +1580,7 @@ class TestOnly {}
       final output = result.readerWriter.testing.readString(
         result.outputs.single,
       );
-      expect(output, contains("import 'beans.dart' as _i2;"));
+      expect(output, contains("import '../../fixtures/beans.dart' as _i2;"));
     });
 
     test('nothing without @ComponentScan', () async {
@@ -2287,7 +2292,7 @@ class CloudConfig {}
         final result = await _build({
           'bin/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -2306,7 +2311,7 @@ class DbProps { String url = ''; }
         final output = _normalize(
           result.readerWriter.testing.readString(result.outputs.single),
         );
-        expect(result.outputs.single.path, 'bin/main.spring.dart');
+        expect(result.outputs.single.path, 'bin/spring_gen/main.spring.dart');
         // lib/spring_auto_configuration.dart of the dependencies is
         // discovered, listed by package (SpringApplication sorts them).
         expect(
@@ -2374,7 +2379,7 @@ class DbProps { String url = ''; }
         final result = await _build({
           'bin/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -4226,7 +4231,7 @@ abstract class BaseHandler implements Handler {}
     String scan(String options) =>
         '''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 import 'package:pkg/src/service.dart';
 
 @ComponentScan($options)

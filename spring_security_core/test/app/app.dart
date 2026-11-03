@@ -2,7 +2,7 @@
 // generator into app.spring.dart (dart run build_runner build).
 import 'package:spring_security_core/spring_security_core.dart';
 
-import 'app.spring.dart';
+import '../spring_gen/app/app.spring.dart';
 
 @ComponentScan()
 final BeanModule securityTestBeans = $securityTestBeans;

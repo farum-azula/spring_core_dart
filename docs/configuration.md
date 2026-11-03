@@ -1360,6 +1360,44 @@ shop.beta=true
 </td></tr>
 </table>
 
+### Completion and checks in the editor
+
+The generator writes `lib/spring_gen/spring_metadata.json` for every
+package with Spring code: the properties of your `@ConfigurationProperties`
+classes (with their `///` comments as descriptions), value hints (enum
+constants, each with its `///`) and, for the Flutter starter, the theme.
+Spring: the same job as `spring-configuration-metadata.json`. All of it
+comes from the code: put `@Range(min, max)`, `@WarnValues([...], 'why')` or
+`@PropertyValues([...])` on a field for bounds, warned values and values of
+a `String` field. Nothing is written by hand (there is no
+`spring_metadata_additional.json`), and the starters read their settings
+through the same classes they are described by, so the editor's keys,
+defaults and values cannot differ from what the code accepts. A map field
+(`Map<String, V> headers`) is listed as `headers.*`, a list of classes as
+`routes[*].path`, a map of classes as `registration.*.client-id`.
+
+Any editor with the YAML language server (Red Hat's `yaml-language-server`:
+VS Code, Zed, IntelliJ) can complete and check `application*.yml` from a
+JSON Schema made from the metadata of the app and its dependencies:
+
+```sh
+dart run tool/spring_schema.dart example/server_guide
+```
+
+This writes `example/server_guide/spring-application.schema.json`
+(JSON Schema draft 2020-12). Name it in the first line of the YAML file:
+
+```yaml
+# yaml-language-server: $schema=../../spring-application.schema.json
+spring:
+  profiles:
+    active: dev
+```
+
+The path is relative to the YAML file; a URL works too. A `${...}`
+placeholder is accepted wherever a number or a flag is expected. Run the
+tool again after `build_runner build` when properties change.
+
 ---
 
 ## 11. Reference: the application
@@ -2023,6 +2061,8 @@ answered (at most five seconds), then the window appears already as set.
 
 ### Themes, step by step
 
+> The full theme reference, one page per topic, is in [Flutter themes in YAML](flutter/theme/index.md).
+
 The theme can be set entirely from properties: colours, fonts, shapes,
 components, a dark theme and themes of your own. Designers and
 developers then change the look in one file, per profile or per
@@ -2197,7 +2237,7 @@ spring:
         large: 24
       components:
         button: { shape: full, min-height: 44 }
-        card: { shape: large, color: surface-container-low, elevation: level0 }
+        card: { shape: large, color: $colors.surface-container-low, elevation: level0 }
         input: { style: outline, shape: small }
         app-bar: { center-title: true, title-style: title-large }
         navigation-bar: { label-behavior: onlyShowSelected }
@@ -2211,7 +2251,7 @@ spring.flutter.theme.shape.large=24
 spring.flutter.theme.components.button.shape=full
 spring.flutter.theme.components.button.min-height=44
 spring.flutter.theme.components.card.shape=large
-spring.flutter.theme.components.card.color=surface-container-low
+spring.flutter.theme.components.card.color=$colors.surface-container-low
 spring.flutter.theme.components.card.elevation=level0
 spring.flutter.theme.components.input.style=outline
 spring.flutter.theme.components.input.shape=small
@@ -2294,8 +2334,8 @@ themes are easier to keep in one file each, imported with
 
 Some values have no place in Material's theme: a brand color, a banner
 height, a badge text. They go under `tokens.<group>.<key>` and can differ
-per theme like any other value. `spacing.<name>`, `motion.duration-<name>`
-and `motion.easing-<name>` take names of your own too.
+per theme like any other value. `spacing.<name>`, `motion.durations.<name>`
+and `motion.curves.<name>` take names of your own too.
 
 <table>
 <tr><th>YAML</th><th>.properties</th></tr>
@@ -2313,7 +2353,8 @@ spring:
       spacing:
         gutter: 20
       motion:
-        duration-banner: 600ms
+        durations:
+          banner: 600ms
       themes:
         sepia:
           tokens:
@@ -2328,7 +2369,7 @@ spring.flutter.theme.tokens.brand.accent=#FF6B00
 spring.flutter.theme.tokens.brand.banner-height=120
 spring.flutter.theme.tokens.brand.badge-text=NEW
 spring.flutter.theme.spacing.gutter=20
-spring.flutter.theme.motion.duration-banner=600ms
+spring.flutter.theme.motion.durations.banner=600ms
 spring.flutter.theme.themes.sepia.tokens.brand.accent=#8B4513
 ```
 
@@ -2343,7 +2384,7 @@ class PromoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = SpringTheme.of(context);               // the theme shown now
     return AnimatedContainer(
-      duration: theme.duration('banner'),                 // 600ms
+      duration: context.theme.motion.banner,             // 600ms, 0 with reduce motion
       height: theme.tokenNumber('brand.banner-height'),   // 120
       padding: EdgeInsets.all(theme.space('gutter')),     // 20
       color: theme.tokenColor('brand.accent'),            // #FF6B00, #8B4513 in sepia
@@ -2372,14 +2413,21 @@ from the `SpringThemes` bean:
 
 The string keys above fail at run time when a property is renamed. With the
 generator (`dart run build_runner build`) the Flutter app gets
-`lib/spring_keys.dart`, where `context.theme` has a getter for every key your
-properties declare under `spring.flutter.theme`, in any theme:
+`lib/spring_gen/theme.spring.dart`, where `context.theme` has a getter for every key your
+properties declare under `spring.flutter.theme`, in any theme. The file is a
+part of `lib/spring_gen/main.spring.dart`, so import that one in your widgets:
+
+```dart
+import 'package:shop/spring_gen/main.spring.dart';
+```
+
+The getters:
 
 ```dart
 context.theme.colors.surfaceContainerLow;      // Color
 context.theme.spacing.gutter;                  // double
 context.theme.typography.titleLarge;           // TextStyle
-context.theme.tokens.brand.accent;             // Color (a #RRGGBB / 0x value)
+context.theme.tokens.brand.accent;             // Color (a #RRGGBB value)
 context.theme.tokens.brand.bannerHeight;       // double (a number)
 context.theme.tokens.brand.badgeText;          // String (anything else)
 selection.select(AppThemes.sepia);             // the ThemeSelection bean
@@ -2394,8 +2442,9 @@ another fails the build, naming both properties.
 - Only what the properties declare is generated; the Material roles computed
   from the seed stay in `Theme.of(context).colorScheme`. `typography` has
   the 15 Material styles and `code` (a group such as `display` configures
-  several styles and is not a getter), `tokens` two levels
-  (`tokens.<group>.<key>`).
+  several styles and is not a getter), `tokens` any depth
+  (`context.theme.tokens.brand.accent`; see
+  [nested tokens](#nested-tokens)).
 - Names: `-` and `_` start a new word (`surface-container-low` is
   `surfaceContainerLow`), the first letter is lower case, a leading digit gets
   a `$` in front (`2xl` is `$2xl`), a Dart keyword a `$` behind
@@ -2404,6 +2453,20 @@ another fails the build, naming both properties.
 - The string API stays for keys added at run time (a theme from a server).
 - The Spring theme is read by `context.theme`; Flutter's own
   `Theme.of(context)` is untouched.
+- More in [Themes without Dart](#themes-without-dart-references-states-motion-background-images):
+  references, `styles.*`, `motion`, `animations.*`, `background` and images
+  are typed too.
+- Two generated files, both parts of the `.spring.dart` file of your
+  `@ComponentScan` library (or `@SpringBootApplication` class):
+  `lib/spring_gen/theme.spring.dart` and `lib/spring_gen/messages.spring.dart`. A library such as a
+  design-system package gets its own pair, and an app never sees the
+  library's `context.theme`. The parent is the `@SpringBootApplication`
+  library if there is one, else the outermost `@ComponentScan` (nested scans
+  in `lib/src/` are fine); unrelated roots stop the build and are named.
+- A `styles.<name>` is the class `AppStyle<Name>` (its values
+  `AppStyle<Name>Values`), so a style called `text` or `button` never hides
+  Flutter's `TextStyle` or `ButtonStyle`. `background` is nullable
+  (`ThemeBackgroundData?`): `null` in a theme without one.
 
 #### Step 7: switching themes from Dart
 
@@ -2529,7 +2592,7 @@ testWidgets('the dark theme', (tester) async {
 forgotten argument at run time. The generator reads the same message files
 (`lib/resources/messages.properties`, `messages_ja.properties`, ... or the
 bases of `spring.messages.basename`) and writes `context.messages` into
-`lib/spring_keys.dart`:
+`lib/spring_gen/messages.spring.dart` (import `spring_gen/main.spring.dart`):
 
 ```properties
 # messages.properties
@@ -2559,6 +2622,8 @@ word as for theme keys.
   (`'theme.${name}'`).
 
 ### Themes: every property
+
+> The full theme reference, one page per topic, is in [Flutter themes in YAML](flutter/theme/index.md).
 
 The theme properties have three parts. The root of `spring.flutter.theme`
 is shared by every theme. `light` and `dark` always exist. Any number of
@@ -2603,12 +2668,14 @@ spring:
       splash: sparkle
       motion:
         page-transition: zoom
-        duration-medium: 250ms
-        easing-standard: '0.2, 0, 0, 1'
+        durations:
+          medium: 250ms
+        curves:
+          standard: '0.2, 0, 0, 1'
       components:
         app-bar: { center-title: true, scrolled-under-elevation: level2 }
         button: { shape: full }
-        card: { shape: large, color: surface-container-low }
+        card: { shape: large, color: $colors.surface-container-low }
         input: { style: outline, shape: small }
       tokens:
         brand: { accent: '#FF6B00', hero-height: 240 }
@@ -2654,13 +2721,13 @@ spring.flutter.theme.visual-density=adaptive
 spring.flutter.theme.tap-target-size=padded
 spring.flutter.theme.splash=sparkle
 spring.flutter.theme.motion.page-transition=zoom
-spring.flutter.theme.motion.duration-medium=250ms
-spring.flutter.theme.motion.easing-standard=0.2, 0, 0, 1
+spring.flutter.theme.motion.durations.medium=250ms
+spring.flutter.theme.motion.curves.standard=0.2, 0, 0, 1
 spring.flutter.theme.components.app-bar.center-title=true
 spring.flutter.theme.components.app-bar.scrolled-under-elevation=level2
 spring.flutter.theme.components.button.shape=full
 spring.flutter.theme.components.card.shape=large
-spring.flutter.theme.components.card.color=surface-container-low
+spring.flutter.theme.components.card.color=$colors.surface-container-low
 spring.flutter.theme.components.input.style=outline
 spring.flutter.theme.components.input.shape=small
 spring.flutter.theme.tokens.brand.accent=#FF6B00
@@ -2705,8 +2772,8 @@ theme starts from the root, or from the theme it `extends`:
 | `tap-target-size` | `padded` / `shrinkWrap` | Flutter's | The minimum tap target size |
 | `splash` | `ripple` / `sparkle` / `none` | Flutter's | The ink splash on taps |
 | `motion.page-transition` | `platform`, `fadeUpwards`, `zoom`, `cupertino`, `none` | `platform` | The page transition, on every platform |
-| `motion.duration-<name>` | duration | `short` 100ms, `medium` 250ms, `long` 450ms | Durations for the app's animations |
-| `motion.easing-<name>` | four numbers | `standard`: Material's | Curves for the app's animations |
+| `motion.durations.<name>` | duration | `short` 100ms, `medium` 250ms, `long` 450ms | Durations for the app's animations |
+| `motion.curves.<name>` | four numbers | `standard`: Material's | Curves for the app's animations |
 | `components.<component>.<property>` | see the next table | Material 3's | Adjusts one component |
 | `tokens.<group>.<key>` | any value | — | The app's own values, read with `tokenColor('brand.accent')`, `tokenNumber(...)` or `token(...)` |
 | `cupertino.<property>` | see the reference below | iOS's | The `CupertinoThemeData`: `primary-color` (default `colors.primary`, else the seed, else iOS blue), `primary-contrasting-color`, `scaffold-background-color`, `bar-background-color`, `selection-handle-color`, `apply-theme-to-all`, and `text-theme.*` (the text styles) |
@@ -2725,12 +2792,12 @@ The values by type:
 
 | Type | Written as |
 |---|---|
-| **color** | a role (`primary`, `on-surface`, `surface-container-low`, ...), a `Colors` name (`grey.shade100`), or `#RGB`, `#RRGGBB`, `#AARRGGBB`; add an opacity with `@`: `primary@12%` or `primary@0.12` |
+| **color** | `#RGB`, `#RRGGBB`, `#AARRGGBB`, a `Colors` name (`grey.shade100`), a reference to a role (`$colors.primary`), or an object `{ color, mix: { with, amount }, alpha }` (`mix` first, then `alpha`; a percent is `12%` or `0.12`) |
 | **number** | `12`, `1.5`, `infinity` |
 | **elevation** | `level0` … `level5`, or a number |
 | **true / false** | `true`, `false` |
 | **whole number** | `2` |
-| **duration** | `250ms`, `1s`, or plain milliseconds |
+| **duration** | `250ms`, `250 ms`, `1.5s`, `2m`, `1h` (the unit in any case), or plain milliseconds |
 | **choice** | the name of an enum value, as Flutter spells it or in kebab case: `always-show` is `alwaysShow` |
 | **insets** | `8` (all), `16, 8` (horizontal, vertical), `1, 2, 3, 4` (left, top, right, bottom), or a map of `all`, `horizontal`, `vertical`, `left`, `top`, `right`, `bottom` |
 | **size** | `48` (a square), `64, 48` (width, height), or a map of `width`, `height` |
@@ -2770,20 +2837,20 @@ spring:
       components:
         filled-button:
           background-color:
-            default: primary
-            hovered: primary@90%
-            pressed: tertiary
-            disabled: on-surface@12%
+            default: $colors.primary
+            hovered: { color: $colors.primary, alpha: 90% }
+            pressed: $colors.tertiary
+            disabled: { color: $colors.on-surface, alpha: 12% }
           side:
             default: none
-            focused: { color: secondary, width: 2 }
+            focused: { color: $colors.secondary, width: 2 }
           text-style: { style: label-large, weight: bold }
         checkbox:
-          fill-color: { default: outline, selected: primary, error: error }
+          fill-color: { default: $colors.outline, selected: $colors.primary, error: $colors.error }
         card: { shape: { type: continuous, radius: large } }
         bottom-sheet: { constraints: { max-width: 640 } }
       cupertino:
-        primary-color: secondary
+        primary-color: $colors.secondary
         scaffold-background-color: '#F2F2F7'
         text-theme:
           nav-title-text-style: { style: title-large, weight: 600 }
@@ -2792,22 +2859,24 @@ spring:
 </td><td>
 
 ```properties
-spring.flutter.theme.components.filled-button.background-color.default=primary
-spring.flutter.theme.components.filled-button.background-color.hovered=primary@90%
-spring.flutter.theme.components.filled-button.background-color.pressed=tertiary
-spring.flutter.theme.components.filled-button.background-color.disabled=on-surface@12%
+spring.flutter.theme.components.filled-button.background-color.default=$colors.primary
+spring.flutter.theme.components.filled-button.background-color.hovered.color=$colors.primary
+spring.flutter.theme.components.filled-button.background-color.hovered.alpha=90%
+spring.flutter.theme.components.filled-button.background-color.pressed=$colors.tertiary
+spring.flutter.theme.components.filled-button.background-color.disabled.color=$colors.on-surface
+spring.flutter.theme.components.filled-button.background-color.disabled.alpha=12%
 spring.flutter.theme.components.filled-button.side.default=none
-spring.flutter.theme.components.filled-button.side.focused.color=secondary
+spring.flutter.theme.components.filled-button.side.focused.color=$colors.secondary
 spring.flutter.theme.components.filled-button.side.focused.width=2
 spring.flutter.theme.components.filled-button.text-style.style=label-large
 spring.flutter.theme.components.filled-button.text-style.weight=bold
-spring.flutter.theme.components.checkbox.fill-color.default=outline
-spring.flutter.theme.components.checkbox.fill-color.selected=primary
-spring.flutter.theme.components.checkbox.fill-color.error=error
+spring.flutter.theme.components.checkbox.fill-color.default=$colors.outline
+spring.flutter.theme.components.checkbox.fill-color.selected=$colors.primary
+spring.flutter.theme.components.checkbox.fill-color.error=$colors.error
 spring.flutter.theme.components.card.shape.type=continuous
 spring.flutter.theme.components.card.shape.radius=large
 spring.flutter.theme.components.bottom-sheet.constraints.max-width=640
-spring.flutter.theme.cupertino.primary-color=secondary
+spring.flutter.theme.cupertino.primary-color=$colors.secondary
 spring.flutter.theme.cupertino.scaffold-background-color=#F2F2F7
 spring.flutter.theme.cupertino.text-theme.nav-title-text-style.style=title-large
 spring.flutter.theme.cupertino.text-theme.nav-title-text-style.weight=600
@@ -2837,56 +2906,56 @@ mapping the starter reads, and a test keeps it in step.
 
 | Component | Properties, by the type of their value |
 |---|---|
-| `app-bar` | **color** `background-color`, `foreground-color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`, `scrolled-under-elevation`<br>**shape** `shape`<br>**icon theme** `icon-theme`, `actions-icon-theme`<br>**true / false** `center-title`<br>**number** `title-spacing`, `leading-width`, `toolbar-height`<br>**text style** `toolbar-text-style`, `title-text-style`<br>**choice** `system-overlay-style` (light / dark)<br>**insets** `actions-padding` |
-| `badge` | **color** `background-color`, `text-color`<br>**number** `small-size`, `large-size`<br>**text style** `text-style`<br>**insets** `padding`<br>**alignment** `alignment`<br>**offset** `offset` |
-| `banner` | **color** `background-color`, `surface-tint-color`, `shadow-color`, `divider-color`<br>**text style** `content-text-style`<br>**elevation** `elevation`<br>**insets** `padding`, `leading-padding` |
-| `bottom-app-bar` | **color** `color`, `surface-tint-color`, `shadow-color`<br>**elevation** `elevation`<br>**number** `height`<br>**insets** `padding` |
-| `bottom-navigation-bar` | **color** `background-color`, `selected-item-color`, `unselected-item-color`<br>**elevation** `elevation`<br>**icon theme** `selected-icon-theme`, `unselected-icon-theme`<br>**text style** `selected-label-style`, `unselected-label-style`<br>**true / false** `show-selected-labels`, `show-unselected-labels`, `enable-feedback`<br>**choice** `type` (fixed / shifting), `landscape-layout` (spread / centered / linear)<br>**mouse cursor** `mouse-cursor`* |
-| `bottom-sheet` | **color** `background-color`, `surface-tint-color`, `modal-background-color`, `modal-barrier-color`, `shadow-color`, `drag-handle-color`<br>**elevation** `elevation`, `modal-elevation`<br>**shape** `shape`<br>**true / false** `show-drag-handle`<br>**size** `drag-handle-size`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**constraints** `constraints` |
-| `button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `elevated-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `filled-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `outlined-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `text-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `icon-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `segmented-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `menu-button` | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
-| `toggle-buttons` | **text style** `text-style`<br>**constraints** `constraints`<br>**color** `color`, `selected-color`, `disabled-color`, `fill-color`, `focus-color`, `highlight-color`, `splash-color`, `hover-color`, `border-color`, `selected-border-color`, `disabled-border-color`<br>**number** `border-width`<br>**corner radius** `border-radius` |
-| `floating-action-button` | **color** `foreground-color`, `background-color`, `focus-color`, `hover-color`, `splash-color`<br>**elevation** `elevation`, `focus-elevation`, `hover-elevation`, `disabled-elevation`, `highlight-elevation`<br>**shape** `shape`<br>**true / false** `enable-feedback`<br>**number** `icon-size`, `extended-icon-label-spacing`<br>**constraints** `size-constraints`, `small-size-constraints`, `large-size-constraints`, `extended-size-constraints`<br>**insets** `extended-padding`<br>**text style** `extended-text-style`<br>**mouse cursor** `mouse-cursor`* |
-| `card` | **choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**color** `color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`<br>**insets** `margin`<br>**shape** `shape` |
-| `carousel-view` | **insets** `padding`<br>**color** `background-color`, `overlay-color`*<br>**elevation** `elevation`<br>**shape** `shape`<br>**choice** `item-clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer) |
-| `checkbox` | **mouse cursor** `mouse-cursor`*<br>**color** `fill-color`*, `check-color`*, `overlay-color`*<br>**number** `splash-radius`<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**visual density** `visual-density`<br>**shape** `shape`<br>**border side** `side` |
-| `chip` | **color** `color`*, `background-color`, `delete-icon-color`, `disabled-color`, `selected-color`, `secondary-selected-color`, `shadow-color`, `surface-tint-color`, `selected-shadow-color`, `checkmark-color`<br>**true / false** `show-checkmark`<br>**insets** `label-padding`, `padding`<br>**border side** `side`<br>**shape** `shape`<br>**text style** `label-style`, `secondary-label-style`<br>**elevation** `elevation`, `press-elevation`<br>**icon theme** `icon-theme`<br>**constraints** `avatar-box-constraints`, `delete-icon-box-constraints` |
-| `data-table` | **decoration** `decoration`<br>**color** `data-row-color`*, `heading-row-color`*<br>**number** `data-row-min-height`, `data-row-max-height`, `heading-row-height`, `horizontal-margin`, `column-spacing`, `divider-thickness`, `checkbox-horizontal-margin`<br>**text style** `data-text-style`, `heading-text-style`<br>**mouse cursor** `heading-cell-cursor`*, `data-row-cursor`*<br>**choice** `heading-row-alignment` (start / end / center / space-between / space-around / space-evenly) |
-| `date-picker` | **color** `background-color`, `shadow-color`, `surface-tint-color`, `header-background-color`, `header-foreground-color`, `day-foreground-color`*, `day-background-color`*, `day-overlay-color`*, `today-foreground-color`*, `today-background-color`*, `year-foreground-color`*, `year-background-color`*, `year-overlay-color`*, `range-picker-background-color`, `range-picker-shadow-color`, `range-picker-surface-tint-color`, `range-picker-header-background-color`, `range-picker-header-foreground-color`, `range-selection-background-color`, `range-selection-overlay-color`*, `divider-color`, `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `cancel-button-style.border-color`, `cancel-button-style.background-color`*, `cancel-button-style.foreground-color`*, `cancel-button-style.overlay-color`*, `cancel-button-style.shadow-color`*, `cancel-button-style.surface-tint-color`*, `cancel-button-style.icon-color`*, `confirm-button-style.border-color`, `confirm-button-style.background-color`*, `confirm-button-style.foreground-color`*, `confirm-button-style.overlay-color`*, `confirm-button-style.shadow-color`*, `confirm-button-style.surface-tint-color`*, `confirm-button-style.icon-color`*, `sub-header-foreground-color`<br>**elevation** `elevation`, `range-picker-elevation`, `cancel-button-style.elevation`*, `confirm-button-style.elevation`*<br>**shape** `shape`, `day-shape`*, `year-shape`*, `range-picker-shape`, `input-decoration.shape`, `cancel-button-style.shape`*, `confirm-button-style.shape`*<br>**text style** `header-headline-style`, `header-help-style`, `weekday-style`, `day-style`, `year-style`, `range-picker-header-headline-style`, `range-picker-header-help-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`, `cancel-button-style.text-style`*, `confirm-button-style.text-style`*, `toggle-button-text-style`<br>**border side** `today-border`, `input-decoration.outline-border`, `input-decoration.active-indicator-border`, `cancel-button-style.side`*, `confirm-button-style.side`*<br>**choice** `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always), `cancel-button-style.icon-alignment` (start / end), `cancel-button-style.tap-target-size` (padded / shrink-wrap), `cancel-button-style.splash-factory` (ripple / sparkle / none), `confirm-button-style.icon-alignment` (start / end), `confirm-button-style.tap-target-size` (padded / shrink-wrap), `confirm-button-style.splash-factory` (ripple / sparkle / none)<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**true / false** `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`, `cancel-button-style.enable-feedback`, `confirm-button-style.enable-feedback`<br>**insets** `input-decoration.content-padding`, `cancel-button-style.padding`*, `confirm-button-style.padding`*<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**duration** `input-decoration.hint-fade-duration`, `cancel-button-style.animation-duration`, `confirm-button-style.animation-duration`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints`<br>**visual density** `input-decoration.visual-density`, `cancel-button-style.visual-density`, `confirm-button-style.visual-density`<br>**number** `cancel-button-style.min-height`, `cancel-button-style.icon-size`*, `confirm-button-style.min-height`, `confirm-button-style.icon-size`*<br>**size** `cancel-button-style.minimum-size`*, `cancel-button-style.fixed-size`*, `cancel-button-style.maximum-size`*, `confirm-button-style.minimum-size`*, `confirm-button-style.fixed-size`*, `confirm-button-style.maximum-size`*<br>**mouse cursor** `cancel-button-style.mouse-cursor`*, `confirm-button-style.mouse-cursor`*<br>**alignment** `cancel-button-style.alignment`, `confirm-button-style.alignment` |
-| `dialog` | **color** `background-color`, `shadow-color`, `surface-tint-color`, `icon-color`, `barrier-color`<br>**elevation** `elevation`<br>**shape** `shape`<br>**alignment** `alignment`<br>**text style** `title-text-style`, `content-text-style`<br>**insets** `actions-padding`, `inset-padding`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**constraints** `constraints` |
-| `divider` | **color** `color`<br>**number** `space`, `thickness`, `indent`, `end-indent`<br>**corner radius** `radius` |
-| `drawer` | **color** `background-color`, `scrim-color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`<br>**shape** `shape`, `end-shape`<br>**number** `width`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer) |
-| `dropdown-menu` | **text style** `text-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`<br>**choice** `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always)<br>**shape** `input-decoration.shape`, `menu-style.shape`*<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**true / false** `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`<br>**color** `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `menu-style.background-color`*, `menu-style.shadow-color`*, `menu-style.surface-tint-color`*, `disabled-color`<br>**insets** `input-decoration.content-padding`, `menu-style.padding`*<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**duration** `input-decoration.hint-fade-duration`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints`<br>**border side** `input-decoration.outline-border`, `input-decoration.active-indicator-border`, `menu-style.side`*<br>**visual density** `input-decoration.visual-density`, `menu-style.visual-density`<br>**elevation** `menu-style.elevation`*<br>**size** `menu-style.minimum-size`*, `menu-style.fixed-size`*, `menu-style.maximum-size`*<br>**mouse cursor** `menu-style.mouse-cursor`*<br>**alignment** `menu-style.alignment` |
-| `expansion-tile` | **color** `background-color`, `collapsed-background-color`, `icon-color`, `collapsed-icon-color`, `text-color`, `collapsed-text-color`<br>**insets** `tile-padding`, `children-padding`<br>**alignment** `expanded-alignment`<br>**shape** `shape`, `collapsed-shape`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**animation** `expansion-animation-style` |
-| `icon` | **color** `color`<br>**number** `size`, `fill`, `weight`, `grade`, `optical-size`, `opacity` |
-| `primary-icon` | **color** `color`<br>**number** `size`, `fill`, `weight`, `grade`, `optical-size`, `opacity` |
-| `input` | **choice** `style` (outline / underline / filled), `floating-label-behavior` (never / auto / always)<br>**shape** `shape`<br>**input border** `border`, `error-border`, `focused-border`, `focused-error-border`, `disabled-border`, `enabled-border`<br>**true / false** `filled`, `is-dense`, `is-collapsed`, `align-label-with-hint`<br>**color** `fill-color`, `icon-color`, `prefix-icon-color`, `suffix-icon-color`, `focus-color`, `hover-color`<br>**insets** `content-padding`<br>**text style** `label-style`, `floating-label-style`, `helper-style`, `hint-style`, `error-style`, `prefix-style`, `suffix-style`, `counter-style`<br>**whole number** `helper-max-lines`, `hint-max-lines`, `error-max-lines`<br>**duration** `hint-fade-duration`<br>**constraints** `prefix-icon-constraints`, `suffix-icon-constraints`, `constraints`<br>**border side** `outline-border`, `active-indicator-border`<br>**visual density** `visual-density` |
-| `list-tile` | **true / false** `dense`, `enable-feedback`, `is-three-line`<br>**shape** `shape`<br>**choice** `style` (list / drawer), `title-alignment` (three-line / title-height / top / center / bottom), `control-affinity` (leading / trailing / platform)<br>**color** `selected-color`, `icon-color`, `text-color`, `tile-color`, `selected-tile-color`<br>**text style** `title-text-style`, `subtitle-text-style`, `leading-and-trailing-text-style`<br>**insets** `content-padding`<br>**number** `horizontal-title-gap`, `min-vertical-padding`, `min-leading-width`, `min-tile-height`<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density` |
-| `menu` | **color** `background-color`*, `shadow-color`*, `surface-tint-color`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**alignment** `alignment` |
-| `menu-bar` | **color** `background-color`*, `shadow-color`*, `surface-tint-color`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**alignment** `alignment` |
-| `navigation-bar` | **number** `height`<br>**color** `background-color`, `shadow-color`, `surface-tint-color`, `indicator-color`, `overlay-color`*<br>**elevation** `elevation`<br>**shape** `indicator-shape`<br>**text style** `label-text-style`*<br>**icon theme** `icon-theme`*<br>**choice** `label-behavior` (always-show / always-hide / only-show-selected)<br>**insets** `label-padding` |
-| `navigation-drawer` | **number** `tile-height`<br>**color** `background-color`, `shadow-color`, `surface-tint-color`, `indicator-color`<br>**elevation** `elevation`<br>**shape** `indicator-shape`<br>**size** `indicator-size`<br>**text style** `label-text-style`*<br>**icon theme** `icon-theme`* |
-| `navigation-rail` | **color** `background-color`, `indicator-color`<br>**elevation** `elevation`<br>**text style** `unselected-label-text-style`, `selected-label-text-style`<br>**icon theme** `unselected-icon-theme`, `selected-icon-theme`<br>**number** `group-alignment`, `min-width`, `min-extended-width`<br>**choice** `label-type` (none / selected / all)<br>**true / false** `use-indicator`<br>**shape** `indicator-shape` |
-| `popup-menu` | **color** `color`, `shadow-color`, `surface-tint-color`, `icon-color`<br>**shape** `shape`<br>**insets** `menu-padding`<br>**elevation** `elevation`<br>**text style** `text-style`, `label-text-style`*<br>**true / false** `enable-feedback`<br>**mouse cursor** `mouse-cursor`*<br>**choice** `position` (over / under)<br>**number** `icon-size` |
-| `progress-indicator` | **color** `color`, `linear-track-color`, `circular-track-color`, `refresh-background-color`, `stop-indicator-color`<br>**number** `linear-min-height`, `stop-indicator-radius`, `stroke-width`, `stroke-align`, `track-gap`<br>**corner radius** `border-radius`<br>**choice** `stroke-cap` (butt / round / square)<br>**constraints** `constraints`<br>**insets** `circular-track-padding` |
-| `radio` | **mouse cursor** `mouse-cursor`*<br>**color** `fill-color`*, `overlay-color`*, `background-color`*<br>**number** `splash-radius`, `inner-radius`*<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**visual density** `visual-density`<br>**border side** `side` |
-| `scrollbar` | **true / false** `thumb-visibility`*, `track-visibility`*, `interactive`<br>**number** `thickness`*, `cross-axis-margin`, `main-axis-margin`, `min-thumb-length`<br>**corner radius** `radius`<br>**color** `thumb-color`*, `track-color`*, `track-border-color`* |
-| `search-bar` | **elevation** `elevation`*<br>**color** `background-color`*, `shadow-color`*, `surface-tint-color`*, `overlay-color`*<br>**border side** `side`*<br>**shape** `shape`*<br>**insets** `padding`*<br>**text style** `text-style`*, `hint-style`*<br>**constraints** `constraints`<br>**choice** `text-capitalization` (words / sentences / characters / none) |
-| `search-view` | **color** `background-color`, `surface-tint-color`, `divider-color`<br>**elevation** `elevation`<br>**border side** `side`<br>**shape** `shape`<br>**number** `header-height`<br>**text style** `header-text-style`, `header-hint-style`<br>**constraints** `constraints`<br>**insets** `padding`, `bar-padding`<br>**true / false** `shrink-wrap` |
-| `slider` | **number** `track-height`, `min-thumb-separation`, `track-gap`<br>**color** `active-track-color`, `inactive-track-color`, `secondary-active-track-color`, `disabled-active-track-color`, `disabled-secondary-active-track-color`, `disabled-inactive-track-color`, `active-tick-mark-color`, `inactive-tick-mark-color`, `disabled-active-tick-mark-color`, `disabled-inactive-tick-mark-color`, `thumb-color`, `overlapping-shape-stroke-color`, `disabled-thumb-color`, `overlay-color`, `value-indicator-color`, `value-indicator-stroke-color`<br>**choice** `show-value-indicator` (only-for-discrete / only-for-continuous / always / on-drag / always-visible / never), `allowed-interaction` (tap-and-slide / tap-only / slide-only / slide-thumb)<br>**text style** `value-indicator-text-style`<br>**mouse cursor** `mouse-cursor`*<br>**insets** `padding`<br>**size** `thumb-size`* |
-| `snack-bar` | **color** `background-color`, `action-text-color`, `disabled-action-text-color`, `close-icon-color`, `action-background-color`, `disabled-action-background-color`<br>**text style** `content-text-style`<br>**elevation** `elevation`<br>**shape** `shape`<br>**choice** `behavior` (fixed / floating), `dismiss-direction` (vertical / horizontal / end-to-start / start-to-end / up / down / none)<br>**number** `width`, `action-overflow-threshold`<br>**insets** `inset-padding`<br>**true / false** `show-close-icon` |
-| `switch` | **color** `thumb-color`*, `track-color`*, `track-outline-color`*, `overlay-color`*<br>**number** `track-outline-width`*, `splash-radius`<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**mouse cursor** `mouse-cursor`*<br>**insets** `padding` |
-| `tab-bar` | **decoration** `indicator`<br>**color** `indicator-color`, `divider-color`, `label-color`, `unselected-label-color`, `overlay-color`*<br>**choice** `indicator-size` (tab / label), `splash-factory` (ripple / sparkle / none), `tab-alignment` (start / start-offset / fill / center), `indicator-animation` (linear / elastic)<br>**number** `divider-height`<br>**insets** `label-padding`<br>**text style** `label-style`, `unselected-label-style`<br>**mouse cursor** `mouse-cursor`*<br>**corner radius** `splash-border-radius` |
-| `text-selection` | **color** `cursor-color`, `selection-color`, `selection-handle-color` |
-| `time-picker` | **color** `background-color`, `cancel-button-style.border-color`, `cancel-button-style.background-color`*, `cancel-button-style.foreground-color`*, `cancel-button-style.overlay-color`*, `cancel-button-style.shadow-color`*, `cancel-button-style.surface-tint-color`*, `cancel-button-style.icon-color`*, `confirm-button-style.border-color`, `confirm-button-style.background-color`*, `confirm-button-style.foreground-color`*, `confirm-button-style.overlay-color`*, `confirm-button-style.shadow-color`*, `confirm-button-style.surface-tint-color`*, `confirm-button-style.icon-color`*, `day-period-color`, `day-period-text-color`, `dial-background-color`, `dial-hand-color`, `dial-text-color`, `entry-mode-icon-color`, `hour-minute-color`, `hour-minute-text-color`, `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `time-selector-separator-color`*<br>**number** `cancel-button-style.min-height`, `cancel-button-style.icon-size`*, `confirm-button-style.min-height`, `confirm-button-style.icon-size`*<br>**text style** `cancel-button-style.text-style`*, `confirm-button-style.text-style`*, `day-period-text-style`, `dial-text-style`, `help-text-style`, `hour-minute-text-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`, `time-selector-separator-text-style`*<br>**elevation** `cancel-button-style.elevation`*, `confirm-button-style.elevation`*, `elevation`<br>**insets** `cancel-button-style.padding`*, `confirm-button-style.padding`*, `input-decoration.content-padding`, `padding`<br>**size** `cancel-button-style.minimum-size`*, `cancel-button-style.fixed-size`*, `cancel-button-style.maximum-size`*, `confirm-button-style.minimum-size`*, `confirm-button-style.fixed-size`*, `confirm-button-style.maximum-size`*<br>**choice** `cancel-button-style.icon-alignment` (start / end), `cancel-button-style.tap-target-size` (padded / shrink-wrap), `cancel-button-style.splash-factory` (ripple / sparkle / none), `confirm-button-style.icon-alignment` (start / end), `confirm-button-style.tap-target-size` (padded / shrink-wrap), `confirm-button-style.splash-factory` (ripple / sparkle / none), `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always)<br>**border side** `cancel-button-style.side`*, `confirm-button-style.side`*, `day-period-border-side`, `input-decoration.outline-border`, `input-decoration.active-indicator-border`<br>**shape** `cancel-button-style.shape`*, `confirm-button-style.shape`*, `day-period-shape`, `hour-minute-shape`, `input-decoration.shape`, `shape`<br>**mouse cursor** `cancel-button-style.mouse-cursor`*, `confirm-button-style.mouse-cursor`*<br>**visual density** `cancel-button-style.visual-density`, `confirm-button-style.visual-density`, `input-decoration.visual-density`<br>**duration** `cancel-button-style.animation-duration`, `confirm-button-style.animation-duration`, `input-decoration.hint-fade-duration`<br>**true / false** `cancel-button-style.enable-feedback`, `confirm-button-style.enable-feedback`, `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`<br>**alignment** `cancel-button-style.alignment`, `confirm-button-style.alignment`<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints` |
-| `tooltip` | **shape** `shape`<br>**color** `background`<br>**decoration** `decoration`<br>**constraints** `constraints`<br>**insets** `padding`, `margin`<br>**number** `vertical-offset`<br>**true / false** `prefer-below`, `exclude-from-semantics`, `enable-feedback`<br>**text style** `text-style`<br>**choice** `text-align` (left / right / center / justify / start / end), `trigger-mode` (manual / long-press / tap)<br>**duration** `wait-duration`, `show-duration`, `exit-duration` |
-| `cupertino` (own root) | **color** `primary-color`, `text-theme.primary-color`, `primary-contrasting-color`, `scaffold-background-color`, `bar-background-color`, `selection-handle-color`<br>**text style** `text-theme.text-style`, `text-theme.action-text-style`, `text-theme.tab-label-text-style`, `text-theme.nav-title-text-style`, `text-theme.nav-large-title-text-style`, `text-theme.nav-action-text-style`, `text-theme.picker-text-style`, `text-theme.date-time-picker-text-style`<br>**true / false** `apply-theme-to-all` |
+| [`app-bar`](flutter/theme/components/app-bar.md) | **color** `background-color`, `foreground-color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`, `scrolled-under-elevation`<br>**shape** `shape`<br>**icon theme** `icon-theme`, `actions-icon-theme`<br>**true / false** `center-title`<br>**number** `title-spacing`, `leading-width`, `toolbar-height`<br>**text style** `toolbar-text-style`, `title-text-style`<br>**choice** `system-overlay-style` (light / dark)<br>**insets** `actions-padding` |
+| [`badge`](flutter/theme/components/badge.md) | **color** `background-color`, `text-color`<br>**number** `small-size`, `large-size`<br>**text style** `text-style`<br>**insets** `padding`<br>**alignment** `alignment`<br>**offset** `offset` |
+| [`banner`](flutter/theme/components/banner.md) | **color** `background-color`, `surface-tint-color`, `shadow-color`, `divider-color`<br>**text style** `content-text-style`<br>**elevation** `elevation`<br>**insets** `padding`, `leading-padding` |
+| [`bottom-app-bar`](flutter/theme/components/bottom-app-bar.md) | **color** `color`, `surface-tint-color`, `shadow-color`<br>**elevation** `elevation`<br>**number** `height`<br>**insets** `padding` |
+| [`bottom-navigation-bar`](flutter/theme/components/bottom-navigation-bar.md) | **color** `background-color`, `selected-item-color`, `unselected-item-color`<br>**elevation** `elevation`<br>**icon theme** `selected-icon-theme`, `unselected-icon-theme`<br>**text style** `selected-label-style`, `unselected-label-style`<br>**true / false** `show-selected-labels`, `show-unselected-labels`, `enable-feedback`<br>**choice** `type` (fixed / shifting), `landscape-layout` (spread / centered / linear)<br>**mouse cursor** `mouse-cursor`* |
+| [`bottom-sheet`](flutter/theme/components/bottom-sheet.md) | **color** `background-color`, `surface-tint-color`, `modal-background-color`, `modal-barrier-color`, `shadow-color`, `drag-handle-color`<br>**elevation** `elevation`, `modal-elevation`<br>**shape** `shape`<br>**true / false** `show-drag-handle`<br>**size** `drag-handle-size`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**constraints** `constraints` |
+| [`button`](flutter/theme/components/button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`elevated-button`](flutter/theme/components/elevated-button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`filled-button`](flutter/theme/components/filled-button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`outlined-button`](flutter/theme/components/outlined-button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`text-button`](flutter/theme/components/text-button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`icon-button`](flutter/theme/components/icon-button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`segmented-button`](flutter/theme/components/segmented-button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`menu-button`](flutter/theme/components/menu-button.md) | **number** `min-height`, `icon-size`*<br>**color** `border-color`, `background-color`*, `foreground-color`*, `overlay-color`*, `shadow-color`*, `surface-tint-color`*, `icon-color`*<br>**text style** `text-style`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**choice** `icon-alignment` (start / end), `tap-target-size` (padded / shrink-wrap), `splash-factory` (ripple / sparkle / none)<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**duration** `animation-duration`<br>**true / false** `enable-feedback`<br>**alignment** `alignment` |
+| [`toggle-buttons`](flutter/theme/components/toggle-buttons.md) | **text style** `text-style`<br>**constraints** `constraints`<br>**color** `color`, `selected-color`, `disabled-color`, `fill-color`, `focus-color`, `highlight-color`, `splash-color`, `hover-color`, `border-color`, `selected-border-color`, `disabled-border-color`<br>**number** `border-width`<br>**corner radius** `border-radius` |
+| [`floating-action-button`](flutter/theme/components/floating-action-button.md) | **color** `foreground-color`, `background-color`, `focus-color`, `hover-color`, `splash-color`<br>**elevation** `elevation`, `focus-elevation`, `hover-elevation`, `disabled-elevation`, `highlight-elevation`<br>**shape** `shape`<br>**true / false** `enable-feedback`<br>**number** `icon-size`, `extended-icon-label-spacing`<br>**constraints** `size-constraints`, `small-size-constraints`, `large-size-constraints`, `extended-size-constraints`<br>**insets** `extended-padding`<br>**text style** `extended-text-style`<br>**mouse cursor** `mouse-cursor`* |
+| [`card`](flutter/theme/components/card.md) | **choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**color** `color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`<br>**insets** `margin`<br>**shape** `shape` |
+| [`carousel-view`](flutter/theme/components/carousel-view.md) | **insets** `padding`<br>**color** `background-color`, `overlay-color`*<br>**elevation** `elevation`<br>**shape** `shape`<br>**choice** `item-clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer) |
+| [`checkbox`](flutter/theme/components/checkbox.md) | **mouse cursor** `mouse-cursor`*<br>**color** `fill-color`*, `check-color`*, `overlay-color`*<br>**number** `splash-radius`<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**visual density** `visual-density`<br>**shape** `shape`<br>**border side** `side` |
+| [`chip`](flutter/theme/components/chip.md) | **color** `color`*, `background-color`, `delete-icon-color`, `disabled-color`, `selected-color`, `secondary-selected-color`, `shadow-color`, `surface-tint-color`, `selected-shadow-color`, `checkmark-color`<br>**true / false** `show-checkmark`<br>**insets** `label-padding`, `padding`<br>**border side** `side`<br>**shape** `shape`<br>**text style** `label-style`, `secondary-label-style`<br>**elevation** `elevation`, `press-elevation`<br>**icon theme** `icon-theme`<br>**constraints** `avatar-box-constraints`, `delete-icon-box-constraints` |
+| [`data-table`](flutter/theme/components/data-table.md) | **decoration** `decoration`<br>**color** `data-row-color`*, `heading-row-color`*<br>**number** `data-row-min-height`, `data-row-max-height`, `heading-row-height`, `horizontal-margin`, `column-spacing`, `divider-thickness`, `checkbox-horizontal-margin`<br>**text style** `data-text-style`, `heading-text-style`<br>**mouse cursor** `heading-cell-cursor`*, `data-row-cursor`*<br>**choice** `heading-row-alignment` (start / end / center / space-between / space-around / space-evenly) |
+| [`date-picker`](flutter/theme/components/date-picker.md) | **color** `background-color`, `shadow-color`, `surface-tint-color`, `header-background-color`, `header-foreground-color`, `day-foreground-color`*, `day-background-color`*, `day-overlay-color`*, `today-foreground-color`*, `today-background-color`*, `year-foreground-color`*, `year-background-color`*, `year-overlay-color`*, `range-picker-background-color`, `range-picker-shadow-color`, `range-picker-surface-tint-color`, `range-picker-header-background-color`, `range-picker-header-foreground-color`, `range-selection-background-color`, `range-selection-overlay-color`*, `divider-color`, `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `cancel-button-style.border-color`, `cancel-button-style.background-color`*, `cancel-button-style.foreground-color`*, `cancel-button-style.overlay-color`*, `cancel-button-style.shadow-color`*, `cancel-button-style.surface-tint-color`*, `cancel-button-style.icon-color`*, `confirm-button-style.border-color`, `confirm-button-style.background-color`*, `confirm-button-style.foreground-color`*, `confirm-button-style.overlay-color`*, `confirm-button-style.shadow-color`*, `confirm-button-style.surface-tint-color`*, `confirm-button-style.icon-color`*, `sub-header-foreground-color`<br>**elevation** `elevation`, `range-picker-elevation`, `cancel-button-style.elevation`*, `confirm-button-style.elevation`*<br>**shape** `shape`, `day-shape`*, `year-shape`*, `range-picker-shape`, `input-decoration.shape`, `cancel-button-style.shape`*, `confirm-button-style.shape`*<br>**text style** `header-headline-style`, `header-help-style`, `weekday-style`, `day-style`, `year-style`, `range-picker-header-headline-style`, `range-picker-header-help-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`, `cancel-button-style.text-style`*, `confirm-button-style.text-style`*, `toggle-button-text-style`<br>**border side** `today-border`, `input-decoration.outline-border`, `input-decoration.active-indicator-border`, `cancel-button-style.side`*, `confirm-button-style.side`*<br>**choice** `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always), `cancel-button-style.icon-alignment` (start / end), `cancel-button-style.tap-target-size` (padded / shrink-wrap), `cancel-button-style.splash-factory` (ripple / sparkle / none), `confirm-button-style.icon-alignment` (start / end), `confirm-button-style.tap-target-size` (padded / shrink-wrap), `confirm-button-style.splash-factory` (ripple / sparkle / none)<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**true / false** `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`, `cancel-button-style.enable-feedback`, `confirm-button-style.enable-feedback`<br>**insets** `input-decoration.content-padding`, `cancel-button-style.padding`*, `confirm-button-style.padding`*<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**duration** `input-decoration.hint-fade-duration`, `cancel-button-style.animation-duration`, `confirm-button-style.animation-duration`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints`<br>**visual density** `input-decoration.visual-density`, `cancel-button-style.visual-density`, `confirm-button-style.visual-density`<br>**number** `cancel-button-style.min-height`, `cancel-button-style.icon-size`*, `confirm-button-style.min-height`, `confirm-button-style.icon-size`*<br>**size** `cancel-button-style.minimum-size`*, `cancel-button-style.fixed-size`*, `cancel-button-style.maximum-size`*, `confirm-button-style.minimum-size`*, `confirm-button-style.fixed-size`*, `confirm-button-style.maximum-size`*<br>**mouse cursor** `cancel-button-style.mouse-cursor`*, `confirm-button-style.mouse-cursor`*<br>**alignment** `cancel-button-style.alignment`, `confirm-button-style.alignment` |
+| [`dialog`](flutter/theme/components/dialog.md) | **color** `background-color`, `shadow-color`, `surface-tint-color`, `icon-color`, `barrier-color`<br>**elevation** `elevation`<br>**shape** `shape`<br>**alignment** `alignment`<br>**text style** `title-text-style`, `content-text-style`<br>**insets** `actions-padding`, `inset-padding`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**constraints** `constraints` |
+| [`divider`](flutter/theme/components/divider.md) | **color** `color`<br>**number** `space`, `thickness`, `indent`, `end-indent`<br>**corner radius** `radius` |
+| [`drawer`](flutter/theme/components/drawer.md) | **color** `background-color`, `scrim-color`, `shadow-color`, `surface-tint-color`<br>**elevation** `elevation`<br>**shape** `shape`, `end-shape`<br>**number** `width`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer) |
+| [`dropdown-menu`](flutter/theme/components/dropdown-menu.md) | **text style** `text-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`<br>**choice** `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always)<br>**shape** `input-decoration.shape`, `menu-style.shape`*<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**true / false** `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`<br>**color** `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `menu-style.background-color`*, `menu-style.shadow-color`*, `menu-style.surface-tint-color`*, `disabled-color`<br>**insets** `input-decoration.content-padding`, `menu-style.padding`*<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**duration** `input-decoration.hint-fade-duration`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints`<br>**border side** `input-decoration.outline-border`, `input-decoration.active-indicator-border`, `menu-style.side`*<br>**visual density** `input-decoration.visual-density`, `menu-style.visual-density`<br>**elevation** `menu-style.elevation`*<br>**size** `menu-style.minimum-size`*, `menu-style.fixed-size`*, `menu-style.maximum-size`*<br>**mouse cursor** `menu-style.mouse-cursor`*<br>**alignment** `menu-style.alignment` |
+| [`expansion-tile`](flutter/theme/components/expansion-tile.md) | **color** `background-color`, `collapsed-background-color`, `icon-color`, `collapsed-icon-color`, `text-color`, `collapsed-text-color`<br>**insets** `tile-padding`, `children-padding`<br>**alignment** `expanded-alignment`<br>**shape** `shape`, `collapsed-shape`<br>**choice** `clip-behavior` (none / hard-edge / anti-alias / anti-alias-with-save-layer)<br>**animation** `expansion-animation-style` |
+| [`icon`](flutter/theme/components/icon.md) | **color** `color`<br>**number** `size`, `fill`, `weight`, `grade`, `optical-size`, `opacity` |
+| [`primary-icon`](flutter/theme/components/primary-icon.md) | **color** `color`<br>**number** `size`, `fill`, `weight`, `grade`, `optical-size`, `opacity` |
+| [`input`](flutter/theme/components/input.md) | **choice** `style` (outline / underline / filled), `floating-label-behavior` (never / auto / always)<br>**shape** `shape`<br>**input border** `border`, `error-border`, `focused-border`, `focused-error-border`, `disabled-border`, `enabled-border`<br>**true / false** `filled`, `is-dense`, `is-collapsed`, `align-label-with-hint`<br>**color** `fill-color`, `icon-color`, `prefix-icon-color`, `suffix-icon-color`, `focus-color`, `hover-color`<br>**insets** `content-padding`<br>**text style** `label-style`, `floating-label-style`, `helper-style`, `hint-style`, `error-style`, `prefix-style`, `suffix-style`, `counter-style`<br>**whole number** `helper-max-lines`, `hint-max-lines`, `error-max-lines`<br>**duration** `hint-fade-duration`<br>**constraints** `prefix-icon-constraints`, `suffix-icon-constraints`, `constraints`<br>**border side** `outline-border`, `active-indicator-border`<br>**visual density** `visual-density` |
+| [`list-tile`](flutter/theme/components/list-tile.md) | **true / false** `dense`, `enable-feedback`, `is-three-line`<br>**shape** `shape`<br>**choice** `style` (list / drawer), `title-alignment` (three-line / title-height / top / center / bottom), `control-affinity` (leading / trailing / platform)<br>**color** `selected-color`, `icon-color`, `text-color`, `tile-color`, `selected-tile-color`<br>**text style** `title-text-style`, `subtitle-text-style`, `leading-and-trailing-text-style`<br>**insets** `content-padding`<br>**number** `horizontal-title-gap`, `min-vertical-padding`, `min-leading-width`, `min-tile-height`<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density` |
+| [`menu`](flutter/theme/components/menu.md) | **color** `background-color`*, `shadow-color`*, `surface-tint-color`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**alignment** `alignment` |
+| [`menu-bar`](flutter/theme/components/menu-bar.md) | **color** `background-color`*, `shadow-color`*, `surface-tint-color`*<br>**elevation** `elevation`*<br>**insets** `padding`*<br>**size** `minimum-size`*, `fixed-size`*, `maximum-size`*<br>**border side** `side`*<br>**shape** `shape`*<br>**mouse cursor** `mouse-cursor`*<br>**visual density** `visual-density`<br>**alignment** `alignment` |
+| [`navigation-bar`](flutter/theme/components/navigation-bar.md) | **number** `height`<br>**color** `background-color`, `shadow-color`, `surface-tint-color`, `indicator-color`, `overlay-color`*<br>**elevation** `elevation`<br>**shape** `indicator-shape`<br>**text style** `label-text-style`*<br>**icon theme** `icon-theme`*<br>**choice** `label-behavior` (always-show / always-hide / only-show-selected)<br>**insets** `label-padding` |
+| [`navigation-drawer`](flutter/theme/components/navigation-drawer.md) | **number** `tile-height`<br>**color** `background-color`, `shadow-color`, `surface-tint-color`, `indicator-color`<br>**elevation** `elevation`<br>**shape** `indicator-shape`<br>**size** `indicator-size`<br>**text style** `label-text-style`*<br>**icon theme** `icon-theme`* |
+| [`navigation-rail`](flutter/theme/components/navigation-rail.md) | **color** `background-color`, `indicator-color`<br>**elevation** `elevation`<br>**text style** `unselected-label-text-style`, `selected-label-text-style`<br>**icon theme** `unselected-icon-theme`, `selected-icon-theme`<br>**number** `group-alignment`, `min-width`, `min-extended-width`<br>**choice** `label-type` (none / selected / all)<br>**true / false** `use-indicator`<br>**shape** `indicator-shape` |
+| [`popup-menu`](flutter/theme/components/popup-menu.md) | **color** `color`, `shadow-color`, `surface-tint-color`, `icon-color`<br>**shape** `shape`<br>**insets** `menu-padding`<br>**elevation** `elevation`<br>**text style** `text-style`, `label-text-style`*<br>**true / false** `enable-feedback`<br>**mouse cursor** `mouse-cursor`*<br>**choice** `position` (over / under)<br>**number** `icon-size` |
+| [`progress-indicator`](flutter/theme/components/progress-indicator.md) | **color** `color`, `linear-track-color`, `circular-track-color`, `refresh-background-color`, `stop-indicator-color`<br>**number** `linear-min-height`, `stop-indicator-radius`, `stroke-width`, `stroke-align`, `track-gap`<br>**corner radius** `border-radius`<br>**choice** `stroke-cap` (butt / round / square)<br>**constraints** `constraints`<br>**insets** `circular-track-padding` |
+| [`radio`](flutter/theme/components/radio.md) | **mouse cursor** `mouse-cursor`*<br>**color** `fill-color`*, `overlay-color`*, `background-color`*<br>**number** `splash-radius`, `inner-radius`*<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**visual density** `visual-density`<br>**border side** `side` |
+| [`scrollbar`](flutter/theme/components/scrollbar.md) | **true / false** `thumb-visibility`*, `track-visibility`*, `interactive`<br>**number** `thickness`*, `cross-axis-margin`, `main-axis-margin`, `min-thumb-length`<br>**corner radius** `radius`<br>**color** `thumb-color`*, `track-color`*, `track-border-color`* |
+| [`search-bar`](flutter/theme/components/search-bar.md) | **elevation** `elevation`*<br>**color** `background-color`*, `shadow-color`*, `surface-tint-color`*, `overlay-color`*<br>**border side** `side`*<br>**shape** `shape`*<br>**insets** `padding`*<br>**text style** `text-style`*, `hint-style`*<br>**constraints** `constraints`<br>**choice** `text-capitalization` (words / sentences / characters / none) |
+| [`search-view`](flutter/theme/components/search-view.md) | **color** `background-color`, `surface-tint-color`, `divider-color`<br>**elevation** `elevation`<br>**border side** `side`<br>**shape** `shape`<br>**number** `header-height`<br>**text style** `header-text-style`, `header-hint-style`<br>**constraints** `constraints`<br>**insets** `padding`, `bar-padding`<br>**true / false** `shrink-wrap` |
+| [`slider`](flutter/theme/components/slider.md) | **number** `track-height`, `min-thumb-separation`, `track-gap`<br>**color** `active-track-color`, `inactive-track-color`, `secondary-active-track-color`, `disabled-active-track-color`, `disabled-secondary-active-track-color`, `disabled-inactive-track-color`, `active-tick-mark-color`, `inactive-tick-mark-color`, `disabled-active-tick-mark-color`, `disabled-inactive-tick-mark-color`, `thumb-color`, `overlapping-shape-stroke-color`, `disabled-thumb-color`, `overlay-color`, `value-indicator-color`, `value-indicator-stroke-color`<br>**choice** `show-value-indicator` (only-for-discrete / only-for-continuous / always / on-drag / always-visible / never), `allowed-interaction` (tap-and-slide / tap-only / slide-only / slide-thumb)<br>**text style** `value-indicator-text-style`<br>**mouse cursor** `mouse-cursor`*<br>**insets** `padding`<br>**size** `thumb-size`* |
+| [`snack-bar`](flutter/theme/components/snack-bar.md) | **color** `background-color`, `action-text-color`, `disabled-action-text-color`, `close-icon-color`, `action-background-color`, `disabled-action-background-color`<br>**text style** `content-text-style`<br>**elevation** `elevation`<br>**shape** `shape`<br>**choice** `behavior` (fixed / floating), `dismiss-direction` (vertical / horizontal / end-to-start / start-to-end / up / down / none)<br>**number** `width`, `action-overflow-threshold`<br>**insets** `inset-padding`<br>**true / false** `show-close-icon` |
+| [`switch`](flutter/theme/components/switch.md) | **color** `thumb-color`*, `track-color`*, `track-outline-color`*, `overlay-color`*<br>**number** `track-outline-width`*, `splash-radius`<br>**choice** `material-tap-target-size` (padded / shrink-wrap)<br>**mouse cursor** `mouse-cursor`*<br>**insets** `padding` |
+| [`tab-bar`](flutter/theme/components/tab-bar.md) | **decoration** `indicator`<br>**color** `indicator-color`, `divider-color`, `label-color`, `unselected-label-color`, `overlay-color`*<br>**choice** `indicator-size` (tab / label), `splash-factory` (ripple / sparkle / none), `tab-alignment` (start / start-offset / fill / center), `indicator-animation` (linear / elastic)<br>**number** `divider-height`<br>**insets** `label-padding`<br>**text style** `label-style`, `unselected-label-style`<br>**mouse cursor** `mouse-cursor`*<br>**corner radius** `splash-border-radius` |
+| [`text-selection`](flutter/theme/components/text-selection.md) | **color** `cursor-color`, `selection-color`, `selection-handle-color` |
+| [`time-picker`](flutter/theme/components/time-picker.md) | **color** `background-color`, `cancel-button-style.border-color`, `cancel-button-style.background-color`*, `cancel-button-style.foreground-color`*, `cancel-button-style.overlay-color`*, `cancel-button-style.shadow-color`*, `cancel-button-style.surface-tint-color`*, `cancel-button-style.icon-color`*, `confirm-button-style.border-color`, `confirm-button-style.background-color`*, `confirm-button-style.foreground-color`*, `confirm-button-style.overlay-color`*, `confirm-button-style.shadow-color`*, `confirm-button-style.surface-tint-color`*, `confirm-button-style.icon-color`*, `day-period-color`, `day-period-text-color`, `dial-background-color`, `dial-hand-color`, `dial-text-color`, `entry-mode-icon-color`, `hour-minute-color`, `hour-minute-text-color`, `input-decoration.fill-color`, `input-decoration.icon-color`, `input-decoration.prefix-icon-color`, `input-decoration.suffix-icon-color`, `input-decoration.focus-color`, `input-decoration.hover-color`, `time-selector-separator-color`*<br>**number** `cancel-button-style.min-height`, `cancel-button-style.icon-size`*, `confirm-button-style.min-height`, `confirm-button-style.icon-size`*<br>**text style** `cancel-button-style.text-style`*, `confirm-button-style.text-style`*, `day-period-text-style`, `dial-text-style`, `help-text-style`, `hour-minute-text-style`, `input-decoration.label-style`, `input-decoration.floating-label-style`, `input-decoration.helper-style`, `input-decoration.hint-style`, `input-decoration.error-style`, `input-decoration.prefix-style`, `input-decoration.suffix-style`, `input-decoration.counter-style`, `time-selector-separator-text-style`*<br>**elevation** `cancel-button-style.elevation`*, `confirm-button-style.elevation`*, `elevation`<br>**insets** `cancel-button-style.padding`*, `confirm-button-style.padding`*, `input-decoration.content-padding`, `padding`<br>**size** `cancel-button-style.minimum-size`*, `cancel-button-style.fixed-size`*, `cancel-button-style.maximum-size`*, `confirm-button-style.minimum-size`*, `confirm-button-style.fixed-size`*, `confirm-button-style.maximum-size`*<br>**choice** `cancel-button-style.icon-alignment` (start / end), `cancel-button-style.tap-target-size` (padded / shrink-wrap), `cancel-button-style.splash-factory` (ripple / sparkle / none), `confirm-button-style.icon-alignment` (start / end), `confirm-button-style.tap-target-size` (padded / shrink-wrap), `confirm-button-style.splash-factory` (ripple / sparkle / none), `input-decoration.style` (outline / underline / filled), `input-decoration.floating-label-behavior` (never / auto / always)<br>**border side** `cancel-button-style.side`*, `confirm-button-style.side`*, `day-period-border-side`, `input-decoration.outline-border`, `input-decoration.active-indicator-border`<br>**shape** `cancel-button-style.shape`*, `confirm-button-style.shape`*, `day-period-shape`, `hour-minute-shape`, `input-decoration.shape`, `shape`<br>**mouse cursor** `cancel-button-style.mouse-cursor`*, `confirm-button-style.mouse-cursor`*<br>**visual density** `cancel-button-style.visual-density`, `confirm-button-style.visual-density`, `input-decoration.visual-density`<br>**duration** `cancel-button-style.animation-duration`, `confirm-button-style.animation-duration`, `input-decoration.hint-fade-duration`<br>**true / false** `cancel-button-style.enable-feedback`, `confirm-button-style.enable-feedback`, `input-decoration.filled`, `input-decoration.is-dense`, `input-decoration.is-collapsed`, `input-decoration.align-label-with-hint`<br>**alignment** `cancel-button-style.alignment`, `confirm-button-style.alignment`<br>**input border** `input-decoration.border`, `input-decoration.error-border`, `input-decoration.focused-border`, `input-decoration.focused-error-border`, `input-decoration.disabled-border`, `input-decoration.enabled-border`<br>**whole number** `input-decoration.helper-max-lines`, `input-decoration.hint-max-lines`, `input-decoration.error-max-lines`<br>**constraints** `input-decoration.prefix-icon-constraints`, `input-decoration.suffix-icon-constraints`, `input-decoration.constraints` |
+| [`tooltip`](flutter/theme/components/tooltip.md) | **shape** `shape`<br>**color** `background`<br>**decoration** `decoration`<br>**constraints** `constraints`<br>**insets** `padding`, `margin`<br>**number** `vertical-offset`<br>**true / false** `prefer-below`, `exclude-from-semantics`, `enable-feedback`<br>**text style** `text-style`<br>**choice** `text-align` (left / right / center / justify / start / end), `trigger-mode` (manual / long-press / tap)<br>**duration** `wait-duration`, `show-duration`, `exit-duration` |
+| [`cupertino`](flutter/theme/cupertino.md) (own root) | **color** `primary-color`, `text-theme.primary-color`, `primary-contrasting-color`, `scaffold-background-color`, `bar-background-color`, `selection-handle-color`<br>**text style** `text-theme.text-style`, `text-theme.action-text-style`, `text-theme.tab-label-text-style`, `text-theme.nav-title-text-style`, `text-theme.nav-large-title-text-style`, `text-theme.nav-action-text-style`, `text-theme.picker-text-style`, `text-theme.date-time-picker-text-style`<br>**true / false** `apply-theme-to-all` |
 
 <!-- theme-components:end -->
 
@@ -2971,12 +3040,12 @@ spring.flutter.theme.themes.brand-dark.brightness=dark
 |---|---|---|
 | `source` | none | where the theme comes from: an `https` URL, or `github:owner/repo/path@ref`, which is `https://raw.githubusercontent.com/owner/repo/ref/path` (`HEAD` without `@ref`). `http` and other schemes stop the start, naming the property |
 | `source-sha256` | none | 64 hexadecimal digits: content with another digest is refused (not shown, not cached). Part of the cache's identity |
-| `refresh` | none (cached for ever) | a duration (`30m`, `1h`, `PT12H`): when the cache is older, the file is read again in the background |
+| `refresh` | none (cached for ever) | a duration (`30m`, `1h`, `1.5d`): when the cache is older, the file is read again in the background |
 
 - The file is written like the theme part of `application.yml`: the keys
   under `spring.flutter.theme`, or at the top, or one `themes.<any name>`
   block. Only the theme's look is taken and it becomes `<name>`; any other
-  key (`spring.datasource.*`, `active`, `system-light`, `source`, ...) is
+  key (`spring.datasource.*`, `active`, `extends`, `system-light`, `source`, ...) is
   ignored with a warning. Keys the theme does not know stop that theme
   (not the app) like in any theme file.
 - The theme is always cached in the `support` place through `FileTemplate`,
@@ -2993,10 +3062,283 @@ spring.flutter.theme.themes.brand-dark.brightness=dark
   are removed at start.
 - The start never waits on the network when a cache exists. Without one,
   the download may take 10 seconds and 1 MiB at most (redirects only to
-  `https`); offline, an error, a timeout or an invalid file leave the theme
+  `https`; a theme's request has no custom headers); offline, an error, a timeout or an invalid file leave the theme
   the app's own files describe for `<name>`, and the next start tries again.
 - The theme keys the generator typed (`context.theme`) come from the build:
   the file changes values, it does not add keys.
+
+### Themes without Dart: references, states, motion, background, images
+
+> The full theme reference, one page per topic, is in [Flutter themes in YAML](flutter/theme/index.md).
+
+Since 0.6.3 a design system can live in YAML. The examples below sit under
+`spring.flutter.theme` (and under `themes.<name>` for one theme); the
+`spring:` levels are left out to keep them short.
+
+#### References and color objects
+
+Any value can name another value of the same theme with `$` and its path:
+
+```yaml
+seed-color: $colors.primary
+colors:
+  primary: '#F5E000'
+tokens:
+  neon:
+    yellow: $colors.primary
+    badge-fill: { color: $colors.primary, alpha: 12% }
+    hover-fill: { color: $colors.primary, mix: { with: white, amount: 14% } }
+```
+
+- A path starts at the root of the theme: `$colors.primary`, `$spacing.m`,
+  `$motion.durations.fast`, `$tokens.neon.yellow`. A token path may drop
+  `tokens.` when its group is not the name of a root section
+  (`$neon.yellow`).
+- A Material role you did not write down can be referenced too:
+  `$colors.outline`, `$colors.surface-container-lowest`. It is the role of
+  the palette that the theme's own `seed-color`, `brightness`,
+  `scheme-variant` and `contrast` make (other `colors.*` you declare do not
+  change it). The same for Material 3's corner radii: `$shape.extra-small`.
+  A value you wrote down wins. An unknown name stops the start with the
+  closest one.
+- Values under `headers` and the image keys `source`, `fallback` and
+  `source-sha256` are never resolved: a `$abc` (or `$$`) from a placeholder
+  such as `${cdn.token}` stays as it is.
+- References are resolved per theme, after `extends`. A dark theme that
+  changes `colors.primary` changes everything that refers to it.
+- A cycle or an unknown path stops the start. The message shows the chain
+  and the closest name.
+- `$path` is replaced wherever it stands in a value, as a whole value, in a
+  color object or inside a longer text (`120ms ease-out` can be
+  `$motion.durations.fast ease-out`).
+- `$$` is a literal `$`. A `$` followed by anything but a letter is text
+  (`$5`).
+- Colors: a color that is changed is an object, `{ color: $colors.primary,
+  alpha: 12% }` or `{ color: $colors.primary, mix: { with: white, amount:
+  14% } }` (`mix` is applied first, then `alpha`; a percent is `12%` or
+  `0.12`). A `color` is a reference, `#RRGGBB`, `#AARRGGBB` or a name
+  (`white`, `black`, `transparent`).
+
+Why not `${...}`? That is Spring's placeholder. It reads any property of the
+`Environment` (`${cdn.token}`) and it still works in a theme. A theme path
+starts at the theme's root, not at a property key, so it has its own, shorter
+form.
+
+#### Nested tokens
+
+Tokens can be as deep as you like. They can hold lists and durations. No more
+JSON inside a YAML string:
+
+```yaml
+tokens:
+  neon:
+    modal:
+      width: 460
+      fade: 250ms
+      barrier: transparent
+      border:
+        width: 1
+        glow: 8
+        colors: [$neon.yellow, $neon.cyan, $neon.pink]
+```
+
+```dart
+final border = context.theme.tokens.neon.modal.border;
+border.width;     // double
+border.colors;    // List<Color>
+context.theme.tokens.neon.modal.fade;   // Duration
+```
+
+A token is typed by its value: a color, a number, a duration (`250ms`), text,
+or a list of one type (`List<Color>`, `List<double>`, `List<String>`). Every
+group becomes a small class. Tokens with two levels, as in 0.6.2, read as
+before.
+
+#### Styles for your own widgets: `styles.*`
+
+Material's components have their states (hovered, pressed, focused...) in
+`components.*`. Your own widgets get the same under `styles.<name>`. Give a
+property one value, or a map of states:
+
+```yaml
+styles:
+  neon-chip:
+    padding: [12, 6]
+    border: { default: $colors.outline, hovered: $colors.primary, selected: $colors.primary }
+    fill:   { default: transparent, selected: { color: $colors.primary, alpha: 12% } }
+    text:   { default: $colors.on-surface-variant, hovered: $colors.primary }
+    transition: 120ms ease-out
+```
+
+The states are `default`, `hovered`, `focused`, `pressed`, `dragged`,
+`selected`, `scrolled-under`, `disabled` and `error`. When several are true,
+the first of this list wins: disabled, error, pressed, dragged, hovered,
+focused, selected, scrolled-under, default. A property with states must have
+`default`.
+
+Values are typed by what they look like: a color, a number, insets
+(`[all]`, `[horizontal, vertical]` or `[left, top, right, bottom]`), text or a
+duration. `transition: <duration> [<curve>]` animates the change between
+states.
+
+The widget `ThemeStates` tracks the states for you:
+
+```dart
+ThemeStates(
+  style: context.theme.styles.neonChip,
+  selected: selected,
+  onPressed: onPressed,           // null: the chip is disabled
+  builder: (context, s) => Container(
+    padding: s.padding,           // EdgeInsets
+    decoration: BoxDecoration(
+      color: s.fill,              // Color
+      border: Border.all(color: s.border),
+    ),
+    child: Text(label, style: TextStyle(color: s.text)),
+  ),
+)
+```
+
+It follows the mouse, the focus and the press, handles Enter and Space and the
+mouse cursor, and blends the values over `transition`. `selected` and `error`
+come from your arguments. Names can be written in any spelling: `neon-chip`,
+`neonChip`, `neon_chip`.
+
+#### Motion and animations
+
+```yaml
+motion:
+  durations: { fast: 120ms, medium: 250ms }
+  curves: { emphasized: [0.2, 0, 0, 1], out: ease-out }
+  page-transition: fade-upwards
+animations:
+  border-spin: { duration: 4s, curve: linear, repeat: loop }
+  glow-pulse:  { duration: 1.6s, curve: ease-in-out, repeat: reverse }
+```
+
+```dart
+AnimatedContainer(
+  duration: context.theme.motion.fast,                  // a Duration
+  curve: context.theme.motion.curves.emphasized,        // a Curve
+  ...
+)
+```
+
+- `motion.durations.<name>` and `motion.curves.<name>` are yours to name. A
+  curve is a name (`linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`,
+  `fast-out-slow-in`, `emphasized`, ...) or four numbers for a cubic curve.
+- **Reduce motion:** when the device asks for less motion, every duration
+  from `context.theme.motion` is `Duration.zero`, an animation with
+  `repeat: none` jumps to its end (`t` is 1), and `loop` and `reverse` stand
+  still at 0.
+- `animations.<name>` has `duration`, `curve` and `repeat`: `none` (once),
+  `loop` or `reverse` (back and forth).
+
+`ThemeAnimation` plays one:
+
+```dart
+ThemeAnimation(
+  context.theme.animations.borderSpin,
+  builder: (context, t) => Transform.rotate(angle: t * 2 * pi, child: child),
+)
+```
+
+`t` goes from 0 to 1. The widget owns the controller, repeats as asked, stands
+still (a one-shot goes to its end) when the device asks for less motion, and takes the new duration when the
+theme changes.
+
+#### The background: `background`
+
+```yaml
+background:
+  color: $colors.surface-container-lowest
+  image:
+    source: https://cdn.example.com/neon/background.jpg
+    fit: cover
+    alignment: center
+    opacity: 0.9
+    blur: 0
+  overlay:
+    gradient: { type: linear, begin: top, end: bottom, colors: [transparent, '#CC0A0C12'] }
+  animation: background-drift      # a name from animations.*
+  effect: drift                    # drift | zoom | pulse
+  transition: 400ms ease-out
+  screens:
+    login: { image: { source: packages/neon_ui/assets/images/login.jpg } }
+```
+
+- With `background` set, `SpringApp` puts it under every screen and makes the
+  Material scaffold and the Cupertino page backgrounds **transparent**, so the
+  background shows through. A scaffold color you set in the theme is kept.
+- The image is loaded at start. A theme switch, or a new image, fades over
+  `transition`.
+- A gradient has `type` (`linear` or `radial`), `begin`, `end`, `colors` and
+  `stops`. For a radial gradient `begin` is the center.
+- `ThemeBackground.screen('login', child: ...)` shows `screens.login` over the
+  theme's background. `ThemeBackground.none(child: ...)` gives a plain surface
+  for a screen that should not have the background. Without a name,
+  `ThemeBackground(child: ...)` shows the theme's background (this is what
+  `SpringApp` uses).
+- Read the values with `context.theme.background`.
+- With less motion on the device, the background stands still and changes
+  without a fade.
+
+#### Images from the network: `ThemeImage`
+
+The background, the screens' backgrounds and image tokens all take the same
+map. `source` is an asset path or a URL:
+
+```yaml
+image:
+  source: https://cdn.example.com/neon/background.jpg
+  refresh: 1d
+  source-sha256: 9f2c1a...                 # 64 hexadecimal digits
+  headers: { Authorization: 'Bearer ${cdn.token}' }
+  timeout: 10s
+  fallback: packages/neon_ui/assets/images/neon-background.jpg
+  allow-http: false
+```
+
+An image token is a token map with `source` and only the keys of this table:
+
+```yaml
+tokens:
+  neon:
+    hero: { source: https://cdn.example.com/hero.png, refresh: 1d }
+```
+
+```dart
+final hero = context.theme.tokens.neon.hero;      // a ThemeImage
+ValueListenableBuilder(
+  valueListenable: hero.listenable,
+  builder: (context, provider, _) =>
+      provider == null ? const SizedBox() : Image(image: provider),
+)
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `source` | required | an asset path, an `https` URL, or an `http` URL with `allow-http` |
+| `refresh` | none | a duration. Without it the file is downloaded once and read from the cache for ever. With it the cache is shown at once and checked again in the background when older |
+| `source-sha256` | none | 64 hexadecimal digits. A file with another digest is dropped with a warning |
+| `headers` | none | request headers. A map (`{ Authorization: ... }`). `${...}` placeholders work here |
+| `timeout` | `10s` | how long a download may take |
+| `fallback` | none | an asset shown while there is no cache |
+| `allow-http` | `false` | `true` for an `http://` source. Without it the start stops with a hint. Android and iOS refuse clear text anyway |
+
+- It works like [a theme from a URL](#a-theme-from-a-url): the same HTTP
+  client, and a cache through `FileTemplate`.
+- **The cache** is in the `support` place, in `spring/images/<sha256 of source
+  and pin>/` (`image` and `meta.json`). It survives restarts. In a browser it
+  is in IndexedDB. Images that are no longer configured are removed at start.
+- **The start never waits for the network.** The app shows the cache; with no
+  cache the `fallback`; with no `fallback` the `background.color`. When the
+  download ends, the image fades in. Offline, a timeout or a bad digest keep
+  what is shown, with a warning.
+- A redirect to another host drops your custom `headers` (so a token is not
+  sent to a stranger).
+- **On the web** the server must allow your origin with CORS headers. If a
+  download fails, the log says so.
 
 ### Fonts
 
@@ -4134,17 +4476,14 @@ spring.json.default-property-inclusion`. A forgotten
 `server.servlet.session.*` ignored in silence would leave the sessions on
 their defaults.
 
-`classpath:` is renamed the same way: Dart has no class path, and the prefix
+There is no `classpath:`: Dart has no class path, and the prefix
 points into `lib/resources/` (the files the generator embeds), so every
 location is written `resources:` (`resources:config/`, `resources*:i18n/*.properties`
 for the search over every root, `optional:resources:extra.yml`, and the
 defaults of `spring.sql.migration.locations`, `spring.sql.init.*-locations`,
 `spring.messages.basename` and the banner). It works in `spring.config.import`,
 `spring.config.location`, `@PropertySource`, `@Value`, `getResource` and the
-generator's build-time readers. In 0.6.2 `classpath:` and `classpath*:` still
-work, with one warning per location (`'classpath:x' uses the prefix
-classpath:, which is now resources: (classpath: is refused in the next minor
-release)`); the next minor release refuses them like the old property names.
+generator's build-time readers.
 
 - `.properties` files are read as UTF-8; Spring Boot reads ISO-8859-1. For
   Spring Boot's behaviour use

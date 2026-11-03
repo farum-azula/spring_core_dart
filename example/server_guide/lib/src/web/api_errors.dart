@@ -1,7 +1,7 @@
 // Errors as RFC 9457 problems (chapter 3): `application/problem+json`
 // from @ExceptionHandler methods of a @RestControllerAdvice, for every
 // controller.
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'

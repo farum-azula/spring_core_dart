@@ -154,6 +154,9 @@ targets:
         // neither).
         'spring_boot_starter_oauth2_client',
         'spring_boot_starter_flutter_security',
+        // It depends on the generator (the SQL lexer and the derived query
+        // grammar of lib/query_syntax.dart).
+        'extensions/language_server',
       });
     });
 

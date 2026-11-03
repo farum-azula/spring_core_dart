@@ -29,7 +29,7 @@ dev_dependencies:
 From the `spring_boot_dart` directory:
 
 ```bash
-dart run build_runner build                         # writes example/example.spring.dart
+dart run build_runner build                         # writes example/spring_gen/example.spring.dart
 dart run example/example.dart                       # [greeting] INFO: Hello, World!
 dart run example/example.dart --greeting.name=Ada   # [greeting] INFO: Hello, Ada!
 GREETING_NAME=Grace dart run example/example.dart   # [greeting] INFO: Hello, Grace!
@@ -48,14 +48,14 @@ application.
 ```dart
 // bin/main.dart (lib/main.dart in Flutter)
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart'; // generated next to this file
+import 'spring_gen/main.spring.dart'; // generated, in spring_gen/
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
 ```
 
 ```bash
-dart run build_runner build   # scans lib/ and bin/, writes main.spring.dart
+dart run build_runner build   # scans lib/ and bin/, writes spring_gen/main.spring.dart
 dart run bin/main.dart
 ```
 

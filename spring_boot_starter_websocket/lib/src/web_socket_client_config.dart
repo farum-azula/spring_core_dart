@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart';
 
 /// The settings of one `@WebSocketClient`: its address, handshake timeout,
 /// reconnection and default headers.
@@ -9,9 +9,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// `<name>` is the client's name, and fall back to
 /// `spring.websocket.client.config.default.*` for every client. So an
 /// application tunes its clients in `application.properties` and per
-/// profile, without code; this class is what the starter reads them
-/// into. Code reads it through `WebSocketInvocationHandler.config`, or
-/// creates one for a test.
+/// profile, without code; this class is what the starter makes of the
+/// bound `WebSocketProperties`. Code reads it through
+/// `WebSocketInvocationHandler.config`, or creates one for a test.
 ///
 /// ```properties
 /// # Every client: a shorter timeout. The chat: its own address, its own
@@ -59,60 +59,49 @@ final class WebSocketClientConfig {
 
   static const _prefix = 'spring.websocket.client.config.';
 
-  /// Reads the settings of the client [name] from [environment], with
-  /// `default` as fallback for each property.
+  /// Reads the settings of the client [name] from the bound [properties],
+  /// with `default` as fallback for each property.
   ///
-  /// Throws when a value is wrong: a [FormatException] for a duration,
-  /// number or on/off value that cannot be read, an [ArgumentError] for
-  /// a reconnect value out of range (see
+  /// Throws an [ArgumentError] for a reconnect value out of range (see
   /// [WebSocketReconnectPolicy.validate]). The start then fails.
-  static WebSocketClientConfig of(Environment environment, String name) {
-    String? get(String key) =>
-        environment.getProperty('$_prefix$name.$key') ??
-        environment.getProperty('${_prefix}default.$key');
-    Duration? duration(String key) {
-      final value = get(key);
-      return value == null
-          ? null
-          : DefaultConversionService().convert<Duration>(value);
-    }
+  static WebSocketClientConfig of(
+    WebSocketProperties properties,
+    String name,
+  ) {
+    // The name as written in the properties; environment variables are
+    // lower case, so a client name matches in any case.
+    final configs = properties.config;
+    WebSocketClientSettings? settings(String wanted) =>
+        configs[wanted] ??
+        configs.entries
+            .where((e) => e.key.toLowerCase() == wanted.toLowerCase())
+            .map((e) => e.value)
+            .firstOrNull;
+    final own = settings(name);
+    final fallback = settings('default');
+    T? get<T>(T? Function(WebSocketClientSettings settings) read) =>
+        (own == null ? null : read(own)) ??
+        (fallback == null ? null : read(fallback));
 
     const defaults = WebSocketClientConfig();
     const policy = WebSocketReconnectPolicy();
-    final multiplier = get('reconnect.multiplier');
-    final maxRetries = get('reconnect.max-retries');
     return WebSocketClientConfig(
-      url: get('url'),
-      connectTimeout: duration('connect-timeout') ?? defaults.connectTimeout,
+      url: get((s) => s.url),
+      connectTimeout: get((s) => s.connectTimeout) ?? defaults.connectTimeout,
       reconnect: WebSocketReconnectPolicy(
-        enabled: _flag(get('reconnect.enabled'), '$name.reconnect.enabled'),
-        delay: duration('reconnect.delay') ?? policy.delay,
-        multiplier: multiplier == null
-            ? policy.multiplier
-            : double.parse(multiplier.trim()),
-        maxDelay: duration('reconnect.max-delay') ?? policy.maxDelay,
-        jitter: duration('reconnect.jitter') ?? policy.jitter,
-        maxRetries: maxRetries == null ? null : int.parse(maxRetries.trim()),
+        enabled: get((s) => s.reconnect.enabled) ?? policy.enabled,
+        delay: get((s) => s.reconnect.delay) ?? policy.delay,
+        multiplier: get((s) => s.reconnect.multiplier) ?? policy.multiplier,
+        maxDelay: get((s) => s.reconnect.maxDelay) ?? policy.maxDelay,
+        jitter: get((s) => s.reconnect.jitter) ?? policy.jitter,
+        maxRetries: get((s) => s.reconnect.maxRetries),
       )..validate('$_prefix$name.reconnect'),
       defaultRequestHeaders: _merge(
-        _headers(environment, '${_prefix}default.default-request-headers'),
-        _headers(environment, '$_prefix$name.default-request-headers'),
+        fallback?.defaultRequestHeaders ?? const {},
+        own?.defaultRequestHeaders ?? const {},
       ),
     );
   }
-
-  // A boolean like Spring Boot's binding: true / false (also on / off,
-  // yes / no, 1 / 0) in any case; anything else fails.
-  static bool _flag(String? value, String key) =>
-      switch (value?.trim().toLowerCase()) {
-        null || '' => true,
-        'true' || 'on' || 'yes' || '1' => true,
-        'false' || 'off' || 'no' || '0' => false,
-        _ => throw FormatException(
-          '$_prefix$key: failed to convert to boolean (was "$value")',
-          value,
-        ),
-      };
 
   // The client's headers replace those of `default` with the same name in
   // any case (header names are case-insensitive).
@@ -125,32 +114,6 @@ final class WebSocketClientConfig {
         key: value,
     ...own,
   };
-
-  // The map of lists at [name], bound like a Spring Boot
-  // `Map<String, List<String>>`: relaxed names
-  // (`default-request-headers.X-Shop`, `defaultRequestHeaders.X-Shop`,
-  // `default-request-headers[X.Shop]`), a comma list or indexed values
-  // (`X-Shop[0]`, YAML lists) for several values.
-  static Map<String, List<String>> _headers(
-    Environment environment,
-    String name,
-  ) {
-    if (environment is! ConfigurableEnvironment) {
-      return const {};
-    }
-    final canonical = ConfigurationPropertyName.isValid(name)
-        ? name
-        : ConfigurationPropertyName.adapt(name, '.').toString();
-    return Binder.get(environment)
-        .bind(
-          canonical,
-          const MapType<String, List<String>>(
-            ClassType<String>(),
-            ListType<String>(ClassType<String>()),
-          ),
-        )
-        .orElse(const {});
-  }
 }
 
 /// The rule for opening a `@WebSocketClient`'s connection again after a

@@ -8,6 +8,7 @@ library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_security/src/config/security_auto_configuration.dart';
+import 'package:spring_boot_starter_security/src/properties/properties_beans.dart';
 
 // The auto-configurations this starter builds on, so a test of an
 // application that lists only this starter can name them.
@@ -29,6 +30,7 @@ export 'package:spring_security_core/spring_auto_configuration.dart';
 final BeanModule springBootStarterSecurityAutoConfiguration = BeanModule(
   'springBootStarterSecurityAutoConfiguration',
   [...securityAutoConfiguration],
+  imports: [securityConfigBeans],
 );
 
 /// The ID token decoder of servers (`oidcIdTokenDecoder`, an

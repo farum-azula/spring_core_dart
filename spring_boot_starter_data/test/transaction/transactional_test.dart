@@ -5,8 +5,8 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import '../spring_gen/transaction/app/transaction_app.spring.dart';
 import 'app/transaction_app.dart';
-import 'app/transaction_app.spring.dart';
 import 'support/recording_transaction_manager.dart';
 
 Future<void> withApp(

@@ -3,6 +3,7 @@ import 'package:spring_security_core/src/authentication/authentication_manager.d
 import 'package:spring_security_core/src/authentication/events.dart';
 import 'package:spring_security_core/src/authentication/password_checks.dart';
 import 'package:spring_security_core/src/authorization/authorization_manager.dart';
+import 'package:spring_security_core/src/config/security_core_properties.dart';
 import 'package:spring_security_core/src/crypto/password_encoder.dart';
 import 'package:spring_security_core/src/method/expression_handler.dart';
 import 'package:spring_security_core/src/method/method_security_interceptor.dart';
@@ -104,19 +105,10 @@ final securityCoreAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) {
-      final environment = r.dependency<Environment>();
-      int? number(String key) {
-        final text = environment.getProperty(key)?.trim();
-        if (text == null || text.isEmpty) {
-          return null;
-        }
-        return int.tryParse(text) ??
-            (throw ArgumentError('$key must be a whole number: $text'));
-      }
-
+      final checks = r.dependency<PasswordChecksProperties>();
       return PasswordCheckLimiter(
-        maxConcurrent: number('spring.security.password-checks.max-concurrent'),
-        maxQueued: number('spring.security.password-checks.max-queued'),
+        maxConcurrent: checks.maxConcurrent,
+        maxQueued: checks.maxQueued,
       );
     },
   ),

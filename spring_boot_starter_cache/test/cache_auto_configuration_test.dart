@@ -1,5 +1,6 @@
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
+import 'package:spring_boot_starter_cache/src/config/config.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
@@ -39,6 +40,21 @@ final class _ManagerDefinitionRegistrar
           create: (_) => manager,
         ),
       );
+}
+
+// What the starter does at startup: binds spring.cache.* of [environment]
+// and builds the manager from it.
+CacheManager managerFor(ConfigurableEnvironment environment) {
+  ConfigurationPropertySources.attach(environment);
+  final binder = ConfigurationPropertiesBinder(
+    environment,
+    BeanIntrospector(introspections: cacheConfigBeans.introspections),
+  );
+  final properties = binder.postProcessBeforeInitialization(
+    CacheProperties(),
+    'cacheProperties',
+  ) as CacheProperties;
+  return cacheManagerFromProperties(properties, environment);
 }
 
 void main() {
@@ -291,7 +307,7 @@ spring:
     const YamlPropertySourceLoader()
         .load('application.yaml', yaml)
         .forEach(environment.propertySources.addLast);
-    final manager = cacheManagerFromProperties(environment);
+    final manager = managerFor(environment);
     final byIsbn = manager.getCache('books.byIsbn')! as InMemoryCache;
     expect(byIsbn.spec.maxSize, 2);
     final prices = manager.getCache('prices')! as InMemoryCache;
@@ -309,8 +325,7 @@ spring:
       environment.propertySources.addFirst(
         SystemEnvironmentPropertySource('test-variables', variables),
       );
-      return cacheManagerFromProperties(environment).getCache(name)!
-          as InMemoryCache;
+      return managerFor(environment).getCache(name)! as InMemoryCache;
     }
 
     test('every relaxed form of max-size and time-to-live binds', () {
@@ -381,8 +396,7 @@ spring:
           ..addFirst(variablesFirst ? file : variables)
           ..addFirst(variablesFirst ? variables : file);
         final books =
-            cacheManagerFromProperties(environment).getCache('books')!
-                as InMemoryCache;
+            managerFor(environment).getCache('books')! as InMemoryCache;
         expect(books.spec.maxSize, expected, reason: '$variablesFirst');
       }
     });

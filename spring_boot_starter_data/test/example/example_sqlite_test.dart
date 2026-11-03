@@ -11,7 +11,7 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:test/test.dart';
 
 import '../../example/example.dart';
-import '../../example/example.spring.dart';
+import '../../example/spring_gen/example.spring.dart';
 
 void main() {
   late Directory temp;

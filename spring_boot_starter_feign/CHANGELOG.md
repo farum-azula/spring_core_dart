@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `spring.feign.client.*` is made from code and the starter reads the same classes: `FeignProperties` (`decode-slash`, `config.<name>.*` as `FeignClientSettings`) is bound by the Binder, and `FeignClientConfig.of` / `connectTimeout` take it instead of the `Environment`; `FeignLoggerLevel.parse` is gone (the Binder converts the enum). The hand-written `spring_metadata_additional.json` is gone.
+
 ## 0.6.2
 
 - No changes of its own; released with the family version 0.6.2.

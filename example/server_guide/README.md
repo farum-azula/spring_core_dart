@@ -151,7 +151,7 @@ response removes the cookie, and the next response (such as `GET
 
 One annotation on `main` and one generated import are the whole entry
 point. The generator scans `lib/` and `bin/`, finds the starters in
-`pubspec.yaml`, and writes `bin/main.spring.dart` with `runApplication`.
+`pubspec.yaml`, and writes `bin/spring_gen/main.spring.dart` with `runApplication`.
 `lib/src/app.dart` is the `@ComponentScan` of `lib/src/`, so its
 generated file can hold the `log` getters of the `@Log` classes.
 

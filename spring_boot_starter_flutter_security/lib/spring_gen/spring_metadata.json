@@ -1,0 +1,1440 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_flutter_security",
+  "properties": [
+    {
+      "name": "spring.flutter.security.application-id",
+      "type": "String?",
+      "description": "Apps on Windows and Linux: the name the app's secrets are kept under, apart from other apps' (Windows: the folder under `%LOCALAPPDATA%\\spring_secret_store`, `\\` separates folders; Linux: the Secret Service items' `application` attribute). Default: the app's own id.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 231,
+      "class": "FlutterSecurityProperties"
+    },
+    {
+      "name": "spring.flutter.security.ephemeral-session",
+      "type": "bool",
+      "description": "Apps on iOS and macOS: the login window (`ASWebAuthenticationSession`) keeps no cookies of Safari: no system prompt before the window, but no single sign-on (every login asks for the password).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 236,
+      "class": "FlutterSecurityProperties"
+    },
+    {
+      "name": "spring.flutter.security.web.authorization-base-uri",
+      "type": "String",
+      "description": "Where the server starts a login; `login('keycloak')` goes to `<server-url><this>/keycloak`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 157,
+      "class": "FlutterWebSecurityProperties"
+    },
+    {
+      "name": "spring.flutter.security.web.logout-url",
+      "type": "String",
+      "description": "`POST` with the CSRF token; an answer `{\"logoutUrl\": \"...\"}` or a `2xx` with `Location` sends the page to the provider's logout.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 148,
+      "class": "FlutterWebSecurityProperties"
+    },
+    {
+      "name": "spring.flutter.security.web.mode",
+      "type": "WebLoginMode",
+      "description": "Who logs in: the app's server (backend-for-frontend), or the browser by itself (`spa`: a public client with PKCE, tokens in the tab's memory, DPoP with a non-extractable WebCrypto key; without a registration the app stops at startup).",
+      "default": "server",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 124,
+      "class": "FlutterWebSecurityProperties"
+    },
+    {
+      "name": "spring.flutter.security.web.server-url",
+      "type": "String?",
+      "description": "The app's server, with its context path if any. Default: the page's origin.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 132,
+      "class": "FlutterWebSecurityProperties"
+    },
+    {
+      "name": "spring.flutter.security.web.silent-restore",
+      "type": "bool",
+      "description": "Spa mode: after a reload or in a new tab, `restore()` sends the page to the provider with `prompt=none` when someone logged in in this browser before, and comes back logged in (or with `login_required`: nobody).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 169,
+      "class": "FlutterWebSecurityProperties"
+    },
+    {
+      "name": "spring.flutter.security.web.user-endpoint",
+      "type": "String",
+      "description": "`GET` with the session cookie: who is logged in, as `{\"name\", \"authorities\", \"registrationId\", \"attributes\"}` (only `name` required).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 140,
+      "class": "FlutterWebSecurityProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.flutter.security.web.mode",
+      "values": [
+        {
+          "value": "server",
+          "description": "The app's server logs the user in (backend-for-frontend, the default): `oauth2Login()` of `spring_boot_starter_security` keeps the tokens, the browser holds only an `HttpOnly` session cookie."
+        },
+        {
+          "value": "spa",
+          "description": "The browser logs in by itself, as a public client with PKCE and the tokens in the tab's memory (`SpaOAuth2LoginService`): for an app without a server of its own. The provider must accept public browser clients and allow the page's origin (CORS) on its token endpoint."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "appleIdSignIn",
+      "type": "PlatformAppleIdSignIn",
+      "types": [
+        "PlatformAppleIdSignIn",
+        "AppleIdSignIn"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnAppleIdSheet()",
+        "@_OnClientRegistrations()",
+        "@ConditionalOnMissingBean(AppleIdSignIn)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 428,
+      "injects": [],
+      "members": [
+        {
+          "name": "signIn",
+          "kind": "method",
+          "type": "Future<AppleIdCredential>",
+          "parameters": [
+            "{Set<String> scopes}",
+            "{String nonce}",
+            "{String state}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "authorizedClientService",
+      "type": "OAuth2AuthorizedClientService",
+      "types": [
+        "OAuth2AuthorizedClientService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnClientRegistrations()",
+        "@ConditionalOnMissingBean(OAuth2AuthorizedClientService)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 408,
+      "injects": [],
+      "members": [
+        {
+          "name": "loadAuthorizedClient",
+          "kind": "method",
+          "type": "Future<OAuth2AuthorizedClient?>",
+          "parameters": [
+            "String clientRegistrationId",
+            "String principalName"
+          ]
+        },
+        {
+          "name": "removeAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String clientRegistrationId",
+            "String principalName"
+          ]
+        },
+        {
+          "name": "saveAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "OAuth2AuthorizedClient authorizedClient",
+            "Authentication principal"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "browserPage",
+      "type": "BrowserPage",
+      "types": [
+        "BrowserPage"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnWeb()",
+        "@_OnServerMode()",
+        "@ConditionalOnMissingBean(BrowserPage)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 502,
+      "injects": [],
+      "members": [
+        {
+          "name": "cookie",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "location",
+          "kind": "getter",
+          "type": "Uri"
+        },
+        {
+          "name": "navigate",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Uri url"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "flutterSecurityProperties",
+      "type": "FlutterSecurityProperties",
+      "types": [
+        "FlutterSecurityProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 215,
+      "injects": [],
+      "members": [
+        {
+          "name": "applicationId",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "ephemeralSession",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "flutterWebSecurityProperties",
+      "type": "FlutterWebSecurityProperties",
+      "types": [
+        "FlutterWebSecurityProperties",
+        "Validator"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "web"
+      ],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart",
+      "line": 48,
+      "injects": [],
+      "members": [
+        {
+          "name": "authorizationBaseUri",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "credentials",
+          "kind": "method",
+          "type": "FetchCredentials",
+          "parameters": [
+            "Uri page"
+          ]
+        },
+        {
+          "name": "logoutUrl",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "mode",
+          "kind": "field",
+          "type": "WebLoginMode"
+        },
+        {
+          "name": "server",
+          "kind": "method",
+          "type": "Uri",
+          "parameters": [
+            "Uri page"
+          ]
+        },
+        {
+          "name": "serverUrl",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "silentRestore",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object target"
+          ]
+        },
+        {
+          "name": "userEndpoint",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "validate",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object target",
+            "Errors errors"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "httpTransport",
+      "type": "CsrfCookieHttpTransport",
+      "types": [
+        "CsrfCookieHttpTransport",
+        "HttpTransport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnWeb()",
+        "@_OnServerMode()",
+        "@ConditionalOnMissingBean(HttpTransport)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 515,
+      "injects": [],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "cookieName",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "delegate",
+          "kind": "field",
+          "type": "HttpTransport"
+        },
+        {
+          "name": "headerName",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "page",
+          "kind": "field",
+          "type": "BrowserPage"
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<HttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        },
+        {
+          "name": "server",
+          "kind": "field",
+          "type": "Uri"
+        },
+        {
+          "name": "stream",
+          "kind": "method",
+          "type": "Future<StreamedHttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        },
+        {
+          "name": "withToken",
+          "kind": "method",
+          "type": "HttpRequest",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inMemorySecretStore",
+      "type": "InMemorySecretStore",
+      "types": [
+        "InMemorySecretStore",
+        "SecretStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SecretStore)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 270,
+      "injects": [],
+      "members": [
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "keys",
+          "kind": "method",
+          "type": "Future<Set<String>>",
+          "parameters": []
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "Future<String?>",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "write",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String key",
+            "String value"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "loopbackAuthorizationWindow",
+      "type": "LoopbackAuthorizationWindow",
+      "types": [
+        "LoopbackAuthorizationWindow",
+        "AuthorizationWindow"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnLoopbackWindow()",
+        "@ConditionalOnMissingBean(AuthorizationWindow)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 322,
+      "injects": [],
+      "members": [
+        {
+          "name": "authorize",
+          "kind": "method",
+          "type": "Future<Uri>",
+          "parameters": [
+            "{Uri redirectUri}",
+            "{Uri Function(Uri) authorizationUri}"
+          ]
+        },
+        {
+          "name": "timeout",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
+      "name": "oauth2LoginService",
+      "type": "NativeOAuth2LoginService",
+      "types": [
+        "NativeOAuth2LoginService",
+        "OAuth2LoginService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_NotOnWeb()",
+        "@_OnClientRegistrations()",
+        "@ConditionalOnMissingBean(OAuth2LoginService)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 442,
+      "injects": [],
+      "members": [
+        {
+          "name": "accessTokenResponseClient",
+          "kind": "field",
+          "type": "OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>"
+        },
+        {
+          "name": "appleIdSignIn",
+          "kind": "field",
+          "type": "AppleIdSignIn?"
+        },
+        {
+          "name": "authentication",
+          "kind": "getter",
+          "type": "OAuth2AuthenticationToken?"
+        },
+        {
+          "name": "authenticationChanges",
+          "kind": "getter",
+          "type": "Stream<OAuth2AuthenticationToken?>"
+        },
+        {
+          "name": "authoritiesMapper",
+          "kind": "field",
+          "type": "GrantedAuthoritiesMapper"
+        },
+        {
+          "name": "authorizationWindow",
+          "kind": "field",
+          "type": "AuthorizationWindow?"
+        },
+        {
+          "name": "authorizedClientManager",
+          "kind": "field",
+          "type": "OAuth2AuthorizedClientManager?"
+        },
+        {
+          "name": "authorizedClientService",
+          "kind": "field",
+          "type": "OAuth2AuthorizedClientService"
+        },
+        {
+          "name": "baseUrl",
+          "kind": "field",
+          "type": "Uri"
+        },
+        {
+          "name": "clientRegistrationRepository",
+          "kind": "field",
+          "type": "ClientRegistrationRepository"
+        },
+        {
+          "name": "dPoPKey",
+          "kind": "field",
+          "type": "PlatformDPoPKey?"
+        },
+        {
+          "name": "eventPublisher",
+          "kind": "field",
+          "type": "ApplicationEventPublisher?"
+        },
+        {
+          "name": "idTokenDecoder",
+          "kind": "field",
+          "type": "OidcIdTokenDecoder"
+        },
+        {
+          "name": "isLoggedIn",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "login",
+          "kind": "method",
+          "type": "Future<OAuth2AuthenticationToken>",
+          "parameters": [
+            "String registrationId",
+            "{Map<String, String> additionalParameters}"
+          ]
+        },
+        {
+          "name": "logout",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{bool endSession}",
+            "{Uri? postLogoutRedirectUri}"
+          ]
+        },
+        {
+          "name": "nativeIdTokenDecoder",
+          "kind": "field",
+          "type": "OidcIdTokenDecoder?"
+        },
+        {
+          "name": "nativeSignIn",
+          "kind": "field",
+          "type": "Map<String, NativeSignIn>"
+        },
+        {
+          "name": "oidcUserService",
+          "kind": "field",
+          "type": "OAuth2UserService<OidcUserRequest, OidcUser>"
+        },
+        {
+          "name": "restore",
+          "kind": "method",
+          "type": "Future<OAuth2AuthenticationToken?>",
+          "parameters": []
+        },
+        {
+          "name": "revocationClient",
+          "kind": "field",
+          "type": "OAuth2TokenRevocationClient?"
+        },
+        {
+          "name": "secretStore",
+          "kind": "field",
+          "type": "SecretStore"
+        },
+        {
+          "name": "securityContextHolderStrategy",
+          "kind": "field",
+          "type": "SecurityContextHolderStrategy"
+        },
+        {
+          "name": "user",
+          "kind": "getter",
+          "type": "OAuth2User?"
+        },
+        {
+          "name": "userService",
+          "kind": "field",
+          "type": "OAuth2UserService<OAuth2UserRequest, OAuth2User>"
+        }
+      ]
+    },
+    {
+      "name": "platformAuthorizationWindow",
+      "type": "PlatformAuthorizationWindow",
+      "types": [
+        "PlatformAuthorizationWindow",
+        "AuthorizationWindow"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnPlatformWindow()",
+        "@ConditionalOnMissingBean(AuthorizationWindow)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 302,
+      "injects": [],
+      "members": [
+        {
+          "name": "authorize",
+          "kind": "method",
+          "type": "Future<Uri>",
+          "parameters": [
+            "{Uri redirectUri}",
+            "{Uri Function(Uri) authorizationUri}"
+          ]
+        },
+        {
+          "name": "preferEphemeralSession",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "platformDPoPKey",
+      "type": "PlatformDPoPKey",
+      "types": [
+        "PlatformDPoPKey",
+        "LoadableDPoPKey",
+        "DPoPKey"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_NotOnWeb()",
+        "@_OnPlatformDPoPKey()",
+        "@_OnClientRegistrations()",
+        "@ConditionalOnMissingBean(DPoPKey)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 354,
+      "injects": [],
+      "members": [
+        {
+          "name": "algorithm",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "load",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "persistent",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "publicJwk",
+          "kind": "getter",
+          "type": "Map<String, Object?>"
+        },
+        {
+          "name": "sign",
+          "kind": "method",
+          "type": "Future<Uint8List>",
+          "parameters": [
+            "Uint8List input"
+          ]
+        },
+        {
+          "name": "storage",
+          "kind": "getter",
+          "type": "DPoPKeyStorage?"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "platformSecretStore",
+      "type": "PlatformSecretStore",
+      "types": [
+        "PlatformSecretStore",
+        "SecretStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnSecureStorage()",
+        "@ConditionalOnMissingBean(SecretStore)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 253,
+      "injects": [],
+      "members": [
+        {
+          "name": "applicationId",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "keys",
+          "kind": "method",
+          "type": "Future<Set<String>>",
+          "parameters": []
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "Future<String?>",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "write",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String key",
+            "String value"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "principalNotifier",
+      "type": "PrincipalNotifier",
+      "types": [
+        "PrincipalNotifier",
+        "ChangeNotifier",
+        "Listenable",
+        "SecurityContextChangedListener",
+        "GenericApplicationListener",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(PrincipalNotifier)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 335,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "authentication",
+          "kind": "getter",
+          "type": "Authentication?"
+        },
+        {
+          "name": "dependOn",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isAuthenticated",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "onApplicationEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object event"
+          ]
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "securityContextChanged",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SecurityContextChangedEvent event"
+          ]
+        },
+        {
+          "name": "supportsEvent",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object event"
+          ]
+        },
+        {
+          "name": "trustResolver",
+          "kind": "field",
+          "type": "AuthenticationTrustResolver"
+        }
+      ]
+    },
+    {
+      "name": "secretTemplate",
+      "type": "SecretTemplate",
+      "types": [
+        "SecretTemplate"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SecretTemplate)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 288,
+      "injects": [],
+      "members": [
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "keys",
+          "kind": "method",
+          "type": "Future<Set<String>>",
+          "parameters": []
+        },
+        {
+          "name": "namespace",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "objectMapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "Future<T?>",
+          "parameters": [
+            "String key",
+            "[TypeInfo<T>? type]"
+          ]
+        },
+        {
+          "name": "secretStore",
+          "kind": "field",
+          "type": "SecretStore"
+        },
+        {
+          "name": "write",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String key",
+            "Object value"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "serverOAuth2LoginService",
+      "type": "ServerOAuth2LoginService",
+      "types": [
+        "ServerOAuth2LoginService",
+        "OAuth2LoginService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnWeb()",
+        "@_OnServerMode()",
+        "@ConditionalOnMissingBean(OAuth2LoginService)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 552,
+      "injects": [],
+      "members": [
+        {
+          "name": "authentication",
+          "kind": "getter",
+          "type": "Authentication?"
+        },
+        {
+          "name": "authenticationChanges",
+          "kind": "getter",
+          "type": "Stream<Authentication?>"
+        },
+        {
+          "name": "eventPublisher",
+          "kind": "field",
+          "type": "ApplicationEventPublisher?"
+        },
+        {
+          "name": "isLoggedIn",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "login",
+          "kind": "method",
+          "type": "Future<Authentication?>",
+          "parameters": [
+            "String registrationId",
+            "{Map<String, String> additionalParameters}"
+          ]
+        },
+        {
+          "name": "logout",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{bool endSession}",
+            "{Uri? postLogoutRedirectUri}"
+          ]
+        },
+        {
+          "name": "page",
+          "kind": "field",
+          "type": "BrowserPage"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "FlutterWebSecurityProperties"
+        },
+        {
+          "name": "restore",
+          "kind": "method",
+          "type": "Future<Authentication?>",
+          "parameters": []
+        },
+        {
+          "name": "securityContextHolderStrategy",
+          "kind": "field",
+          "type": "SecurityContextHolderStrategy"
+        },
+        {
+          "name": "server",
+          "kind": "field",
+          "type": "Uri"
+        },
+        {
+          "name": "timeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "transport",
+          "kind": "field",
+          "type": "HttpTransport"
+        }
+      ]
+    },
+    {
+      "name": "spaBrowserPage",
+      "type": "SpaBrowserPage",
+      "types": [
+        "SpaBrowserPage",
+        "BrowserPage"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnWeb()",
+        "@_OnSpaMode()",
+        "@ConditionalOnMissingBean(SpaBrowserPage)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 488,
+      "injects": [],
+      "members": [
+        {
+          "name": "baseUri",
+          "kind": "getter",
+          "type": "Uri"
+        },
+        {
+          "name": "cookie",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "localStorage",
+          "kind": "getter",
+          "type": "BrowserStorage"
+        },
+        {
+          "name": "location",
+          "kind": "getter",
+          "type": "Uri"
+        },
+        {
+          "name": "navigate",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Uri url"
+          ]
+        },
+        {
+          "name": "replaceLocation",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Uri url"
+          ]
+        },
+        {
+          "name": "sessionStorage",
+          "kind": "getter",
+          "type": "BrowserStorage"
+        }
+      ]
+    },
+    {
+      "name": "spaOAuth2LoginService",
+      "type": "SpaOAuth2LoginService",
+      "types": [
+        "SpaOAuth2LoginService",
+        "OAuth2LoginService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnWeb()",
+        "@_OnSpaMode()",
+        "@ConditionalOnMissingBean(OAuth2LoginService)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 571,
+      "injects": [],
+      "members": [
+        {
+          "name": "accessTokenResponseClient",
+          "kind": "field",
+          "type": "OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>"
+        },
+        {
+          "name": "authentication",
+          "kind": "getter",
+          "type": "OAuth2AuthenticationToken?"
+        },
+        {
+          "name": "authenticationChanges",
+          "kind": "getter",
+          "type": "Stream<OAuth2AuthenticationToken?>"
+        },
+        {
+          "name": "authoritiesMapper",
+          "kind": "field",
+          "type": "GrantedAuthoritiesMapper"
+        },
+        {
+          "name": "authorizedClientService",
+          "kind": "field",
+          "type": "OAuth2AuthorizedClientService"
+        },
+        {
+          "name": "clientRegistrationRepository",
+          "kind": "field",
+          "type": "ClientRegistrationRepository"
+        },
+        {
+          "name": "dPoPKey",
+          "kind": "field",
+          "type": "DPoPKey?"
+        },
+        {
+          "name": "eventPublisher",
+          "kind": "field",
+          "type": "ApplicationEventPublisher?"
+        },
+        {
+          "name": "idTokenDecoder",
+          "kind": "field",
+          "type": "OidcIdTokenDecoder"
+        },
+        {
+          "name": "isLoggedIn",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "login",
+          "kind": "method",
+          "type": "Future<Authentication?>",
+          "parameters": [
+            "String registrationId",
+            "{Map<String, String> additionalParameters}"
+          ]
+        },
+        {
+          "name": "logout",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{bool endSession}",
+            "{Uri? postLogoutRedirectUri}"
+          ]
+        },
+        {
+          "name": "oidcUserService",
+          "kind": "field",
+          "type": "OAuth2UserService<OidcUserRequest, OidcUser>"
+        },
+        {
+          "name": "page",
+          "kind": "field",
+          "type": "SpaBrowserPage"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "FlutterWebSecurityProperties"
+        },
+        {
+          "name": "requestLifetime",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "restore",
+          "kind": "method",
+          "type": "Future<OAuth2AuthenticationToken?>",
+          "parameters": []
+        },
+        {
+          "name": "revocationClient",
+          "kind": "field",
+          "type": "OAuth2TokenRevocationClient?"
+        },
+        {
+          "name": "securityContextHolderStrategy",
+          "kind": "field",
+          "type": "SecurityContextHolderStrategy"
+        },
+        {
+          "name": "user",
+          "kind": "getter",
+          "type": "OAuth2User?"
+        },
+        {
+          "name": "userService",
+          "kind": "field",
+          "type": "OAuth2UserService<OAuth2UserRequest, OAuth2User>"
+        }
+      ]
+    },
+    {
+      "name": "tabAuthorizedClientService",
+      "type": "TabOAuth2AuthorizedClientService",
+      "types": [
+        "TabOAuth2AuthorizedClientService",
+        "OAuth2AuthorizedClientService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnWeb()",
+        "@_OnSpaMode()",
+        "@_OnClientRegistrations()",
+        "@ConditionalOnMissingBean(OAuth2AuthorizedClientService)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 388,
+      "injects": [],
+      "members": [
+        {
+          "name": "loadAuthorizedClient",
+          "kind": "method",
+          "type": "Future<OAuth2AuthorizedClient?>",
+          "parameters": [
+            "String clientRegistrationId",
+            "String principalName"
+          ]
+        },
+        {
+          "name": "removeAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String clientRegistrationId",
+            "String principalName"
+          ]
+        },
+        {
+          "name": "saveAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "OAuth2AuthorizedClient authorizedClient",
+            "Authentication principal"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webCryptoDPoPKey",
+      "type": "WebCryptoDPoPKey",
+      "types": [
+        "WebCryptoDPoPKey",
+        "LoadableDPoPKey",
+        "DPoPKey"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnWeb()",
+        "@_OnSpaMode()",
+        "@_OnClientRegistrations()",
+        "@ConditionalOnMissingBean(DPoPKey)"
+      ],
+      "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
+      "line": 371,
+      "injects": [],
+      "members": [
+        {
+          "name": "algorithm",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "isLoaded",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "load",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "persistent",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "publicJwk",
+          "kind": "getter",
+          "type": "Map<String, Object?>"
+        },
+        {
+          "name": "sign",
+          "kind": "method",
+          "type": "Future<Uint8List>",
+          "parameters": [
+            "Uint8List input"
+          ]
+        },
+        {
+          "name": "thumbprint",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    "web"
+  ]
+}

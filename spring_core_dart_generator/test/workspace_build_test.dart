@@ -22,7 +22,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -33,7 +33,7 @@ const _syntaxError =
     "import 'package:spring_core_dart/spring_core_dart.dart';\n"
     '@Service()\nclass Greeter {\n';
 
-const _output = 'lib/src/beans.spring.dart';
+const _output = 'lib/spring_gen/src/beans.spring.dart';
 
 late Directory _workspace;
 
@@ -147,7 +147,7 @@ void main() {
   });
 
   test("the test builder keeps the test package's generated file", () async {
-    const output = 'test/spring/shop.test.spring.dart';
+    const output = 'test/spring_gen/shop.test.spring.dart';
     _write('app', output, "// app's tests\n");
     _write('pkg', output, "// pkg's tests\n");
     final (result, kept) = await _build(
@@ -158,7 +158,7 @@ void main() {
       ),
       {
         'test/shop_test.dart':
-            "import 'spring/shop.test.spring.dart';\n"
+            "import 'spring_gen/shop.test.spring.dart';\n"
             '@SpringBootTest()\nclass ShopTest {\n',
       },
       output: output,

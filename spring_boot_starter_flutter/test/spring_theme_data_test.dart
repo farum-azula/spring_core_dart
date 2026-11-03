@@ -81,6 +81,10 @@ void main() {
         invalid('schemevariant'),
       );
       expect(() => theme({'contrast': 'high'}), invalid('contrast'));
+      expect(() => theme({'contrast': '1.5'}), invalid('contrast'));
+      expect(() => theme({'contrast': '-1.01'}), invalid('contrast'));
+      expect(theme({'contrast': '-1'}).contrast, -1);
+      expect(theme({'contrast': '1'}).contrast, 1);
       expect(() => theme({'brightness': 'grey'}), invalid('brightness'));
     });
   });
@@ -180,23 +184,59 @@ void main() {
     });
 
     test('motion: durations and curves, defaults and set', () {
-      final defaults = theme(const {});
-      expect(defaults.duration('short'), const Duration(milliseconds: 100));
-      expect(defaults.duration('medium'), const Duration(milliseconds: 250));
-      expect(defaults.duration('long'), const Duration(milliseconds: 450));
-      expect(defaults.curve('standard'), Easing.standard);
+      final defaults = ThemeKeyReader(theme(const {}));
+      expect(
+        defaults.motionDuration('short'),
+        const Duration(milliseconds: 100),
+      );
+      expect(
+        defaults.motionDuration('medium'),
+        const Duration(milliseconds: 250),
+      );
+      expect(
+        defaults.motionDuration('long'),
+        const Duration(milliseconds: 450),
+      );
+      expect(
+        () => defaults.motionDuration('mediun'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains("did you mean 'medium'"),
+          ),
+        ),
+      );
+      expect(
+        ThemeKeyReader(theme(const {}), reduceMotion: true).motionDuration(
+          'long',
+        ),
+        Duration.zero,
+      );
+      expect(theme(const {}).curve('standard'), Easing.standard);
       final t = theme({
-        'motion.duration-medium': '300ms',
-        'motion.easing-emphasized': '0.3, 0, 0, 1',
+        'motion.durations.medium': '300ms',
+        'motion.curves.emphasized': '0.3, 0, 0, 1',
       });
-      expect(t.duration('medium'), const Duration(milliseconds: 300));
+      expect(
+        ThemeKeyReader(t).motionDuration('medium'),
+        const Duration(milliseconds: 300),
+      );
       expect((t.curve('emphasized') as Cubic).a, 0.3);
       expect(
-        () => theme({'motion.duration-medium': 'slow'}),
+        () => theme({'motion.durations.medium': 'slow'}),
+        invalid('motion.durations.medium'),
+      );
+      expect(
+        () => theme({'motion.curves.standard': '1, 2'}),
+        invalid('motion.curves.standard'),
+      );
+      expect(
+        () => theme({'motion.duration-medium': '300ms'}),
         invalid('durationmedium'),
       );
       expect(
-        () => theme({'motion.easing-standard': '1, 2'}),
+        () => theme({'motion.easing-standard': 'ease'}),
         invalid('easingstandard'),
       );
     });
@@ -325,7 +365,7 @@ void main() {
         'components.app-bar.center-title': 'true',
         'components.app-bar.elevation': '2',
         'components.app-bar.scrolled-under-elevation': 'level3',
-        'components.app-bar.background': 'surface-container',
+        'components.app-bar.background': r'$colors.surface-container',
         'components.app-bar.foreground': '#112233',
         'components.app-bar.title-style': 'headline-small',
         'components.app-bar.toolbar-height': '72',
@@ -345,13 +385,13 @@ void main() {
         'components.button.shape': 'small',
         'components.button.min-height': '44',
         'components.button.text-style': 'label-medium',
-        'components.filled-button.background': 'tertiary',
-        'components.filled-button.foreground': 'on-tertiary',
+        'components.filled-button.background': r'$colors.tertiary',
+        'components.filled-button.foreground': r'$colors.on-tertiary',
         'components.elevated-button.elevation': 'level2',
-        'components.outlined-button.border-color': 'outline',
+        'components.outlined-button.border-color': r'$colors.outline',
         'components.outlined-button.padding': '8',
         'components.text-button.padding': '1, 2, 3, 4',
-        'components.text-button.foreground': 'secondary',
+        'components.text-button.foreground': r'$colors.secondary',
       });
       final filled = t.filledButtonTheme.style!;
       expect(
@@ -402,17 +442,17 @@ void main() {
       final t = material({
         'components.card.shape': '10',
         'components.card.elevation': 'level0',
-        'components.card.color': 'surface-container-low',
+        'components.card.color': r'$colors.surface-container-low',
         'components.card.margin': '4, 8',
         'components.chip.shape': 'full',
-        'components.chip.background': 'secondary-container',
+        'components.chip.background': r'$colors.secondary-container',
         'components.chip.label-style': 'label-small',
         'components.dialog.shape': 'large',
-        'components.dialog.background': 'surface',
+        'components.dialog.background': r'$colors.surface',
         'components.dialog.elevation': '9',
         'components.popup-menu.shape': 'small',
         'components.popup-menu.elevation': 'level2',
-        'components.popup-menu.color': 'surface-container-high',
+        'components.popup-menu.color': r'$colors.surface-container-high',
       });
       expect(
         t.cardTheme.shape,
@@ -448,7 +488,7 @@ void main() {
       final t = material({
         'components.bottom-sheet.shape': 'extra-large',
         'components.bottom-sheet.show-drag-handle': 'true',
-        'components.bottom-sheet.background': 'surface-container-low',
+        'components.bottom-sheet.background': r'$colors.surface-container-low',
         'components.bottom-sheet.elevation': '1',
       });
       expect(
@@ -468,19 +508,22 @@ void main() {
     test('navigation bar, tab bar, FAB', () {
       final t = material({
         'components.navigation-bar.height': '64',
-        'components.navigation-bar.background': 'surface',
-        'components.navigation-bar.indicator-color': 'primary-container',
+        'components.navigation-bar.background': r'$colors.surface',
+        'components.navigation-bar.indicator-color':
+            r'$colors.primary-container',
         'components.navigation-bar.indicator-shape': 'medium',
         'components.navigation-bar.label-behavior': 'alwaysHide',
         'components.navigation-bar.elevation': 'level0',
-        'components.tab-bar.indicator-color': 'tertiary',
+        'components.tab-bar.indicator-color': r'$colors.tertiary',
         'components.tab-bar.label-style': 'title-small',
-        'components.tab-bar.label-color': 'primary',
-        'components.tab-bar.unselected-label-color': 'outline',
+        'components.tab-bar.label-color': r'$colors.primary',
+        'components.tab-bar.unselected-label-color': r'$colors.outline',
         'components.floating-action-button.shape': 'full',
         'components.floating-action-button.elevation': '2',
-        'components.floating-action-button.background': 'tertiary-container',
-        'components.floating-action-button.foreground': 'on-tertiary-container',
+        'components.floating-action-button.background':
+            r'$colors.tertiary-container',
+        'components.floating-action-button.foreground':
+            r'$colors.on-tertiary-container',
       });
       final n = t.navigationBarTheme;
       expect(n.height, 64);
@@ -510,15 +553,15 @@ void main() {
       final t = material({
         'components.snack-bar.behavior': 'floating',
         'components.snack-bar.shape': 'small',
-        'components.snack-bar.background': 'inverse-surface',
+        'components.snack-bar.background': r'$colors.inverse-surface',
         'components.snack-bar.elevation': 'level3',
-        'components.tooltip.background': 'primary',
+        'components.tooltip.background': r'$colors.primary',
         'components.tooltip.text-style': 'body-small',
         'components.list-tile.dense': 'true',
         'components.list-tile.shape': 'medium',
-        'components.list-tile.tile-color': 'surface-container',
+        'components.list-tile.tile-color': r'$colors.surface-container',
         'components.divider.thickness': '2',
-        'components.divider.color': 'outline',
+        'components.divider.color': r'$colors.outline',
         'components.divider.space': '24',
       });
       expect(t.snackBarTheme.behavior, SnackBarBehavior.floating);
@@ -566,7 +609,7 @@ void main() {
         'components.input.style': 'outline',
         'components.input.shape': 'small',
         'components.input.content-padding': '12, 8',
-        'components.input.fill-color': 'surface-container',
+        'components.input.fill-color': r'$colors.surface-container',
       }).inputDecorationTheme;
       expect(outline.border, isA<OutlineInputBorder>());
       expect(
@@ -725,8 +768,8 @@ void main() {
           'typography.font-family-fallback.0': 'A',
           'typography.body.letter-spacing': '0.2',
           'motion.page-transition': 'zoom',
-          'motion.duration-short': '50ms',
-          'motion.easing-standard': '0, 0, 1, 1',
+          'motion.durations.short': '50ms',
+          'motion.curves.standard': '0, 0, 1, 1',
           'cupertino.primary-color': 'blue',
           'tokens.anything.at-all': 'x',
         }),
@@ -780,6 +823,15 @@ void main() {
         expect(seeded.toCupertino().primaryColor, seeded.colorScheme.primary);
       },
     );
+
+    test('action text styles carry the theme\'s primary color', () {
+      final text = theme({
+        'colors.primary': '#FF5E3A',
+        'typography.body-large.size': '17',
+      }).toCupertino().textTheme;
+      expect(text.actionTextStyle.color, const Color(0xFFFF5E3A));
+      expect(text.navActionTextStyle.color, const Color(0xFFFF5E3A));
+    });
 
     test('backgrounds and text styles', () {
       final t = theme({

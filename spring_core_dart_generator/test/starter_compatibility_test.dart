@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 const _app = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -136,7 +136,7 @@ void main() {
         '^$springBootVersion',
         app: '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 class CacheAutoConfiguration {}
 

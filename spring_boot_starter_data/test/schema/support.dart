@@ -96,7 +96,7 @@ Directory classpath(Map<String, String> files) {
       ..createSync(recursive: true)
       ..writeAsStringSync(value);
   }
-  final remove = ClasspathResources.addDirectory(directory.path);
+  final remove = Resources.addDirectory(directory.path);
   addTearDown(() {
     remove();
     deleteTemp(directory);

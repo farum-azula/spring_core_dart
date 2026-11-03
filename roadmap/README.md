@@ -110,8 +110,8 @@ What comes next, in order:
      the theme's colors, spacing, text styles, tokens and theme names
      (`context.theme.colors.surfaceContainerLow`, `context.theme.spacing.m`)
      and for the messages (`context.messages.basket.total(sum)`); a renamed
-     key fails the build, not the app (assets and routes later) — done:
-     `lib/spring_keys.dart` from the `spring_flutter_keys` builder;
+     key fails the build, not the app (assets and routes later) — done,
+     from the `spring_flutter_keys` builder;
    - the components' states (hovered, pressed, focused, disabled) and every
      component theme of Flutter (about 50, today 16) and Cupertino's — no
      generated widgets;
@@ -122,9 +122,44 @@ What comes next, in order:
      `lib/resources/`; `classpath` is Java history like `servlet` and
      `jackson`): `resources:` everywhere a location is read
      (`spring.config.import`, `@PropertySource`,
-     `spring.sql.migration.locations`, ...); in 0.6.2 `classpath:` still
-     works with a warning naming the new prefix, and a later minor release
-     refuses it like the renamed properties.
+     `spring.sql.migration.locations`, ...); `classpath:` is not a location.
+   Then **0.6.3: themes without Dart** (done, unreleased; the owner, November 2026; branch
+   `theme`; [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#themes-without-dart-063-the-owner-november-2026)):
+   the generated keys in `lib/spring_gen/theme.spring.dart` / `lib/spring_gen/messages.spring.dart`
+   as parts of the main `.spring.dart`; references (`$colors.primary`) and
+   color objects; nested tokens; `styles.*` with states and
+   `ThemeStates`; typed motion and `animations.*` with `ThemeAnimation`;
+   the background in the theme (`ThemeBackground`); images from the
+   network with a persistent cache (`ThemeImage`) — all done in 0.6.3
+   (unreleased); the example is `example/themes/neon` with its
+   design system as a library (`example/themes/neon_ui`), next to a Material
+   and a Cupertino showcase (`example/themes/`), later a repository of
+   its own used as a library.
+   Then **the navigation starter** (the next release; the owner, November
+   2026; [spring_boot_starter_flutter_navigation.md](spring_boot_starter_flutter_navigation.md)):
+   routes on pages and in Dart configuration, shells with a stack per
+   branch, `RouteTemplate` for the current route, generated constants per
+   page, the `route` and `branch` scopes.
+   Then **the site** (the owner, November 2026): the documentation site
+   built on Spring itself (a Flutter web app on the starters and the
+   navigation starter); the guides, the examples and the docs move there.
+   It must read well for other models too: `llms.txt` with a map of the
+   docs, a plain Markdown page per topic, full examples to copy. A
+   Flutter web page draws on a canvas, so search engines and models see
+   no text; the plan (the owner finds it not pretty, a better way is
+   welcome): one source, `site/content/**.md`, and a build
+   (`dart run tool/site.dart build`) that writes for every page, at the
+   same URL, `<path>/index.html` with the text in plain HTML (title,
+   description, `<link rel="alternate" type="text/markdown">`) plus the
+   Flutter bootstrap, which replaces the static text once loaded; the
+   page as `<path>.md`; `llms.txt` (the map of the `.md` pages),
+   `llms-full.txt` (everything in one file) and `sitemap.xml`. The app
+   reads the same `content/` as resources, so people, search engines and
+   models get the same text. The other way: the site served by our own
+   web starter, choosing by content negotiation like Spring MVC
+   (`Accept: text/markdown` → Markdown, a crawler → HTML, a browser → the
+   app) — prettier and more Spring, but it needs a server instead of
+   static hosting.
 11. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
    `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
    `@HttpExchange` later.
@@ -181,7 +216,7 @@ What comes next, in order:
 
 | File | Package | Status |
 |---|---|---|
-| [generated_code_performance.md](generated_code_performance.md) | generator, all packages | planned, a release of its own: faster and smaller generated code, incremental output per library, per-platform branches, `docs/codegen.md` |
+| [generated_code_performance.md](generated_code_performance.md) | generator, all packages | planned, a release of its own: faster and smaller generated code, incremental output per library (with the editor metadata per starter and properties typed in code instead of the hand file), per-platform branches, `docs/codegen.md` |
 | [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, Jakarta annotations under question (incremental generation moved to [generated_code_performance.md](generated_code_performance.md)) |
 | [dependencies.md](dependencies.md) | all packages | what an application must list (one package and the generator), what each package re-exports, the gaps left |
 | [fix_plan.md](fix_plan.md) | all packages | open differences from Spring 7 / Boot 4 found in reviews, how close each area is |

@@ -38,7 +38,7 @@ class in that file's directory and below is scanned.
 ```dart
 // lib/src/beans.dart
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:my_app/src/beans.spring.dart'; // written by the generator
+import 'package:my_app/spring_gen/src/beans.spring.dart'; // written by the generator
 
 @ComponentScan()
 final BeanModule appBeans = $appBeans;
@@ -51,7 +51,7 @@ dart run build_runner build
 dart run build_runner watch
 ```
 
-The generator writes `beans.spring.dart` next to `beans.dart`. Pass
+The generator writes `lib/spring_gen/beans.spring.dart` for `lib/beans.dart`. Pass
 `appBeans` to the context: `ApplicationContext.run([appBeans])`. A
 runnable walk-through is in the
 [example](https://pub.dev/packages/spring_core_dart_generator/example).
@@ -61,8 +61,9 @@ runnable walk-through is in the
 The package registers three builders in its `build.yaml`; all apply
 automatically to every package that depends on it.
 
-**`spring_core_dart`** (the main builder) writes `<file>.spring.dart` next
-to two kinds of library:
+**`spring_core_dart`** (the main builder) writes `<file>.spring.dart` into the
+`spring_gen/` folder of the source root (`lib/src/a.dart` gives
+`lib/spring_gen/src/a.spring.dart`) for two kinds of library:
 
 - **A library with a `@ComponentScan()` variable.** The output holds a
   `BeanModule` getter, named after the variable with a `$` prefix
@@ -123,7 +124,7 @@ Into that file it writes:
   the higher the precedence.
 
 **`spring_test`** (the test builder) writes
-`test/spring/<name>.test.spring.dart` for every `test/<name>_test.dart`
+`test/spring_gen/<name>.test.spring.dart` for every `test/<name>_test.dart`
 that declares `@SpringBootTest` or `@DataTest` classes. The file has a
 `runSpringTests()` function that registers the tests of those classes
 with `package:test`; the test's `main` calls it. A `@DataTest` class (of
@@ -382,16 +383,47 @@ for the properties.
 ### Typed keys of the configuration
 
 For an app that depends on `spring_boot_starter_flutter` (or the security
-starter that brings it), the builder `spring_flutter_keys` writes
-`lib/spring_keys.dart` from `lib/resources/`: every `.yml`, `.yaml` and
-`.properties` file, whatever the profile and the theme (the union of the keys,
-as the values are read at run time).
+starter that brings it), the builder `spring_flutter_keys` reads
+`lib/resources/` (every `.yml`, `.yaml` and `.properties` file, whatever the
+profile and the theme: the union of the keys, as the values are read at run
+time) and writes two files:
+
+```
+lib/
+  main.dart                 # yours, with @ComponentScan (or @SpringBootApplication)
+  spring_gen/
+    main.spring.dart        # generated: the beans; it has the `part` lines
+    theme.spring.dart       # generated: part of main.spring.dart, context.theme
+    messages.spring.dart    # generated: part of main.spring.dart, context.messages
+```
+
+Import `spring_gen/main.spring.dart` in your widgets to get `context.theme` and
+`context.messages`. The two files are parts of the `.spring.dart` of the
+package's parent library (an app's `spring_gen/main.spring.dart`; a library package has
+its own, and an app never sees the library's keys): the
+`@SpringBootApplication` library if there is one, else the outermost
+`@ComponentScan` (nested scans, as in `lib/src/feature/`, are fine). Unrelated
+roots in one package stop the build and are named; with none, no key files
+are written and a log line says why. The main builder decides the `part`
+lines with the same computation as the keys builder (a part cannot be probed
+with `canRead`: the keys builder writes in its own phase), so the keys builder
+must not be disabled while the main one runs. Nothing is written without
+`spring.flutter.theme.*` properties (theme file) or message files (messages
+file).
 
 - `context.theme` (`AppTheme`): `colors.<role>` (`Color`), `spacing.<name>`
   (`double`), `typography.<style>` (`TextStyle`; the 15 Material styles and
-  `code`), `tokens.<group>.<key>` (`Color` for `#RRGGBB` / `0x...`, `double`
-  for numbers, `String` otherwise; a token of different types in two themes is
-  an error), and `AppThemes.<name>` (theme names for `ThemeSelection.select`).
+  `code`), `tokens.<group>...<key>` (any depth, a class per group: `Color` for
+  `#RRGGBB` / `0x...` and references to colors, `double` for numbers,
+  `Duration` for `250ms`, `List<Color>` / `List<double>` / `List<String>`,
+  `ThemeImage` for a map with `source`, `String` otherwise; a token of
+  different types in two themes is an error), `styles.<name>` (a typed
+  `ThemeStyle` per `styles.*` entry, the class `AppStyle<Name>` with its
+  values `AppStyle<Name>Values`, for `ThemeStates`), `motion.<name>`
+  (`Duration`) and `motion.curves.<name>` (`Curve`), `animations.<name>`
+  (`AnimationSpec`, for `ThemeAnimation`), `background` (nullable:
+  `ThemeBackgroundData?`, `null` in a theme without one), and
+  `AppThemes.<name>` (theme names for `ThemeSelection.select`).
 - `context.messages` (`AppMessages`): from `<basename>.properties` and
   `<basename>_<locale>.properties` (`spring.messages.basename`, `messages` by
   default): a getter for a message without arguments, a method with `Object?`
@@ -403,15 +435,29 @@ as the values are read at run time).
   gets a `$` before it (`2xl` -> `$2xl`), a Dart keyword or `hashCode`,
   `toString`, ... a `$` after it. A name with other characters, or two keys
   with one Dart name, is an error and nothing is written.
+- References in values (`$colors.primary`, `{ color: $colors.primary, alpha: 12% }`) are
+  followed when the type of a token is decided, so a reference to a color is
+  a `Color`. Values are classified as the starter does (its fixture
+  `test/fixtures/theme_value_kinds.yaml` is checked by a generator test):
+  numbers (`+5`, `.5`, `1e3`), durations (`250ms`, `250 ms`, `s`/`m`/`h`),
+  colors (hex, Material names such as `grey.shade200` or `black54`, chained
+  `alpha` / `mix` in any case); `$colors.<any Material role>` and
+  `$shape.<scale name>` resolve without being declared. An image token is a
+  token at least `tokens.<group>.<key>` deep with a `source` and only image
+  keys (`refresh`, `source-sha256`, `headers`, `timeout`, `fallback`,
+  `allow-http`); with any other key it is a group.
 
 ```dart
-// lib/spring_keys.dart (generated)
-extension SpringKeys on BuildContext {
+// lib/spring_gen/theme.spring.dart (generated; part of main.spring.dart)
+extension SpringThemeKeys on BuildContext {
   AppTheme get theme => AppTheme._(ThemeKeyReader(SpringTheme.of(this)));
-  AppMessages get messages => AppMessages._(this);
 }
 final class AppThemeSpacing {
   double get m => _values.spacing('m');
+}
+// lib/spring_gen/messages.spring.dart (generated)
+extension SpringMessageKeys on BuildContext {
+  AppMessages get messages => AppMessages._(this);
 }
 final class AppMessagesBasket {
   String total(Object? arg0) =>
@@ -419,8 +465,43 @@ final class AppMessagesBasket {
 }
 ```
 
-The file holds keys, not values. Without `spring.flutter.theme.*` properties
-and message files nothing is written (a file written earlier stays: delete it).
+The files hold keys, not values.
+
+## Metadata for editors
+
+For every package with Spring code the generator writes
+`lib/spring_gen/spring_metadata.json`: the configuration properties
+(`@ConfigurationProperties`, with `///` descriptions and literal defaults),
+the beans (types, scope, conditions, injection points, members for SpEL),
+the profiles and value hints. Everything is derived from the code, nothing
+is written by hand: the `///` of a field is its description, a literal
+initializer or constructor default its `default`, an enum type lists its
+constants (each with its own `///`) as values, `@Range(min, max)` gives
+`range`, `@WarnValues([...], 'why')` gives `warn`, and
+`@PropertyValues([...])` (or `@PropertyValues.provider('profiles')`) the
+values of a `String` field. Keys that are only read (`@Value('${a.b}')`,
+`@ConditionalOnProperty`) are listed by name, without a description.
+Commit it with the other generated files; it is published
+with the package, so a language server reads the metadata of an app and of
+all its dependencies. The format is in `roadmap/spring_metadata.md`.
+
+Any editor can get completion and checks for `application.yml` from a JSON
+Schema made from that metadata:
+
+```sh
+dart run tool/spring_schema.dart path/to/app     # in this repository
+```
+
+writes `path/to/app/spring-application.schema.json`. Point a YAML file at
+it with a first line (the path is relative to the file; the YAML language
+server also accepts a URL):
+
+```yaml
+# yaml-language-server: $schema=../../spring-application.schema.json
+spring:
+  profiles:
+    active: dev
+```
 
 ## Options
 
@@ -564,8 +645,8 @@ names; applications do not import it.
 
 | Factory | Builder | `build.yaml` entry |
 |---|---|---|
-| `springCoreDartBuilder` | the main builder, with the `aop_proxies` and `aop_prune` options | `spring_core_dart`: `auto_apply: dependents`, `build_to: source`, `.dart` → `.spring.dart` |
-| `springTestBuilder` | the test builder, no options | `spring_test`: `auto_apply: dependents`, `build_to: source`, `test/<name>_test.dart` → `test/spring/<name>.test.spring.dart` |
+| `springCoreDartBuilder` | the main builder, with the `aop_proxies` and `aop_prune` options | `spring_core_dart`: `auto_apply: dependents`, `build_to: source`, `lib/{{}}.dart` → `lib/spring_gen/{{}}.spring.dart` (the same for `bin/`, `test/`, `example/`) |
+| `springTestBuilder` | the test builder, no options | `spring_test`: `auto_apply: dependents`, `build_to: source`, `test/<name>_test.dart` → `test/spring_gen/<name>.test.spring.dart` |
 | `springFlutterWebBuilder` | the `web_dev_config.yaml` builder, no options | `spring_flutter_web`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web_dev_config.yaml` itself) |
 
 ## Dependencies
@@ -610,7 +691,7 @@ lib/
     flutter_scanning.dart       spring_boot_starter_flutter
     asset_check.dart            @Value('asset:...') against pubspec.yaml
     dart_define_keys.dart       --dart-define keys
-    test_builder.dart           @SpringBootTest, @DataTest → test/spring/*.test.spring.dart
+    test_builder.dart           @SpringBootTest, @DataTest → test/spring_gen/*.test.spring.dart
     web_dev_config_builder.dart spring.flutter.web.* → web_dev_config.yaml
 build.yaml
 test/                           generated output and every rejected declaration

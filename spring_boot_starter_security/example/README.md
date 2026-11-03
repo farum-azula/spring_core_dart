@@ -25,7 +25,7 @@ dev_dependencies:
 ## Run it
 
 The generator writes the controllers' handlers and the proxies that the
-`@PreAuthorize` check runs in (`example.spring.dart`):
+`@PreAuthorize` check runs in (`spring_gen/example.spring.dart`):
 
 ```bash
 dart run build_runner build

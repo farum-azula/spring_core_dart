@@ -5,7 +5,7 @@
 // context.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'postgres_app.spring.dart';
+import '../../spring_gen/postgres/app/postgres_app.spring.dart';
 
 /// A bean of the application's own module.
 @Component()

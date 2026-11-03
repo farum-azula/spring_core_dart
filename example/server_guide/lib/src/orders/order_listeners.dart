@@ -1,7 +1,7 @@
 // Who reacts to orders (chapter 6): @EventListener methods with a
 // condition, an order and @Async, and an ApplicationListener bean. The
 // stock goes first (StockService, @Order(1)).
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/orders/mail.dart';
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:neon_books_server/src/shop/receipt.dart';

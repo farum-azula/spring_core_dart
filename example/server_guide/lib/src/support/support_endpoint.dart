@@ -2,7 +2,7 @@
 // port. The handshake is an ordinary request through the security filter
 // chain, so only logged-in users connect (the session cookie), and the
 // methods get the user of the handshake.
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/shop/clock.dart';
 import 'package:neon_books_server/src/support/chat_message.dart';
 import 'package:neon_books_server/src/support/support_bot.dart';

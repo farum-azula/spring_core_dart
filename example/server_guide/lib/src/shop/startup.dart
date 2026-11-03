@@ -1,7 +1,7 @@
 // What happens when the application starts (chapter 1): a callback once
 // every singleton exists, runners in @Order, events of Spring Boot and of
 // the web server.
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/catalog/book_repository.dart';
 import 'package:neon_books_server/src/shop/shop_properties.dart';

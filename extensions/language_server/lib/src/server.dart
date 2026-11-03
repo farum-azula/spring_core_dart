@@ -14,7 +14,9 @@ import 'package:dart_spring_language_server/src/workspace.dart';
 /// `${key}` to the property. Hover shows the candidate beans and the
 /// values of a property. Semantic tokens colour placeholders, SpEL,
 /// pointcuts and the parameters of closures. Diagnostics report invalid
-/// SpEL, unknown keys and the like. [SpringWorkspace] does the work; this
+/// SpEL, unknown keys and the like. Completion and hovers in config files
+/// and annotation strings come from the Spring metadata of the package and
+/// its dependencies. [SpringWorkspace] does the work; this
 /// class decodes the messages, tracks the open documents and encodes the
 /// answers.
 ///
@@ -176,6 +178,8 @@ final class SpringLanguageServer {
           _respond(id, _definition(params));
         case 'textDocument/hover':
           _respond(id, _hover(params));
+        case 'textDocument/completion':
+          _respond(id, _completion(params));
         case 'textDocument/semanticTokens/full':
           _respond(id, _semanticTokens(params));
         default:
@@ -216,6 +220,10 @@ final class SpringLanguageServer {
         },
         'definitionProvider': true,
         'hoverProvider': true,
+        'completionProvider': {
+          'triggerCharacters': ['.', r'$', '{', '@', '#', '-', ':'],
+          'resolveProvider': false,
+        },
         'semanticTokensProvider': {
           'legend': {
             'tokenTypes': semanticTokenTypes,
@@ -238,16 +246,55 @@ final class SpringLanguageServer {
     workspace.refresh();
     final path = _path((params['textDocument']! as Map)['uri']! as String);
     final position = params['position']! as Map;
-    final file = workspace.file(path);
-    if (file == null) {
+    final text = workspace.textOf(path);
+    if (text == null) {
       return null;
     }
     final line = position['line']! as int;
     final character = position['character']! as int;
-    if (line >= file.lineInfo.lineCount) {
+    var start = 0;
+    for (var row = 0; row < line; row++) {
+      final next = text.indexOf('\n', start);
+      if (next < 0) {
+        return null;
+      }
+      start = next + 1;
+    }
+    return (path, (start + character).clamp(0, text.length));
+  }
+
+  Object? _completion(Map<String, Object?> params) {
+    final at = _position(params);
+    if (at == null) {
       return null;
     }
-    return (path, file.lineInfo.getOffsetOfLine(line) + character);
+    final result = _workspace!.completion(at.$1, at.$2);
+    if (result == null) {
+      return null;
+    }
+    final range = _range(result.replace);
+    return {
+      'isIncomplete': false,
+      'items': [
+        for (final item in result.items)
+          {
+            'label': item.label,
+            'kind': item.kind,
+            'detail': ?item.detail,
+            if (item.documentation != null)
+              'documentation': {
+                'kind': 'markdown',
+                'value': item.documentation,
+              },
+            'sortText': ?item.sortText,
+            'filterText': item.label,
+            'textEdit': {
+              'range': range,
+              'newText': item.insertText ?? item.label,
+            },
+          },
+      ],
+    };
   }
 
   Object? _definition(Map<String, Object?> params) {
@@ -310,15 +357,28 @@ final class SpringLanguageServer {
     }
     workspace.refresh();
     for (final path in _open) {
+      final List<Problem> problems;
+      try {
+        problems = [
+          ...workspace.problems(path),
+          ...workspace.metadataNotes(path),
+        ];
+      } on Object catch (error, stackTrace) {
+        // One broken file must not stop the others' diagnostics.
+        stderr.writeln(
+          'dart_spring_lsp: diagnostics of $path: $error\n$stackTrace',
+        );
+        continue;
+      }
       _send({
         'method': 'textDocument/publishDiagnostics',
         'params': {
           'uri': Uri.file(path).toString(),
           'diagnostics': [
-            for (final problem in workspace.problems(path))
+            for (final problem in problems)
               {
                 'range': _range(problem.range),
-                'severity': problem.error ? 1 : 2,
+                'severity': problem.error ? 1 : (problem.info ? 3 : 2),
                 'source': 'dart_spring',
                 'message': problem.message,
               },

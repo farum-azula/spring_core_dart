@@ -58,7 +58,7 @@ Java. The generator writes the getter into the `.spring.dart` file of the
 scan, so import that file:
 
 ```dart
-import 'example.spring.dart'; // the generated file
+import 'spring_gen/example.spring.dart'; // the generated file
 
 @Service()
 @Log(topic: 'shop.checkout') // without topic: <package>.Checkout

@@ -28,7 +28,7 @@ dev_dependencies:
 From the `spring_boot_starter_web` directory:
 
 ```bash
-dart run build_runner build   # writes example.spring.dart: the beans and the request handlers
+dart run build_runner build   # writes spring_gen/example.spring.dart: the beans and the request handlers
 dart run example/example.dart
 # INFO  Web server started on port 8085 (http)
 ```

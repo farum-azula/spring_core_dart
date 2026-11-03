@@ -578,7 +578,7 @@ final class _BrowserResources implements ProtocolResolver {
   _BrowserResources(Map<String, String> files, this._binary)
     : _resolvers = [
         InMemoryProtocolResolver('memory:', files),
-        InMemoryProtocolResolver(ClasspathResources.prefix, files),
+        InMemoryProtocolResolver(Resources.prefix, files),
       ];
 
   final List<InMemoryProtocolResolver> _resolvers;
@@ -590,7 +590,7 @@ final class _BrowserResources implements ProtocolResolver {
 
   @override
   Resource resolve(String location, ResourceLoader resourceLoader) {
-    for (final prefix in ['memory:', ClasspathResources.prefix]) {
+    for (final prefix in ['memory:', Resources.prefix]) {
       if (location.startsWith(prefix)) {
         // InMemoryProtocolResolver's path cleaning.
         final path = FileSystemResource(
@@ -618,7 +618,7 @@ final class _BrowserResources implements ProtocolResolver {
     if (_scheme.hasMatch(location)) {
       return _empty('resource [$location]');
     }
-    return resolve('${ClasspathResources.prefix}$location', resourceLoader);
+    return resolve('${Resources.prefix}$location', resourceLoader);
   }
 
   static Resource _empty(String description) =>
@@ -652,7 +652,7 @@ final class _BrowserResources implements ProtocolResolver {
 // 'memory:/application-web.yaml'`, or `'resources:...'` when imported).
 String _sourceOrigin(String sourceName) {
   final match = RegExp(
-    "'(?:memory|resources|classpath):/?([^']+)'",
+    "'(?:memory|resources):/?([^']+)'",
   ).firstMatch(sourceName);
   return match == null ? '' : ' (in lib/resources/${match[1]})';
 }
@@ -854,16 +854,15 @@ final class _StaticConfig {
     if (value.startsWith(ConfigDataEnvironment.optionalPrefix)) {
       value = value.substring(ConfigDataEnvironment.optionalPrefix.length);
     }
-    value = ClasspathResources.migrate(value);
     if (!value.contains('[') || value.endsWith('/')) {
       return null; // no hint: every config file is read anyway
     }
     final relative =
-        !value.startsWith(ClasspathResources.prefix) &&
+        !value.startsWith(Resources.prefix) &&
         !RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(value) &&
         !value.startsWith('/') &&
         !value.startsWith(r'\');
-    if (!relative && !value.startsWith(ClasspathResources.prefix)) {
+    if (!relative && !value.startsWith(Resources.prefix)) {
       return null;
     }
     final ({String path, String? extension, Encoding? encoding}) hints;
@@ -894,9 +893,9 @@ final class _StaticConfig {
       return null;
     }
     if (!relative) {
-      file = file.substring(ClasspathResources.prefix.length);
+      file = file.substring(Resources.prefix.length);
     }
-    return switch (ClasspathResources.normalize(file)) {
+    return switch (Resources.normalize(file)) {
       final path? when !path.endsWith('/') => (path, loader, hints.encoding),
       _ => null,
     };
@@ -1531,8 +1530,27 @@ final class _Reader {
         'integer from 0 to 65535 (0 picks a free port).',
       );
     }
+    if (_browserBlockedPorts.contains(port)) {
+      log.warning(
+        '${WebDevConfigBuilder.prefix}.port: browsers refuse port $port '
+        '(ERR_UNSAFE_PORT: it belongs to another protocol, such as SIP or '
+        'IRC), so the app will not open in a browser; use another port, '
+        'such as 8080.',
+      );
+    }
     return port;
   }
+
+  // The ports Chrome, Edge, Brave, Firefox and Safari refuse to open
+  // (Chromium's net/base/port_util.cc, the Fetch standard's "bad ports").
+  static const _browserBlockedPorts = {
+    1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 69, //
+    77, 79, 87, 95, 101, 102, 103, 104, 109, 110, 111, 113, 115, 117, 119,
+    123, 135, 137, 139, 143, 161, 179, 389, 427, 465, 512, 513, 514, 515,
+    526, 530, 531, 532, 540, 548, 554, 556, 563, 587, 601, 636, 989, 990,
+    993, 995, 1719, 1720, 1723, 2049, 3659, 4045, 4190, 5060, 5061, 6000,
+    6566, 6665, 6666, 6667, 6668, 6669, 6679, 6697, 10080,
+  };
 
   String? _baseHref() {
     final baseHref = _string('base-href');

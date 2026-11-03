@@ -22,6 +22,9 @@
 //   flutter_security spring_boot_starter_flutter_security affected
 //   flutter_guide    example/flutter_guide affected, or the server guide
 //                    its end-to-end tests run against (incl. goldens)
+//   theme_showcase_neon, theme_showcase_material, theme_showcase_cupertino
+//                    the app in example/themes/ (neon: or neon_ui)
+//                    affected (incl. goldens)
 //   flutter          any Flutter package
 //   family           a published Dart package of the family (the
 //                    applications of tool/check_app_dependencies.dart)
@@ -38,6 +41,10 @@ const flutterPackages = [
   'spring_boot_starter_flutter',
   'spring_boot_starter_flutter_security',
   'example/flutter_guide',
+  'example/themes/neon_ui',
+  'example/themes/neon',
+  'example/themes/material',
+  'example/themes/cupertino',
 ];
 
 /// Changed paths (prefixes) that affect every package.
@@ -112,6 +119,17 @@ Future<void> main(List<String> args) async {
     // The app's end-to-end tests run against the server guide: a change of
     // the server tests the app too.
     final app = has('example/flutter_guide') || server;
+    final showcaseNeon =
+        has('example/themes/neon') || has('example/themes/neon_ui');
+    final showcaseMaterial = has('example/themes/material');
+    final showcaseCupertino = has('example/themes/cupertino');
+    final anyFlutter =
+        starter ||
+        security ||
+        app ||
+        showcaseNeon ||
+        showcaseMaterial ||
+        showcaseCupertino;
     final dartPackages = ordered
         .where((p) => !flutterPackages.contains(p))
         .join(',');
@@ -124,7 +142,10 @@ Future<void> main(List<String> args) async {
         'flutter_starter=$starter',
         'flutter_security=$security',
         'flutter_guide=$app',
-        'flutter=${starter || security || app}',
+        'theme_showcase_neon=$showcaseNeon',
+        'theme_showcase_material=$showcaseMaterial',
+        'theme_showcase_cupertino=$showcaseCupertino',
+        'flutter=$anyFlutter',
         'family=${familyAffected(affected)}',
         '',
       ].join('\n'),

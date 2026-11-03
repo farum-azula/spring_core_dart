@@ -44,8 +44,6 @@ enum NativeSignIn {
   /// Sign in with Apple's sheet on iOS and macOS (`native-sign-in=apple`).
   apple;
 
-  static const _prefix = 'spring.security.oauth2.client.registration';
-
   /// The mode named [value] (`none`, `apple`, ignoring case).
   ///
   /// Throws an [ArgumentError] for another value.
@@ -70,24 +68,11 @@ enum NativeSignIn {
     if (environment is! ConfigurableEnvironment) {
       return const {};
     }
-    final keys = Binder.get(environment)
-        .bind(
-          _prefix,
-          const MapType<String, String>(
-            ClassType<String>(),
-            ClassType<String>(),
-          ),
-        )
-        .orElse(const {})
-        .keys;
     final modes = <String, NativeSignIn>{};
-    for (final id in {for (final key in keys) key.split('.').first}) {
-      if (id.isEmpty) {
-        continue;
-      }
-      final set = environment.getProperty('$_prefix.$id.native-sign-in');
-      final provider =
-          environment.getProperty('$_prefix.$id.provider')?.trim() ?? id;
+    for (final MapEntry(key: id, value: registration)
+        in bindOAuth2ClientProperties(environment).registration.entries) {
+      final set = registration.nativeSignIn;
+      final provider = registration.provider?.trim() ?? id;
       final mode = set != null && set.trim().isNotEmpty
           ? parse(set)
           : (CommonOAuth2Provider.of(provider) == CommonOAuth2Provider.apple

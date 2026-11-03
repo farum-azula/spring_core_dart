@@ -77,7 +77,7 @@ The app is not part of the repository's pub workspace, because
 takes the family's packages from their folders instead.
 
 After changing beans, annotations or `lib/resources/`, regenerate
-`lib/main.spring.dart` (and `web_dev_config.yaml`):
+`lib/spring_gen/main.spring.dart` (and `web_dev_config.yaml`):
 
 ```sh
 dart run build_runner build      # or `watch` while developing
@@ -107,7 +107,10 @@ flutter test --tags golden                   # the screenshots (macOS only, see 
 ```text
 lib/
   main.dart                    @SpringBootApplication, SpringApplicationWidget
-  main.spring.dart             generated: the beans, proxies, Feign clients, context getters, `log`
+  spring_gen/                  generated, do not edit
+    main.spring.dart           the beans, proxies, Feign clients, context getters, `log`
+    theme.spring.dart          typed context.theme
+    messages.spring.dart       typed context.messages
   resources/                   the resources: application*.properties, application.yml,
                                themes/*.yml, messages*.properties
   src/app/                     the home (sections), app properties, language, lifecycle and route logs
@@ -171,7 +174,7 @@ debug banner), its locales from the message files, and its themes from
   when the app goes to the background and comes back (the context is
   paused: chapter 8).
 - **`@Log`** gives a class a `log` getter, generated into
-  `main.spring.dart` (Lombok's `@Slf4j` in Java). The logger is named
+  `spring_gen/main.spring.dart` (Lombok's `@Slf4j` in Java). The logger is named
   `topic:` (`neon.lifecycle`), else `neon_books_app.LifecycleLog`.
 - **Checked at startup.** `ApiProperties` (`lib/src/api/api_properties.dart`)
   is `@ConfigurationProperties('api')` with constraints (`@NotBlank`,
@@ -240,7 +243,7 @@ loses nothing.
   `LoginPage`, `AdminPage`, `OrdersPage`, `ChatInput`, ...
 - **`@BuildContextAccess`** generates `context.basket`, `context.catalog`,
   `context.session` and `context.languageSelection` (imported from
-  `main.spring.dart`). `BookTile` calls `context.basket.add(book)`;
+  `spring_gen/main.spring.dart`). `BookTile` calls `context.basket.add(book)`;
   `AccountButton` listens to `context.session` with a
   `ListenableBuilder`.
 - **Only the widgets that read a bean rebuild.** `BasketBadge` reads
@@ -278,9 +281,13 @@ standard `dark` theme changes. It imports one file per custom theme
 
 ```yaml
 # lib/resources/themes/neon-night.yml: everything of `neon`, dark
-spring.flutter.theme.themes.neon-night:
-  extends: neon
-  brightness: dark
+spring:
+  flutter:
+    theme:
+      themes:
+        neon-night:
+          extends: neon
+          brightness: dark
 ```
 
 - **Fonts from an asset folder.** `res/fonts/roboto/` and

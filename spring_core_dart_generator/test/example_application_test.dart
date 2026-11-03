@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @Component()
 class ExampleGreeter {}

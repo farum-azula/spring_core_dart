@@ -1,4 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
+import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 
 /// How the native title bar of a desktop window looks: the value of
 /// `spring.flutter.desktop.window.title-bar`.
@@ -131,41 +133,42 @@ final class DesktopWindowSettings {
   }
 
   /// `spring.flutter.desktop.window.title`.
-  static const titleProperty = 'spring.flutter.desktop.window.title';
+  static const titleProperty = '${DesktopWindowProperties.prefix}.title';
 
   /// `spring.flutter.desktop.window.title-bar`.
-  static const titleBarProperty = 'spring.flutter.desktop.window.title-bar';
+  static const titleBarProperty = '${DesktopWindowProperties.prefix}.title-bar';
 
   /// `spring.flutter.desktop.window.initial-size`.
   static const initialSizeProperty =
-      'spring.flutter.desktop.window.initial-size';
+      '${DesktopWindowProperties.prefix}.initial-size';
 
   /// `spring.flutter.desktop.window.min-size`.
-  static const minSizeProperty = 'spring.flutter.desktop.window.min-size';
+  static const minSizeProperty = '${DesktopWindowProperties.prefix}.min-size';
 
   /// `spring.flutter.desktop.window.max-size`.
-  static const maxSizeProperty = 'spring.flutter.desktop.window.max-size';
+  static const maxSizeProperty = '${DesktopWindowProperties.prefix}.max-size';
 
   /// Reads the properties of [environment]; a missing, empty or blank one
   /// is its default (a blank title is no title: the runner's stays). Throws
   /// for a malformed value (naming the key and the expected format) and for
   /// sizes that contradict each other (min <= initial <= max).
   factory DesktopWindowSettings.fromEnvironment(Environment environment) {
-    String? read(String key) {
-      final text = environment.getProperty(key)?.trim() ?? '';
-      return text.isEmpty ? null : text;
+    final properties = boundProperties<DesktopWindowProperties>(
+      environment,
+      'desktopWindowProperties',
+    );
+    // A blank value is none.
+    String? text(String? value) {
+      final trimmed = value?.trim();
+      return trimmed == null || trimmed.isEmpty ? null : trimmed;
     }
 
-    final title = read(titleProperty);
-    final titleBar = read(titleBarProperty);
-    final initial = read(initialSizeProperty);
-    final min = read(minSizeProperty);
-    final max = read(maxSizeProperty);
+    final initial = text(properties.initialSize);
+    final min = text(properties.minSize);
+    final max = text(properties.maxSize);
     return DesktopWindowSettings(
-      title: title,
-      titleBar: titleBar == null
-          ? TitleBarStyle.defaultStyle
-          : TitleBarStyle.parse(titleBar),
+      title: text(properties.title),
+      titleBar: TitleBarStyle.parse(text(properties.titleBar) ?? 'default'),
       initialSize: initial == null
           ? null
           : WindowSize.parse(initial, property: initialSizeProperty),

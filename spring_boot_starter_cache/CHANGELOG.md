@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `spring.cache.*` is made from code and the starter reads the same classes: `CacheProperties` (`type` is the `CacheType` enum, `cache-names`, `simple.*`) is bound by the Binder, and `cacheManagerFromProperties` takes it before the `Environment`. The hand-written `spring_metadata_additional.json` is gone.
+
 ## 0.6.2
 
 - No changes of its own; released with the family version 0.6.2.

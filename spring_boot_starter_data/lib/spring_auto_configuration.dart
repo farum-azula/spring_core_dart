@@ -14,6 +14,7 @@ library;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/data_auto_configuration.dart';
 import 'package:spring_boot_starter_data/src/data_source_auto_configuration.dart';
+import 'package:spring_boot_starter_data/src/properties/properties_beans.dart';
 
 // The auto-configurations this starter builds on (logging, and through it
 // spring_boot_dart's), so a test of an application that lists only this
@@ -30,4 +31,5 @@ final BeanModule springBootStarterDataAutoConfiguration = BeanModule(
   // The SQL beans first: the in-memory transaction manager of
   // dataAutoConfiguration is only made when none of them made one.
   [...dataSourceAutoConfiguration, ...dataAutoConfiguration],
+  imports: [dataConfigBeans],
 );

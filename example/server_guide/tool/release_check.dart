@@ -22,7 +22,7 @@ import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.da
     show Scheduled, ScheduledAnnotationBeanPostProcessor;
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
-import '../bin/main.spring.dart';
+import '../bin/spring_gen/main.spring.dart';
 
 Future<void> main() async {
   // Config comes from the embedded classpath resources (lib/resources/),

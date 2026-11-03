@@ -123,7 +123,7 @@ void main() {
     test('component properties reference tokens', () {
       final t = themes(const {
         'components.card.shape': 'large',
-        'components.card.color': 'surface-container',
+        'components.card.color': r'$colors.surface-container',
         'components.card.elevation': 'level2',
         'components.app-bar.center-title': 'true',
         'components.app-bar.title-style': 'title-medium',

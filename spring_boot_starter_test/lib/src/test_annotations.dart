@@ -31,14 +31,14 @@ import 'package:test_api/scaffolding.dart' show Timeout;
 /// its objects by hand needs no annotation.
 ///
 /// The annotation does nothing at run time. `spring_core_dart_generator`
-/// reads the class and writes `test/spring/<name>.test.spring.dart`, whose
+/// reads the class and writes `test/spring_gen/<name>.test.spring.dart`, whose
 /// `runSpringTests()` declares the tests with `springBootTest`; the test
 /// file's `main` calls it. The other annotations of this file set the
 /// remaining options: [ActiveProfiles], [TestPropertySource], [TestBean],
 /// [Test] and so on.
 ///
 /// ```dart
-/// import 'spring/checkout.test.spring.dart'; // generated
+/// import 'spring_gen/checkout.test.spring.dart'; // generated
 ///
 /// // The shop starts with a test name; the test uses its real Checkout.
 /// @SpringBootTest(args: ['--shop.name=Night Books'])

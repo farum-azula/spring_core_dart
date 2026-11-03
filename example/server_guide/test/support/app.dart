@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-import '../../bin/main.spring.dart';
+import '../../bin/spring_gen/main.spring.dart';
 
 /// The whole application (`dev` sample data, `test` settings from
 /// test/resources/application-test.properties), once for the tests of

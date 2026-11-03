@@ -49,7 +49,7 @@ them, is in the [testing guide](../docs/testing.md).
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/shop.spring.dart'; // the generated springApplication
+import '../bin/spring_gen/shop.spring.dart'; // the generated springApplication
 
 void main() {
   final gateway = FakeGateway();
@@ -545,7 +545,7 @@ generator (`spring_core_dart_generator`, already a dev dependency of the
 application) turns each class into the functions above:
 
 ```dart
-import 'spring/checkout.test.spring.dart'; // generated
+import 'spring_gen/checkout.test.spring.dart'; // generated
 
 @SpringBootTest()
 @ActiveProfiles(['test'])

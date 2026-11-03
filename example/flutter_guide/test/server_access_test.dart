@@ -6,14 +6,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neon_books_app/main.spring.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/admin/admin_page.dart';
 import 'package:neon_books_app/src/admin/admin_service.dart';
 import 'package:neon_books_app/src/api/catalog_client.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
-import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/api/models.dart';
+import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/catalog/book_page.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';

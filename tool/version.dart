@@ -41,6 +41,10 @@ const family = [
 const dependents = [
   'example/server_guide',
   'example/flutter_guide',
+  'example/themes/neon_ui',
+  'example/themes/neon',
+  'example/themes/material',
+  'example/themes/cupertino',
   'extensions/language_server',
 ];
 

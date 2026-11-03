@@ -5,6 +5,7 @@
 // (the logout answer).
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/bound_properties.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/browser_page.dart'
     show cookieValue;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
@@ -36,7 +37,7 @@ final class _Events implements ApplicationEventPublisher {
 }
 
 FlutterWebSecurityProperties bind(Map<String, String> values) =>
-    FlutterWebSecurityProperties.bind(
+    boundWebSecurityProperties(
       StandardEnvironment()
         ..propertySources.addFirst(MapPropertySource('test', values)),
     );
@@ -78,7 +79,7 @@ void main() {
       );
       expect(
         () => bind({'spring.flutter.security.web.mode': 'bff'}),
-        throwsArgumentError,
+        throwsA(isA<ConfigurationPropertiesBindException>()),
       );
     });
 
@@ -86,19 +87,19 @@ void main() {
       for (final bad in ['localhost:8080', 'ftp://x', 'http://x/?a=1', '/']) {
         expect(
           () => bind({'spring.flutter.security.web.server-url': bad}),
-          throwsArgumentError,
+          throwsA(isA<ConfigurationPropertiesBindException>()),
           reason: bad,
         );
       }
       expect(
         () => bind({'spring.flutter.security.web.logout-url': 'logout'}),
-        throwsArgumentError,
+        throwsA(isA<ConfigurationPropertiesBindException>()),
       );
       expect(
         () => bind({
           'spring.flutter.security.web.logout-url': 'javascript:alert(1)',
         }),
-        throwsArgumentError,
+        throwsA(isA<ConfigurationPropertiesBindException>()),
       );
     });
 

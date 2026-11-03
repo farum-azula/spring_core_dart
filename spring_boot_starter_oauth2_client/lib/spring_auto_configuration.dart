@@ -8,6 +8,7 @@ library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart';
+import 'package:spring_boot_starter_oauth2_client/src/properties/properties_beans.dart';
 
 // The auto-configurations this starter builds on (Feign, the security
 // core, logging, and through them spring_boot_dart's), so a test of an
@@ -29,4 +30,5 @@ export 'package:spring_security_core/spring_auto_configuration.dart';
 final BeanModule springBootStarterOauth2ClientAutoConfiguration = BeanModule(
   'springBootStarterOauth2ClientAutoConfiguration',
   [...oauth2ClientAutoConfiguration],
+  imports: [oauth2ClientConfigBeans],
 );

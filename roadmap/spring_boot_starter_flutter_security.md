@@ -14,7 +14,7 @@ Since SSO, every app with `spring_boot_starter_flutter` gets the OAuth2
 client, Feign, `spring_security_core` and the plugin's native code
 (Swift, Kotlin, `androidx.browser`, two activities in the Android
 manifest), even an app without any login. Tree shaking does not remove
-it: the generated `main.spring.dart` lists the OAuth2 client's
+it: the generated `spring_gen/main.spring.dart` lists the OAuth2 client's
 auto-configuration, whose bean definitions reference that code, and their
 conditions are decided at run time; native code is always built in. As
 in Spring, an app adds security when it needs it:

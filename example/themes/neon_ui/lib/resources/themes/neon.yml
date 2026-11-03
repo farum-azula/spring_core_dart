@@ -1,0 +1,238 @@
+# NEON: a dark design system in the spirit of neon signs. Yellow, cyan and
+# pink on a near-black night, a drifting picture behind the page, a glowing
+# border that turns around the modal.
+#
+# The whole look is this file; neon_ui has no theme code. Values refer to
+# each other (`$colors.primary`, `$neon.cyan`), so a theme that `extends:
+# neon` and changes one color changes everything built from it.
+#
+# An app imports it with `spring.config.import: resources:themes/neon.yml`
+# and shows it with `spring.flutter.theme.active: neon`.
+spring:
+  flutter:
+    theme:
+      themes:
+        neon:
+          brightness: dark
+          seed-color: $colors.primary
+
+          # ------------------------------------------------------ colors
+          colors:
+            primary: $neon.yellow
+            on-primary: '#0A0C12'
+            primary-container: { color: $colors.primary, mix: { with: black, amount: 78% } }
+            on-primary-container: $colors.primary
+            secondary: $neon.cyan
+            on-secondary: '#0A0C12'
+            tertiary: $neon.pink
+            on-tertiary: '#0A0C12'
+            error: '#FF5C7A'
+            on-error: '#0A0C12'
+            surface: '#0D1017'
+            on-surface: '#E4E7EE'
+            on-surface-variant: '#8B91A1'
+            surface-container-lowest: '#090B10'
+            surface-container-low: '#10131B'
+            surface-container: '#141822'
+            surface-container-high: '#1A1E29'
+            surface-container-highest: '#222733'
+            outline: '#343A48'
+            outline-variant: '#232834'
+
+          # --------------------------------------------------- typography
+          # Space Grotesk for headings, JetBrains Mono for the rest (the
+          # fonts are in this package: the family is packages/neon_ui/...).
+          typography:
+            font-family: packages/neon_ui/JetBrains Mono
+            defaults: { letter-spacing: 0.2 }
+            display: { font-family: packages/neon_ui/Space Grotesk, weight: bold, letter-spacing: 4 }
+            headline: { font-family: packages/neon_ui/Space Grotesk, weight: bold, letter-spacing: 2 }
+            title: { font-family: packages/neon_ui/Space Grotesk, weight: 600, letter-spacing: 1.2 }
+            title-large: { font-family: packages/neon_ui/Space Grotesk, weight: bold, size: 20, letter-spacing: 1.6 }
+            display-small: { size: 36 }
+            headline-small: { size: 24 }
+            body-large: { size: 14, height: 1.4 }
+            body-medium: { size: 13, height: 1.45 }
+            body-small: { size: 12, height: 1.4 }
+            label: { font-family: packages/neon_ui/JetBrains Mono, weight: 600, letter-spacing: 1.4 }
+            label-large: { size: 13 }
+            label-medium: { size: 12 }
+            label-small: { size: 10, weight: 600, letter-spacing: 1.6 }
+            code: { font-family: packages/neon_ui/JetBrains Mono, size: 12, height: 1.5 }
+          shape: { extra-small: 2, small: 3, medium: 4, large: 4 }
+          spacing: { xs: 4, s: 8, m: 16, l: 24, xl: 32 }
+
+          # ------------------------------------------------------ tokens
+          # Values of our own. Groups nest, lists and durations work, and a
+          # color can be made from another one.
+          tokens:
+            neon:
+              # The palette. The roles above point at it, not the other way.
+              yellow: '#F2E35B'
+              cyan: '#4FD8E8'
+              pink: '#F0508C'
+              lavender: '#A89BF5'
+              green: '#7BE495'
+              # The accent of the page: the logo, the panel mark, the glow.
+              accent: $colors.primary
+              glow: { color: $neon.accent, alpha: 35% }
+              # Surfaces.
+              panel: '#CC0E1119'
+              panel-border: { color: white, alpha: 15% }
+              code: '#E60A0C12'
+              input-fill: '#B30A0C12'
+              # A tone of a badge and its soft fill (the old badgeAlpha).
+              tone:
+                accent: $neon.accent
+                cyan: $neon.cyan
+                pink: $neon.pink
+                lavender: $neon.lavender
+                green: $neon.green
+              tone-soft:
+                accent: { color: $neon.accent, alpha: 12% }
+                cyan: { color: $neon.cyan, alpha: 12% }
+                pink: { color: $neon.pink, alpha: 12% }
+                lavender: { color: $neon.lavender, alpha: 12% }
+                green: { color: $neon.green, alpha: 12% }
+              # Sizes.
+              radius: $shape.extra-small
+              border-width: 1
+              accent-width: 3
+              accent-height: 12
+              label-gap: 6
+              logo-size: 34
+              logo-shift: 1.6
+              logo-layer: { color: $neon.pink, alpha: 70% }
+              logo-layer-b: { color: $neon.cyan, alpha: 70% }
+              glow-blur: 18
+              grip-width: 48
+              # The modal: a group, no JSON in a string. The border turns
+              # (animations.border-spin) through these colors.
+              modal:
+                width: 460
+                barrier: transparent
+                border:
+                  width: 1
+                  glow: 8
+                  glow-alpha: 0.6
+                  colors: [$neon.accent, $neon.cyan, $neon.pink, $neon.lavender]
+            # The log panel's colors, like the console of Spring Boot.
+            logs:
+              text: '#D7DAE2'
+              faint: '#6C7282'
+              info: '#4FD1A0'
+              warn: '#F2C94C'
+              error: '#FF5C7A'
+              pid: '#C77DFF'
+              logger: '#4FD8E8'
+
+          # ------------------------------------------------------ styles
+          # What the widgets look like per state (ThemeStates). Precedence:
+          # disabled > error > pressed > hovered > focused > selected.
+          styles:
+            # A filled button: lighter on hover and focus.
+            neon-button:
+              height: 42
+              radius: $shape.extra-small
+              border-width: $neon.border-width
+              fill:
+                default: $colors.primary
+                hovered: { color: $colors.primary, mix: { with: white, amount: 14% } }
+                focused: { color: $colors.primary, mix: { with: white, amount: 14% } }
+                pressed: { color: $colors.primary, mix: { with: white, amount: 28% } }
+                disabled: { color: $colors.primary, alpha: 40% }
+              border: { default: transparent }
+              text: { default: $colors.on-primary, disabled: { color: $colors.on-primary, alpha: 40% } }
+              transition: 120ms ease-out
+            # The same, outlined.
+            neon-button-outline:
+              height: 42
+              radius: $shape.extra-small
+              border-width: $neon.border-width
+              fill: { default: transparent, pressed: { color: $colors.primary, alpha: 12% } }
+              border:
+                default: $colors.outline
+                hovered: $colors.primary
+                focused: $colors.primary
+                pressed: $colors.primary
+                disabled: { color: $colors.outline, alpha: 40% }
+              text:
+                default: $colors.on-surface
+                hovered: $colors.primary
+                focused: $colors.primary
+                disabled: { color: $colors.on-surface, alpha: 40% }
+              transition: 120ms ease-out
+            # A pill that can be selected.
+            neon-chip:
+              padding: [12, 6]
+              radius: $shape.extra-small
+              border-width: $neon.border-width
+              border:
+                default: $colors.outline
+                hovered: $colors.primary
+                focused: $colors.primary
+                selected: $colors.primary
+                disabled: { color: $colors.outline, alpha: 40% }
+              fill: { default: transparent, selected: { color: $colors.primary, alpha: 12% } }
+              text:
+                default: $colors.on-surface-variant
+                hovered: $colors.primary
+                focused: $colors.primary
+                selected: $colors.primary
+                disabled: { color: $colors.on-surface-variant, alpha: 40% }
+              transition: 120ms ease-out
+            # The frame of a text field: the border lights up on focus.
+            neon-text-field:
+              height: 42
+              padding: [12, 0]
+              radius: $shape.extra-small
+              border-width: $neon.border-width
+              fill: { default: $neon.input-fill }
+              border:
+                default: $colors.outline
+                hovered: $colors.on-surface-variant
+                focused: $colors.primary
+                error: $colors.error
+                disabled: { color: $colors.outline, alpha: 40% }
+              text: { default: $colors.on-surface, disabled: { color: $colors.on-surface, alpha: 40% } }
+              selection: { color: $colors.primary, alpha: 35% }
+              transition: 120ms ease-out
+            # The grip of a resizable panel.
+            neon-resize-handle:
+              height: 16
+              thickness: 3
+              radius: $shape.extra-small
+              color: { default: $colors.outline, hovered: $colors.primary, pressed: $colors.primary }
+              transition: 120ms ease-out
+
+          # ------------------------------------------------------ motion
+          motion:
+            durations: { fast: 120ms, medium: 250ms }
+            curves: { out: ease-out }
+          animations:
+            # The modal's border turns once in four seconds; with "reduce
+            # motion" it stands still.
+            border-spin: { duration: 4s, curve: linear, repeat: loop }
+            # The picture behind the page drifts slowly.
+            background-drift: { duration: 40s, curve: ease-in-out, repeat: reverse }
+
+          # --------------------------------------------------- background
+          # Under every screen (around the navigator): a color, the picture
+          # of this package (tool/neon_background.py makes it), a veil over
+          # it and the drift.
+          background:
+            color: $colors.surface-container-lowest
+            image:
+              source: packages/neon_ui/assets/images/neon-background.jpg
+              fit: cover
+              alignment: center
+            overlay:
+              gradient: { type: linear, begin: top, end: bottom, colors: [transparent, '#8007080D'] }
+            animation: background-drift
+            effect: drift
+            transition: 400ms ease-out
+            # ThemeBackground.screen('stage', ...) puts this over it.
+            screens:
+              stage:
+                overlay:
+                  gradient: { type: radial, begin: center, colors: [{ color: $neon.accent, alpha: 22% }, transparent] }

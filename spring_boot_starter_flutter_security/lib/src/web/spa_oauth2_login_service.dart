@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_token_revocation_client.dart';
-import 'package:spring_boot_starter_flutter_security/src/web/flutter_web_security_properties.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/spa_browser_page.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/web_crypto_dpop_key.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';

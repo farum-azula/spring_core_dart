@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 
 import 'catalog.dart';
 import 'orders.dart';
+import 'support/feign_properties.dart';
 
 typedef _Script = Future<HttpResponse> Function(HttpRequest request, int n);
 
@@ -151,7 +152,10 @@ void main() {
           }),
         );
       }
-      return FeignClientConfig.of(environment, name).callTimeout;
+      return FeignClientConfig.of(
+        bindFeignProperties(environment),
+        name,
+      ).callTimeout;
     }
 
     test('is none by default', () {
@@ -189,13 +193,13 @@ void main() {
           'spring.feign.client.config.catalog.callTimeout=2s',
           'spring.feign.client.config.orders.call_timeout=3s',
         ]).runAsync((context) async {
-          final environment = context.getBean<Environment>();
+          final properties = context.getBean<FeignProperties>();
           expect(
-            FeignClientConfig.of(environment, 'catalog').callTimeout,
+            FeignClientConfig.of(properties, 'catalog').callTimeout,
             const Duration(seconds: 2),
           );
           expect(
-            FeignClientConfig.of(environment, 'orders').callTimeout,
+            FeignClientConfig.of(properties, 'orders').callTimeout,
             const Duration(seconds: 3),
           );
         });

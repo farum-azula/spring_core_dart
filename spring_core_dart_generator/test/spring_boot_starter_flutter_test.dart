@@ -16,7 +16,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -201,7 +201,7 @@ Matcher _has(String code) => contains(_normalize(code));
 Future<String> _generate(String beans) async {
   final result = await _build(beans);
   expect(result.errors, isEmpty);
-  const path = 'lib/src/beans.spring.dart';
+  const path = 'lib/spring_gen/src/beans.spring.dart';
   final output = result.readerWriter.testing.readString(
     result.outputs.singleWhere((o) => o.path == path),
   );
@@ -429,7 +429,7 @@ class Basket {}
       {
         'pkg|lib/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -457,7 +457,9 @@ class Badge extends SpringStatelessWidget<(Basket,)> {
     expect(result.errors, isEmpty);
     final output = _normalize(
       result.readerWriter.testing.readString(
-        result.outputs.singleWhere((o) => o.path == 'lib/main.spring.dart'),
+        result.outputs.singleWhere(
+          (o) => o.path == 'lib/spring_gen/main.spring.dart',
+        ),
       ),
     );
     expect(output, _has("name: r'flutterSpringWidgetBindings#application'"));

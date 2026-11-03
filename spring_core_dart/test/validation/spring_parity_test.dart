@@ -1162,7 +1162,7 @@ void main() {
     });
 
     test('bundles are searched basename by basename', () {
-      ClasspathResources.registerAll(const {
+      Resources.registerAll(const {
         'parity/messages.properties': EmbeddedResource.text('title=Shop'),
         'parity/errors_de.properties': EmbeddedResource.text(
           'title=Fehler\nonly.errors=Nur',

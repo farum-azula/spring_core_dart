@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
 import 'package:spring_boot_starter_flutter/src/desktop_window/desktop_window.dart';
 import 'package:spring_boot_starter_flutter/src/desktop_window/desktop_window_setup.dart';
+import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
+import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
@@ -14,7 +17,6 @@ import 'package:spring_boot_starter_flutter/src/spring_widgets.dart';
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_fonts.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// The root widget of a Flutter app built on Spring: it starts the
 /// application context and gives it to every widget below.
@@ -32,7 +34,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// own `MaterialApp` (or other app widget) instead.
 ///
 /// ```dart
-/// import 'main.spring.dart';
+/// import 'spring_gen/main.spring.dart';
 ///
 /// @SpringBootApplication()
 /// void main() => runApp(
@@ -276,11 +278,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   }
 
   static bool _scanOsEnvironment(SpringApplication application) {
-    final defines = application.dartDefines;
-    final value =
-        defines['spring.flutter.scan-os-environment'] ??
-        defines['SPRING_FLUTTER_SCANOSENVIRONMENT'];
-    return value?.trim().toLowerCase() == 'true';
+    return scanOsEnvironmentIn(application.dartDefines);
   }
 
   @override
@@ -384,18 +382,16 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
 
   // Spring Boot DevTools' switch for restarts after code changes.
   static bool _restartEnabled(ConfigurableApplicationContext context) =>
-      context.environment
-          .getProperty('spring.devtools.restart.enabled')
-          ?.trim()
-          .toLowerCase() !=
-      'false';
+      boundProperties<FlutterRestartProperties>(
+        context.environment,
+        'flutterRestartProperties',
+      ).enabled;
 
   static bool _pauseInBackground(ConfigurableApplicationContext context) =>
-      context.environment
-          .getProperty('spring.flutter.lifecycle.pause-in-background')
-          ?.trim()
-          .toLowerCase() !=
-      'false';
+      boundProperties<FlutterLifecycleProperties>(
+        context.environment,
+        'flutterLifecycleProperties',
+      ).pauseInBackground;
 
   @override
   void dispose() {

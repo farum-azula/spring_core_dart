@@ -3,7 +3,7 @@
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 
-import 'socket.spring.dart';
+import '../../spring_gen/app/socket/socket.spring.dart';
 
 @ComponentScan()
 final BeanModule socketSecurityBeans = $socketSecurityBeans;

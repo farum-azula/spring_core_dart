@@ -1,7 +1,10 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_properties.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sqlite/sqlite_jdbc_driver.dart';
-import 'package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart';
+import 'package:spring_boot_starter_data/src/properties/data_properties.dart'
+    show NamedDataJdbcProperties;
+import 'package:spring_boot_starter_data/src/properties_binding.dart';
+import 'package:spring_boot_starter_data/src/schema/database_initializer.dart';
 import 'package:spring_boot_starter_data/src/schema/schema_support.dart';
 import 'package:spring_boot_starter_data/src/schema/script_database_initializer.dart';
 
@@ -100,10 +103,15 @@ final class TestDatabase implements ApplicationContextInitializer {
         '${p}pool.idle-timeout': '0',
         '${p}pool.max-lifetime': '0',
       });
-      final schemaKey = '${database.settingsPrefix}data.jdbc.schema';
-      if ((environment.getProperty(schemaKey) ?? '').trim().isEmpty &&
+      final schemaSet =
+          bindSettingsOrNull<NamedDataJdbcProperties>(
+            environment,
+            '${database.settingsPrefix}data.jdbc',
+          ) !=
+          null;
+      if (!schemaSet &&
           !_ownsSchema(environment, resolver, database.settingsPrefix)) {
-        properties[schemaKey] = 'create';
+        properties['${database.settingsPrefix}data.jdbc.schema'] = 'create';
       }
       _log.debug(() => 'Replaced the database of ${p}url by $url');
     }
@@ -118,12 +126,10 @@ final class TestDatabase implements ApplicationContextInitializer {
     if (DataSourceProperties.hasPrimary(environment))
       const _Database(DataSourceProperties.primaryPrefix, 'spring.'),
     for (final name in DataSourceProperties.namedDataSources(environment))
-      if ((environment.getProperty(
-                '${DataSourceProperties.prefixOf(name)}url',
-              ) ??
-              '')
-          .trim()
-          .isNotEmpty)
+      if (DataSourceProperties.hasUrl(
+        environment,
+        DataSourceProperties.prefixOf(name),
+      ))
         _Database(
           DataSourceProperties.prefixOf(name),
           DataSourceProperties.prefixOf(name),
@@ -138,7 +144,8 @@ final class TestDatabase implements ApplicationContextInitializer {
     ResourcePatternResolver resolver,
     String prefix,
   ) {
-    final migration = MigrationSettings.fromEnvironment(environment, prefix);
+    final settings = DatabaseInitSettings.fromEnvironment(environment, prefix);
+    final migration = settings.migration;
     if (migration.enabled) {
       for (final configured in migration.locations) {
         var location = configured.replaceAll('{vendor}', 'sqlite');
@@ -151,7 +158,7 @@ final class TestDatabase implements ApplicationContextInitializer {
         }
       }
     }
-    final init = SqlInitSettings.fromEnvironment(environment, prefix);
+    final init = settings.sqlInit;
     if (init.mode == SqlInitMode.never) {
       return false;
     }

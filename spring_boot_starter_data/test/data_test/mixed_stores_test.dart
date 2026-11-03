@@ -2,12 +2,12 @@
 // named one and the memory. Each has its own transaction manager, and the
 // transaction of a test must cover all of them: nothing written to any of
 // them outlives a test that rolls back. The generator writes
-// spring/data_test/mixed_stores.test.spring.dart.
+// spring_gen/data_test/mixed_stores.test.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/mixed_stores.test.spring.dart';
+import '../spring_gen/data_test/mixed_stores.test.spring.dart';
 import 'mixed_app/mixed_app.dart';
 
 @DataTest(application: 'test/data_test/mixed_app/mixed_app.dart')

@@ -1,0 +1,871 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_security",
+  "properties": [
+    {
+      "name": "spring.security.cookie.secret",
+      "type": "String?",
+      "description": "The key that signs the security cookies (at least 32 characters; the same on every instance behind a proxy); a random key of the process when unset (set it to keep cookies valid across restarts and servers).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 98,
+      "class": "SecurityCookieProperties"
+    },
+    {
+      "name": "spring.security.filter.order",
+      "type": "int",
+      "description": "The place of the security filter among the web filters.",
+      "default": -100,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 76,
+      "class": "SecurityFilterProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.audiences",
+      "type": "List<String>",
+      "description": "The audiences a bearer token must have one of; no audience check when empty.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 146,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.authorities-claim-delimiter",
+      "type": "String",
+      "description": "The character that splits a text claim into authorities.",
+      "default": " ",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 156,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.authorities-claim-name",
+      "type": "String?",
+      "description": "The claim whose values are the user's authorities; without it the `scope` claim, else `scp`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 153,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.authority-prefix",
+      "type": "String",
+      "description": "Put before each authority read from the token.",
+      "default": "SCOPE_",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 149,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.issuer-uri",
+      "type": "String?",
+      "description": "The issuer of the accepted bearer tokens; the keys come from its metadata.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 121,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.jwk-set-uri",
+      "type": "String?",
+      "description": "The address of the keys that sign the accepted bearer tokens.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 124,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.jws-algorithms",
+      "type": "List<String>",
+      "description": "The signature algorithms accepted with `jwk-set-uri`. Default: `RS256`.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 142,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.principal-claim-name",
+      "type": "String",
+      "description": "The claim that names the user of a bearer token.",
+      "default": "sub",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 159,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.session.max-sessions-prevents-login",
+      "type": "bool",
+      "description": "Whether a login over the session limit is refused instead of ending the oldest session.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 88,
+      "class": "SecuritySessionProperties"
+    },
+    {
+      "name": "spring.security.session.maximum-sessions",
+      "type": "int",
+      "description": "The most sessions per user of the chains with sessions; `-1` for no limit. `0` and values below `-1` fail the start.",
+      "default": 10,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 84,
+      "class": "SecuritySessionProperties"
+    },
+    {
+      "name": "spring.security.user.name",
+      "type": "String",
+      "description": "The name of the default user.",
+      "default": "user",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 62,
+      "class": "SecurityUserProperties"
+    },
+    {
+      "name": "spring.security.user.password",
+      "type": "String?",
+      "description": "The password of the default user; without it a random one is generated and logged (for development only).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 66,
+      "class": "SecurityUserProperties"
+    },
+    {
+      "name": "spring.security.user.roles",
+      "type": "List<String>",
+      "description": "The roles of the default user, without the `ROLE_` prefix.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 69,
+      "class": "SecurityUserProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.jws-algorithms[*]",
+      "values": [
+        {
+          "value": "RS256",
+          "description": null
+        },
+        {
+          "value": "RS384",
+          "description": null
+        },
+        {
+          "value": "RS512",
+          "description": null
+        },
+        {
+          "value": "PS256",
+          "description": null
+        },
+        {
+          "value": "PS384",
+          "description": null
+        },
+        {
+          "value": "PS512",
+          "description": null
+        },
+        {
+          "value": "ES256",
+          "description": null
+        },
+        {
+          "value": "ES384",
+          "description": null
+        },
+        {
+          "value": "ES512",
+          "description": null
+        },
+        {
+          "value": "HS256",
+          "description": null
+        },
+        {
+          "value": "HS384",
+          "description": null
+        },
+        {
+          "value": "HS512",
+          "description": null
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "authorizedClientRepository",
+      "type": "OAuth2AuthorizedClientRepository",
+      "types": [
+        "OAuth2AuthorizedClientRepository"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(OAuth2AuthorizedClientService)",
+        "@ConditionalOnMissingBean(OAuth2AuthorizedClientRepository)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 351,
+      "injects": [],
+      "members": [
+        {
+          "name": "loadAuthorizedClient",
+          "kind": "method",
+          "type": "Future<OAuth2AuthorizedClient?>",
+          "parameters": [
+            "String clientRegistrationId",
+            "Authentication? principal",
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "removeAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String clientRegistrationId",
+            "Authentication? principal",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "saveAuthorizedClient",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "OAuth2AuthorizedClient authorizedClient",
+            "Authentication? principal",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cookieSigner",
+      "type": "CookieSigner",
+      "types": [
+        "CookieSigner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.security.cookie.secret')",
+        "@ConditionalOnMissingBean(CookieSigner)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 219,
+      "injects": [],
+      "members": [
+        {
+          "name": "open",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String cookieName",
+            "String? signed",
+            "{DateTime? now}"
+          ]
+        },
+        {
+          "name": "sign",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String cookieName",
+            "String value",
+            "Duration maxAge",
+            "{DateTime? now}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "defaultSecurityFilterChain",
+      "type": "SecurityFilterChain",
+      "types": [
+        "SecurityFilterChain"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SecurityFilterChain)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 324,
+      "injects": [],
+      "members": [
+        {
+          "name": "filters",
+          "kind": "getter",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "httpSecurity",
+      "type": "HttpSecurity",
+      "types": [
+        "HttpSecurity"
+      ],
+      "scope": "prototype",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 204,
+      "injects": [],
+      "members": [
+        {
+          "name": "addFilterAfter",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "WebFilter filter",
+            "Type after"
+          ]
+        },
+        {
+          "name": "addFilterAt",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "WebFilter filter",
+            "Type at"
+          ]
+        },
+        {
+          "name": "addFilterBefore",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "WebFilter filter",
+            "Type before"
+          ]
+        },
+        {
+          "name": "anonymous",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(AnonymousConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "authenticationManager",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "AuthenticationManager manager"
+          ]
+        },
+        {
+          "name": "authorizeHttpRequests",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(AuthorizeHttpRequestsConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "BeanFactory?"
+        },
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "SecurityFilterChain",
+          "parameters": []
+        },
+        {
+          "name": "contextPath",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "cors",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "[void Function(CorsConfigurer)? customizer]"
+          ]
+        },
+        {
+          "name": "csrf",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(CsrfConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "exceptionHandling",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(ExceptionHandlingConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "formLogin",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "[void Function(FormLoginConfigurer)? customizer]"
+          ]
+        },
+        {
+          "name": "headers",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(HeadersConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "httpBasic",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "[void Function(HttpBasicConfigurer)? customizer]"
+          ]
+        },
+        {
+          "name": "logout",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(LogoutConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "oauth2Login",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "[void Function(OAuth2LoginConfigurer)? customizer]"
+          ]
+        },
+        {
+          "name": "oauth2ResourceServer",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(OAuth2ResourceServerConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "requestCache",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(RequestCacheConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "securityContext",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(SecurityContextConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "securityMatcher",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "String pattern",
+            "[String? pattern2]",
+            "[String? pattern3]",
+            "[String? pattern4]"
+          ]
+        },
+        {
+          "name": "securityMatcherOf",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "RequestMatcher matcher"
+          ]
+        },
+        {
+          "name": "sessionManagement",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "void Function(SessionManagementConfigurer) customizer"
+          ]
+        },
+        {
+          "name": "userDetailsService",
+          "kind": "method",
+          "type": "HttpSecurity",
+          "parameters": [
+            "UserDetailsService service"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inMemoryUserDetailsManager",
+      "type": "InMemoryUserDetailsManager",
+      "types": [
+        "InMemoryUserDetailsManager",
+        "UserDetailsManager",
+        "UserDetailsService",
+        "UserDetailsPasswordService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean.where(types: [AuthenticationManager, AuthenticationProvider, UserDetailsService, JwtDecoder])",
+        "@_OnNoResourceServerProperties()",
+        "@_OnNoClientRegistrationsOrUserProperties()"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 275,
+      "injects": [],
+      "members": [
+        {
+          "name": "createUser",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "UserDetails user"
+          ]
+        },
+        {
+          "name": "deleteUser",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String username"
+          ]
+        },
+        {
+          "name": "loadUserByUsername",
+          "kind": "method",
+          "type": "UserDetails",
+          "parameters": [
+            "String username"
+          ]
+        },
+        {
+          "name": "updatePassword",
+          "kind": "method",
+          "type": "UserDetails",
+          "parameters": [
+            "UserDetails user",
+            "String newPassword"
+          ]
+        },
+        {
+          "name": "updateUser",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "UserDetails user"
+          ]
+        },
+        {
+          "name": "userExists",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String username"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jwtAuthenticationConverter",
+      "type": "JwtAuthenticationConverter",
+      "types": [
+        "JwtAuthenticationConverter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(JwtAuthenticationConverter)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 263,
+      "injects": [],
+      "members": [
+        {
+          "name": "authoritiesConverter",
+          "kind": "field",
+          "type": "JwtGrantedAuthoritiesConverter"
+        },
+        {
+          "name": "convert",
+          "kind": "method",
+          "type": "Authentication",
+          "parameters": [
+            "Jwt jwt"
+          ]
+        },
+        {
+          "name": "principalClaimName",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "jwtDecoder",
+      "type": "JwtDecoder",
+      "types": [
+        "JwtDecoder"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(JwtDecoder)",
+        "@_OnResourceServerProperties()"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 233,
+      "injects": [],
+      "members": [
+        {
+          "name": "decode",
+          "kind": "method",
+          "type": "Future<Jwt>",
+          "parameters": [
+            "String token"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jwtExpressionCustomizer",
+      "type": "JwtExpressionCustomizer",
+      "types": [
+        "JwtExpressionCustomizer",
+        "SecurityExpressionContextCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 391,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "StandardEvaluationContext context"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "oidcIdTokenDecoder",
+      "type": "OidcIdTokenDecoder",
+      "types": [
+        "OidcIdTokenDecoder"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnClientRegistrations()",
+        "@ConditionalOnMissingBean(OidcIdTokenDecoder)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 446,
+      "injects": [],
+      "members": [
+        {
+          "name": "decode",
+          "kind": "method",
+          "type": "Future<OidcIdToken>",
+          "parameters": [
+            "ClientRegistration registration",
+            "String tokenValue"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "securityFilterChain",
+      "type": "FilterChainProxy",
+      "types": [
+        "FilterChainProxy",
+        "WebFilter",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 369,
+      "injects": [],
+      "members": [
+        {
+          "name": "chains",
+          "kind": "field",
+          "type": "List<SecurityFilterChain>"
+        },
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "firewall",
+          "kind": "field",
+          "type": "HttpFirewall"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "requestRejectedHandler",
+          "kind": "field",
+          "type": "RequestRejectedHandler"
+        }
+      ]
+    },
+    {
+      "name": "securityProperties",
+      "type": "SecurityProperties",
+      "types": [
+        "SecurityProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 41,
+      "injects": [],
+      "members": [
+        {
+          "name": "cookie",
+          "kind": "field",
+          "type": "SecurityCookieProperties"
+        },
+        {
+          "name": "filter",
+          "kind": "field",
+          "type": "SecurityFilterProperties"
+        },
+        {
+          "name": "oauth2",
+          "kind": "field",
+          "type": "SecurityOAuth2Properties"
+        },
+        {
+          "name": "session",
+          "kind": "field",
+          "type": "SecuritySessionProperties"
+        },
+        {
+          "name": "user",
+          "kind": "field",
+          "type": "SecurityUserProperties"
+        }
+      ]
+    },
+    {
+      "name": "securityWebMvcConfigurer",
+      "type": "WebMvcConfigurer",
+      "types": [
+        "WebMvcConfigurer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 385,
+      "injects": [],
+      "members": [
+        {
+          "name": "addArgumentResolvers",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<HandlerMethodArgumentResolver> resolvers"
+          ]
+        },
+        {
+          "name": "addCorsMappings",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "CorsRegistry registry"
+          ]
+        },
+        {
+          "name": "addInterceptors",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InterceptorRegistry registry"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

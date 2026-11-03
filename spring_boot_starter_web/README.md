@@ -124,7 +124,7 @@ dev_dependencies:
 // bin/main.dart
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -1368,7 +1368,7 @@ handling. It can also start a real server on a free port.
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/main.spring.dart';
+import '../bin/spring_gen/main.spring.dart';
 
 void main() {
   final app = springBootTest(springApplication);   // WebEnvironment.mock: no server

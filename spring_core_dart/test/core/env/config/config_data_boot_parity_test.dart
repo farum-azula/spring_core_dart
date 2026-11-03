@@ -446,7 +446,7 @@ void main() {
     // resolveNonPatternEmptyDirectories); one read from disk did here.
     test('a classpath directory counts only when a file is found in it', () {
       write('cp/cpdir/application-dev.yaml', 'b: cp\n');
-      final remove = ClasspathResources.addDirectory('$root/cp');
+      final remove = Resources.addDirectory('$root/cp');
       try {
         final e = env({
           'spring.config.import': 'resources:/cpdir/',

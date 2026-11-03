@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
-import 'app/sqlite_app.spring.dart';
+import '../spring_gen/sqlite/app/sqlite_app.spring.dart';
 
 /// The `SqliteJdbcDriver` of the started test application; with [isolate],
 /// a driver over the same binding whose connections run on worker isolates.

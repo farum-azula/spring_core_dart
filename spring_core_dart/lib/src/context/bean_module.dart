@@ -4,7 +4,7 @@ import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/context/bean_registrar.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
-import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
+import 'package:spring_core_dart/src/core/io/resources.dart';
 
 /// One `@PropertySource` annotation, recorded in a [BeanModule]: which
 /// property files to add to the environment, and when.
@@ -202,12 +202,12 @@ final class BeanModule {
        resources = Map.unmodifiable(resources) {
     // Embedded `lib/resources/` files become `resources:` resources as soon
     // as the module exists (before config files are read).
-    ClasspathResources.registerAll(resources, owner: name);
+    Resources.registerAll(resources, owner: name);
   }
 
   /// The files of the package's `lib/resources/`, embedded by the
   /// generator and keyed by path; they are served as `resources:`
-  /// resources (see [ClasspathResources]), which works in AOT, Flutter and
+  /// resources (see [Resources]), which works in AOT, Flutter and
   /// the web too.
   final Map<String, EmbeddedResource> resources;
 

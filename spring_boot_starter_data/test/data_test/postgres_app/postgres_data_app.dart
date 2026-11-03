@@ -6,7 +6,7 @@
 // seeing `postgres` among the dev dependencies, the driver's glue.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'postgres_data_app.spring.dart';
+import '../../spring_gen/data_test/postgres_app/postgres_data_app.spring.dart';
 
 /// A book.
 @Table('books')

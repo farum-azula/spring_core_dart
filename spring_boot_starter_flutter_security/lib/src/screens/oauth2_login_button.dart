@@ -123,11 +123,12 @@ class OAuth2LoginButton extends StatefulWidget {
   /// `Facebook`, `Okta`), else the id itself (Spring's default client
   /// name). Reads no registration, so no discovery request is made.
   static String clientName(String registrationId, Environment? environment) {
-    final configured = environment
-        ?.getProperty(
-          'spring.security.oauth2.client.registration.$registrationId.client-name',
-        )
-        ?.trim();
+    final configured = switch (environment) {
+      final ConfigurableEnvironment environment => bindOAuth2ClientProperties(
+        environment,
+      ).registration[registrationId]?.clientName?.trim(),
+      _ => null,
+    };
     if (configured != null && configured.isNotEmpty) {
       return configured;
     }

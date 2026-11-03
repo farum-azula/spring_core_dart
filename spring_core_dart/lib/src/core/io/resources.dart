@@ -1,0 +1,265 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
+import 'package:spring_core_dart/src/core/io/resource.dart';
+
+/// The content of one file of `lib/resources/`, written into the generated
+/// code at build time.
+///
+/// Embedding is what makes `resources:` locations work the same in
+/// `dart run`, AOT executables, Flutter and the web, where there is no
+/// project folder at run time and no asset declaration is needed. The
+/// generator writes these (`BeanModule(resources: ...)`); applications
+/// never create one.
+final class EmbeddedResource {
+  /// A text file with the content [text].
+  const EmbeddedResource.text(String this.text) : base64 = null;
+
+  /// A binary file whose content is encoded in base64.
+  const EmbeddedResource.base64(String this.base64) : text = null;
+
+  /// The content of a text file; `null` for a binary file.
+  final String? text;
+
+  /// The base64 content of a binary file; `null` for a text file.
+  final String? base64;
+
+  /// The content as bytes (text encoded as UTF-8).
+  Uint8List get bytes => text != null
+      ? Uint8List.fromList(utf8.encode(text!))
+      : base64Decode(base64!);
+}
+
+/// The registry behind `resources:` locations: the files of
+/// `lib/resources/` of the application and of its dependencies.
+///
+/// Dart has no classpath, so the generator embeds every file of a
+/// package's `lib/resources/` into its generated module, and the files are
+/// registered here when the module is created. That is how
+/// `application.yml`, message bundles and templates are found on every
+/// platform. A path that is not embedded (a file added while developing
+/// without regenerating) is read from `lib/resources/<path>` on disk.
+/// Directories added with [addDirectory] come first, like
+/// `src/test/resources` before `src/main/resources` on a test classpath: a
+/// file there shadows the embedded file with the same path. A path whose
+/// `..` segments climb above `lib/resources/` (`resources:../../secret`)
+/// finds nothing, as Java's class loader refuses such a name: [resolve]
+/// gives a resource that does not exist.
+///
+/// Applications only write locations (`resources:templates/mail.txt`);
+/// resource loaders call this class. Code calls it directly in tests, to
+/// add a directory, or to list the embedded files.
+///
+/// ```dart
+/// // Reads lib/resources/banner.txt, embedded or from disk.
+/// final resource =
+///     DefaultResourceLoader().getResource('resources:banner.txt');
+/// log.info(resource.readAsStringSync());
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// Resource resource = new ClassPathResource("banner.txt");
+/// ```
+abstract final class Resources {
+  /// The location prefix, `resources:`.
+  static const prefix = 'resources:';
+
+  /// The prefix that searches every root, `resources*:` (Spring's
+  /// `classpath*:`).
+  static const allPrefix = 'resources*:';
+
+  /// The directory read from disk for paths that are not embedded:
+  /// `lib/resources`, relative to the working directory.
+  static const directory = 'lib/resources';
+
+  static final _embedded = <String, EmbeddedResource>{};
+  static final _owners = <String, String>{};
+  static final _directories = <String>[];
+
+  /// Makes `resources:` look in [directory] on disk before the embedded
+  /// files, until the returned function is called. The most recently
+  /// added directory comes first. `spring_boot_starter_test` uses it for
+  /// `test/resources/`, so test config files win over packaged ones.
+  ///
+  /// ```dart
+  /// final remove = Resources.addDirectory('test/resources');
+  /// ...
+  /// remove();
+  /// ```
+  static void Function() addDirectory(String directory) {
+    final entry = directory.endsWith('/')
+        ? directory.substring(0, directory.length - 1)
+        : directory;
+    _directories.insert(0, entry);
+    var removed = false;
+    return () {
+      if (!removed) {
+        removed = true;
+        _directories.remove(entry);
+      }
+    };
+  }
+
+  /// The directories searched before the embedded files, in search order.
+  static List<String> get directories => List.unmodifiable(_directories);
+
+  /// Registers embedded files, keyed by their path under
+  /// `lib/resources/`. Generated modules call it; applications do not.
+  ///
+  /// The first registration of a path wins, as the first classpath entry
+  /// does in Java. With an [owner] (the module name),
+  /// registering again replaces that owner's earlier files: that is how a
+  /// module rebuilt after a hot reload brings its changed
+  /// `application.properties`.
+  static void registerAll(
+    Map<String, EmbeddedResource> resources, {
+    String? owner,
+  }) {
+    if (owner != null) {
+      _owners.removeWhere((path, previous) {
+        final mine = previous == owner;
+        if (mine) {
+          _embedded.remove(path);
+        }
+        return mine;
+      });
+    }
+    for (final MapEntry(:key, :value) in resources.entries) {
+      final path = normalize(key);
+      if (path == null || _embedded.containsKey(path)) {
+        continue;
+      }
+      _embedded[path] = value;
+      if (owner != null) {
+        _owners[path] = owner;
+      }
+    }
+  }
+
+  /// The paths of all embedded files, relative to `lib/resources/`.
+  static Iterable<String> get paths => _embedded.keys;
+
+  /// The resource for `resources:<path>` or a plain
+  /// [path]: a file of an
+  /// added directory when it exists there, otherwise the embedded file,
+  /// otherwise the file under [directory] (which may not exist). A path
+  /// that climbs above the root with `..` gives a resource that does not
+  /// exist and cannot be read; so does `createRelative` of an embedded
+  /// file. A file read from disk is a [FileSystemResource], whose
+  /// `createRelative` is a file's.
+  static Resource resolve(String path) {
+    final relative = path.startsWith(prefix)
+        ? path.substring(prefix.length)
+        : path;
+    final normalized = normalize(relative);
+    if (normalized == null) {
+      return _OutsideClasspathResource(_clean(relative));
+    }
+    for (final directory in _directories) {
+      final file = FileSystemResource('$directory/$normalized');
+      if (file.exists()) {
+        return file;
+      }
+    }
+    return resolveEmbedded(normalized);
+  }
+
+  /// The resource for [path], ignoring the added [directories]: the
+  /// embedded file, or else the file under [directory]; nothing for a
+  /// path that climbs above the root, as in [resolve].
+  ///
+  /// ```dart
+  /// Resources.resolveEmbedded('application.yml');
+  /// ```
+  static Resource resolveEmbedded(String path) {
+    final normalized = normalize(path);
+    if (normalized == null) {
+      return _OutsideClasspathResource(_clean(path));
+    }
+    final embedded = _embedded[normalized];
+    if (embedded != null) {
+      return _EmbeddedClasspathResource(normalized, embedded.bytes);
+    }
+    return FileSystemResource('$directory/$normalized');
+  }
+
+  /// [path] relative to `lib/resources/` (without `resources:`): a
+  /// leading `/` removed, `\` read as `/`, `.` and empty segments dropped,
+  /// `..` resolved (`/config/./app.properties` gives
+  /// `config/app.properties`). `null` when `..` climbs above the root:
+  /// nothing there is on the classpath.
+  ///
+  /// Spring (Java): `StringUtils.cleanPath`, after which the class loader
+  /// refuses a name that starts with `../`.
+  static String? normalize(String path) {
+    final cleaned = _clean(path);
+    return cleaned == '..' || cleaned.startsWith('../') ? null : cleaned;
+  }
+
+  // `/a/../../b` → `../b`: normalized, leading `..` segments kept.
+  static String _clean(String path) => FileSystemResource(
+    path.replaceAll(r'\', '/').replaceFirst(RegExp('^/+'), ''),
+  ).path;
+}
+
+// What a path that climbs above `lib/resources/` resolves to: nothing, as
+// Java's class loader refuses `../` names.
+final class _OutsideClasspathResource extends AbstractResource {
+  const _OutsideClasspathResource(this.path);
+
+  final String path;
+
+  @override
+  String get description => 'class path resource [$path]';
+
+  @override
+  bool exists() => false;
+
+  @override
+  String get filename => path.substring(path.lastIndexOf('/') + 1);
+
+  @override
+  bool get supportsSyncRead => true;
+
+  @override
+  Future<Uint8List> readAsBytes() => Future.error(_cannotOpen());
+
+  @override
+  Uint8List readAsBytesSync() => throw _cannotOpen();
+
+  @override
+  Resource createRelative(String relativePath) {
+    final slash = path.lastIndexOf('/');
+    return Resources.resolve(
+      '${path.substring(0, slash + 1)}$relativePath',
+    );
+  }
+
+  StateError _cannotOpen() => StateError(
+    '$description cannot be opened: the path leaves lib/resources/',
+  );
+}
+
+// An embedded file, with a file name and relative resources like Spring's
+// ClassPathResource.
+final class _EmbeddedClasspathResource extends ByteArrayResource {
+  _EmbeddedClasspathResource(this.path, Uint8List bytes)
+    : super(bytes, description: 'class path resource [$path]');
+
+  final String path;
+
+  @override
+  String get filename => path.substring(path.lastIndexOf('/') + 1);
+
+  @override
+  Resource createRelative(String relativePath) {
+    final slash = path.lastIndexOf('/');
+    final directory = slash < 0 ? '' : path.substring(0, slash + 1);
+    final relative = relativePath.startsWith('/')
+        ? relativePath.substring(1)
+        : relativePath;
+    return Resources.resolve('$directory$relative');
+  }
+}

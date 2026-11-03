@@ -3,7 +3,7 @@
 // (memory_app.spring.dart, from `dart run build_runner build`).
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'memory_app.spring.dart';
+import '../../spring_gen/data_test/memory_app/memory_app.spring.dart';
 
 @Table('notes')
 class Note {

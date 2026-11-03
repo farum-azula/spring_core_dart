@@ -45,6 +45,7 @@ library;
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 export 'package:spring_web_dart/spring_web_dart.dart';
 
+export 'src/config/web_properties.dart';
 export 'src/cors.dart' hide addVary;
 export 'src/dispatcher.dart';
 export 'src/form_parameters.dart';

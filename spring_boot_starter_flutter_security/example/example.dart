@@ -6,7 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 /// A secret of the app, kept as JSON in the Keychain / Keystore.
 @Introspected()

@@ -1,0 +1,2605 @@
+{
+  "version": 1,
+  "package": "neon_data",
+  "properties": [
+    {
+      "name": "spring.datasource.url",
+      "type": "String",
+      "description": "A repository with a `@Query` join: SQL only, so it exists only when the application has a database (the in-memory store has no joins).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:neon_data/example.dart",
+      "line": 324,
+      "class": ""
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "accountRepository",
+      "type": "AccountRepository",
+      "types": [
+        "AccountRepository",
+        "CrudRepository<Account, String>",
+        "DataRepository<Account, String>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 281,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Account entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<String> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Account> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<Iterable<Account>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<Iterable<Account>>",
+          "parameters": [
+            "Iterable<String> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Account?>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "findByOwner",
+          "kind": "method",
+          "type": "Future<List<Account>>",
+          "parameters": [
+            "String owner"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Account>",
+          "parameters": [
+            "Account entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<Iterable<Account>>",
+          "parameters": [
+            "Iterable<Account> entities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "auditingSetup",
+      "type": "AuditingSetup",
+      "types": [
+        "AuditingSetup"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 340,
+      "injects": [],
+      "members": []
+    },
+    {
+      "name": "authorRepository",
+      "type": "AuthorRepository",
+      "types": [
+        "AuthorRepository",
+        "ListCrudRepository<Author, int>",
+        "CrudRepository<Author, int>",
+        "DataRepository<Author, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 261,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Author entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Author> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Author>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Author>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Author?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findByNameStartingWith",
+          "kind": "method",
+          "type": "Future<List<Author>>",
+          "parameters": [
+            "String prefix"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Author>",
+          "parameters": [
+            "Author entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Author>>",
+          "parameters": [
+            "Iterable<Author> entities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bookReportRepository",
+      "type": "BookReportRepository",
+      "types": [
+        "BookReportRepository",
+        "DataRepository<Book, int>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.datasource.url')"
+      ],
+      "source": "package:neon_data/example.dart",
+      "line": 324,
+      "injects": [],
+      "members": [
+        {
+          "name": "cardsSince",
+          "kind": "method",
+          "type": "Future<List<BookCard>>",
+          "parameters": [
+            "int year"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bookRepository",
+      "type": "BookRepository",
+      "types": [
+        "BookRepository",
+        "ListCrudRepository<Book, int>",
+        "CrudRepository<Book, int>",
+        "DataRepository<Book, int>",
+        "ListPagingAndSortingRepository<Book, int>",
+        "PagingAndSortingRepository<Book, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>",
+        "ListPagingAndSortingRepository<dynamic, dynamic>",
+        "PagingAndSortingRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 198,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "countByInStock",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "bool inStock"
+          ]
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Book entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Book> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "deleteByInStock",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "bool inStock"
+          ]
+        },
+        {
+          "name": "deleteByYearLessThan",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsByTitle",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "String title"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findAllPaged",
+          "kind": "method",
+          "type": "Future<Page<Book>>",
+          "parameters": [
+            "Pageable pageable"
+          ]
+        },
+        {
+          "name": "findAllSorted",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "Sort sort"
+          ]
+        },
+        {
+          "name": "findByAuthor",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "AggregateReference<Author, int> author"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Book?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findByInStock",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "bool inStock",
+            "Sort sort"
+          ]
+        },
+        {
+          "name": "findByInStockEquals",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "bool inStock",
+            "Pageable pageable"
+          ]
+        },
+        {
+          "name": "findByInStockFalse",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": []
+        },
+        {
+          "name": "findByInStockIsTrue",
+          "kind": "method",
+          "type": "Future<Slice<Book>>",
+          "parameters": [
+            "Pageable pageable"
+          ]
+        },
+        {
+          "name": "findByInStockOrderByYearDescTitleAsc",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "bool inStock"
+          ]
+        },
+        {
+          "name": "findByInStockTrue",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": []
+        },
+        {
+          "name": "findBySubtitleIsNotNull",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": []
+        },
+        {
+          "name": "findBySubtitleIsNull",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": []
+        },
+        {
+          "name": "findByTitle",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String title"
+          ]
+        },
+        {
+          "name": "findByTitleAndYear",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String title",
+            "int year"
+          ]
+        },
+        {
+          "name": "findByTitleContaining",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String part"
+          ]
+        },
+        {
+          "name": "findByTitleContainingIgnoreCase",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String part"
+          ]
+        },
+        {
+          "name": "findByTitleEndingWith",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String suffix"
+          ]
+        },
+        {
+          "name": "findByTitleIgnoreCase",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String title"
+          ]
+        },
+        {
+          "name": "findByTitleLike",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String pattern"
+          ]
+        },
+        {
+          "name": "findByTitleNotContaining",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String part"
+          ]
+        },
+        {
+          "name": "findByTitleNotLike",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String pattern"
+          ]
+        },
+        {
+          "name": "findByTitleOrYear",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String title",
+            "int year"
+          ]
+        },
+        {
+          "name": "findByTitleStartingWith",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "String prefix"
+          ]
+        },
+        {
+          "name": "findByYear",
+          "kind": "method",
+          "type": "Future<Set<Book>>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "findByYearAfter",
+          "kind": "method",
+          "type": "Future<Page<Book>>",
+          "parameters": [
+            "int year",
+            "Pageable pageable"
+          ]
+        },
+        {
+          "name": "findByYearBetween",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "int from",
+            "int to"
+          ]
+        },
+        {
+          "name": "findByYearGreaterThan",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "findByYearGreaterThanEqual",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "findByYearIn",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "List<int> years"
+          ]
+        },
+        {
+          "name": "findByYearLessThan",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "findByYearLessThanEqual",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "findByYearLessThanOrderByYear",
+          "kind": "method",
+          "type": "Future<Iterable<Book>>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "findByYearNot",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "int year"
+          ]
+        },
+        {
+          "name": "findByYearNotIn",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "Set<int> years"
+          ]
+        },
+        {
+          "name": "findDistinctByInStock",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "bool inStock"
+          ]
+        },
+        {
+          "name": "findFirstByOrderByYearAsc",
+          "kind": "method",
+          "type": "Future<Book?>",
+          "parameters": []
+        },
+        {
+          "name": "findOneByTitle",
+          "kind": "method",
+          "type": "Future<Book?>",
+          "parameters": [
+            "String title"
+          ]
+        },
+        {
+          "name": "findOneByYearAndTitle",
+          "kind": "method",
+          "type": "Future<Book?>",
+          "parameters": [
+            "int year",
+            "String title"
+          ]
+        },
+        {
+          "name": "findTop2ByOrderByYearDesc",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": []
+        },
+        {
+          "name": "findTop3ByInStock",
+          "kind": "method",
+          "type": "Future<Page<Book>>",
+          "parameters": [
+            "bool inStock",
+            "Pageable pageable"
+          ]
+        },
+        {
+          "name": "getByTitle",
+          "kind": "method",
+          "type": "Future<Book>",
+          "parameters": [
+            "String title"
+          ]
+        },
+        {
+          "name": "removeByTitle",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String title"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Book>",
+          "parameters": [
+            "Book entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "Iterable<Book> entities"
+          ]
+        },
+        {
+          "name": "streamByInStock",
+          "kind": "method",
+          "type": "Stream<Book>",
+          "parameters": [
+            "bool inStock"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bookmarkRepository",
+      "type": "BookmarkRepository",
+      "types": [
+        "BookmarkRepository",
+        "ListCrudRepository<Bookmark, int>",
+        "CrudRepository<Bookmark, int>",
+        "DataRepository<Bookmark, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 275,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Bookmark entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Bookmark> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Bookmark>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Bookmark>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findByBookId",
+          "kind": "method",
+          "type": "Future<List<Bookmark>>",
+          "parameters": [
+            "int bookId"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Bookmark?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Bookmark>",
+          "parameters": [
+            "Bookmark entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Bookmark>>",
+          "parameters": [
+            "Iterable<Bookmark> entities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "currentUser",
+      "type": "CurrentUser",
+      "types": [
+        "CurrentUser",
+        "AuditorAware<String>",
+        "AuditorAware<dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 343,
+      "injects": [],
+      "members": [
+        {
+          "name": "getCurrentAuditor",
+          "kind": "method",
+          "type": "String?",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "library",
+      "type": "Library",
+      "types": [
+        "Library"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 354,
+      "injects": [
+        {
+          "parameter": "authors",
+          "type": "AuthorRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "books",
+          "type": "BookRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "orders",
+          "type": "PurchaseOrderRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "bookmarks",
+          "type": "BookmarkRepository",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "Future<Book>",
+          "parameters": [
+            "String title",
+            "int year",
+            "{String? author}"
+          ]
+        },
+        {
+          "name": "authors",
+          "kind": "field",
+          "type": "AuthorRepository"
+        },
+        {
+          "name": "bookmarks",
+          "kind": "field",
+          "type": "BookmarkRepository"
+        },
+        {
+          "name": "books",
+          "kind": "field",
+          "type": "BookRepository"
+        },
+        {
+          "name": "decade",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": [
+            "int start"
+          ]
+        },
+        {
+          "name": "discard",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int bookId"
+          ]
+        },
+        {
+          "name": "order",
+          "kind": "method",
+          "type": "Future<PurchaseOrder>",
+          "parameters": [
+            "String customer",
+            "Map<String, int> quantities"
+          ]
+        },
+        {
+          "name": "orders",
+          "kind": "field",
+          "type": "PurchaseOrderRepository"
+        },
+        {
+          "name": "rename",
+          "kind": "method",
+          "type": "Future<Book?>",
+          "parameters": [
+            "int year",
+            "String title",
+            "String newTitle"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "libraryTour",
+      "type": "LibraryTour",
+      "types": [
+        "LibraryTour",
+        "CommandLineRunner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 419,
+      "injects": [
+        {
+          "parameter": "library",
+          "type": "Library",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "library",
+          "kind": "field",
+          "type": "Library"
+        },
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "List<String> args"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "purchaseOrderRepository",
+      "type": "PurchaseOrderRepository",
+      "types": [
+        "PurchaseOrderRepository",
+        "ListCrudRepository<PurchaseOrder, int>",
+        "CrudRepository<PurchaseOrder, int>",
+        "DataRepository<PurchaseOrder, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 290,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "PurchaseOrder entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<PurchaseOrder> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<PurchaseOrder>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<PurchaseOrder>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findByCustomer",
+          "kind": "method",
+          "type": "Future<List<PurchaseOrder>>",
+          "parameters": [
+            "String customer"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<PurchaseOrder?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<PurchaseOrder>",
+          "parameters": [
+            "PurchaseOrder entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<PurchaseOrder>>",
+          "parameters": [
+            "Iterable<PurchaseOrder> entities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reportTour",
+      "type": "ReportTour",
+      "types": [
+        "ReportTour",
+        "CommandLineRunner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.datasource.url')"
+      ],
+      "source": "package:neon_data/example.dart",
+      "line": 453,
+      "injects": [
+        {
+          "parameter": "reports",
+          "type": "BookReportRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "jdbc",
+          "type": "JdbcClient",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcClient"
+        },
+        {
+          "name": "reports",
+          "kind": "field",
+          "type": "BookReportRepository"
+        },
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "List<String> args"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reviewRepository",
+      "type": "ReviewRepository",
+      "types": [
+        "ReviewRepository",
+        "ListCrudRepository<Review, int>",
+        "CrudRepository<Review, int>",
+        "DataRepository<Review, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 271,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Review entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Review> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Review>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Review>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Review?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Review>",
+          "parameters": [
+            "Review entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Review>>",
+          "parameters": [
+            "Iterable<Review> entities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ticketRepository",
+      "type": "TicketRepository",
+      "types": [
+        "TicketRepository",
+        "ListCrudRepository<Ticket, int>",
+        "CrudRepository<Ticket, int>",
+        "DataRepository<Ticket, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_data/example.dart",
+      "line": 286,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Ticket entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Ticket> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Ticket>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Ticket>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Ticket?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Ticket>",
+          "parameters": [
+            "Ticket entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Ticket>>",
+          "parameters": [
+            "Iterable<Ticket> entities"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": [],
+  "entities": [
+    {
+      "class": "Account",
+      "table": "accounts",
+      "source": "package:neon_data/example.dart",
+      "line": 157,
+      "id": "iban",
+      "properties": [
+        {
+          "name": "iban",
+          "type": "String",
+          "kind": "column",
+          "column": "iban",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 161
+        },
+        {
+          "name": "owner",
+          "type": "String",
+          "kind": "column",
+          "column": "owner",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 163
+        },
+        {
+          "name": "version",
+          "type": "int",
+          "kind": "column",
+          "column": "version",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 166
+        }
+      ]
+    },
+    {
+      "class": "Author",
+      "table": "authors",
+      "source": "package:neon_data/example.dart",
+      "line": 24,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 28
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "kind": "column",
+          "column": "name",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 30
+        },
+        {
+          "name": "isni",
+          "type": "String?",
+          "kind": "column",
+          "column": "isni",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 36
+        }
+      ]
+    },
+    {
+      "class": "Book",
+      "table": "books",
+      "source": "package:neon_data/example.dart",
+      "line": 43,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 59
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "kind": "column",
+          "column": "title",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 61
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "kind": "column",
+          "column": "year",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 62
+        },
+        {
+          "name": "subtitle",
+          "type": "String?",
+          "kind": "column",
+          "column": "subtitle",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 63
+        },
+        {
+          "name": "inStock",
+          "type": "bool",
+          "kind": "column",
+          "column": "in_stock",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 64
+        },
+        {
+          "name": "author",
+          "type": "AggregateReference<Author, int>?",
+          "kind": "column",
+          "column": "author",
+          "relation": {
+            "entity": "Author",
+            "id": "int"
+          },
+          "source": "package:neon_data/example.dart",
+          "line": 70
+        },
+        {
+          "name": "version",
+          "type": "int?",
+          "kind": "column",
+          "column": "version",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 73
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime?",
+          "kind": "column",
+          "column": "created_at",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 76
+        },
+        {
+          "name": "modifiedAt",
+          "type": "DateTime?",
+          "kind": "column",
+          "column": "modified_at",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 79
+        },
+        {
+          "name": "createdBy",
+          "type": "String?",
+          "kind": "column",
+          "column": "created_by",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 82
+        },
+        {
+          "name": "modifiedBy",
+          "type": "String?",
+          "kind": "column",
+          "column": "modified_by",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 85
+        }
+      ]
+    },
+    {
+      "class": "Bookmark",
+      "table": "bookmarks",
+      "source": "package:neon_data/example.dart",
+      "line": 98,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 102
+        },
+        {
+          "name": "bookId",
+          "type": "int",
+          "kind": "column",
+          "column": "book_id",
+          "relation": {
+            "entity": "Book",
+            "id": "int"
+          },
+          "source": "package:neon_data/example.dart",
+          "line": 106
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "kind": "column",
+          "column": "page",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 108
+        }
+      ]
+    },
+    {
+      "class": "OrderLine",
+      "table": "order_lines",
+      "source": "package:neon_data/example.dart",
+      "line": 138,
+      "id": null,
+      "properties": [
+        {
+          "name": "sku",
+          "type": "String",
+          "kind": "column",
+          "column": "sku",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 141
+        },
+        {
+          "name": "quantity",
+          "type": "int",
+          "kind": "column",
+          "column": "quantity",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 142
+        }
+      ]
+    },
+    {
+      "class": "OrderNote",
+      "table": "order_notes",
+      "source": "package:neon_data/example.dart",
+      "line": 147,
+      "id": null,
+      "properties": [
+        {
+          "name": "text",
+          "type": "String",
+          "kind": "column",
+          "column": "text",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 150
+        }
+      ]
+    },
+    {
+      "class": "PurchaseOrder",
+      "table": "orders",
+      "source": "package:neon_data/example.dart",
+      "line": 114,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 123
+        },
+        {
+          "name": "customer",
+          "type": "String",
+          "kind": "column",
+          "column": "customer",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 125
+        },
+        {
+          "name": "lines",
+          "type": "List<OrderLine>",
+          "kind": "collection",
+          "column": null,
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 129
+        },
+        {
+          "name": "notes",
+          "type": "Map<String, OrderNote>",
+          "kind": "collection",
+          "column": null,
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 133
+        }
+      ]
+    },
+    {
+      "class": "Review",
+      "table": "reviews",
+      "source": "package:neon_data/example.dart",
+      "line": 171,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 175
+        },
+        {
+          "name": "text",
+          "type": "String",
+          "kind": "column",
+          "column": "text",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 177
+        }
+      ]
+    },
+    {
+      "class": "Ticket",
+      "table": "tickets",
+      "source": "package:neon_data/example.dart",
+      "line": 182,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 186
+        },
+        {
+          "name": "subject",
+          "type": "String",
+          "kind": "column",
+          "column": "subject",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 188
+        },
+        {
+          "name": "stamp",
+          "type": "DateTime?",
+          "kind": "column",
+          "column": "stamp",
+          "relation": null,
+          "source": "package:neon_data/example.dart",
+          "line": 191
+        }
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "AccountRepository",
+      "entity": "Account",
+      "id": "String",
+      "source": "package:neon_data/example.dart",
+      "line": 281,
+      "methods": [
+        {
+          "name": "findByOwner",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "owner",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Account>>",
+          "line": 283
+        }
+      ]
+    },
+    {
+      "name": "AuthorRepository",
+      "entity": "Author",
+      "id": "int",
+      "source": "package:neon_data/example.dart",
+      "line": 261,
+      "methods": [
+        {
+          "name": "findByNameStartingWith",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Author>>",
+          "line": 263
+        }
+      ]
+    },
+    {
+      "name": "BookReportRepository",
+      "entity": "Book",
+      "id": "int",
+      "source": "package:neon_data/example.dart",
+      "line": 324,
+      "methods": [
+        {
+          "name": "cardsSince",
+          "kind": "query",
+          "query": "select b.title, a.name as author_name, b.year from {Book} b join {Author} a on a.{Author.id} = b.{Book.author} where b.year >= :year order by b.year, b.title",
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<BookCard>>",
+          "line": 331
+        }
+      ]
+    },
+    {
+      "name": "BookRepository",
+      "entity": "Book",
+      "id": "int",
+      "source": "package:neon_data/example.dart",
+      "line": 198,
+      "methods": [
+        {
+          "name": "findByTitle",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 202
+        },
+        {
+          "name": "findByTitleIgnoreCase",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 203
+        },
+        {
+          "name": "findOneByTitle",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<Book?>",
+          "line": 204
+        },
+        {
+          "name": "getByTitle",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<Book>",
+          "line": 205
+        },
+        {
+          "name": "findByTitleAndYear",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            },
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 206
+        },
+        {
+          "name": "findByTitleOrYear",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            },
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 207
+        },
+        {
+          "name": "findByYearNot",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 208
+        },
+        {
+          "name": "findByYearBetween",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "from",
+              "type": "int"
+            },
+            {
+              "name": "to",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 209
+        },
+        {
+          "name": "findByYearGreaterThan",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 210
+        },
+        {
+          "name": "findByYearGreaterThanEqual",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 211
+        },
+        {
+          "name": "findByYearLessThan",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 212
+        },
+        {
+          "name": "findByYearLessThanEqual",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 213
+        },
+        {
+          "name": "findByYearIn",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "years",
+              "type": "List<int>"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 214
+        },
+        {
+          "name": "findByYearNotIn",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "years",
+              "type": "Set<int>"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 215
+        },
+        {
+          "name": "findByTitleStartingWith",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 216
+        },
+        {
+          "name": "findByTitleEndingWith",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "suffix",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 217
+        },
+        {
+          "name": "findByTitleContaining",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "part",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 218
+        },
+        {
+          "name": "findByTitleNotContaining",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "part",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 219
+        },
+        {
+          "name": "findByTitleLike",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "pattern",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 220
+        },
+        {
+          "name": "findByTitleNotLike",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "pattern",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 221
+        },
+        {
+          "name": "findByTitleContainingIgnoreCase",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "part",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 222
+        },
+        {
+          "name": "findBySubtitleIsNull",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [],
+          "returns": "Future<List<Book>>",
+          "line": 223
+        },
+        {
+          "name": "findBySubtitleIsNotNull",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [],
+          "returns": "Future<List<Book>>",
+          "line": 224
+        },
+        {
+          "name": "findByInStockTrue",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [],
+          "returns": "Future<List<Book>>",
+          "line": 225
+        },
+        {
+          "name": "findByInStockFalse",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [],
+          "returns": "Future<List<Book>>",
+          "line": 226
+        },
+        {
+          "name": "findByAuthor",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "author",
+              "type": "AggregateReference<Author, int>"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 227
+        },
+        {
+          "name": "findByInStockOrderByYearDescTitleAsc",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 228
+        },
+        {
+          "name": "findByYear",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<Set<Book>>",
+          "line": 229
+        },
+        {
+          "name": "findByYearLessThanOrderByYear",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<Iterable<Book>>",
+          "line": 230
+        },
+        {
+          "name": "findDistinctByInStock",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 231
+        },
+        {
+          "name": "streamByInStock",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            }
+          ],
+          "returns": "Stream<Book>",
+          "line": 232
+        },
+        {
+          "name": "findByInStock",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            },
+            {
+              "name": "sort",
+              "type": "Sort"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 235
+        },
+        {
+          "name": "findByYearAfter",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            },
+            {
+              "name": "pageable",
+              "type": "Pageable"
+            }
+          ],
+          "returns": "Future<Page<Book>>",
+          "line": 236
+        },
+        {
+          "name": "findByInStockIsTrue",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "pageable",
+              "type": "Pageable"
+            }
+          ],
+          "returns": "Future<Slice<Book>>",
+          "line": 237
+        },
+        {
+          "name": "findByInStockEquals",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            },
+            {
+              "name": "pageable",
+              "type": "Pageable"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 238
+        },
+        {
+          "name": "findOneByYearAndTitle",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            },
+            {
+              "name": "title",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<Book?>",
+          "line": 244
+        },
+        {
+          "name": "findFirstByOrderByYearAsc",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [],
+          "returns": "Future<Book?>",
+          "line": 247
+        },
+        {
+          "name": "findTop2ByOrderByYearDesc",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [],
+          "returns": "Future<List<Book>>",
+          "line": 248
+        },
+        {
+          "name": "findTop3ByInStock",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            },
+            {
+              "name": "pageable",
+              "type": "Pageable"
+            }
+          ],
+          "returns": "Future<Page<Book>>",
+          "line": 249
+        },
+        {
+          "name": "countByInStock",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            }
+          ],
+          "returns": "Future<int>",
+          "line": 252
+        },
+        {
+          "name": "existsByTitle",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<bool>",
+          "line": 253
+        },
+        {
+          "name": "deleteByYearLessThan",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<int>",
+          "line": 254
+        },
+        {
+          "name": "removeByTitle",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "title",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<void>",
+          "line": 255
+        },
+        {
+          "name": "deleteByInStock",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "inStock",
+              "type": "bool"
+            }
+          ],
+          "returns": "Future<List<Book>>",
+          "line": 256
+        }
+      ]
+    },
+    {
+      "name": "BookmarkRepository",
+      "entity": "Bookmark",
+      "id": "int",
+      "source": "package:neon_data/example.dart",
+      "line": 275,
+      "methods": [
+        {
+          "name": "findByBookId",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "bookId",
+              "type": "int"
+            }
+          ],
+          "returns": "Future<List<Bookmark>>",
+          "line": 277
+        }
+      ]
+    },
+    {
+      "name": "PurchaseOrderRepository",
+      "entity": "PurchaseOrder",
+      "id": "int",
+      "source": "package:neon_data/example.dart",
+      "line": 290,
+      "methods": [
+        {
+          "name": "findByCustomer",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "customer",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<PurchaseOrder>>",
+          "line": 292
+        }
+      ]
+    },
+    {
+      "name": "ReviewRepository",
+      "entity": "Review",
+      "id": "int",
+      "source": "package:neon_data/example.dart",
+      "line": 271,
+      "methods": []
+    },
+    {
+      "name": "TicketRepository",
+      "entity": "Ticket",
+      "id": "int",
+      "source": "package:neon_data/example.dart",
+      "line": 286,
+      "methods": []
+    }
+  ]
+}

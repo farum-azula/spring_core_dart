@@ -1500,7 +1500,7 @@ Measured with Flutter 3.47 (October 2026): a minimal app (a
 `SpringApplicationWidget` showing a text) built twice, once with
 `spring_boot_starter_flutter` and once with this package instead, which
 adds the OAuth2 client, Feign, `spring_security_core` and this plugin.
-The app uses none of it; the generated `main.spring.dart` lists their
+The app uses none of it; the generated `spring_gen/main.spring.dart` lists their
 auto-configurations, whose beans keep the code in the build (tree shaking
 cannot remove it).
 

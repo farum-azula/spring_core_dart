@@ -50,6 +50,18 @@
       "$0"
     ]
   },
+  "Theme color object": {
+    "prefix": "spcolorobject",
+    "description": "A color with alpha or mix: the object form (the one-line forms are gone)",
+    "body": [
+      "spring.flutter.theme.colors.${1:primary-container}.color=\\$colors.${2:primary}",
+      "spring.flutter.theme.colors.${1:primary-container}.alpha=${3:12%}",
+      "spring.flutter.theme.colors.${4:secondary-container}.color=\\$colors.${5:secondary}",
+      "spring.flutter.theme.colors.${4:secondary-container}.mix.with=${6:white}",
+      "spring.flutter.theme.colors.${4:secondary-container}.mix.amount=${7:14%}",
+      "$0"
+    ]
+  },
   "Theme typography": {
     "prefix": "sptypography",
     "description": "Fonts per text role (font files: any asset directory, found by family)",
@@ -81,7 +93,7 @@
       "spring.flutter.theme.components.app-bar.center-title=${1:true}",
       "spring.flutter.theme.components.button.shape=${2:full}",
       "spring.flutter.theme.components.card.shape=${3:large}",
-      "spring.flutter.theme.components.card.color=surface-container-low",
+      "spring.flutter.theme.components.card.color=\\$colors.surface-container-low",
       "spring.flutter.theme.components.input.style=${4:outline}",
       "spring.flutter.theme.components.snack-bar.behavior=floating",
       "$0"

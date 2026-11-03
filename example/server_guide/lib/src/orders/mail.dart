@@ -2,7 +2,7 @@
 // configurations. Its type is what the @Bean method's body returns
 // (LogMailSender in dev, SmtpMailSender in prod), as Spring knows it only
 // once the bean exists.
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 abstract interface class MailSender {

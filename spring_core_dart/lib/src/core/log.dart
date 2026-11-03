@@ -125,7 +125,7 @@ typedef SpringLogHandler = void Function(SpringLogRecord record);
 /// logs.
 ///
 /// ```dart
-/// import 'package:my_app/main.spring.dart'; // the generated file
+/// import 'package:my_app/spring_gen/main.spring.dart'; // the generated file
 ///
 /// @Component()
 /// @Log()

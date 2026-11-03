@@ -238,7 +238,7 @@ void main() {
       find.textContaining('spring.flutter.app.debug-banner'),
       findsOneWidget,
     );
-    expect(find.textContaining('true or false'), findsOneWidget);
+    expect(find.textContaining('failed to convert to bool'), findsOneWidget);
   });
 
   test('settings made by hand: Flutter\'s defaults', () {

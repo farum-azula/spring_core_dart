@@ -1,10 +1,10 @@
-import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/path_matcher.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
+import 'package:spring_core_dart/src/core/io/resources.dart';
 
 /// A [ResourceLoader] that also finds all resources matching a pattern
 /// with wildcards, such as `resources:templates/*.html` or
@@ -61,7 +61,7 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 /// they are, without wildcard expansion.
 ///
 /// The classpath roots are the directories added with
-/// `ClasspathResources.addDirectory` (latest first), then the embedded
+/// `Resources.addDirectory` (latest first), then the embedded
 /// resources together with `lib/resources/`. As in Spring, a `resources:`
 /// pattern searches only the first root that has its base directory,
 /// while `resources*:` searches every root, and `resources*:` without
@@ -139,7 +139,7 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   /// The prefix that searches every classpath root instead of the first
   /// one that has the base directory: `resources*:`, Spring's
   /// `CLASSPATH_ALL_URL_PREFIX`.
-  static const String classpathAllUrlPrefix = ClasspathResources.allPrefix;
+  static const String classpathAllUrlPrefix = Resources.allPrefix;
 
   /// The loader for locations without wildcards and for prefixes this
   /// resolver does not expand.
@@ -153,7 +153,7 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
 
   @override
   List<Resource> getResources(String location) {
-    final locationPattern = ClasspathResources.migrate(location);
+    final locationPattern = location;
     if (locationPattern.startsWith(classpathAllUrlPrefix)) {
       final path = locationPattern.substring(classpathAllUrlPrefix.length);
       if (!pathMatcher.isPattern(path)) {
@@ -177,14 +177,14 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
     final isFile = locationPattern.startsWith(ResourceLoader.filePrefix);
     // Plain locations are classpath locations, as in DefaultResourceLoader.
     final isClasspath =
-        locationPattern.startsWith(ClasspathResources.prefix) ||
+        locationPattern.startsWith(Resources.prefix) ||
         !RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(locationPattern);
     // As in Spring, the wildcards are looked for in the location as
     // written: `file:mail/%2A.txt` is the file named `*.txt`, no pattern.
     final path = isFile
         ? locationPattern.substring(ResourceLoader.filePrefix.length)
-        : locationPattern.startsWith(ClasspathResources.prefix)
-        ? locationPattern.substring(ClasspathResources.prefix.length)
+        : locationPattern.startsWith(Resources.prefix)
+        ? locationPattern.substring(Resources.prefix.length)
         : locationPattern;
     if (!(isFile || isClasspath) || !pathMatcher.isPattern(path)) {
       final resource = getResource(locationPattern);
@@ -276,7 +276,7 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   // kept, `''` for the root itself. `null` when `..` climbs above the
   // roots.
   static String? _classpathDirectory(String directory) =>
-      switch (ClasspathResources.normalize(directory)) {
+      switch (Resources.normalize(directory)) {
         null => null,
         '.' || '' => '',
         final cleaned when directory.endsWith('/') && !cleaned.endsWith('/') =>
@@ -346,8 +346,7 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
 
   // The classpath roots, in lookup order.
   List<_ClasspathRoot> _roots() => [
-    for (final directory in ClasspathResources.directories)
-      _DirectoryRoot(directory),
+    for (final directory in Resources.directories) _DirectoryRoot(directory),
     _EmbeddedRoot(),
   ];
 
@@ -449,12 +448,12 @@ final class _DirectoryRoot extends _ClasspathRoot {
 }
 
 final class _EmbeddedRoot extends _ClasspathRoot {
-  static const String _directory = ClasspathResources.directory;
+  static const String _directory = Resources.directory;
 
   @override
   bool hasDirectory(String base) =>
       base.isEmpty ||
-      ClasspathResources.paths.any((path) => path.startsWith(base)) ||
+      Resources.paths.any((path) => path.startsWith(base)) ||
       FileAccess.isDirectory('$_directory/$base');
 
   @override
@@ -463,7 +462,7 @@ final class _EmbeddedRoot extends _ClasspathRoot {
     String base,
     String pattern,
   ) => {
-    for (final path in ClasspathResources.paths)
+    for (final path in Resources.paths)
       if (path.startsWith(base) &&
           resolver.pathMatcher.match(pattern, path.substring(base.length)))
         path,
@@ -475,8 +474,8 @@ final class _EmbeddedRoot extends _ClasspathRoot {
   // The embedded copy first, then the file under `lib/resources/`.
   @override
   Resource resolve(String path) {
-    if (ClasspathResources.paths.contains(path)) {
-      return ClasspathResources.resolveEmbedded(path);
+    if (Resources.paths.contains(path)) {
+      return Resources.resolveEmbedded(path);
     }
     return FileSystemResource('$_directory/$path');
   }

@@ -143,7 +143,7 @@ void main() {
 
   group('resources', () {
     test('embedded classpath resources have a filename and createRelative', () {
-      ClasspathResources.registerAll(const {
+      Resources.registerAll(const {
         'fixes/conf/app.properties': EmbeddedResource.text('a=1'),
         'fixes/conf/other.properties': EmbeddedResource.text('b=2'),
       });
