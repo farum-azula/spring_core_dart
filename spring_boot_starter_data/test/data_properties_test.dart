@@ -13,6 +13,17 @@ Environment env(Map<String, String> values) =>
     StandardEnvironment()
       ..propertySources.addFirst(MapPropertySource('test', values));
 
+/// [path] in this package: the tests run from the package directory and from
+/// the workspace root.
+String _inPackage(String path) =>
+    Directory('lib').existsSync() && Directory('test').existsSync()
+    ? path
+    : 'spring_boot_starter_data/$path';
+
+File _packageFile(String path) => File(_inPackage(path));
+
+Directory _packageDirectory(String path) => Directory(_inPackage(path));
+
 void main() {
   test('the memory lock timeout: 10s, a value, never negative', () {
     expect(
@@ -63,7 +74,7 @@ void main() {
 
   test('every metadata key is read somewhere in lib/', () {
     final json = jsonDecode(
-      File('lib/spring_gen/spring_metadata.json').readAsStringSync(),
+      _packageFile('lib/spring_gen/spring_metadata.json').readAsStringSync(),
     ) as Map<String, Object?>;
     final names = [
       for (final p in json['properties']! as List)
@@ -76,7 +87,7 @@ void main() {
     // The last part of a key (`lock-timeout`) is spelled out in the code
     // that reads it.
     final sources = [
-      for (final f in Directory('lib/src').listSync(recursive: true))
+      for (final f in _packageDirectory('lib/src').listSync(recursive: true))
         if (f is File && f.path.endsWith('.dart')) f.readAsStringSync(),
     ].join('\n');
     final unread = [
@@ -91,7 +102,7 @@ void main() {
   group('the classes and the readers they cannot bind agree', () {
     Set<String> keysBelow(String prefix) {
       final json = jsonDecode(
-        File('lib/spring_gen/spring_metadata.json').readAsStringSync(),
+        _packageFile('lib/spring_gen/spring_metadata.json').readAsStringSync(),
       ) as Map<String, Object?>;
       return {
         for (final p in json['properties']! as List)

@@ -14,6 +14,8 @@ import 'package:spring_core_dart_generator/src/bean_scanner.dart'
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
+import 'support/real_sources.dart';
+
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:pkg/spring_gen/src/beans.spring.dart';
@@ -525,10 +527,10 @@ Future<(String, List<String>)> _generate(String models) async {
     rootPackage: 'pkg',
     flattenOutput: true,
   );
-  await readerWriter.testing.loadIsolateSources();
+  final own = await loadRealSources(readerWriter, sources);
   final result = await testBuilder(
     SpringBuilder(),
-    sources,
+    own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     packageConfig: packageConfig,

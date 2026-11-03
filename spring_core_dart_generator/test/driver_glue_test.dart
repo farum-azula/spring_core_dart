@@ -13,6 +13,8 @@ import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
+import 'support/real_sources.dart';
+
 const _template =
     'spring_boot_starter_data|'
     'lib/src/jdbc/drivers/sqlite3.dart.tmpl';
@@ -206,13 +208,13 @@ Future<String> _build(
   );
   // The isolate's sources include the real starter: its real template is
   // the one under test.
-  await readerWriter.testing.loadIsolateSources();
+  final own = await loadRealSources(readerWriter, sources);
   if (!template) {
     readerWriter.testing.delete(AssetId.parse(_template));
   }
   final result = await testBuilder(
     SpringBuilder(),
-    sources,
+    own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     flattenOutput: true,

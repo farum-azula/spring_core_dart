@@ -12,6 +12,15 @@ import 'package:test/test.dart';
 // generated from them. These tests keep the two from drifting apart: the
 // keys the readers use are the keys of the classes, and the defaults of
 // the classes are the defaults the readers apply.
+/// [path] in this package: the tests run from the package directory and from
+/// the workspace root.
+String _inPackage(String path) =>
+    Directory('lib').existsSync() && Directory('test').existsSync()
+    ? path
+    : 'spring_core_dart/$path';
+
+File _packageFile(String path) => File(_inPackage(path));
+
 void main() {
   late Directory temp;
   late String root;
@@ -33,7 +42,7 @@ void main() {
 
   test('the keys the readers use are the keys of the classes', () {
     final metadata = jsonDecode(
-      File('lib/spring_gen/spring_metadata.json').readAsStringSync(),
+      _packageFile('lib/spring_gen/spring_metadata.json').readAsStringSync(),
     ) as Map<String, Object?>;
     final described = {
       for (final property in metadata['properties']! as List<Object?>)
