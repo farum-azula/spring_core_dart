@@ -2,7 +2,7 @@
 // looked up: the security chain is one of them.
 import 'dart:math';
 
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// Gives every request an id (the client's `X-Request-Id`, or a new one),

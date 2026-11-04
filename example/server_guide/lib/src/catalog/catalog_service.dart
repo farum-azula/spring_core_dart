@@ -1,8 +1,8 @@
 // The catalog: caching (chapter 8), method security (chapter 4), AOP
 // (@Timed, chapter 6) and a @Lazy reference to itself (chapter 1), all
 // through the proxy the container injects instead of the bean.
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/aop/timed.dart';
-import 'package:neon_books_server/src/app.spring.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/catalog/book_repository.dart';
 import 'package:neon_books_server/src/stock/stock_changed.dart';

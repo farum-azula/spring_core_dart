@@ -3,7 +3,7 @@
 // `dart run build_runner build`).
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'create_app.spring.dart';
+import '../../spring_gen/data_test/create_app/create_app.spring.dart';
 
 @Table('tasks')
 class Task {

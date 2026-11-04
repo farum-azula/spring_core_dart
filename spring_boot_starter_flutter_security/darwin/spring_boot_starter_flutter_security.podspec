@@ -22,7 +22,7 @@ logins in ASWebAuthenticationSession.
   s.osx.dependency 'FlutterMacOS'
   s.ios.deployment_target = '13.0'
   s.osx.deployment_target = '10.15'
-  s.frameworks = 'AuthenticationServices', 'CryptoKit', 'Security'
+  s.frameworks = 'AuthenticationServices', 'CryptoKit', 'LocalAuthentication', 'Security'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/app_directories.dart';
+import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
+import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 import 'package:spring_boot_starter_flutter/src/sqlite_directories_stub.dart'
     if (dart.library.io) 'package:spring_boot_starter_flutter/src/sqlite_directories_io.dart'
     as native;
@@ -24,23 +26,7 @@ enum SqliteLocation {
 
   /// The user's documents (`getApplicationDocumentsDirectory`): visible to
   /// the user, on desktop and in iOS's Files app.
-  documents;
-
-  /// The location named [value] (case does not matter); throws an
-  /// `ArgumentError` naming the allowed values for any other.
-  static SqliteLocation parse(String value) {
-    final wanted = value.trim().toLowerCase();
-    for (final location in values) {
-      if (location.name == wanted) {
-        return location;
-      }
-    }
-    throw ArgumentError.value(
-      value,
-      SqliteDirectories.locationProperty,
-      'Must be one of ${values.map((v) => v.name).join(', ')}',
-    );
-  }
+  documents,
 }
 
 /// The directory of the databases on Android: `databases`, the sibling of
@@ -98,9 +84,6 @@ final class SqliteDirectories {
   /// The directories of [paths], for tests and for apps that know them.
   const SqliteDirectories.of(Map<SqliteLocation, String> paths)
     : this._(paths, const []);
-
-  /// The location property.
-  static const locationProperty = 'spring.datasource.sqlite.location';
 
   /// The name of the property source that carries the properties.
   static const propertySourceName = 'flutterSqliteDirectories';
@@ -189,15 +172,17 @@ final class SqliteDirectories {
     if (prefixes.isEmpty) {
       return;
     }
-    final text = environment.getProperty(locationProperty)?.trim() ?? '';
-    final location = text.isEmpty
-        ? SqliteLocation.support
-        : SqliteLocation.parse(text);
+    final location = boundProperties<FlutterDataSourceProperties>(
+      environment,
+      'flutterDataSourceProperties',
+    ).sqlite.location;
+    // The default is not asked for: a place it cannot be had is a warning.
+    final asked = location != const FlutterSqliteProperties().location;
     String? directory;
     try {
       directory = of(location);
     } on StateError catch (error) {
-      if (text.isNotEmpty) {
+      if (asked) {
         // Asked for, so not a thing to go on without.
         rethrow;
       }
@@ -234,31 +219,22 @@ final class SqliteDirectories {
 /// each name below `spring.datasources.`.
 List<String> dataSourcePrefixes(Environment environment) {
   final prefixes = <String>[];
-  if ((environment.getProperty('spring.datasource.url') ?? '')
-      .trim()
-      .isNotEmpty) {
-    prefixes.add('spring.datasource.');
+  if (boundProperties<FlutterDataSourceProperties>(
+        environment,
+        'flutterDataSourceProperties',
+      ).url !=
+      null) {
+    prefixes.add('${FlutterDataSourceProperties.prefix}.');
   }
-  const named = 'spring.datasources.';
-  final names = <String>{};
-  if (environment is ConfigurableEnvironment) {
-    for (final source in environment.propertySources) {
-      if (source is! EnumerablePropertySource<Object>) {
-        continue;
-      }
-      for (final property in source.propertyNames) {
-        if (!property.startsWith(named)) {
-          continue;
-        }
-        final dot = property.indexOf('.', named.length);
-        if (dot > named.length) {
-          names.add(property.substring(named.length, dot));
-        }
-      }
-    }
-  }
+  final names = [
+    ...?boundProperties<FlutterDataSourcesProperties>(
+      environment,
+      'flutterDataSourcesProperties',
+    ).datasources?.keys,
+  ]..sort();
+  const named = '${FlutterDataSourcesProperties.prefix}.';
   return [
     ...prefixes,
-    for (final name in names.toList()..sort()) '$named$name.',
+    for (final name in names) '$named$name.',
   ];
 }

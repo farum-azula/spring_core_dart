@@ -1,9 +1,14 @@
-# The generator only writes the example's application (example/example.spring.dart);
-# the package itself is written by hand.
+# The generator writes the example's application
+# (example/spring_gen/example.spring.dart) and, with `spring_properties`,
+# the binding of the typed properties (lib/src/properties/); the rest of the
+# package is written by hand.
 targets:
   $default:
     builders:
       spring_core_dart_generator:spring_core_dart:
         generate_for: [example/**]
+      spring_core_dart_generator:spring_properties:
+        enabled: true
+        generate_for: [lib/src/properties/**]
       spring_core_dart_generator:spring_test:
         enabled: false

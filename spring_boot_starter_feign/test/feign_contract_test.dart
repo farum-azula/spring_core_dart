@@ -329,7 +329,7 @@ void main() {
         expect(request.timeout, isNull);
         expect(request.followRedirects, isTrue);
         expect(
-          FeignClientConfig.connectTimeout(context.getBean<Environment>()),
+          FeignClientConfig.connectTimeout(context.getBean<FeignProperties>()),
           const Duration(seconds: 10),
         );
       });

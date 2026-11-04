@@ -36,7 +36,8 @@ final loggingAutoConfiguration = <BeanDefinition<Object>>[
     ],
     source: _source,
     conditions: _enabled,
-    create: (r) => LoggingSystemInitializer(r.dependency<Environment>()),
+    create: (r) =>
+        LoggingSystemInitializer(r.dependency<ConfigurableEnvironment>()),
   ),
   BeanDefinition<LoggingSystem>(
     name: 'loggingSystem',

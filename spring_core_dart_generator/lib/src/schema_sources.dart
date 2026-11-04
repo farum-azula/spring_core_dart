@@ -71,8 +71,6 @@ final class SchemaSources {
       for (final prefix in const [
         'resources*:',
         'resources:',
-        'classpath*:',
-        'classpath:',
       ]) {
         if (text.startsWith(prefix)) {
           text = text.substring(prefix.length);

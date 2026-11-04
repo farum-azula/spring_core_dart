@@ -20,6 +20,8 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import 'support/client_properties.dart';
+
 // A P-256 test key in PKCS #8 (made with `openssl ecparam -name
 // prime256v1 -genkey | openssl pkcs8 -topk8 -nocrypt`), and its public
 // point (`openssl ec -pubout -text`).
@@ -381,7 +383,7 @@ void main() {
           {'apple'},
           reason: section,
         );
-        final secret = await JwtClientSecretResolver.fromEnvironment(
+        final secret = await jwtResolverOf(
           environment,
         ).resolve(_apple());
         expect(secret, isNotNull, reason: section);
@@ -410,7 +412,7 @@ void main() {
 
     test('a key that cannot be read fails the request as invalid_client, '
         'without the key in the message or the log', () async {
-      final resolver = JwtClientSecretResolver.fromEnvironment(
+      final resolver = jwtResolverOf(
         _environment({
           '$_jwt.issuer': 'T',
           '$_jwt.key-id': 'K',
@@ -433,7 +435,7 @@ void main() {
 
     test('incomplete properties fail at once', () {
       expect(
-        () => JwtClientSecretResolver.fromEnvironment(
+        () => jwtResolverOf(
           _environment({
             '$_jwt.issuer': 'T',
             '$_jwt.private-key': _pem,

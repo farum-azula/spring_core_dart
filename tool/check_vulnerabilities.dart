@@ -23,6 +23,10 @@ const _flutterLocks = [
   'spring_boot_starter_flutter/pubspec.lock',
   'spring_boot_starter_flutter_security/pubspec.lock',
   'example/flutter_guide/pubspec.lock',
+  'example/themes/neon_ui/pubspec.lock',
+  'example/themes/neon/pubspec.lock',
+  'example/themes/material/pubspec.lock',
+  'example/themes/cupertino/pubspec.lock',
 ];
 
 /// The hosted packages of the lock file at [path]: name → version.

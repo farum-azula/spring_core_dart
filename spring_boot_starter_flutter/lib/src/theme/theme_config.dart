@@ -1,3 +1,8 @@
+import 'dart:ui' show Color;
+
+import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart'
+    show didYouMean;
+import 'package:spring_boot_starter_flutter/src/theme/theme_references.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 
 /// The theme properties (`spring.flutter.theme.*`) sorted into named
@@ -73,17 +78,22 @@ final class ThemeConfig {
   /// The properties of theme [name], each layer over the previous one: the
   /// brightness (`dark` for the `dark` theme, else `light`), the shared
   /// part or the theme it extends, then its own. A list in a later layer
-  /// replaces the whole list. Throws an `ArgumentError` for an unknown
-  /// name, and a `StateError` for an `extends` cycle or unknown parent.
-  Map<String, String> resolve(String name) => _resolve(
-    nameOf(name) ??
+  /// replaces the whole list. Then the references (`$colors.primary`) are
+  /// replaced by the values they name, so an extending theme that changes
+  /// `colors.primary` changes what refers to it. Throws an `ArgumentError`
+  /// for an unknown name, a `StateError` for an `extends` cycle or unknown
+  /// parent, and a `ThemePropertyException` for a reference cycle or an
+  /// unknown reference.
+  Map<String, String> resolve(String name) {
+    final resolved =
+        nameOf(name) ??
         (throw ArgumentError.value(
           name,
           'name',
           'no such theme; one of ${names.join(', ')}',
-        )),
-    [],
-  );
+        ));
+    return ThemeReferences.resolve(resolved, _resolve(resolved, []));
+  }
 
   Map<String, String> _resolve(String name, List<String> chain) {
     if (chain.contains(name)) {
@@ -124,16 +134,90 @@ final class ThemeConfig {
     'refresh',
   };
 
-  static String _canonicalPath(Iterable<String> segments) =>
-      segments.map(ThemeValues.canonical).join('.');
+  // The canonical path; the name right under a `headers` is kept as
+  // written, as `X-Api-Key` must keep its dashes.
+  static String _canonicalPath(Iterable<String> segments) {
+    final out = <String>[];
+    var afterHeaders = false;
+    for (final segment in segments) {
+      out.add(afterHeaders ? segment : ThemeValues.canonical(segment));
+      afterHeaders = !afterHeaders && out.last == 'headers';
+    }
+    return out.join('.');
+  }
 
   static final _indexed = RegExp(r'^(.*)\.(\d+)$');
+
+  // In a style property (`styles.chip.fill`) a later layer's plain value,
+  // list or map of states replaces one of another shape of an earlier
+  // layer; maps of states merge state by state.
+  static void _dropOtherShape(Map<String, String> target, String key) {
+    final segments = key.split('.');
+    if (segments.length < 3 || segments.first != 'styles') {
+      return;
+    }
+    final property = segments.take(3).join('.');
+    if (segments.length == 3) {
+      target.removeWhere((existing, _) => existing.startsWith('$property.'));
+      return;
+    }
+    final isItem = int.tryParse(segments[3]) != null;
+    target.removeWhere((existing, _) {
+      if (existing == property) {
+        return true;
+      }
+      final other = existing.split('.');
+      return other.length > 3 &&
+          existing.startsWith('$property.') &&
+          (int.tryParse(other[3]) != null) != isItem;
+    });
+  }
+
+  // The tails of the keys of a color object.
+  static const _objectTails = {'color', 'alpha', 'mix.with', 'mix.amount'};
+
+  // A color object of [source] (a `color` with an `alpha` or a `mix`)
+  // replaces the color of [target] whole, whatever its shape; so does a
+  // plain color over an object.
+  static void _dropOtherColor(
+    Map<String, String> target,
+    Map<String, String> source,
+  ) {
+    final roots = <String>{};
+    for (final key in source.keys) {
+      for (final tail in const ['alpha', 'mix.with', 'mix.amount']) {
+        if (key.endsWith('.$tail')) {
+          final root = key.substring(0, key.length - tail.length - 1);
+          if (source.containsKey('$root.color') ||
+              source.keys.any((k) => k.startsWith('$root.color.'))) {
+            roots.add(root);
+          }
+        }
+      }
+      // A plain value over an object of the target.
+      final prefix = '$key.';
+      final below = [
+        for (final existing in target.keys)
+          if (existing.startsWith(prefix)) existing.substring(prefix.length),
+      ];
+      if (below.isNotEmpty && below.every(_objectTails.contains)) {
+        roots.add(key);
+      }
+    }
+    for (final root in roots) {
+      target.removeWhere(
+        (existing, _) => existing == root || existing.startsWith('$root.'),
+      );
+    }
+  }
 
   // Puts [source] over [target]; a list in [source] (indexed entries or one
   // comma-separated value) replaces the whole list of [target].
   static void _merge(Map<String, String> target, Map<String, String> source) {
+    _dropOtherColor(target, source);
     final replaced = <String>{};
     for (final key in source.keys) {
+      _dropOtherShape(target, key);
       final list = _indexed.firstMatch(key)?.group(1) ?? key;
       if (replaced.add(list)) {
         target.removeWhere(
@@ -203,6 +287,118 @@ final class ThemeProperties {
       if (key.startsWith('$path.'))
         key.substring(path.length + 1).split('.').first,
   };
+
+  /// What a color may be written as, for error messages.
+  static const colorFormats =
+      "a color: a Colors name like 'deepPurple.shade200', #RGB, #RRGGBB or "
+      '#AARRGGBB, a \$ reference, or an object '
+      '{ color, mix: { with, amount }, alpha }';
+
+  static const _colorKeys = ['color', 'mix', 'alpha'];
+  static const _mixKeys = ['with', 'amount'];
+
+  /// The color at [path]: a plain value (a name, `#RRGGBB`, ...) or an
+  /// object `{ color, mix: { with, amount }, alpha }`, where `mix` moves
+  /// the color towards `with` by `amount` and then `alpha` sets the
+  /// opacity. `null` when there is neither. Throws a
+  /// [ThemePropertyException] for anything else, an unknown key included.
+  Color? color(String path) {
+    final raw = this[path];
+    if (raw != null) {
+      return ThemeValues.color(raw) ??
+          (throw ThemePropertyException(propertyName(path), raw, colorFormats));
+    }
+    return children(path).isEmpty ? null : colorObject(path);
+  }
+
+  /// The colors of the list at [path]: indexed entries (each a color or an
+  /// object) or one comma-separated value; `null` when there is neither.
+  List<Color>? colorList(String path) {
+    final indexes = <int>{
+      for (final child in children(path)) ?int.tryParse(child),
+    };
+    if (indexes.isNotEmpty) {
+      return [
+        for (final index in indexes.toList()..sort()) color('$path.$index')!,
+      ];
+    }
+    final items = list(path);
+    return items == null
+        ? null
+        : [
+            for (final item in items)
+              ThemeValues.color(item) ??
+                  (throw ThemePropertyException(
+                    propertyName(path),
+                    item,
+                    colorFormats,
+                  )),
+          ];
+  }
+
+  /// The color object at [path], whose children are `color` (required),
+  /// `mix` and `alpha`.
+  Color colorObject(String path) {
+    final kids = children(path);
+    for (final kid in kids) {
+      if (!_colorKeys.contains(kid)) {
+        throw ThemePropertyException(
+          propertyName('$path.$kid'),
+          this['$path.$kid'] ?? '',
+          'a key of a color object: ${_colorKeys.join(', ')}'
+          '${didYouMean(kid, _colorKeys)}',
+        );
+      }
+    }
+    if (!kids.contains('color')) {
+      throw ThemePropertyException(
+        propertyName(path),
+        '',
+        "a color object with a 'color' (and optionally 'mix' and 'alpha')",
+      );
+    }
+    var result = _need('$path.color', color);
+    if (kids.contains('mix')) {
+      final mix = '$path.mix';
+      final mixKids = children(mix);
+      for (final kid in mixKids) {
+        if (!_mixKeys.contains(kid)) {
+          throw ThemePropertyException(
+            propertyName('$mix.$kid'),
+            this['$mix.$kid'] ?? '',
+            'a key of mix: ${_mixKeys.join(', ')}'
+            '${didYouMean(kid, _mixKeys)}',
+          );
+        }
+      }
+      if (mixKids.length != 2) {
+        throw ThemePropertyException(
+          propertyName(mix),
+          this[mix] ?? '',
+          "mix as an object with 'with' (a color) and 'amount' (a percent)",
+        );
+      }
+      final other = _need('$mix.with', color);
+      final amount = _need('$mix.amount', percent);
+      result = Color.lerp(result, other, amount)!;
+    }
+    if (kids.contains('alpha')) {
+      result = result.withValues(alpha: _need('$path.alpha', percent));
+    }
+    return result;
+  }
+
+  // The value at [path], which must be there.
+  T _need<T>(String path, T? Function(String path) at) =>
+      at(path) ??
+      (throw ThemePropertyException(propertyName(path), '', 'a value'));
+
+  /// The share (0 to 1) at [path], written `12%` or `0.12`.
+  double? percent(String path) => read(
+    path,
+    ThemeValues.percent,
+    'a percent: 0% to 100%, or 0 to 1',
+  );
 
   /// The value at [path] parsed with [parse]; `null` when there is none.
   /// Throws a [ThemePropertyException] naming the property and [expected]

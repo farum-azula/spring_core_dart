@@ -1,202 +1,127 @@
 import 'package:build/build.dart' hide Resource;
 import 'package:dart_style/dart_style.dart';
-import 'package:spring_core_dart/core.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/typed_message_keys.dart';
+import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
-import 'package:yaml/yaml.dart';
 
-/// Writes `lib/spring_keys.dart` for a Flutter app: typed access to the
-/// keys of its configuration, so a renamed key is a compile error instead
-/// of a run-time failure.
+/// Writes the typed keys of a Flutter app's configuration, so a renamed key
+/// is a compile error instead of a run-time failure:
 ///
-/// - `context.theme` (see [TypedThemeKeys]): the colors, spacing, text
-///   styles and tokens declared under `spring.flutter.theme.*`, and
-///   `AppThemes` with the theme names;
-/// - `context.messages` (see [TypedMessageKeys]): the keys of
-///   `messages*.properties`.
+/// - `lib/spring_gen/theme.spring.dart` (see `TypedThemeKeys`):
+///   `context.theme`, the
+///   colors, spacing, text styles, tokens, styles, motion, animations and
+///   background declared under `spring.flutter.theme.*`, and `AppThemes`
+///   with the theme names;
+/// - `lib/spring_gen/messages.spring.dart` (see `TypedMessageKeys`):
+///   `context.messages`, the keys of `messages*.properties`.
+///
+/// Both are `part of` the `.spring.dart` of the package's only
+/// `@SpringBootApplication` library, else the outermost `@ComponentScan`
+/// (`spring_gen/main.spring.dart` in an app,
+/// `spring_gen/spring_auto_configuration.spring.dart` in a library; nested scans in `lib/src/` do not matter): the main builder
+/// writes their `part` directives and imports, and widgets get the
+/// extensions by importing that file. Unrelated roots fail the build and
+/// name them; none: nothing is written and the log says why.
 ///
 /// It runs for a package that depends on `spring_boot_starter_flutter`
-/// (or a package that brings it, such as the security starter),
-/// reads `lib/resources/` as the web builder does (every `.yml`, `.yaml`
-/// and `.properties` file, any profile, any theme) and writes nothing
-/// without `spring.flutter.theme.*` properties and message files. The
-/// values are not in the file, only the keys: they are read at run time
-/// from the active theme and the message source, so a refreshed or
-/// switched theme and the app's language change them.
+/// (or a package that brings it, such as the security starter), reads
+/// `lib/resources/` as the web builder does (every `.yml`, `.yaml` and
+/// `.properties` file, any profile, any theme, and the `resources:` files
+/// that `spring.config.import` names from a dependency, as a library's
+/// theme `resources:themes/neon.yml`) and writes nothing without
+/// `spring.flutter.theme.*` properties and message files. The values are
+/// not in the files, only the keys: they are read at run time from the
+/// active theme and the message source.
 ///
 /// Warnings (a message missing in a language) go to the build log; errors
 /// (a message with a different number of arguments in two languages, a name
-/// no Dart name can be made of, a token of two types) fail the build and
-/// leave the file as it is.
+/// no Dart name can be made of, a token of two types, an unknown reference)
+/// fail the build and none of the key files is written (build_runner removes
+/// the outputs a step does not write).
 ///
 /// Spring has nothing like it: Java reads these keys by string.
 final class FlutterKeysBuilder implements Builder {
-  static const _starter = 'spring_boot_starter_flutter';
-  static const _starterImport = "import 'package:$_starter/$_starter.dart';";
-
-  /// The generated file, below the package directory.
-  static const output = 'lib/spring_keys.dart';
-
   @override
   Map<String, List<String>> get buildExtensions => const {
-    r'$package$': [output],
+    r'$package$': [
+      SpringKeyFiles.themeFile,
+      SpringKeyFiles.messagesFile,
+    ],
   };
 
   @override
   Future<void> build(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
-    if (!await _usesFlutterStarter(buildStep, package)) {
+    if (!await SpringKeyFiles.usesFlutterStarter(buildStep)) {
       return;
     }
     final resources = await SpringBuilder.resources(buildStep, warn: false);
-    final texts = {
+    final texts = await SpringKeyFiles.withImports(buildStep, {
       for (final MapEntry(:key, value: (:text, base64: _)) in resources.entries)
         key: ?text,
-    };
+    });
     final diagnostics = KeysDiagnostics();
-    final code = generate(texts, diagnostics);
+    final parts = SpringKeyFiles.generate(
+      texts,
+      diagnostics,
+      loaderKinds: await SpringKeyFiles.loaderKinds(buildStep),
+    );
     diagnostics.warnings.forEach(log.warning);
     diagnostics.errors.forEach(log.severe);
-    if (code != null) {
-      await buildStep.writeAsString(AssetId(package, output), code);
+    if (parts.theme == null && parts.messages == null) {
+      return;
     }
+    final scans = await SpringKeyFiles.scanLibraries(buildStep);
+    if (scans.isEmpty) {
+      log.warning(
+        'No library of $package has a @ComponentScan or '
+        '@SpringBootApplication, so the typed keys of lib/resources/ have no '
+        'library to be a part of: lib/spring_gen/theme.spring.dart and '
+        'lib/spring_gen/messages.spring.dart are not written.',
+      );
+      return;
+    }
+    final choice = SpringKeyFiles.parentLibrary(scans);
+    if (choice.error case final error?) {
+      log.severe(error);
+      return;
+    }
+    final parent = SpringKeyFiles.parentOf(choice.parent!);
+    Future<void> write(String path, String? code, String source) async {
+      if (code == null) {
+        return;
+      }
+      await buildStep.writeAsString(
+        AssetId(package, path),
+        _format(
+          '${_header(source)}\n'
+          "part of '${SpringKeyFiles.parentPath(parent)}';\n\n"
+          '$code',
+        ),
+      );
+    }
+
+    await write(
+      SpringKeyFiles.themeFile,
+      parts.theme,
+      'spring.flutter.theme.*',
+    );
+    await write(
+      SpringKeyFiles.messagesFile,
+      parts.messages,
+      'messages*.properties',
+    );
   }
 
-  static Future<bool> _usesFlutterStarter(
-    BuildStep buildStep,
-    String package,
-  ) async {
-    final id = AssetId(package, 'pubspec.yaml');
-    if (!await buildStep.canRead(id)) {
-      return false;
-    }
-    try {
-      final pubspec = loadYaml(await buildStep.readAsString(id));
-      if (pubspec is! YamlMap) {
-        return false;
-      }
-      for (final section in const ['dependencies', 'dev_dependencies']) {
-        final dependencies = pubspec[section];
-        if (dependencies is YamlMap &&
-            dependencies.keys.any(
-              (name) => '$name'.startsWith('spring_boot_starter_flutter'),
-            )) {
-          return true;
-        }
-      }
-    } on YamlException {
-      return false;
-    }
-    return false;
-  }
+  // The header of a file made from [source] (the keys it reads).
+  static String _header(String source) =>
+      '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+      '// Generated by spring_core_dart_generator from the configuration '
+      'of lib/resources/\n'
+      '// ($source).\n\n'
+      '// ignore_for_file: type=lint\n';
 
-  /// The content of `lib/spring_keys.dart` for the resources [texts]
-  /// (paths below `lib/resources/`), or `null` when there is nothing to
-  /// write or [diagnostics] has errors.
-  static String? generate(
-    Map<String, String> texts,
-    KeysDiagnostics diagnostics,
-  ) {
-    final properties = readProperties(texts, diagnostics);
-    final theme = TypedThemeKeys.generate(properties, diagnostics);
-    final messages = TypedMessageKeys.generate(texts, properties, diagnostics);
-    if (diagnostics.errors.isNotEmpty || (theme == null && messages == null)) {
-      return null;
-    }
-    final out = StringBuffer()
-      ..writeln('// GENERATED CODE - DO NOT MODIFY BY HAND')
-      ..writeln(
-        '// Generated by spring_core_dart_generator from the configuration '
-        'of lib/resources/',
-      )
-      ..writeln('// (spring.flutter.theme.*, messages*.properties).')
-      ..writeln()
-      ..writeln('// ignore_for_file: type=lint')
-      ..writeln()
-      ..writeln("import 'package:flutter/widgets.dart';")
-      ..writeln(_starterImport)
-      ..writeln()
-      ..writeln('/// Typed access to the configuration from any widget.')
-      ..writeln('extension SpringKeys on BuildContext {');
-    if (theme != null) {
-      out
-        ..writeln(
-          '  /// The values `spring.flutter.theme.*` declares, from the active',
-        )
-        ..writeln('  /// Spring theme; the widget rebuilds when it changes.')
-        ..writeln(
-          '  AppTheme get theme => '
-          'AppTheme._(ThemeKeyReader(SpringTheme.of(this)));',
-        );
-    }
-    if (messages != null) {
-      out
-        ..writeln(
-          '  /// The messages, in the current language; the widget rebuilds',
-        )
-        ..writeln('  /// when it changes.')
-        ..writeln('  AppMessages get messages => AppMessages._(this);');
-    }
-    out
-      ..writeln('}\n')
-      ..write(theme ?? '')
-      ..writeln()
-      ..write(messages ?? '');
-    return DartFormatter(
-      languageVersion: DartFormatter.latestLanguageVersion,
-    ).format(out.toString());
-  }
-
-  static const List<PropertySourceLoader> _loaders = [
-    PropertiesPropertySourceLoader(),
-    YamlPropertySourceLoader(),
-  ];
-
-  /// Every property of the `.properties`, `.yml` and `.yaml` files in
-  /// [texts], in the order of the files (sorted by path), whatever their
-  /// profile. A file that does not parse is a warning and is skipped.
-  static List<ConfigProperty> readProperties(
-    Map<String, String> texts,
-    KeysDiagnostics diagnostics,
-  ) {
-    final result = <ConfigProperty>[];
-    for (final path in texts.keys.toList()..sort()) {
-      final dot = path.lastIndexOf('.');
-      final extension = dot == -1 ? '' : path.substring(dot + 1);
-      final loader = _loaders
-          .where((loader) => loader.fileExtensions.contains(extension))
-          .firstOrNull;
-      if (loader == null) {
-        continue;
-      }
-      final List<AbstractPropertySource<Object>> sources;
-      try {
-        sources = loader.load(path, texts[path]!);
-      } on FormatException catch (e) {
-        if (!_isMessageFile(path)) {
-          diagnostics.warnings.add(
-            'lib/resources/$path does not parse (${e.message}): its keys '
-            'are not typed.',
-          );
-        }
-        continue;
-      }
-      for (final source in sources) {
-        if (source is! EnumerablePropertySource<Object>) {
-          continue;
-        }
-        for (final name in source.propertyNames) {
-          if (source.getProperty(name) case final value?) {
-            result.add((file: path, name: name, value: '$value'));
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  // Message files are read as properties too, but only for their keys.
-  static bool _isMessageFile(String path) =>
-      path.split('/').last.startsWith('messages');
+  static String _format(String source) => DartFormatter(
+    languageVersion: DartFormatter.latestLanguageVersion,
+  ).format(source);
 }

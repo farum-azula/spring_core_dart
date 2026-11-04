@@ -125,7 +125,7 @@ greeting.times=2
 ```dart
 import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
-import 'main.spring.dart'; // written by the generator, next to this file
+import 'spring_gen/main.spring.dart'; // written by the generator, in spring_gen/
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -150,7 +150,7 @@ import 'package:my_app/greeting.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/main.spring.dart'; // springApplication
+import '../bin/spring_gen/main.spring.dart'; // springApplication
 
 class FakeGreeter implements Greeter {
   @override
@@ -192,7 +192,11 @@ void main() {
   [core's quick start](spring_core_dart/README.md#quick-start).
 - **A complete application, chapter by chapter:** the
   [server guide](example/server_guide/README.md) and the
-  [Flutter guide](example/flutter_guide/README.md) below.
+  [Flutter guide](example/flutter_guide/README.md) below. For the theme
+  alone, three designs (Material, Cupertino and a custom design system with
+  no Material and no Cupertino, the [NEON theme showcase](example/themes/neon/README.md)
+  on the [`neon_ui`](example/themes/neon_ui/README.md) library): see
+  [`example/themes/`](example/themes/README.md).
 
 Starters are found automatically. Add a package that has a
 `lib/spring_auto_configuration.dart` to `pubspec.yaml`, run
@@ -229,6 +233,10 @@ brings and re-exports the packages below it, so a web server lists
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | The `build_runner` builder that reads the annotations and writes the `*.spring.dart` files. A dev dependency of every application. |
 | `neon_books_server` | [`example/server_guide/`](example/server_guide/README.md) | **The server guide.** NEON Books, a bookstore's server that uses everything a Dart server can: beans, configuration, a REST API with files and server-sent events, Spring Security (sessions, CSRF, roles, method security, single sign-on with Keycloak: `oauth2Login()` and bearer tokens), WebSocket, events and AOP, cache, scheduling, Feign, validation, logging and tests. Read it chapter by chapter; run it with `dart run bin/main.dart` in its folder. Not published. |
 | `neon_books_app` | [`example/flutter_guide/`](example/flutter_guide/README.md) | **The Flutter guide.** The bookstore's app, a client of the server guide: state in beans, themes and texts from properties, assets, Feign clients and a WebSocket with a session, login and roles with Spring Security, single sign-on with Keycloak (the system's login window on devices, the server on the web), cache, scheduling, validation, a log screen, widget tests, goldens and end-to-end tests against the server. Run it with `flutter run` in its folder. Not published. |
+| `neon_ui` | [`example/themes/neon_ui/`](example/themes/neon_ui/README.md) | **The NEON design system.** A Flutter library of widgets for apps of type `widgets` whose whole look is a theme in YAML (references, color objects, nested tokens, `styles.*`, animations, a background), with its fonts and picture. The measure of "themes without Dart". Not published. |
+| `theme_showcase_neon` | [`example/themes/neon/`](example/themes/neon/README.md) | **The NEON theme showcase.** An app of type `widgets` (no Material, no Cupertino) built from `neon_ui`: components with states, the glow modal, the background, tokens, a log panel, and a theme of its own that `extends` the library's, switched at run time. Not published. |
+| `theme_showcase_material` | [`example/themes/material/`](example/themes/material/README.md) | **The Material theme showcase.** A `MaterialApp` whose whole look is YAML: colors, type, space and shape, tokens, every component per state, styles for own widgets, motion, background, images and six themes. Not published. |
+| `theme_showcase_cupertino` | [`example/themes/cupertino/`](example/themes/cupertino/README.md) | **The Cupertino theme showcase.** A `CupertinoApp` themed from YAML with only Cupertino widgets, a controls gallery and four themes. Not published. |
 
 The core is split into libraries that follow Spring's modules. Import
 one, or `package:spring_core_dart/spring_core_dart.dart` for all of them:
@@ -287,7 +295,7 @@ plain Dart strings and text.
 
 | Extension | What it gives |
 |---|---|
-| [`dart_spring`](extensions/zed/dart_spring/README.md) (this repository) | Spring support as in IntelliJ IDEA: go from an injection point to its beans and from `@Value('${...}')` to the property; SpEL, pointcuts and placeholders highlighted and checked while you type (invalid expressions, unknown pointcuts, a `${key}` that no properties file defines, `'${key}'` written without `r`); the Properties language; snippets |
+| [`dart_spring`](extensions/zed/dart_spring/README.md) (this repository) | Spring support as in IntelliJ IDEA: go from an injection point to its beans and from `@Value('${...}')` to the property; SpEL, pointcuts and placeholders highlighted and checked while you type (invalid expressions, unknown pointcuts, a `${key}` that no properties file defines, `'${key}'` written without `r`); completion, hovers and checks of `application.yml` keys, the theme and SpEL beans from the Spring metadata of your package and its dependencies; the Properties language; snippets |
 | [Flutter Tools](https://github.com/farum-azula/zed_editor_extensions/tree/main/flutter-extension) | Dart and Flutter as in VS Code: run and debug on every platform, hot reload on save, DevTools; `build_runner watch`, so the generated code follows your edits |
 | [HTTP Client](https://github.com/farum-azula/zed_editor_extensions/tree/main/http-client-extension) | IntelliJ's HTTP client: a request for every `@GetMapping` of a controller or Feign client, run from the gutter |
 
@@ -589,7 +597,7 @@ are printed to the console.
 ```dart
 // The getter is an extension in the generated file of the scan that
 // covers this class (next to its @ComponentScan() declaration).
-import 'package:my_shop/src/app.spring.dart';
+import 'package:my_shop/spring_gen/src/app.spring.dart';
 
 @Service()
 @Log()

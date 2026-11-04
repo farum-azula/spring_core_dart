@@ -1,4 +1,3 @@
-import 'package:spring_boot_dart/src/annotations.dart';
 import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 

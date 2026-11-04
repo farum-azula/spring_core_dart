@@ -1,0 +1,39 @@
+# High contrast: black on white, thick borders, no motion between pages.
+spring:
+  flutter:
+    theme:
+      themes:
+        high-contrast:
+          extends: light
+          seed-color: '#000000'
+          contrast: 1
+          colors:
+            primary: '#000000'
+            on-primary: '#FFFFFF'
+            secondary: '#0000CC'
+            tertiary: '#8A0000'
+            surface: '#FFFFFF'
+            on-surface: '#000000'
+            surface-container-low: '#FFFFFF'
+            outline: '#000000'
+          components:
+            outlined-button:
+              side:
+                default: { color: $colors.outline, width: 3 }
+                hovered: { color: $colors.secondary, width: 4 }
+                disabled: { color: $colors.on-surface, width: 2 }
+            input:
+              focused-border: { type: outline, radius: small, side: { color: $colors.secondary, width: 4 } }
+              enabled-border: { type: outline, radius: small, side: { color: $colors.outline, width: 2 } }
+            card:
+              color: $colors.surface
+              shape:
+                type: rounded
+                radius: large
+                side: { color: $colors.outline, width: 2 }
+          motion:
+            page-transition: none
+          tokens:
+            brand:
+              name: High contrast
+              tagline: Black, white and thick lines

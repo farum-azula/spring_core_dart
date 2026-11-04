@@ -1,6 +1,6 @@
 // Scheduled jobs (chapter 8): restocking with a fixed delay from the
 // properties, a report at a cron time.
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/stock/stock_service.dart';
 import 'package:neon_books_server/src/supplier/supplier_clients.dart';
 import 'package:neon_books_server/src/supplier/supplier_configured.dart';

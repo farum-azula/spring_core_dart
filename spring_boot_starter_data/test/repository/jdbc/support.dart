@@ -9,8 +9,8 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 import '../../postgres/support.dart' as pg;
+import '../../spring_gen/repository/jdbc/app/jdbc_app.spring.dart';
 import 'app/jdbc_app.dart';
-import 'app/jdbc_app.spring.dart';
 
 export 'app/jdbc_app.dart';
 

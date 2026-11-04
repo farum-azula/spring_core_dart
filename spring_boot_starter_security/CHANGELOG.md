@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `spring.security.*` is made from code and the starter reads the same class: `SecurityProperties` is bound by the Binder. The hand-written `spring_metadata_additional.json` is gone.
+
 ## 0.6.2
 
 - feat: 0.6.2 — the theme (typed keys and messages, states, every component, a theme from a URL), (#20)

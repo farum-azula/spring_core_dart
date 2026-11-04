@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 
 const _app = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'app.spring.dart';
+import 'spring_gen/app.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -21,7 +21,7 @@ const _imports = '''
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart' as t;
-import 'spring/shop.test.spring.dart';
+import 'spring_gen/shop.test.spring.dart';
 ''';
 
 Future<TestBuilderResult> _build(
@@ -53,7 +53,7 @@ Future<String> _generated(
   final result = await _build(testClass, files: files);
   expect(result.errors, isEmpty);
   return result.readerWriter.testing.readString(
-    AssetId('pkg', 'test/spring/shop.test.spring.dart'),
+    AssetId('pkg', 'test/spring_gen/shop.test.spring.dart'),
   );
 }
 
@@ -679,7 +679,7 @@ class Deeper {
       );
       expect(
         source,
-        _has("import '../data/app/data_app.spring.dart' as _app0;"),
+        _has("import 'data/app/data_app.spring.dart' as _app0;"),
       );
     });
 
@@ -726,7 +726,10 @@ class Deeper {
         'class ShopTest {}\n',
         files: {'bin/app.dart': _app, 'example/main.dart': _app},
       );
-      expect(source, _has("import '../../example/main.spring.dart' as _app0;"));
+      expect(
+        source,
+        _has("import '../../example/spring_gen/main.spring.dart' as _app0;"),
+      );
     });
   });
 
@@ -847,16 +850,16 @@ abstract class Clock {}
     final source = await _generated(testClass);
     final errors = await resolveSources<List<String>>(
       {
-        'pkg|bin/app.spring.dart': _appSpring,
+        'pkg|bin/spring_gen/app.spring.dart': _appSpring,
         'pkg|test/shop_test.dart':
             '$_imports\n$testClass\nvoid main() => runSpringTests();\n',
-        'pkg|test/spring/shop.test.spring.dart': source,
+        'pkg|test/spring_gen/shop.test.spring.dart': source,
       },
       (resolver) async {
         final messages = <String>[];
         for (final path in [
           'test/shop_test.dart',
-          'test/spring/shop.test.spring.dart',
+          'test/spring_gen/shop.test.spring.dart',
         ]) {
           final library = await resolver.libraryFor(AssetId('pkg', path));
           final result = await library.session.getErrors(
@@ -873,7 +876,7 @@ abstract class Clock {}
         return messages;
       },
       rootPackage: 'pkg',
-      resolverFor: 'pkg|test/spring/shop.test.spring.dart',
+      resolverFor: 'pkg|test/spring_gen/shop.test.spring.dart',
       readAllSourcesFromFilesystem: true,
     );
     expect(errors, isEmpty, reason: source);

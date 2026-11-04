@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -18,7 +18,7 @@ final BeanModule pkgBeans = $pkgBeans;
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -66,7 +66,7 @@ Future<String> _generate(
     'lib/src/service.dart': '$_header$beans',
   }, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
-  return _normalize(_output(result, 'lib/src/beans.spring.dart'));
+  return _normalize(_output(result, 'lib/spring_gen/src/beans.spring.dart'));
 }
 
 /// The build errors of a `@ComponentScan` of [beans].
@@ -91,7 +91,9 @@ Future<List<String>> _compileErrors(
   };
   final result = await _build(sources);
   expect(result.errors, isEmpty);
-  final path = app ? 'bin/main.spring.dart' : 'lib/src/beans.spring.dart';
+  final path = app
+      ? 'bin/spring_gen/main.spring.dart'
+      : 'lib/spring_gen/src/beans.spring.dart';
   final output = _output(result, path);
   return await resolveSources<List<String>>(
     {
@@ -136,7 +138,7 @@ void main() {
         'lib/src/service.dart': '$_header$_orders',
         'lib/src/aspects/aspects.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/aspects/aspects.spring.dart';
+import 'package:pkg/spring_gen/src/aspects/aspects.spring.dart';
 
 @ComponentScan()
 final BeanModule aspectBeans = $aspectBeans;
@@ -158,7 +160,9 @@ class Clock {
 ''',
       });
       expect(result.errors, isEmpty);
-      final root = _normalize(_output(result, 'bin/main.spring.dart'));
+      final root = _normalize(
+        _output(result, 'bin/spring_gen/main.spring.dart'),
+      );
       // Orders is advised by the nested module's aspect: kept.
       expect(root, contains(r'class_$OrdersProxy'));
       // Mail matches no pointcut of any module: pruned.
@@ -169,7 +173,7 @@ class Clock {
       );
       // The nested module may be imported by others: every proxy stays.
       final nested = _normalize(
-        _output(result, 'lib/src/aspects/aspects.spring.dart'),
+        _output(result, 'lib/spring_gen/src/aspects/aspects.spring.dart'),
       );
       expect(nested, contains(r'class_$ClockProxy'));
     });
@@ -189,7 +193,9 @@ class Tracing {
 ''',
       });
       expect(result.errors, isEmpty);
-      final root = _normalize(_output(result, 'bin/main.spring.dart'));
+      final root = _normalize(
+        _output(result, 'bin/spring_gen/main.spring.dart'),
+      );
       expect(root, contains(r'class_$OrdersProxy'));
       expect(root, contains(r'class_$MailProxy'));
     });
@@ -298,7 +304,7 @@ class Cfg {
         'lib/src/service.dart': '$_header$_orders',
       });
       expect(
-        _output(result, 'lib/src/beans.spring.dart'),
+        _output(result, 'lib/spring_gen/src/beans.spring.dart'),
         contains(
           '// ignore_for_file: type=lint, implementation_imports, '
           'unnecessary_cast',

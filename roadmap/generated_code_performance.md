@@ -107,6 +107,20 @@ Plan: split the work like source_gen's `SharedPartBuilder` +
   (`feign.spring.dart`, `data.spring.dart`, ...) next to the root one, so a
   change in the Feign clients rewrites only the Feign file.
 
+The editor metadata (`lib/spring_gen/spring_metadata.json`, see
+[spring_metadata.md](spring_metadata.md)) goes the same way: each
+starter writes its own, from its own code only, and a change regenerates
+only the metadata of the library it touched. Two things come with it (the
+owner, November 2026):
+
+- **Properties typed in code, not by hand (done).** The metadata is
+  generated whole from `@ConfigurationProperties` classes: `///` for the
+  description, enums for fixed values, literal defaults, `@Range`,
+  `@WarnValues` and `@PropertyValues` for what a type cannot say.
+  `spring_metadata_additional.json` is gone (the generator no longer reads
+  it), and `tool/test/property_keys_test.dart` fails for a literal key read
+  in `lib/` that no `@ConfigurationProperties` class binds.
+
 Goal: editing one class regenerates only what depends on it; build_runner's
 own invalidation then does the rest. It goes with the items above: the
 decisions that need the whole application (which beans an advisor can

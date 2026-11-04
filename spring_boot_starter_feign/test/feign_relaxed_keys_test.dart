@@ -45,7 +45,7 @@ void main() {
           expect(request.headers['X-Shop'], 'neon');
           expect(request.url.queryParameters['lang'], 'en');
           final config = FeignClientConfig.of(
-            context.getBean<Environment>(),
+            context.getBean<FeignProperties>(),
             'contract-v2',
           );
           expect(config.loggerLevel, FeignLoggerLevel.basic);
@@ -70,7 +70,9 @@ void main() {
           expect(request.headers['X-Trace'], 't1');
           expect(request.followRedirects, isFalse);
           expect(
-            FeignClientConfig.connectTimeout(context.getBean<Environment>()),
+            FeignClientConfig.connectTimeout(
+              context.getBean<FeignProperties>(),
+            ),
             const Duration(seconds: 4),
           );
         });

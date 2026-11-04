@@ -37,7 +37,7 @@ need to know Spring to use it.
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
-import 'main.spring.dart'; // written by the generator
+import 'spring_gen/main.spring.dart'; // written by the generator
 
 @SpringBootApplication()
 void main() => runApp(
@@ -96,7 +96,11 @@ spring.flutter.app.title=Counter
 
 A complete app: the [Flutter guide](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide),
 a bookstore's app that uses everything the family offers a Flutter app,
-explained chapter by chapter.
+explained chapter by chapter. And the
+[theme examples](https://github.com/farum-azula/spring_core_dart/tree/main/example/themes):
+a Material app, a Cupertino app and the NEON theme showcase, a custom design
+system (an app of type `widgets`) built from the library
+[`neon_ui`](https://github.com/farum-azula/spring_core_dart/tree/main/example/themes/neon_ui).
 
 *In the guides:* [app, 1. The application](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#1-the-application), [2. State in beans](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#2-state-in-beans), [3. Themes](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#3-themes).
 
@@ -142,7 +146,7 @@ Then:
 
 1. Put `@SpringBootApplication()` on `main` in `lib/main.dart`.
 2. Run `dart run build_runner watch` (or `build`). The generator writes
-   `lib/main.spring.dart`, with `springApplication`: the application,
+   `lib/spring_gen/main.spring.dart`, with `springApplication`: the application,
    with every bean found under `lib/`. Keep `watch` running while you
    work.
 3. Put configuration files and message files into `lib/resources/`. The
@@ -353,7 +357,7 @@ generator writes a typed getter on `BuildContext`, named after the bean:
 `context.basket`. Use it for the few beans many widgets need, deep in the
 tree: a basket, a session, the current user. Only marked beans get one,
 so the list stays short. `@BuildContextAccess(name: 'cart')` picks
-another name. The getters are generated into `main.spring.dart`; import
+another name. The getters are generated into `spring_gen/main.spring.dart`; import
 it where you use them. Like `context.bean`, a getter does not rebuild the
 widget when the bean changes.
 
@@ -611,7 +615,10 @@ theme, the standard `light` and `dark` themes, and any number of themes
 of your own, in `.properties` or `.yml`, per profile, even loaded from a
 server at run time. There is no `ThemeData` in the code, and every value
 the properties leave out is Flutter's Material 3 default. Designers can
-change the look in one file without touching widget code.
+change the look in one file without touching widget code. The full
+reference, one page per topic (colors, typography, components, states,
+background, images, Cupertino), starts at
+[Flutter themes in YAML](../docs/flutter/theme/index.md).
 
 ```yaml
 # lib/resources/application.yml
@@ -643,22 +650,24 @@ spring:
       splash: sparkle                         # ripple | sparkle | none
       motion:
         page-transition: zoom                 # platform | fadeUpwards | zoom | cupertino | none
-        duration-medium: 250ms
-        easing-standard: '0.2, 0, 0, 1'
+        durations:
+          medium: 250ms
+        curves:
+          standard: '0.2, 0, 0, 1'
       spacing: { s: 8, m: 16 }                # SpringTheme.of(context).space('m')
       components:                             # values refer to the tokens above
         app-bar: { center-title: true, scrolled-under-elevation: level2, title-style: title-large }
         button: { shape: full, padding: '24, 10' }
         filled-button: { shape: medium }
-        card: { shape: large, color: surface-container-low, elevation: level1 }
+        card: { shape: large, color: $colors.surface-container-low, elevation: level1 }
         input: { style: outline, shape: small }
         navigation-bar: { label-behavior: onlyShowSelected }
         snack-bar: { behavior: floating }
         checkbox:
-          fill-color: { default: outline, selected: primary, error: error }
+          fill-color: { default: $colors.outline, selected: $colors.primary, error: $colors.error }
         filled-button:
-          background-color: { default: primary, hovered: primary@90%, disabled: on-surface@12% }
-          side: { focused: { color: secondary, width: 2 } }
+          background-color: { default: $colors.primary, hovered: { color: $colors.primary, alpha: 90% }, disabled: { color: $colors.on-surface, alpha: 12% } }
+          side: { focused: { color: $colors.secondary, width: 2 } }
       tokens:                                 # the app's own values, read through SpringTheme
         brand: { accent: '#FF6B00', hero-height: 240 }
 
@@ -696,12 +705,14 @@ spring:
   it (`shape.medium` -> cards).
 - **A value per state.** What Flutter models as a `WidgetStateProperty`
   (colors, borders, elevation, text styles, overlay, cursor, ...) takes one
-  value, or a map per state: `background-color: { default: primary,
-  hovered: primary@90%, pressed: tertiary, disabled: on-surface@12% }`.
+  value, or a map per state: `background-color: { default: $colors.primary,
+  hovered: { color: $colors.primary, alpha: 90% }, pressed: $colors.tertiary,
+  disabled: { color: $colors.on-surface, alpha: 12% } }`.
   The strongest state wins: `disabled` > `error` > `pressed` > `dragged` >
   `hovered` > `focused` > `selected` > `scrolled-under` > `default`; a
-  state with no value (and no `default`) keeps Flutter's. Colors accept a
-  role, a `Colors` name or hex, and an opacity (`primary@12%`). Every
+  state with no value (and no `default`) keeps Flutter's. A color is a
+  `Colors` name, hex, a reference to a role (`$colors.primary`) or an object
+  `{ color, mix: { with, amount }, alpha }`. Every
   component, property and value type is listed in the
   [configuration reference](../docs/configuration.md#themes-every-property).
 - **Checked at the start.** Every theme is read when the application
@@ -805,7 +816,8 @@ theme: [the Flutter guide, 3. Themes](https://github.com/farum-azula/spring_core
 
 ### Typed keys
 
-`dart run build_runner build` also writes `lib/spring_keys.dart` with
+`dart run build_runner build` also writes `lib/spring_gen/theme.spring.dart` (a part of
+`lib/spring_gen/main.spring.dart`: import that one in your widgets) with
 `context.theme`: a getter for every colour, spacing, text style and token
 that the properties declare under `spring.flutter.theme` (in any theme), and
 `AppThemes` with the theme names:
@@ -903,6 +915,72 @@ it does not add keys. The HTTP client is the `HttpTransport` bean if the app
 has one (the Feign starter declares it), else `spring_web_dart`'s client
 (`dart:io`, the browser's `fetch`).
 
+### Themes without Dart
+
+New in 0.6.3: a whole design system in YAML, read through typed keys.
+Everything below is under `spring.flutter.theme`.
+
+```yaml
+colors:
+  primary: '#F5E000'
+tokens:
+  neon:
+    yellow: $colors.primary                      # a reference
+    badge-fill: { color: $colors.primary, alpha: 12% }        # a color object
+    modal:
+      width: 460                                 # tokens nest, any depth
+      border: { colors: [$neon.yellow, $neon.pink] }
+styles:
+  neon-chip:                                     # states for your own widget
+    fill: { default: transparent, hovered: $neon.badge-fill }
+    transition: 120ms ease-out
+motion:
+  durations: { fast: 120ms }
+animations:
+  border-spin: { duration: 4s, curve: linear, repeat: loop }
+background:
+  color: $colors.surface
+  image: { source: https://cdn.example.com/bg.jpg, refresh: 1d, fallback: assets/bg.jpg }
+```
+
+```dart
+context.theme.tokens.neon.modal.border.colors;     // List<Color>
+context.theme.motion.fast;                         // Duration; zero with reduced motion
+
+ThemeStates(
+  style: context.theme.styles.neonChip,
+  onPressed: onPressed,                            // null: disabled
+  builder: (context, s) => ColoredBox(color: s.fill, child: child),
+);
+
+ThemeAnimation(
+  context.theme.animations.borderSpin,
+  builder: (context, t) => Transform.rotate(angle: t * 2 * pi, child: child),
+);
+
+ThemeBackground.screen('login', child: const LoginForm()); // or ThemeBackground.none(...)
+```
+
+- **References:** `$colors.primary` is the value at that path of the same
+  theme. It works as a whole value or inside a color object
+  (`{ color: $colors.primary, alpha: 12% }`). A Material role or shape the theme does not
+  declare works too (`$colors.outline`, `$shape.extra-small`). It is not
+  `${...}`, which stays Spring's placeholder for properties.
+- **`ThemeStates`** follows hover, focus, press and disabled, and blends the
+  values over `transition`.
+  `focused` shows with the keyboard, as Flutter's focus highlight; give a
+  text input's frame `showFocusAlways: true` and it shows after a tap too.
+- **`background`** goes under every screen, and the scaffolds become
+  transparent. Opt out of it with `ThemeBackground.none`.
+- **Images from the network** (`source`, `refresh`, `source-sha256`,
+  `headers`, `timeout`, `fallback`, `allow-http`) are cached in the app's
+  files. The start never waits for the network. On the web the server needs
+  CORS headers. Reduced motion on the device stops animations and sets
+  durations to zero.
+
+Every key, with more examples, is in
+[Configuration, Themes without Dart](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#themes-without-dart-references-states-motion-background-images).
+
 ## Messages and languages
 
 `context.message` returns a text from the application's message files
@@ -928,7 +1006,7 @@ A missing code throws a `NoSuchMessageException`, unless you pass
 ### Typed messages
 
 The generator (`spring_core_dart_generator`) writes `context.messages` from
-the same files into `lib/spring_keys.dart`: a getter for a message without
+the same files into `lib/spring_gen/messages.spring.dart` (import `spring_gen/main.spring.dart`): a getter for a message without
 arguments, a method for one with `{0}`, `{1}`, ... (`Object?` parameters,
 formatted by the same message source, in the current language):
 
@@ -1274,7 +1352,7 @@ A define is read like an environment variable in Spring Boot:
 `API_URL` answers both `@Value(r'${API_URL}')` and `api.url`.
 
 A compiled app can only read the defines whose names the generator wrote
-into `main.spring.dart` (`String.fromEnvironment` needs a constant
+into `spring_gen/main.spring.dart` (`String.fromEnvironment` needs a constant
 name). It writes every name the app can read: the `${...}` placeholders
 of annotations, the fields of `@ConfigurationProperties` classes, the
 keys of the config files, and a few such as `spring.profiles.active`.
@@ -1372,7 +1450,7 @@ would be missing and a changed one would keep its old dependencies.
 `SpringApplicationWidget` takes care of it, as Spring Boot DevTools'
 *restart* does; it is on by default and needs no setup. Flutter calls the
 root widget's `reassemble()` on every hot reload. There the widget
-compares the fingerprint of the generated code (`lib/main.spring.dart`)
+compares the fingerprint of the generated code (`lib/spring_gen/main.spring.dart`)
 with the one the running context was built from.
 
 **Only method bodies changed: the context stays.** The fingerprint is the
@@ -1393,7 +1471,7 @@ class Counter extends ChangeNotifier {
 
 **Beans, annotations or `lib/resources/` changed: the context restarts.**
 With `dart run build_runner watch` running, the generator rewrites
-`main.spring.dart` a moment after you save. The next hot reload sees a
+`spring_gen/main.spring.dart` a moment after you save. The next hot reload sees a
 new fingerprint, and the widget:
 
 1. closes the running context (`@PreDestroy` methods run, lifecycle

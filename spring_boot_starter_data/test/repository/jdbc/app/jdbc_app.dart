@@ -6,7 +6,7 @@
 // interface, so the semantic suite runs the same calls on both stores.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'jdbc_app.spring.dart';
+import '../../../spring_gen/repository/jdbc/app/jdbc_app.spring.dart';
 
 // --- Aggregates ------------------------------------------------------------
 

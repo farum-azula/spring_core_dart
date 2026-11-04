@@ -18,7 +18,7 @@ settings as a secret, and shows what the user may do.
   only, and `PrincipalView(authenticated: false, ...)` the sign-in button
   to nobody logged in. For display only: the server checks access.
 
-The generator writes `example.spring.dart` from it
+The generator writes `spring_gen/example.spring.dart` from it
 (`dart run build_runner build`).
 
 ## Run it
@@ -33,7 +33,7 @@ flutter create pin_app && cd pin_app
 flutter pub add spring_boot_starter_flutter_security
 flutter pub add dev:build_runner dev:spring_core_dart_generator
 # copy example.dart to lib/main.dart, and change its import
-# 'example.spring.dart' to 'main.spring.dart'
+# 'spring_gen/example.spring.dart' to 'spring_gen/main.spring.dart'
 dart run build_runner build
 flutter run
 ```

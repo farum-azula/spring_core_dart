@@ -10,6 +10,7 @@
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_feign/src/config/config.dart';
 import 'package:spring_boot_starter_feign/src/feign_auto_configuration.dart';
 
 // The auto-configurations this starter builds on (logging, and through it
@@ -23,4 +24,5 @@ export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 final BeanModule springBootStarterFeignAutoConfiguration = BeanModule(
   'springBootStarterFeignAutoConfiguration',
   [...feignAutoConfiguration],
+  imports: [feignConfigBeans],
 );

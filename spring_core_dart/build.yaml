@@ -1,4 +1,4 @@
-# The generator only writes the example's application (example/main.spring.dart);
+# The generator only writes the example's application (example/spring_gen/main.spring.dart);
 # the package itself is written by hand.
 targets:
   $default:

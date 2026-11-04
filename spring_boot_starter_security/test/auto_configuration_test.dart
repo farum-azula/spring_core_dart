@@ -4,6 +4,7 @@
 // chains are checked at startup.
 
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
+import 'package:spring_boot_starter_security/src/properties/properties_beans.dart';
 import 'package:test/test.dart';
 
 import 'support.dart';
@@ -11,7 +12,15 @@ import 'support.dart';
 SecurityProperties _properties(Map<String, Object?> values) {
   final environment = StandardEnvironment(systemEnvironment: const {})
     ..propertySources.addFirst(MapPropertySource('test', values));
-  return SecurityProperties.of(environment);
+  ConfigurationPropertySources.attach(environment);
+  final binder = ConfigurationPropertiesBinder(
+    environment,
+    BeanIntrospector(introspections: securityConfigBeans.introspections),
+  );
+  return binder.postProcessBeforeInitialization(
+    SecurityProperties(),
+    'securityProperties',
+  ) as SecurityProperties;
 }
 
 const _password = 'spring.security.user.password=pw';
@@ -52,8 +61,8 @@ void main() {
         ['A', 'B'],
       );
       expect(
-        _properties({'spring.security.filter.order': 'x'}).filterOrder,
-        -100,
+        () => _properties({'spring.security.filter.order': 'x'}),
+        throwsA(isA<ConfigurationPropertiesBindException>()),
       );
       expect(_properties({'spring.security.user.name': ' '}).userName, 'user');
     });

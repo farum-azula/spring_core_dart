@@ -1,0 +1,370 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_websocket",
+  "properties": [
+    {
+      "name": "spring.websocket.client.config.*.connect-timeout",
+      "type": "Duration?",
+      "description": "The longest a handshake may take. Default: `10s`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 34,
+      "class": "WebSocketClientSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.default-request-headers.*",
+      "type": "List<String>",
+      "description": "Headers sent with the handshake, such as an API key (a comma list or an indexed list gives several values); not possible in browsers. A client's header replaces the `default` one of the same name.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 39,
+      "class": "WebSocketClientSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.reconnect.delay",
+      "type": "Duration?",
+      "description": "The first wait. Default: `1s`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 55,
+      "class": "WebSocketReconnectSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.reconnect.enabled",
+      "type": "bool?",
+      "description": "Reconnects while someone listens to the messages. With `false`, a lost connection ends the message streams. Default: `true`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 52,
+      "class": "WebSocketReconnectSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.reconnect.jitter",
+      "type": "Duration?",
+      "description": "A random part added or taken, scaled like the delay. Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 65,
+      "class": "WebSocketReconnectSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.reconnect.max-delay",
+      "type": "Duration?",
+      "description": "The longest wait; positive. Default: `30s`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 62,
+      "class": "WebSocketReconnectSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.reconnect.max-retries",
+      "type": "int?",
+      "description": "Attempts in a row before giving up. Default: no limit.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 68,
+      "class": "WebSocketReconnectSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.reconnect.multiplier",
+      "type": "double?",
+      "description": "What each further wait is multiplied by; `1` for a fixed delay, not less. Default: `2`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 59,
+      "class": "WebSocketReconnectSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.url",
+      "type": "String?",
+      "description": "The address, when `@WebSocketClient(url:)` is not set. `${...}` placeholders are allowed.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 31,
+      "class": "WebSocketClientSettings"
+    },
+    {
+      "name": "spring.websocket.client.max-binary-message-size",
+      "type": "DataSize",
+      "description": "The same for binary messages. `-1` for no limit.",
+      "default": "8KB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 16,
+      "class": "WebSocketProperties"
+    },
+    {
+      "name": "spring.websocket.client.max-text-message-size",
+      "type": "DataSize",
+      "description": "The largest text message a client reads, in UTF-8 bytes (Tomcat counts characters); a larger one closes the connection with 1009 (message too big). `-1` for no limit.",
+      "default": "8KB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 13,
+      "class": "WebSocketProperties"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "webSocketClientFactory",
+      "type": "WebSocketClientFactory",
+      "types": [
+        "WebSocketClientFactory",
+        "InvocationHandlerFactory",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
+      "line": 49,
+      "injects": [],
+      "members": [
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "InvocationHandler",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "FutureOr<void>",
+          "parameters": []
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "interceptors",
+          "kind": "field",
+          "type": "List<WebSocketHandshakeInterceptor>"
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "WebSocketProperties"
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "transport",
+          "kind": "field",
+          "type": "WebSocketTransport"
+        }
+      ]
+    },
+    {
+      "name": "webSocketHandlerMapping",
+      "type": "WebSocketHandlerMapping",
+      "types": [
+        "WebSocketHandlerMapping",
+        "HandlerMapping",
+        "Ordered",
+        "SmartInitializingSingleton"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
+      "line": 72,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterSingletonsInstantiated",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "ListableBeanFactory"
+        },
+        {
+          "name": "configurers",
+          "kind": "field",
+          "type": "List<WebSocketConfigurer>"
+        },
+        {
+          "name": "getHandler",
+          "kind": "method",
+          "type": "HttpHandler?",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "initialize",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "paths",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "sessions",
+          "kind": "field",
+          "type": "WebSocketSessionRegistry"
+        }
+      ]
+    },
+    {
+      "name": "webSocketProperties",
+      "type": "WebSocketProperties",
+      "types": [
+        "WebSocketProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "config",
+          "kind": "field",
+          "type": "Map<String, WebSocketClientSettings>"
+        },
+        {
+          "name": "maxBinaryMessageSize",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "maxTextMessageSize",
+          "kind": "field",
+          "type": "DataSize"
+        }
+      ]
+    },
+    {
+      "name": "webSocketSessionRegistry",
+      "type": "WebSocketSessionRegistry",
+      "types": [
+        "WebSocketSessionRegistry"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
+      "line": 67,
+      "injects": [],
+      "members": [
+        {
+          "name": "broadcast",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String? pattern",
+            "Object message"
+          ]
+        },
+        {
+          "name": "register",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String pattern",
+            "ServerWebSocketSession session"
+          ]
+        },
+        {
+          "name": "sessions",
+          "kind": "method",
+          "type": "List<ServerWebSocketSession>",
+          "parameters": [
+            "[String? pattern]"
+          ]
+        },
+        {
+          "name": "unregister",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String pattern",
+            "ServerWebSocketSession session"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webSocketTransport",
+      "type": "WebSocketTransport",
+      "types": [
+        "WebSocketTransport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(WebSocketTransport)"
+      ],
+      "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
+      "line": 33,
+      "injects": [],
+      "members": [
+        {
+          "name": "connect",
+          "kind": "method",
+          "type": "Future<WebSocketSession>",
+          "parameters": [
+            "Uri url",
+            "{HttpHeaders? headers}",
+            "{List<String> protocols}",
+            "{Duration? timeout}"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

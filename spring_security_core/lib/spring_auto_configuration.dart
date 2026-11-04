@@ -7,6 +7,7 @@
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_security_core/src/config/config.dart';
 import 'package:spring_security_core/src/security_core_auto_configuration.dart';
 
 // The auto-configurations this package builds on (logging, and through it
@@ -21,4 +22,5 @@ export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 final BeanModule springSecurityCoreAutoConfiguration = BeanModule(
   'springSecurityCoreAutoConfiguration',
   [...securityCoreAutoConfiguration],
+  imports: [securityCoreConfigBeans],
 );

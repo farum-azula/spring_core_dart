@@ -1,4 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart' show Environment;
+import 'package:spring_boot_starter_data/src/properties/data_properties.dart';
+import 'package:spring_boot_starter_data/src/properties_binding.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 
@@ -98,44 +100,40 @@ final class WebPagingProperties {
 
   /// The settings of [environment]; a malformed number or boolean throws.
   factory WebPagingProperties.of(Environment environment) {
-    const pageable = 'spring.data.web.pageable.';
-    String text(String key, String fallback) {
-      final value = environment.getProperty(key);
-      return value == null || value.trim().isEmpty ? fallback : value.trim();
-    }
-
-    int number(String key, int fallback) {
-      final value = environment.getProperty(key)?.trim();
-      if (value == null || value.isEmpty) {
-        return fallback;
-      }
-      return int.tryParse(value) ??
-          (throw ArgumentError.value(value, key, 'must be a number'));
-    }
-
-    bool flag(String key, bool fallback) {
-      final value = environment.getProperty(key)?.trim().toLowerCase();
-      return switch (value) {
-        null || '' => fallback,
-        'true' => true,
-        'false' => false,
-        _ => throw ArgumentError.value(value, key, 'must be true or false'),
-      };
-    }
-
+    Never refuse(InvalidProperty failure) => throw ArgumentError.value(
+      failure.value,
+      failure.property,
+      'must be ${failure.expected}',
+    );
+    final pageable = bindSettings<DataPageableProperties>(
+      environment,
+      'spring.data.web.pageable',
+      fallback: const DataPageableProperties(),
+      onInvalid: refuse,
+    );
+    final sort = bindSettings<DataSortProperties>(
+      environment,
+      'spring.data.web.sort',
+      fallback: const DataSortProperties(),
+      onInvalid: refuse,
+    );
+    const defaults = DataPageableProperties();
+    // A blank name is as good as none; the prefix and the delimiter keep
+    // their spaces and empty values as written.
+    String name(String value, String fallback) =>
+        value.trim().isEmpty ? fallback : value.trim();
     return WebPagingProperties(
-      defaultPageSize: number('${pageable}default-page-size', 20),
-      maxPageSize: number('${pageable}max-page-size', 2000),
-      oneIndexedParameters: flag('${pageable}one-indexed-parameters', false),
-      pageParameter: text('${pageable}page-parameter', 'page'),
-      sizeParameter: text('${pageable}size-parameter', 'size'),
-      prefix: environment.getProperty('${pageable}prefix') ?? '',
-      qualifierDelimiter:
-          environment.getProperty(
-            '${pageable}qualifier-delimiter',
-          ) ??
-          '_',
-      sortParameter: text('spring.data.web.sort.sort-parameter', 'sort'),
+      defaultPageSize: pageable.defaultPageSize,
+      maxPageSize: pageable.maxPageSize,
+      oneIndexedParameters: pageable.oneIndexedParameters,
+      pageParameter: name(pageable.pageParameter, defaults.pageParameter),
+      sizeParameter: name(pageable.sizeParameter, defaults.sizeParameter),
+      prefix: pageable.prefix,
+      qualifierDelimiter: pageable.qualifierDelimiter,
+      sortParameter: name(
+        sort.sortParameter,
+        const DataSortProperties().sortParameter,
+      ),
     );
   }
 

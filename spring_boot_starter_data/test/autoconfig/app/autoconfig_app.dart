@@ -5,7 +5,7 @@
 // lib/resources/db/. The generator writes autoconfig_app.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'autoconfig_app.spring.dart';
+import '../../spring_gen/autoconfig/app/autoconfig_app.spring.dart';
 
 @Table('authors')
 class Author {

@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/bound_properties.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/web_crypto_dpop_key.dart'
     show StoredKeyPair, storedKeyPairUsable;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
@@ -752,7 +753,7 @@ void main() {
 
   group('properties', () {
     FlutterWebSecurityProperties bind(Map<String, String> values) =>
-        FlutterWebSecurityProperties.bind(
+        boundWebSecurityProperties(
           StandardEnvironment()
             ..propertySources.addFirst(MapPropertySource('test', values)),
         );
@@ -770,7 +771,7 @@ void main() {
       );
       expect(
         () => bind({'spring.flutter.security.web.silent-restore': 'maybe'}),
-        throwsArgumentError,
+        throwsA(isA<ConfigurationPropertiesBindException>()),
       );
     });
   });

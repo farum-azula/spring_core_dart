@@ -3,24 +3,35 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
 import 'package:spring_boot_starter_flutter/src/desktop_window/desktop_window.dart';
 import 'package:spring_boot_starter_flutter/src/desktop_window/desktop_window_setup.dart';
+import 'package:spring_boot_starter_flutter/src/loader_hand_off.dart';
+import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
+import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/spring_widgets.dart';
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_fonts.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_splash.dart';
+
+const _log = SpringLog('spring_boot_starter_flutter.SpringApplicationWidget');
 
 /// The root widget of a Flutter app built on Spring: it starts the
 /// application context and gives it to every widget below.
 ///
 /// Pass it to `runApp`. While the application starts (configuration files,
-/// beans, runners, font files) it shows [splash]; if the start fails, it
+/// beans, runners, font files) it shows [splash], or else the `splash` of
+/// the active theme (`spring.flutter.theme.splash`: background, logo,
+/// title and a loader that follows the start's progress, shown until the
+/// context is ready and its `min-duration` is over, then faded out); if
+/// the start fails, it
 /// shows [failure] and logs the report. Once the context is ready, the
 /// widgets below get their beans through it (`context.bean<T>()`, the
 /// generated getters, `SpringStatelessWidget` and `SpringStatefulWidget`).
@@ -32,7 +43,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// own `MaterialApp` (or other app widget) instead.
 ///
 /// ```dart
-/// import 'main.spring.dart';
+/// import 'spring_gen/main.spring.dart';
 ///
 /// @SpringBootApplication()
 /// void main() => runApp(
@@ -116,8 +127,9 @@ class SpringApplicationWidget extends StatefulWidget {
   /// once the application has started. Not together with [child].
   final Widget? home;
 
-  /// Builds what is shown while the application starts, such as a logo;
-  /// an empty box by default.
+  /// Builds what is shown while the application starts, such as a logo.
+  /// It wins over the theme's `splash`; without either an empty box is
+  /// shown.
   final WidgetBuilder? splash;
 
   /// Builds what is shown when the start (or a restart after a hot reload)
@@ -156,10 +168,21 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   late final DesktopWindowSetup _windowSetup;
   DesktopWindowData _window = DesktopWindowData.none;
   bool _firstFrameHeld = false;
+  // The start's progress for the theme's splash, 0 to 1.
+  final _progress = ValueNotifier<double>(0);
+  // The active theme once the properties are read, when it has a splash.
+  SpringThemeData? _splashTheme;
+  bool _splashDone = false;
+  bool _handedOff = false;
+  final _splashKey = GlobalKey();
+  final _appKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    if (widget.splash != null) {
+      _handOffAfterFrame();
+    }
     _windowSetup = widget.desktopWindowSetup ?? DesktopWindowSetup();
     _holdFirstFrame();
     _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
@@ -186,6 +209,58 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     }
   }
 
+  // Tells the web page loader the Flutter side is on screen; once.
+  void _handOff() {
+    if (!_handedOff) {
+      _handedOff = true;
+      LoaderHandOff.call(_progress.value);
+    }
+  }
+
+  void _handOffAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _handOff();
+      }
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  // The properties are read: the theme's splash can show from here on,
+  // before any bean exists. A theme that cannot be read is reported by the
+  // start itself; no splash shows then.
+  void _environmentPrepared(ApplicationEnvironmentPreparedEvent event) {
+    SpringThemeData? theme;
+    try {
+      final themes = SpringThemes.fromEnvironment(event.environment);
+      theme = themes.data(_splashThemeName(themes));
+    } on Object catch (error) {
+      _log.debug(() => 'No theme splash: $error');
+    }
+    if (!mounted) {
+      return;
+    }
+    if (theme?.splash == null) {
+      _handOffAfterFrame();
+      return;
+    }
+    setState(() => _splashTheme = theme);
+  }
+
+  // The theme `active` names, or by the device's brightness for `system`.
+  static String _splashThemeName(SpringThemes themes) {
+    final config = themes.config;
+    final active = config.active.toLowerCase();
+    if (active != 'system') {
+      return themes.nameOf(config.active) ?? 'light';
+    }
+    final dark =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+        Brightness.dark;
+    return themes.nameOf(dark ? config.systemDark : config.systemLight) ??
+        (dark ? 'dark' : 'light');
+  }
+
   Future<void> _start() async {
     ConfigurableApplicationContext? started;
     try {
@@ -195,6 +270,16 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       final application = widget.application();
       _directories?.provideTo(application);
       _windowSetup.provideTo(application);
+      application.progressListener = (progress) {
+        if (mounted) {
+          _progress.value = progress.fraction;
+        }
+      };
+      if (widget.splash == null) {
+        application.addListener<ApplicationEnvironmentPreparedEvent>(
+          _environmentPrepared,
+        );
+      }
       final context = started = await application.runAsync(
         widget.args,
         systemEnvironment: _scanOsEnvironment(application) ? null : const {},
@@ -213,6 +298,9 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         return;
       }
       setState(() => _context = context);
+      if (_splashTheme == null) {
+        _handOffAfterFrame();
+      }
     } catch (error) {
       // The application started, then a check of the widget failed: its
       // runners and scheduled tasks must not go on behind the failure
@@ -222,6 +310,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       }
       if (mounted) {
         setState(() => _error = error);
+        _handOffAfterFrame();
       }
     } finally {
       unawaited(_windowSetup.settle());
@@ -276,11 +365,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   }
 
   static bool _scanOsEnvironment(SpringApplication application) {
-    final defines = application.dartDefines;
-    final value =
-        defines['spring.flutter.scan-os-environment'] ??
-        defines['SPRING_FLUTTER_SCANOSENVIRONMENT'];
-    return value?.trim().toLowerCase() == 'true';
+    return scanOsEnvironmentIn(application.dartDefines);
   }
 
   @override
@@ -384,21 +469,20 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
 
   // Spring Boot DevTools' switch for restarts after code changes.
   static bool _restartEnabled(ConfigurableApplicationContext context) =>
-      context.environment
-          .getProperty('spring.devtools.restart.enabled')
-          ?.trim()
-          .toLowerCase() !=
-      'false';
+      boundProperties<FlutterRestartProperties>(
+        context.environment,
+        'flutterRestartProperties',
+      ).enabled;
 
   static bool _pauseInBackground(ConfigurableApplicationContext context) =>
-      context.environment
-          .getProperty('spring.flutter.lifecycle.pause-in-background')
-          ?.trim()
-          .toLowerCase() !=
-      'false';
+      boundProperties<FlutterLifecycleProperties>(
+        context.environment,
+        'flutterLifecycleProperties',
+      ).pauseInBackground;
 
   @override
   void dispose() {
+    _progress.dispose();
     _releaseFirstFrame();
     _lifecycle.dispose();
     final context = _context;
@@ -416,10 +500,14 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       return widget.failure?.call(context, error) ?? _Failure(error);
     }
     final running = _context;
+    final themed = widget.splash == null ? _splashTheme : null;
     if (running == null) {
+      if (themed != null && !_splashDone) {
+        return _splashLayer(themed, ready: false);
+      }
       return widget.splash?.call(context) ?? const SizedBox.shrink();
     }
-    return SpringScope(
+    final app = SpringScope(
       applicationContext: running,
       // A new context starts the widgets afresh: none keeps a bean of the
       // closed one in its state.
@@ -428,6 +516,42 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         child: KeyedSubtree(
           key: ObjectKey(running),
           child: widget.child ?? SpringApp(home: widget.home!),
+        ),
+      ),
+    );
+    if (themed == null) {
+      return app;
+    }
+    // The app is built under the splash, which fades out when it is
+    // ready; the stack stays when it is gone, so the app keeps its state.
+    return Stack(
+      textDirection: TextDirection.ltr,
+      fit: StackFit.expand,
+      children: [
+        KeyedSubtree(key: _appKey, child: app),
+        if (!_splashDone) _splashLayer(themed, ready: true),
+      ],
+    );
+  }
+
+  // The theme's splash, with what it needs above the app widget: a text
+  // direction and a media query.
+  Widget _splashLayer(SpringThemeData theme, {required bool ready}) {
+    return Directionality(
+      key: _splashKey,
+      textDirection: TextDirection.ltr,
+      child: MediaQuery.fromView(
+        view: View.of(context),
+        child: ThemeSplash(
+          theme: theme,
+          progress: _progress,
+          ready: ready,
+          onShown: _handOff,
+          onExited: () {
+            if (mounted) {
+              setState(() => _splashDone = true);
+            }
+          },
         ),
       ),
     );

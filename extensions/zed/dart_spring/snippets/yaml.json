@@ -29,7 +29,7 @@
       "        medium: ${4:16}",
       "      components:",
       "        app-bar: { center-title: true }",
-      "        card: { shape: large, color: surface-container-low }",
+      "        card: { shape: large, color: \\$colors.surface-container-low }",
       "        input: { style: outline }",
       "      themes:",
       "        dark:",
@@ -66,11 +66,11 @@
       "      # splash: sparkle               # ripple | sparkle | none",
       "      # motion:",
       "      #   page-transition: platform   # platform | fadeUpwards | zoom | cupertino | none",
-      "      #   duration-medium: 250ms",
-      "      #   easing-standard: '0.2, 0, 0, 1'",
+      "      #   durations: { medium: 250ms }",
+      "      #   curves: { standard: '0.2, 0, 0, 1' }",
       "      # spacing: { xs: 4, s: 8, m: 16, l: 24, xl: 32 }",
       "      # components:                   # app-bar, button, filled-button, elevated-button, outlined-button, text-button, card, input, chip, dialog, bottom-sheet, navigation-bar, snack-bar, tooltip, list-tile, divider, floating-action-button, tab-bar, popup-menu",
-      "      #   card: { shape: large, color: surface-container-low, elevation: level1 }",
+      "      #   card: { shape: large, color: \\$colors.surface-container-low, elevation: level1 }",
       "      # tokens:                       # the app's own: SpringTheme.of(context).tokenColor('brand.accent')",
       "      #   brand: { accent: '#FF6B00' }",
       "      # cupertino: { primary-color: '#007AFF' }",
@@ -100,6 +100,20 @@
       "  secondary: '${2:#625B71}'",
       "  error: '${3:#B3261E}'",
       "  surface: '${4:#FEF7FF}'",
+      "$0"
+    ]
+  },
+  "Theme color object": {
+    "prefix": "spcolorobject",
+    "description": "A color with alpha or mix: the object form (the one-line forms are gone)",
+    "body": [
+      "spring.flutter.theme.colors:",
+      "  ${1:primary-container}:",
+      "    color: \\$colors.${2:primary}",
+      "    alpha: ${3:12%}",
+      "  ${4:secondary-container}:",
+      "    color: \\$colors.${5:secondary}",
+      "    mix: { with: ${6:white}, amount: ${7:14%} }",
       "$0"
     ]
   },
@@ -136,7 +150,7 @@
       "spring.flutter.theme.components:",
       "  app-bar: { center-title: ${1:true}, scrolled-under-elevation: level2 }",
       "  button: { shape: ${2:full} }",
-      "  card: { shape: ${3:large}, color: surface-container-low, elevation: level1 }",
+      "  card: { shape: ${3:large}, color: \\$colors.surface-container-low, elevation: level1 }",
       "  input: { style: ${4:outline}, shape: small }",
       "  navigation-bar: { label-behavior: onlyShowSelected }",
       "  snack-bar: { behavior: floating }",
@@ -161,6 +175,60 @@
       "spring.flutter.fonts:",
       "  auto-load: ${1:true}",
       "  exclude: [${2:assets/pdf/**}]",
+      "$0"
+    ]
+  },
+  "Theme loaders": {
+    "prefix": "sploader",
+    "description": "spring.flutter.theme.loaders: a built-in loader (spinner, dots, pulse, bar, skeleton)",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      loaders:",
+      "        ${1:dots}:",
+      "          kind: ${2:dots}               # spinner | dots | pulse | bar | skeleton | a @ThemeLoaderKind",
+      "          color: \\$colors.primary",
+      "          size: ${3:10}",
+      "          animation: { duration: ${4:900ms}, curve: ease-in-out, repeat: loop }",
+      "$0"
+    ]
+  },
+  "Theme loader of the app's own kind": {
+    "prefix": "sploaderkind",
+    "description": "A loader of a @ThemeLoaderKind class, with phases and the web page loader file",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      loaders:",
+      "        ${1:neon-doors}:",
+      "          kind: ${2:doors}               # @ThemeLoaderKind('${2:doors}')",
+      "          phases:",
+      "            close: { duration: 500ms, curve: ease-in }",
+      "            fill: { progress: true }     # follows the real progress",
+      "            open: { duration: 450ms, curve: emphasized }",
+      "          ${3:door}: { color: ${4:'#0B0D14'}, edge: { color: \\$colors.primary, width: 2 } }",
+      "          web: ${5:web/loaders/neon-doors.html}   # how it looks before Flutter runs",
+      "$0"
+    ]
+  },
+  "Theme splash": {
+    "prefix": "spsplash",
+    "description": "spring.flutter.theme.splash: the splash screen and the web page loader",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      loaders:",
+      "        ${5:dots}: { kind: dots, color: \\$colors.primary }",
+      "      splash:",
+      "        background: { color: \\$colors.${1:surface-container-lowest} }",
+      "        logo: { source: ${2:assets/images/logo.png}, size: ${3:96} }",
+      "        title: ${4:My app}",
+      "        loader: ${5:dots}                # a loaders.* name",
+      "        min-duration: ${6:1.2s}",
+      "        exit: { transition: 400ms ease-out }",
       "$0"
     ]
   }

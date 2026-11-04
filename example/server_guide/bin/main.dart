@@ -9,7 +9,7 @@
 //   dart run bin/main.dart --server.port=9090 --neon.shop.name="Night Books"
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);

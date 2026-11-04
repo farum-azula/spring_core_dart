@@ -177,7 +177,7 @@ void main() {
             endsWith('spring_boot_starter_test/test/resources'),
           ),
         ]);
-        expect(ClasspathResources.directories, app.resourceDirectories);
+        expect(Resources.directories, app.resourceDirectories);
       });
 
       test('propertyFiles win over config files, properties over both', () {
@@ -206,7 +206,7 @@ void main() {
       );
 
       test('the first listed directory comes first', () {
-        expect(ClasspathResources.directories, [
+        expect(Resources.directories, [
           endsWith('/test/other_resources'),
           endsWith('/test/resources'),
         ]);
@@ -215,7 +215,7 @@ void main() {
     });
 
     test('directories are removed after the tests', () {
-      expect(ClasspathResources.directories, isEmpty);
+      expect(Resources.directories, isEmpty);
     });
   });
 }

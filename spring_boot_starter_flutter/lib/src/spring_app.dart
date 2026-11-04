@@ -2,9 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
+import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_background_widget.dart';
 
 /// The kind of app widget [SpringApp] builds, chosen with
 /// `spring.flutter.app.type` (`widgets`, `material` or `cupertino`).
@@ -125,26 +128,23 @@ final class FlutterAppSettings {
   static final _cache = Expando<FlutterAppSettings>('FlutterAppSettings');
 
   static FlutterAppSettings _settings(ApplicationContext context) {
-    final environment = context.environment;
-    String? property(String key) {
-      final value = environment.getProperty('spring.flutter.app.$key')?.trim();
-      return value == null || value.isEmpty ? null : value;
-    }
-
-    final type =
-        _enum(AppType.values, 'type', property('type')) ?? AppType.widgets;
-    final locales = switch (property('locales')) {
-      final list? => [
-        for (final tag in list.split(','))
-          if (tag.trim().isNotEmpty) _locale(tag.trim()),
-      ],
-      null => messageLocales(context),
-    };
+    final properties = boundProperties<FlutterAppProperties>(
+      context.environment,
+      'flutterAppProperties',
+    );
+    final type = properties.type;
+    // A list with no tag is no list: the messages files decide.
+    final tags = [
+      for (final tag in properties.locales ?? const <String>[])
+        if (tag.isNotEmpty) tag,
+    ];
+    final locales = tags.isEmpty
+        ? messageLocales(context)
+        : [for (final tag in tags) _locale(tag)];
     final settings = FlutterAppSettings(
       type: type,
-      title: property('title') ?? '',
-      debugShowCheckedModeBanner:
-          _bool('debug-banner', property('debug-banner')) ?? true,
+      title: properties.title ?? '',
+      debugShowCheckedModeBanner: properties.debugBanner,
       supportedLocales: locales,
       localizationsDelegates: switch (type) {
         AppType.material => [...GlobalMaterialLocalizations.delegates],
@@ -207,34 +207,6 @@ final class FlutterAppSettings {
         ? Locale.fromSubtags(languageCode: language, scriptCode: parts[1])
         : Locale(language, parts[1]);
   }
-
-  static T? _enum<T extends Enum>(List<T> values, String key, String? value) {
-    if (value == null) {
-      return null;
-    }
-    for (final candidate in values) {
-      if (candidate.name.toLowerCase() == value.toLowerCase()) {
-        return candidate;
-      }
-    }
-    throw ArgumentError.value(
-      value,
-      'spring.flutter.app.$key',
-      'one of ${values.map((v) => v.name).join(', ')}',
-    );
-  }
-
-  static bool? _bool(String key, String? value) =>
-      switch (value?.toLowerCase()) {
-        null => null,
-        'true' => true,
-        'false' => false,
-        _ => throw ArgumentError.value(
-          value,
-          'spring.flutter.app.$key',
-          'true or false',
-        ),
-      };
 }
 
 /// An app widget set up by properties instead of code: a `WidgetsApp`,
@@ -307,6 +279,14 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
     );
   }
 
+  // The theme's background goes around the navigator, inside the app's own
+  // builder.
+  TransitionBuilder _builder(FlutterAppSettings app) =>
+      (context, child) => (app.builder ?? (_, child) => child!)(
+        context,
+        ThemeBackground(child: child ?? const SizedBox.shrink()),
+      );
+
   Widget _app(
     FlutterAppSettings app,
     SpringThemes themes,
@@ -330,7 +310,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
-        builder: app.builder,
+        builder: _builder(app),
         scrollBehavior: app.scrollBehavior,
         shortcuts: app.shortcuts,
         home: home,
@@ -343,7 +323,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
-        builder: app.builder,
+        builder: _builder(app),
         scrollBehavior: app.scrollBehavior,
         shortcuts: app.shortcuts,
         home: home,
@@ -356,7 +336,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
-        builder: app.builder,
+        builder: _builder(app),
         shortcuts: app.shortcuts,
         // WidgetsApp needs a route for `home`.
         pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(

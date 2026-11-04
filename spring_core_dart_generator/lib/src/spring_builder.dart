@@ -19,8 +19,12 @@ import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
 import 'package:spring_core_dart_generator/src/driver_glue.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
+import 'package:spring_core_dart_generator/src/generated_path.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
+import 'package:spring_core_dart_generator/src/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
+    show KeysDiagnostics;
 import 'package:yaml/yaml.dart';
 
 // Suffix of generated files; also used to skip them as scan inputs.
@@ -93,7 +97,7 @@ const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 ///   final Clock clock;
 /// }
 ///
-/// // Output: lib/src/beans.spring.dart
+/// // Output: lib/spring_gen/src/beans.spring.dart
 /// /// Beans found by `@ComponentScan` in `lib/src/`.
 /// BeanModule get $appBeans => BeanModule(r'appBeans', [
 ///   BeanDefinition<Greeter>(
@@ -175,16 +179,21 @@ class SpringBuilder implements Builder {
   // a successful generation.
   final Set<AssetId> _warned = {};
 
-  /// Every `.dart` input may produce a `.spring.dart` output next to it
-  /// (most produce none).
+  /// Every `.dart` input of `lib/`, `bin/`, `test/` and `example/` may
+  /// produce a `.spring.dart` output in the `spring_gen/` folder of its
+  /// root (most produce none).
   @override
   Map<String, List<String>> get buildExtensions => const {
-    '.dart': [_outputExtension],
+    '^lib/{{}}.dart': ['lib/spring_gen/{{}}.spring.dart'],
+    '^bin/{{}}.dart': ['bin/spring_gen/{{}}.spring.dart'],
+    '^test/{{}}.dart': ['test/spring_gen/{{}}.spring.dart'],
+    '^example/{{}}.dart': ['example/spring_gen/{{}}.spring.dart'],
   };
 
-  /// Writes `<input>.spring.dart` when [buildStep]'s input declares a
-  /// `@ComponentScan` variable or a `@SpringBootApplication` function. Any
-  /// other input is skipped after a cheap text check, without resolving it.
+  /// Writes the `.spring.dart` of the input (see [generatedPath]) when
+  /// [buildStep]'s input declares a `@ComponentScan` variable or a
+  /// `@SpringBootApplication` function. Any other input is skipped after a
+  /// cheap text check, without resolving it.
   ///
   /// Throws `InvalidGenerationSource` when a file has more than one
   /// `@ComponentScan` or `@SpringBootApplication`, when the scan variable is
@@ -207,7 +216,8 @@ class SpringBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final input = buildStep.inputId;
-    if (input.path.endsWith(_outputExtension)) {
+    if (input.path.endsWith(_outputExtension) ||
+        !hasGeneratedRoot(input.path)) {
       return;
     }
     // Cheap text check before resolving every library in the package.
@@ -216,7 +226,7 @@ class SpringBuilder implements Builder {
         !text.contains('SpringBootApplication')) {
       return;
     }
-    final output = input.changeExtension(_outputExtension);
+    final output = generatedId(input);
     String? source;
     try {
       source = await _generate(buildStep, output);
@@ -321,6 +331,7 @@ class SpringBuilder implements Builder {
     );
 
     final resources = await SpringBuilder.resources(buildStep);
+    final keyParts = await _keyParts(buildStep);
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
@@ -369,7 +380,43 @@ class SpringBuilder implements Builder {
       extra: [for (final output in glue) output.code],
       extraDefinitions: [for (final output in glue) output.definition],
       resources: resources,
+      parts: keyParts,
+      partImports: keyParts.isEmpty ? const [] : SpringKeyFiles.imports,
     );
+  }
+
+  /// The generated key files (`theme.spring.dart`, `messages.spring.dart`)
+  /// that are `part of` the output of the input: when the package uses the
+  /// Flutter starter, the input is the parent library
+  /// ([SpringKeyFiles.parentLibrary]), and
+  /// the keys builder writes them (it decides with the same
+  /// [SpringKeyFiles.generate]).
+  Future<List<String>> _keyParts(BuildStep buildStep) async {
+    if (!await SpringKeyFiles.usesFlutterStarter(buildStep)) {
+      return const [];
+    }
+    final scans = await SpringKeyFiles.scanLibraries(buildStep);
+    // The same choice as the keys builder. That builder may be disabled,
+    // and a part cannot be probed with canRead: the keys builder writes to
+    // source in its own phase, so the file is not readable from this one.
+    // The parts are therefore decided by the shared computation.
+    if (SpringKeyFiles.parentLibrary(scans).parent != buildStep.inputId) {
+      return const [];
+    }
+    // Read as the keys builder reads them, whatever the entry point.
+    final resources = await SpringBuilder.resources(buildStep, warn: false);
+    final parts = SpringKeyFiles.generate(
+      await SpringKeyFiles.withImports(buildStep, _texts(resources)),
+      KeysDiagnostics(),
+      loaderKinds: await SpringKeyFiles.loaderKinds(buildStep),
+    );
+    final parent = SpringKeyFiles.parentOf(buildStep.inputId);
+    return [
+      if (parts.theme != null)
+        SpringKeyFiles.partPath(parent, SpringKeyFiles.themeFile),
+      if (parts.messages != null)
+        SpringKeyFiles.partPath(parent, SpringKeyFiles.messagesFile),
+    ];
   }
 
   // The text files among [resources], by path.
@@ -568,12 +615,15 @@ class SpringBuilder implements Builder {
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
     final defines = await _dartDefineKeys(buildStep, assets, resources);
+    final keyParts = await _keyParts(buildStep);
     final source = emitter.emit(
       moduleName: 'application',
       variableName: r'$application',
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
       module: module,
       resources: resources,
+      parts: keyParts,
+      partImports: keyParts.isEmpty ? const [] : SpringKeyFiles.imports,
       extraDefinitions: [for (final output in glue) output.definition],
       extra: [
         for (final output in glue) output.code,
@@ -1505,4 +1555,24 @@ class _AdvisorCreations extends RecursiveAstVisitor<void> {
     }
     return true;
   }
+}
+
+/// The main builder, for the `lib/` of a package whose own code imports
+/// what it writes.
+///
+/// A hand-written starter binds its `@ConfigurationProperties` classes
+/// through a `@ComponentScan` library, and its `lib/` imports the result.
+/// The package's example (written by [SpringBuilder]) imports that `lib/`,
+/// and a builder cannot read what another input of its own phase writes.
+/// This builder (`spring_properties` in `build.yaml`, off unless a package
+/// turns it on, and then the main builder is limited to the example)
+/// runs in an earlier phase, so the example sees the files.
+class SpringPropertiesBuilder extends SpringBuilder {
+  /// A builder with the options of [SpringBuilder].
+  SpringPropertiesBuilder({super.proxyMode, super.pruneProxies});
+
+  @override
+  Map<String, List<String>> get buildExtensions => const {
+    '^lib/{{}}.dart': ['lib/spring_gen/{{}}.spring.dart'],
+  };
 }

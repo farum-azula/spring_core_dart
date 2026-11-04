@@ -1,0 +1,349 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_feign",
+  "properties": [
+    {
+      "name": "spring.feign.client.config.*.call-timeout",
+      "type": "Duration?",
+      "description": "The longest one call may take **in all**: every attempt, the pauses of the `Retryer` and the wait for the answer. Default: none (`0` or less: none).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 39,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.connect-timeout",
+      "type": "Duration?",
+      "description": "**Under `default` only**: the connect timeout of the transport all clients share. Default: `10s` (`0`: none).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 30,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.default-query-parameters.*",
+      "type": "List<String>",
+      "description": "The same for query parameters. The URL with its query is in the log lines and in exception messages, so prefer a header for a secret.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 56,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.default-request-headers.*",
+      "type": "List<String>",
+      "description": "Headers sent when the request has none of that name; `default`'s and the client's are merged, the client's winning for the same name. A comma list or an indexed list gives several values.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 52,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.dismiss404",
+      "type": "bool?",
+      "description": "A 404 gives `null` (or a `ResponseEntity`) instead of an exception; `void` methods still throw. Default: `false`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 47,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.error-decoder",
+      "type": "String?",
+      "description": "The client's `ErrorDecoder`: a bean name, or a class name matching the type of exactly one bean. Default: `DefaultErrorDecoder`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 71,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.event-stream.max-attempts",
+      "type": "int?",
+      "description": "How many connections in a row may end without an event before the stream gives up. Default: no limit.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 96,
+      "class": "FeignEventStreamSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.event-stream.reconnect",
+      "type": "bool?",
+      "description": "An `EventStream<T>` method connects again when the connection ends. Default: `true`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 88,
+      "class": "FeignEventStreamSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.event-stream.reconnect-delay",
+      "type": "Duration?",
+      "description": "The wait before connecting again. Default: `3s`, or the server's `retry:`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 92,
+      "class": "FeignEventStreamSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.follow-redirects",
+      "type": "bool?",
+      "description": "Follows redirects; with `false` a 3xx answer is an error. Default: `true`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 60,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.logger-level",
+      "type": "FeignLoggerLevel?",
+      "description": "How much of each call is logged, under the logger `feign.<Interface>` at debug level. Default: `none`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 43,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.read-timeout",
+      "type": "Duration?",
+      "description": "The longest wait for the response, then between two chunks of the body; not a limit for the whole call. Default: `60s` (`0`: none).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 34,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.request-interceptors",
+      "type": "List<String>",
+      "description": "More `RequestInterceptor` beans, by bean name or class name: `default`'s, then the client's, after those the client has anyway.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 75,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.retryer",
+      "type": "String?",
+      "description": "The client's `Retryer`: a bean name, or a class name matching the type of exactly one bean. Default: never retries.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 67,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.sensitive-headers",
+      "type": "List<String>",
+      "description": "More headers whose values the `headers` and `full` logs show as `***` (names in any case): `default`'s, then the client's. `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie` and `DPoP` always are.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 80,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.config.*.url",
+      "type": "String?",
+      "description": "The base URL when `@FeignClient(url:)` is empty; `http://` is added when the scheme is missing. `${...}` placeholders are allowed.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 26,
+      "class": "FeignClientSettings"
+    },
+    {
+      "name": "spring.feign.client.decode-slash",
+      "type": "bool",
+      "description": "`false` encodes `/` in path variables as `%2F`. One setting for all clients.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 11,
+      "class": "FeignProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.feign.client.config.*.logger-level",
+      "values": [
+        {
+          "value": "none",
+          "description": "Nothing; the default. Failed connections and retries are not logged either."
+        },
+        {
+          "value": "basic",
+          "description": "The method and URL of each request, the status and the time of each response, failed connections and retries."
+        },
+        {
+          "value": "headers",
+          "description": "[basic] plus the headers of requests and responses, with the values of credentials shown as `***`: `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `DPoP` (a proof of possession) and those of the `sensitive-headers` property ([FeignClientConfig.sensitiveHeaders])."
+        },
+        {
+          "value": "full",
+          "description": "[headers] plus the bodies."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "feignClientFactory",
+      "type": "FeignClientFactory",
+      "types": [
+        "FeignClientFactory",
+        "InvocationHandlerFactory",
+        "BeanFactoryAware",
+        "Aware"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_feign/src/feign_auto_configuration.dart",
+      "line": 40,
+      "injects": [],
+      "members": [
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "InvocationHandler",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "errorDecoder",
+          "kind": "field",
+          "type": "ErrorDecoder?"
+        },
+        {
+          "name": "interceptors",
+          "kind": "field",
+          "type": "List<RequestInterceptor>?"
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "FeignProperties"
+        },
+        {
+          "name": "retryer",
+          "kind": "field",
+          "type": "Retryer?"
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "transport",
+          "kind": "field",
+          "type": "HttpTransport"
+        }
+      ]
+    },
+    {
+      "name": "feignProperties",
+      "type": "FeignProperties",
+      "types": [
+        "FeignProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_feign/src/config/feign_properties.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "config",
+          "kind": "field",
+          "type": "Map<String, FeignClientSettings>"
+        },
+        {
+          "name": "decodeSlash",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "httpTransport",
+      "type": "HttpTransport",
+      "types": [
+        "HttpTransport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(HttpTransport)"
+      ],
+      "source": "package:spring_boot_starter_feign/src/feign_auto_configuration.dart",
+      "line": 25,
+      "injects": [],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<HttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        },
+        {
+          "name": "stream",
+          "kind": "method",
+          "type": "Future<StreamedHttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

@@ -14,7 +14,7 @@ import 'dart:io' as io;
 
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 /// The partner's API. The starter's interceptor adds
 /// `Authorization: Bearer <token>` to every call

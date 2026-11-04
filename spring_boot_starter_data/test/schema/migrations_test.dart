@@ -32,6 +32,9 @@ Future<List<String>> history(DataSource db) async => [
 Future<MigrationVersion?> versionOf(DataSource db) async =>
     (await runnerOf(db, const {}).migrate()).currentVersion;
 
+MigrationSettings migrationOf(Environment env, [String prefix = 'spring.']) =>
+    DatabaseInitSettings.fromEnvironment(env, prefix).migration;
+
 void main() {
   group('a run', () {
     test('applies the files in order and records them', () async {
@@ -862,7 +865,7 @@ void main() {
           ..propertySources.addFirst(MapPropertySource('test', properties));
 
     test("the defaults are Flyway's", () {
-      final s = MigrationSettings.fromEnvironment(envOf(const {}));
+      final s = migrationOf(envOf(const {}));
       expect(s.enabled, isTrue);
       expect(s.locations, ['resources:db/migration']);
       expect(s.table, 'schema_history');
@@ -882,7 +885,7 @@ void main() {
     });
 
     test('every key is read, placeholders included', () {
-      final s = MigrationSettings.fromEnvironment(
+      final s = migrationOf(
         envOf({
           'spring.sql.migration.enabled': 'false',
           'spring.sql.migration.locations':
@@ -925,7 +928,7 @@ void main() {
     });
 
     test('a named data source has its own prefix', () {
-      final s = MigrationSettings.fromEnvironment(
+      final s = migrationOf(
         envOf({
           'spring.datasources.audit.sql.migration.table': 'audit_history',
           'spring.sql.migration.table': 'other',
@@ -937,7 +940,7 @@ void main() {
 
     test('a wrong value names the property', () {
       expect(
-        () => MigrationSettings.fromEnvironment(
+        () => migrationOf(
           envOf({'spring.sql.migration.group': 'maybe'}),
         ),
         throwsA(

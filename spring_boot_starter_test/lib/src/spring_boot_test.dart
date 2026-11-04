@@ -53,7 +53,7 @@ import 'package:test_api/scaffolding.dart';
 /// `SpringLog` levels and handler are restored after the last test.
 ///
 /// ```dart
-/// import '../bin/shop.spring.dart'; // the generated springApplication
+/// import '../bin/spring_gen/shop.spring.dart'; // the generated springApplication
 ///
 /// void main() {
 ///   // The real shop, with a fake payment gateway and test settings.
@@ -332,7 +332,7 @@ final class SpringBootTestContext {
     if (_removeDirectories.isEmpty) {
       // Reversed: the first listed directory ends up first on the classpath.
       for (final directory in _resourceDirectories.reversed) {
-        _removeDirectories.add(ClasspathResources.addDirectory(directory));
+        _removeDirectories.add(Resources.addDirectory(directory));
       }
     }
     final loader = _application.resourceLoader ?? DefaultResourceLoader();

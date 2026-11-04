@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `server.*`, `spring.web.multipart.*`, `spring.mvc.*`, `spring.main.web-application-type`, `spring.test.web-environment` and `local.server.port` is made from code and the starter reads the same classes: `ServerSettings` (`ssl`, `compression`, `websocket`, `session`, `forward-headers`; `Shutdown`, `ClientAuth`, `ForwardHeadersStrategy` and `SessionSameSite` are enums), `MultipartSettings`, `MvcSettings`, `WebMainSettings`, `WebTestSettings` and `LocalServerSettings` are bound by the Binder; `ServerProperties.of`, `HttpSessionProperties.of` and `MultipartProperties.of` bind them, and `.from` builds the settings from the bound classes. The hand-written `spring_metadata_additional.json` is gone. `spring.mvc.log-request-details` is now in the metadata; the constants `webEnvironmentProperty` and `logRequestDetailsProperty` are gone. A value that does not fit (a port that is not a number, an unreadable `server.session.max-sessions`) now fails the binding naming the property.
+
 ## 0.6.2
 
 - feat: 0.6.2 — the theme (typed keys and messages, states, every component, a theme from a URL), (#20)

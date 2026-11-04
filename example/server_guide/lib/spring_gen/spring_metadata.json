@@ -1,0 +1,4159 @@
+{
+  "version": 1,
+  "package": "neon_books_server",
+  "properties": [
+    {
+      "name": "neon.app.web-url",
+      "type": "String",
+      "description": "Where the browser goes after a Keycloak login and logout: the Flutter web app (`flutter run -d chrome --web-port 5050`). Only this setting decides it, never a request parameter (no open redirect); Keycloak must allow it as a post-logout redirect.",
+      "default": "http://localhost:5050/",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/security/sso_config.dart",
+      "line": 14,
+      "class": "AppProperties"
+    },
+    {
+      "name": "neon.catalog.page-size",
+      "type": "String",
+      "description": null,
+      "default": "10",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/catalog/catalog_service.dart",
+      "line": 56,
+      "class": "CatalogService"
+    },
+    {
+      "name": "neon.catalog.sample-data",
+      "type": "String",
+      "description": null,
+      "default": null,
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/startup.dart",
+      "line": 20,
+      "class": "new"
+    },
+    {
+      "name": "neon.cors.allowed-origin-patterns",
+      "type": "List<String>",
+      "description": null,
+      "default": [],
+      "deprecated": null,
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 12,
+      "class": "CorsProperties"
+    },
+    {
+      "name": "neon.covers.directory",
+      "type": "String",
+      "description": null,
+      "default": "build/covers",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/shop_config.dart",
+      "line": 21,
+      "class": "coverStore"
+    },
+    {
+      "name": "neon.mail.host",
+      "type": "String",
+      "description": null,
+      "default": "smtp.neon.books",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/orders/mail.dart",
+      "line": 44,
+      "class": "mailSender"
+    },
+    {
+      "name": "neon.orders.shipping-delay",
+      "type": "String",
+      "description": null,
+      "default": "5s",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/orders/order_service.dart",
+      "line": 23,
+      "class": "new"
+    },
+    {
+      "name": "neon.security.users.*.password",
+      "type": "String",
+      "description": "A hash with its encoder id (`{argon2}...`), never the password: a plain password stops the start.",
+      "default": "",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/security/users.dart",
+      "line": 10,
+      "class": "UserEntry"
+    },
+    {
+      "name": "neon.security.users.*.roles",
+      "type": "List<String>",
+      "description": "Roles without the `ROLE_` prefix (`USER`, `ADMIN`).",
+      "default": [],
+      "deprecated": null,
+      "source": "package:neon_books_server/src/security/users.dart",
+      "line": 14,
+      "class": "UserEntry"
+    },
+    {
+      "name": "neon.shop.closes-at",
+      "type": "int",
+      "description": null,
+      "default": 21,
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/shop_properties.dart",
+      "line": 41,
+      "class": "ShopProperties"
+    },
+    {
+      "name": "neon.shop.delivery-time",
+      "type": "Duration",
+      "description": "`2d`, `48h`, `PT48H`: converted to a Duration.",
+      "default": "2d",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/shop_properties.dart",
+      "line": 48,
+      "class": "ShopProperties"
+    },
+    {
+      "name": "neon.shop.max-basket-size",
+      "type": "int",
+      "description": "Books per basket, all titles together.",
+      "default": 10,
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/shop_properties.dart",
+      "line": 45,
+      "class": "ShopProperties"
+    },
+    {
+      "name": "neon.shop.max-cover-size",
+      "type": "DataSize",
+      "description": "`512KB`, `1MB`: converted to a DataSize.",
+      "default": "512KB",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/shop_properties.dart",
+      "line": 51,
+      "class": "ShopProperties"
+    },
+    {
+      "name": "neon.shop.name",
+      "type": "String",
+      "description": null,
+      "default": "NEON Books",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/shop_properties.dart",
+      "line": 32,
+      "class": "ShopProperties"
+    },
+    {
+      "name": "neon.shop.opens-at",
+      "type": "int",
+      "description": "Opening hours, 0-24.",
+      "default": 9,
+      "deprecated": null,
+      "source": "package:neon_books_server/src/shop/shop_properties.dart",
+      "line": 37,
+      "class": "ShopProperties"
+    },
+    {
+      "name": "neon.stock.low-threshold",
+      "type": "String",
+      "description": null,
+      "default": "2",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/stock/stock_service.dart",
+      "line": 15,
+      "class": "new"
+    },
+    {
+      "name": "neon.stock.replay-size",
+      "type": "String",
+      "description": null,
+      "default": "100",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/stock/stock_feed.dart",
+      "line": 15,
+      "class": "new"
+    },
+    {
+      "name": "neon.stock.report-cron",
+      "type": "String",
+      "description": null,
+      "default": "0 0 6 * * *",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/stock/restock_job.dart",
+      "line": 66,
+      "class": "StockReport"
+    },
+    {
+      "name": "neon.stock.restock-initial-delay",
+      "type": "String",
+      "description": null,
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/stock/restock_job.dart",
+      "line": 30,
+      "class": "RestockJob"
+    },
+    {
+      "name": "neon.stock.restock-interval",
+      "type": "String",
+      "description": null,
+      "default": "30s",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/stock/restock_job.dart",
+      "line": 30,
+      "class": "RestockJob"
+    },
+    {
+      "name": "neon.supplier.api-key",
+      "type": "String",
+      "description": null,
+      "default": "",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
+      "line": 11,
+      "class": "SupplierProperties"
+    },
+    {
+      "name": "neon.supplier.url",
+      "type": "String",
+      "description": null,
+      "default": "",
+      "deprecated": null,
+      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
+      "line": 10,
+      "class": "SupplierProperties"
+    },
+    {
+      "name": "neon.support.bot.enabled",
+      "type": "String",
+      "description": null,
+      "default": null,
+      "deprecated": null,
+      "source": "package:neon_books_server/src/support/support_bot.dart",
+      "line": 10,
+      "class": ""
+    },
+    {
+      "name": "spring.application.name",
+      "type": "String",
+      "description": null,
+      "default": null,
+      "deprecated": null,
+      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
+      "line": 19,
+      "class": "supplierHeaders"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "accessLogFilter",
+      "type": "AccessLogFilter",
+      "types": [
+        "AccessLogFilter",
+        "WebFilter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/web/request_id_filter.dart",
+      "line": 36,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "adminController",
+      "type": "AdminController",
+      "types": [
+        "AdminController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/admin/admin_controller.dart",
+      "line": 9,
+      "injects": [
+        {
+          "parameter": "logs",
+          "type": "LogService",
+          "qualifier": null
+        },
+        {
+          "parameter": "orders",
+          "type": "AdminOrderFeed",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "liveOrders",
+          "kind": "method",
+          "type": "SseEmitter",
+          "parameters": []
+        },
+        {
+          "name": "logs",
+          "kind": "field",
+          "type": "LogService"
+        },
+        {
+          "name": "orders",
+          "kind": "field",
+          "type": "AdminOrderFeed"
+        },
+        {
+          "name": "recentLogs",
+          "kind": "method",
+          "type": "List<LogLine>",
+          "parameters": [
+            "{String level}",
+            "{String logger}",
+            "{String text}",
+            "{int limit}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "adminOrderFeed",
+      "type": "AdminOrderFeed",
+      "types": [
+        "AdminOrderFeed"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/admin/order_feed.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "onLowStock",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "LowStock low"
+          ]
+        },
+        {
+          "name": "onPlaced",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "OrderPlaced placed"
+          ]
+        },
+        {
+          "name": "onShipped",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "OrderShipped shipped"
+          ]
+        },
+        {
+          "name": "subscribe",
+          "kind": "method",
+          "type": "SseEmitter",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "alarmRegistrar",
+      "type": "AlarmRegistrar",
+      "types": [
+        "AlarmRegistrar",
+        "BeanDefinitionRegistryPostProcessor",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/alarm_registrar.dart",
+      "line": 18,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessBeanDefinitionRegistry",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanDefinitionRegistry registry"
+          ]
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "apiChain",
+      "type": "SecurityFilterChain",
+      "types": [
+        "SecurityFilterChain"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "!sso"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 42,
+      "injects": [
+        {
+          "parameter": "http",
+          "type": "HttpSecurity",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "filters",
+          "kind": "getter",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "apiErrors",
+      "type": "ApiErrors",
+      "types": [
+        "ApiErrors"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/web/api_errors.dart",
+      "line": 13,
+      "injects": [
+        {
+          "parameter": "messages",
+          "type": "MessageSource",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "bookNotFound",
+          "kind": "method",
+          "type": "ProblemDetail",
+          "parameters": [
+            "BookNotFoundException error"
+          ]
+        },
+        {
+          "name": "conflict",
+          "kind": "method",
+          "type": "ResponseEntity<ProblemDetail>",
+          "parameters": [
+            "StateError error"
+          ]
+        },
+        {
+          "name": "emptyBasket",
+          "kind": "method",
+          "type": "ProblemDetail",
+          "parameters": [
+            "EmptyBasketException error"
+          ]
+        },
+        {
+          "name": "invalid",
+          "kind": "method",
+          "type": "ProblemDetail",
+          "parameters": [
+            "MethodArgumentNotValidException error",
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "messages",
+          "kind": "field",
+          "type": "MessageSource"
+        },
+        {
+          "name": "supplierFailed",
+          "kind": "method",
+          "type": "ProblemDetail",
+          "parameters": [
+            "FeignException error"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "appProperties",
+      "type": "AppProperties",
+      "types": [
+        "AppProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/sso_config.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "webUrl",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "auditAspect",
+      "type": "AuditAspect",
+      "types": [
+        "AuditAspect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/aop/aspects.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterSupplierCall",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "JoinPoint call"
+          ]
+        },
+        {
+          "name": "beforeRemove",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "failed",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "JoinPoint call",
+            "Exception error"
+          ]
+        },
+        {
+          "name": "placed",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "CustomerOrder order"
+          ]
+        },
+        {
+          "name": "shopServices",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "basketController",
+      "type": "BasketController",
+      "types": [
+        "BasketController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/basket_controller.dart",
+      "line": 8,
+      "injects": [
+        {
+          "parameter": "baskets",
+          "type": "BasketService",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "basket",
+          "kind": "method",
+          "type": "Basket",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "baskets",
+          "kind": "field",
+          "type": "BasketService"
+        },
+        {
+          "name": "setQuantity",
+          "kind": "method",
+          "type": "Basket",
+          "parameters": [
+            "String isbn",
+            "QuantityRequest quantityRequest",
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "basketService",
+      "type": "BasketService",
+      "types": [
+        "BasketService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/basket_service.dart",
+      "line": 11,
+      "injects": [
+        {
+          "parameter": "_catalog",
+          "type": "Catalog",
+          "qualifier": null
+        },
+        {
+          "parameter": "_pricing",
+          "type": "PriceRule",
+          "qualifier": null
+        },
+        {
+          "parameter": "_shop",
+          "type": "ShopProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "clear",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "HttpSession session"
+          ]
+        },
+        {
+          "name": "contentOf",
+          "kind": "method",
+          "type": "Map<String, int>",
+          "parameters": [
+            "HttpSession session"
+          ]
+        },
+        {
+          "name": "price",
+          "kind": "method",
+          "type": "Basket",
+          "parameters": [
+            "Map<String, int> content"
+          ]
+        },
+        {
+          "name": "setQuantity",
+          "kind": "method",
+          "type": "Basket",
+          "parameters": [
+            "HttpSession session",
+            "String isbn",
+            "int quantity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "beanInitTimer",
+      "type": "BeanInitTimer",
+      "types": [
+        "BeanInitTimer",
+        "BeanPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/bean_init_timer.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "slowest",
+          "kind": "method",
+          "type": "List<MapEntry<String, Duration>>",
+          "parameters": [
+            "int count"
+          ]
+        },
+        {
+          "name": "timings",
+          "kind": "field",
+          "type": "Map<String, Duration>"
+        }
+      ]
+    },
+    {
+      "name": "bestDiscount",
+      "type": "BestDiscount",
+      "types": [
+        "BestDiscount",
+        "PriceRule"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/pricing.dart",
+      "line": 36,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "PriceRule",
+          "qualifier": null
+        },
+        {
+          "parameter": null,
+          "type": "PriceRule",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "discountPercent",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "Book book",
+            "int quantity"
+          ]
+        },
+        {
+          "name": "report",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "rules",
+          "kind": "field",
+          "type": "List<PriceRule>"
+        },
+        {
+          "name": "rulesByName",
+          "kind": "field",
+          "type": "Map<String, PriceRule>"
+        }
+      ]
+    },
+    {
+      "name": "bookController",
+      "type": "BookController",
+      "types": [
+        "BookController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/catalog/book_controller.dart",
+      "line": 12,
+      "injects": [
+        {
+          "parameter": "catalog",
+          "type": "Catalog",
+          "qualifier": null
+        },
+        {
+          "parameter": "covers",
+          "type": "CoverStore",
+          "qualifier": null
+        },
+        {
+          "parameter": "shop",
+          "type": "ShopProperties",
+          "qualifier": null
+        },
+        {
+          "parameter": "recentLimit",
+          "type": "int",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "ResponseEntity<Book>",
+          "parameters": [
+            "NewBook newBook"
+          ]
+        },
+        {
+          "name": "catalog",
+          "kind": "field",
+          "type": "Catalog"
+        },
+        {
+          "name": "cover",
+          "kind": "method",
+          "type": "ResponseEntity<Resource>",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "covers",
+          "kind": "field",
+          "type": "ObjectProvider<CoverStore>"
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "Book",
+          "parameters": [
+            "String isbn",
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "recent",
+          "kind": "method",
+          "type": "List<Book>",
+          "parameters": [
+            "{String recent}"
+          ]
+        },
+        {
+          "name": "recentLimit",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "remove",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "search",
+          "kind": "method",
+          "type": "BookPage",
+          "parameters": [
+            "{String query}",
+            "{int page}"
+          ]
+        },
+        {
+          "name": "shop",
+          "kind": "field",
+          "type": "ShopProperties"
+        },
+        {
+          "name": "uploadCover",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn",
+            "MultipartFile cover"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bulkDiscount",
+      "type": "BulkDiscount",
+      "types": [
+        "BulkDiscount",
+        "PriceRule"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/pricing.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "discountPercent",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "Book book",
+            "int quantity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalogImporter",
+      "type": "CatalogImporter",
+      "types": [
+        "CatalogImporter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/import_batch.dart",
+      "line": 38,
+      "injects": [
+        {
+          "parameter": "_books",
+          "type": "BookRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "_batch",
+          "type": "ImportBatch",
+          "qualifier": null
+        },
+        {
+          "parameter": "_scope",
+          "type": "ImportBatchScope",
+          "qualifier": null
+        },
+        {
+          "parameter": "_validator",
+          "type": "BeanValidator",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "import",
+          "kind": "method",
+          "type": "ImportBatch",
+          "parameters": [
+            "List<NewBook> books"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalogService",
+      "type": "CatalogService",
+      "types": [
+        "CatalogService",
+        "Catalog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/catalog/catalog_service.dart",
+      "line": 44,
+      "injects": [
+        {
+          "parameter": "_books",
+          "type": "BookRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "_events",
+          "type": "ApplicationEventPublisher",
+          "qualifier": null
+        },
+        {
+          "parameter": "_self",
+          "type": "Catalog",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "Book",
+          "parameters": [
+            "NewBook book"
+          ]
+        },
+        {
+          "name": "all",
+          "kind": "method",
+          "type": "List<Book>",
+          "parameters": []
+        },
+        {
+          "name": "changeStock",
+          "kind": "method",
+          "type": "Book",
+          "parameters": [
+            "String isbn",
+            "int delta"
+          ]
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "Book?",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "List<Book>",
+          "parameters": [
+            "Iterable<String> isbns"
+          ]
+        },
+        {
+          "name": "get",
+          "kind": "method",
+          "type": "Book",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "pageSize",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "remove",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "search",
+          "kind": "method",
+          "type": "BookPage",
+          "parameters": [
+            "String query",
+            "int page"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalogStatistics",
+      "type": "CatalogStatistics",
+      "types": [
+        "CatalogStatistics",
+        "SmartInitializingSingleton"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/startup.dart",
+      "line": 80,
+      "injects": [
+        {
+          "parameter": "_shop",
+          "type": "ShopProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "afterSingletonsInstantiated",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "checkout",
+      "type": "Checkout",
+      "types": [
+        "Checkout"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/payments.dart",
+      "line": 50,
+      "injects": [
+        {
+          "parameter": "gateway",
+          "type": "PaymentGateway",
+          "qualifier": null
+        },
+        {
+          "parameter": "backup",
+          "type": "PaymentGateway",
+          "qualifier": "offline"
+        }
+      ],
+      "members": [
+        {
+          "name": "backup",
+          "kind": "field",
+          "type": "PaymentGateway"
+        },
+        {
+          "name": "gateway",
+          "kind": "field",
+          "type": "PaymentGateway"
+        },
+        {
+          "name": "pay",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "CustomerOrder order"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "clock",
+      "type": "Clock",
+      "types": [
+        "Clock"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/demos.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "now",
+          "kind": "method",
+          "type": "DateTime",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "clock",
+      "type": "Clock",
+      "types": [
+        "Clock"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/demos.dart",
+      "line": 85,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "ShopProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "now",
+          "kind": "method",
+          "type": "DateTime",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "clock",
+      "type": "SystemClock",
+      "types": [
+        "SystemClock",
+        "Clock"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(Clock)"
+      ],
+      "source": "package:neon_books_server/src/shop/shop_config.dart",
+      "line": 14,
+      "injects": [],
+      "members": [
+        {
+          "name": "now",
+          "kind": "method",
+          "type": "DateTime",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "corsConfigurationSource",
+      "type": "UrlBasedCorsConfigurationSource",
+      "types": [
+        "UrlBasedCorsConfigurationSource",
+        "CorsConfigurationSource"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 177,
+      "injects": [
+        {
+          "parameter": "cors",
+          "type": "CorsProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "getCorsConfiguration",
+          "kind": "method",
+          "type": "CorsConfiguration?",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "registerCorsConfiguration",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String pattern",
+            "CorsConfiguration configuration"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corsProperties",
+      "type": "CorsProperties",
+      "types": [
+        "CorsProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 11,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowedOriginPatterns",
+          "kind": "field",
+          "type": "List<String>"
+        }
+      ]
+    },
+    {
+      "name": "coverStore",
+      "type": "CoverStore",
+      "types": [
+        "CoverStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/shop_config.dart",
+      "line": 20,
+      "injects": [
+        {
+          "parameter": "resources",
+          "type": "ResourceLoader",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "coverOf",
+          "kind": "method",
+          "type": "Resource",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "directory",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "isOpen",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "open",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "store",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String isbn",
+            "MultipartFile file"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "devMailConfig",
+      "type": "DevMailConfig",
+      "types": [
+        "DevMailConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "!prod"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/mail.dart",
+      "line": 34,
+      "injects": [],
+      "members": [
+        {
+          "name": "mailSender",
+          "kind": "method",
+          "type": "MailSender",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "firstAlert",
+      "type": "StockAlert",
+      "types": [
+        "StockAlert"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/demos.dart",
+      "line": 24,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "Clock",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "at",
+          "kind": "field",
+          "type": "DateTime"
+        },
+        {
+          "name": "isbn",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "handlerMetrics",
+      "type": "HandlerMetrics",
+      "types": [
+        "HandlerMetrics"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/aop/handler_metrics.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "calls",
+          "kind": "field",
+          "type": "Map<String, int>"
+        }
+      ]
+    },
+    {
+      "name": "handlerMetricsAdvisor",
+      "type": "DefaultPointcutAdvisor",
+      "types": [
+        "DefaultPointcutAdvisor",
+        "PointcutAdvisor",
+        "Advisor",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/aop/handler_metrics.dart",
+      "line": 30,
+      "injects": [
+        {
+          "parameter": "metrics",
+          "type": "HandlerMetrics",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "advice",
+          "kind": "field",
+          "type": "MethodInterceptor"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "pointcut",
+          "kind": "field",
+          "type": "AopPointcut"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "importBatch",
+      "type": "ImportBatch",
+      "types": [
+        "ImportBatch"
+      ],
+      "scope": "import-batch",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/import_batch.dart",
+      "line": 29,
+      "injects": [],
+      "members": [
+        {
+          "name": "isbns",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "rejected",
+          "kind": "field",
+          "type": "List<String>"
+        }
+      ]
+    },
+    {
+      "name": "importBatchScope",
+      "type": "ImportBatchScope",
+      "types": [
+        "ImportBatchScope",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/import_batch.dart",
+      "line": 12,
+      "injects": [],
+      "members": [
+        {
+          "name": "end",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inMemoryBookRepository",
+      "type": "InMemoryBookRepository",
+      "types": [
+        "InMemoryBookRepository",
+        "BookRepository"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/catalog/book_repository.dart",
+      "line": 24,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "List<Book>",
+          "parameters": []
+        },
+        {
+          "name": "findByIsbn",
+          "kind": "method",
+          "type": "Book?",
+          "parameters": [
+            "String isbn"
+          ]
+        },
+        {
+          "name": "ready",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Book",
+          "parameters": [
+            "Book book"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keycloakRoles",
+      "type": "KeycloakRolesMapper",
+      "types": [
+        "KeycloakRolesMapper",
+        "GrantedAuthoritiesMapper"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "sso"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/sso_config.dart",
+      "line": 28,
+      "injects": [],
+      "members": [
+        {
+          "name": "mapAuthorities",
+          "kind": "method",
+          "type": "List<GrantedAuthority>",
+          "parameters": [
+            "Iterable<GrantedAuthority> authorities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lifecycleConfig",
+      "type": "LifecycleConfig",
+      "types": [
+        "LifecycleConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/lifecycle_probe.dart",
+      "line": 62,
+      "injects": [],
+      "members": [
+        {
+          "name": "lifecycleProbe",
+          "kind": "method",
+          "type": "LifecycleProbe",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "lifecycleProbe",
+      "type": "LifecycleProbe",
+      "types": [
+        "LifecycleProbe",
+        "BeanNameAware",
+        "Aware",
+        "BeanFactoryAware",
+        "EnvironmentAware",
+        "ApplicationContextAware",
+        "InitializingBean",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/lifecycle_probe.dart",
+      "line": 64,
+      "injects": [
+        {
+          "parameter": "environment",
+          "type": "Environment",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "afterPropertiesSet",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "customDestroy",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "customInit",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "inject",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Environment environment"
+          ]
+        },
+        {
+          "name": "postConstruct",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "preDestroy",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "setApplicationContext",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationContext context"
+          ]
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
+        },
+        {
+          "name": "setBeanName",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "setEnvironment",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Environment environment"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "live",
+      "type": "LiveGateway",
+      "types": [
+        "LiveGateway",
+        "PaymentGateway"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "prod"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/payments.dart",
+      "line": 24,
+      "injects": [],
+      "members": [
+        {
+          "name": "charge",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "CustomerOrder order"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "logService",
+      "type": "LogService",
+      "types": [
+        "LogService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/admin/log_service.dart",
+      "line": 24,
+      "injects": [
+        {
+          "parameter": "_buffer",
+          "type": "LogBuffer",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "recent",
+          "kind": "method",
+          "type": "List<LogLine>",
+          "parameters": [
+            "{SpringLogLevel? minLevel}",
+            "{String? logger}",
+            "{String? text}",
+            "{int limit}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "loginAudit",
+      "type": "LoginAudit",
+      "types": [
+        "LoginAudit"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/login_audit.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "failures",
+          "kind": "field",
+          "type": "Map<String, int>"
+        },
+        {
+          "name": "onBadCredentials",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "AuthenticationFailureBadCredentialsEvent event"
+          ]
+        },
+        {
+          "name": "onLogout",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "LogoutSuccessEvent event"
+          ]
+        },
+        {
+          "name": "onSuccess",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "AuthenticationSuccessEvent event"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lowStockAlarm",
+      "type": "LowStockAlarm",
+      "types": [
+        "LowStockAlarm"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/alarm_registrar.dart",
+      "line": 22,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "StockService",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "ringing",
+          "kind": "method",
+          "type": "List<String>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "mailSender",
+      "type": "LogMailSender",
+      "types": [
+        "LogMailSender",
+        "MailSender"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "!prod"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/mail.dart",
+      "line": 36,
+      "injects": [],
+      "members": [
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String to",
+            "String subject",
+            "String body"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mailSender",
+      "type": "SmtpMailSender",
+      "types": [
+        "SmtpMailSender",
+        "MailSender"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "prod"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/mail.dart",
+      "line": 43,
+      "injects": [],
+      "members": [
+        {
+          "name": "host",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String to",
+            "String subject",
+            "String body"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "meController",
+      "type": "MeController",
+      "types": [
+        "MeController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/me_controller.dart",
+      "line": 37,
+      "injects": [],
+      "members": [
+        {
+          "name": "me",
+          "kind": "method",
+          "type": "Me",
+          "parameters": [
+            "Authentication authentication"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "metricsConfig",
+      "type": "MetricsConfig",
+      "types": [
+        "MetricsConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/aop/handler_metrics.dart",
+      "line": 28,
+      "injects": [],
+      "members": [
+        {
+          "name": "handlerMetricsAdvisor",
+          "kind": "method",
+          "type": "PointcutAdvisor",
+          "parameters": [
+            "HandlerMetrics metrics"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "noDeliveries",
+      "type": "NoDeliveries",
+      "types": [
+        "NoDeliveries",
+        "SupplierDeliveries"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_clients.dart",
+      "line": 42,
+      "injects": [],
+      "members": [
+        {
+          "name": "order",
+          "kind": "method",
+          "type": "Future<ResponseEntity<Delivery>>",
+          "parameters": [
+            "DeliveryRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "offline",
+      "type": "OfflineGateway",
+      "types": [
+        "OfflineGateway",
+        "PaymentGateway"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/payments.dart",
+      "line": 33,
+      "injects": [],
+      "members": [
+        {
+          "name": "charge",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "CustomerOrder order"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "orderController",
+      "type": "OrderController",
+      "types": [
+        "OrderController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/order_controller.dart",
+      "line": 8,
+      "injects": [
+        {
+          "parameter": "orders",
+          "type": "OrderService",
+          "qualifier": null
+        },
+        {
+          "parameter": "baskets",
+          "type": "BasketService",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "all",
+          "kind": "method",
+          "type": "List<CustomerOrder>",
+          "parameters": []
+        },
+        {
+          "name": "baskets",
+          "kind": "field",
+          "type": "BasketService"
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "CustomerOrder",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "orders",
+          "kind": "field",
+          "type": "OrderService"
+        },
+        {
+          "name": "place",
+          "kind": "method",
+          "type": "ResponseEntity<CustomerOrder>",
+          "parameters": [
+            "Authentication authentication",
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "orderMailer",
+      "type": "OrderMailer",
+      "types": [
+        "OrderMailer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/order_listeners.dart",
+      "line": 35,
+      "injects": [
+        {
+          "parameter": "messages",
+          "type": "MessageSource",
+          "qualifier": null
+        },
+        {
+          "parameter": "mail",
+          "type": "MailSender",
+          "qualifier": null
+        },
+        {
+          "parameter": "shop",
+          "type": "ShopProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "mail",
+          "kind": "field",
+          "type": "MailSender"
+        },
+        {
+          "name": "messages",
+          "kind": "field",
+          "type": "MessageSource"
+        },
+        {
+          "name": "newReceipt",
+          "kind": "method",
+          "type": "ReceiptBuilder",
+          "parameters": []
+        },
+        {
+          "name": "onOrderPlaced",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "OrderPlaced placed"
+          ]
+        },
+        {
+          "name": "shop",
+          "kind": "field",
+          "type": "ShopProperties"
+        },
+        {
+          "name": "template",
+          "kind": "field",
+          "type": "Resource"
+        }
+      ]
+    },
+    {
+      "name": "orderPermissionEvaluator",
+      "type": "OrderPermissionEvaluator",
+      "types": [
+        "OrderPermissionEvaluator",
+        "PermissionEvaluator"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 194,
+      "injects": [],
+      "members": [
+        {
+          "name": "hasPermission",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Authentication authentication",
+            "Object? targetDomainObject",
+            "Object permission"
+          ]
+        },
+        {
+          "name": "hasPermissionById",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Authentication authentication",
+            "Object? targetId",
+            "String targetType",
+            "Object permission"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "orderRepository",
+      "type": "OrderRepository",
+      "types": [
+        "OrderRepository"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/order_repository.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "List<CustomerOrder>",
+          "parameters": []
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "CustomerOrder?",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "nextId",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "CustomerOrder",
+          "parameters": [
+            "CustomerOrder order"
+          ]
+        },
+        {
+          "name": "shutdown",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "orderService",
+      "type": "OrderService",
+      "types": [
+        "OrderService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/order_service.dart",
+      "line": 16,
+      "injects": [
+        {
+          "parameter": "_orders",
+          "type": "OrderRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "_baskets",
+          "type": "BasketService",
+          "qualifier": null
+        },
+        {
+          "parameter": "_events",
+          "type": "ApplicationEventPublisher",
+          "qualifier": null
+        },
+        {
+          "parameter": "_scheduler",
+          "type": "TaskScheduler",
+          "qualifier": null
+        },
+        {
+          "parameter": "checkout",
+          "type": "Checkout",
+          "qualifier": null
+        },
+        {
+          "parameter": "clock",
+          "type": "Clock",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "all",
+          "kind": "method",
+          "type": "List<CustomerOrder>",
+          "parameters": []
+        },
+        {
+          "name": "checkout",
+          "kind": "field",
+          "type": "Checkout"
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "CustomerOrder",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "place",
+          "kind": "method",
+          "type": "CustomerOrder",
+          "parameters": [
+            "String customer",
+            "Map<String, int> basket"
+          ]
+        },
+        {
+          "name": "ship",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "shippingDelay",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
+      "name": "passwordEncoder",
+      "type": "PasswordEncoder",
+      "types": [
+        "PasswordEncoder"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/users.dart",
+      "line": 32,
+      "injects": [],
+      "members": [
+        {
+          "name": "encode",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String rawPassword"
+          ]
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String rawPassword",
+            "String? encodedPassword"
+          ]
+        },
+        {
+          "name": "upgradeEncoding",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String? encodedPassword"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "poetryDiscount",
+      "type": "PoetryDiscount",
+      "types": [
+        "PoetryDiscount",
+        "PriceRule"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/pricing.dart",
+      "line": 24,
+      "injects": [],
+      "members": [
+        {
+          "name": "discountPercent",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "Book book",
+            "int quantity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prodMailConfig",
+      "type": "ProdMailConfig",
+      "types": [
+        "ProdMailConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "prod"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/mail.dart",
+      "line": 41,
+      "injects": [],
+      "members": [
+        {
+          "name": "mailSender",
+          "kind": "method",
+          "type": "MailSender",
+          "parameters": [
+            "String host"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "receiptBuilder",
+      "type": "ReceiptBuilder",
+      "types": [
+        "ReceiptBuilder"
+      ],
+      "scope": "prototype",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/shop_config.dart",
+      "line": 31,
+      "injects": [
+        {
+          "parameter": "shop",
+          "type": "ShopProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String line"
+          ]
+        },
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "createdAt",
+          "kind": "field",
+          "type": "DateTime"
+        },
+        {
+          "name": "shopName",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "requestIdFilter",
+      "type": "RequestIdFilter",
+      "types": [
+        "RequestIdFilter",
+        "OncePerRequestFilter",
+        "WebFilter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/web/request_id_filter.dart",
+      "line": 13,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "doFilterInternal",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "shouldNotFilter",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "restockJob",
+      "type": "RestockJob",
+      "types": [
+        "RestockJob"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@Conditional([SupplierConfigured])"
+      ],
+      "source": "package:neon_books_server/src/stock/restock_job.dart",
+      "line": 14,
+      "injects": [
+        {
+          "parameter": "_stock",
+          "type": "StockService",
+          "qualifier": null
+        },
+        {
+          "parameter": "_offers",
+          "type": "SupplierOffers",
+          "qualifier": null
+        },
+        {
+          "parameter": "_deliveries",
+          "type": "SupplierDeliveries",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "restockLowStock",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "runs",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "roleHierarchy",
+      "type": "RoleHierarchyImpl",
+      "types": [
+        "RoleHierarchyImpl",
+        "RoleHierarchy"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 171,
+      "injects": [],
+      "members": [
+        {
+          "name": "getReachableGrantedAuthorities",
+          "kind": "method",
+          "type": "List<GrantedAuthority>",
+          "parameters": [
+            "Iterable<GrantedAuthority> authorities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sampleData",
+      "type": "SampleData",
+      "types": [
+        "SampleData",
+        "ApplicationRunner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "dev"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/startup.dart",
+      "line": 16,
+      "injects": [
+        {
+          "parameter": "_books",
+          "type": "BookRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "_mapper",
+          "type": "ObjectMapper",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ApplicationArguments args"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sandbox",
+      "type": "SandboxGateway",
+      "types": [
+        "SandboxGateway",
+        "PaymentGateway"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "dev"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/payments.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "charge",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "CustomerOrder order"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "securityConfig",
+      "type": "SecurityConfig",
+      "types": [
+        "SecurityConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "apiChain",
+          "kind": "method",
+          "type": "SecurityFilterChain",
+          "parameters": [
+            "HttpSecurity http"
+          ]
+        },
+        {
+          "name": "corsConfigurationSource",
+          "kind": "method",
+          "type": "CorsConfigurationSource",
+          "parameters": [
+            "CorsProperties cors"
+          ]
+        },
+        {
+          "name": "ssoChain",
+          "kind": "method",
+          "type": "SecurityFilterChain",
+          "parameters": [
+            "HttpSecurity http",
+            "ClientRegistrationRepository registrations",
+            "AppProperties app"
+          ]
+        },
+        {
+          "name": "supplierStubChain",
+          "kind": "method",
+          "type": "SecurityFilterChain",
+          "parameters": [
+            "HttpSecurity http"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "serverAnnouncer",
+      "type": "ServerAnnouncer",
+      "types": [
+        "ServerAnnouncer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/startup.dart",
+      "line": 96,
+      "injects": [],
+      "members": [
+        {
+          "name": "onContext",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationEvent event"
+          ]
+        },
+        {
+          "name": "onReady",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationReadyEvent event"
+          ]
+        },
+        {
+          "name": "onServerStarted",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "WebServerInitializedEvent event"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shippingNotifier",
+      "type": "ShippingNotifier",
+      "types": [
+        "ShippingNotifier",
+        "ApplicationListener<OrderShipped>",
+        "ApplicationListener<Object>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/order_listeners.dart",
+      "line": 82,
+      "injects": [
+        {
+          "parameter": "support",
+          "type": "SupportSessions",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "onApplicationEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "OrderShipped event"
+          ]
+        },
+        {
+          "name": "support",
+          "kind": "field",
+          "type": "SupportSessions"
+        }
+      ]
+    },
+    {
+      "name": "shop",
+      "type": "ShopProperties",
+      "types": [
+        "ShopProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/demos.dart",
+      "line": 78,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "Clock",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "closesAt",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "deliveryTime",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "isOpenAt",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "DateTime time"
+          ]
+        },
+        {
+          "name": "maxBasketSize",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "maxCoverSize",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "opensAt",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "shop",
+      "type": "ShopProperties",
+      "types": [
+        "ShopProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/demos.dart",
+      "line": 90,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "Clock",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "closesAt",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "deliveryTime",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "isOpenAt",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "DateTime time"
+          ]
+        },
+        {
+          "name": "maxBasketSize",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "maxCoverSize",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "opensAt",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "shopConfig",
+      "type": "ShopConfig",
+      "types": [
+        "ShopConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/shop_config.dart",
+      "line": 10,
+      "injects": [],
+      "members": [
+        {
+          "name": "clock",
+          "kind": "method",
+          "type": "Clock",
+          "parameters": []
+        },
+        {
+          "name": "coverStore",
+          "kind": "method",
+          "type": "CoverStore",
+          "parameters": [
+            "String directory",
+            "ResourceLoader resources"
+          ]
+        },
+        {
+          "name": "receiptBuilder",
+          "kind": "method",
+          "type": "ReceiptBuilder",
+          "parameters": [
+            "ShopProperties shop"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shopProperties",
+      "type": "ShopProperties",
+      "types": [
+        "ShopProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/shop_properties.dart",
+      "line": 30,
+      "injects": [],
+      "members": [
+        {
+          "name": "closesAt",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "deliveryTime",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "isOpenAt",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "DateTime time"
+          ]
+        },
+        {
+          "name": "maxBasketSize",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "maxCoverSize",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "opensAt",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "shutdownWatcher",
+      "type": "ShutdownWatcher",
+      "types": [
+        "ShutdownWatcher",
+        "DestructionAwareBeanPostProcessor",
+        "BeanPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "advanced"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/advanced/lifecycle_probe.dart",
+      "line": 70,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeDestruction",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "requiresDestruction",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object bean"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ssoChain",
+      "type": "SecurityFilterChain",
+      "types": [
+        "SecurityFilterChain"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "sso"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 84,
+      "injects": [
+        {
+          "parameter": "http",
+          "type": "HttpSecurity",
+          "qualifier": null
+        },
+        {
+          "parameter": "registrations",
+          "type": "ClientRegistrationRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "app",
+          "type": "AppProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "filters",
+          "kind": "getter",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ssoConfig",
+      "type": "SsoConfig",
+      "types": [
+        "SsoConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "sso"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/sso_config.dart",
+      "line": 19,
+      "injects": [],
+      "members": [
+        {
+          "name": "keycloakRoles",
+          "kind": "method",
+          "type": "GrantedAuthoritiesMapper",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "startupAnnouncement",
+      "type": "StartupAnnouncement",
+      "types": [
+        "StartupAnnouncement",
+        "CommandLineRunner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/shop/startup.dart",
+      "line": 42,
+      "injects": [
+        {
+          "parameter": "_books",
+          "type": "BookRepository",
+          "qualifier": null
+        },
+        {
+          "parameter": "_messages",
+          "type": "MessageSource",
+          "qualifier": null
+        },
+        {
+          "parameter": "environment",
+          "type": "Environment",
+          "qualifier": null
+        },
+        {
+          "parameter": "context",
+          "type": "ApplicationContext",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "banner",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "configure",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Environment environment",
+            "ApplicationContext context"
+          ]
+        },
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<String> args"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stockController",
+      "type": "StockController",
+      "types": [
+        "StockController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/stock/stock_controller.dart",
+      "line": 7,
+      "injects": [
+        {
+          "parameter": "feed",
+          "type": "StockFeed",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "events",
+          "kind": "method",
+          "type": "EventStream<StockChanged>",
+          "parameters": [
+            "String? lastEventId"
+          ]
+        },
+        {
+          "name": "feed",
+          "kind": "field",
+          "type": "StockFeed"
+        }
+      ]
+    },
+    {
+      "name": "stockFeed",
+      "type": "StockFeed",
+      "types": [
+        "StockFeed",
+        "SmartLifecycle",
+        "Lifecycle"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/stock/stock_feed.dart",
+      "line": 14,
+      "injects": [],
+      "members": [
+        {
+          "name": "isAutoStartup",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isPauseable",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isRunning",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "onStockChanged",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "StockChanged change"
+          ]
+        },
+        {
+          "name": "phase",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "replaySize",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stopWithCallback",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() callback"
+          ]
+        },
+        {
+          "name": "subscribe",
+          "kind": "method",
+          "type": "EventStream<StockChanged>",
+          "parameters": [
+            "{String? lastEventId}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stockReport",
+      "type": "StockReport",
+      "types": [
+        "StockReport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/stock/restock_job.dart",
+      "line": 60,
+      "injects": [
+        {
+          "parameter": "_stock",
+          "type": "StockService",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "dailyReport",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "stockService",
+      "type": "StockService",
+      "types": [
+        "StockService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/stock/stock_service.dart",
+      "line": 12,
+      "injects": [
+        {
+          "parameter": "_catalog",
+          "type": "Catalog",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "lowStock",
+          "kind": "method",
+          "type": "List<Book>",
+          "parameters": []
+        },
+        {
+          "name": "lowThreshold",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "onOrderPlaced",
+          "kind": "method",
+          "type": "LowStock?",
+          "parameters": [
+            "OrderPlaced placed"
+          ]
+        },
+        {
+          "name": "restock",
+          "kind": "method",
+          "type": "Book",
+          "parameters": [
+            "String isbn",
+            "int copies"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supplierClientConfig",
+      "type": "SupplierClientConfig",
+      "types": [
+        "SupplierClientConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
+      "line": 15,
+      "injects": [],
+      "members": [
+        {
+          "name": "supplierHeaders",
+          "kind": "method",
+          "type": "RequestInterceptor",
+          "parameters": [
+            "SupplierProperties supplier",
+            "String application"
+          ]
+        },
+        {
+          "name": "supplierRetryer",
+          "kind": "method",
+          "type": "Retryer",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "supplierDeliveries",
+      "type": "SupplierDeliveries",
+      "types": [
+        "SupplierDeliveries"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_clients.dart",
+      "line": 32,
+      "injects": [],
+      "members": [
+        {
+          "name": "order",
+          "kind": "method",
+          "type": "Future<ResponseEntity<Delivery>>",
+          "parameters": [
+            "DeliveryRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supplierHeaders",
+      "type": "SupplierHeaders",
+      "types": [
+        "SupplierHeaders",
+        "RequestInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
+      "line": 17,
+      "injects": [
+        {
+          "parameter": "supplier",
+          "type": "SupplierProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "apiKey",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "application",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "apply",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "RequestTemplate template"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supplierOffers",
+      "type": "SupplierOffers",
+      "types": [
+        "SupplierOffers"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_clients.dart",
+      "line": 13,
+      "injects": [],
+      "members": [
+        {
+          "name": "offer",
+          "kind": "method",
+          "type": "Future<Offer>",
+          "parameters": [
+            "String isbn",
+            "int copies"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supplierProperties",
+      "type": "SupplierProperties",
+      "types": [
+        "SupplierProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "apiKey",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "url",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "supplierRetryer",
+      "type": "DefaultRetryer",
+      "types": [
+        "DefaultRetryer",
+        "Retryer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
+      "line": 24,
+      "injects": [],
+      "members": [
+        {
+          "name": "maxAttempts",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "maxPeriod",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "nextDelay",
+          "kind": "method",
+          "type": "Duration?",
+          "parameters": [
+            "int attempt",
+            "RetryableException error"
+          ]
+        },
+        {
+          "name": "period",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
+      "name": "supplierStub",
+      "type": "SupplierStub",
+      "types": [
+        "SupplierStub"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "supplier-stub & !prod"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/supplier/supplier_stub.dart",
+      "line": 12,
+      "injects": [],
+      "members": [
+        {
+          "name": "apiKey",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "deliver",
+          "kind": "method",
+          "type": "ResponseEntity<Delivery>",
+          "parameters": [
+            "DeliveryRequest request",
+            "String key"
+          ]
+        },
+        {
+          "name": "offer",
+          "kind": "method",
+          "type": "Offer",
+          "parameters": [
+            "String isbn",
+            "String key",
+            "{int copies}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supplierStubChain",
+      "type": "SecurityFilterChain",
+      "types": [
+        "SecurityFilterChain"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [
+        "supplier-stub & !prod"
+      ],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/security_config.dart",
+      "line": 24,
+      "injects": [
+        {
+          "parameter": "http",
+          "type": "HttpSecurity",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "filters",
+          "kind": "getter",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supportBot",
+      "type": "SupportBot",
+      "types": [
+        "SupportBot"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('neon.support.bot.enabled', havingValue: 'true')"
+      ],
+      "source": "package:neon_books_server/src/support/support_bot.dart",
+      "line": 10,
+      "injects": [
+        {
+          "parameter": "_environment",
+          "type": "Environment",
+          "qualifier": null
+        },
+        {
+          "parameter": "_messages",
+          "type": "MessageSource",
+          "qualifier": null
+        },
+        {
+          "parameter": "_shop",
+          "type": "ShopProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "answer",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String question",
+            "String user",
+            "{String? locale}"
+          ]
+        },
+        {
+          "name": "greet",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String user",
+            "{String? locale}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supportEndpoint",
+      "type": "SupportEndpoint",
+      "types": [
+        "SupportEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/support/support_endpoint.dart",
+      "line": 27,
+      "injects": [
+        {
+          "parameter": "_support",
+          "type": "SupportSessions",
+          "qualifier": null
+        },
+        {
+          "parameter": "_clock",
+          "type": "Clock",
+          "qualifier": null
+        },
+        {
+          "parameter": null,
+          "type": "ChatFilter",
+          "qualifier": null
+        },
+        {
+          "parameter": "_bot",
+          "type": "SupportBot",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ServerWebSocketSession session",
+            "CloseStatus status"
+          ]
+        },
+        {
+          "name": "error",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ServerWebSocketSession session",
+            "Object error"
+          ]
+        },
+        {
+          "name": "message",
+          "kind": "method",
+          "type": "ChatMessage?",
+          "parameters": [
+            "ServerWebSocketSession session",
+            "Principal? user",
+            "ChatMessage message"
+          ]
+        },
+        {
+          "name": "open",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ServerWebSocketSession session",
+            "Principal? user"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supportSessions",
+      "type": "SupportSessions",
+      "types": [
+        "SupportSessions"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/support/support_sessions.dart",
+      "line": 8,
+      "injects": [
+        {
+          "parameter": "_registry",
+          "type": "WebSocketSessionRegistry",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "broadcast",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ChatMessage message"
+          ]
+        },
+        {
+          "name": "sendTo",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String user",
+            "ChatMessage message"
+          ]
+        },
+        {
+          "name": "sendToAdmins",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ChatMessage message",
+            "{ServerWebSocketSession? except}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "timingAspect",
+      "type": "TimingAspect",
+      "types": [
+        "TimingAspect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/aop/aspects.dart",
+      "line": 47,
+      "injects": [],
+      "members": [
+        {
+          "name": "time",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "ProceedingJoinPoint call",
+            "Timed timed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "userDetailsService",
+      "type": "InMemoryUserDetailsManager",
+      "types": [
+        "InMemoryUserDetailsManager",
+        "UserDetailsManager",
+        "UserDetailsService",
+        "UserDetailsPasswordService"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/users.dart",
+      "line": 38,
+      "injects": [
+        {
+          "parameter": "properties",
+          "type": "UsersProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "createUser",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "UserDetails user"
+          ]
+        },
+        {
+          "name": "deleteUser",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String username"
+          ]
+        },
+        {
+          "name": "loadUserByUsername",
+          "kind": "method",
+          "type": "UserDetails",
+          "parameters": [
+            "String username"
+          ]
+        },
+        {
+          "name": "updatePassword",
+          "kind": "method",
+          "type": "UserDetails",
+          "parameters": [
+            "UserDetails user",
+            "String newPassword"
+          ]
+        },
+        {
+          "name": "updateUser",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "UserDetails user"
+          ]
+        },
+        {
+          "name": "userExists",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String username"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "usersConfig",
+      "type": "UsersConfig",
+      "types": [
+        "UsersConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/users.dart",
+      "line": 27,
+      "injects": [],
+      "members": [
+        {
+          "name": "passwordEncoder",
+          "kind": "method",
+          "type": "PasswordEncoder",
+          "parameters": []
+        },
+        {
+          "name": "userDetailsService",
+          "kind": "method",
+          "type": "UserDetailsService",
+          "parameters": [
+            "UsersProperties properties"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "usersProperties",
+      "type": "UsersProperties",
+      "types": [
+        "UsersProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/security/users.dart",
+      "line": 21,
+      "injects": [],
+      "members": [
+        {
+          "name": "users",
+          "kind": "field",
+          "type": "Map<String, UserEntry>"
+        }
+      ]
+    },
+    {
+      "name": "vipDesk",
+      "type": "VipDesk",
+      "types": [
+        "VipDesk"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/orders/order_listeners.dart",
+      "line": 19,
+      "injects": [],
+      "members": [
+        {
+          "name": "onVipOrder",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "OrderPlaced placed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webConfig",
+      "type": "WebConfig",
+      "types": [
+        "WebConfig",
+        "WebMvcConfigurer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:neon_books_server/src/web/web_config.dart",
+      "line": 6,
+      "injects": [],
+      "members": [
+        {
+          "name": "addArgumentResolvers",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<HandlerMethodArgumentResolver> resolvers"
+          ]
+        },
+        {
+          "name": "addCorsMappings",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "CorsRegistry registry"
+          ]
+        },
+        {
+          "name": "addInterceptors",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InterceptorRegistry registry"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    "advanced",
+    "dev",
+    "prod",
+    "sso",
+    "supplier-stub"
+  ]
+}

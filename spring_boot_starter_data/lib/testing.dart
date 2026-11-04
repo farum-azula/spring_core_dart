@@ -4,7 +4,7 @@
 ///
 /// A test class marked `@DataTest()` needs none of it by hand:
 /// `spring_core_dart_generator` writes the calls into the generated
-/// `test/spring/<name>.test.spring.dart`. Import this library to write the
+/// `test/spring_gen/<name>.test.spring.dart`. Import this library to write the
 /// same tests as functions, with `springBootTest` of
 /// `spring_boot_starter_test` (a `dev_dependency`; this starter does not
 /// depend on it, the generated code and the test join the two):
@@ -15,7 +15,7 @@
 /// import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 /// import 'package:test/test.dart';
 ///
-/// import '../bin/shop.spring.dart'; // springApplication
+/// import '../bin/spring_gen/shop.spring.dart'; // springApplication
 ///
 /// void main() {
 ///   // The repositories of the shop on an in-memory SQLite database.

@@ -89,7 +89,7 @@ directory and below, here `lib/src/`:
 ```dart
 // lib/src/app.dart
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'app.spring.dart'; // will be generated
+import 'spring_gen/app.spring.dart'; // will be generated
 
 @ComponentScan()
 final BeanModule appBeans = $appBeans;
@@ -133,7 +133,7 @@ shows four things working together:
   class knowing the other.
 
 `Tour` implements `CommandLineRunner`, so Spring Boot calls its `run` once
-the application has started. [`main.spring.dart`](main.spring.dart) is
+the application has started. [`spring_gen/main.spring.dart`](main.spring.dart) is
 the code the generator wrote from the annotations.
 
 Run it from the package folder of the
@@ -160,7 +160,7 @@ A command-line argument overrides the setting:
 dart run example/main.dart '--greeting.punctuation=?'   # Hello, Ada?
 ```
 
-After changing an annotation, regenerate `main.spring.dart` with
+After changing an annotation, regenerate `spring_gen/main.spring.dart` with
 `dart run build_runner build`.
 
 ## A tour of the features

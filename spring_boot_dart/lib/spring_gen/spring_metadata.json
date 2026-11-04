@@ -1,0 +1,1336 @@
+{
+  "version": 1,
+  "package": "spring_boot_dart",
+  "properties": [
+    {
+      "name": "debug",
+      "type": "String?",
+      "description": "Any value but `false` (for example `--debug`) logs the condition evaluation report: which auto-configured beans were created, and why the others were not.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 84,
+      "class": "DebugProperties"
+    },
+    {
+      "name": "spring.application.json",
+      "type": "String?",
+      "description": "Properties as one JSON object (see `SPRING_APPLICATION_JSON`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 46,
+      "class": "ApplicationProperties"
+    },
+    {
+      "name": "spring.application.name",
+      "type": "String?",
+      "description": "The application's name: the context's id, and the name in the startup lines (`application` when not set).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 50,
+      "class": "ApplicationProperties"
+    },
+    {
+      "name": "spring.autoconfigure.exclude",
+      "type": "List<String>?",
+      "description": "The auto-configurations to leave out, by class or module name.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 39,
+      "class": "AutoconfigureProperties"
+    },
+    {
+      "name": "spring.banner.location",
+      "type": "String",
+      "description": "The banner file. `${spring-boot.version}`, `${spring-boot.formatted-version}` and other `${...}` in it are replaced.",
+      "default": "resources:banner.txt",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 59,
+      "class": "BannerProperties"
+    },
+    {
+      "name": "spring.devtools.restart.enabled",
+      "type": "bool",
+      "description": "Whether a hot reload restarts the context when the generated code changed.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 67,
+      "class": "DevtoolsRestartProperties"
+    },
+    {
+      "name": "spring.json.datatype.datetime.read-date-timestamps-as-nanoseconds",
+      "type": "bool?",
+      "description": "Reads timestamps with a fraction. Default: the value of `spring.json.deserialization.read-date-timestamps-as-nanoseconds`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 210,
+      "class": "JsonDatetimeProperties"
+    },
+    {
+      "name": "spring.json.datatype.datetime.write-date-timestamps-as-nanoseconds",
+      "type": "bool?",
+      "description": "Timestamps with a fraction. Default: the value of `spring.json.serialization.write-date-timestamps-as-nanoseconds`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 214,
+      "class": "JsonDatetimeProperties"
+    },
+    {
+      "name": "spring.json.datatype.datetime.write-dates-as-timestamps",
+      "type": "bool?",
+      "description": "Dates as numbers. Default: the value of `spring.json.serialization.write-dates-as-timestamps`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 218,
+      "class": "JsonDatetimeProperties"
+    },
+    {
+      "name": "spring.json.datatype.datetime.write-durations-as-timestamps",
+      "type": "bool?",
+      "description": "Durations as numbers. Default: the value of `spring.json.serialization.write-durations-as-timestamps`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 222,
+      "class": "JsonDatetimeProperties"
+    },
+    {
+      "name": "spring.json.default-property-inclusion",
+      "type": "JsonInclusion",
+      "description": "Which properties are written.",
+      "default": "always",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 138,
+      "class": "JsonProperties"
+    },
+    {
+      "name": "spring.json.deserialization.accept-float-as-int",
+      "type": "bool",
+      "description": "`1.0` can be read into an `int`.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 161,
+      "class": "JsonDeserializationProperties"
+    },
+    {
+      "name": "spring.json.deserialization.fail-on-null-for-primitives",
+      "type": "bool",
+      "description": "`null` for a non-nullable number or `bool` fails the read.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 164,
+      "class": "JsonDeserializationProperties"
+    },
+    {
+      "name": "spring.json.deserialization.fail-on-unknown-properties",
+      "type": "bool",
+      "description": "An unknown JSON property fails the read.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 167,
+      "class": "JsonDeserializationProperties"
+    },
+    {
+      "name": "spring.json.deserialization.read-date-timestamps-as-nanoseconds",
+      "type": "bool",
+      "description": "Reads timestamps with a fraction.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 170,
+      "class": "JsonDeserializationProperties"
+    },
+    {
+      "name": "spring.json.mapper.default-view-inclusion",
+      "type": "bool",
+      "description": "Properties without `@JsonView` appear in every view.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 193,
+      "class": "JsonMapperProperties"
+    },
+    {
+      "name": "spring.json.mapper.sort-properties-alphabetically",
+      "type": "bool",
+      "description": "Writes properties in alphabetical order.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 196,
+      "class": "JsonMapperProperties"
+    },
+    {
+      "name": "spring.json.property-naming-strategy",
+      "type": "String",
+      "description": "How field names become JSON names.",
+      "default": "LOWER_CAMEL_CASE",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 135,
+      "class": "JsonProperties"
+    },
+    {
+      "name": "spring.json.serialization.indent-output",
+      "type": "bool",
+      "description": "Pretty-printed JSON.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 176,
+      "class": "JsonSerializationProperties"
+    },
+    {
+      "name": "spring.json.serialization.write-date-timestamps-as-nanoseconds",
+      "type": "bool",
+      "description": "Timestamps with a fraction.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 179,
+      "class": "JsonSerializationProperties"
+    },
+    {
+      "name": "spring.json.serialization.write-dates-as-timestamps",
+      "type": "bool",
+      "description": "Dates as numbers. `spring.json.datatype.datetime.write-dates-as-timestamps` does the same and wins.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 184,
+      "class": "JsonSerializationProperties"
+    },
+    {
+      "name": "spring.json.serialization.write-durations-as-timestamps",
+      "type": "bool",
+      "description": "Durations as numbers.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 187,
+      "class": "JsonSerializationProperties"
+    },
+    {
+      "name": "spring.json.time-zone",
+      "type": "String?",
+      "description": "`UTC`, `Z` or a fixed offset (`+02:00`); named zones such as `Europe/Berlin` fail, as Dart has no time zone database.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 142,
+      "class": "JsonProperties"
+    },
+    {
+      "name": "spring.lifecycle.timeout-per-shutdown-phase",
+      "type": "Duration",
+      "description": "How long the context waits for the beans of one shutdown phase to stop.",
+      "default": "30s",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 75,
+      "class": "LifecycleProperties"
+    },
+    {
+      "name": "spring.main.allow-bean-definition-overriding",
+      "type": "bool",
+      "description": "A second bean with the same name replaces the first instead of failing the start.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 17,
+      "class": "MainProperties"
+    },
+    {
+      "name": "spring.main.banner-mode",
+      "type": "BannerMode",
+      "description": "Where the banner is printed. `false` is the same as `off`.",
+      "default": "console",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 20,
+      "class": "MainProperties"
+    },
+    {
+      "name": "spring.main.lazy-initialization",
+      "type": "bool",
+      "description": "Creates every bean on first use instead of at the start: a faster start, but a broken bean fails later.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 24,
+      "class": "MainProperties"
+    },
+    {
+      "name": "spring.main.log-startup-info",
+      "type": "bool",
+      "description": "Logs the \"Starting …\", active profiles and \"Started … in N seconds\" lines.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 28,
+      "class": "MainProperties"
+    },
+    {
+      "name": "spring.main.register-shutdown-hook",
+      "type": "bool",
+      "description": "Closes the context on SIGINT or SIGTERM, so `@PreDestroy` methods run (VM only). Off by default, unlike in Spring Boot.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 32,
+      "class": "MainProperties"
+    },
+    {
+      "name": "spring.messages.always-use-message-format",
+      "type": "bool",
+      "description": "Formats messages without arguments too, so `''` becomes `'`.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 95,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.messages.basename",
+      "type": "List<String>",
+      "description": "The base names of the files. `i18n/errors` (or `i18n.errors`) reads `i18n/errors_{locale}.properties`.",
+      "default": [
+        "messages"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 99,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.messages.cache-duration",
+      "type": "Duration?",
+      "description": "How long a loaded file is kept before it is read again. Default: kept forever. A number without a unit is in seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 104,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.messages.common-messages",
+      "type": "List<String>?",
+      "description": "Texts shared by every locale; a later file wins.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 107,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.messages.default-locale",
+      "type": "String?",
+      "description": "A locale tried before the system's (not in Spring Boot).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 110,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.messages.encoding",
+      "type": "String?",
+      "description": "The files' encoding; an unknown one fails the start. Default: UTF-8.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 113,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.messages.fallback-to-system-locale",
+      "type": "bool",
+      "description": "Tries the system's locale before the file without a locale.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 116,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.messages.use-code-as-default-message",
+      "type": "bool",
+      "description": "A missing key returns the key itself instead of failing.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 119,
+      "class": "MessagesProperties"
+    },
+    {
+      "name": "trace",
+      "type": "String?",
+      "description": "Any value but `false` (for example `--trace`) sets the framework loggers to trace.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 88,
+      "class": "DebugProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.json.default-property-inclusion",
+      "values": [
+        {
+          "value": "always",
+          "description": "Every value, `null` included (`ALWAYS`). The mapper's default."
+        },
+        {
+          "value": "non-null",
+          "description": "Every value except `null` (`NON_NULL`)."
+        },
+        {
+          "value": "non-absent",
+          "description": "Every value except `null` (`NON_ABSENT`); the same as [nonNull], as Dart has no `Optional`."
+        },
+        {
+          "value": "non-empty",
+          "description": "Every value except `null` and an empty string, list, set or map (`NON_EMPTY`)."
+        },
+        {
+          "value": "non-default",
+          "description": "Every value that differs from its default (`NON_DEFAULT`). On a class (`@JsonInclude(JsonInclusion.nonDefault)` on the class), the default is the value in an instance created with the no-argument constructor. Elsewhere, or when the class has no such constructor, it is the default of the type: `null`, `0`, `false` and what [nonEmpty] leaves out."
+        }
+      ]
+    },
+    {
+      "name": "spring.json.property-naming-strategy",
+      "values": [
+        {
+          "value": "SNAKE_CASE",
+          "description": null
+        },
+        {
+          "value": "UPPER_SNAKE_CASE",
+          "description": null
+        },
+        {
+          "value": "UPPER_CAMEL_CASE",
+          "description": null
+        },
+        {
+          "value": "LOWER_CAMEL_CASE",
+          "description": null
+        },
+        {
+          "value": "LOWER_CASE",
+          "description": null
+        },
+        {
+          "value": "KEBAB_CASE",
+          "description": null
+        },
+        {
+          "value": "LOWER_DOT_CASE",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.main.banner-mode",
+      "values": [
+        {
+          "value": "off",
+          "description": "No banner is printed. The property value `false` means this too."
+        },
+        {
+          "value": "console",
+          "description": "Printed with `print` (Spring Boot's `System.out`). The default."
+        },
+        {
+          "value": "log",
+          "description": "Logged at INFO under the logger `spring_boot_dart.SpringApplication`, so it goes wherever the log goes (a log file, for example)."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "applicationProperties",
+      "type": "ApplicationProperties",
+      "types": [
+        "ApplicationProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 44,
+      "injects": [],
+      "members": [
+        {
+          "name": "json",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "autoconfigureProperties",
+      "type": "AutoconfigureProperties",
+      "types": [
+        "AutoconfigureProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 37,
+      "injects": [],
+      "members": [
+        {
+          "name": "exclude",
+          "kind": "field",
+          "type": "List<String>?"
+        }
+      ]
+    },
+    {
+      "name": "bannerProperties",
+      "type": "BannerProperties",
+      "types": [
+        "BannerProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 55,
+      "injects": [],
+      "members": [
+        {
+          "name": "location",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "debugProperties",
+      "type": "DebugProperties",
+      "types": [
+        "DebugProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 80,
+      "injects": [],
+      "members": [
+        {
+          "name": "debug",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "trace",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "defaultValidator",
+      "type": "BeanValidator",
+      "types": [
+        "BeanValidator",
+        "SmartValidator",
+        "Validator"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(BeanValidator)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/validation_auto_configuration.dart",
+      "line": 31,
+      "injects": [],
+      "members": [
+        {
+          "name": "clockProvider",
+          "kind": "field",
+          "type": "ClockProvider"
+        },
+        {
+          "name": "groupSequences",
+          "kind": "field",
+          "type": "Map<Type, List<Type>>"
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector"
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object target"
+          ]
+        },
+        {
+          "name": "validate",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object target",
+            "Errors errors"
+          ]
+        },
+        {
+          "name": "validateObject",
+          "kind": "method",
+          "type": "List<ConstraintViolation>",
+          "parameters": [
+            "Object target",
+            "{List<Type> groups}"
+          ]
+        },
+        {
+          "name": "validateParameters",
+          "kind": "method",
+          "type": "List<ConstraintViolation>",
+          "parameters": [
+            "Object target",
+            "MethodSignature method",
+            "List<Object?> arguments",
+            "{List<Type> groups}"
+          ]
+        },
+        {
+          "name": "validateProperty",
+          "kind": "method",
+          "type": "List<ConstraintViolation>",
+          "parameters": [
+            "Object target",
+            "String property",
+            "{List<Type> groups}"
+          ]
+        },
+        {
+          "name": "validateReturnValue",
+          "kind": "method",
+          "type": "List<ConstraintViolation>",
+          "parameters": [
+            "Object target",
+            "MethodSignature method",
+            "Object? returnValue",
+            "{List<Type> groups}"
+          ]
+        },
+        {
+          "name": "validateValue",
+          "kind": "method",
+          "type": "List<ConstraintViolation>",
+          "parameters": [
+            "Type type",
+            "String property",
+            "Object? value",
+            "{List<Type> groups}"
+          ]
+        },
+        {
+          "name": "validateWithGroups",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object target",
+            "Errors errors",
+            "List<Type> groups"
+          ]
+        },
+        {
+          "name": "validationMessageSource",
+          "kind": "field",
+          "type": "MessageSource?"
+        }
+      ]
+    },
+    {
+      "name": "devtoolsRestartProperties",
+      "type": "DevtoolsRestartProperties",
+      "types": [
+        "DevtoolsRestartProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 64,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "jacksonJsonMapper",
+      "type": "ObjectMapper",
+      "types": [
+        "ObjectMapper"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(ObjectMapper)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.dart",
+      "line": 39,
+      "injects": [],
+      "members": [
+        {
+          "name": "acceptFloatAsInt",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "convertValue",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "Object? value",
+            "[TypeInfo<T>? type]"
+          ]
+        },
+        {
+          "name": "createArrayNode",
+          "kind": "method",
+          "type": "ArrayNode",
+          "parameters": []
+        },
+        {
+          "name": "createObjectNode",
+          "kind": "method",
+          "type": "ObjectNode",
+          "parameters": []
+        },
+        {
+          "name": "defaultViewInclusion",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "deserializers",
+          "kind": "field",
+          "type": "List<JsonDeserializer<Object>>"
+        },
+        {
+          "name": "failOnNullForPrimitives",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "failOnUnknownProperties",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "inclusion",
+          "kind": "field",
+          "type": "JsonInclusion"
+        },
+        {
+          "name": "indentOutput",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector"
+        },
+        {
+          "name": "isEnabled",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "JsonFeature feature"
+          ]
+        },
+        {
+          "name": "namingStrategy",
+          "kind": "field",
+          "type": "PropertyNamingStrategy"
+        },
+        {
+          "name": "readDateTimestampsAsNanoseconds",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "readList",
+          "kind": "method",
+          "type": "List<E>",
+          "parameters": [
+            "String json",
+            "[TypeInfo<E>? element]"
+          ]
+        },
+        {
+          "name": "readMap",
+          "kind": "method",
+          "type": "Map<String, V>",
+          "parameters": [
+            "String json",
+            "[TypeInfo<V>? value]"
+          ]
+        },
+        {
+          "name": "readTree",
+          "kind": "method",
+          "type": "JsonNode",
+          "parameters": [
+            "String json"
+          ]
+        },
+        {
+          "name": "readValue",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "String json",
+            "[TypeInfo<T>? type]"
+          ]
+        },
+        {
+          "name": "readerWithView",
+          "kind": "method",
+          "type": "ObjectReader",
+          "parameters": [
+            "Type view"
+          ]
+        },
+        {
+          "name": "rebuild",
+          "kind": "method",
+          "type": "JsonMapperBuilder",
+          "parameters": []
+        },
+        {
+          "name": "serializers",
+          "kind": "field",
+          "type": "List<JsonSerializer<Object>>"
+        },
+        {
+          "name": "sortPropertiesAlphabetically",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "timeZone",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "treeToValue",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "Object? tree",
+            "[TypeInfo<T>? type]"
+          ]
+        },
+        {
+          "name": "valueToTree",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "Object? value",
+            "[TypeInfo<Object?>? type]"
+          ]
+        },
+        {
+          "name": "writeDateTimestampsAsNanoseconds",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "writeDatesAsTimestamps",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "writeDurationsAsTimestamps",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "writeValueAsString",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "Object? value"
+          ]
+        },
+        {
+          "name": "writerWithView",
+          "kind": "method",
+          "type": "ObjectWriter",
+          "parameters": [
+            "Type view"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jsonProperties",
+      "type": "JsonProperties",
+      "types": [
+        "JsonProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 124,
+      "injects": [],
+      "members": [
+        {
+          "name": "datatype",
+          "kind": "field",
+          "type": "JsonDatatypeProperties"
+        },
+        {
+          "name": "defaultPropertyInclusion",
+          "kind": "field",
+          "type": "JsonInclusion"
+        },
+        {
+          "name": "deserialization",
+          "kind": "field",
+          "type": "JsonDeserializationProperties"
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "JsonMapperProperties"
+        },
+        {
+          "name": "propertyNamingStrategy",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "serialization",
+          "kind": "field",
+          "type": "JsonSerializationProperties"
+        },
+        {
+          "name": "timeZone",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "lifecycleProperties",
+      "type": "LifecycleProperties",
+      "types": [
+        "LifecycleProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 72,
+      "injects": [],
+      "members": [
+        {
+          "name": "timeoutPerShutdownPhase",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
+      "name": "mainProperties",
+      "type": "MainProperties",
+      "types": [
+        "MainProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 14,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowBeanDefinitionOverriding",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "bannerMode",
+          "kind": "field",
+          "type": "BannerMode"
+        },
+        {
+          "name": "lazyInitialization",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "logStartupInfo",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "registerShutdownHook",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "messageSource",
+      "type": "ReloadableResourceBundleMessageSource",
+      "types": [
+        "ReloadableResourceBundleMessageSource",
+        "AbstractMessageSource",
+        "HierarchicalMessageSource",
+        "MessageSource"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean.named('messageSource', search: SearchStrategy.current)",
+        "@MessagesBundleCondition()"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart",
+      "line": 46,
+      "injects": [],
+      "members": [
+        {
+          "name": "addBasenames",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<String> basenames"
+          ]
+        },
+        {
+          "name": "alwaysUseMessageFormat",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "basenames",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "cacheMillis",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "cacheSeconds",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "clearCache",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "commonMessages",
+          "kind": "field",
+          "type": "Map<String, String>?"
+        },
+        {
+          "name": "defaultEncoding",
+          "kind": "field",
+          "type": "Encoding"
+        },
+        {
+          "name": "defaultLocale",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "fallbackLocale",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "fallbackToSystemLocale",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "formatMessage",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String pattern",
+            "List<Object?> args",
+            "[String? locale]"
+          ]
+        },
+        {
+          "name": "getMessage",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String code",
+            "{List<Object?> args}",
+            "{String? defaultMessage}",
+            "{String? locale}"
+          ]
+        },
+        {
+          "name": "getMessageFromResolvable",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "MessageSourceResolvable resolvable",
+            "{String? locale}"
+          ]
+        },
+        {
+          "name": "getMessageInternal",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String code",
+            "List<Object?> args",
+            "String? locale"
+          ]
+        },
+        {
+          "name": "localeChain",
+          "kind": "method",
+          "type": "List<String>",
+          "parameters": [
+            "String? locale"
+          ]
+        },
+        {
+          "name": "parentMessageSource",
+          "kind": "field",
+          "type": "MessageSource?"
+        },
+        {
+          "name": "preload",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "List<String> locales"
+          ]
+        },
+        {
+          "name": "renderDefaultMessage",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String defaultMessage",
+            "List<Object?> args",
+            "String? locale"
+          ]
+        },
+        {
+          "name": "resolveArguments",
+          "kind": "method",
+          "type": "List<Object?>",
+          "parameters": [
+            "List<Object?> args",
+            "String? locale"
+          ]
+        },
+        {
+          "name": "resolveCode",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String code",
+            "String locale"
+          ]
+        },
+        {
+          "name": "resolveCodeInLocales",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String code",
+            "List<String> locales"
+          ]
+        },
+        {
+          "name": "resourceLoader",
+          "kind": "field",
+          "type": "ResourceLoader"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "useCodeAsDefaultMessage",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "messagesProperties",
+      "type": "MessagesProperties",
+      "types": [
+        "MessagesProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 93,
+      "injects": [],
+      "members": [
+        {
+          "name": "alwaysUseMessageFormat",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "basename",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "cacheDuration",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "commonMessages",
+          "kind": "field",
+          "type": "List<String>?"
+        },
+        {
+          "name": "defaultLocale",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "encoding",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "fallbackToSystemLocale",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "useCodeAsDefaultMessage",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "methodValidationPostProcessor",
+      "type": "MethodValidationPostProcessor",
+      "types": [
+        "MethodValidationPostProcessor",
+        "PointcutAdvisor",
+        "Advisor",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(MethodValidationPostProcessor)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/validation_auto_configuration.dart",
+      "line": 43,
+      "injects": [],
+      "members": [
+        {
+          "name": "advice",
+          "kind": "field",
+          "type": "MethodValidationInterceptor"
+        },
+        {
+          "name": "excludeFilters",
+          "kind": "field",
+          "type": "List<bool Function(List<Object>)>"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "pointcut",
+          "kind": "getter",
+          "type": "AnnotationPointcut"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

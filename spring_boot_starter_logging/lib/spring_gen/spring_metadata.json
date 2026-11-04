@@ -1,0 +1,924 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_logging",
+  "properties": [
+    {
+      "name": "logging.buffer.capacity",
+      "type": "int",
+      "description": "How many records the in-memory buffer keeps.",
+      "default": 1000,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 155,
+      "class": "LoggingBufferProperties"
+    },
+    {
+      "name": "logging.buffer.enabled",
+      "type": "bool",
+      "description": "Whether the in-memory buffer (the `logBuffer` bean) receives records.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 151,
+      "class": "LoggingBufferProperties"
+    },
+    {
+      "name": "logging.charset.console",
+      "type": "String?",
+      "description": "The character set of the console.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 190,
+      "class": "LoggingCharsetProperties"
+    },
+    {
+      "name": "logging.charset.file",
+      "type": "String?",
+      "description": "The character set of the log file.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 193,
+      "class": "LoggingCharsetProperties"
+    },
+    {
+      "name": "logging.console.enabled",
+      "type": "bool",
+      "description": "The console output.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 140,
+      "class": "LoggingConsoleProperties"
+    },
+    {
+      "name": "logging.console.target",
+      "type": "ConsoleTarget?",
+      "description": "Where the console writes on the Dart VM. Default: `stdout`; not setting it leaves the output an application set itself (Flutter's `debugPrint`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 145,
+      "class": "LoggingConsoleProperties"
+    },
+    {
+      "name": "logging.enabled",
+      "type": "bool",
+      "description": "Whether the starter installs the logging system; false leaves `SpringLog` with its plain output.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 57,
+      "class": "LoggingProperties"
+    },
+    {
+      "name": "logging.exception-conversion-word",
+      "type": "String",
+      "description": "How exceptions are printed.",
+      "default": "%wEx",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 71,
+      "class": "LoggingProperties"
+    },
+    {
+      "name": "logging.file.name",
+      "type": "String?",
+      "description": "The log file; a relative path is resolved against `LoggingSystem.fileDirectory`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 162,
+      "class": "LoggingFileProperties"
+    },
+    {
+      "name": "logging.file.path",
+      "type": "String?",
+      "description": "A directory; the file is `spring.log` in it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 165,
+      "class": "LoggingFileProperties"
+    },
+    {
+      "name": "logging.file.rolling-policy.clean-history-on-start",
+      "type": "bool",
+      "description": "Deletes the rolled files when the application starts.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 175,
+      "class": "LoggingRollingPolicyProperties"
+    },
+    {
+      "name": "logging.file.rolling-policy.max-file-size",
+      "type": "DataSize",
+      "description": "The size at which the file rolls over to `.1`, `.2`, ….",
+      "default": "10MB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 178,
+      "class": "LoggingRollingPolicyProperties"
+    },
+    {
+      "name": "logging.file.rolling-policy.max-history",
+      "type": "int",
+      "description": "How many rolled files are kept.",
+      "default": 7,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 181,
+      "class": "LoggingRollingPolicyProperties"
+    },
+    {
+      "name": "logging.file.rolling-policy.total-size-cap",
+      "type": "DataSize?",
+      "description": "The largest total size of the rolled files. Default: 0B (no limit).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 184,
+      "class": "LoggingRollingPolicyProperties"
+    },
+    {
+      "name": "logging.group.*",
+      "type": "List<String>",
+      "description": "A name for several loggers, usable in `logging.level.<group>`.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 67,
+      "class": "LoggingProperties"
+    },
+    {
+      "name": "logging.include-application-group",
+      "type": "bool",
+      "description": "Puts `[spring.application.group]` into the default patterns.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 74,
+      "class": "LoggingProperties"
+    },
+    {
+      "name": "logging.include-application-name",
+      "type": "bool",
+      "description": "Puts `[spring.application.name]` into the default patterns.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 77,
+      "class": "LoggingProperties"
+    },
+    {
+      "name": "logging.level.*",
+      "type": "String",
+      "description": "The level of the logger named by the key, for example `logging.level.neon.checkout=debug`. `root` is the level of every logger without a level of its own or of an ancestor (`info` when not set). Also `warn` and `fatal`; `false` (YAML's `off`) is `off`.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 64,
+      "class": "LoggingProperties"
+    },
+    {
+      "name": "logging.pattern.console",
+      "type": "String?",
+      "description": "The line format of the console. `${...}` stays as written: the pattern resolves it itself.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 103,
+      "class": "LoggingPatternProperties"
+    },
+    {
+      "name": "logging.pattern.correlation",
+      "type": "String?",
+      "description": "The correlation column. Default: empty.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 115,
+      "class": "LoggingPatternProperties"
+    },
+    {
+      "name": "logging.pattern.dateformat",
+      "type": "String",
+      "description": "The format of `%d` in the default patterns (times are UTC).",
+      "default": "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 119,
+      "class": "LoggingPatternProperties"
+    },
+    {
+      "name": "logging.pattern.file",
+      "type": "String?",
+      "description": "The line format of the log file; empty switches the file off.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 107,
+      "class": "LoggingPatternProperties"
+    },
+    {
+      "name": "logging.pattern.level",
+      "type": "String",
+      "description": "The format of the level in a line.",
+      "default": "%5p",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 111,
+      "class": "LoggingPatternProperties"
+    },
+    {
+      "name": "logging.threshold.buffer",
+      "type": "String",
+      "description": "The lowest level the in-memory buffer keeps.",
+      "default": "trace",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 130,
+      "class": "LoggingThresholdProperties"
+    },
+    {
+      "name": "logging.threshold.console",
+      "type": "String",
+      "description": "The lowest level the console shows.",
+      "default": "trace",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 126,
+      "class": "LoggingThresholdProperties"
+    },
+    {
+      "name": "logging.threshold.file",
+      "type": "String",
+      "description": "The lowest level the log file keeps.",
+      "default": "trace",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 134,
+      "class": "LoggingThresholdProperties"
+    },
+    {
+      "name": "spring.application.group",
+      "type": "String?",
+      "description": "The application's group, shown in the default log patterns when `logging.include-application-group` is true.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 202,
+      "class": "ApplicationGroupProperties"
+    },
+    {
+      "name": "spring.output.ansi.enabled",
+      "type": "AnsiOutput?",
+      "description": "Colours on the console: `%clr`, or the time, level and logger of a pattern without colours. Default: `always`, except where the console shows the codes as text (a Flutter app on iOS): `never` there.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 211,
+      "class": "AnsiProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "logging.buffer.capacity",
+      "range": [
+        1,
+        1000000
+      ]
+    },
+    {
+      "name": "logging.console.target",
+      "values": [
+        {
+          "value": "stdout",
+          "description": "Standard output."
+        },
+        {
+          "value": "stderr",
+          "description": "Standard error."
+        },
+        {
+          "value": "system-out",
+          "description": "Logback's name for standard output (`System.out`), the same as `stdout`."
+        },
+        {
+          "value": "system-err",
+          "description": "Logback's name for standard error (`System.err`), the same as `stderr`."
+        }
+      ]
+    },
+    {
+      "name": "logging.level.*",
+      "values": [
+        {
+          "value": "trace",
+          "description": null
+        },
+        {
+          "value": "debug",
+          "description": null
+        },
+        {
+          "value": "info",
+          "description": null
+        },
+        {
+          "value": "warn",
+          "description": null
+        },
+        {
+          "value": "warning",
+          "description": null
+        },
+        {
+          "value": "error",
+          "description": null
+        },
+        {
+          "value": "fatal",
+          "description": null
+        },
+        {
+          "value": "off",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "logging.threshold.buffer",
+      "values": [
+        {
+          "value": "trace",
+          "description": null
+        },
+        {
+          "value": "debug",
+          "description": null
+        },
+        {
+          "value": "info",
+          "description": null
+        },
+        {
+          "value": "warn",
+          "description": null
+        },
+        {
+          "value": "warning",
+          "description": null
+        },
+        {
+          "value": "error",
+          "description": null
+        },
+        {
+          "value": "fatal",
+          "description": null
+        },
+        {
+          "value": "off",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "logging.threshold.console",
+      "values": [
+        {
+          "value": "trace",
+          "description": null
+        },
+        {
+          "value": "debug",
+          "description": null
+        },
+        {
+          "value": "info",
+          "description": null
+        },
+        {
+          "value": "warn",
+          "description": null
+        },
+        {
+          "value": "warning",
+          "description": null
+        },
+        {
+          "value": "error",
+          "description": null
+        },
+        {
+          "value": "fatal",
+          "description": null
+        },
+        {
+          "value": "off",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "logging.threshold.file",
+      "values": [
+        {
+          "value": "trace",
+          "description": null
+        },
+        {
+          "value": "debug",
+          "description": null
+        },
+        {
+          "value": "info",
+          "description": null
+        },
+        {
+          "value": "warn",
+          "description": null
+        },
+        {
+          "value": "warning",
+          "description": null
+        },
+        {
+          "value": "error",
+          "description": null
+        },
+        {
+          "value": "fatal",
+          "description": null
+        },
+        {
+          "value": "off",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.output.ansi.enabled",
+      "values": [
+        {
+          "value": "detect",
+          "description": "Colours when the console supports them."
+        },
+        {
+          "value": "always",
+          "description": "Always colours. The default, except where the console shows the codes as text (a Flutter app on iOS)."
+        },
+        {
+          "value": "never",
+          "description": "Never colours."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "ansiProperties",
+      "type": "AnsiProperties",
+      "types": [
+        "AnsiProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 207,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "AnsiOutput?"
+        }
+      ]
+    },
+    {
+      "name": "applicationGroupProperties",
+      "type": "ApplicationGroupProperties",
+      "types": [
+        "ApplicationGroupProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 199,
+      "injects": [],
+      "members": [
+        {
+          "name": "group",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "logBuffer",
+      "type": "LogBuffer",
+      "types": [
+        "LogBuffer",
+        "LogAppender"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('logging.enabled', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_logging/src/logging_auto_configuration.dart",
+      "line": 48,
+      "injects": [],
+      "members": [
+        {
+          "name": "append",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SpringLogRecord record"
+          ]
+        },
+        {
+          "name": "capacity",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "clear",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "counts",
+          "kind": "getter",
+          "type": "Map<SpringLogLevel, int>"
+        },
+        {
+          "name": "dropped",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "export",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "[LogQuery query]",
+            "[LogPattern? pattern]"
+          ]
+        },
+        {
+          "name": "isEmpty",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "length",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "loggerNames",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "onChange",
+          "kind": "getter",
+          "type": "Stream<void>"
+        },
+        {
+          "name": "onRecord",
+          "kind": "getter",
+          "type": "Stream<SpringLogRecord>"
+        },
+        {
+          "name": "query",
+          "kind": "method",
+          "type": "List<SpringLogRecord>",
+          "parameters": [
+            "[LogQuery query]"
+          ]
+        },
+        {
+          "name": "records",
+          "kind": "getter",
+          "type": "List<SpringLogRecord>"
+        },
+        {
+          "name": "threshold",
+          "kind": "field",
+          "type": "SpringLogLevel"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "Stream<List<SpringLogRecord>>",
+          "parameters": [
+            "[LogQuery query]"
+          ]
+        },
+        {
+          "name": "write",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SpringLogRecord record"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "loggingProperties",
+      "type": "LoggingProperties",
+      "types": [
+        "LoggingProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 54,
+      "injects": [],
+      "members": [
+        {
+          "name": "buffer",
+          "kind": "field",
+          "type": "LoggingBufferProperties"
+        },
+        {
+          "name": "charset",
+          "kind": "field",
+          "type": "LoggingCharsetProperties"
+        },
+        {
+          "name": "console",
+          "kind": "field",
+          "type": "LoggingConsoleProperties"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "exceptionConversionWord",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "file",
+          "kind": "field",
+          "type": "LoggingFileProperties"
+        },
+        {
+          "name": "group",
+          "kind": "field",
+          "type": "Map<String, List<String>>"
+        },
+        {
+          "name": "includeApplicationGroup",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "includeApplicationName",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "level",
+          "kind": "field",
+          "type": "Map<String, String>"
+        },
+        {
+          "name": "pattern",
+          "kind": "field",
+          "type": "LoggingPatternProperties"
+        },
+        {
+          "name": "threshold",
+          "kind": "field",
+          "type": "LoggingThresholdProperties"
+        }
+      ]
+    },
+    {
+      "name": "loggingSystem",
+      "type": "LoggingSystem",
+      "types": [
+        "LoggingSystem"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('logging.enabled', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_logging/src/logging_auto_configuration.dart",
+      "line": 42,
+      "injects": [],
+      "members": [
+        {
+          "name": "addAppender",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "LogAppender appender"
+          ]
+        },
+        {
+          "name": "appenders",
+          "kind": "getter",
+          "type": "List<LogAppender>"
+        },
+        {
+          "name": "buffer",
+          "kind": "field",
+          "type": "LogBuffer"
+        },
+        {
+          "name": "bufferEnabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "configure",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableEnvironment environment"
+          ]
+        },
+        {
+          "name": "console",
+          "kind": "field",
+          "type": "ConsoleAppender"
+        },
+        {
+          "name": "consoleEnabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "file",
+          "kind": "getter",
+          "type": "FileAppender?"
+        },
+        {
+          "name": "fileDirectory",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "install",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "isInstalled",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "levelOf",
+          "kind": "method",
+          "type": "SpringLogLevel",
+          "parameters": [
+            "String logger"
+          ]
+        },
+        {
+          "name": "loggerLevels",
+          "kind": "getter",
+          "type": "Map<String, SpringLogLevel>"
+        },
+        {
+          "name": "removeAppender",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "LogAppender appender"
+          ]
+        },
+        {
+          "name": "rootLevel",
+          "kind": "getter",
+          "type": "SpringLogLevel"
+        },
+        {
+          "name": "setLogLevel",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String? loggerName",
+            "SpringLogLevel? level"
+          ]
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "uninstall",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "loggingSystemInitializer",
+      "type": "LoggingSystemInitializer",
+      "types": [
+        "LoggingSystemInitializer",
+        "BeanFactoryPostProcessor",
+        "PriorityOrdered",
+        "Ordered",
+        "DisposableBean",
+        "ApplicationContextAware",
+        "Aware"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('logging.enabled', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_logging/src/logging_auto_configuration.dart",
+      "line": 28,
+      "injects": [],
+      "members": [
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "ConfigurableEnvironment"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        },
+        {
+          "name": "setApplicationContext",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationContext applicationContext"
+          ]
+        },
+        {
+          "name": "system",
+          "kind": "field",
+          "type": "LoggingSystem"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

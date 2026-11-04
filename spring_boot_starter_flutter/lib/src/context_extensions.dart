@@ -1,8 +1,8 @@
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 
 /// Gives any widget below `SpringApplicationWidget` access to the
 /// application: a bean with `context.bean<T>()`, a translated text with

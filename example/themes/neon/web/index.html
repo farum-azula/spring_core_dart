@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="theme_showcase_neon">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>theme_showcase_neon</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+<!-- spring:loader:start -->
+<!-- Written by spring_core_dart_generator from the splash of the active theme; rewritten on every build. -->
+<style id="spring-loader-style">
+#spring-loader{position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--spring-progress:0}
+#spring-loader .sl-body{display:flex;flex-direction:column;align-items:center;gap:20px;padding:24px;text-align:center}
+#spring-loader .sl-logo{display:block;object-fit:contain}
+#spring-loader .sl-title{font-size:28px;font-weight:600;letter-spacing:.04em}
+#spring-loader .sl-kind{display:flex;align-items:center;justify-content:center}
+@keyframes sl-spin{to{transform:rotate(360deg)}}
+@keyframes sl-bounce{0%,80%,100%{transform:scale(.55);opacity:.45}40%{transform:scale(1);opacity:1}}
+@keyframes sl-pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+@keyframes sl-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){#spring-loader *{animation:none!important;transition:none!important}}
+#spring-loader{background:#090b10;color:#f5f5f5;--phases-enter-duration:2000ms;--phases-enter-curve:linear;--phases-fill-progress:1;--phases-fill-min-duration:2500ms;--phases-exit-duration:1400ms;--phases-exit-curve:linear;--gate-color:#060b1e;--gate-panel:#0c1330;--edge-color:#4fd8e8;--edge-accent:#ff2a55;--edge-width:2;--edge-glow:6;--flicker-duration:2400ms;--flicker-curve:linear;--flicker-repeat:"loop";--flicker-dim:0.5;--box-color:#ff2a55;--box-fill:rgba(255, 42, 85, 0.82);--box-text:#e4e7ee;--box-width:420;--box-height:46;--box-skew:-18;--box-glow:10;--label-text:"LOADING";--label-size:10;--label-letter-spacing:1.6}
+
+</style>
+<div id="spring-loader" role="status" aria-busy="true" aria-label="Loading" data-kind="neongate" data-fill-at="2000" data-fill-min="2500" data-stage="start"><div class="sl-body"><div class="sl-kind"><!-- The page loader of the `neon-gate` kind (neon_ui): what the browser
+     shows before Flutter runs, the same picture as NeonGateLoader (the
+     Flutter splash), so the hand-off has no jump. The generator puts this in
+     web/index.html and fills the variables from the loader's keys in
+     themes/neon.yml (gate.color is --gate-color, edge.accent is
+     --edge-accent); --spring-progress is the progress the script shows
+     (with the fill phase's min-duration). Each panel slides in on its own
+     share of the phase enter (--d its start, --s its length) from its side
+     (--dx, --dy), with the easing the Flutter side uses; the edges flicker
+     on time from the page's start (--ph, the phase of the cycle). The
+     numbers are the same as in lib/src/neon_gate_loader.dart. The panels
+     part in the Flutter splash, which takes over before. The font is the
+     package's, which Flutter serves below assets/packages/neon_ui/. -->
+<link rel="preload" as="font" type="font/ttf" crossorigin href="assets/packages/neon_ui/assets/fonts/JetBrainsMono-SemiBold.ttf">
+<style>
+@font-face{font-family:"NEON JetBrains Mono";font-weight:600;font-display:block;src:url(assets/packages/neon_ui/assets/fonts/JetBrainsMono-SemiBold.ttf) format("truetype")}
+@property --spring-progress{syntax:"<number>";inherits:true;initial-value:0}
+#spring-loader .sl-body,#spring-loader .sl-kind{display:contents}
+#spring-loader .ng{position:fixed;top:0;right:0;bottom:0;left:0;overflow:hidden;pointer-events:none}
+/* A panel: its shape, then its edge twice (a blurred copy is the glow). */
+#spring-loader .ng-l{position:absolute;top:0;left:0;width:100%;height:100%;
+animation:ng-in calc(var(--phases-enter-duration,2000ms) * var(--s)) cubic-bezier(.05,.7,.1,1) calc(var(--phases-enter-duration,2000ms) * var(--d)) both}
+@keyframes ng-in{from{transform:translate(calc(var(--dx) * 100%),calc(var(--dy) * 100%))}to{transform:translate(0,0)}}
+#spring-loader .ng-l svg,#spring-loader .ng-fl{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible}
+#spring-loader .ng-f{fill:var(--gate-color)}
+#spring-loader .ng-p .ng-f{fill:var(--gate-panel)}
+#spring-loader .ng-e{fill:none;stroke:var(--edge-color);stroke-width:calc(var(--edge-width,2) * 1px);vector-effect:non-scaling-stroke}
+#spring-loader .ng-a .ng-e{stroke:var(--edge-accent)}
+#spring-loader svg.ng-g{filter:blur(calc(var(--edge-glow,6) * 1px))}
+#spring-loader .ng-g .ng-e{stroke-width:calc(var(--edge-width,2) * 2px)}
+#spring-loader .ng-fl{animation:ng-flick var(--flicker-duration,2400ms) linear infinite;animation-delay:calc(var(--flicker-duration,2400ms) * var(--ph) * -1)}
+@keyframes ng-flick{0%,5%,12%,55%,58%,62%,100%{opacity:1}6%{opacity:calc(1 - var(--flicker-dim,.5) * .9)}8%{opacity:calc(1 - var(--flicker-dim,.5) * .1)}10%{opacity:calc(1 - var(--flicker-dim,.5) * .6)}56%{opacity:calc(1 - var(--flicker-dim,.5) * .7)}60%{opacity:calc(1 - var(--flicker-dim,.5) * .4)}}
+/* The box: angled, outlined in red, filled by the progress, the word at
+   the left and the number at the right (the style label-small). It comes
+   in the last fifth of enter. */
+#spring-loader .ng-box{position:absolute;left:50%;top:50%;box-sizing:border-box;
+width:min(calc(var(--box-width,420) * 1px),60vw);height:calc(var(--box-height,46) * 1px);
+transform:translate(-50%,-50%) skewX(calc(var(--box-skew,-18) * 1deg));
+animation:ng-box calc(var(--phases-enter-duration,2000ms) * .2) cubic-bezier(.05,.7,.1,1) calc(var(--phases-enter-duration,2000ms) * .8) both;
+font:600 calc(var(--box-height,46) * .42px)/1 "NEON JetBrains Mono",monospace}
+@keyframes ng-box{from{opacity:0;translate:0 16px}to{opacity:1;translate:0 0}}
+#spring-loader .ng-bglow{position:absolute;top:-2px;right:-2px;bottom:-2px;left:-2px;border:2px solid var(--box-color);filter:blur(calc(var(--box-glow,10) * 1px));opacity:.9}
+#spring-loader .ng-track{position:absolute;top:0;right:0;bottom:0;left:0;border:2px solid var(--box-color);overflow:hidden;background:color-mix(in srgb,var(--box-color) 12%,var(--gate-color))}
+#spring-loader .ng-fill{position:absolute;top:0;bottom:0;left:0;width:calc(var(--spring-progress) * 100%);background:var(--box-fill);box-shadow:inset -2px 0 0 rgba(255,255,255,.85)}
+#spring-loader .ng-lab,#spring-loader .ng-pct{position:absolute;top:2px;bottom:2px;display:flex;align-items:center;color:var(--box-text);white-space:nowrap}
+#spring-loader .ng-lab{left:14px;font-size:calc(var(--label-size,10) * 1px);letter-spacing:calc(var(--label-letter-spacing,1.6) * 1px);text-transform:uppercase}
+#spring-loader .ng-lab::before{content:var(--label-text)}
+#spring-loader .ng-pct{right:14px;counter-reset:ng-pct calc(var(--spring-progress) * 100);letter-spacing:1px}
+#spring-loader .ng-pct::before{content:counter(ng-pct) "%"}
+</style>
+<div class="ng"><div class="ng-l ng-a" style="--d:.08;--s:.5;--dx:1.1;--dy:0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="ng-f" points="55.6,-2 102,-2 102,102 43.6,102"/></svg><div class="ng-fl" style="--ph:.66"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="ng-g"><polyline class="ng-e" points="58,-2 46,102"/></svg><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline class="ng-e" points="58,-2 46,102"/></svg></div></div><div class="ng-l" style="--d:0;--s:.5;--dx:-1.1;--dy:0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="ng-f" points="-2,-2 56.4,-2 44.4,102 -2,102"/></svg><div class="ng-fl" style="--ph:.41"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="ng-g"><polyline class="ng-e" points="56.4,-2 44.4,102"/></svg><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline class="ng-e" points="56.4,-2 44.4,102"/></svg></div></div><div class="ng-l ng-p ng-a" style="--d:.3;--s:.42;--dx:0;--dy:-1.1"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="ng-f" points="-2,-2 102,-2 102,8 62,8 58.5,12.5 -2,12.5"/></svg><div class="ng-fl" style="--ph:.17"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="ng-g"><polyline class="ng-e" points="-2,12.5 58.5,12.5 62,8 102,8"/></svg><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline class="ng-e" points="-2,12.5 58.5,12.5 62,8 102,8"/></svg></div></div><div class="ng-l ng-p" style="--d:.38;--s:.42;--dx:0;--dy:1.1"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="ng-f" points="-2,102 102,102 102,87.5 42,87.5 38.5,92 -2,92"/></svg><div class="ng-fl" style="--ph:.53"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="ng-g"><polyline class="ng-e" points="-2,92 38.5,92 42,87.5 102,87.5"/></svg><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline class="ng-e" points="-2,92 38.5,92 42,87.5 102,87.5"/></svg></div></div><div class="ng-l ng-p" style="--d:.5;--s:.4;--dx:-1.1;--dy:0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="ng-f" points="-2,30 33,30 30.5,36 -2,36"/></svg><div class="ng-fl" style="--ph:.79"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="ng-g"><polyline class="ng-e" points="-2,30 33,30 30.5,36"/></svg><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline class="ng-e" points="-2,30 33,30 30.5,36"/></svg></div></div><div class="ng-l ng-p ng-a" style="--d:.58;--s:.42;--dx:1.1;--dy:0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="ng-f" points="69.5,64 102,64 102,70 67,70"/></svg><div class="ng-fl" style="--ph:.29"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="ng-g"><polyline class="ng-e" points="69.5,64 67,70 102,70"/></svg><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline class="ng-e" points="69.5,64 67,70 102,70"/></svg></div></div><div class="ng-box"><i class="ng-bglow"></i><div class="ng-track"><i class="ng-fill"></i></div><div class="ng-lab"></div><div class="ng-pct"></div></div></div></div></div></div>
+<script>
+(function () {
+  var root = document.getElementById('spring-loader');
+  if (!root) return;
+  var done = false, progress = 0, shown = 0, floor = 0, cap = 0.4, timer;
+  function now() {
+    return window.performance && performance.now ? performance.now() : Date.now();
+  }
+  var started = now(), last = 0;
+  var fillMin = +root.getAttribute('data-fill-min') || 0;
+  var fillAt = +root.getAttribute('data-fill-at') || 0;
+  var still = !!(window.matchMedia &&
+    matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function ease(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2;
+  }
+  function target() {
+    if (!fillMin || still) return progress;
+    var t = (now() - started - fillAt) / fillMin;
+    return Math.min(progress, t <= 0 ? 0 : t >= 1 ? 1 : ease(t));
+  }
+  var stages = {
+    load: [0.08, 0.45], app: [0.5, 0.6], engine: [0.6, 0.88],
+    run: [0.9, 0.95], done: [1, 1]
+  };
+  function show(stage) {
+    var s = stages[stage];
+    if (done || !s) return;
+    floor = s[0]; cap = s[1];
+    if (progress < floor) progress = floor;
+    root.setAttribute('data-stage', stage);
+  }
+  function paint(time) {
+    if (done) return;
+    var dt = last ? time - last : 16, to = target(), step = dt / 300;
+    last = time;
+    shown = to > shown ? Math.min(to, shown + step) : Math.max(to, shown - step);
+    root.style.setProperty('--spring-progress', shown.toFixed(3));
+    requestAnimationFrame(paint);
+  }
+  function remove() {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    clearInterval(creep);
+    if (root.parentNode) root.parentNode.removeChild(root);
+    var style = document.getElementById('spring-loader-style');
+    if (style && style.parentNode) style.parentNode.removeChild(style);
+  }
+  var creep = setInterval(function () {
+    if (progress < cap) progress += (cap - progress) * 0.04;
+  }, 150);
+  window.springLoader = {
+    get progress() { return shown; },
+    get stage() { return root.getAttribute('data-stage'); },
+    get elapsed() { return now() - started; },
+    handOff: remove
+  };
+  window.springLoaderHandOff = remove;
+  timer = setTimeout(remove, 60000);
+  window.addEventListener('flutter-first-frame', function () {
+    show('done');
+    clearTimeout(timer);
+    timer = setTimeout(remove, 3000);
+  });
+  function wrap(loader) {
+    if (!loader || loader.__springLoader || typeof loader.load !== 'function') return;
+    loader.__springLoader = true;
+    var load = loader.load;
+    loader.load = function (options) {
+      options = options || {};
+      var next = options.onEntrypointLoaded;
+      var config = options.config || {};
+      show('load');
+      options.onEntrypointLoaded = function (initializer) {
+        show('app');
+        var initialize = initializer.initializeEngine;
+        try {
+          initializer.initializeEngine = function () {
+            show('engine');
+            return initialize.apply(initializer, arguments).then(function (runner) {
+              show('run');
+              return runner;
+            });
+          };
+        } catch (e) {}
+        if (next) return next(initializer);
+        return initializer.initializeEngine(config).then(function (runner) {
+          return runner.runApp();
+        });
+      };
+      return load.call(loader, options);
+    };
+  }
+  var flutter = window._flutter = window._flutter || {};
+  if (flutter.loader) {
+    wrap(flutter.loader);
+  } else {
+    var held;
+    Object.defineProperty(flutter, 'loader', {
+      configurable: true,
+      enumerable: true,
+      get: function () { return held; },
+      set: function (value) { held = value; wrap(value); }
+    });
+  }
+  show('load');
+  requestAnimationFrame(paint);
+})();
+</script>
+<!-- spring:loader:end -->
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

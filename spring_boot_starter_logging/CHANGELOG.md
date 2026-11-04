@@ -1,3 +1,11 @@
+## Unreleased
+
+- `LoggingSystem.configure` binds the `logging.*`, `spring.output.ansi.*` and `spring.application.group` settings through the `@ConfigurationProperties` classes (`lib/src/properties/logging_properties.dart`) instead of reading each key by name, so the editor metadata and the reading cannot drift apart. It takes a `ConfigurableEnvironment` (was `PropertyResolver`), as does `LoggingSystemInitializer`. A value that cannot be read (a level, a number, a size, an on/off value, `logging.console.target`, `spring.output.ansi.enabled`) now fails with a `ConfigurationPropertiesBindException` listing the property, not a `FormatException`; an invalid pattern or charset is still a `FormatException`. Keys, defaults and accepted values are unchanged: log patterns keep their `${...}` as written (`@RawValue`), `logging.console.target` still accepts `System.out` / `System.err`.
+- A Flutter app on iOS logs without colours by default: its system log
+  escaped the codes (`flutter: \^[[32m INFO`). The layout of the line is the
+  same on every platform; `spring.output.ansi.enabled=always` still forces
+  colours.
+
 ## 0.6.2
 
 - No changes of its own; released with the family version 0.6.2.

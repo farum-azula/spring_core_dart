@@ -32,4 +32,5 @@ final BeanModule springBootAutoConfiguration = BeanModule(
     ...validationAutoConfiguration,
     ...lifecycleAutoConfiguration,
   ],
+  imports: [bootPropertiesBeans],
 );

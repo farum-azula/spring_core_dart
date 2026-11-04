@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
+import 'package:spring_boot_dart/src/properties/boot_properties.dart';
+import 'package:spring_boot_dart/src/properties/properties.dart';
 import 'package:spring_boot_dart/src/spring_application.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
@@ -140,11 +142,10 @@ abstract final class SpringHotReload {
 
   // Spring Boot DevTools' switch for restarts after code changes.
   static bool _restartEnabled(ConfigurableApplicationContext context) =>
-      context.environment
-          .getProperty('spring.devtools.restart.enabled')
-          ?.trim()
-          .toLowerCase() !=
-      'false';
+      bindBootProperties(
+        context.environment,
+        DevtoolsRestartProperties(),
+      ).enabled;
 
   static Future<developer.ServiceExtensionResponse> _handle(
     String method,

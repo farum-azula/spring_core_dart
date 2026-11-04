@@ -7,8 +7,8 @@ import 'package:spring_boot_starter_data/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
+import '../spring_gen/integration/app/integration_app.spring.dart';
 import 'app/integration_app.dart';
-import 'app/integration_app.spring.dart';
 
 export 'app/integration_app.dart';
 

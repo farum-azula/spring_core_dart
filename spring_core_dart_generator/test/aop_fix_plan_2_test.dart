@@ -17,7 +17,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -25,7 +25,7 @@ final BeanModule pkgBeans = $pkgBeans;
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -90,7 +90,7 @@ Future<String> _generate(String beans) async {
     'lib/src/service.dart': '$_header$beans',
   });
   expect(result.errors, isEmpty);
-  return _normalize(_output(result, 'lib/src/beans.spring.dart'));
+  return _normalize(_output(result, 'lib/spring_gen/src/beans.spring.dart'));
 }
 
 /// The build errors of a `@ComponentScan` of [beans].
@@ -116,7 +116,9 @@ Future<List<String>> _diagnostics(
   };
   final result = await _build(sources);
   expect(result.errors, isEmpty);
-  final path = app ? 'bin/main.spring.dart' : 'lib/src/beans.spring.dart';
+  final path = app
+      ? 'bin/spring_gen/main.spring.dart'
+      : 'lib/spring_gen/src/beans.spring.dart';
   final output = _output(result, path);
   return await resolveSources<List<String>>(
     {
@@ -319,7 +321,9 @@ class AopConfig {
         'lib/src/service.dart': '$_header$source',
       });
       expect(result.errors, isEmpty);
-      final root = _normalize(_output(result, 'bin/main.spring.dart'));
+      final root = _normalize(
+        _output(result, 'bin/spring_gen/main.spring.dart'),
+      );
       expect(root, contains(r'class_$OrdersProxy'));
       expect(root, isNot(contains(r'class_$MailProxy')));
     });
@@ -337,7 +341,7 @@ class Orders {
 ''',
         'lib/src/aspects/aspects.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/aspects/aspects.spring.dart';
+import 'package:pkg/spring_gen/src/aspects/aspects.spring.dart';
 
 @ComponentScan()
 final BeanModule aspectBeans = $aspectBeans;
@@ -359,7 +363,9 @@ class AopConfig {
 ''',
       });
       expect(result.errors, isEmpty);
-      final root = _normalize(_output(result, 'bin/main.spring.dart'));
+      final root = _normalize(
+        _output(result, 'bin/spring_gen/main.spring.dart'),
+      );
       expect(root, contains(r'class_$OrdersProxy'));
     });
   });
@@ -680,7 +686,7 @@ final BeanModule neonAop = BeanModule('neonAop', [
         starter: {'lib/spring_auto_configuration.dart': starter(advisor)},
       );
       expect(result.errors, isEmpty);
-      return _normalize(_output(result, 'bin/main.spring.dart'));
+      return _normalize(_output(result, 'bin/spring_gen/main.spring.dart'));
     }
 
     test('an annotation-driven advisor keeps pruning on', () async {

@@ -1,11 +1,11 @@
 // A @DataTest on an application without a database: the repositories use
 // the in-memory store, and the transaction of a test is the store's. The
-// generator writes spring/data_test/memory_store.test.spring.dart.
+// generator writes spring_gen/data_test/memory_store.test.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/memory_store.test.spring.dart';
+import '../spring_gen/data_test/memory_store.test.spring.dart';
 import 'memory_app/memory_app.dart';
 
 @DataTest(application: 'test/data_test/memory_app/memory_app.dart')

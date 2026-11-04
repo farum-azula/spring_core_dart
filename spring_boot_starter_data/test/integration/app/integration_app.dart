@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
-import 'integration_app.spring.dart';
+import '../../spring_gen/integration/app/integration_app.spring.dart';
 
 // --- Aggregates ------------------------------------------------------------
 

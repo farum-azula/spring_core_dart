@@ -5,6 +5,9 @@ import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/mapping/naming_strategy.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
+import 'package:spring_boot_starter_data/src/properties/data_properties.dart'
+    show NamedDataJdbcProperties;
+import 'package:spring_boot_starter_data/src/properties_binding.dart';
 import 'package:spring_boot_starter_data/src/schema/migrations/migration_runner.dart';
 import 'package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart';
 import 'package:spring_boot_starter_data/src/schema/migrations/migration_source.dart';
@@ -37,19 +40,6 @@ enum SchemaMode {
   /// The value of the property.
   final String value;
 
-  /// The mode written [text]: `none`, `validate`, `create`, `create-drop`.
-  static SchemaMode parse(String text) {
-    for (final mode in values) {
-      if (mode.value == text.toLowerCase()) {
-        return mode;
-      }
-    }
-    throw SchemaException(
-      'spring.data.jdbc.schema must be none, validate, create or '
-      "create-drop, not '$text'",
-    );
-  }
-
   /// Whether the mode writes the schema.
   bool get writes => this == create || this == createDrop;
 }
@@ -73,14 +63,20 @@ final class DatabaseInitSettings {
     Environment environment, [
     String prefix = 'spring.',
   ]) {
-    final schema = SettingsReader(
+    // The prefix ends with a dot, the names bound do not.
+    T bound<T extends Object>(String key, T fallback) => bindSettings<T>(
       environment,
-      prefix,
-    ).string('data.jdbc.schema');
+      '$prefix$key',
+      fallback: fallback,
+      onInvalid: refuseSetting,
+    );
     return DatabaseInitSettings(
-      sqlInit: SqlInitSettings.fromEnvironment(environment, prefix),
-      migration: MigrationSettings.fromEnvironment(environment, prefix),
-      schema: schema == null ? SchemaMode.validate : SchemaMode.parse(schema),
+      sqlInit: bound('sql.init', const SqlInitSettings()),
+      migration: bound('sql.migration', const MigrationSettings()),
+      schema: bound(
+        'data.jdbc',
+        const NamedDataJdbcProperties(),
+      ).schema,
     );
   }
 

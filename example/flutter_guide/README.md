@@ -77,7 +77,7 @@ The app is not part of the repository's pub workspace, because
 takes the family's packages from their folders instead.
 
 After changing beans, annotations or `lib/resources/`, regenerate
-`lib/main.spring.dart` (and `web_dev_config.yaml`):
+`lib/spring_gen/main.spring.dart` (and `web_dev_config.yaml`):
 
 ```sh
 dart run build_runner build      # or `watch` while developing
@@ -107,7 +107,10 @@ flutter test --tags golden                   # the screenshots (macOS only, see 
 ```text
 lib/
   main.dart                    @SpringBootApplication, SpringApplicationWidget
-  main.spring.dart             generated: the beans, proxies, Feign clients, context getters, `log`
+  spring_gen/                  generated, do not edit
+    main.spring.dart           the beans, proxies, Feign clients, context getters, `log`
+    theme.spring.dart          typed context.theme
+    messages.spring.dart       typed context.messages
   resources/                   the resources: application*.properties, application.yml,
                                themes/*.yml, messages*.properties
   src/app/                     the home (sections), app properties, language, lifecycle and route logs
@@ -171,7 +174,7 @@ debug banner), its locales from the message files, and its themes from
   when the app goes to the background and comes back (the context is
   paused: chapter 8).
 - **`@Log`** gives a class a `log` getter, generated into
-  `main.spring.dart` (Lombok's `@Slf4j` in Java). The logger is named
+  `spring_gen/main.spring.dart` (Lombok's `@Slf4j` in Java). The logger is named
   `topic:` (`neon.lifecycle`), else `neon_books_app.LifecycleLog`.
 - **Checked at startup.** `ApiProperties` (`lib/src/api/api_properties.dart`)
   is `@ConfigurationProperties('api')` with constraints (`@NotBlank`,
@@ -240,7 +243,7 @@ loses nothing.
   `LoginPage`, `AdminPage`, `OrdersPage`, `ChatInput`, ...
 - **`@BuildContextAccess`** generates `context.basket`, `context.catalog`,
   `context.session` and `context.languageSelection` (imported from
-  `main.spring.dart`). `BookTile` calls `context.basket.add(book)`;
+  `spring_gen/main.spring.dart`). `BookTile` calls `context.basket.add(book)`;
   `AccountButton` listens to `context.session` with a
   `ListenableBuilder`.
 - **Only the widgets that read a bean rebuild.** `BasketBadge` reads
@@ -278,9 +281,13 @@ standard `dark` theme changes. It imports one file per custom theme
 
 ```yaml
 # lib/resources/themes/neon-night.yml: everything of `neon`, dark
-spring.flutter.theme.themes.neon-night:
-  extends: neon
-  brightness: dark
+spring:
+  flutter:
+    theme:
+      themes:
+        neon-night:
+          extends: neon
+          brightness: dark
 ```
 
 - **Fonts from an asset folder.** `res/fonts/roboto/` and
@@ -305,11 +312,25 @@ spring.flutter.theme.themes.neon-night:
 - **Checked at the start.** A misspelled key or value fails the start,
   naming the property.
 
+- **Loaders and the splash.** `loaders.*` and `splash` in
+  `lib/resources/application.yml`. The app starts with the splash (the leaf,
+  "NEON Books" and a bar that follows the start; at least a second), and on
+  the web the page shows the same splash before Flutter runs (build_runner
+  writes it into `web/index.html`). Where the app really waits for the server
+  it uses them: the catalog and the orders show a skeleton of the list
+  (`ThemeSkeleton`, `BookTilePlaceholder`), a book and About a bar, and
+  "Order" a bar under the button while the order is sent. Settings has a
+  Loaders section with a skeleton, an indeterminate bar and a bar with the
+  progress of a fake download, next to the YAML that makes them
+  (`lib/src/settings/loaders_preview.dart`).
+
 Try: More → Settings and pick each theme. `flutter run
 --dart-define=SPRING_FLUTTER_THEME_ACTIVE=neon` starts in one.
 
 Test: `test/themes_test.dart` (the themes and their order, `extends`,
-the fonts, switching, `loadYaml`, a broken property), and the
+the fonts, switching, `loadYaml`, a broken property), `test/loaders_test.dart`
+(the splash and its hand-over, the catalog's skeleton until the server
+answers, the Loaders section, the quoted YAML lines) and the
 screenshots of Settings in every theme (chapter 11).
 
 ## 4. Texts

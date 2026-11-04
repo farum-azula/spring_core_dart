@@ -1,0 +1,57 @@
+# NEON: a dark theme in the spirit of neon signs: yellow, cyan and pink on a
+# near-black night, a glowing border, a drifting grid behind it.
+spring:
+  flutter:
+    theme:
+      themes:
+        neon:
+          brightness: dark
+          seed-color: '#F5E000'
+          scheme-variant: fidelity
+          colors:
+            primary: '#F5E000'
+            on-primary: '#14110A'
+            secondary: '#00E5FF'
+            on-secondary: '#001F24'
+            tertiary: '#FF40A0'
+            on-tertiary: '#2A0016'
+            surface: '#0B0D14'
+            on-surface: '#E8EAF2'
+            surface-container-lowest: '#07080D'
+            surface-container-low: '#10131C'
+            outline: '#3A4160'
+          shape: { medium: 12, large: 20, extra-large: 28 }
+          components:
+            card:
+              elevation: level0
+              shape:
+                type: rounded
+                radius: large
+                side: { color: $colors.outline-variant, width: 1 }
+          tokens:
+            brand:
+              name: NEON
+              tagline: Yellow, cyan and pink after dark
+          motion:
+            page-transition: zoom
+          # The page behind everything: a color, a picture, a gradient over
+          # it, and the picture drifting slowly (the animation
+          # `background-drift`).
+          background:
+            color: $colors.surface-container-lowest
+            image:
+              source: assets/images/neon-grid.png
+              fit: cover
+              alignment: center
+              opacity: 0.9
+              blur: 0
+            overlay:
+              gradient: { type: linear, begin: top, end: bottom, colors: [transparent, '#CC0A0C12'] }
+            animation: background-drift
+            effect: drift
+            transition: 400ms ease-out
+            # ThemeBackground.screen('showcase') shows this over the background.
+            screens:
+              showcase:
+                overlay:
+                  gradient: { type: radial, begin: center, colors: [{ color: $colors.tertiary, alpha: 35% }, transparent] }

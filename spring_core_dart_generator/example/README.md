@@ -27,7 +27,7 @@ Mark the scan root. Every class in this file's directory and below (here
 ```dart
 // lib/src/app.dart
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'app.spring.dart'; // created by the generator
+import 'spring_gen/app.spring.dart'; // created by the generator
 
 @ComponentScan()
 final BeanModule appBeans = $appBeans;
@@ -77,7 +77,7 @@ dart run build_runner watch   # regenerate on every save
 dart run bin/main.dart
 ```
 
-The generator writes `app.spring.dart` next to `app.dart`. Commit the
+The generator writes `spring_gen/app.spring.dart` next to `app.dart`. Commit the
 generated files: then the app builds without running the generator first
 (in CI, for other developers).
 
@@ -165,5 +165,5 @@ work everywhere without declaring Flutter assets.
   [spring_core_dart example](https://pub.dev/packages/spring_core_dart/example).
 - Full apps and their generated code:
   [example/ in the repository](https://github.com/farum-azula/spring_core_dart/tree/main/example)
-  (`server_guide/lib/src/app.spring.dart` from a `@ComponentScan`,
-  `server_guide/bin/main.spring.dart` from a `@SpringBootApplication`).
+  (`server_guide/lib/spring_gen/src/app.spring.dart` from a `@ComponentScan`,
+  `server_guide/bin/spring_gen/main.spring.dart` from a `@SpringBootApplication`).

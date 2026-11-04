@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart';
 import 'package:spring_boot_starter_scheduling/src/scheduled_annotation_bean_post_processor.dart';
 import 'package:spring_boot_starter_scheduling/src/task_scheduler.dart';
 
@@ -69,16 +70,10 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) {
       // Spring Boot's TaskSchedulingProperties.Shutdown.
-      final environment = r.dependency<Environment>();
+      final shutdown = r.dependency<SchedulingProperties>().shutdown;
       return TimerTaskScheduler(
-        awaitTermination:
-            environment.getPropertyAs<bool>(
-              'spring.task.scheduling.shutdown.await-termination',
-            ) ??
-            false,
-        awaitTerminationPeriod: environment.getPropertyAs<Duration>(
-          'spring.task.scheduling.shutdown.await-termination-period',
-        ),
+        awaitTermination: shutdown.awaitTermination,
+        awaitTerminationPeriod: shutdown.awaitTerminationPeriod,
         // The only (or primary) ErrorHandler bean; none when ambiguous.
         errorHandler: r.provider<ErrorHandler>().getIfUnique(),
       );

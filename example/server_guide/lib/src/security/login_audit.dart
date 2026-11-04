@@ -1,6 +1,6 @@
 // Authentication events (chapter 4): the security packages publish them,
 // the application decides what to do (here: log, and count failures).
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
 @Component()

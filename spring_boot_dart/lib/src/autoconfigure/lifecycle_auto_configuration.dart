@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/src/conditions.dart';
+import 'package:spring_boot_dart/src/properties/boot_properties.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _source = 'package:spring_boot_dart#LifecycleAutoConfiguration';
@@ -39,11 +40,9 @@ final lifecycleAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) => DefaultLifecycleProcessor(
       r.dependency<ConfigurableListableBeanFactory>(),
-      timeoutPerShutdownPhase:
-          r.dependency<Environment>().getPropertyAs<Duration>(
-            'spring.lifecycle.timeout-per-shutdown-phase',
-          ) ??
-          const Duration(seconds: 30),
+      timeoutPerShutdownPhase: r
+          .dependency<LifecycleProperties>()
+          .timeoutPerShutdownPhase,
     ),
   ),
 ];

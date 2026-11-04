@@ -1,4 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/src/config/config.dart';
+import 'package:spring_boot_starter_web/src/config/web_properties.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
 import 'package:spring_boot_starter_web/src/forwarded_headers.dart';
@@ -11,7 +13,6 @@ import 'package:spring_boot_starter_web/src/platform_web_server_stub.dart'
     as platform;
 import 'package:spring_boot_starter_web/src/request_mapping.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
-import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_boot_starter_web/src/web_server_lifecycle.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
@@ -23,19 +24,18 @@ const _source = 'package:spring_boot_starter_web#WebMvcAutoConfiguration';
 // by accident.
 const _isFlutter = bool.fromEnvironment('dart.library.ui');
 
-/// Reads the server's settings from `server.*` in [environment], as the
-/// starter applies them: in a Flutter app the address defaults to
-/// `127.0.0.1`, and a test with the `random-port` web environment gets
-/// port 0 (a free port).
-ServerProperties serverProperties(Environment environment) =>
-    ServerProperties.of(
-      environment,
+/// The server's settings from the bound `server.*`, as the starter applies
+/// them: in a Flutter app the address defaults to `127.0.0.1`, and a test
+/// with the `random-port` web environment gets port 0 (a free port).
+ServerProperties _serverProperties(DependencyResolver r) =>
+    ServerProperties.from(
+      r.dependency<ServerSettings>(),
       // Not redundant: `_isFlutter` is only false where analyzed (the VM).
       // ignore: avoid_redundant_argument_values
       defaultAddress: _isFlutter ? '127.0.0.1' : null,
     ).copyWith(
       port:
-          environment.getProperty(webEnvironmentProperty)?.trim() ==
+          r.dependency<WebTestSettings>().webEnvironment?.trim() ==
               'random-port'
           ? 0
           : null,
@@ -109,7 +109,7 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) {
       final factory = platform.createPlatformWebServerFactory()
-        ..settings = serverProperties(r.dependency<Environment>());
+        ..settings = _serverProperties(r);
       for (final customizer
           in r.optionalDependencyList<WebServerFactoryCustomizer>() ??
               const <WebServerFactoryCustomizer>[]) {
@@ -122,18 +122,14 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
     name: 'responseWriter',
     source: _source,
     create: (r) {
-      final environment = r.dependency<Environment>();
+      final mvc = r.dependency<MvcSettings>();
       return ResponseWriter(
         mapper:
             r.optionalDependency<ObjectMapper>() ??
             ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
         messageSource: r.optionalDependency<MessageSource>(),
-        asyncTimeout: environment.getPropertyAs<Duration>(
-          'spring.mvc.async.request-timeout',
-        ),
-        sseHeartbeat: environment.getPropertyAs<Duration>(
-          'spring.mvc.sse.heartbeat-interval',
-        ),
+        asyncTimeout: mvc.async.requestTimeout,
+        sseHeartbeat: mvc.sse.heartbeatInterval,
       );
     },
   ),
@@ -147,8 +143,9 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean(MultipartResolver),
       ]),
     ],
-    create: (r) =>
-        MultipartResolver(MultipartProperties.of(r.dependency<Environment>())),
+    create: (r) => MultipartResolver(
+      MultipartProperties.from(r.dependency<MultipartSettings>()),
+    ),
   ),
   BeanDefinition<RequestMappingHandlerMapping>(
     name: 'requestMappingHandlerMapping',
@@ -198,7 +195,9 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) {
-      final properties = HttpSessionProperties.of(r.dependency<Environment>());
+      final properties = HttpSessionProperties.from(
+        r.dependency<ServerSettings>().session,
+      );
       return InMemoryHttpSessionRepository(
         timeout: properties.timeout,
         maxSessions: properties.maxSessions,
@@ -208,16 +207,13 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<HttpSessionManager>(
     name: 'httpSessionManager',
     source: _source,
-    create: (r) {
-      final environment = r.dependency<Environment>();
-      return HttpSessionManager(
-        r.dependency<HttpSessionRepository>(),
-        HttpSessionProperties.of(
-          environment,
-          contextPath: serverProperties(environment).contextPath,
-        ),
-      );
-    },
+    create: (r) => HttpSessionManager(
+      r.dependency<HttpSessionRepository>(),
+      HttpSessionProperties.from(
+        r.dependency<ServerSettings>().session,
+        contextPath: _serverProperties(r).contextPath,
+      ),
+    ),
   ),
   BeanDefinition<ForwardedHeaderFilter>(
     name: 'forwardedHeaderFilter',
@@ -227,17 +223,14 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       ConditionGroup('$_source.forwardedHeaderFilter', [_OnForwardHeaders()]),
     ],
     create: (r) {
-      final text = r
-          .dependency<Environment>()
-          .getProperty('server.forward-headers.trusted-proxies')
-          ?.trim();
+      final proxies = [
+        for (final part
+            in r.dependency<ServerSettings>().forwardHeaders.trustedProxies ??
+                const <String>[])
+          if (part.trim().isNotEmpty) part.trim(),
+      ];
       return ForwardedHeaderFilter(
-        trustedProxies: text == null || text.isEmpty
-            ? null
-            : [
-                for (final part in text.split(','))
-                  if (part.trim().isNotEmpty) part.trim(),
-              ],
+        trustedProxies: proxies.isEmpty ? null : proxies,
       );
     },
   ),
@@ -253,7 +246,7 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     create: (r) {
       final requestMapping = r.dependency<RequestMappingHandlerMapping>();
-      final server = serverProperties(r.dependency<Environment>());
+      final server = _serverProperties(r);
       final mappings =
           r.optionalDependencyList<HandlerMapping>() ??
           <HandlerMapping>[requestMapping];
@@ -264,13 +257,7 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
         writer: r.dependency<ResponseWriter>(),
         contextPath: server.contextPath,
         requestTimeout: server.requestTimeout,
-        logRequestDetails:
-            r
-                .dependency<Environment>()
-                .getProperty(logRequestDetailsProperty)
-                ?.trim()
-                .toLowerCase() ==
-            'true',
+        logRequestDetails: r.dependency<MvcSettings>().logRequestDetails,
       );
     },
   ),
@@ -284,19 +271,17 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       AsyncStartup,
     ],
     source: _source,
-    create: (r) {
-      final environment = r.dependency<Environment>();
-      return WebServerStartStopLifecycle(
-        r.dependency<WebServerFactory>(),
-        r.dependency<HttpHandler>(name: 'dispatcherHandler'),
-        environment,
-        shutdownTimeout:
-            environment.getPropertyAs<Duration>(
-              'spring.lifecycle.timeout-per-shutdown-phase',
-            ) ??
-            const Duration(seconds: 30),
-      );
-    },
+    create: (r) => WebServerStartStopLifecycle(
+      r.dependency<WebServerFactory>(),
+      r.dependency<HttpHandler>(name: 'dispatcherHandler'),
+      r.dependency<Environment>(),
+      shutdownTimeout: r
+          .dependency<LifecycleProperties>()
+          .timeoutPerShutdownPhase,
+      main: r.dependency<WebMainSettings>(),
+      test: r.dependency<WebTestSettings>(),
+      serverSettings: r.dependency<ServerSettings>(),
+    ),
   ),
   BeanDefinition<PortInUseFailureAnalyzer>(
     name: 'portInUseFailureAnalyzer',
@@ -306,24 +291,17 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
   ),
 ];
 
-// server.forward-headers-strategy=native or framework; another value
-// than those and `none` stops the start.
+// server.forward-headers-strategy=native or framework. The condition is
+// decided before any bean exists, so it binds the setting itself; another
+// value than none, native and framework stops the start.
 final class _OnForwardHeaders implements Condition {
   const _OnForwardHeaders();
 
   @override
-  bool matches(ConditionContext context) {
-    final value = context.environment
-        .getProperty('server.forward-headers-strategy')
-        ?.trim()
-        .toLowerCase();
-    return switch (value) {
-      null || '' || 'none' => false,
-      'native' || 'framework' => true,
-      _ => throw ArgumentError(
-        'server.forward-headers-strategy must be none, native or framework: '
-        '$value',
-      ),
-    };
-  }
+  bool matches(ConditionContext context) => switch (bindServerSettings(
+    context.environment,
+  ).forwardHeadersStrategy) {
+    ForwardHeadersStrategy.none => false,
+    ForwardHeadersStrategy.native || ForwardHeadersStrategy.framework => true,
+  };
 }

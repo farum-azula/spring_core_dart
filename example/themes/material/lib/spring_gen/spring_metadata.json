@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "package": "theme_showcase_material",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "pageLog",
+      "type": "PageLog",
+      "types": [
+        "PageLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:theme_showcase_material/src/app/logs.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "opened",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String page"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "routeLog",
+      "type": "RouteLog",
+      "types": [
+        "RouteLog",
+        "NavigatorObserver"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:theme_showcase_material/src/app/logs.dart",
+      "line": 29,
+      "injects": [],
+      "members": [
+        {
+          "name": "didChangeTop",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> topRoute",
+            "Route<dynamic>? previousTopRoute"
+          ]
+        },
+        {
+          "name": "didPop",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didPush",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didRemove",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didReplace",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "{Route<dynamic>? newRoute}",
+            "{Route<dynamic>? oldRoute}"
+          ]
+        },
+        {
+          "name": "didStartUserGesture",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Route<dynamic> route",
+            "Route<dynamic>? previousRoute"
+          ]
+        },
+        {
+          "name": "didStopUserGesture",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "navigator",
+          "kind": "getter",
+          "type": "NavigatorState?"
+        }
+      ]
+    },
+    {
+      "name": "themeLog",
+      "type": "ThemeLog",
+      "types": [
+        "ThemeLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:theme_showcase_material/src/app/logs.dart",
+      "line": 15,
+      "injects": [
+        {
+          "parameter": "_selection",
+          "type": "ThemeSelection",
+          "qualifier": null
+        }
+      ],
+      "members": []
+    }
+  ],
+  "profiles": [
+    "desktop",
+    "network"
+  ]
+}

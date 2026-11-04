@@ -34,7 +34,7 @@ dependencies:
 getter into the `.spring.dart` file of the scan, so import that file:
 
 ```dart
-import 'package:neon/app.spring.dart'; // the generated file
+import 'package:neon/spring_gen/app.spring.dart'; // the generated file
 
 @Service()
 @Log(topic: 'neon.checkout') // the logger's name; without topic: <package>.<Class>

@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart';
 import 'package:spring_boot_starter_websocket/src/server/web_socket_handler.dart';
 import 'package:spring_boot_starter_websocket/src/server/web_socket_handler_mapping.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client_factory.dart';
@@ -38,16 +39,10 @@ final webSocketAutoConfiguration = <BeanDefinition<Object>>[
       ConditionGroup(_source, [ConditionalOnMissingBean(WebSocketTransport)]),
     ],
     create: (r) {
-      final environment = r.dependency<Environment>();
-      int? size(String key) =>
-          switch (environment.getProperty('spring.websocket.client.$key')) {
-            null => null,
-            final value when value.trim() == '-1' => -1,
-            final value => DataSize.parse(value.trim()).toBytes(),
-          };
+      final properties = r.dependency<WebSocketProperties>();
       return platformWebSocketTransport(
-        maxTextMessageSize: size('max-text-message-size'),
-        maxBinaryMessageSize: size('max-binary-message-size'),
+        maxTextMessageSize: properties.maxTextMessageSize.toBytes(),
+        maxBinaryMessageSize: properties.maxBinaryMessageSize.toBytes(),
       );
     },
   ),
@@ -57,6 +52,7 @@ final webSocketAutoConfiguration = <BeanDefinition<Object>>[
     types: const [WebSocketClientFactory, InvocationHandlerFactory],
     create: (r) => WebSocketClientFactory(
       environment: r.dependency<Environment>(),
+      properties: r.dependency<WebSocketProperties>(),
       mapper:
           r.optionalDependency<ObjectMapper>() ??
           ObjectMapper(introspector: r.dependency<BeanIntrospector>()),

@@ -23,10 +23,10 @@ void main() {
       write('two/other/c.properties', 'c=2');
       // Added later, so `two` is searched first.
       removals = [
-        ClasspathResources.addDirectory('${temp.path}/one'),
-        ClasspathResources.addDirectory('${temp.path}/two'),
+        Resources.addDirectory('${temp.path}/one'),
+        Resources.addDirectory('${temp.path}/two'),
       ];
-      ClasspathResources.registerAll({
+      Resources.registerAll({
         'i18n/embedded.properties': const EmbeddedResource.text('e=1'),
       }, owner: 'resource_fixes_test');
     });
@@ -34,7 +34,7 @@ void main() {
       for (final remove in removals) {
         remove();
       }
-      ClasspathResources.registerAll(const {}, owner: 'resource_fixes_test');
+      Resources.registerAll(const {}, owner: 'resource_fixes_test');
     });
 
     List<String> contents(String pattern) => [

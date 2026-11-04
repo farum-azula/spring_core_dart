@@ -1,4 +1,4 @@
-import 'package:neon_books_app/main.spring.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/account/sso_properties.dart';
 import 'package:neon_books_app/src/api/account_client.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';

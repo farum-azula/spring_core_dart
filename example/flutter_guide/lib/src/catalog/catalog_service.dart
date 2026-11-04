@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:neon_books_app/main.spring.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/api/catalog_client.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';

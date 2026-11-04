@@ -1,4 +1,19 @@
 # The neon theme at night: everything of `neon`, dark.
-spring.flutter.theme.themes.neon-night:
-  extends: neon
-  brightness: dark
+spring:
+  flutter:
+    theme:
+      themes:
+        neon-night:
+          extends: neon
+          brightness: dark
+          # A color under every screen with a tint of the accent at the bottom. An
+          # image would go next to them, from an asset or from the network:
+          #   image: { source: https://cdn.example.com/neon/night.jpg, refresh: 1d }
+          background:
+            color: '#1A1024'
+            overlay:
+              gradient:
+                type: linear
+                begin: top
+                end: bottom
+                colors: [transparent, { color: $brand.accent, alpha: 18% }]

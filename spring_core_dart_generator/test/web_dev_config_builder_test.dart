@@ -183,10 +183,6 @@ void main() {
         'dev.conf': 'spring:\n  flutter:\n    web:\n      port: 5057\n',
       },
       {
-        'application.yaml': 'spring.config.import: classpath:dev.conf[.yaml]\n',
-        'dev.conf': 'spring:\n  flutter:\n    web:\n      port: 5057\n',
-      },
-      {
         'application.properties':
             'spring.config.import[0]=resources:web/dev.conf[.properties]\n',
         'web/dev.conf': 'spring.flutter.web.port=5057\n',
@@ -935,6 +931,18 @@ spring:
     expect((server['proxy'] as YamlList).length, 2);
   });
 
+  test('a port the browsers refuse is written, with a warning', () async {
+    final files = _Files();
+    final logs = await _build(files, {
+      'application.properties': 'spring.flutter.web.port=5060\n',
+    });
+    expect(_body(files), 'server:\n  port: 5060\n');
+    expect(
+      _warnings(logs).single,
+      contains('spring.flutter.web.port: browsers refuse port 5060'),
+    );
+  });
+
   test('values are quoted for YAML', () async {
     final files = _Files();
     await _build(files, {
@@ -1410,9 +1418,9 @@ spring:
         '${WebDevConfigBuilder.header}\nserver:\n  port: 5050\n',
       );
       await _build(files, {
-        'application.properties': 'spring.flutter.web.port=5060\n',
+        'application.properties': 'spring.flutter.web.port=5070\n',
       });
-      expect(_body(files), 'server:\n  port: 5060\n');
+      expect(_body(files), 'server:\n  port: 5070\n');
     });
   });
 

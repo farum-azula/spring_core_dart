@@ -1,12 +1,12 @@
 // A @DataTest(transactionManager:) on the application with three stores:
 // only the named manager's database is rolled back; the primary database
 // and the memory write for real. The generator writes
-// spring/data_test/named_manager.test.spring.dart.
+// spring_gen/data_test/named_manager.test.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/named_manager.test.spring.dart';
+import '../spring_gen/data_test/named_manager.test.spring.dart';
 import 'mixed_app/mixed_app.dart';
 
 @DataTest(

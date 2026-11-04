@@ -21,7 +21,7 @@ import 'package:spring_boot_starter_security/spring_boot_starter_security.dart'
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/main.spring.dart';
+import '../bin/spring_gen/main.spring.dart';
 import 'support/app.dart';
 
 void main() {

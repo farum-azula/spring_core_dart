@@ -50,6 +50,18 @@
       "$0"
     ]
   },
+  "Theme color object": {
+    "prefix": "spcolorobject",
+    "description": "A color with alpha or mix: the object form (the one-line forms are gone)",
+    "body": [
+      "spring.flutter.theme.colors.${1:primary-container}.color=\\$colors.${2:primary}",
+      "spring.flutter.theme.colors.${1:primary-container}.alpha=${3:12%}",
+      "spring.flutter.theme.colors.${4:secondary-container}.color=\\$colors.${5:secondary}",
+      "spring.flutter.theme.colors.${4:secondary-container}.mix.with=${6:white}",
+      "spring.flutter.theme.colors.${4:secondary-container}.mix.amount=${7:14%}",
+      "$0"
+    ]
+  },
   "Theme typography": {
     "prefix": "sptypography",
     "description": "Fonts per text role (font files: any asset directory, found by family)",
@@ -81,7 +93,7 @@
       "spring.flutter.theme.components.app-bar.center-title=${1:true}",
       "spring.flutter.theme.components.button.shape=${2:full}",
       "spring.flutter.theme.components.card.shape=${3:large}",
-      "spring.flutter.theme.components.card.color=surface-container-low",
+      "spring.flutter.theme.components.card.color=\\$colors.surface-container-low",
       "spring.flutter.theme.components.input.style=${4:outline}",
       "spring.flutter.theme.components.snack-bar.behavior=floating",
       "$0"
@@ -102,6 +114,50 @@
     "body": [
       "spring.flutter.fonts.auto-load=${1:true}",
       "spring.flutter.fonts.exclude=${2:assets/pdf/**}",
+      "$0"
+    ]
+  },
+  "Theme loaders": {
+    "prefix": "sploader",
+    "description": "spring.flutter.theme.loaders: a built-in loader (spinner, dots, pulse, bar, skeleton)",
+    "body": [
+      "spring.flutter.theme.loaders.${1:dots}.kind=${2:dots}",
+      "spring.flutter.theme.loaders.${1:dots}.color=\\$colors.primary",
+      "spring.flutter.theme.loaders.${1:dots}.size=${3:10}",
+      "spring.flutter.theme.loaders.${1:dots}.animation.duration=${4:900ms}",
+      "spring.flutter.theme.loaders.${1:dots}.animation.curve=ease-in-out",
+      "spring.flutter.theme.loaders.${1:dots}.animation.repeat=loop",
+      "$0"
+    ]
+  },
+  "Theme loader of the app's own kind": {
+    "prefix": "sploaderkind",
+    "description": "A loader of a @ThemeLoaderKind class, with phases and the web page loader file",
+    "body": [
+      "spring.flutter.theme.loaders.${1:neon-doors}.kind=${2:doors}",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.close.duration=500ms",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.close.curve=ease-in",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.fill.progress=true",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.open.duration=450ms",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.open.curve=emphasized",
+      "spring.flutter.theme.loaders.${1:neon-doors}.${3:door}.color=${4:#0B0D14}",
+      "spring.flutter.theme.loaders.${1:neon-doors}.web=${5:web/loaders/neon-doors.html}",
+      "$0"
+    ]
+  },
+  "Theme splash": {
+    "prefix": "spsplash",
+    "description": "spring.flutter.theme.splash: the splash screen and the web page loader",
+    "body": [
+      "spring.flutter.theme.loaders.${5:dots}.kind=dots",
+      "spring.flutter.theme.loaders.${5:dots}.color=\\$colors.primary",
+      "spring.flutter.theme.splash.background.color=\\$colors.${1:surface-container-lowest}",
+      "spring.flutter.theme.splash.logo.source=${2:assets/images/logo.png}",
+      "spring.flutter.theme.splash.logo.size=${3:96}",
+      "spring.flutter.theme.splash.title=${4:My app}",
+      "spring.flutter.theme.splash.loader=${5:dots}",
+      "spring.flutter.theme.splash.min-duration=${6:1.2s}",
+      "spring.flutter.theme.splash.exit.transition=400ms ease-out",
       "$0"
     ]
   }

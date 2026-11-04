@@ -117,27 +117,27 @@ final class PoolSettings {
   }) : assert(maxSize > 0, 'max-size must be at least 1'),
        assert(minIdle >= 0, 'min-idle must not be negative');
 
-  /// `max-size`: the most connections at once (default 10).
+  /// Most connections at once (default 10).
   final int maxSize;
 
-  /// `min-idle`: connections kept open when idle (default 0; Hikari
-  /// keeps as many as [maxSize]).
+  /// Connections kept open when idle (default 0; Hikari keeps as many as
+  /// [maxSize]).
   final int minIdle;
 
-  /// `connection-timeout`: how long a caller waits for a connection
-  /// (default 30 s) before a [CannotGetJdbcConnectionException].
+  /// The longest wait for a connection (default 30 s), then a
+  /// [CannotGetJdbcConnectionException].
   final Duration connectionTimeout;
 
-  /// `idle-timeout`: an idle connection above [minIdle] older than this is
-  /// closed (default 10 min; zero keeps them forever).
+  /// An idle connection above [minIdle] older than this is closed (default
+  /// 10 min; zero keeps them forever).
   final Duration idleTimeout;
 
-  /// `max-lifetime`: a connection older than this is closed when it comes
-  /// back to the pool (default 30 min; zero: no limit).
+  /// A connection older than this is closed when it comes back to the pool
+  /// (default 30 min; zero: no limit).
   final Duration maxLifetime;
 
-  /// `validation`: whether a connection that waited in the pool is
-  /// checked with `isValid` before it is handed out (default true).
+  /// Whether a connection that waited in the pool is checked with `isValid`
+  /// before it is handed out (default true).
   final bool validation;
 }
 

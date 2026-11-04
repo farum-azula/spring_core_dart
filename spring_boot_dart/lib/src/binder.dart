@@ -656,7 +656,8 @@ final class BindContext {
   /// any relaxed spelling, or `null`.
   ///
   /// `${...}` placeholders in a string value are resolved; unresolvable
-  /// ones are kept as they are, as in Spring Boot.
+  /// ones are kept as they are, as in Spring Boot. A member marked
+  /// [RawValue] gets its text as written.
   Object? findProperty(ConfigurationPropertyName name, List<BindSource> scope) {
     for (final source in scope) {
       final value = source.valueOf(name);
@@ -668,7 +669,9 @@ final class BindContext {
   }
 
   Object? _resolve(Object value) =>
-      value is String ? binder.environment.resolvePlaceholders(value) : value;
+      value is String && !_annotations.any((a) => a is RawValue)
+      ? binder.environment.resolvePlaceholders(value)
+      : value;
 
   bool _mayHaveDescendants(
     ConfigurationPropertyName name,
@@ -729,7 +732,8 @@ final class BindContext {
 
   /// The value of [values] that [raw] names, ignoring case and
   /// separators: `MY_VALUE`, `my-value` and `myValue` all find `myValue`,
-  /// as with Spring Boot's lenient enum conversion.
+  /// as with Spring Boot's lenient enum conversion. `false` is `off` (what
+  /// YAML makes of an unquoted `off`) when the enum has such a constant.
   ///
   /// Blank input gives [unbound]. An unknown name is an error that lists
   /// the allowed values.
@@ -745,7 +749,13 @@ final class BindContext {
     if (text.isEmpty) {
       return unbound;
     }
-    final wanted = _lenient(text);
+    // YAML reads an unquoted `off` as `false` (and `on` as `true`), so an
+    // enum with an `off` (`on`) constant accepts that.
+    final wanted = switch (_lenient(text)) {
+      'false' when values.any((v) => v.name == 'off') => 'off',
+      'true' when values.any((v) => v.name == 'on') => 'on',
+      final name => name,
+    };
     for (final value in values) {
       if (_lenient(value.name) == wanted) {
         return value;

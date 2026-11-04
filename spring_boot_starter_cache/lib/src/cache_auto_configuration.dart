@@ -1,18 +1,20 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_cache/src/cache.dart';
 import 'package:spring_boot_starter_cache/src/cache_interceptor.dart';
+import 'package:spring_boot_starter_cache/src/config/cache_properties.dart';
 import 'package:spring_boot_starter_cache/src/in_memory_cache.dart';
 import 'package:spring_boot_starter_cache/src/no_op_cache.dart';
 
 const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 
-/// Builds the [CacheManager] that the `spring.cache.*` properties of
-/// [environment] describe: the manager the starter creates when the
-/// application declares none.
+/// Builds the [CacheManager] that the `spring.cache.*` [properties]
+/// describe: the manager the starter creates when the application declares
+/// none.
 ///
 /// Applications set the properties and let the starter call it. Call it
 /// yourself when you declare your own `CacheManager` bean but still want
-/// it configured by the same properties, for example to wrap it.
+/// it configured by the same properties (inject [CacheProperties] and the
+/// `Environment`), for example to wrap it.
 ///
 /// - `spring.cache.type`: `generic` gives a [SimpleCacheManager] of
 ///   [caches] (the `Cache` beans) and is the default when there are any;
@@ -46,8 +48,10 @@ const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 /// @Configuration()
 /// class CacheSetup {
 ///   @Bean()
-///   CacheManager cacheManager(Environment environment) =>
-///       cacheManagerFromProperties(environment);
+///   CacheManager cacheManager(
+///     CacheProperties properties,
+///     Environment environment,
+///   ) => cacheManagerFromProperties(properties, environment);
 /// }
 /// ```
 ///
@@ -55,27 +59,31 @@ const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 /// `GenericCacheConfiguration` / `SimpleCacheConfiguration` /
 /// `NoOpCacheConfiguration`.
 CacheManager cacheManagerFromProperties(
+  CacheProperties properties,
   Environment environment, {
   List<Cache> caches = const [],
   List<CacheManagerCustomizer> customizers = const [],
 }) {
-  final manager = _cacheManager(environment, caches);
+  final manager = _cacheManager(properties, environment, caches);
   for (final customizer in customizers) {
     customizer.customize(manager);
   }
   return manager;
 }
 
-CacheManager _cacheManager(Environment environment, List<Cache> caches) {
-  final configured = environment.getProperty('spring.cache.type')?.trim();
+CacheManager _cacheManager(
+  CacheProperties properties,
+  Environment environment,
+  List<Cache> caches,
+) {
   // Boot tries generic first: it applies when there are Cache beans.
-  final type = configured == null || configured.isEmpty
-      ? (caches.isEmpty ? 'simple' : 'generic')
-      : configured.toLowerCase();
+  final type =
+      properties.type ??
+      (caches.isEmpty ? CacheType.simple : CacheType.generic);
   switch (type) {
-    case 'none':
+    case CacheType.none:
       return NoOpCacheManager();
-    case 'generic':
+    case CacheType.generic:
       if (caches.isEmpty) {
         throw StateError(
           'spring.cache.type=generic needs at least one Cache bean (the '
@@ -83,28 +91,13 @@ CacheManager _cacheManager(Environment environment, List<Cache> caches) {
         );
       }
       return SimpleCacheManager(caches);
-    case 'simple':
+    case CacheType.simple:
       break;
-    default:
-      throw StateError(
-        "Unsupported spring.cache.type '$type': use 'generic', 'simple' or "
-        "'none', or declare a CacheManager bean",
-      );
   }
-  // A comma list or a YAML list (`spring.cache.cache-names[0]`).
-  final names = environment is ConfigurableEnvironment
-      ? Binder.get(environment)
-            .bind(
-              'spring.cache.cache-names',
-              const ListType<String>(ClassType<String>()),
-            )
-            .map<List<String>?>((names) => names)
-            .orElse(null)
-      : environment.getProperty('spring.cache.cache-names')?.split(',');
   // Like Boot's SimpleCacheConfiguration: only a non-empty list fixes the
   // caches (`spring.cache.cache-names=` keeps them dynamic).
   final cacheNames = [
-    for (final name in names ?? const <String>[])
+    for (final name in properties.cacheNames)
       if (name.trim().isNotEmpty) name.trim(),
   ];
   // Caffeine refuses a negative maximumSize or expireAfterWrite; 0 keeps
@@ -131,31 +124,37 @@ CacheManager _cacheManager(Environment environment, List<Cache> caches) {
     return value;
   }
 
-  CacheSpec spec(String prefix) => CacheSpec(
+  final simple = properties.simple;
+  final defaults = CacheSpec(
     timeToLive: timeToLive(
-      '$prefix.time-to-live',
-      environment.getPropertyAs<Duration>('$prefix.time-to-live'),
+      'spring.cache.simple.time-to-live',
+      simple.timeToLive,
     ),
-    maxSize: maxSize(
-      '$prefix.max-size',
-      environment.getPropertyAs<int>('$prefix.max-size'),
-    ),
+    maxSize: maxSize('spring.cache.simple.max-size', simple.maxSize),
   );
-  final defaults = spec('spring.cache.simple');
-  // Bound and checked now, so a wrong value fails the start instead of
-  // the first use of the cache; `null` for an environment without
-  // property sources to list.
+  // The limits of single caches. A configurable environment is read by
+  // [_perCacheSpecs], which also understands the names and forms the typed
+  // `caches` map cannot (a plain name with dots, `MAXSIZE`); any other
+  // environment has the bound map. Checked now, so a wrong value fails the
+  // start instead of the first use of the cache.
   final perCache = environment is ConfigurableEnvironment
       ? _perCacheSpecs(environment, maxSize, timeToLive)
-      : null;
+      : {
+          for (final MapEntry(key: name, value: limits)
+              in simple.caches.entries)
+            name: CacheSpec(
+              timeToLive: timeToLive(
+                'spring.cache.simple.caches.$name.time-to-live',
+                limits.timeToLive,
+              ),
+              maxSize: maxSize(
+                'spring.cache.simple.caches.$name.max-size',
+                limits.maxSize,
+              ),
+            ),
+        };
   CacheSpec? specFor(String name) {
-    final prefix = 'spring.cache.simple.caches.$name';
-    final own = perCache != null
-        ? perCache[name]
-        : environment.containsProperty('$prefix.time-to-live') ||
-              environment.containsProperty('$prefix.max-size')
-        ? spec(prefix)
-        : null;
+    final own = perCache[name];
     if (own == null) {
       return null;
     }
@@ -283,6 +282,7 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) => cacheManagerFromProperties(
+      r.dependency<CacheProperties>(),
       r.dependency<Environment>(),
       caches: r.optionalDependencyList<Cache>() ?? const [],
       customizers:

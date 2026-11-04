@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `spring.websocket.client.*` is made from code and the starter reads the same classes: `WebSocketProperties` and `WebSocketClientSettings` are bound by the Binder. The hand-written `spring_metadata_additional.json` is gone.
+
 ## 0.6.2
 
 - No changes of its own; released with the family version 0.6.2.

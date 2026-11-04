@@ -2,10 +2,17 @@ import 'dart:io';
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:dart_spring_language_server/src/config_editor.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
+import 'package:dart_spring_language_server/src/data_model.dart';
+import 'package:dart_spring_language_server/src/derived_queries.dart';
 import 'package:dart_spring_language_server/src/flutter_assets.dart';
+import 'package:dart_spring_language_server/src/metadata.dart';
 import 'package:dart_spring_language_server/src/pointcuts.dart';
 import 'package:dart_spring_language_server/src/properties_index.dart';
+import 'package:dart_spring_language_server/src/query_editor.dart';
+import 'package:dart_spring_language_server/src/schema.dart';
+import 'package:dart_spring_language_server/src/spel_editor.dart';
 import 'package:dart_spring_language_server/src/templates.dart';
 import 'package:dart_spring_language_server/src/test_properties.dart';
 import 'package:spring_core_dart/aop.dart' show ExpressionPointcut;
@@ -102,6 +109,31 @@ const _propertyMethods = {
   'getPropertyAs',
 };
 
+/// Types the container itself provides to an injection point.
+const _frameworkTypes = {
+  'ApplicationContext',
+  'ConfigurableApplicationContext',
+  'BeanFactory',
+  'ListableBeanFactory',
+  'ConfigurableListableBeanFactory',
+  'Environment',
+  'ConfigurableEnvironment',
+  'ApplicationEventPublisher',
+  'ResourceLoader',
+  'MessageSource',
+  'ApplicationArguments',
+};
+
+/// Annotations on a class that do not make it a bean in a dependency.
+const _plainAnnotations = {
+  'immutable',
+  'sealed',
+  'deprecated',
+  'visibleForTesting',
+  'Immutable',
+  'JsonSerializable',
+};
+
 /// Types that wrap the bean type at an injection point: for
 /// `List<Mailer>`, `ObjectProvider<Mailer>` or `Map<String, Mailer>`, the
 /// beans of `Mailer` (the last type argument) are meant.
@@ -149,7 +181,16 @@ final class SourceRange {
 /// with the source `dart_spring`.
 final class Problem {
   /// A warning, or with [error] an error, about [range].
-  const Problem(this.range, this.message, {this.error = false});
+  const Problem(
+    this.range,
+    this.message, {
+    this.error = false,
+    this.info = false,
+  });
+
+  /// Whether it is only a note (LSP severity 3), such as the hint to
+  /// generate the Spring metadata.
+  final bool info;
 
   /// The text to underline.
   final SourceRange range;
@@ -168,7 +209,8 @@ final class Problem {
 /// legend it announces at `initialize`: a token's type is an index into
 /// this list.
 ///
-/// The first nine are standard LSP types, which every theme colours.
+/// The first nine and `comment` are standard LSP types, which every theme
+/// colours.
 /// `closureParameter` is the server's own, for a closure's parameters where
 /// they are declared and used; it needs an editor rule to get a colour.
 const semanticTokenTypes = [
@@ -184,6 +226,8 @@ const semanticTokenTypes = [
   // A closure's parameter, where it is declared and where the closure's
   // body uses it (an editor rule gives it a colour of its own).
   'closureParameter',
+  // A comment in the SQL of a `@Query`.
+  'comment',
 ];
 
 /// One piece of text to colour: a SpEL keyword, a placeholder key, a
@@ -265,6 +309,21 @@ final class SpringWorkspace {
   Map<String, List<ClassInfo>>? _classes;
   DateTime _lastScan = DateTime.fromMillisecondsSinceEpoch(0);
 
+  /// The Spring metadata of the packages, read from
+  /// `lib/spring_gen/spring_metadata.json` and found through
+  /// `.dart_tool/package_config.json`; re-read when a file changes.
+  final metadata = MetadataStore();
+  final _schemas = <String, (int, int, Schema)>{};
+  Map<String, Set<String>>? _codeKeys;
+  var _generation = 0;
+  late final _spel = SpelEditor(this);
+
+  /// The entities and repositories of the data layer.
+  late final data = DataModel(this);
+  late final _query = QueryEditor(this);
+  late final _derived = DerivedQueryEditor(this);
+  late final _config = ConfigEditor(this);
+
   /// Sets the unsaved [text] of the document open at [path]; with `null`
   /// (the document was closed), the file on disk counts again.
   ///
@@ -284,6 +343,8 @@ final class SpringWorkspace {
       _files[path] = DartFile.parse(path, text);
     }
     _beans = null;
+    _codeKeys = null;
+    _generation++;
     _classes = null;
     _addedMessages = null;
   }
@@ -331,6 +392,7 @@ final class SpringWorkspace {
       return;
     }
     _lastScan = now;
+    metadata.refresh();
     final seenDart = <String>{};
     final seenProperties = <String>{};
     for (final root in roots) {
@@ -358,6 +420,8 @@ final class SpringWorkspace {
     _packageRoots.clear();
     if (changed || _beans == null) {
       _beans = null;
+      _codeKeys = null;
+      _generation++;
       _classes = null;
       _addedMessages = null;
     }
@@ -411,6 +475,8 @@ final class SpringWorkspace {
       _files.remove(file.path);
     }
     _beans = null;
+    _codeKeys = null;
+    _generation++;
     _classes = null;
     _addedMessages = null;
   }
@@ -472,6 +538,13 @@ final class SpringWorkspace {
     return _classes = index;
   }
 
+  /// The classes of the workspace called [name] (top-level, by simple name).
+  List<ClassInfo> classesNamed(String name) =>
+      _classIndex[name] ?? const <ClassInfo>[];
+
+  /// Every top-level class of the workspace.
+  Iterable<ClassInfo> get allClasses => _classIndex.values.expand((c) => c);
+
   /// Every type name that a class called [name] can be used as: itself and
   /// its supertypes (`extends`, `implements`, `with`), followed through the
   /// classes of the workspace by simple name. A type from a dependency ends
@@ -516,6 +589,24 @@ final class SpringWorkspace {
             .where((a) => stereotypes.contains(annotationName(a)))
             .firstOrNull;
         if (stereotype == null) {
+          // A Spring Data repository (`implements DataRepository<Book, int>`)
+          // is a bean the data starter makes; it carries no annotation.
+          if (data.entityOf(info.declaration, file.path) != null) {
+            result.add(
+              BeanInfo(
+                name: defaultBeanName(info.name),
+                typeName: info.name,
+                kind: BeanKind.component,
+                path: file.path,
+                offset: info.nameOffset,
+                length: info.name.length,
+                qualifiers: _qualifiers(info.annotations),
+                primary: info.annotationNames.contains('Primary'),
+                profiles: _profiles(info.annotations),
+                backsOff: _backsOff(info.annotations),
+              ),
+            );
+          }
           continue;
         }
         final explicit = _unnamed(stereotype)
@@ -534,6 +625,7 @@ final class SpringWorkspace {
             primary: info.annotationNames.contains('Primary'),
             profiles: _profiles(info.annotations),
             contextGetter: _contextGetter(info.annotations, name),
+            backsOff: _backsOff(info.annotations),
           ),
         );
         for (final member in info.declaration.body.members) {
@@ -563,6 +655,7 @@ final class SpringWorkspace {
                 (a) => annotationName(a) == 'Primary',
               ),
               profiles: _profiles(member.metadata),
+              backsOff: _backsOff(member.metadata),
               owner: info.name,
               contextGetter: _contextGetter(member.metadata, name),
             ),
@@ -570,10 +663,81 @@ final class SpringWorkspace {
         }
       }
     }
-    for (final bean in result) {
-      bean.providedTypes = supertypesOf(bean.typeName);
-    }
+    _mergeMetadataBeans(result);
     return result;
+  }
+
+  // The beans of the metadata (dependencies' auto-configuration, the
+  // package's own at the last build) join the beans found in the source. A
+  // bean declared in a file of the workspace is taken from the source, the
+  // live truth; the metadata then only adds the supertypes and the members
+  // SpEL can reach.
+  void _mergeMetadataBeans(List<BeanInfo> result) {
+    final seen = <SpringMetadata>{};
+    final roots = {for (final path in _files.keys) _packageRoot(path)};
+    final fromMetadata = <BeanInfo>[];
+    for (final root in roots) {
+      final view = metadata.viewFor(root);
+      for (final meta in view.metadata) {
+        if (!seen.add(meta)) {
+          continue;
+        }
+        for (final bean in meta.beans) {
+          final path = view.resolve(bean.source);
+          final local = result.where((b) => b.name == bean.name).firstOrNull;
+          if (local != null) {
+            local
+              ..members = bean.members
+              ..extraTypes = bean.types;
+            continue;
+          }
+          final declared = path == null ? null : _files[path];
+          final klass = declared?.classes
+              .where((c) => c.name == bean.type)
+              .firstOrNull;
+          // Removed from the source since the last build: the class is gone
+          // from the whole workspace. A bean declared elsewhere than its
+          // class (a `BeanDefinition` or `@Bean` in a configuration file)
+          // is kept.
+          if (declared != null &&
+              klass == null &&
+              !_classIndex.containsKey(bean.type)) {
+            continue;
+          }
+          fromMetadata.add(
+            BeanInfo(
+              name: bean.name,
+              typeName: bean.type,
+              kind: BeanKind.component,
+              path: path ?? '',
+              offset: klass?.nameOffset ?? 0,
+              length: klass?.name.length ?? 0,
+              qualifiers: bean.qualifiers.toSet(),
+              primary: bean.primary,
+              profiles: bean.profiles,
+              // A class of the workspace is found in the live source.
+              line: klass != null || bean.line == null ? null : bean.line! - 1,
+              members: bean.members,
+              fromMetadata: true,
+              scope: bean.scope,
+              origin: bean.source,
+              backsOff: bean.conditions.any(
+                (c) =>
+                    c.startsWith('@ConditionalOnMissingBean') ||
+                    c.startsWith('@Fallback'),
+              ),
+            )..extraTypes = bean.types,
+          );
+        }
+      }
+    }
+    result.addAll(fromMetadata);
+    for (final bean in result) {
+      bean.providedTypes = {
+        ...supertypesOf(bean.typeName),
+        ...bean.extraTypes,
+      };
+    }
   }
 
   // The `BuildContext` getter `@BuildContextAccess` generates: its `name:`,
@@ -596,6 +760,13 @@ final class SpringWorkspace {
         ?stringValue(positionalArgument(annotation)),
   };
 
+  static bool _backsOff(List<Annotation> annotations) => annotations.any(
+    (a) => const {
+      'Fallback',
+      'ConditionalOnMissingBean',
+    }.contains(annotationName(a)),
+  );
+
   static List<String> _profiles(List<Annotation> annotations) => [
     for (final annotation in annotations)
       if (annotationName(annotation) == 'Profile')
@@ -605,14 +776,80 @@ final class SpringWorkspace {
   /// The beans that can be injected where [type] is asked for, `@Primary`
   /// ones first: what go to definition on an injection point lists. With
   /// [qualifier], only the beans whose name, alias or `@Qualifier` it is.
-  List<BeanInfo> beansOfType(String type, {String? qualifier}) {
+  ///
+  /// With [from] (a file), only the beans that package can see: its own and
+  /// those of its dependencies. A workspace holds many packages, and their
+  /// tests and examples often declare beans of the same type.
+  List<BeanInfo> beansOfType(String type, {String? qualifier, String? from}) {
+    final visible = from == null ? null : _visibleRoots(from);
     final candidates = [
       for (final bean in beans)
         if (bean.providedTypes.contains(type))
-          if (qualifier == null || bean.matches(qualifier)) bean,
+          if (qualifier == null || bean.matches(qualifier))
+            if (visible == null || _isVisible(bean, visible)) bean,
     ]..sort((a, b) => (b.primary ? 1 : 0) - (a.primary ? 1 : 0));
     return candidates;
   }
+
+  // The package roots a file sees: its package and its dependencies.
+  ({Set<String> roots, Set<String> packages}) _visibleRoots(String path) {
+    final root = _packageRoot(path);
+    final view = metadata.viewFor(root);
+    return (
+      roots: {root, ...view.packageRoots.values},
+      packages: view.packageRoots.keys.toSet(),
+    );
+  }
+
+  bool _isVisible(
+    BeanInfo bean,
+    ({Set<String> roots, Set<String> packages}) visible,
+  ) {
+    if (bean.path.isNotEmpty) {
+      // The bean's own package, not just a folder above it: a package
+      // nested in another (an example inside a starter) has its own root.
+      final own = _ownPackage(bean.path);
+      return own == null || visible.roots.any((root) => _realPath(root) == own);
+    }
+    final origin = bean.origin;
+    if (origin == null || !origin.startsWith('package:')) {
+      return true;
+    }
+    final name = origin.substring('package:'.length).split('/').first;
+    return visible.packages.contains(name);
+  }
+
+  // The folder of the nearest pubspec.yaml above [path], symlinks resolved;
+  // `null` when there is none.
+  String? _ownPackage(String path) =>
+      _ownPackages[File(path).parent.path] ??= () {
+        var current = Directory(File(path).parent.path);
+        while (true) {
+          if (File('${current.path}/pubspec.yaml').existsSync()) {
+            return _realPath(current.path);
+          }
+          if (current.parent.path == current.path) {
+            return null;
+          }
+          current = current.parent;
+        }
+      }();
+  final _ownPackages = <String, String?>{};
+
+  static String _realPath(String path) {
+    final trimmed = path.endsWith('/') && path.length > 1
+        ? path.substring(0, path.length - 1)
+        : path;
+    try {
+      return Directory(trimmed).resolveSymbolicLinksSync();
+    } on FileSystemException {
+      return trimmed;
+    }
+  }
+
+  // The file whose package decides which beans are visible, while a hover,
+  // a definition or a check of that file runs.
+  String? _scope;
 
   /// The beans that answer to [name], by bean name, by
   /// `@Bean(aliases: ...)` or by `@Qualifier`.
@@ -775,7 +1012,7 @@ final class SpringWorkspace {
         if (entry.key == 'spring.messages.common-messages') {
           for (final name in entry.value.split(',')) {
             final trimmed = name.trim().replaceFirst(
-              RegExp('^(?:resources|classpath):'),
+              RegExp('^resources:'),
               '',
             );
             if (trimmed.isNotEmpty) {
@@ -796,7 +1033,7 @@ final class SpringWorkspace {
           final names = basenames.putIfAbsent(_packageRoot(path), () => {});
           for (final name in entry.value.split(',')) {
             final trimmed = name.trim().replaceFirst(
-              RegExp('^(?:resources|classpath):'),
+              RegExp('^resources:'),
               '',
             );
             if (trimmed.isNotEmpty) {
@@ -866,13 +1103,28 @@ final class SpringWorkspace {
   /// when there is nothing Spring-specific at [offset]; the Dart analysis
   /// server answers for the rest.
   List<SourceRange> definition(String path, int offset) {
+    if (isConfigFile(path)) {
+      final text = textOf(path);
+      return text == null ? const [] : _config.definition(path, text, offset);
+    }
     final file = this.file(path);
     if (file == null) {
       return const [];
     }
+    // `@Query` texts and derived query names of repositories.
+    if (_query.definition(file, path, offset) case final found?) {
+      return found;
+    }
+    if (_derived.definition(file, path, offset) case final found?
+        when found.isNotEmpty) {
+      return found;
+    }
     final target = _targetAt(file, offset);
     return switch (target) {
-      _BeanTarget(:final beans) => [for (final bean in beans) _beanRange(bean)],
+      _BeanTarget(:final beans) => [
+        for (final bean in beans)
+          if (bean.path.isNotEmpty) _beanRange(bean),
+      ],
       _PropertyTarget(:final entries) => [
         for (final entry in entries)
           SourceRange(
@@ -895,8 +1147,25 @@ final class SpringWorkspace {
               declaration.offset + declaration.length,
             ),
       ],
+      _TextTarget() => const [],
       null => const [],
     };
+  }
+
+  // The default of the `${key:default}` around [offset] in [text], or
+  // `null` when the placeholder has none.
+  static String? _placeholderDefault(String? text, int offset) {
+    if (text == null) {
+      return null;
+    }
+    final start = text.lastIndexOf(r'${', offset);
+    final end = start < 0 ? -1 : text.indexOf('}', offset);
+    if (start < 0 || end < 0) {
+      return null;
+    }
+    final inner = text.substring(start + 2, end);
+    final colon = inner.indexOf(':');
+    return colon < 0 ? null : inner.substring(colon + 1);
   }
 
   /// Markdown for a hover at [offset] of the Dart file [path], about the same
@@ -906,9 +1175,19 @@ final class SpringWorkspace {
   /// When nothing is found it says so (and, for a location, where it looked).
   /// `null` when [offset] is not on such a target.
   String? hover(String path, int offset) {
+    if (isConfigFile(path)) {
+      final text = textOf(path);
+      return text == null ? null : _config.hover(path, text, offset);
+    }
     final file = this.file(path);
     if (file == null) {
       return null;
+    }
+    if (_query.hover(file, path, offset) case final text?) {
+      return text;
+    }
+    if (_derived.hover(file, path, offset) case final text?) {
+      return text;
     }
     final target = _targetAt(file, offset);
     switch (target) {
@@ -920,13 +1199,18 @@ final class SpringWorkspace {
           '**$description**',
           '',
           for (final bean in beans)
-            '- ${bean.summary} — `${_shortPath(bean.path)}`',
+            '- ${bean.summary} — `${bean.origin ?? _shortPath(bean.path)}`',
         ].join('\n');
       case _PropertyTarget(:final key, :final entries, :final message):
         if (entries.isEmpty) {
-          return message
-              ? '**`$key`**: no such message in the message bundles'
-              : '**`$key`**: not defined in any properties file';
+          if (message) {
+            return '**`$key`**: no such message in the message bundles';
+          }
+          final fallback = _placeholderDefault(textOf(path), offset);
+          return fallback == null
+              ? '**`$key`**: not defined in any properties file'
+              : '**`$key`**: not defined in any properties file; '
+                    'the default after the colon is used: `$fallback`';
         }
         return [
           if (message) '**`$key`** (message)' else '**`$key`**',
@@ -957,12 +1241,17 @@ final class SpringWorkspace {
           '',
           for (final file in files) '- `${_shortPath(file)}`',
         ].join('\n');
+      case _TextTarget(:final text):
+        return text;
       case null:
         return null;
     }
   }
 
   SourceRange _beanRange(BeanInfo bean) {
+    if (bean.line case final line?) {
+      return SourceRange(bean.path, line, 0, line, 0);
+    }
     final file = this.file(bean.path);
     if (file == null) {
       return SourceRange(bean.path, 0, 0, 0, 0);
@@ -994,6 +1283,7 @@ final class SpringWorkspace {
   }
 
   _Target? _targetAt(DartFile file, int offset) {
+    _scope = file.path;
     final node = file.nodeAt(offset);
     if (node == null) {
       return null;
@@ -1048,7 +1338,10 @@ final class SpringWorkspace {
     final description = qualifier == null
         ? 'Beans of type $type'
         : "Beans of type $type qualified '$qualifier'";
-    return _BeanTarget(beansOfType(type, qualifier: qualifier), description);
+    return _BeanTarget(
+      beansOfType(type, qualifier: qualifier, from: _scope),
+      description,
+    );
   }
 
   _StringRef _stringRef(SimpleStringLiteral literal) {
@@ -1301,7 +1594,7 @@ final class SpringWorkspace {
       const [];
 
   static final _resourceLocation = RegExp(
-    r'^(?:optional:)?((?:resources|classpath)\*?|file|asset):(.+)$',
+    r'^(?:optional:)?(resources\*?|file|asset):(.+)$',
   );
 
   // `resources:legacy.properties` (in `@PropertySource`, `@Value`,
@@ -1351,6 +1644,9 @@ final class SpringWorkspace {
 
   final _packageRoots = <String, String>{};
 
+  /// The root directory of the package of the file [path].
+  String packageRootOf(String path) => _packageRoot(path);
+
   // The nearest directory with a pubspec.yaml (else the workspace root).
   String _packageRoot(String path) {
     final directory = File(path).parent.path;
@@ -1375,6 +1671,9 @@ final class SpringWorkspace {
   _Target? _expressionTarget(String source, TemplatePart part, int relative) {
     final expression = source.substring(part.innerStart, part.innerEnd);
     final at = relative - part.innerStart;
+    if (_spel.hover(expression, at, beanPart: false) case final member?) {
+      return _TextTarget(member);
+    }
     final List<Token> tokens;
     try {
       tokens = Tokenizer(expression).process();
@@ -1426,7 +1725,7 @@ final class SpringWorkspace {
       return _beanTargetFor(beanType, null);
     }
     if (_widgetRecordField(type) case (final owner, final fieldName)) {
-      final beans = beansOfType(beanType);
+      final beans = beansOfType(beanType, from: _scope);
       // A named field picks among several beans by its name.
       final named = [
         if (fieldName != null && beans.length > 1)
@@ -1573,6 +1872,553 @@ final class SpringWorkspace {
   }
 
   // ---------------------------------------------------------------------
+  // Metadata, config files and completion
+  // ---------------------------------------------------------------------
+
+  /// The Spring metadata that applies to the file [path]: its package's and
+  /// those of all the dependencies.
+  MetadataView metadataFor(String path) => metadata.viewFor(_packageRoot(path));
+
+  /// The known keys for the package of [path]: the properties, hints and
+  /// theme of the metadata, plus keys some code of the package reads.
+  Schema schemaFor(String path) {
+    final root = _packageRoot(path);
+    final view = metadata.viewFor(root);
+    final cached = _schemas[root];
+    if (cached != null &&
+        cached.$1 == view.version &&
+        cached.$2 == _generation) {
+      return cached.$3;
+    }
+    final schema = Schema.build(
+      view,
+      codeKeys: (_codeKeys ??= _collectCodeKeys())[root] ?? const {},
+    );
+    _schemas[root] = (view.version, _generation, schema);
+    return schema;
+  }
+
+  // The keys the code of each package reads: `${key}` in annotation
+  // strings, `@ConditionalOnProperty('key')`, `getProperty('key')`. They
+  // are known to the editor for completion and hovers, but never make a
+  // key "unknown" or "known" for the checks: only the metadata does.
+  Map<String, Set<String>> _collectCodeKeys() {
+    final result = <String, Set<String>>{};
+    for (final file in _files.values) {
+      final root = _packageRoot(file.path);
+      final strings = <SimpleStringLiteral>[];
+      file.unit.accept(_StringCollector(strings));
+      void add(String key) {
+        if (RegExp(r'^[A-Za-z][\w.\-]*$').hasMatch(key)) {
+          (result[root] ??= {}).add(key);
+        }
+      }
+
+      for (final literal in strings) {
+        final ref = _stringRef(literal);
+        final value = literal.value;
+        if (ref.annotation == 'ConditionalOnProperty' ||
+            ref.annotation == 'ConditionalOnBooleanProperty' ||
+            ref.method != null && _propertyMethods.contains(ref.method)) {
+          add(value);
+        } else if (ref.annotation != null && value.contains(r'${')) {
+          for (final part in scanTemplate(value)) {
+            if (part.kind == TemplatePartKind.placeholder && !part.unclosed) {
+              add(part.inner(value));
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  /// The entries of the config files that apply to [path]: those of its own
+  /// package, and those of the dependencies' `lib/resources` (their themes
+  /// are what `$` references may point into).
+  List<PropertyEntry> configEntries(String path) {
+    final package = _packageRoot(path);
+    final view = metadata.viewFor(package);
+    final seen = <String>{};
+    final result = <PropertyEntry>[];
+    for (final MapEntry(key: file, value: entries) in _properties.entries) {
+      if (_packageRoot(file) == package) {
+        seen.add(file);
+        result.addAll(entries);
+      }
+    }
+    for (final root in view.packageRoots.values) {
+      if (root == package) {
+        continue;
+      }
+      for (final entry in _dependencyConfig(root)) {
+        if (!seen.contains(entry.path) || _properties[entry.path] == null) {
+          result.add(entry);
+        }
+      }
+    }
+    return result;
+  }
+
+  final _dependencyFiles = <String, (DateTime, List<PropertyEntry>)>{};
+
+  // The config files under `lib/resources` of a dependency, re-listed at
+  // most every few seconds.
+  List<PropertyEntry> _dependencyConfig(String root) {
+    final cached = _dependencyFiles[root];
+    final now = DateTime.now();
+    if (cached != null && now.difference(cached.$1).inSeconds < 5) {
+      return cached.$2;
+    }
+    final entries = <PropertyEntry>[];
+    final directory = Directory('$root/lib/resources');
+    if (directory.existsSync()) {
+      try {
+        for (final entity in directory.listSync(recursive: true)) {
+          if (entity is! File || !isConfigFile(entity.path)) {
+            continue;
+          }
+          if (_properties[entity.path] case final known?) {
+            entries.addAll(known);
+            continue;
+          }
+          final text = entity.readAsStringSync();
+          entries.addAll(
+            _isYaml(entity.path)
+                ? parseYamlProperties(entity.path, text)
+                : parseProperties(entity.path, text),
+          );
+        }
+      } on FileSystemException {
+        // A directory being rewritten: next time.
+      }
+    }
+    _dependencyFiles[root] = (now, entries);
+    return entries;
+  }
+
+  /// Every key a config file of [path]'s package may set, for `${}`
+  /// completion: the properties of the metadata and the keys in use.
+  List<String> knownKeys(String path) {
+    final keys = <String>{};
+    void walk(SchemaNode node, List<String> prefix) {
+      for (final child in node.named) {
+        final next = [...prefix, child.name];
+        if (child.prop != null && !child.prop!.theme) {
+          keys.add(next.join('.'));
+        }
+        walk(child, next);
+      }
+    }
+
+    walk(schemaFor(path).root, const []);
+    for (final entry in configEntries(path)) {
+      if (!entry.key.startsWith('spring.flutter.theme')) {
+        keys.add(entry.key);
+      }
+    }
+    return keys.toList()..sort();
+  }
+
+  /// The profile names known to the package of [path]: those the metadata
+  /// lists, the `application-<name>` files and the profiles the config
+  /// activates.
+  Set<String> knownProfiles(String path) {
+    final package = _packageRoot(path);
+    final result = {...metadataFor(path).profiles};
+    for (final file in _properties.keys) {
+      if (_packageRoot(file) != package) {
+        continue;
+      }
+      final match = RegExp(
+        r'^application-(.+)\.(?:properties|ya?ml)$',
+      ).firstMatch(file.split(RegExp(r'[\\/]')).last);
+      if (match != null) {
+        result.add(match.group(1)!);
+      }
+    }
+    for (final entry in configEntries(path)) {
+      if (const {
+        'spring.profiles.active',
+        'spring.profiles.include',
+        'spring.config.activate.on-profile',
+      }.contains(entry.key)) {
+        if (entry.value.contains(r'${')) {
+          continue;
+        }
+        // `a, b` or an expression such as `!web & (mobile | spa)`.
+        for (final match in RegExp(
+          r'[A-Za-z0-9_][\w\-.]*',
+        ).allMatches(entry.value)) {
+          result.add(match.group(0)!);
+        }
+      }
+    }
+    return result;
+  }
+
+  /// SpEL problems of the beans and members in [expression] (offsets inside
+  /// it); [path] says which package's metadata counts.
+  List<SpelIssue> spelIssues(String path, String expression) {
+    try {
+      SpelExpressionParser().parseExpression(expression);
+    } on SpelParseException catch (error) {
+      final at = error.position < 0 ? 0 : error.position;
+      return [
+        SpelIssue(
+          at.clamp(0, expression.length),
+          (at + 1).clamp(0, expression.length),
+          'SpEL: ${error.message}',
+        ),
+      ];
+    } on Object {
+      return const []; // tokenizer errors: the parser reports them
+    }
+    return _spel.issues(expression, complete: metadataFor(path).complete);
+  }
+
+  /// The hover of the bean or member at [at] of [expression].
+  String? spelHover(String path, String expression, int at) =>
+      _spel.hover(expression, at);
+
+  /// Where the bean at [at] of [expression] is declared.
+  List<SourceRange> spelDefinition(String path, String expression, int at) => [
+    for (final bean in _spel.definition(expression, at))
+      if (bean.path.isNotEmpty) _beanRange(bean),
+  ];
+
+  /// SpEL completion for the text [prefix] of an expression before the
+  /// cursor: the offset in it where the replaced word starts, and the items.
+  (int, List<Completion>)? spelComplete(String path, String prefix) =>
+      _spel.complete(prefix);
+
+  /// The text of the file at [path]: the open document's, else the file on
+  /// disk; `null` when it cannot be read.
+  String? textOf(String path) {
+    if (path.endsWith('.dart')) {
+      return file(path)?.text;
+    }
+    if (_configOverlays[path] case final open?) {
+      return open;
+    }
+    try {
+      return File(path).readAsStringSync();
+    } on FileSystemException {
+      return null;
+    }
+  }
+
+  /// Completion proposals at [offset] of the file [path] (a Dart file or a
+  /// config file); `null` when there is nothing to propose.
+  CompletionResult? completion(String path, int offset) {
+    if (isConfigFile(path)) {
+      final text = textOf(path);
+      return text == null ? null : _config.completion(path, text, offset);
+    }
+    return _dartCompletion(path, offset);
+  }
+
+  // Inside an annotation string: `${key}`, `#{@bean.member}`, profile names,
+  // bean names and property keys.
+  CompletionResult? _dartCompletion(String path, int offset) {
+    final file = this.file(path);
+    if (file != null) {
+      if (_query.completion(file, path, offset) case final result?) {
+        return result;
+      }
+    }
+    final node = file?.nodeAt(offset);
+    if (file == null ||
+        node is! SimpleStringLiteral ||
+        offset < node.contentsOffset ||
+        offset > node.contentsEnd) {
+      return null;
+    }
+    final ref = _stringRef(node);
+    final before = file.text.substring(ref.contentStart, offset);
+    if (before.contains('\n')) {
+      return null;
+    }
+    SourceRange rangeFrom(int start) {
+      final from = file.lineInfo.getLocation(start);
+      final to = file.lineInfo.getLocation(offset);
+      return SourceRange(
+        path,
+        from.lineNumber - 1,
+        from.columnNumber - 1,
+        to.lineNumber - 1,
+        to.columnNumber - 1,
+      );
+    }
+
+    final placeholder = RegExp(r'\$\{([^}:]*)$').firstMatch(before);
+    if (placeholder != null && ref.annotation != null) {
+      return CompletionResult(
+        rangeFrom(offset - placeholder.group(1)!.length),
+        [
+          for (final key in knownKeys(path))
+            Completion(key, detail: 'property'),
+        ],
+      );
+    }
+    final spel = RegExp(r'#\{([^}]*)$').firstMatch(before);
+    if (spel != null && ref.annotation != null) {
+      final result = spelComplete(path, spel.group(1)!);
+      return result == null
+          ? null
+          : CompletionResult(
+              rangeFrom(ref.contentStart + spel.start + 2 + result.$1),
+              result.$2,
+            );
+    }
+    final word = RegExp(r'[\w.\-]*$').firstMatch(before)!;
+    final from = rangeFrom(offset - word.group(0)!.length);
+    switch (ref.annotation) {
+      case 'Profile':
+        return CompletionResult(from, [
+          for (final name in knownProfiles(path).toList()..sort())
+            Completion(name, kind: 20, detail: 'profile'),
+        ]);
+      case 'Qualifier' || 'DependsOn' || 'ConditionalOnBean':
+        return CompletionResult(from, [
+          for (final bean in beans)
+            Completion(bean.name, kind: 6, detail: bean.typeName),
+        ]);
+      case 'ConditionalOnProperty' || 'ConditionalOnBooleanProperty':
+        return CompletionResult(from, [
+          for (final key in knownKeys(path))
+            Completion(key, detail: 'property'),
+        ]);
+    }
+    return null;
+  }
+
+  /// Notes about Spring metadata that is missing for the package of [path]
+  /// (its own, or a dependency's): one information line at the top of the
+  /// file telling to run `build_runner`. Empty when nothing is missing or
+  /// the file is not part of a Spring package.
+  List<Problem> metadataNotes(String path) {
+    if (!path.endsWith('.dart') && !isConfigFile(path)) {
+      return const [];
+    }
+    final view = metadataFor(path);
+    final name = view.packageName;
+    if (name == null || view.packageRoot == null) {
+      return const [];
+    }
+    final range = SourceRange(path, 0, 0, 0, 1);
+    if (view.missing.contains(name)) {
+      return [
+        Problem(
+          range,
+          'No Spring metadata for $name: run build_runner '
+          '(`dart run build_runner build`) to get completion, hovers and '
+          'checks for keys, beans and the theme',
+          info: true,
+        ),
+      ];
+    }
+    if (view.missing.isNotEmpty) {
+      return [
+        Problem(
+          range,
+          'No Spring metadata in ${view.missing.join(', ')}: their keys and '
+          'beans are not known here (they need a version with '
+          '`lib/spring_gen/spring_metadata.json`)',
+          info: true,
+        ),
+      ];
+    }
+    return const [];
+  }
+
+  List<Problem> _configProblems(String path) {
+    final text = textOf(path);
+    return text == null ? const [] : _config.problems(path, text);
+  }
+
+  // `@Profile('x')`: a name that no metadata, profile file or setting knows.
+  // Only checked when the package has metadata of its own, else the name
+  // may be declared where the editor cannot see.
+  void _profileProblems(DartFile file, List<Problem> problems) {
+    if (!metadata.hasMetadata(_packageRoot(file.path))) {
+      return;
+    }
+    final strings = <SimpleStringLiteral>[];
+    file.unit.accept(_StringCollector(strings));
+    Set<String>? known;
+    for (final literal in strings) {
+      final ref = _stringRef(literal);
+      if (ref.annotation != 'Profile') {
+        continue;
+      }
+      known ??= {...knownProfiles(file.path), 'default'};
+      final source = file.text.substring(ref.contentStart, ref.contentEnd);
+      for (final match in RegExp(r'[A-Za-z0-9_][\w\-.]*').allMatches(source)) {
+        final name = match.group(0)!;
+        if (known.contains(name)) {
+          continue;
+        }
+        final guess = didYouMean(name, known.toList());
+        problems.add(
+          Problem(
+            rangeOf(
+              file,
+              ref.contentStart + match.start,
+              ref.contentStart + match.end,
+            ),
+            "Unknown profile '$name': no application-$name file and the "
+            'metadata does not list it (known: '
+            "${(known.toList()..sort()).join(', ')})"
+            "${guess == null ? '' : ". Did you mean '$guess'?"}",
+          ),
+        );
+      }
+    }
+  }
+
+  // The candidates that compete: those that back off when another bean of
+  // the type exists do not (unless all of them do), nor do beans of one
+  // name (the later one replaces the earlier), nor beans whose profiles can
+  // never be active together.
+  static String _withProfiles(BeanInfo b) => b.profiles.isEmpty
+      ? b.name
+      : '${b.name} (profile ${b.profiles.join(', ')})';
+
+  static List<BeanInfo> _ambiguous(List<BeanInfo> candidates) {
+    final firm = [
+      for (final bean in candidates)
+        if (!bean.backsOff) bean,
+    ];
+    final pool = firm.isEmpty ? candidates : firm;
+    if ({for (final bean in pool) bean.name}.length < 2) {
+      return const [];
+    }
+    // Each limited to its own profile (`dev`, `prod`): alternatives, as
+    // profiles are used in practice.
+    final plain = RegExp(r'^[A-Za-z0-9_][\w\-.]*$');
+    final alternatives = [
+      for (final bean in pool)
+        if (bean.profiles.length == 1 && plain.hasMatch(bean.profiles.single))
+          bean.profiles.single,
+    ];
+    if (alternatives.length == pool.length &&
+        alternatives.toSet().length == pool.length) {
+      return const [];
+    }
+    final names = <String>{
+      for (final bean in pool)
+        for (final expression in bean.profiles)
+          ...RegExp(r'[A-Za-z0-9_][\w\-.]*')
+              .allMatches(expression)
+              .map((m) => m.group(0)!),
+    }.toList();
+    if (names.length > 12) {
+      return pool;
+    }
+    for (var mask = 0; mask < 1 << names.length; mask++) {
+      final active = {
+        for (var i = 0; i < names.length; i++)
+          if (mask & (1 << i) != 0) names[i],
+      };
+      final together = [
+        for (final bean in pool)
+          if (profilesActive(bean.profiles, active)) bean,
+      ];
+      if ({for (final bean in together) bean.name}.length > 1) {
+        return together;
+      }
+    }
+    return const [];
+  }
+
+  // Constructor, `@Bean` and `@Autowired` parameters of beans: no bean of
+  // the type is an error, several without `@Primary` or `@Qualifier` a
+  // warning. All profiles are considered, since the active ones are only
+  // known at run time; the message says so and shows each bean's profile.
+  void _injectionProblems(DartFile file, List<Problem> problems) {
+    final collector = _ParameterCollector();
+    file.unit.accept(collector);
+    final view = metadataFor(file.path);
+    for (final parameter in collector.parameters) {
+      if (parameter.defaultClause != null) {
+        continue;
+      }
+      if (!_isInjectedParameter(parameter) ||
+          _hasAnnotation(parameter.metadata, 'Value')) {
+        continue;
+      }
+      final type = switch (parameter) {
+        FieldFormalParameter() => _fieldType(parameter),
+        _ => parameter.type is NamedType ? parameter.type! as NamedType : null,
+      };
+      if (type == null || type.question != null) {
+        continue;
+      }
+      final name = type.name.lexeme;
+      if (_containers.contains(name) ||
+          _frameworkTypes.contains(name) ||
+          !_classIndex.containsKey(name) ||
+          _classIndex[name]!.any(
+            (info) => info.annotationNames.any(
+              (annotation) => !_plainAnnotations.contains(annotation),
+            ),
+          )) {
+        // Not a plain type of the project: the framework provides it, or an
+        // annotation of a dependency (a repository, a client) makes it a
+        // bean the editor cannot see in the source.
+        continue;
+      }
+      final qualifier = _qualifierOf(parameter.metadata);
+      final candidates = beansOfType(
+        name,
+        qualifier: qualifier,
+        from: file.path,
+      );
+      final token = parameter.name;
+      final range = token != null
+          ? rangeOf(file, token.offset, token.end)
+          : rangeOf(file, type.offset, type.end);
+      String considered() {
+        final profiles = knownProfiles(file.path).toList()..sort();
+        return profiles.isEmpty
+            ? 'all profiles considered'
+            : 'all profiles considered: ${profiles.join(', ')}';
+      }
+
+      if (candidates.isEmpty) {
+        problems.add(
+          Problem(
+            range,
+            'No bean of type $name'
+            "${qualifier == null ? '' : " with qualifier '$qualifier'"} "
+            '(${considered()})'
+            "${view.complete ? '' : '; dependencies without Spring metadata '
+                      'may provide it'}",
+            error: view.complete,
+          ),
+        );
+      } else if (_ambiguous(candidates).length > 1 &&
+          qualifier == null &&
+          !candidates.any((bean) => bean.primary) &&
+          !candidates.any(
+            (bean) => bean.matches(
+              parameter.name?.lexeme.replaceFirst(RegExp('^_+'), '') ?? '',
+            ),
+          )) {
+        problems.add(
+          Problem(
+            range,
+            'Several beans of type $name and none is @Primary: '
+            '${_ambiguous(candidates).map(_withProfiles).join(', ')}. '
+            'Mark one @Primary or add @Qualifier (${considered()})',
+          ),
+        );
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------
   // Highlighting and checks
   // ---------------------------------------------------------------------
 
@@ -1580,6 +2426,10 @@ final class SpringWorkspace {
     final strings = <SimpleStringLiteral>[];
     file.unit.accept(_StringCollector(strings));
     for (final literal in strings) {
+      // The SQL of a repository's `@Query` is read by the query editor.
+      if (_query.covers(file, literal.contentsOffset)) {
+        continue;
+      }
       final ref = _stringRef(literal);
       final value = literal.value;
       if (ref.annotation != null &&
@@ -1640,6 +2490,7 @@ final class SpringWorkspace {
         add,
       );
     }
+    _query.tokens(file, add);
     for (final ref in _pointcutStrings(file)) {
       final base = ref.contentStart;
       final source = file.text.substring(ref.contentStart, ref.contentEnd);
@@ -1795,6 +2646,14 @@ final class SpringWorkspace {
     _spelTokens(expression, base + part.innerStart, add);
   }
 
+  /// Calls [add] with the span (offsets from [offset]) and the token type of
+  /// each piece of the SpEL [expression].
+  void spelTokens(
+    String expression,
+    int offset,
+    void Function(int start, int end, String type) add,
+  ) => _spelTokens(expression, offset, add);
+
   // Tokens of the SpEL [expression] that starts at [offset] in the file.
   void _spelTokens(
     String expression,
@@ -1929,6 +2788,9 @@ final class SpringWorkspace {
   /// - an `asset:` location whose file is missing or not declared under
   ///   `flutter: assets:` in `pubspec.yaml` (warning).
   List<Problem> problems(String path) {
+    if (isConfigFile(path)) {
+      return _configProblems(path);
+    }
     final file = this.file(path);
     if (file == null) {
       return const [];
@@ -1993,6 +2855,7 @@ final class SpringWorkspace {
               key.isNotEmpty &&
               !_looksLikeEnvironmentVariable(key) &&
               !_targetIsNullable(ref.literal) &&
+              !declaredByMetadata(file.path, key) &&
               property(key, from: file).isEmpty) {
             problems.add(
               Problem(
@@ -2009,6 +2872,19 @@ final class SpringWorkspace {
         }
         try {
           SpelExpressionParser().parseExpression(expression);
+          for (final issue in spelIssues(file.path, expression)) {
+            problems.add(
+              Problem(
+                rangeOf(
+                  file,
+                  base + part.innerStart + issue.start,
+                  base + part.innerStart + issue.end,
+                ),
+                issue.message,
+                error: issue.error,
+              ),
+            );
+          }
         } on SpelParseException catch (error) {
           final position = error.position < 0 ? 0 : error.position;
           final at = base + part.innerStart + position;
@@ -2028,9 +2904,14 @@ final class SpringWorkspace {
         }
       }
     }
+    problems
+      ..addAll(_query.problems(file, path))
+      ..addAll(_derived.problems(file, path));
     _pointcutProblems(file, problems);
     _spelArgumentProblems(file, problems);
     _assetProblems(file, problems);
+    _profileProblems(file, problems);
+    _injectionProblems(file, problems);
     for (final problem in containerProblems(file)) {
       problems.add(
         Problem(
@@ -2225,6 +3106,14 @@ final class SpringWorkspace {
     return type?.question != null;
   }
 
+  // Whether the metadata declares the property [key] (so it is no typo,
+  // and it has a value from the class's initial value).
+  /// Whether the metadata of [path]'s package declares the property [key].
+  bool declaredByMetadata(String path, String key) {
+    final prop = schemaFor(path).nodeAt(splitKey(key))?.prop;
+    return prop != null && !prop.fromCode;
+  }
+
   static bool _looksLikeEnvironmentVariable(String key) =>
       RegExp(r'^[A-Z][A-Z0-9_]*$').hasMatch(key);
 }
@@ -2236,6 +3125,13 @@ final class _BeanTarget extends _Target {
 
   final List<BeanInfo> beans;
   final String description;
+}
+
+/// A hover text with nothing to go to (a member of a bean in SpEL).
+final class _TextTarget extends _Target {
+  _TextTarget(this.text);
+
+  final String text;
 }
 
 final class _PropertyTarget extends _Target {
@@ -2377,6 +3273,16 @@ final class _StringCollector extends RecursiveAstVisitor<void> {
 
   @override
   void visitSimpleStringLiteral(SimpleStringLiteral node) => strings.add(node);
+}
+
+final class _ParameterCollector extends RecursiveAstVisitor<void> {
+  final parameters = <FormalParameter>[];
+
+  @override
+  void visitFormalParameterList(FormalParameterList node) {
+    parameters.addAll(node.parameters);
+    super.visitFormalParameterList(node);
+  }
 }
 
 final class _InterpolationCollector extends RecursiveAstVisitor<void> {
@@ -2553,4 +3459,61 @@ final class _ClosureParameters extends RecursiveAstVisitor<void> {
     Label() => false,
     _ => true,
   };
+}
+
+/// Whether a bean limited by the profile expressions [expressions] (any one
+/// of them) is active when exactly the profiles [active] are: `dev`,
+/// `!web`, `a & b`, `a | (b & !c)`. No expressions: always.
+bool profilesActive(List<String> expressions, Set<String> active) {
+  if (expressions.isEmpty) {
+    return true;
+  }
+  return expressions.any((expression) => _evaluateProfile(expression, active));
+}
+
+bool _evaluateProfile(String expression, Set<String> active) {
+  final tokens = RegExp(
+    r'[A-Za-z0-9_][\w\-.]*|[!&|()]',
+  ).allMatches(expression).map((m) => m.group(0)!).toList();
+  var position = 0;
+  late bool Function() or;
+
+  bool atom() {
+    if (position >= tokens.length) {
+      return false;
+    }
+    final token = tokens[position++];
+    if (token == '!') {
+      return !atom();
+    }
+    if (token == '(') {
+      final value = or();
+      if (position < tokens.length && tokens[position] == ')') {
+        position++;
+      }
+      return value;
+    }
+    return active.contains(token);
+  }
+
+  bool and() {
+    var value = atom();
+    while (position < tokens.length && tokens[position] == '&') {
+      position++;
+      final right = atom();
+      value = value && right;
+    }
+    return value;
+  }
+
+  or = () {
+    var value = and();
+    while (position < tokens.length && tokens[position] == '|') {
+      position++;
+      final right = and();
+      value = value || right;
+    }
+    return value;
+  };
+  return or();
 }

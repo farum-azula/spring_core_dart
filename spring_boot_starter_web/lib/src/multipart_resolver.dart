@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/src/config/config.dart';
+import 'package:spring_boot_starter_web/src/config/web_properties.dart';
 import 'package:spring_boot_starter_web/src/multipart_store_stub.dart'
     if (dart.library.io) 'package:spring_boot_starter_web/src/multipart_store_io.dart'
     as store;
@@ -55,38 +57,24 @@ final class MultipartProperties {
     this.location,
   });
 
-  /// Reads `spring.web.multipart.*` from [environment]. Sizes take a
-  /// unit (`512KB`, `5MB`); `-1` means no limit.
-  factory MultipartProperties.of(PropertyResolver environment) {
-    String? text(String key) {
-      final value = environment
-          .getProperty('spring.web.multipart.$key')
-          ?.trim();
-      return value == null || value.isEmpty ? null : value;
-    }
+  /// Reads `spring.web.multipart.*` from [environment] (binding
+  /// [MultipartSettings]). Sizes take a unit (`512KB`, `5MB`); `-1` means
+  /// no limit.
+  factory MultipartProperties.of(PropertyResolver environment) =>
+      MultipartProperties.from(
+        bindWebSettings(environment, MultipartSettings(), 'multipartSettings'),
+      );
 
-    int size(String key, int fallback) => switch (text(key)) {
-      null => fallback,
-      '-1' => -1,
-      final value => DataSize.parse(value).toBytes(),
-    };
-
+  /// The settings of the bound [settings] (`spring.web.multipart.*`).
+  factory MultipartProperties.from(MultipartSettings settings) {
+    final location = settings.location?.trim();
     return MultipartProperties(
-      enabled: text('enabled')?.toLowerCase() != 'false',
-      maxFileSize: size('max-file-size', 1024 * 1024),
-      maxRequestSize: size('max-request-size', 10 * 1024 * 1024),
-      maxPartCount: switch (text('max-part-count')) {
-        null => 50,
-        final value =>
-          int.tryParse(value) ??
-              (throw ArgumentError.value(
-                value,
-                'spring.web.multipart.max-part-count',
-                'not a number',
-              )),
-      },
-      fileSizeThreshold: size('file-size-threshold', 0),
-      location: text('location'),
+      enabled: settings.enabled,
+      maxFileSize: settings.maxFileSize.toBytes(),
+      maxRequestSize: settings.maxRequestSize.toBytes(),
+      maxPartCount: settings.maxPartCount,
+      fileSizeThreshold: settings.fileSizeThreshold.toBytes(),
+      location: location == null || location.isEmpty ? null : location,
     );
   }
 

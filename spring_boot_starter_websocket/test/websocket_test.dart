@@ -9,6 +9,7 @@ import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart
 import 'package:test/test.dart';
 
 import 'chat.dart';
+import 'support/client_config.dart';
 
 // The properties of the client sockets, for the lines that would not fit.
 const _clientConfig = 'spring.websocket.client.config';
@@ -273,7 +274,7 @@ void main() {
     });
 
     test('read from reconnect.* properties', () {
-      final config = WebSocketClientConfig.of(
+      final config = configOf(
         StandardEnvironment()
           ..propertySources.addFirst(
             const MapPropertySource('test', {
@@ -583,7 +584,7 @@ void main() {
   });
 
   test('the configured url is used when the annotation has none', () {
-    final config = WebSocketClientConfig.of(
+    final config = configOf(
       StandardEnvironment()
         ..propertySources.addFirst(
           const MapPropertySource('test', {

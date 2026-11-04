@@ -1047,7 +1047,7 @@ class PropertySource {
 ///
 /// ```dart
 /// // lib/src/beans.dart: everything under lib/src/ is scanned.
-/// import 'package:my_feature/src/beans.spring.dart';
+/// import 'package:my_feature/spring_gen/src/beans.spring.dart';
 ///
 /// @ComponentScan()
 /// final BeanModule myFeatureBeans = $myFeatureBeans;

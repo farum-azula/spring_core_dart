@@ -1,6 +1,6 @@
 // Stock: copies leave with orders and come back with deliveries; every
 // change is a StockChanged event (published by Catalog.changeStock).
-import 'package:neon_books_server/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/catalog/catalog_service.dart';
 import 'package:neon_books_server/src/orders/order.dart';

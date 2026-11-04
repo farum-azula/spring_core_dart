@@ -14,9 +14,11 @@ import 'package:spring_core_dart_generator/src/bean_scanner.dart'
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
+import 'support/real_sources.dart';
+
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -525,10 +527,10 @@ Future<(String, List<String>)> _generate(String models) async {
     rootPackage: 'pkg',
     flattenOutput: true,
   );
-  await readerWriter.testing.loadIsolateSources();
+  final own = await loadRealSources(readerWriter, sources);
   final result = await testBuilder(
     SpringBuilder(),
-    sources,
+    own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     packageConfig: packageConfig,
@@ -537,10 +539,10 @@ Future<(String, List<String>)> _generate(String models) async {
   expect(result.errors, isEmpty);
   final output = result.readerWriter.testing.readString(result.outputs.single);
   final errors = await resolveSources<List<String>>(
-    {...sources, 'pkg|lib/src/beans.spring.dart': output},
+    {...sources, 'pkg|lib/spring_gen/src/beans.spring.dart': output},
     (resolver) async {
       final library = await resolver.libraryFor(
-        AssetId('pkg', 'lib/src/beans.spring.dart'),
+        AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
       final result = await library.session.getErrors(
         library.firstFragment.source.fullName,
@@ -552,7 +554,7 @@ Future<(String, List<String>)> _generate(String models) async {
       ];
     },
     rootPackage: 'pkg',
-    resolverFor: 'pkg|lib/src/beans.spring.dart',
+    resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
   return (_normalize(output), errors);

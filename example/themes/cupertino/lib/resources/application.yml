@@ -1,0 +1,249 @@
+# THEME SHOWCASE CUPERTINO: a CupertinoApp whose whole look is in this file
+# and in themes/*.yml. There is no CupertinoThemeData in the Dart code. The
+# pages show each part of the theme next to the YAML line that makes it
+# (their little grey code boxes quote this file; a test checks they do).
+#
+# Read it top to bottom:
+#   1. the app and the theme list                (this block)
+#   2. colors, references, color expressions     (colors, tokens.palette)
+#   3. typography, spacing, shapes               (typography, spacing, shape)
+#   4. the CupertinoThemeData                    (cupertino)
+#   5. tokens: groups, lists, durations, image   (tokens)
+#   6. styles for our own widgets                (styles)
+#   7. motion, animations, loaders, the splash   (motion, animations, loaders, splash)
+#   8. themes: light, dark, graphite, sunset
+spring:
+  config:
+    import: >-
+      resources:themes/graphite.yml, resources:themes/sunset.yml
+
+  flutter:
+    web:
+      # `flutter run -d chrome` serves the app on http://localhost:5080/.
+      port: 5080
+    app:
+      # A CupertinoApp: CupertinoPageScaffold, CupertinoTabScaffold and the
+      # other iOS widgets. Its theme is the `cupertino` block below.
+      type: cupertino
+      title: Theme Showcase Cupertino
+      debug-banner: false
+
+    theme:
+      # The theme shown at the start. `system` follows the device and picks
+      # system-light or system-dark.
+      # Names: light | dark | graphite | sunset
+      active: light
+      system-light: light
+      system-dark: dark
+
+      # ---------------------------------------------------------------- 2
+      # Everything below is the "root": it is the theme `light`, and every
+      # other theme starts from it (or from the theme it `extends`).
+
+      # The seed makes the palette roles nobody declared (see the Colors page).
+      seed-color: '#007AFF'
+      colors:
+        # The iOS system colors, light mode. Declared colors win over the
+        # palette made from the seed.
+        primary: '#007AFF'
+        on-primary: '#FFFFFF'
+        secondary: '#34C759'
+        on-secondary: '#FFFFFF'
+        tertiary: '#FF9500'
+        on-tertiary: '#FFFFFF'
+        error: '#FF3B30'
+        # The page (systemGroupedBackground) and the cards on it.
+        surface: '#F2F2F7'
+        on-surface: '#000000'
+        on-surface-variant: '#6C6C70'
+        surface-container-lowest: '#FFFFFF'
+        # The fill of a field or a segmented control.
+        surface-container-high: '#E9E9EB'
+        outline: '#C6C6C8'
+        # A reference to another color of this theme.
+        outline-variant: { color: $colors.outline, alpha: 50% }
+
+      # ---------------------------------------------------------------- 3
+      typography:
+        defaults: { letter-spacing: -0.2 }
+        body-large: { size: 17, height: 1.3 }
+        label-large: { size: 17, weight: 500 }
+        label-small: { size: 10, weight: 500 }
+        title-large: { size: 22, weight: bold }
+        display-small: { size: 34, weight: bold, letter-spacing: 0.4 }
+        code: { font-family: monospace, size: 13, letter-spacing: 0 }
+      spacing:
+        xs: 4
+        s: 8
+        m: 16
+        l: 24
+        xl: 32
+        gutter: 20
+      # iOS corner radii.
+      shape:
+        small: 8
+        medium: 10
+        large: 14
+        extra-large: 20
+
+      # ---------------------------------------------------------------- 4
+      # The CupertinoThemeData of the CupertinoApp. A color is a role of
+      # `colors` (or a hex value, or a reference with an expression).
+      cupertino:
+        primary-color: $colors.primary
+        primary-contrasting-color: $colors.on-primary
+        scaffold-background-color: $colors.surface
+        # A bar that lets the page show through, like iOS's.
+        bar-background-color: { color: $colors.surface, alpha: 80% }
+        selection-handle-color: $colors.tertiary
+        # Text styles: from `typography` when not written here.
+        text-theme:
+          # The actions and links of the text styles use the primary color.
+          primary-color: $colors.primary
+          nav-title-text-style: { size: 17, weight: 600 }
+          picker-text-style: { size: 21 }
+          date-time-picker-text-style: { size: 21 }
+
+      # ---------------------------------------------------------------- 5
+      # Tokens: values of our own. Groups nest, lists and durations work.
+      tokens:
+        brand:
+          name: Light
+          tagline: The iOS look, written in YAML
+          accent: $colors.primary
+          # A token with a `source` is an image (see the Images page).
+          badge: { source: assets/images/badge.png }
+        palette:
+          # Color expressions: alpha, mix, and a reference to a reference.
+          soft: { color: $colors.primary, alpha: 12% }
+          hover: { color: $colors.primary, mix: { with: white, amount: 20% } }
+          deep: { color: $palette.hover, mix: { with: black, amount: 30% } }
+          # A role nobody declared, by reference: the palette makes it.
+          container: $colors.surface-container
+          edge: $colors.outline
+        corner:
+          # The shape scale by reference.
+          tiny: $shape.small
+          roomy: $shape.extra-large
+        chart:
+          # A list of colors (List<Color>), of numbers and of texts.
+          colors: [$colors.primary, $colors.secondary, $colors.tertiary, $palette.deep]
+          bars: [4, 9, 6, 11, 7]
+          days: [Mon, Tue, Wed, Thu, Fri]
+        timing:
+          # Durations, and a reference to a motion duration.
+          intro: 600ms
+          stagger: $motion.durations.fast
+        layout:
+          content-width: 720
+          sidebar-width: 280
+          card:
+            padding: 16
+            radius: $shape.large
+
+      # ---------------------------------------------------------------- 6
+      # Looks for our own widgets (ThemeStates): one value, or a value per
+      # state; `transition` animates between them. iOS shows a press by
+      # fading, so these have an `opacity` that drops when pressed.
+      styles:
+        ios-button:
+          padding: [20, 12]
+          radius: $shape.large
+          fill:
+            default: $colors.primary
+            hovered: { color: $colors.primary, mix: { with: white, amount: 14% } }
+            focused: { color: $colors.primary, mix: { with: white, amount: 14% } }
+            disabled: { color: $colors.on-surface, alpha: 12% }
+          text: { default: $colors.on-primary, disabled: $colors.outline }
+          border: { default: transparent, focused: $colors.tertiary }
+          opacity: { default: 1, hovered: 0.9, pressed: 0.55, disabled: 0.6 }
+          transition: 120ms ease-out
+        ios-chip:
+          padding: [14, 7]
+          radius: 999
+          border: { default: $colors.outline, hovered: $colors.primary, selected: $colors.primary, disabled: $colors.outline-variant, error: $colors.error }
+          fill: { default: $colors.surface-container-lowest, hovered: { color: $colors.primary, alpha: 8% }, selected: { color: $colors.primary, alpha: 16% }, disabled: transparent }
+          text: { default: $colors.on-surface-variant, hovered: $colors.primary, selected: $colors.primary, disabled: $colors.outline, error: $colors.error }
+          opacity: { default: 1, pressed: 0.55 }
+          transition: 120ms ease-out
+        ios-field:
+          padding: [14, 12]
+          radius: $shape.medium
+          border: { default: transparent, hovered: $colors.outline, focused: $colors.primary, error: $colors.error, disabled: transparent }
+          fill: { default: $colors.surface-container-high, focused: $colors.surface-container-lowest, disabled: { color: $colors.surface-container-high, alpha: 50% } }
+          # The width of the border grows when it is focused or wrong.
+          width: { default: 0, hovered: 1, focused: 2, error: 2 }
+          transition: 140ms ease-out
+        ios-card:
+          padding: [16]
+          radius: $shape.large
+          border: { default: $colors.outline-variant, hovered: $colors.outline, selected: $colors.primary }
+          fill: { default: $colors.surface-container-lowest, selected: { color: $colors.primary, alpha: 8% } }
+          width: { default: 1, selected: 2 }
+          opacity: { default: 1, pressed: 0.7 }
+          transition: 200ms ease-out
+
+      # ---------------------------------------------------------------- 7
+      motion:
+        durations:
+          fast: 120ms
+          medium: 250ms
+          slow: 500ms
+        curves:
+          ios: [0.25, 0.1, 0.25, 1]
+          out: ease-out
+          standard: ease-in-out
+      animations:
+        # repeat: none (once) | loop (again and again) | reverse (back and forth)
+        spin: { duration: 2s, curve: linear, repeat: loop }
+        pulse: { duration: 1.4s, curve: ease-in-out, repeat: reverse }
+        enter: { duration: $motion.durations.slow, curve: ease-out, repeat: none }
+        background-drift: { duration: 30s, curve: ease-in-out, repeat: reverse }
+
+      # Loaders: ThemeLoader and ThemeSkeleton show them, by name. These are
+      # in the iOS look: a pulse like a breathing dot, small dots, a thin
+      # rounded bar and a quiet skeleton.
+      loaders:
+        pulse: { kind: pulse, color: $colors.primary, size: 28, animation: { duration: 1.2s, curve: ease-in-out, repeat: reverse } }
+        dots: { kind: dots, color: $colors.primary, size: 8, count: 3 }
+        bar: { kind: bar, color: $colors.primary, track: { color: $colors.primary, alpha: 20% }, height: 4, width: 220, radius: 2 }
+        card:
+          kind: skeleton
+          base: { color: $colors.on-surface, alpha: 8% }
+          highlight: { color: $colors.on-surface, alpha: 16% }
+          radius: 10
+          shimmer: { duration: 1.4s, angle: 20 }
+
+      # The splash: what shows while the app starts (and, on the web, before
+      # Flutter runs: the generator writes it into web/index.html).
+      splash:
+        background: { color: $colors.surface }
+        logo: { source: assets/images/badge.png, size: 96 }
+        title: Theme Showcase
+        loader: dots
+        min-duration: 1.2s
+        exit: { transition: 400ms ease-out }
+
+      # ---------------------------------------------------------------- 8
+      themes:
+        # `light` is the root above. `dark` is `light` turned around, with
+        # the iOS dark-mode colors; every color that refers to the palette
+        # ($colors.primary...) follows.
+        dark:
+          extends: light
+          brightness: dark
+          colors:
+            primary: '#0A84FF'
+            on-primary: '#FFFFFF'
+            secondary: '#30D158'
+            tertiary: '#FF9F0A'
+            error: '#FF453A'
+            surface: '#000000'
+            on-surface: '#FFFFFF'
+            on-surface-variant: '#98989F'
+            surface-container-lowest: '#1C1C1E'
+            surface-container-high: '#2C2C2E'
+            outline: '#38383A'
+          tokens:
+            brand:
+              name: Dark

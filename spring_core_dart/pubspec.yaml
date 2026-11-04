@@ -21,7 +21,7 @@ dependencies:
 
 dev_dependencies:
   # For example/: a Spring Boot application, written by the generator
-  # (example/main.spring.dart).
+  # (example/spring_gen/main.spring.dart).
   build_runner: ^2.17.0
   coverage: ^1.11.0
   spring_boot_dart: ^0.6.2

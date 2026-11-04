@@ -9,6 +9,9 @@ import 'support.dart';
 const _schema = 'CREATE TABLE book (id INTEGER PRIMARY KEY, title TEXT);';
 const _data = "INSERT INTO book (title) VALUES ('Dune');";
 
+SqlInitSettings sqlInitOf(Environment env, [String prefix = 'spring.']) =>
+    DatabaseInitSettings.fromEnvironment(env, prefix).sqlInit;
+
 void main() {
   Future<DataSource> memory() => memorySource();
 
@@ -63,10 +66,23 @@ void main() {
     });
 
     test('the mode is parsed, and a wrong one is refused', () {
-      expect(SqlInitMode.parse('ALWAYS'), SqlInitMode.always);
+      Environment mode(String value) =>
+          StandardEnvironment(
+              systemEnvironment: const {},
+            )
+            ..propertySources.addFirst(
+              MapPropertySource('test', {'spring.sql.init.mode': value}),
+            );
+      expect(sqlInitOf(mode('ALWAYS')).mode, SqlInitMode.always);
       expect(
-        () => SqlInitMode.parse('sometimes'),
-        throwsA(isA<SchemaException>()),
+        () => sqlInitOf(mode('sometimes')),
+        throwsA(
+          isA<SchemaException>().having(
+            (e) => e.message,
+            'message',
+            contains('spring.sql.init.mode'),
+          ),
+        ),
       );
     });
   });
@@ -265,7 +281,7 @@ void main() {
             'spring.sql.init.encoding': 'latin1',
           }),
         );
-      final settings = SqlInitSettings.fromEnvironment(env);
+      final settings = sqlInitOf(env);
       expect(settings.mode, SqlInitMode.always);
       expect(settings.schemaLocations, ['resources:a.sql', 'resources:b.sql']);
       expect(settings.dataLocations, ['resources:c.sql']);
@@ -285,11 +301,11 @@ void main() {
             }),
           );
         expect(
-          SqlInitSettings.fromEnvironment(env, 'spring.datasources.main.').mode,
+          sqlInitOf(env, 'spring.datasources.main.').mode,
           SqlInitMode.never,
         );
         const defaults = SqlInitSettings();
-        final plain = SqlInitSettings.fromEnvironment(env);
+        final plain = sqlInitOf(env);
         expect(plain.mode, SqlInitMode.embedded);
         expect(plain.platform, defaults.platform);
         expect(plain.separator, ';');

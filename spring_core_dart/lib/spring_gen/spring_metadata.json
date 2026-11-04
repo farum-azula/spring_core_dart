@@ -1,0 +1,353 @@
+{
+  "version": 1,
+  "package": "spring_core_dart",
+  "properties": [
+    {
+      "name": "spring.config.activate.on-cloud-platform",
+      "type": "CloudPlatform?",
+      "description": "The document applies on this platform, or on `none` (no platform).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 28,
+      "class": "ConfigActivateProperties"
+    },
+    {
+      "name": "spring.config.activate.on-profile",
+      "type": "String?",
+      "description": "The document applies when this profile expression matches.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 25,
+      "class": "ConfigActivateProperties"
+    },
+    {
+      "name": "spring.config.additional-location",
+      "type": "String?",
+      "description": "Groups searched after the locations, so they win over them, also where a location is named in both: `file:./config/` puts `./config/application.properties` above `./config/*/`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 40,
+      "class": "ConfigProperties"
+    },
+    {
+      "name": "spring.config.import",
+      "type": "List<String>?",
+      "description": "More configuration to read: `resources:other.yml`, `optional:file:./local.yml`, `configtree:/run/secrets/`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 45,
+      "class": "ConfigProperties"
+    },
+    {
+      "name": "spring.config.location",
+      "type": "String?",
+      "description": "Replaces the default locations. `,` separates groups; `;` joins locations into one group. Default: the two default groups.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 49,
+      "class": "ConfigProperties"
+    },
+    {
+      "name": "spring.config.name",
+      "type": "List<String>",
+      "description": "The base names of the files. `application,shop` reads `application*.*` and `shop*.*`; a later name wins.",
+      "default": [
+        "application"
+      ],
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 53,
+      "class": "ConfigProperties"
+    },
+    {
+      "name": "spring.config.on-not-found",
+      "type": "OnNotFound",
+      "description": "What to do with a location that does not exist.",
+      "default": "fail",
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 56,
+      "class": "ConfigProperties"
+    },
+    {
+      "name": "spring.main.cloud-platform",
+      "type": "CloudPlatform?",
+      "description": "Forces the cloud platform instead of detecting it; `none` turns detection off.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 89,
+      "class": "CloudPlatformProperties"
+    },
+    {
+      "name": "spring.profiles.active",
+      "type": "List<String>?",
+      "description": "The active profiles. The first source that has the key wins, so the command line beats a file.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 65,
+      "class": "ProfilesProperties"
+    },
+    {
+      "name": "spring.profiles.default",
+      "type": "List<String>?",
+      "description": "The profiles used while none is active; `default` when not set.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 70,
+      "class": "ProfilesProperties"
+    },
+    {
+      "name": "spring.profiles.group.*",
+      "type": "List<String>",
+      "description": "Activating `<name>` activates these too; groups can contain groups.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 77,
+      "class": "ProfilesProperties"
+    },
+    {
+      "name": "spring.profiles.include",
+      "type": "List<String>?",
+      "description": "Profiles added to the active ones, from every source.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 74,
+      "class": "ProfilesProperties"
+    },
+    {
+      "name": "spring.profiles.validate",
+      "type": "bool",
+      "description": "Whether the names are checked: letters, digits and `-_.+@`, starting and ending with a letter or digit.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 81,
+      "class": "ProfilesProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.config.activate.on-cloud-platform",
+      "values": [
+        {
+          "value": "none",
+          "description": "No cloud platform. Never detected; set `spring.main.cloud-platform=none` to turn detection off."
+        },
+        {
+          "value": "cloud-foundry",
+          "description": "Cloud Foundry: `VCAP_APPLICATION` or `VCAP_SERVICES` is set."
+        },
+        {
+          "value": "heroku",
+          "description": "Heroku: `DYNO` is set."
+        },
+        {
+          "value": "sap",
+          "description": "SAP Cloud Platform: `HC_LANDSCAPE` is set."
+        },
+        {
+          "value": "nomad",
+          "description": "HashiCorp Nomad: `NOMAD_ALLOC_ID` is set."
+        },
+        {
+          "value": "kubernetes",
+          "description": "Kubernetes: `KUBERNETES_SERVICE_HOST` and `KUBERNETES_SERVICE_PORT` are set, or any `<NAME>_SERVICE_HOST` with its `<NAME>_SERVICE_PORT`. Only the real environment variables count (the `systemEnvironment` source), not properties of the same name from elsewhere."
+        },
+        {
+          "value": "azure-app-service",
+          "description": "Azure App Service: `WEBSITE_SITE_NAME`, `WEBSITE_INSTANCE_ID`, `WEBSITE_RESOURCE_GROUP` and `WEBSITE_SKU` are set."
+        },
+        {
+          "value": "amazon-ecs",
+          "description": "Amazon ECS: `ECS_CONTAINER_METADATA_URI` or `ECS_CONTAINER_METADATA_URI_V4` is set."
+        }
+      ]
+    },
+    {
+      "name": "spring.config.on-not-found",
+      "values": [
+        {
+          "value": "fail",
+          "description": "A missing location that is not `optional:` stops the start."
+        },
+        {
+          "value": "ignore",
+          "description": "Every location is optional."
+        }
+      ]
+    },
+    {
+      "name": "spring.main.cloud-platform",
+      "values": [
+        {
+          "value": "none",
+          "description": "No cloud platform. Never detected; set `spring.main.cloud-platform=none` to turn detection off."
+        },
+        {
+          "value": "cloud-foundry",
+          "description": "Cloud Foundry: `VCAP_APPLICATION` or `VCAP_SERVICES` is set."
+        },
+        {
+          "value": "heroku",
+          "description": "Heroku: `DYNO` is set."
+        },
+        {
+          "value": "sap",
+          "description": "SAP Cloud Platform: `HC_LANDSCAPE` is set."
+        },
+        {
+          "value": "nomad",
+          "description": "HashiCorp Nomad: `NOMAD_ALLOC_ID` is set."
+        },
+        {
+          "value": "kubernetes",
+          "description": "Kubernetes: `KUBERNETES_SERVICE_HOST` and `KUBERNETES_SERVICE_PORT` are set, or any `<NAME>_SERVICE_HOST` with its `<NAME>_SERVICE_PORT`. Only the real environment variables count (the `systemEnvironment` source), not properties of the same name from elsewhere."
+        },
+        {
+          "value": "azure-app-service",
+          "description": "Azure App Service: `WEBSITE_SITE_NAME`, `WEBSITE_INSTANCE_ID`, `WEBSITE_RESOURCE_GROUP` and `WEBSITE_SKU` are set."
+        },
+        {
+          "value": "amazon-ecs",
+          "description": "Amazon ECS: `ECS_CONTAINER_METADATA_URI` or `ECS_CONTAINER_METADATA_URI_V4` is set."
+        }
+      ]
+    },
+    {
+      "name": "spring.profiles.active[*]",
+      "provider": "profiles"
+    },
+    {
+      "name": "spring.profiles.default[*]",
+      "provider": "profiles"
+    },
+    {
+      "name": "spring.profiles.include[*]",
+      "provider": "profiles"
+    }
+  ],
+  "beans": [
+    {
+      "name": "cloudPlatformProperties",
+      "type": "CloudPlatformProperties",
+      "types": [
+        "CloudPlatformProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 86,
+      "injects": [],
+      "members": [
+        {
+          "name": "cloudPlatform",
+          "kind": "field",
+          "type": "CloudPlatform?"
+        }
+      ]
+    },
+    {
+      "name": "configProperties",
+      "type": "ConfigProperties",
+      "types": [
+        "ConfigProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 33,
+      "injects": [],
+      "members": [
+        {
+          "name": "activate",
+          "kind": "field",
+          "type": "ConfigActivateProperties"
+        },
+        {
+          "name": "additionalLocation",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "imports",
+          "kind": "field",
+          "type": "List<String>?"
+        },
+        {
+          "name": "location",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "onNotFound",
+          "kind": "field",
+          "type": "OnNotFound"
+        }
+      ]
+    },
+    {
+      "name": "profilesProperties",
+      "type": "ProfilesProperties",
+      "types": [
+        "ProfilesProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 61,
+      "injects": [],
+      "members": [
+        {
+          "name": "active",
+          "kind": "field",
+          "type": "List<String>?"
+        },
+        {
+          "name": "defaults",
+          "kind": "field",
+          "type": "List<String>?"
+        },
+        {
+          "name": "group",
+          "kind": "field",
+          "type": "Map<String, List<String>>"
+        },
+        {
+          "name": "include",
+          "kind": "field",
+          "type": "List<String>?"
+        },
+        {
+          "name": "validate",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

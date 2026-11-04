@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -17,7 +17,7 @@ final BeanModule pkgBeans = $pkgBeans;
 
 const _header = '''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 ''';
 
 // The scanned libraries: lib/src/app.dart with [app], and [others] by path.
@@ -58,7 +58,7 @@ Future<String> _generate(
 }) async {
   final result = await _build(app, others: others);
   expect(result.errors, isEmpty);
-  const path = 'lib/src/beans.spring.dart';
+  const path = 'lib/spring_gen/src/beans.spring.dart';
   final output = result.readerWriter.testing.readString(
     result.outputs.singleWhere((o) => o.path == path),
   );

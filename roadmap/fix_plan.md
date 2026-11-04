@@ -949,7 +949,7 @@ Found while rewriting the READMEs and `docs/` (October 2026):
 - Test classes: an `@Autowired() Map<String, T>` field ignores
   `@Qualifier` (`test_builder.dart`).
 - Not verified: `@Log` in a Boot app without `@ComponentScan` generates the
-  `log` getter into the scan's file (`bin/main.spring.dart`), which a
+  `log` getter into the scan's file (`bin/spring_gen/main.spring.dart`), which a
   `lib/` library cannot import.
 
 Found by the reviews, not blocking:

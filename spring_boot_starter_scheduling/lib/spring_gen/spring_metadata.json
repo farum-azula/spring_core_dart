@@ -1,0 +1,274 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_scheduling",
+  "properties": [
+    {
+      "name": "spring.task.scheduling.enabled",
+      "type": "bool",
+      "description": "`false`: no `@Scheduled` method runs, which keeps tests predictable.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart",
+      "line": 9,
+      "class": "SchedulingProperties"
+    },
+    {
+      "name": "spring.task.scheduling.shutdown.await-termination",
+      "type": "bool",
+      "description": "Closing the context with `closeAsync()` waits for the runs going on.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart",
+      "line": 19,
+      "class": "SchedulingShutdown"
+    },
+    {
+      "name": "spring.task.scheduling.shutdown.await-termination-period",
+      "type": "Duration?",
+      "description": "The longest such wait. Default: no limit.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart",
+      "line": 22,
+      "class": "SchedulingShutdown"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "applicationTaskExecutor",
+      "type": "TaskExecutor",
+      "types": [
+        "TaskExecutor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(TaskExecutor)"
+      ],
+      "source": "package:spring_boot_starter_scheduling/src/scheduling_auto_configuration.dart",
+      "line": 43,
+      "injects": [],
+      "members": [
+        {
+          "name": "execute",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "FutureOr<void> Function() task"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scheduledAnnotationBeanPostProcessor",
+      "type": "ScheduledAnnotationBeanPostProcessor",
+      "types": [
+        "ScheduledAnnotationBeanPostProcessor",
+        "BeanPostProcessor",
+        "BeanFactoryAware",
+        "Aware",
+        "DisposableBean",
+        "SmartLifecycle",
+        "Lifecycle"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.task.scheduling.enabled', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_scheduling/src/scheduling_auto_configuration.dart",
+      "line": 82,
+      "injects": [],
+      "members": [
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "PropertyResolver"
+        },
+        {
+          "name": "isAutoStartup",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isPauseable",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isRunning",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "phase",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "scheduledTasks",
+          "kind": "getter",
+          "type": "List<ScheduledTask>"
+        },
+        {
+          "name": "scheduler",
+          "kind": "field",
+          "type": "TaskScheduler"
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stopWithCallback",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() callback"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schedulingProperties",
+      "type": "SchedulingProperties",
+      "types": [
+        "SchedulingProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart",
+      "line": 7,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "shutdown",
+          "kind": "field",
+          "type": "SchedulingShutdown"
+        }
+      ]
+    },
+    {
+      "name": "taskScheduler",
+      "type": "TaskScheduler",
+      "types": [
+        "TaskScheduler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.task.scheduling.enabled', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(TaskScheduler)"
+      ],
+      "source": "package:spring_boot_starter_scheduling/src/scheduling_auto_configuration.dart",
+      "line": 59,
+      "injects": [],
+      "members": [
+        {
+          "name": "now",
+          "kind": "method",
+          "type": "DateTime",
+          "parameters": []
+        },
+        {
+          "name": "schedule",
+          "kind": "method",
+          "type": "ScheduledTask",
+          "parameters": [
+            "FutureOr<void> Function() task",
+            "Trigger trigger",
+            "{String? name}"
+          ]
+        },
+        {
+          "name": "scheduleAt",
+          "kind": "method",
+          "type": "ScheduledTask",
+          "parameters": [
+            "FutureOr<void> Function() task",
+            "DateTime startTime",
+            "{String? name}"
+          ]
+        },
+        {
+          "name": "scheduleAtFixedRate",
+          "kind": "method",
+          "type": "ScheduledTask",
+          "parameters": [
+            "FutureOr<void> Function() task",
+            "Duration period",
+            "{Duration initialDelay}",
+            "{String? name}"
+          ]
+        },
+        {
+          "name": "scheduleWithFixedDelay",
+          "kind": "method",
+          "type": "ScheduledTask",
+          "parameters": [
+            "FutureOr<void> Function() task",
+            "Duration delay",
+            "{Duration initialDelay}",
+            "{String? name}"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

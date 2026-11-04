@@ -2,7 +2,7 @@
 // LogBuffer bean keeps the lines in memory, the Logs screen shows them
 // filtered by level.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neon_books_app/main.spring.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/logs/logs_page.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';

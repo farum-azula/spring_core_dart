@@ -56,8 +56,8 @@ resolves to, and the expression of a named pointcut.
   `@Cacheable`, `@CachePut` and `@CacheEvict`, also inside `@Caching`):
   the SpEL syntax, and a `#isbm` that is not a parameter (nor `#root`,
   `#result`, `#p0`) is a warning that lists the parameters;
-- a `${key}` without a default that no properties file defines: a
-  warning;
+- a `${key}` without a default that no properties file and no property of
+  the metadata defines: a warning;
 - `@Value('${key}')` in a normal (non-raw) string: an error, because in
   Dart that is string interpolation; write `r'${key}'`;
 - containers in tests (`spring_boot_starter_test/containers.dart`): a
@@ -78,6 +78,35 @@ designators (`execution`, `within`, `@annotation`, ...), `&&`/`||`/`!`,
 types, annotations, bean patterns, method names and named pointcuts
 (needs the `semantic_tokens` setting below).
 
+**Spring Data repositories** (`spring_boot_starter_data`), inside the
+`@Query('...')` of a repository method (adjacent string literals count as
+one text) and in derived query names:
+
+- highlighting of the SQL: keywords, names (tables, columns, aliases),
+  numbers, strings, comments, `:params`, `{Entity.property}` and
+  `:#{...}` SpEL (needs the `semantic_tokens` setting below; Zed shows the
+  tree-sitter colours of the Dart string until then);
+- go to definition: `{Book}` to the entity class, `{Book.author}` to the
+  field, `:year` and `#year` to the method parameter, a bean in SpEL to the
+  bean, a derived name's property part (`findBy`**`Title`**) to the field;
+- hovers: the entity with its table, id and properties, a property with its
+  column, type and reference, a parameter with its type, a table name,
+  alias or `b.title` in the SQL, and for a derived query name the SQL it
+  stands for;
+- completion after `{` (entities), `{Book.` (the stored properties) and `:`
+  (the method's parameters), and in `:#{` the `#parameters`, beans and
+  members;
+- checks: an unknown `{Entity}` or `{Entity.property}` (with "did you mean";
+  `@Transient` and `@MappedCollection` properties have no column), a
+  `:name` that is no parameter (error), a parameter the query never uses
+  (warning; `Pageable` and `Sort` excepted), invalid SpEL in `:#{...}` with
+  the parameters as `#name` variables, a plain `?`, unbalanced quotes,
+  parentheses and braces; in a derived query name an unknown property
+  (with "did you mean"), a collection or nested path, and a parameter count
+  that does not fit the name. The entities come from your sources and from
+  the `entities` of the Spring metadata; a table or column the database
+  has but no entity declares is not checked.
+
 **A closure's parameters** get a semantic token of their own
 (`closureParameter`), where they are declared and everywhere the
 closure's body uses them (`(alert) => heard.add('${alert.isbn}')`), so a
@@ -92,6 +121,55 @@ are.
 out; in YAML, SpEL counts only in quotes, as YAML reads an unquoted `#` as a
 comment). Unsaved keys of an open config file count for navigation and
 the unknown-key check.
+
+**Spring metadata** (`lib/spring_gen/spring_metadata.json`, written by the
+generator for every package with Spring code). The server reads the file of
+your package and of all its dependencies (found through
+`.dart_tool/package_config.json`) and reloads it when a build changes it.
+From it, in `application*.yml`, `.properties` and YAML under
+`lib/resources/`:
+
+- **completion** of keys (nested YAML aware: the keys below the ones
+  above the cursor, also dotted keys and list/map patterns) and of values:
+  the enum hints of the metadata, `true` / `false`, the profiles for
+  `spring.profiles.active`, `$colors.<role>` and the declared colors and
+  tokens (`$neon.cyan`) in a theme, the parts of a color object
+  (`color`, `alpha`, `mix`);
+- **hovers** with the description, type, default and the class and file
+  that declare the key; the values and range of a hint; for a theme key the
+  Flutter field it sets and whether it takes a value per state; for a `${key}`
+  the value in each profile file;
+- **checks**: an unknown key with "did you mean", a wrong type (`port: abc`),
+  a number out of range, a value the metadata warns about (a port the
+  browsers refuse), the theme (`spring.flutter.theme.*`: unknown keys,
+  colors, the color object `color` / `alpha` / `mix: { with, amount }`, the
+  one-line forms that are gone) and a broken `$` reference;
+- **loaders and the splash** (`loaders.<name>`, `splash`): the `kind` values
+  (the built-in ones and the `@ThemeLoaderKind` classes of the workspace,
+  from `loaderKinds` of the metadata), the keys each kind takes (a typo is
+  an error with "did you mean"), `splash.loader` and `splash.animation`
+  checked and completed from the declared names, and the `web:` file of a
+  loader checked for existence and completed from the `.html` files;
+- **go to definition** of a `$` reference to where it is declared, also in a
+  dependency's theme (`$neon.cyan` in `neon_ui`'s `themes/neon.yml`), of
+  `splash.loader: name` to `loaders.<name>` (and `splash.animation` to
+  `animations.<name>`), of `web:` to the file, and of a `${key}` to every
+  profile file that sets it;
+- **SpEL** `#{@bean.member}` in config values and in Dart strings:
+  completion of beans after `@` and of members after a `.`, hovers with
+  the type, go to a bean, and an error for an unknown bean or member (with
+  "did you mean");
+- **injection points** (constructor, `@Bean` and `@Autowired` parameters)
+  use the beans of your dependencies as well: go to definition, a hover with
+  the candidates and their profiles, an error when there is none, a warning
+  when several can be injected and none is `@Primary` (the message says
+  which profiles were considered); `@Profile('x')` with a profile that no
+  `application-x` file or metadata knows is a warning.
+
+A package without a metadata file shows one information line at the top of
+its files: "run build_runner to get Spring metadata". Until then the editor
+does not guess: keys that dependencies may define are not reported as
+unknown, and the theme components are accepted as written.
 
 **`.properties` files**: the extension brings the Properties language
 (tree-sitter-properties, as Zed's Java extension uses it): keys, values,
@@ -131,6 +209,7 @@ Flutter (`spring_boot_starter_flutter`):
 | `spasset` | a `@Value('asset:...')` parameter |
 | `splifecycle` | an `@EventListener` for `AppLifecycleStateEvent` |
 | `spwidgettest` | a widget test with `springBootTest` and `SpringScope` |
+| `sploaderpainter` | a `@ThemeLoaderKind` painter (`ThemeLoaderPainter<P>`) |
 
 Themes and the app widget, in `application.yml` and in `.properties` files
 (the same prefixes in both):
@@ -142,8 +221,11 @@ Themes and the app widget, in `application.yml` and in `.properties` files
 | `spthemeall` | (YAML) every theme property, commented out, with its values |
 | `spthemenew` | a custom theme (`themes.<name>`, `extends`), in its own file in YAML |
 | `spcolors`, `sptypography`, `spshape` | color roles, fonts per text role, the shape scale |
+| `spcolorobject` | a color with `alpha` and/or `mix: { with, amount }`, the object form |
 | `spcomponents`, `sptokens` | Material components from the tokens, the app's own tokens |
 | `spfonts` | `spring.flutter.fonts`: auto-load, exclude |
+| `sploader`, `sploaderkind` | a built-in loader (`loaders.<name>`), a loader of a `@ThemeLoaderKind` class with phases and `web:` |
+| `spsplash` | `splash`: background, logo, title, loader, minimum time, exit |
 
 ## New project
 
@@ -181,7 +263,7 @@ What you get:
 ```text
 my_app/
   bin/main.dart                               @SpringBootApplication + runApplication
-  bin/main.spring.dart                         generated
+  bin/spring_gen/main.spring.dart                         generated
   lib/src/greeting/app_properties.dart        @ConfigurationProperties('app')
   lib/src/greeting/greeting_service.dart      @Service
   lib/src/greeting/greeting_runner.dart       ApplicationRunner

@@ -6,6 +6,7 @@ library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/logging_auto_configuration.dart';
+import 'package:spring_boot_starter_logging/src/properties/properties_beans.dart';
 
 // The auto-configurations this starter builds on, so a test of an application
 // that lists only this starter can name them
@@ -20,4 +21,5 @@ export 'package:spring_boot_dart/spring_auto_configuration.dart';
 final BeanModule springBootStarterLoggingAutoConfiguration = BeanModule(
   'springBootStarterLoggingAutoConfiguration',
   [...loggingAutoConfiguration],
+  imports: [loggingConfigBeans],
 );

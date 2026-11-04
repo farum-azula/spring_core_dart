@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/catalog/book_tile.dart';
 import 'package:neon_books_app/src/catalog/catalog.dart';
@@ -80,7 +81,11 @@ class CatalogList extends SpringStatelessWidget<(Catalog,)> {
       );
     }
     if (books == null) {
-      return const Center(child: CircularProgressIndicator());
+      // The shape of the list, shimmering, until the server answers.
+      return ThemeSkeleton(
+        context.theme.loaders.card,
+        placeholder: const BookTilePlaceholder(),
+      );
     }
     if (books.items.isEmpty) {
       return _Message(

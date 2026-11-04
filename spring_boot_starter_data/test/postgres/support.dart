@@ -21,7 +21,7 @@ import 'package:spring_boot_starter_test/containers.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'app/postgres_app.spring.dart';
+import '../spring_gen/postgres/app/postgres_app.spring.dart';
 
 final String? _environmentUrl = _url(Platform.environment);
 

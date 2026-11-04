@@ -1,6 +1,8 @@
 // Rows of Markdown tables and sample log lines in documentation cannot wrap.
 // ignore_for_file: lines_longer_than_80_chars
 import 'package:spring_boot_dart/src/conditions.dart';
+import 'package:spring_boot_dart/src/properties/boot_properties.dart';
+import 'package:spring_boot_dart/src/properties/properties.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _source = 'package:spring_boot_dart#JacksonAutoConfiguration';
@@ -153,8 +155,9 @@ final class _FunctionCustomizer implements JsonMapperBuilderCustomizer {
 /// exist in this mapper. A named time zone (`Europe/Berlin`) throws an
 /// [ArgumentError]: Dart has no time zone database, so only `UTC` / `Z`
 /// and fixed offsets work. An unknown naming strategy or inclusion throws
-/// too. A boolean property is on only when its value is `true` (in any
-/// case); any other value turns it off.
+/// too. The properties are bound like any `@ConfigurationProperties`
+/// class: a value that is not a boolean (or not a known inclusion) fails
+/// with a `ConfigurationPropertiesBindException`.
 ObjectMapper objectMapperFromProperties(
   Environment environment, {
   BeanIntrospector? introspector,
@@ -184,115 +187,66 @@ JsonMapperBuilder jsonMapperBuilderFromProperties(
   Iterable<JsonModule> modules = const [],
 }) {
   _warnUnsupportedKeys(environment);
-  // The first of [keys] that is set (the Boot 4 key before the Boot 3 one),
-  // else the feature's default.
-  bool flag(JsonFeature feature, List<String> keys) {
-    for (final key in keys) {
-      if (environment.getProperty(key) case final value?) {
-        return value.trim().toLowerCase() == 'true';
-      }
-    }
-    return feature.enabledByDefault;
-  }
-
-  final naming = environment.getProperty(
-    'spring.json.property-naming-strategy',
-  );
-  final inclusion = environment.getProperty(
-    'spring.json.default-property-inclusion',
-  );
+  final json = bindBootProperties(environment, JsonProperties());
   final builder = JsonMapperBuilder()
     ..propertyNamingStrategy(
-      naming == null
-          ? PropertyNamingStrategy.lowerCamelCase
-          : PropertyNamingStrategy.parse(naming),
+      PropertyNamingStrategy.parse(json.propertyNamingStrategy),
     )
-    ..defaultPropertyInclusion(
-      inclusion == null ? JsonInclusion.always : _inclusion(inclusion),
-    )
-    ..defaultTimeZone(environment.getProperty('spring.json.time-zone'))
+    ..defaultPropertyInclusion(json.defaultPropertyInclusion)
+    ..defaultTimeZone(json.timeZone)
     ..addSerializers(serializers)
     ..addDeserializers(deserializers)
     ..addModules(modules);
   if (introspector != null) {
     builder.introspector(introspector);
   }
-  void set(JsonFeature feature, List<String> keys) =>
-      builder.configure(feature, flag(feature, keys));
-  set(DeserializationFeature.failOnUnknownProperties, const [
-    'spring.json.deserialization.fail-on-unknown-properties',
-  ]);
-  set(DeserializationFeature.acceptFloatAsInt, const [
-    'spring.json.deserialization.accept-float-as-int',
-  ]);
-  set(DeserializationFeature.failOnNullForPrimitives, const [
-    'spring.json.deserialization.fail-on-null-for-primitives',
-  ]);
-  set(DateTimeFeature.writeDatesAsTimestamps, const [
-    '$_dateTime.write-dates-as-timestamps',
-    'spring.json.serialization.write-dates-as-timestamps',
-  ]);
-  set(DateTimeFeature.writeDurationsAsTimestamps, const [
-    '$_dateTime.write-durations-as-timestamps',
-    'spring.json.serialization.write-durations-as-timestamps',
-  ]);
-  set(DateTimeFeature.writeDateTimestampsAsNanoseconds, const [
-    '$_dateTime.write-date-timestamps-as-nanoseconds',
-    'spring.json.serialization.write-date-timestamps-as-nanoseconds',
-  ]);
-  set(DateTimeFeature.readDateTimestampsAsNanoseconds, const [
-    '$_dateTime.read-date-timestamps-as-nanoseconds',
-    'spring.json.deserialization.read-date-timestamps-as-nanoseconds',
-  ]);
-  set(SerializationFeature.indentOutput, const [
-    'spring.json.serialization.indent-output',
-  ]);
-  set(MapperFeature.sortPropertiesAlphabetically, const [
-    'spring.json.mapper.sort-properties-alphabetically',
-  ]);
-  set(MapperFeature.defaultViewInclusion, const [
-    'spring.json.mapper.default-view-inclusion',
-  ]);
+  final deserialization = json.deserialization;
+  final serialization = json.serialization;
+  final dateTime = json.datatype.datetime;
+  builder
+    ..configure(
+      DeserializationFeature.failOnUnknownProperties,
+      deserialization.failOnUnknownProperties,
+    )
+    ..configure(
+      DeserializationFeature.acceptFloatAsInt,
+      deserialization.acceptFloatAsInt,
+    )
+    ..configure(
+      DeserializationFeature.failOnNullForPrimitives,
+      deserialization.failOnNullForPrimitives,
+    )
+    // The Boot 4 key (`datatype.datetime`) wins over the Boot 3 one.
+    ..configure(
+      DateTimeFeature.writeDatesAsTimestamps,
+      dateTime.writeDatesAsTimestamps ?? serialization.writeDatesAsTimestamps,
+    )
+    ..configure(
+      DateTimeFeature.writeDurationsAsTimestamps,
+      dateTime.writeDurationsAsTimestamps ??
+          serialization.writeDurationsAsTimestamps,
+    )
+    ..configure(
+      DateTimeFeature.writeDateTimestampsAsNanoseconds,
+      dateTime.writeDateTimestampsAsNanoseconds ??
+          serialization.writeDateTimestampsAsNanoseconds,
+    )
+    ..configure(
+      DateTimeFeature.readDateTimestampsAsNanoseconds,
+      dateTime.readDateTimestampsAsNanoseconds ??
+          deserialization.readDateTimestampsAsNanoseconds,
+    )
+    ..configure(SerializationFeature.indentOutput, serialization.indentOutput)
+    ..configure(
+      MapperFeature.sortPropertiesAlphabetically,
+      json.mapper.sortPropertiesAlphabetically,
+    )
+    ..configure(
+      MapperFeature.defaultViewInclusion,
+      json.mapper.defaultViewInclusion,
+    );
   return builder;
 }
-
-JsonInclusion _inclusion(String value) =>
-    switch (value.replaceAll(RegExp('[-_ ]'), '').toLowerCase()) {
-      'always' => JsonInclusion.always,
-      'nonnull' => JsonInclusion.nonNull,
-      'nonabsent' => JsonInclusion.nonAbsent,
-      'nonempty' => JsonInclusion.nonEmpty,
-      'nondefault' => JsonInclusion.nonDefault,
-      _ => throw ArgumentError.value(
-        value,
-        'spring.json.default-property-inclusion',
-        'one of always, non_null, non_absent, non_empty, non_default',
-      ),
-    };
-
-const _dateTime = 'spring.json.datatype.datetime';
-
-// Keys read above, compared the way Boot binds them (case, `-` and `_`
-// ignored).
-const _supportedKeys = {
-  'spring.json.property-naming-strategy',
-  'spring.json.default-property-inclusion',
-  'spring.json.deserialization.fail-on-unknown-properties',
-  'spring.json.deserialization.accept-float-as-int',
-  'spring.json.deserialization.fail-on-null-for-primitives',
-  'spring.json.serialization.write-dates-as-timestamps',
-  'spring.json.serialization.write-durations-as-timestamps',
-  'spring.json.serialization.write-date-timestamps-as-nanoseconds',
-  'spring.json.deserialization.read-date-timestamps-as-nanoseconds',
-  '$_dateTime.write-dates-as-timestamps',
-  '$_dateTime.write-durations-as-timestamps',
-  '$_dateTime.write-date-timestamps-as-nanoseconds',
-  '$_dateTime.read-date-timestamps-as-nanoseconds',
-  'spring.json.serialization.indent-output',
-  'spring.json.mapper.sort-properties-alphabetically',
-  'spring.json.mapper.default-view-inclusion',
-  'spring.json.time-zone',
-};
 
 String _canonical(String key) =>
     key.replaceAll(RegExp('[-_]'), '').toLowerCase();
@@ -303,7 +257,9 @@ void _warnUnsupportedKeys(Environment environment) {
   if (environment is! ConfigurableEnvironment) {
     return;
   }
-  final supported = {for (final key in _supportedKeys) _canonical(key)};
+  // The keys of the JsonProperties class: what the mapper reads.
+  final keys = jsonPropertyKeys();
+  final supported = {for (final key in keys) _canonical(key)};
   final reported = <String>{};
   for (final source in environment.propertySources) {
     if (source is! EnumerablePropertySource<Object>) {
@@ -315,7 +271,7 @@ void _warnUnsupportedKeys(Environment environment) {
           reported.add(_canonical(key))) {
         _log.warning(
           "Ignoring unsupported property '$key': spring.json.* supports "
-          '${_supportedKeys.join(', ')}.',
+          '${keys.join(', ')}.',
         );
       }
     }

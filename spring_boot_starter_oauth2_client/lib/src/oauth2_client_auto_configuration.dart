@@ -9,6 +9,8 @@ import 'package:spring_boot_starter_oauth2_client/src/endpoint/jwt_client_secret
 import 'package:spring_boot_starter_oauth2_client/src/endpoint/token_response_clients.dart';
 import 'package:spring_boot_starter_oauth2_client/src/feign/oauth2_access_token_interceptor.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token_decoder.dart';
+import 'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart';
+import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration_repository.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/oauth2_client_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/src/user/oauth2_user.dart';
@@ -124,7 +126,7 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) {
       final repository = InMemoryClientRegistrationRepository.lazy(
         OAuth2ClientPropertiesMapper(
-          OAuth2ClientProperties.of(r.dependency<Environment>()),
+          r.dependency<OAuth2ClientProperties>(),
           transport: r.optionalDependency<HttpTransport>(),
         ).asClientRegistrations(),
       );
@@ -178,8 +180,8 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean(OAuth2ClientSecretResolver),
       ]),
     ],
-    create: (r) => JwtClientSecretResolver.fromEnvironment(
-      r.dependency<Environment>(),
+    create: (r) => JwtClientSecretResolver.fromProperties(
+      r.dependency<OAuth2ClientProperties>(),
       resourceLoader: r.optionalDependency<ResourceLoader>(),
     ),
   ),
@@ -341,9 +343,9 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) => OAuth2AccessTokenInterceptor(
       r.dependency<OAuth2AuthorizedClientManager>(),
-      clientRegistrationId: r.dependency<Environment>().getProperty(
-        'spring.feign.oauth2.client-registration-id',
-      ),
+      clientRegistrationId: r
+          .dependency<FeignOAuth2Properties>()
+          .clientRegistrationId,
       authorizedClientService: r
           .optionalDependency<OAuth2AuthorizedClientService>(),
       dPoPKey: r.optionalDependency<DPoPKey>(),

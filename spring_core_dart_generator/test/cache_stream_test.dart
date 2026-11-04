@@ -7,9 +7,11 @@ import 'package:package_config/package_config.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
+import 'support/real_sources.dart';
+
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -63,13 +65,10 @@ Future<TestBuilderResult> _build(String service) async {
     rootPackage: 'pkg',
     flattenOutput: true,
   );
-  await readerWriter.testing.loadIsolateSources();
-  return await testBuilder(
-    SpringBuilder(),
-    {
-      'pkg|lib/src/beans.dart': _scan,
-      'pkg|lib/src/service.dart':
-          '''
+  final own = await loadRealSources(readerWriter, {
+    'pkg|lib/src/beans.dart': _scan,
+    'pkg|lib/src/service.dart':
+        '''
 import 'dart:async';
 
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -77,8 +76,11 @@ import 'package:spring_boot_starter_cache/src/annotations.dart';
 
 $service
 ''',
-      'spring_boot_starter_cache|lib/src/annotations.dart': _cacheAnnotations,
-    },
+    'spring_boot_starter_cache|lib/src/annotations.dart': _cacheAnnotations,
+  });
+  return await testBuilder(
+    SpringBuilder(),
+    own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     packageConfig: packageConfig,

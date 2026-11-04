@@ -339,6 +339,17 @@ void main() {
         expect(context.startupFailure, isNotNull);
       });
     });
+
+    test('a bad web value stops the web start, not a phone', () {
+      const bad = 'spring.flutter.security.web.mode=bff';
+      on(TargetPlatform.android);
+      runner.withPropertyValues([bad]).run((context) {
+        expect(context.startupFailure, isNull);
+      });
+      web.withPropertyValues([bad]).run((context) {
+        expect(context.startupFailure, isNotNull);
+      });
+    });
   });
 
   test('outside a browser nothing of the web', () {

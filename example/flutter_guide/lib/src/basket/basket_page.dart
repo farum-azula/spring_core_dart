@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:neon_books_app/spring_keys.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/account/login_page.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/app/messages.dart';
@@ -67,11 +67,7 @@ class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
         ),
         SizedBox(height: space),
         if (session.isLoggedIn)
-          FilledButton.icon(
-            onPressed: () => _order(context, orders),
-            icon: const Icon(Icons.shopping_cart_checkout),
-            label: Text(context.messages.basket.order),
-          )
+          _OrderButton(orders)
         else
           OutlinedButton.icon(
             onPressed: () => LoginPage.open(context),
@@ -81,16 +77,53 @@ class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
       ],
     );
   }
+}
 
-  static Future<void> _order(BuildContext context, OrderService orders) async {
+/// "Order": while the order is on its way to the server the button is off
+/// and a bar (`loaders.bar`) runs under it.
+class _OrderButton extends StatefulWidget {
+  const _OrderButton(this.orders);
+
+  final OrderService orders;
+
+  @override
+  State<_OrderButton> createState() => _OrderButtonState();
+}
+
+class _OrderButtonState extends State<_OrderButton> {
+  bool _sending = false;
+
+  Future<void> _order() async {
     final messenger = ScaffoldMessenger.of(context);
+    setState(() => _sending = true);
     String text;
     try {
-      final order = await orders.placeOrder();
-      text = context.mounted ? context.messages.basket.ordered(order.id) : '';
+      final order = await widget.orders.placeOrder();
+      text = mounted ? context.messages.basket.ordered(order.id) : '';
     } on FeignException catch (error) {
-      text = context.mounted ? errorMessage(context, error) : '';
+      text = mounted ? errorMessage(context, error) : '';
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+      }
     }
     messenger.showSnackBar(SnackBar(content: Text(text)));
   }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      FilledButton.icon(
+        onPressed: _sending ? null : _order,
+        icon: const Icon(Icons.shopping_cart_checkout),
+        label: Text(context.messages.basket.order),
+      ),
+      if (_sending)
+        Padding(
+          padding: EdgeInsets.only(top: context.theme.spacing.s),
+          child: Center(child: ThemeLoader(context.theme.loaders.bar)),
+        ),
+    ],
+  );
 }

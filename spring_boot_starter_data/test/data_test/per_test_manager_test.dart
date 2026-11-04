@@ -1,12 +1,12 @@
 // @Transactional(transactionManager:) on a test method of a @DataTest class:
 // that test runs in a transaction of the named manager only, the others
 // (without it) in one of every manager. The generator writes
-// spring/data_test/per_test_manager.test.spring.dart.
+// spring_gen/data_test/per_test_manager.test.spring.dart.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/per_test_manager.test.spring.dart';
+import '../spring_gen/data_test/per_test_manager.test.spring.dart';
 import 'mixed_app/mixed_app.dart';
 
 @DataTest(application: 'test/data_test/mixed_app/mixed_app.dart')

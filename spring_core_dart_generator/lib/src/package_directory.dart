@@ -19,7 +19,7 @@ import 'package:build/build.dart';
 ///
 /// ```dart
 /// final file = PackageDirectories.current.file(
-///   AssetId('app', 'lib/main.spring.dart'),
+///   AssetId('app', 'lib/spring_gen/main.spring.dart'),
 /// );
 /// ```
 ///

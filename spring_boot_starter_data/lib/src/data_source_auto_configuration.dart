@@ -1,5 +1,4 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-
 import 'package:spring_boot_starter_data/src/data_failure_analyzer.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_properties.dart';
@@ -10,6 +9,8 @@ import 'package:spring_boot_starter_data/src/jdbc/jdbc_template.dart';
 import 'package:spring_boot_starter_data/src/jdbc/named_parameter_jdbc_template.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_logging.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
+import 'package:spring_boot_starter_data/src/properties/data_properties.dart';
+import 'package:spring_boot_starter_data/src/properties_binding.dart';
 import 'package:spring_boot_starter_data/src/schema/database_initializer.dart';
 import 'package:spring_boot_starter_data/src/schema/initializing_data_source.dart';
 import 'package:spring_boot_starter_data/src/schema/repository_entities.dart';
@@ -24,19 +25,22 @@ const _source = 'package:spring_boot_starter_data#DataSourceAutoConfiguration';
 /// A value that is not a duration (`500ms`, `10s`, `PT5S`, milliseconds) or
 /// is negative is an error that stops the start.
 Duration? jdbcQueryTimeout(Environment environment) {
-  const key = 'spring.jdbc.template.query-timeout';
-  final Duration? value;
-  try {
-    value = environment.getPropertyAs<Duration>(key);
-  } on Object {
-    throw ArgumentError.value(
-      environment.getProperty(key),
-      key,
+  final value = bindSettings<JdbcTemplateProperties>(
+    environment,
+    'spring.jdbc.template',
+    fallback: const JdbcTemplateProperties(),
+    onInvalid: (failure) => throw ArgumentError.value(
+      failure.value,
+      failure.property,
       'must be a duration such as 500ms or 10s',
-    );
-  }
+    ),
+  ).queryTimeout;
   if (value != null && value.isNegative) {
-    throw ArgumentError.value('$value', key, 'must not be negative');
+    throw ArgumentError.value(
+      '$value',
+      'spring.jdbc.template.query-timeout',
+      'must not be negative',
+    );
   }
   return value;
 }
@@ -46,38 +50,36 @@ Duration? jdbcQueryTimeout(Environment environment) {
 /// [JdbcLogSettings]; everything off by default. A value that is not a
 /// boolean or a duration stops the start.
 JdbcLogSettings jdbcLogSettingsOf(Environment environment) {
-  bool flag(String key) {
-    final name = 'spring.data.jdbc.$key';
-    final text = environment.getProperty(name)?.trim().toLowerCase();
-    return switch (text) {
-      null || '' || 'false' => false,
-      'true' => true,
-      _ => throw ArgumentError.value(text, name, 'must be true or false'),
-    };
-  }
-
-  const thresholdKey = 'spring.data.jdbc.slow-query-threshold';
-  final Duration? threshold;
-  try {
-    threshold = environment.getPropertyAs<Duration>(thresholdKey);
-  } on Object {
-    throw ArgumentError.value(
-      environment.getProperty(thresholdKey),
-      thresholdKey,
-      'must be a duration such as 500ms or 2s',
-    );
-  }
+  final jdbc = bindSettings<DataJdbcProperties>(
+    environment,
+    'spring.data.jdbc',
+    fallback: const DataJdbcProperties(),
+    onInvalid: (failure) {
+      // The schema mode is checked where the schema is set up.
+      if (failure.type == 'SchemaMode') {
+        return;
+      }
+      throw ArgumentError.value(
+        failure.value,
+        failure.property,
+        failure.type == 'Duration'
+            ? 'must be a duration such as 500ms or 2s'
+            : 'must be ${failure.expected}',
+      );
+    },
+  );
+  final threshold = jdbc.slowQueryThreshold;
   if (threshold != null && threshold.isNegative) {
     throw ArgumentError.value(
       '$threshold',
-      thresholdKey,
+      'spring.data.jdbc.slow-query-threshold',
       'must not be negative',
     );
   }
   return JdbcLogSettings(
-    showSql: flag('show-sql'),
-    showParameters: flag('show-parameters'),
-    formatSql: flag('format-sql'),
+    showSql: jdbc.showSql,
+    showParameters: jdbc.showParameters,
+    formatSql: jdbc.formatSql,
     slowQueryThreshold: threshold,
   );
 }

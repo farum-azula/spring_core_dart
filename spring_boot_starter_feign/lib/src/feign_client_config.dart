@@ -1,4 +1,4 @@
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_feign/src/config/feign_properties.dart';
 
 /// How much a Feign client logs about its calls, set per client with the
 /// `logger-level` property.
@@ -31,18 +31,7 @@ enum FeignLoggerLevel {
   headers,
 
   /// [headers] plus the bodies.
-  full;
-
-  /// The level for a property value such as `basic` or `FULL` (any case).
-  /// Throws an [ArgumentError] for another value.
-  static FeignLoggerLevel parse(String value) => values.firstWhere(
-    (level) => level.name == value.trim().toLowerCase(),
-    orElse: () => throw ArgumentError.value(
-      value,
-      'logger-level',
-      'one of none, basic, headers, full',
-    ),
-  );
+  full,
 }
 
 /// The settings of one Feign client: its URL, timeouts, logging, default
@@ -231,99 +220,62 @@ final class FeignClientConfig {
     'dpop',
   };
 
-  static const _prefix = 'spring.feign.client.config.';
-
-  // A boolean property like Boot's binding: true / false (also on / off,
-  // yes / no, 1 / 0) in any case; anything else fails.
-  static bool _flag(String? value, String key, {required bool defaultValue}) =>
-      switch (value?.trim().toLowerCase()) {
-        null || '' => defaultValue,
-        'true' || 'on' || 'yes' || '1' => true,
-        'false' || 'off' || 'no' || '0' => false,
-        _ => throw FormatException(
-          '$key: failed to convert to boolean (was "$value")',
-          value,
-        ),
-      };
-
   /// Reads the settings of the client whose configuration key is [name]
-  /// from [environment], with `default` for what it does not set.
-  ///
-  /// Throws a [FormatException] for an on/off property that is not
-  /// `true`/`false` (or `on`/`off`, `yes`/`no`, `1`/`0`) or a
-  /// `max-attempts` that is not a number, and an [ArgumentError] for an
-  /// unknown `logger-level`.
-  static FeignClientConfig of(Environment environment, String name) {
-    String? get(String key) =>
-        environment.getProperty('$_prefix$name.$key') ??
-        environment.getProperty('${_prefix}default.$key');
-    bool flag(String key, {required bool defaultValue}) {
-      final own = environment.getProperty('$_prefix$name.$key');
-      return _flag(
-        own ?? environment.getProperty('${_prefix}default.$key'),
-        own != null ? '$_prefix$name.$key' : '${_prefix}default.$key',
-        defaultValue: defaultValue,
-      );
-    }
-
-    Duration? duration(String key) {
-      final value = get(key);
-      return value == null
-          ? null
-          : DefaultConversionService().convert<Duration>(value);
-    }
-
-    final level = get('logger-level');
-    final headers = <String, List<String>>{
-      ..._lists(environment, '${_prefix}default.default-request-headers'),
-      ..._lists(environment, '$_prefix$name.default-request-headers'),
-    };
-    final queries = <String, List<String>>{
-      ..._lists(environment, '${_prefix}default.default-query-parameters'),
-      ..._lists(environment, '$_prefix$name.default-query-parameters'),
-    };
-    String? bean(String key) => switch (get(key)?.trim()) {
-      final value? when value.isNotEmpty => value,
-      _ => null,
-    };
-    final readTimeout = duration('read-timeout') ?? defaultReadTimeout;
+  /// from the bound [properties], with `default` for what it does not set.
+  static FeignClientConfig of(FeignProperties properties, String name) {
+    // The name as written in the properties; environment variables are
+    // lower case, so a client name matches in any case.
+    final configs = properties.config;
+    FeignClientSettings? settings(String wanted) =>
+        configs[wanted] ??
+        configs.entries
+            .where((e) => e.key.toLowerCase() == wanted.toLowerCase())
+            .map((e) => e.value)
+            .firstOrNull;
+    final own = settings(name);
+    final fallback = settings('default');
+    T? get<T>(T? Function(FeignClientSettings settings) read) =>
+        (own == null ? null : read(own)) ??
+        (fallback == null ? null : read(fallback));
+    // The client's entries add to those of `default`.
+    List<T> both<T>(List<T> Function(FeignClientSettings settings) read) => [
+      ...?fallback == null ? null : read(fallback),
+      ...?own == null ? null : read(own),
+    ];
+    String? bean(String? Function(FeignClientSettings settings) read) =>
+        switch (get(read)?.trim()) {
+          final value? when value.isNotEmpty => value,
+          _ => null,
+        };
+    final readTimeout = get((s) => s.readTimeout) ?? defaultReadTimeout;
     return FeignClientConfig(
-      url: get('url'),
+      url: get((s) => s.url),
       readTimeout: readTimeout == Duration.zero ? null : readTimeout,
-      callTimeout: switch (duration('call-timeout')) {
+      callTimeout: switch (get((s) => s.callTimeout)) {
         final timeout? when timeout > Duration.zero => timeout,
         _ => null,
       },
-      loggerLevel: level == null
-          ? FeignLoggerLevel.none
-          : FeignLoggerLevel.parse(level),
-      dismiss404: flag('dismiss404', defaultValue: false),
-      defaultRequestHeaders: headers,
-      defaultQueryParameters: queries,
-      followRedirects: flag('follow-redirects', defaultValue: true),
-      decodeSlash: _flag(
-        environment.getProperty('spring.feign.client.decode-slash'),
-        'spring.feign.client.decode-slash',
-        defaultValue: true,
-      ),
-      eventStreamReconnect: flag('event-stream.reconnect', defaultValue: true),
-      eventStreamReconnectDelay:
-          duration('event-stream.reconnect-delay') ??
-          const Duration(seconds: 3),
-      eventStreamMaxAttempts: switch (get('event-stream.max-attempts')) {
-        final value? => int.parse(value.trim()),
-        null => null,
+      loggerLevel: get((s) => s.loggerLevel) ?? FeignLoggerLevel.none,
+      dismiss404: get((s) => s.dismiss404) ?? false,
+      defaultRequestHeaders: {
+        ...?fallback?.defaultRequestHeaders,
+        ...?own?.defaultRequestHeaders,
       },
-      retryer: bean('retryer'),
-      errorDecoder: bean('error-decoder'),
-      requestInterceptors: [
-        ..._list(environment, '${_prefix}default.request-interceptors'),
-        ..._list(environment, '$_prefix$name.request-interceptors'),
-      ],
-      sensitiveHeaders: [
-        ..._list(environment, '${_prefix}default.sensitive-headers'),
-        ..._list(environment, '$_prefix$name.sensitive-headers'),
-      ],
+      defaultQueryParameters: {
+        ...?fallback?.defaultQueryParameters,
+        ...?own?.defaultQueryParameters,
+      },
+      followRedirects: get((s) => s.followRedirects) ?? true,
+      decodeSlash: properties.decodeSlash,
+      eventStreamReconnect: get((s) => s.eventStream.reconnect) ?? true,
+      eventStreamReconnectDelay:
+          get((s) => s.eventStream.reconnectDelay) ??
+          const Duration(seconds: 3),
+      eventStreamMaxAttempts: get((s) => s.eventStream.maxAttempts),
+      retryer: bean((s) => s.retryer),
+      errorDecoder: bean((s) => s.errorDecoder),
+      requestInterceptors: both((s) => s.requestInterceptors),
+      sensitiveHeaders: both((s) => s.sensitiveHeaders),
     );
   }
 
@@ -331,57 +283,9 @@ final class FeignClientConfig {
   /// clients (`spring.feign.client.config.default.connect-timeout`):
   /// [defaultConnectTimeout] when it is not set, `null` (no timeout) when
   /// it is `0`.
-  static Duration? connectTimeout(Environment environment) {
-    final value = environment.getProperty('${_prefix}default.connect-timeout');
-    final timeout = value == null
-        ? defaultConnectTimeout
-        : DefaultConversionService().convert<Duration>(value);
+  static Duration? connectTimeout(FeignProperties properties) {
+    final timeout =
+        properties.config['default']?.connectTimeout ?? defaultConnectTimeout;
     return timeout == Duration.zero ? null : timeout;
   }
-
-  // The map of lists at [name], bound like Spring Cloud OpenFeign's
-  // `Map<String, Collection<String>>`: relaxed names
-  // (`default-request-headers.X-Shop`, `defaultRequestHeaders.X-Shop`,
-  // `default-request-headers[X.Shop]`), a comma list or indexed values
-  // (`X-Shop[0]`, YAML lists) for several values.
-  static Map<String, List<String>> _lists(
-    Environment environment,
-    String name,
-  ) {
-    if (environment is! ConfigurableEnvironment) {
-      return const {};
-    }
-    return Binder.get(environment)
-        .bind(
-          _canonical(name),
-          const MapType<String, List<String>>(
-            ClassType<String>(),
-            ListType<String>(ClassType<String>()),
-          ),
-        )
-        .orElse(const {});
-  }
-
-  // The list at [name] (a comma list or indexed values).
-  static List<String> _list(Environment environment, String name) {
-    if (environment is! ConfigurableEnvironment) {
-      return switch (environment.getProperty(name)) {
-        final value? => [
-          for (final item in value.split(','))
-            if (item.trim().isNotEmpty) item.trim(),
-        ],
-        null => const [],
-      };
-    }
-    return Binder.get(environment)
-        .bind(_canonical(name), const ListType<String>(ClassType<String>()))
-        .orElse(const []);
-  }
-
-  // [name] as a canonical property name (a client name may have upper
-  // case letters).
-  static String _canonical(String name) =>
-      ConfigurationPropertyName.isValid(name)
-      ? name
-      : ConfigurationPropertyName.adapt(name, '.').toString();
 }

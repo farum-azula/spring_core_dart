@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The generated test files are in `test/spring_gen/` (was `test/spring/`): import `spring_gen/<name>.test.spring.dart`.
+
 ## 0.6.2
 
 ### Changes

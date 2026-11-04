@@ -59,7 +59,7 @@
 /// `package:spring_boot_starter_data/testing.dart`) around `springBootTest`.
 ///
 /// ```dart
-/// import 'spring/book_repository.test.spring.dart'; // generated
+/// import 'spring_gen/book_repository.test.spring.dart'; // generated
 ///
 /// @DataTest()
 /// class BookRepositoryTest {

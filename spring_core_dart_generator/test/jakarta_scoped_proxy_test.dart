@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -52,7 +52,7 @@ Future<String> _generate(String beans, {ProxyMode? proxyMode}) async {
     'lib/src/service.dart': '$_header$beans',
   }, proxyMode: proxyMode ?? ProxyMode.none);
   expect(result.errors, isEmpty);
-  return _output(result, 'lib/src/beans.spring.dart');
+  return _output(result, 'lib/spring_gen/src/beans.spring.dart');
 }
 
 Future<String> _errors(Map<String, String> files) async {
@@ -82,11 +82,11 @@ Future<List<String>> _diagnostics(
   return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/src/beans.spring.dart': output,
+      'pkg|lib/spring_gen/src/beans.spring.dart': output,
     },
     (resolver) async {
       final library = await resolver.libraryFor(
-        AssetId('pkg', 'lib/src/beans.spring.dart'),
+        AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
       final errors = await library.session.getErrors(
         library.firstFragment.source.fullName,
@@ -99,7 +99,7 @@ Future<List<String>> _diagnostics(
       ];
     },
     rootPackage: 'pkg',
-    resolverFor: 'pkg|lib/src/beans.spring.dart',
+    resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
 }

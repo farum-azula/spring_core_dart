@@ -8,6 +8,11 @@ int? get processId => io.pid;
 /// isolate has no debug name, as the main one.
 String get isolateName => Isolate.current.debugName ?? 'main';
 
+/// Whether the console turns ANSI codes into text: a Flutter app on iOS,
+/// whose system log shows ESC as `\^[` in `flutter run`.
+bool get consoleEscapesAnsi =>
+    const bool.fromEnvironment('dart.library.ui') && io.Platform.isIOS;
+
 /// Whether the console can show ANSI colours; this decides
 /// `spring.output.ansi.enabled=detect`.
 ///
@@ -17,7 +22,8 @@ String get isolateName => Isolate.current.debugName ?? 'main';
 /// colours. A release build has no console to colour.
 bool get stdoutSupportsAnsi {
   if (_isFlutterDebug) {
-    return true;
+    // iOS's system log escapes ESC (`\^[[32m`): the same line, no colours.
+    return !io.Platform.isIOS;
   }
   try {
     return io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;

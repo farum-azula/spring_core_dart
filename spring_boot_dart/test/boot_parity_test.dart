@@ -521,7 +521,7 @@ void main() {
 
     test('@ConditionalOnExpression, @ConditionalOnResource, '
         '@ConditionalOnBean by name', () {
-      ClasspathResources.registerAll(const {
+      Resources.registerAll(const {
         'conditions/present.txt': EmbeddedResource.text('x'),
       });
       final context = run(
@@ -638,7 +638,7 @@ void main() {
 
   group('messages', () {
     setUpAll(
-      () => ClasspathResources.registerAll(const {
+      () => Resources.registerAll(const {
         'parity/a.properties': EmbeddedResource.text('a=A'),
         'parity/b.properties': EmbeddedResource.text('b=B'),
       }),
@@ -747,7 +747,7 @@ void main() {
 
   group('banner', () {
     test('printed from spring.banner.location, logged in log mode', () {
-      ClasspathResources.registerAll(const {
+      Resources.registerAll(const {
         'parity/banner.txt': EmbeddedResource.text(
           r'Shop ${app.edition} on ${spring-boot.version}',
         ),

@@ -1,9 +1,12 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/schema/schema_exceptions.dart';
-import 'package:spring_boot_starter_data/src/schema/schema_support.dart';
 
 /// The settings of the migration runner, `spring.sql.migration.*`: Flyway's
 /// settings under our own name.
+///
+/// A data source's settings are bound from `sql.migration` below its prefix
+/// by `DatabaseInitSettings.fromEnvironment`. A plain number of a duration is
+/// in seconds.
 ///
 /// Spring (Java): `org.springframework.boot.autoconfigure.flyway.
 /// FlywayProperties` (`spring.flyway.*`), whose names these keep.
@@ -26,57 +29,14 @@ final class MigrationSettings {
     this.placeholderSuffix = '}',
     this.group = false,
     this.connectRetries = 0,
+    @DurationUnit(ChronoUnit.seconds)
     this.connectRetriesInterval = const Duration(seconds: 10),
+    @DurationUnit(ChronoUnit.seconds)
     this.lockTimeout = const Duration(minutes: 1),
   });
 
-  /// Reads `<prefix>sql.migration.*` from [environment]; the keys are the
-  /// fields below in kebab case (`validate-on-migrate`), the placeholders
-  /// `placeholders.<name>`.
-  factory MigrationSettings.fromEnvironment(
-    Environment environment, [
-    String prefix = 'spring.',
-  ]) {
-    final reader = SettingsReader(environment, '${prefix}sql.migration.');
-    const defaults = MigrationSettings();
-    final locations = reader.list('locations');
-    final patterns = reader.list('ignore-migration-patterns');
-    return MigrationSettings(
-      enabled: reader.boolean('enabled', fallback: true),
-      locations: locations.isEmpty ? defaults.locations : locations,
-      table: reader.string('table') ?? defaults.table,
-      validateOnMigrate: reader.boolean('validate-on-migrate', fallback: true),
-      outOfOrder: reader.boolean('out-of-order', fallback: false),
-      ignoreMigrationPatterns: patterns.isEmpty
-          ? defaults.ignoreMigrationPatterns
-          : patterns,
-      baselineOnMigrate: reader.boolean('baseline-on-migrate', fallback: false),
-      baselineVersion: reader.string('baseline-version') ?? '1',
-      baselineDescription:
-          reader.string('baseline-description') ?? defaults.baselineDescription,
-      target: reader.string('target') ?? 'latest',
-      placeholders: reader.subProperties('placeholders'),
-      placeholderReplacement: reader.boolean(
-        'placeholder-replacement',
-        fallback: true,
-      ),
-      placeholderPrefix: reader.raw('placeholder-prefix') ?? r'${',
-      placeholderSuffix: reader.raw('placeholder-suffix') ?? '}',
-      group: reader.boolean('group', fallback: false),
-      connectRetries: reader.integer('connect-retries', fallback: 0),
-      connectRetriesInterval: reader.duration(
-        'connect-retries-interval',
-        fallback: const Duration(seconds: 10),
-      ),
-      lockTimeout: reader.duration(
-        'lock-timeout',
-        fallback: const Duration(minutes: 1),
-      ),
-    );
-  }
-
-  /// Whether migrations run (`enabled`); with no migration files nothing
-  /// runs anyway.
+  /// Whether migrations run: `lib/resources/db/migration/V<version>__<name>.sql`
+  /// and `R__<name>.sql`; with no files nothing runs anyway (`enabled`).
   final bool enabled;
 
   /// Where the files are (`locations`); `{vendor}` is replaced by the

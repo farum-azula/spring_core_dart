@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_feign/src/config/feign_properties.dart';
 import 'package:spring_boot_starter_feign/src/feign_client.dart';
 import 'package:spring_boot_starter_feign/src/feign_client_config.dart';
 import 'package:spring_boot_starter_feign/src/feign_exception.dart';
@@ -37,10 +38,12 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// `FeignClientFactory` context.
 final class FeignClientFactory
     implements InvocationHandlerFactory, BeanFactoryAware {
-  /// A factory that resolves placeholders and properties in [environment],
+  /// A factory that resolves placeholders in [environment], reads the
+  /// client settings from [properties],
   /// writes and reads JSON with [mapper] and sends through [transport].
   FeignClientFactory({
     required this.environment,
+    required this.properties,
     required this.mapper,
     required this.transport,
     this.interceptors,
@@ -48,9 +51,12 @@ final class FeignClientFactory
     this.retryer,
   });
 
-  /// The configuration: the clients' properties and the placeholders of
-  /// their URLs, paths and headers.
+  /// The configuration: the placeholders of the clients' URLs, paths and
+  /// headers.
   final Environment environment;
+
+  /// The bound `spring.feign.client.*` properties.
+  final FeignProperties properties;
 
   /// Writes request bodies as JSON and reads response bodies, for every
   /// client.
@@ -84,7 +90,7 @@ final class FeignClientFactory
   @override
   InvocationHandler create(InterfaceMetadata<Object> metadata) {
     final client = metadata.annotation<FeignClient>()!;
-    final config = FeignClientConfig.of(environment, client.configKey);
+    final config = FeignClientConfig.of(properties, client.configKey);
     final beans = _ClientBeans(this, client, metadata.typeName);
     final fallbackType = client.fallback;
     Object? fallbackBean;

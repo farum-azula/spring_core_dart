@@ -73,30 +73,18 @@ void main() {
     expect(sources.reliable, isTrue);
   });
 
-  test('the former classpath: prefix is read as resources:', () {
-    final files = {
+  test('resources: and resources*: locations are read', () {
+    final current = _find({
       'sql/V1__one.sql': 'one',
       'db/schema-h2.sql': 'schema',
-    };
-    final old = _find({
-      ...files,
-      'application.properties':
-          'spring.sql.migration.locations=classpath:sql\n'
-          'spring.sql.init.platform=h2\n'
-          'spring.sql.init.schema-locations='
-          'optional:classpath*:db/schema-@@platform@@.sql\n',
-    });
-    final current = _find({
-      ...files,
       'application.properties':
           'spring.sql.migration.locations=resources:sql\n'
           'spring.sql.init.platform=h2\n'
           'spring.sql.init.schema-locations='
           'optional:resources*:db/schema-@@platform@@.sql\n',
     });
-    expect(old.scripts, ['one', 'schema']);
-    expect(old.scripts, current.scripts);
-    expect(old.reliable, isTrue);
+    expect(current.scripts, ['one', 'schema']);
+    expect(current.reliable, isTrue);
   });
 
   test('spring.sql.init.schema-locations, @@platform@@ and a * in a name', () {

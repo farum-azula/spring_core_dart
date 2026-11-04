@@ -5,7 +5,8 @@ import 'theme_catalog.dart';
 /// The component reference of `docs/configuration.md`, as Markdown made
 /// from the mapping itself: a row per component, its properties grouped
 /// by the type of their value, `*` after those that take a value per
-/// state, the options of enums in parentheses.
+/// state, the options of enums in parentheses, the name linking to the
+/// component's page (tool/theme_docs.dart writes the same table).
 String themeReference() {
   final lines = [
     '| Component | Properties, by the type of their value |',
@@ -23,7 +24,9 @@ String themeReference() {
       for (final MapEntry(key: kind, value: properties) in groups.entries)
         '**$kind** ${properties.map(_describe).join(', ')}',
     ];
-    final name = key == 'cupertino' ? '`cupertino` (own root)' : '`$key`';
+    final name = key == 'cupertino'
+        ? '[`cupertino`](flutter/theme/cupertino.md) (own root)'
+        : '[`$key`](flutter/theme/components/$key.md)';
     lines.add('| $name | ${cells.join('<br>')} |');
   }
   return lines.join('\n');

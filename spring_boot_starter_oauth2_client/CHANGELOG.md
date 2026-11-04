@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `spring.security.oauth2.client.*` and `spring.feign.oauth2.*` is made from code and the starter reads the same classes: `OAuth2ClientProperties` (`registration.<id>.*` as `OAuth2ClientRegistrationProperties`, `client-secret-jwt.*`, `provider.<id>.*` as `OAuth2ClientProviderProperties`) and `FeignOAuth2Properties` are bound by the Binder. The hand-written `spring_metadata_additional.json` is gone.
+
 ## 0.6.2
 
 - feat: 0.6.2 — the theme (typed keys and messages, states, every component, a theme from a URL), (#20)

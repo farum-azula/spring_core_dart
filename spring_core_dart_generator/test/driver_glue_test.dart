@@ -13,6 +13,8 @@ import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
+import 'support/real_sources.dart';
+
 const _template =
     'spring_boot_starter_data|'
     'lib/src/jdbc/drivers/sqlite3.dart.tmpl';
@@ -156,7 +158,7 @@ class _Sqlite3 implements Sqlite3 {
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -206,13 +208,13 @@ Future<String> _build(
   );
   // The isolate's sources include the real starter: its real template is
   // the one under test.
-  await readerWriter.testing.loadIsolateSources();
+  final own = await loadRealSources(readerWriter, sources);
   if (!template) {
     readerWriter.testing.delete(AssetId.parse(_template));
   }
   final result = await testBuilder(
     SpringBuilder(),
-    sources,
+    own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     flattenOutput: true,
@@ -282,11 +284,11 @@ void main() {
         {
           for (final MapEntry(:key, :value) in _sources().entries)
             key: value as String,
-          'pkg|lib/src/beans.spring.dart': output,
+          'pkg|lib/spring_gen/src/beans.spring.dart': output,
         },
         (resolver) async {
           final library = await resolver.libraryFor(
-            AssetId('pkg', 'lib/src/beans.spring.dart'),
+            AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
           final result = await library.session.getErrors(
             library.firstFragment.source.fullName,
@@ -298,7 +300,7 @@ void main() {
           ];
         },
         rootPackage: 'pkg',
-        resolverFor: 'pkg|lib/src/beans.spring.dart',
+        resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
         readAllSourcesFromFilesystem: true,
       );
       expect(errors, isEmpty);

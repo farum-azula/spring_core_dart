@@ -6,6 +6,7 @@ import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart
 import 'package:test/test.dart';
 
 import 'chat.dart';
+import 'support/client_config.dart';
 
 // The properties of the client sockets, for the lines that would not fit.
 const _clientConfig = 'spring.websocket.client.config';
@@ -127,7 +128,7 @@ void main() {
   });
 
   test('reconnect.enabled: true / false in any case, others fail', () async {
-    WebSocketClientConfig config(String value) => WebSocketClientConfig.of(
+    WebSocketClientConfig config(String value) => configOf(
       StandardEnvironment(systemEnvironment: const {})
         ..propertySources.addFirst(
           MapPropertySource('p', {
@@ -139,7 +140,10 @@ void main() {
     expect(config('FALSE').reconnect.enabled, isFalse);
     expect(config('Off').reconnect.enabled, isFalse);
     expect(config('TRUE').reconnect.enabled, isTrue);
-    expect(() => config('nope'), throwsFormatException);
+    expect(
+      () => config('nope'),
+      throwsA(isA<ConfigurationPropertiesBindException>()),
+    );
     runner
         .withPropertyValues([
           'spring.websocket.client.config.chat.reconnect.enabled=nope',
@@ -198,17 +202,16 @@ void main() {
   });
 
   group('reconnect settings are checked like RetryPolicy.Builder', () {
-    WebSocketClientConfig config(Map<String, String> reconnect) =>
-        WebSocketClientConfig.of(
-          StandardEnvironment(systemEnvironment: const {})
-            ..propertySources.addFirst(
-              MapPropertySource('p', {
-                for (final MapEntry(:key, :value) in reconnect.entries)
-                  'spring.websocket.client.config.chat.reconnect.$key': value,
-              }),
-            ),
-          'chat',
-        );
+    WebSocketClientConfig config(Map<String, String> reconnect) => configOf(
+      StandardEnvironment(systemEnvironment: const {})
+        ..propertySources.addFirst(
+          MapPropertySource('p', {
+            for (final MapEntry(:key, :value) in reconnect.entries)
+              'spring.websocket.client.config.chat.reconnect.$key': value,
+          }),
+        ),
+      'chat',
+    );
 
     test('invalid values fail naming the property', () {
       for (final (key, value) in [

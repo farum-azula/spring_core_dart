@@ -6,6 +6,9 @@ int? get processId => null;
 /// web.
 String get isolateName => 'main';
 
+/// Whether the console turns ANSI codes into text: never on the web.
+bool get consoleEscapesAnsi => false;
+
 /// Whether the console can show ANSI colours; this decides
 /// `spring.output.ansi.enabled=detect`. On the web it is true only in a
 /// Flutter app's debug or profile build, whose output the browser's

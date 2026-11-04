@@ -293,7 +293,7 @@ void main() {
     }
 
     setUpAll(
-      () => ClasspathResources.registerAll({
+      () => Resources.registerAll({
         'fixes_messages/latin.properties': EmbeddedResource.base64(
           base64Encode(latin1.encode('greeting=Grüße')),
         ),

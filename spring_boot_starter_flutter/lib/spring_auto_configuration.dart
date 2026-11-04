@@ -6,19 +6,21 @@
 /// builds a context by hand imports it to name the module.
 library;
 
-import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
-import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:flutter/cupertino.dart' show CupertinoThemeData;
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
 import 'package:flutter/material.dart' show ThemeData;
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
+import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_store.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
 import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
+import 'package:spring_boot_starter_flutter/src/properties/properties_beans.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_source.dart';
 import 'package:spring_web_dart/spring_web_dart.dart' show HttpTransport;
-import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
 // The auto-configurations this starter builds on (logging, and through it spring_boot_dart's), so a test of an application that lists only this starter can name them.
 export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
@@ -131,5 +133,17 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       ),
       preDestroy: (loader) => loader.dispose(),
     ),
+    BeanDefinition<ThemeImageLoader>(
+      name: 'themeImageLoader',
+      types: const [ThemeImageLoader, ApplicationRunner],
+      source: _source,
+      create: (r) => ThemeImageLoader(
+        themes: r.dependency<SpringThemes>(),
+        files: r.dependency<FileTemplate>(),
+        transport: r.optionalDependency<HttpTransport>(),
+      ),
+      preDestroy: (loader) => loader.dispose(),
+    ),
   ],
+  imports: [flutterConfigBeans],
 );

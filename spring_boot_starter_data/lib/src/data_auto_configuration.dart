@@ -1,5 +1,4 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-
 import 'package:spring_boot_starter_data/src/data_source_auto_configuration.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_logging.dart';
 import 'package:spring_boot_starter_data/src/mapping/auditing.dart';
@@ -7,6 +6,8 @@ import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/naming_strategy.dart';
+import 'package:spring_boot_starter_data/src/properties/data_properties.dart';
+import 'package:spring_boot_starter_data/src/properties_binding.dart';
 import 'package:spring_boot_starter_data/src/repository/repository_factory.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_sources.dart';
@@ -113,12 +114,24 @@ T? _bean<T extends Object>(
 /// `10s`), 10 seconds by default. A negative value is an error that stops
 /// the start; zero fails at once, as `nowait` does.
 Duration memoryLockTimeout(Environment environment) {
-  const key = 'spring.data.memory.lock-timeout';
-  final value = environment.getPropertyAs<Duration>(key);
-  if (value != null && value.isNegative) {
-    throw ArgumentError.value('$value', key, 'must not be negative');
+  final value = bindSettings<DataMemoryProperties>(
+    environment,
+    'spring.data.memory',
+    fallback: const DataMemoryProperties(),
+    onInvalid: (failure) => throw ArgumentError.value(
+      failure.value,
+      failure.property,
+      'must be a duration such as 500ms or 10s',
+    ),
+  ).lockTimeout;
+  if (value.isNegative) {
+    throw ArgumentError.value(
+      '$value',
+      'spring.data.memory.lock-timeout',
+      'must not be negative',
+    );
   }
-  return value ?? const Duration(seconds: 10);
+  return value;
 }
 
 /// The bean definitions the Data starter adds to every application that

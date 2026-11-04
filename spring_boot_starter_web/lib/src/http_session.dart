@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/src/config/config.dart';
+import 'package:spring_boot_starter_web/src/config/web_properties.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
@@ -201,46 +203,46 @@ final class HttpSessionProperties {
     this.maxSessions = 10000,
   });
 
-  /// Reads `server.session.*` from [environment]. The cookie path
-  /// defaults to [contextPath] (`server.context-path`), else `/`.
-  /// Throws an [ArgumentError] for an unknown `same-site` value; an
-  /// unreadable `max-sessions` keeps the default.
+  /// Reads `server.session.*` from [environment] (binding
+  /// [ServerSettings]). The cookie path defaults to [contextPath]
+  /// (`server.context-path`), else `/`.
+  /// Throws a [ConfigurationPropertiesBindException] for a value that does
+  /// not fit, such as an unknown `same-site`.
   factory HttpSessionProperties.of(
     PropertyResolver environment, {
     String contextPath = '',
+  }) => HttpSessionProperties.from(
+    bindServerSettings(environment).session,
+    contextPath: contextPath,
+  );
+
+  /// The settings of the bound [session] (`server.session.*`). The cookie
+  /// path defaults to [contextPath], else `/`.
+  factory HttpSessionProperties.from(
+    ServerSessionSettings session, {
+    String contextPath = '',
   }) {
-    String? text(String key) {
-      final value = environment.getProperty('server.session.$key')?.trim();
-      return value == null || value.isEmpty ? null : value;
+    String? text(String? value) {
+      final trimmed = value?.trim();
+      return trimmed == null || trimmed.isEmpty ? null : trimmed;
     }
 
-    bool? flag(String key) => switch (text(key)?.toLowerCase()) {
-      'true' => true,
-      'false' => false,
-      _ => null,
-    };
-
-    final timeout = text('timeout');
+    final cookie = session.cookie;
     return HttpSessionProperties(
-      timeout: timeout == null
-          ? const Duration(minutes: 30)
-          : DurationStyle.parse(timeout, unit: ChronoUnit.seconds),
-      cookieName: text('cookie.name') ?? 'JSESSIONID',
+      timeout: session.timeout,
+      cookieName: text(cookie.name) ?? 'JSESSIONID',
       cookiePath:
-          text('cookie.path') ?? (contextPath.isEmpty ? '/' : contextPath),
-      cookieDomain: text('cookie.domain'),
-      httpOnly: flag('cookie.http-only') ?? true,
-      secure: flag('cookie.secure'),
-      sameSite: switch (text('cookie.same-site')?.toLowerCase()) {
-        null || 'lax' => 'Lax',
-        'strict' => 'Strict',
-        'none' => 'None',
-        'unset' => null,
-        final other => throw ArgumentError(
-          'server.session.cookie.same-site: unknown value $other',
-        ),
+          text(cookie.path) ?? (contextPath.isEmpty ? '/' : contextPath),
+      cookieDomain: text(cookie.domain),
+      httpOnly: cookie.httpOnly,
+      secure: cookie.secure,
+      sameSite: switch (cookie.sameSite) {
+        SessionSameSite.lax => 'Lax',
+        SessionSameSite.strict => 'Strict',
+        SessionSameSite.none => 'None',
+        SessionSameSite.unset => null,
       },
-      maxSessions: int.tryParse(text('max-sessions') ?? '') ?? 10000,
+      maxSessions: session.maxSessions,
     );
   }
 

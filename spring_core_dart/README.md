@@ -110,7 +110,7 @@ directory and below.
 ```dart
 // lib/src/beans.dart
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:my_app/src/beans.spring.dart'; // written by the generator
+import 'package:my_app/spring_gen/src/beans.spring.dart'; // written by the generator
 
 @ComponentScan()
 final BeanModule appBeans = $appBeans;
@@ -2068,7 +2068,7 @@ such as `spring_boot_starter_logging` decides where the records go.
 Without a backend, warnings and errors are printed.
 
 ```dart
-import 'package:neon/app.spring.dart'; // the generated file
+import 'package:neon/spring_gen/app.spring.dart'; // the generated file
 
 @Service()
 @Log(topic: 'neon.checkout')

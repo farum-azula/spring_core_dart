@@ -294,8 +294,9 @@ flush.
 with the theme from a URL and the components' states below still to come.
 
 As built (differs from the sketch below): one builder, `spring_flutter_keys`,
-writes `lib/spring_keys.dart` (`extension SpringKeys on BuildContext` with
-`theme` and `messages`). The classes are `AppTheme` (`colors`, `spacing`,
+writes `lib/spring_gen/theme.spring.dart` and `lib/spring_gen/messages.spring.dart` (the extensions
+`SpringThemeKeys` and `SpringMessageKeys` on `BuildContext`, with `theme` and
+`messages`). The classes are `AppTheme` (`colors`, `spacing`,
 `typography`, `tokens`), `AppThemes` (static constants for
 `ThemeSelection.select`) and `AppMessages`; they are cheap views that read
 the active theme through the starter's `ThemeKeyReader` when a getter is
@@ -486,7 +487,7 @@ themes); the app keeps using Flutter's widgets. **No generated widgets**: the
 generator does not write components of its own.
 
 - States: a property may give a value per state (Flutter's
-  `WidgetStateProperty`): `background: { default: primary, hovered: …,
+  `WidgetStateProperty`): `background: { default: $colors.primary, hovered: …,
   pressed: …, focused: …, disabled: … }`.
 - Every component theme of Flutter (about 50, today 16) with all their
   properties (borders per state, shadows, icons, overlay), mapped by property
@@ -555,26 +556,405 @@ Text(context.messages.order.shipped(order.id, order.shippedAt));
   class over its `MessageSource`, for the messages it renders (errors,
   mails), with the locale passed in (`messages.of(locale)`).
 
-## Navigation
+## Themes without Dart (0.6.3; the owner, November 2026)
 
-Routes found by the generator, typed parameters with the same
-`@PathVariable` / `@RequestParam` as the web, deep links and the web URL bar
-through the SDK's `Router`, guards as AOP advice (`@PreAuthorize` once
-security exists), and a `route` bean scope: created when the route is
-pushed, destroyed when it is popped. Routes are also generated as typed
-classes (`BookRoute(isbn)`) for an `AppNavigator` bean, so a service can
-navigate (e.g. after a login) without a `BuildContext`.
+**Done in 0.6.3 (unreleased)** (branch `theme`; docs: the starter's README,
+"Themes without Dart", and `docs/configuration.md`). The measure is the NEON design
+system (`neon_ui`, a theme package written in Dart): before 0.6.3 it needed
+`neonColor` / `neonNumber` / `neonJson` helpers, JSON inside a YAML
+string (`modal: >- {"width": 460, ...}`), constants for derived colors
+(`badgeAlpha = 0.12`, `hoverLighten = 0.14`), a hand-written
+`NeonPressable` for hover, a hand-written `AnimationController` for the
+glowing border and a `NeonBackground` wrapped around every screen. After
+0.6.3 such a theme is YAML, and its widgets read typed values.
+
+As built (differs from the text below, where the code says otherwise the
+code is right):
+
+- Style and animation names are canonical inside (`neon-chip`, `neonChip`
+  and `neon_chip` are one), and any spelling reads.
+- A style property with states must have `default`.
+- `@SpringBootApplication` also counts as the parent of the generated parts
+  (besides `@ComponentScan`). The parts use unprefixed imports.
+- `$path` is a reference only when it is the whole value or an operand of a
+  color object; inside a longer text it stays text.
+- An image token is a token map with `source` and only image keys.
+- `headers` is a map.
+- A redirect to another origin (host, port or scheme) drops the custom
+  headers. Headers and the image keys `source`, `fallback`, `source-sha256`
+  are not searched for `$` references.
+- A Material role or shape the theme does not declare is referenceable
+  (`$colors.outline`, `$shape.extra-small`): computed from the theme's seed,
+  brightness, variant and contrast.
+- Durations: `ms`, `s`, `m`, `h`, a space allowed. The classification of a
+  value is fixed by `test/fixtures/theme_value_kinds.yaml`.
+- Reduce motion: `repeat: none` goes to its end; loops stand still at 0.
+- A radial gradient's `begin` is its center.
+- The example: `example/themes/neon` (app type `widgets`) on
+  `example/themes/neon_ui`, the NEON design system as a library (theme and
+  components), moved onto 0.6.3.
+
+### Generated files: `lib/spring_gen/theme.spring.dart`, `lib/spring_gen/messages.spring.dart`
+
+Generated code is always `*.spring.dart` and lies in `lib/spring_gen/`, which mirrors the source path:
+
+```
+lib/
+  main.dart                         # the app's, with @ComponentScan
+  spring_gen/
+    main.spring.dart                # generated: beans, the context
+    theme.spring.dart               # generated: part of main.spring.dart, context.theme
+    messages.spring.dart            # generated: part of main.spring.dart, context.messages
+```
+
+- `spring_flutter_keys` writes `lib/spring_gen/theme.spring.dart` and
+  `lib/spring_gen/messages.spring.dart` as `part of '<parent>.spring.dart'`; the
+  parent is the `.spring.dart` of the package's `@ComponentScan` library
+  (`spring_gen/main.spring.dart` in an app, `spring_gen/spring_auto_configuration.spring.dart`
+  in a library such as `neon_ui`). The main builder writes the `part`
+  directives (only for parts that exist) and the imports the parts need;
+  a part has no imports of its own. More parts follow the same way later
+  (web, data, HTTP clients), one generated file per concern.
+- Widgets get `context.theme` by importing the parent
+  (`import 'package:app/spring_gen/main.spring.dart';`). Two `@ComponentScan`
+  libraries in one package: the build stops and names both. None: no key
+  files, a log line says why.
+- A library's keys live in its own `.spring.dart`, an app's in its own: an
+  app never sees the library's `context.theme`, no conflict.
+- The extensions: `SpringThemeKeys` (`theme`), `SpringMessageKeys`
+  (`messages`).
+
+### References and color objects
+
+Any value of a theme can name another value of the same theme with
+`$<path>`:
+
+```yaml
+seed-color: $colors.primary
+tokens:
+  neon:
+    yellow: $colors.primary
+    badge-fill: { color: $colors.primary, alpha: 12% }
+    hover-fill: { color: $colors.primary, mix: { with: white, amount: 14% } }
+  logs:
+    error: $colors.error
+```
+
+- A path starts at the theme's root (`$colors.primary`, `$spacing.m`,
+  `$shape.extra-small`, `$motion.durations.fast`,
+  `$tokens.neon.yellow`); a token path may drop `tokens.` when its group
+  is not a root section (`$neon.yellow`).
+- Not `${...}`: that is Spring's placeholder, resolved by the
+  `Environment` against all properties (and it still works, e.g.
+  `${cdn.token}` in a header). `$` followed by anything but a letter is
+  text (`$5`); `$$` is a literal `$`.
+- Resolved per theme after `extends`, so an extending theme that changes
+  `colors.primary` changes everything that refers to it. A cycle or an
+  unknown path stops the start with the chain and "did you mean".
+- Colors: `<color> alpha <n>%` (or `0..1`), `<color> mix <color> <n>%`;
+  `<color>` is a reference, `#RRGGBB`, `#AARRGGBB`, `0x...` or a named
+  color (`white`, `black`, `transparent`).
+
+### Nested tokens
+
+Tokens of any depth, lists, durations; no more JSON in a string:
+
+```yaml
+tokens:
+  neon:
+    modal:
+      width: 460
+      barrier: transparent
+      border:
+        width: 1
+        glow: 8
+        glow-alpha: 0.6
+        colors: [$neon.yellow, $neon.cyan, $neon.pink, $neon.lavender]
+```
+
+Typed by value as in 0.6.2 (color, number, text) plus durations
+(`250ms`), lists of one type (`List<Color>`, `List<double>`,
+`List<String>`) and groups (a generated class per group:
+`context.theme.tokens.neon.modal.border.colors`). Two-level tokens of
+0.6.2 read as before.
+
+### Styles of the app's own widgets: `styles.*`
+
+Values per state for widgets that are not Material's, with the states
+and precedence of the components (disabled > error > pressed > dragged >
+hovered > focused > selected > scrolled-under > default):
+
+```yaml
+styles:
+  neon-chip:
+    padding: [12, 6]
+    border: { default: $colors.outline, hovered: $colors.primary, selected: $colors.primary }
+    fill:   { default: transparent, selected: { color: $colors.primary, alpha: 12% } }
+    text:   { default: $colors.on-surface-variant, hovered: $colors.primary, selected: $colors.primary }
+    transition: 120ms ease-out
+```
+
+A property is one value (every state) or a map of states. Types by
+value: color, number, insets (`[all]`, `[h, v]`, `[l, t, r, b]`), text,
+duration. `transition: <duration> [<curve>]` animates between states.
 
 ```dart
-@Route('/books/:isbn')
-class BookPage extends StatelessWidget {
-  const BookPage(@PathVariable() this.isbn, {super.key});
-  final String isbn;
-  ...
-}
-
-context.go('/books/978-0');
+ThemeStates(
+  style: context.theme.styles.neonChip,
+  selected: selected,
+  onPressed: onPressed,
+  builder: (context, s) => Container(
+    padding: s.padding,                               // EdgeInsets
+    decoration: BoxDecoration(color: s.fill, border: Border.all(color: s.border)),
+    child: Text(label, style: TextStyle(color: s.text)),
+  ),
+)
 ```
+
+`ThemeStates` (a starter widget, nothing generated) tracks hover, focus,
+press and disabled (`onPressed == null`), takes `selected` and `error`
+from its arguments, handles keyboard activation and the mouse cursor, and
+lerps the values over `transition`. The style is a `ThemeStyle<V>`: the
+generated `NeonChipStyle` gives typed values (`s.fill` is a `Color`);
+the runtime `StateStyle` reads untyped (`values.color('fill')`).
+
+### Motion and animations
+
+```yaml
+motion:
+  durations: { fast: 120ms, medium: 250ms }
+  curves: { emphasized: [0.2, 0, 0, 1], out: ease-out }
+  page-transition: fade-upwards
+animations:
+  border-spin: { duration: 4s, curve: linear, repeat: loop }
+  glow-pulse: { duration: 1.6s, curve: ease-in-out, repeat: reverse }
+```
+
+- `context.theme.motion.fast` is a `Duration`, `Duration.zero` when the
+  system asks for less motion (`MediaQuery.disableAnimations`);
+  `context.theme.motion.curves.emphasized` is a `Curve` (named curves:
+  `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`,
+  `fast-out-slow-in`, `emphasized`, ... or four numbers).
+- `animations.<name>`: `duration`, `curve`, `repeat: none | loop |
+  reverse`, an `AnimationSpec`. `ThemeAnimation(spec, builder: (context,
+  t) => ...)` owns the controller, repeats, stands still with less motion
+  and takes a new duration when the theme changes.
+
+### The background: `background`
+
+```yaml
+background:
+  color: $colors.surface-container-lowest
+  image:
+    source: https://cdn.example.com/neon/background.jpg
+    fit: cover
+    alignment: center
+    opacity: 0.9
+    blur: 0
+  overlay:
+    gradient: { type: linear, begin: top, end: bottom, colors: [transparent, '#CC0A0C12'] }
+  animation: background-drift      # an animations.* name
+  effect: drift                    # drift | zoom | pulse
+  transition: 400ms ease-out
+  screens:
+    login: { image: { source: packages/neon_ui/assets/images/login.jpg } }
+```
+
+- With `background` set, the starter puts it under every screen (around
+  the navigator) and makes the Material scaffold and Cupertino page
+  backgrounds transparent unless the theme sets them; the image is
+  precached at start; a theme switch or a new image cross-fades over
+  `transition`.
+- `ThemeBackground.screen('login', child: ...)` takes `screens.login`
+  over the theme's background; `ThemeBackground.none(child: ...)` an
+  opaque surface.
+- `context.theme.background` reads it.
+
+### Images from the network: `ThemeImage`
+
+One image source for the background, the screens' backgrounds and image
+tokens (a token map with `source`):
+
+```yaml
+image:
+  source: https://cdn.example.com/neon/background.jpg   # or an asset path
+  refresh: 1d
+  source-sha256: 9f2c…
+  headers: { Authorization: Bearer ${cdn.token} }
+  timeout: 10s
+  fallback: packages/neon_ui/assets/images/neon-background.jpg
+```
+
+- Like the theme from a URL: the same `HttpTransport`, a persistent cache
+  through `FileTemplate` (`spring/images/<sha256>/`), without `refresh`
+  downloaded once and read from the cache forever, with `refresh` re-read
+  in the background with conditional requests and swapped live; the start
+  never waits for the network: the cache, else `fallback`, else
+  `background.color`. A file not matching `source-sha256` is dropped with
+  a warning. The web caches in IndexedDB and logs a CORS hint on failure.
+- `https` by default; `http://` only with `allow-http: true` (else the
+  start stops with the hint), as Android and iOS refuse clear text
+  anyway.
+
+### Names
+
+The widgets read the theme and are named for it: `ThemeStates`,
+`ThemeAnimation`, `ThemeBackground`, `ThemeImage`; the data `StateStyle`,
+`ThemeStyle<V>`, `AnimationSpec`. Not `ImageSource` (`image_picker`'s
+name). `SpringTheme` / `SpringThemeData` stay.
+
+## Loaders and the splash (0.6.3; the owner, November 2026)
+
+**In 0.6.3.** Three kinds of loader, all from the theme, one look from the
+first byte of the page to the first screen:
+
+1. **Component loaders** — `loaders.<name>` in a theme, shown by
+   `ThemeLoader` (indeterminate or with `progress: 0..1`) and
+   `ThemeSkeleton` (the content, or a placeholder while `loading`).
+2. **The splash** — `splash` in a theme, shown by `SpringApplicationWidget`
+   while the context starts (its `splash:` builder still wins).
+3. **The web page loader** — what the browser shows while it downloads
+   Flutter (today a thin blue bar): generated at build time from the
+   theme's `splash` into the app's web page, and handed over to the
+   Flutter splash without a jump.
+
+### `loaders.<name>`
+
+```yaml
+loaders:
+  dots:     { kind: dots, color: $colors.primary, size: 10, count: 3,
+              animation: { duration: 900ms, curve: ease-in-out, repeat: loop } }
+  upload:   { kind: bar, color: $colors.primary,
+              track: { color: $colors.primary, alpha: 20% }, height: 3 }
+  card:     { kind: skeleton, base: $colors.surface-container-high,
+              highlight: $colors.surface-container-highest, radius: $shape.medium,
+              shimmer: { duration: 1.2s, angle: 20 } }
+  neon-doors:
+    kind: doors                    # a kind of the app's own, see below
+    phases:
+      close: { duration: 500ms, curve: ease-in }
+      fill:  { progress: true }    # follows the real progress
+      open:  { duration: 450ms, curve: emphasized }
+    door: { color: '#0B0D14', edge: { color: $neon.cyan, width: 2, glow: 12 } }
+    seam: { width: 6, fill: $neon.pink,
+            glow: { color: { color: $neon.pink, alpha: 60% }, blur: 24 },
+            flicker: { duration: 120ms, repeat: reverse } }
+    web: web/loaders/neon-doors.html   # how the kind looks before Flutter runs
+```
+
+- Built-in kinds: `spinner`, `dots`, `pulse`, `bar`, `skeleton` (each with
+  its documented keys; colours in the theme's one colour form, durations
+  in the one syntax, `$` references).
+- `phases`: named steps; a phase is an animation spec (`duration`,
+  `curve`, `repeat`) or `{progress: true}` (driven by the progress the
+  loader is given). Built-in kinds have one implicit phase.
+- A kind of the app's own: a class with `@ThemeLoaderKind('doors')`
+  extending `ThemeLoaderPainter<P>` (`paint(canvas, size, frame)`, where
+  `frame.phase('close')` is 0..1 and `frame.props` is `P`) — or
+  `ThemeLoaderWidget<P>` building widgets. The generator writes `P`
+  (`DoorsLoaderProps`) from the keys the theme gives that loader (typed
+  like tokens), and the typed key `context.theme.loaders.neonDoors`.
+  An unknown `kind` or a key the kind does not take stops the build and
+  the start.
+- Reduce motion: no animation, the end state of each phase, no flicker
+  or shimmer.
+
+### `splash`
+
+```yaml
+splash:
+  background: { color: $colors.surface-container-lowest }   # the keys of `background`
+  logo: { source: assets/images/logo.png, size: 96 }        # a ThemeImage
+  title: NEON                                               # text
+  loader: neon-doors                                        # a loaders.* name
+  animation: splash-in                                      # an animations.* name for the logo
+  min-duration: 1.2s
+  exit: { transition: 400ms ease-out }
+```
+
+- The splash gets the start's progress (`SpringApplication` reports the
+  share of bean definitions and runners done) for a `{progress: true}`
+  phase; when the context is ready the loader's last phase (`open`)
+  plays, then the splash fades out over `exit`, not before `min-duration`.
+
+### The web page loader
+
+- The generator (with the web dev config) writes the page loader of the
+  active theme's `splash` into the app's web output: a self-contained
+  block in `web/index.html` between markers (`<!-- spring:loader -->`),
+  rewritten on every build, plain HTML + CSS + a few lines of JS, no
+  external files; built-in kinds have a CSS form; a kind of the app's own
+  gives its `web:` HTML file (CSS variables filled from the theme:
+  `--door-color`, `--seam-fill` ...).
+- It shows at once, follows Flutter's loading (`_flutter.loader` stages:
+  downloading the engine, the app, the first frame) as its progress, and
+  is removed when the Flutter splash paints its first frame, which starts
+  from the same state, so there is no jump. `prefers-reduced-motion`
+  stops its animations. Nothing is written for an app without a
+  `splash`.
+
+### The runtime API (as built)
+
+- `ThemeLoaderSpec` (`name`, `kind`, `phases`, `values`, `look`, `web`),
+  read by `ThemeKeyReader.loader(name)` and `SpringThemeData.loaders`
+  (canonical names: `neondoors`). `ThemeSplashData` by
+  `ThemeKeyReader.splash()` / `SpringThemeData.splash` (`background`,
+  `logo`, `logoSize`, `title`, `loader`, `animation`, `minDuration`, `exit`).
+  Note: `splash: ripple` (a scalar) stays the ink splash of taps; the
+  splash of this section is the map form.
+- Widgets: `ThemeLoader(spec, {progress, ready, size, onFinished})`,
+  `ThemeSkeleton(spec, {loading, child, placeholder})`, `ThemeSplash`.
+- Custom kinds: `@ThemeLoaderKind('name')` (annotation, `annotations.dart`);
+  `ThemeLoaderPainter<P>.paint(Canvas, Size, LoaderFrame<P>)`,
+  `ThemeLoaderWidget<P>.build(BuildContext, LoaderFrame<P>)`;
+  `LoaderFrame<P>` has `phase(name)`, `progress`, `props`, `values`
+  (`LoaderValues`: `color`, `number`, `duration`, `text`, `boolean`, `curve`,
+  `animation`, each with an `...OrNull` form, `at(key)`, `has(key)`,
+  `keys([key])`; a dot goes one level down) and `reduceMotion`.
+- The registry the generated code fills, before the context starts (the
+  themes check every `kind` when they are read):
+  `ThemeLoaderKinds.register<P>(name, {painter | widget, props: P Function(LoaderValues), keys})`.
+  `keys` are the keys the kind takes besides `kind`, `phases` and `web`
+  (`null`: any); `props` runs once at the start, so a missing or wrong key
+  fails it with a `ThemePropertyException`.
+- Start progress: `SpringApplication.progressListener(StartupProgress)`
+  (`done`, `total`, `fraction`; beans created + runners called, never goes
+  back, 1 when ready). `SpringApplicationWidget` reads the properties as
+  soon as the environment is prepared (`ApplicationEnvironmentPreparedEvent`)
+  and shows the active theme's splash from then on.
+- Web hand-off: `window.springLoaderHandOff(progress)` is called once (if
+  defined) after the first frame that paints the Flutter splash (or the
+  `splash:` builder, or when the theme has no splash, or on a failed start).
+
+### Generator, page loader and editor (as built)
+
+- Markers in `web/index.html`: `<!-- spring:loader:start -->` and
+  `<!-- spring:loader:end -->` (builder `spring_flutter_page_loader`). The
+  script exposes `window.springLoader` (`progress`, `stage`, `handOff`), sets
+  `--spring-progress` and `data-stage` (`load`, `app`, `engine`, `run`,
+  `done`) on `#spring-loader`, and `window.springLoaderHandOff(progress)`
+  removes it (timeout 60 s, 3 s after `flutter-first-frame`). The `web:` file
+  is found below the app's directory, else in `lib/resources/` of a
+  dependency. The CSS variables of a loader are the key path in kebab case.
+- The props class of a kind is `<Kind>LoaderProps`, written in the package
+  that declares the `@ThemeLoaderKind` class; kinds of dependencies are known
+  from `loaderKinds` of their `spring_metadata.json`. The registration is in
+  the module getter, before the `BeanModule` is built.
+- The editor knows `loaders.*` (kind values incl. `loaderKinds`, the keys of
+  each kind), `splash.loader` / `splash.animation` (completion, errors,
+  go to definition) and `web:` (existence, completion, go to the file).
+
+### Examples
+
+Every example app shows all three: the Flutter guide, `example/themes/`
+material, cupertino and neon (neon: the title-screen loader, its kind in
+`neon_ui`, so a library can ship loader kinds with its theme).
+
+## Navigation
+
+A starter of its own, the next release:
+[spring_boot_starter_flutter_navigation.md](spring_boot_starter_flutter_navigation.md).
+This starter only uses a `RouterConfig` bean when there is one.
 
 ## Texts
 

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/browser_page.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/csrf_cookie_http_transport.dart';
-import 'package:spring_boot_starter_flutter_security/src/web/flutter_web_security_properties.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 const _log = SpringLog('spring.security.oauth2.client.login');

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:neon_books_app/spring_keys.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
@@ -74,7 +74,7 @@ class _BookPageState extends SpringState<BookPage, BookPageBeans> {
             return Center(child: Text(errorMessage(context, snapshot.error!)));
           }
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: ThemeLoader(context.theme.loaders.bar));
           }
           final book = snapshot.data;
           if (book == null) {

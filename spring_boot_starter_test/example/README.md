@@ -37,7 +37,7 @@ before the tests, and again after changing beans.
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/main.spring.dart'; // generated: springApplication
+import '../bin/spring_gen/main.spring.dart'; // generated: springApplication
 
 void main() {
   final app = springBootTest(springApplication);
@@ -150,7 +150,7 @@ The generator turns a class like this into the functions above; the test
 file keeps a one-line `main`:
 
 ```dart
-import 'spring/checkout.test.spring.dart'; // generated next to the test
+import 'spring_gen/checkout.test.spring.dart'; // generated, in test/spring_gen/
 
 @SpringBootTest()
 @ActiveProfiles(['test'])

@@ -1,0 +1,40 @@
+# Two themes in one file. `ocean` is `light` with a teal seed and rounder
+# corners; `ocean-night` is `ocean`, dark: `extends` copies a theme and
+# `brightness: dark` turns it around. Colors that refer to the palette
+# ($colors.primary...) follow the new seed.
+spring:
+  flutter:
+    theme:
+      themes:
+        ocean:
+          extends: light
+          seed-color: teal
+          scheme-variant: vibrant
+          shape: { medium: 20, large: 28 }
+          colors:
+            secondary: '#0277BD'
+            surface-container-low: '#E6F4F1'
+          components:
+            card: { elevation: level0 }
+          tokens:
+            brand:
+              name: Ocean
+              tagline: Light, teal and round
+        ocean-night:
+          extends: ocean
+          brightness: dark
+          colors:
+            surface-container-low: '#10302E'
+          tokens:
+            brand:
+              name: Ocean at night
+          # A background without an image: a color and a gradient over it.
+          background:
+            color: $colors.surface-container-lowest
+            overlay:
+              gradient:
+                type: linear
+                begin: top
+                end: bottom
+                colors: [transparent, { color: $colors.primary, alpha: 22% }]
+            transition: 400ms ease-out

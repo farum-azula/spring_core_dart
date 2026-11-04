@@ -1,14 +1,14 @@
 // A @DataTest class on the repositories of the application: the data beans
 // without the service and the runner, an in-memory SQLite database with the
 // migrations applied, and a transaction rolled back after each test. The
-// generator writes spring/data_test/book_repository.test.spring.dart.
+// generator writes spring_gen/data_test/book_repository.test.spring.dart.
 import 'dart:io';
 
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/book_repository.test.spring.dart';
+import '../spring_gen/data_test/book_repository.test.spring.dart';
 import 'app/data_test_app.dart';
 
 @DataTest(application: 'test/data_test/app/data_test_app.dart')

@@ -14,12 +14,14 @@ import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_serv
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_token_revocation_client.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/secret_store_oauth2_authorized_client_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/principal/principal_notifier.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/bound_properties.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/properties_beans.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/platform_secret_store.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/browser_page.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/csrf_cookie_http_transport.dart';
-import 'package:spring_boot_starter_flutter_security/src/web/flutter_web_security_properties.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/server_credentials_http_transport.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/server_oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/spa_browser_page.dart';
@@ -113,19 +115,21 @@ final class _NotOnWeb implements Condition {
   bool matches(ConditionContext context) => !const _OnWeb().matches(context);
 }
 
+// The web login's mode of the properties; only asked on the web, so a bad
+// value there does not stop an app on a phone. An unusable value fails the
+// start here, with the report of the properties class.
+WebLoginMode? _webMode(ConditionContext context) => _onWeb(context)
+    ? boundWebSecurityProperties(context.environment).mode
+    : null;
+
 // The web login's server mode: spring.flutter.security.web.mode=server or
-// unset. Another value fails when flutterWebSecurityProperties is created.
+// unset.
 final class _OnServerMode implements Condition {
   const _OnServerMode();
 
   @override
-  bool matches(ConditionContext context) => switch (context.environment
-      .getProperty('${FlutterWebSecurityProperties.prefix}.mode')
-      ?.trim()
-      .toLowerCase()) {
-    null || '' || 'server' => true,
-    _ => false,
-  };
+  bool matches(ConditionContext context) =>
+      _webMode(context) == WebLoginMode.server;
 }
 
 // The web login's spa mode: spring.flutter.security.web.mode=spa, the
@@ -135,11 +139,7 @@ final class _OnSpaMode implements Condition {
 
   @override
   bool matches(ConditionContext context) =>
-      context.environment
-          .getProperty('${FlutterWebSecurityProperties.prefix}.mode')
-          ?.trim()
-          .toLowerCase() ==
-      'spa';
+      _webMode(context) == WebLoginMode.spa;
 }
 
 // OAuth2 clients: a spring.security.oauth2.client.registration.* property
@@ -264,13 +264,7 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
       // spring.flutter.security.application-id: the name of the app's
       // values on Windows and Linux (the app's own id by default).
       create: (r) => PlatformSecretStore(
-        applicationId: switch (r
-            .dependency<Environment>()
-            .getProperty('spring.flutter.security.application-id')
-            ?.trim()) {
-          null || '' => null,
-          final id => id,
-        },
+        applicationId: r.dependency<FlutterSecurityProperties>().applicationId,
       ),
     ),
     BeanDefinition<InMemorySecretStore>(
@@ -320,13 +314,9 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
       // session, no cookies shared with the browser (no single sign-on,
       // no system prompt before the window on iOS and macOS).
       create: (r) => PlatformAuthorizationWindow(
-        preferEphemeralSession:
-            r
-                .dependency<Environment>()
-                .getProperty('spring.flutter.security.ephemeral-session')
-                ?.trim()
-                .toLowerCase() ==
-            'true',
+        preferEphemeralSession: r
+            .dependency<FlutterSecurityProperties>()
+            .ephemeralSession,
       ),
     ),
     BeanDefinition<LoopbackAuthorizationWindow>(
@@ -495,17 +485,6 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
         eventPublisher: r.dependency<ApplicationEventPublisher>(),
       ),
     ),
-    BeanDefinition<FlutterWebSecurityProperties>(
-      name: 'flutterWebSecurityProperties',
-      factoryMethodName: 'flutterWebSecurityProperties',
-      source: _source,
-      conditions: const [
-        ConditionGroup('$_source.flutterWebSecurityProperties', [_OnWeb()]),
-      ],
-      // Throws for unusable values: the start fails.
-      create: (r) =>
-          FlutterWebSecurityProperties.bind(r.dependency<Environment>()),
-    ),
     BeanDefinition<SpaBrowserPage>(
       name: 'spaBrowserPage',
       types: const [SpaBrowserPage, BrowserPage],
@@ -551,7 +530,7 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
         final location = page.location;
         final server = properties.server(location);
         final connectTimeout = FeignClientConfig.connectTimeout(
-          r.dependency<Environment>(),
+          r.dependency<FeignProperties>(),
         );
         return CsrfCookieHttpTransport(
           // fetch sends cookies to the page's own origin by itself; a
@@ -635,4 +614,5 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
       ),
     ),
   ],
+  imports: [flutterSecurityConfigBeans],
 );

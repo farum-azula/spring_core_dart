@@ -9,7 +9,7 @@ import 'dart:async';
 
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 /// A logger for code outside the beans, such as `main`; the beans below get
 /// theirs from `@Log`.

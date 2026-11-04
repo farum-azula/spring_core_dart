@@ -154,6 +154,23 @@ problem of the interface is one build error:
   entity of another package the repository's library can see is written
   through it).
 
+### In the editor
+
+The Dart language server of the `dart_spring` extension (Zed) knows the data
+layer, from the entities in your sources and the `entities` of
+`lib/spring_gen/spring_metadata.json`: inside `@Query('...')` it colours the
+SQL, completes `{` (entities), `{Book.` (properties) and `:` (parameters),
+goes from `{Book}` to the class, from `{Book.authorId}` to the field and from
+`:year` to the parameter, shows the table and column on hover, and reports
+what the build would, while you type: an unknown `{Entity}` or property with
+"did you mean", a `:name` that is no parameter, a parameter the query never
+uses (a warning; `Pageable` and `Sort` are exempt), a mistake in a `:#{...}`
+expression (the parameters are `#name`, beans `@name`), unbalanced quotes
+and parentheses. A derived query name (`findByTitelAndYear`) is read with the
+build's grammar: the unknown property is underlined with a suggestion, the
+parameter count is checked, a hover shows the SQL the name stands for and the
+property part goes to the entity's field.
+
 At startup the repository still resolves `${property:default}` from the
 environment, writes the names of `{Entity}` placeholders through the mapping,
 and runs the `:#{expression}` values the build did not compile (SpEL).
@@ -553,7 +570,7 @@ around every test that is rolled back afterwards. The services, controllers
 and runners of the application are not in the context, and
 [`spring_boot_starter_test`](https://pub.dev/packages/spring_boot_starter_test)
 runs it (a dev dependency; the starters do not depend on each other, the
-generator joins them in `test/spring/<name>.test.spring.dart`).
+generator joins them in `test/spring_gen/<name>.test.spring.dart`).
 
 ```dart
 @DataTest()

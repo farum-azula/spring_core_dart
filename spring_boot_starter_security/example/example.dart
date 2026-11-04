@@ -13,7 +13,7 @@
 //   open http://localhost:8080/account                     # the login page
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 @Service()
 class BookService {

@@ -1,10 +1,14 @@
-# The generator writes the example's application (example/example.spring.dart)
-# and the server endpoints the tests start (test/server/); the package itself
-# is written by hand.
+# The generator writes the example's application (example/spring_gen/example.spring.dart),
+# the server endpoints the tests start (test/server/) and, with
+# `spring_properties`, the binding of the typed properties (lib/src/config/);
+# the rest of the package is written by hand.
 targets:
   $default:
     builders:
       spring_core_dart_generator:spring_core_dart:
         generate_for: [example/**, test/server/**]
+      spring_core_dart_generator:spring_properties:
+        enabled: true
+        generate_for: [lib/src/config/**]
       spring_core_dart_generator:spring_test:
         enabled: false

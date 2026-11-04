@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "package": "theme_showcase_neon",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "demoLog",
+      "type": "DemoLog",
+      "types": [
+        "DemoLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:theme_showcase_neon/src/app/logs.dart",
+      "line": 28,
+      "injects": [],
+      "members": [
+        {
+          "name": "error",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "info",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "warn",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "pageLog",
+      "type": "PageLog",
+      "types": [
+        "PageLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:theme_showcase_neon/src/app/logs.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "opened",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String page"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "themeLog",
+      "type": "ThemeLog",
+      "types": [
+        "ThemeLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:theme_showcase_neon/src/app/logs.dart",
+      "line": 15,
+      "injects": [
+        {
+          "parameter": "_selection",
+          "type": "ThemeSelection",
+          "qualifier": null
+        }
+      ],
+      "members": []
+    }
+  ],
+  "profiles": [
+    "desktop"
+  ]
+}

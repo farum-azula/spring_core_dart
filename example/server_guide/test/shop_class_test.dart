@@ -1,6 +1,6 @@
 // Chapter 12: a test written the way Spring writes tests — annotations on
 // a class, beans in fields, one method per test. The generator turns it
-// into spring/shop_class.test.spring.dart (runSpringTests).
+// into spring_gen/shop_class.test.spring.dart (runSpringTests).
 @TestOn('vm')
 library;
 
@@ -13,7 +13,7 @@ import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 import 'package:test/test.dart';
 
-import 'spring/shop_class.test.spring.dart';
+import 'spring_gen/shop_class.test.spring.dart';
 
 class FixedClock implements Clock {
   @override

@@ -11,7 +11,7 @@ import 'dart:io' as io;
 
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 @FeignClient('catalog', url: r'${catalog.url}')
 abstract interface class CatalogClient {

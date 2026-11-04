@@ -23,7 +23,7 @@ fields, `@TestBean` fakes and `@Test` methods, turned by the generator into
 the functions above. Documented in [docs/testing.md](../docs/testing.md).
 
 ```dart
-import 'spring/checkout.test.spring.dart';
+import 'spring_gen/checkout.test.spring.dart';
 
 @SpringBootTest(args: ['--shop.name=Night Books'])
 @ActiveProfiles(['dev', 'test'])
@@ -58,7 +58,7 @@ void main() => runSpringTests();
   generated code.
 - **Builder** `spring_core_dart_generator:spring_test`
   (`lib/src/test_builder.dart`): `test/{{}}_test.dart` →
-  `test/spring/{{}}.test.spring.dart` (its own folder, one file per test
+  `test/spring_gen/{{}}.test.spring.dart` (its own folder, one file per test
   file). It reads the test file as syntax and copies its
   imports, so bean types are never written out (`instance.checkout =
   app.getBean();`). Finds the `@SpringBootApplication` entry point of the

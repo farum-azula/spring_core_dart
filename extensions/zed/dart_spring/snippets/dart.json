@@ -1,11 +1,11 @@
 {
   "Spring Boot application": {
     "prefix": "spboot",
-    "description": "main with @SpringBootApplication; run build_runner to generate main.spring.dart",
+    "description": "main with @SpringBootApplication; run build_runner to generate spring_gen/main.spring.dart",
     "body": [
       "import 'package:spring_boot_dart/spring_boot_dart.dart';",
       "",
-      "import '${1:main}.spring.dart';",
+      "import 'spring_gen/${1:main}.spring.dart';",
       "",
       "@SpringBootApplication()",
       "void main(List<String> args) => runApplication(args);$0"
@@ -17,7 +17,7 @@
     "body": [
       "import 'package:spring_core_dart/spring_core_dart.dart';",
       "",
-      "import '${1:app}.spring.dart';",
+      "import 'spring_gen/${1:app}.spring.dart';",
       "",
       "@ComponentScan()",
       "final BeanModule ${2:appBeans} = \\$${2:appBeans};$0"
@@ -280,7 +280,7 @@
       "import 'package:flutter/widgets.dart';",
       "import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';",
       "",
-      "import '${1:main}.spring.dart';",
+      "import 'spring_gen/${1:main}.spring.dart';",
       "",
       "@SpringBootApplication()",
       "void main() => runApp(",
@@ -382,7 +382,7 @@
       "import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';",
       "import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';",
       "",
-      "import '${1:package:app/main}.spring.dart';",
+      "import '${1:package:app/spring_gen/main}.spring.dart';",
       "",
       "void main() {",
       "  final app = springBootTest(springApplication);",
@@ -405,7 +405,7 @@
       "import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';",
       "import 'package:test/test.dart';",
       "",
-      "import '${1:../bin/main}.spring.dart';",
+      "import '${1:../bin/spring_gen/main}.spring.dart';",
       "",
       "void main() {",
       "  final app = springBootTest(",
@@ -417,6 +417,22 @@
       "  test('${4:works}', () {",
       "    expect(app.getBean<${5:Type}>(), isNotNull);$0",
       "  });",
+      "}"
+    ]
+  },
+  "Theme loader kind (painter)": {
+    "prefix": "sploaderpainter",
+    "description": "@ThemeLoaderKind painter; the generator writes the props class from the theme's keys",
+    "body": [
+      "@ThemeLoaderKind('${1:doors}')",
+      "class ${2:Doors}Loader extends ThemeLoaderPainter<${2:Doors}LoaderProps> {",
+      "  const ${2:Doors}Loader();",
+      "",
+      "  @override",
+      "  void paint(Canvas canvas, Size size, LoaderFrame<${2:Doors}LoaderProps> frame) {",
+      "    final ${3:close} = frame.phase('${3:close}'); // 0..1",
+      "    $0",
+      "  }",
       "}"
     ]
   }

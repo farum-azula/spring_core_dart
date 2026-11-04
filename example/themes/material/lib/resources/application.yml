@@ -1,0 +1,301 @@
+# THEME SHOWCASE MATERIAL: the whole look of this app is in this file and in
+# themes/*.yml. There is no ThemeData in the Dart code. The pages show each
+# part of the theme next to the YAML line that makes it (their little grey
+# code boxes quote this file; a test checks they do).
+#
+# Read it top to bottom:
+#   1. the app and the theme list                (this block)
+#   2. colors, references and color objects      (colors, tokens.palette)
+#   3. typography, spacing, shapes               (typography, spacing, shape)
+#   4. tokens: groups, lists, durations, an image (tokens)
+#   5. components: Flutter's widgets, per state  (components)
+#   6. styles for our own widgets                (styles)
+#   7. motion, animations, loaders, the splash   (motion, animations, loaders, splash)
+#   8. themes: light, dark, ocean, ocean-night, neon, high-contrast
+spring:
+  config:
+    import: >-
+      resources:themes/ocean.yml, resources:themes/neon.yml,
+      resources:themes/high-contrast.yml
+
+  flutter:
+    web:
+      # `flutter run -d chrome` serves the app on http://localhost:5070/.
+      port: 5070
+    app:
+      # A MaterialApp: Scaffold, AppBar and the other Material widgets.
+      type: material
+      title: Theme Showcase Material
+      debug-banner: false
+
+    theme:
+      # The theme shown at the start. `system` follows the device and picks
+      # system-light or system-dark.
+      # Names: light | dark | ocean | ocean-night | neon | high-contrast
+      active: light
+      system-light: light
+      system-dark: dark
+
+      # ---------------------------------------------------------------- 2
+      # Everything below is the "root": shared by every theme. A theme under
+      # `themes:` (or in themes/*.yml) holds only what it changes.
+
+      # One color makes the whole Material 3 palette (primary, surfaces...).
+      seed-color: '#3F51B5'
+      scheme-variant: tonalSpot
+      colors:
+        # Declared colors win over the palette made from the seed.
+        secondary: '#00897B'
+        error: '#B3261E'
+        surface-container-low: grey.shade100
+        # A reference to a color the palette makes and we never wrote down.
+        outline-variant: { color: $colors.outline, alpha: 50% }
+        # A reference to a declared color, mixed with white.
+        tertiary: { color: $colors.secondary, mix: { with: white, amount: 35% } }
+
+      # ---------------------------------------------------------------- 3
+      typography:
+        defaults: { letter-spacing: 0.1 }
+        display: { weight: bold }
+        headline: { weight: semibold }
+        title-large: { size: 24, weight: semibold }
+        body-medium: { height: 1.5 }
+        code: { font-family: monospace, size: 13 }
+      spacing:
+        xs: 4
+        s: 8
+        m: 16
+        l: 24
+        xl: 32
+        gutter: 20
+      shape:
+        medium: 16
+        large: 24
+
+      # ---------------------------------------------------------------- 4
+      # Tokens: values of our own. Groups nest, lists and durations work.
+      tokens:
+        brand:
+          name: Theme Showcase
+          tagline: Every look in this app is a line of YAML
+          accent: $colors.primary
+          # A token with a `source` is an image (see the Images page).
+          badge: { source: assets/images/badge.png }
+        palette:
+          # Color objects: alpha, mix, and a reference to a reference.
+          soft: { color: $colors.primary, alpha: 12% }
+          hover: { color: $colors.primary, mix: { with: white, amount: 14% } }
+          deep: { color: $palette.hover, mix: { with: black, amount: 30% } }
+          # Roles we never declared, by reference.
+          edge: $colors.outline
+          lowest: $colors.surface-container-lowest
+        corner:
+          # The Material shape scale by reference.
+          tiny: $shape.extra-small
+          roomy: $shape.extra-large
+        chart:
+          # A list of colors (List<Color>), of numbers and of texts.
+          colors: [$colors.primary, $colors.secondary, $colors.tertiary, $palette.deep]
+          bars: [4, 9, 6, 11, 7]
+          days: [Mon, Tue, Wed, Thu, Fri]
+        timing:
+          # Durations, and a reference to a motion duration.
+          intro: 600ms
+          stagger: $motion.durations.fast
+        layout:
+          content-width: 980
+          card:
+            padding: 20
+            radius: $shape.large
+
+      # ---------------------------------------------------------------- 5
+      # Flutter's own components, adjusted from here. A property that takes
+      # a state takes a map: default, hovered, focused, pressed, disabled,
+      # selected, error...
+      components:
+        app-bar: { center-title: false, scrolled-under-elevation: level2, title-text-style: title-large }
+        # `button` holds what the four buttons share.
+        button: { shape: full, min-height: 44 }
+        filled-button:
+          background-color:
+            default: $colors.primary
+            hovered: { color: $colors.primary, alpha: 85% }
+            pressed: $colors.tertiary
+            disabled: { color: $colors.on-surface, alpha: 12% }
+          side:
+            default: none
+            focused: { color: $colors.secondary, width: 2 }
+          text-style: { style: label-large, weight: bold }
+        elevated-button:
+          elevation: { default: level1, hovered: level3, pressed: level0 }
+        outlined-button:
+          side:
+            default: { color: $colors.outline, width: 1 }
+            hovered: { color: $colors.primary, width: 2 }
+            disabled: { color: { color: $colors.on-surface, alpha: 12% }, width: 1 }
+        text-button:
+          foreground-color: { default: $colors.primary, hovered: $colors.tertiary, disabled: { color: $colors.on-surface, alpha: 38% } }
+          overlay-color: { hovered: { color: $colors.primary, alpha: 8% }, pressed: { color: $colors.primary, alpha: 16% } }
+        icon-button:
+          foreground-color: { default: $colors.on-surface-variant, hovered: $colors.primary, selected: $colors.primary }
+        segmented-button:
+          background-color: { selected: $colors.secondary-container }
+          foreground-color: { selected: $colors.on-secondary-container }
+        floating-action-button: { shape: large, elevation: level2 }
+        checkbox:
+          fill-color: { default: $colors.outline, selected: $colors.primary, error: $colors.error, disabled: { color: $colors.on-surface, alpha: 12% } }
+          shape: { type: rounded, radius: extra-small }
+        radio:
+          fill-color: { default: $colors.outline, selected: $colors.primary, disabled: { color: $colors.on-surface, alpha: 38% } }
+        switch:
+          thumb-color: { default: $colors.outline, selected: $colors.on-primary }
+          track-color: { default: $colors.surface-container-highest, selected: $colors.primary }
+        slider:
+          track-height: 6
+          active-track-color: $colors.primary
+          inactive-track-color: { color: $colors.primary, alpha: 24% }
+          thumb-color: $colors.tertiary
+          value-indicator-color: $colors.tertiary
+          show-value-indicator: on-drag
+        chip:
+          shape: stadium
+          side: $colors.outline-variant
+          selected-color: $colors.secondary-container
+          label-style: label-large
+        input:
+          style: outline
+          shape: small
+          filled: true
+          fill-color: $colors.surface-container-low
+          focused-border: { type: outline, radius: small, side: { color: $colors.primary, width: 2 } }
+          error-border: { type: outline, radius: small, side: { color: $colors.error, width: 2 } }
+        card: { shape: large, color: $colors.surface-container-low, elevation: level0 }
+        list-tile: { shape: medium, selected-tile-color: { color: $colors.primary, alpha: 12% }, selected-color: $colors.primary }
+        divider: { color: $colors.outline-variant, thickness: 1 }
+        expansion-tile: { shape: medium, collapsed-shape: medium }
+        progress-indicator: { color: $colors.primary, linear-track-color: { color: $colors.primary, alpha: 16% }, stroke-cap: round, linear-min-height: 6 }
+        badge: { background-color: $colors.tertiary, text-color: $colors.on-tertiary }
+        navigation-bar: { height: 72, label-behavior: only-show-selected, indicator-color: $colors.secondary-container }
+        navigation-rail: { label-type: all, use-indicator: true, indicator-color: $colors.secondary-container }
+        tab-bar:
+          indicator-size: tab
+          indicator-color: $colors.tertiary
+          label-color: $colors.primary
+          unselected-label-color: $colors.on-surface-variant
+          divider-height: 0
+        dialog: { shape: extra-large, elevation: level3, title-text-style: headline-small }
+        snack-bar:
+          behavior: floating
+          shape: medium
+          show-close-icon: true
+          background-color: $colors.inverse-surface
+          content-text-style: { style: body-medium, color: $colors.on-inverse-surface }
+        banner: { background-color: $colors.secondary-container, content-text-style: { style: body-medium, color: $colors.on-secondary-container } }
+        tooltip:
+          decoration: { color: $colors.inverse-surface, radius: small }
+          text-style: { style: label-medium, color: $colors.on-inverse-surface }
+          padding: 12, 8
+          wait-duration: 300ms
+        popup-menu: { shape: medium, elevation: level3 }
+        bottom-sheet: { shape: extra-large, constraints: { max-width: 640 } }
+        scrollbar: { thumb-color: { default: $colors.outline, hovered: $colors.primary }, thickness: { default: 6, hovered: 10 } }
+      # CupertinoThemeData (the iOS look) has a root of its own; the Components
+      # page shows it.
+      cupertino:
+        primary-color: $colors.primary
+        scaffold-background-color: $colors.surface
+        bar-background-color: $colors.surface-container
+        text-theme:
+          primary-color: $colors.primary
+          nav-title-text-style: { style: title-large, weight: 600 }
+
+      # ---------------------------------------------------------------- 6
+      # Looks for our own widgets (ThemeStates): one value, or a value per
+      # state; `transition` animates between them.
+      styles:
+        pill:
+          padding: [12, 6]
+          radius: 999
+          border: { default: $colors.outline, hovered: $colors.primary, selected: $colors.primary, disabled: $colors.outline-variant, error: $colors.error }
+          fill: { default: transparent, hovered: { color: $colors.primary, alpha: 8% }, selected: { color: $colors.primary, alpha: 18% }, disabled: transparent }
+          text: { default: $colors.on-surface-variant, hovered: $colors.primary, selected: $colors.primary, disabled: $colors.outline, error: $colors.error }
+          transition: 120ms ease-out
+        action:
+          padding: [24, 14]
+          radius: 12
+          fill:
+            default: $colors.primary
+            hovered: { color: $colors.primary, mix: { with: white, amount: 14% } }
+            focused: { color: $colors.primary, mix: { with: white, amount: 14% } }
+            pressed: $colors.tertiary
+            disabled: { color: $colors.on-surface, alpha: 12% }
+          text: { default: $colors.on-primary, disabled: $colors.outline }
+          border: { default: transparent, focused: $colors.secondary }
+          # The glow (a blur radius) grows on hover and shrinks when pressed.
+          glow: { default: 0, hovered: 14, pressed: 4, disabled: 0 }
+          transition: 160ms ease-out
+        field:
+          padding: [16, 12]
+          radius: 12
+          border: { default: $colors.outline, hovered: $colors.on-surface-variant, focused: $colors.primary, error: $colors.error, disabled: $colors.outline-variant }
+          fill: { default: $colors.surface-container-low, focused: $colors.surface-container, disabled: transparent }
+          glow: { default: 0, focused: 10, error: 10 }
+          transition: 140ms ease-out
+        tile:
+          padding: [20]
+          radius: 20
+          border: { default: $colors.outline-variant, hovered: $colors.secondary, selected: $colors.primary }
+          fill: { default: $colors.surface-container-low, hovered: $colors.surface-container, selected: { color: $colors.primary, alpha: 10% } }
+          glow: { default: 0, hovered: 12, selected: 18 }
+          transition: 200ms ease-out
+
+      # ---------------------------------------------------------------- 7
+      motion:
+        # What a new page does: platform | fade-upwards | zoom | cupertino | none
+        page-transition: fade-upwards
+        durations:
+          fast: 120ms
+          medium: 250ms
+          slow: 600ms
+        curves:
+          emphasized: [0.2, 0, 0, 1]
+          out: ease-out
+          standard: ease-in-out
+      animations:
+        # repeat: none (once) | loop (again and again) | reverse (back and forth)
+        border-spin: { duration: 4s, curve: linear, repeat: loop }
+        glow-pulse: { duration: 1.6s, curve: ease-in-out, repeat: reverse }
+        enter: { duration: $motion.durations.slow, curve: ease-out, repeat: none }
+        background-drift: { duration: 24s, curve: ease-in-out, repeat: reverse }
+
+      # Loaders: ThemeLoader and ThemeSkeleton show them, by name. A built-in
+      # kind is spinner, dots, pulse, bar or skeleton.
+      loaders:
+        spinner: { kind: spinner, size: 32, stroke: 3, track: { color: $colors.primary, alpha: 20% } }
+        bar: { kind: bar, color: $colors.primary, track: { color: $colors.primary, alpha: 20% }, height: 4, width: 240 }
+        card:
+          kind: skeleton
+          base: $colors.surface-container-high
+          highlight: $colors.surface-container-highest
+          radius: $shape.medium
+          shimmer: { duration: 1.2s, angle: 20 }
+
+      # The splash: what shows while the app starts (and, on the web, before
+      # Flutter runs: the generator writes it into web/index.html). The bar
+      # follows the start's progress. A plain `splash: ripple` would be the
+      # ink of taps instead; this map is the start screen.
+      splash:
+        background: { color: $colors.surface }
+        logo: { source: assets/images/badge.png, size: 96 }
+        title: Theme Showcase
+        loader: bar
+        min-duration: 1.2s
+        exit: { transition: 400ms ease-out }
+
+      # ---------------------------------------------------------------- 8
+      themes:
+        # `light` is the root above; `dark` is the root with these changes.
+        dark:
+          seed-color: '#7986CB'
+          colors:
+            surface-container-low: grey.shade900

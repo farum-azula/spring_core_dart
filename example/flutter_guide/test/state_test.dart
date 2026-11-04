@@ -3,9 +3,9 @@
 // that changed.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:neon_books_app/main.spring.dart';
-import 'package:neon_books_app/src/app/home_page.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/api/models.dart';
+import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/basket/basket_badge.dart';
 import 'package:neon_books_app/src/catalog/book_tile.dart';

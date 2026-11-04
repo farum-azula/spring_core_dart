@@ -1,10 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// The property that shows request parameters and headers in the logs, as
-/// Spring MVC's `spring.mvc.log-request-details`.
-const logRequestDetailsProperty = 'spring.mvc.log-request-details';
-
 /// [text] as one line safe to log: line breaks become `<EOL>` and control
 /// characters `?` (Spring's `LogFormatUtils`), cut at [maxLength]. Unlike
 /// `LogFormatUtils.formatValue` of a `String` it adds no quotes.

@@ -1,27 +1,11 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/src/config/web_properties.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.server');
-
-/// The name of the property, `spring.test.web-environment`, that tells
-/// whether a test starts a real server.
-///
-/// `springBootTest(webEnvironment:)` of the test starter sets it; a test
-/// with `ApplicationContextRunner` may set it by hand. Its values:
-///
-/// - `mock`: no server; `MockMvc` calls the dispatcher in memory (the
-///   default of `springBootTest`);
-/// - `random-port`: a real server on a free port;
-/// - `defined-port`: a real server on `server.port`;
-/// - `none`: no server.
-///
-/// Any other value starts no server either. When the property is not
-/// set, as in a normal run, the server starts unless
-/// `spring.main.web-application-type=none`.
-const webEnvironmentProperty = 'spring.test.web-environment';
 
 /// Starts the HTTP server when the application context is ready and
 /// stops it when the context closes.
@@ -59,13 +43,18 @@ final class WebServerStartStopLifecycle
     with SmartLifecycle
     implements ApplicationContextAware, AsyncStartup {
   /// A lifecycle that starts a server of [factory] for [handler], when
-  /// [environment] says a server should run.
+  /// [main] and [test] say a server should run.
   WebServerStartStopLifecycle(
     this.factory,
     this.handler,
     this.environment, {
     this.shutdownTimeout,
-  });
+    WebMainSettings? main,
+    WebTestSettings? test,
+    ServerSettings? serverSettings,
+  }) : main = main ?? WebMainSettings(),
+       test = test ?? WebTestSettings(),
+       serverSettings = serverSettings ?? ServerSettings();
 
   /// Creates a server at each start.
   final WebServerFactory factory;
@@ -73,10 +62,17 @@ final class WebServerStartStopLifecycle
   /// Answers every request; in the application, the `dispatcherHandler`.
   final HttpHandler handler;
 
-  /// The configuration that decides whether the server runs
-  /// (`spring.main.web-application-type`, `spring.test.web-environment`),
-  /// and that receives the `local.server.port` property.
+  /// The configuration that receives the `local.server.port` property.
   final Environment environment;
+
+  /// `spring.main.web-application-type`: `none` starts no server.
+  final WebMainSettings main;
+
+  /// `spring.test.web-environment`: which test environments start one.
+  final WebTestSettings test;
+
+  /// `server.*`, for the scheme of the log line.
+  final ServerSettings serverSettings;
 
   /// How long a graceful shutdown waits for running requests
   /// (`spring.lifecycle.timeout-per-shutdown-phase`); `null` lets the
@@ -125,18 +121,14 @@ final class WebServerStartStopLifecycle
 
   /// Whether a server should run: not when
   /// `spring.main.web-application-type=none`, and in a test only for
-  /// the `random-port` and `defined-port` web environments (see
-  /// [webEnvironmentProperty]).
+  /// the `random-port` and `defined-port` web environments
+  /// (`spring.test.web-environment`).
   bool get isEnabled {
-    final type = environment
-        .getProperty('spring.main.web-application-type')
-        ?.trim()
-        .toLowerCase();
-    if (type == 'none') {
+    if (main.webApplicationType?.trim().toLowerCase() == 'none') {
       return false;
     }
-    final test = environment.getProperty(webEnvironmentProperty)?.trim();
-    return test == null || test == 'random-port' || test == 'defined-port';
+    final web = test.webEnvironment?.trim();
+    return web == null || web == 'random-port' || web == 'defined-port';
   }
 
   @override
@@ -168,9 +160,10 @@ final class WebServerStartStopLifecycle
           }
           _setLocalPort(server.port);
           final scheme =
-              environment.getProperty('server.ssl.certificate') == null
-              ? 'http'
-              : 'https';
+              serverSettings.ssl.enabled &&
+                  (serverSettings.ssl.certificate?.trim().isNotEmpty ?? false)
+              ? 'https'
+              : 'http';
           _log.info('Web server started on port ${server.port} ($scheme)');
           final context = _context;
           if (context is ConfigurableApplicationContext && context.isActive) {

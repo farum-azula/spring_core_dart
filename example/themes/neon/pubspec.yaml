@@ -1,0 +1,38 @@
+name: theme_showcase_neon
+description: "Theme Showcase NEON: a custom design system (neon_ui, app type widgets, no Material, no Cupertino) on the theme of spring_boot_starter_flutter."
+publish_to: none
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The icons of the Cupertino widgets (CupertinoIcons); see flutter: below.
+  cupertino_icons: ^1.0.8
+  # The design system: widgets, fonts, the background picture and the theme
+  # themes/neon.yml, which the app imports.
+  neon_ui:
+    path: ../neon_ui
+  # SpringApplicationWidget, the theme (spring.flutter.theme.*), the typed
+  # keys, ThemeStates, ThemeAnimation, ThemeBackground.
+  spring_boot_starter_flutter: ^0.6.2
+
+  # Imported by the generated code (lib/spring_gen/).
+  spring_boot_dart: ^0.6.2
+  spring_boot_starter_logging: ^0.6.2
+  spring_core_dart: ^0.6.2
+dev_dependencies:
+  build_runner: ^2.17.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  spring_core_dart_generator: ^0.6.2
+
+flutter:
+  # MaterialApp and CupertinoApp are both in the starter (the theme picks
+  # one at run time), so the build looks for both icon fonts; the unused
+  # glyphs are cut out of a release build.
+  uses-material-design: true

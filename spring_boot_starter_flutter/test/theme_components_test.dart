@@ -133,9 +133,10 @@ void main() {
     test('every value form works in a state: roles, hex, opacity', () {
       final property = fill({
         'fill-color.default': 'grey.shade100',
-        'fill-color.hovered': 'primary',
+        'fill-color.hovered': r'$colors.primary',
         'fill-color.pressed': '#80FF0000',
-        'fill-color.focused': 'primary@50%',
+        'fill-color.focused.color': r'$colors.primary',
+        'fill-color.focused.alpha': '50%',
       });
       final t = theme(c('checkbox', const {}));
       expect(property.resolve({}), Colors.grey.shade100);
@@ -152,8 +153,8 @@ void main() {
         ...c('elevated-button', {
           'elevation.default': 'level1',
           'elevation.hovered': 'level3',
-          'side.default': 'outline',
-          'side.focused.color': 'primary',
+          'side.default': r'$colors.outline',
+          'side.focused.color': r'$colors.primary',
           'side.focused.width': '3',
           'text-style.default': 'label-large',
           'text-style.hovered.weight': 'bold',
@@ -187,7 +188,7 @@ void main() {
 
     test('mistakes: an unknown state, states mixed with other keys', () {
       expect(
-        () => fill({'fill-color.hoverd': 'primary'}),
+        () => fill({'fill-color.hoverd': r'$colors.primary'}),
         invalid(
           'components.checkbox.fillcolor.hoverd',
           "did you mean 'hovered'",
@@ -196,8 +197,8 @@ void main() {
       expect(
         () => material(
           c('elevated-button', {
-            'side.color': 'primary',
-            'side.hovered.color': 'error',
+            'side.color': r'$colors.primary',
+            'side.hovered.color': r'$colors.error',
           }),
         ),
         invalid('components.elevatedbutton.side.color', 'a state of side'),
@@ -206,19 +207,22 @@ void main() {
 
     test('a property without states rejects a map', () {
       expect(
-        () => material(c('card', {'color.hovered': 'primary'})),
+        () => material(c('card', {'color.hovered': r'$colors.primary'})),
         invalid('components.card.color.hovered', 'no states'),
       );
     });
 
     test('from YAML, as a theme loaded at run time', () {
       final themes = SpringThemes(const {});
-      themes.loadYaml('''
+      themes.loadYaml(r'''
 themes:
   states:
     components:
       switch:
-        thumb-color: { default: grey, selected: primary, disabled: outline }
+        thumb-color:
+          default: grey
+          selected: $colors.primary
+          disabled: $colors.outline
         track-outline-width: { default: 1, focused: 3 }
 ''');
       final t = themes.material('states').switchTheme;
@@ -232,23 +236,39 @@ themes:
     ThemeData card(Map<String, String> p) => material(c('card', p));
 
     test('colors: roles, Colors names, hex, opacity', () {
-      expect(card({'color': 'primary'}).cardTheme.color, isNotNull);
+      expect(card({'color': r'$colors.primary'}).cardTheme.color, isNotNull);
       expect(
         card({'color': 'deepPurple.shade200'}).cardTheme.color,
         Colors.deepPurple.shade200,
       );
       expect(card({'color': '#abc'}).cardTheme.color, const Color(0xFFAABBCC));
       expect(
-        card({'color': '#FF0000@25%'}).cardTheme.color,
+        card({
+          'color.color': '#FF0000',
+          'color.alpha': '25%',
+        }).cardTheme.color,
         const Color(0xFFFF0000).withValues(alpha: 0.25),
       );
       expect(
-        card({'color': '#FF0000@0.5'}).cardTheme.color,
+        card({
+          'color.color': '#FF0000',
+          'color.alpha': '0.5',
+        }).cardTheme.color,
         const Color(0xFFFF0000).withValues(alpha: 0.5),
       );
-      for (final bad in ['nope', '#12', '#FF0000@150%']) {
+      for (final bad in [
+        'nope',
+        '#12',
+        '0xFF0000',
+        'primary',
+        '#F00 alpha 5%',
+      ]) {
         expect(() => card({'color': bad}), invalid('components.card.color'));
       }
+      expect(
+        () => card({'color.color': '#FF0000', 'color.alpha': '150%'}),
+        invalid('components.card.color.alpha'),
+      );
     });
 
     test('shapes: token, radius, stadium, circle, map with a border', () {
@@ -266,7 +286,7 @@ themes:
           card({
                 'shape.type': 'beveled',
                 'shape.radius': 'small',
-                'shape.side.color': 'primary',
+                'shape.side.color': r'$colors.primary',
                 'shape.side.width': '2',
               }).cardTheme.shape!
               as BeveledRectangleBorder;
@@ -302,7 +322,7 @@ themes:
     test('border sides: a color, none, or a map', () {
       BorderSide? side(Map<String, String> p) =>
           material(c('chip', p)).chipTheme.side;
-      expect(side({'side': 'error'})!.color, theme({}).role('error'));
+      expect(side({'side': r'$colors.error'})!.color, theme({}).role('error'));
       expect(side({'side': 'none'}), BorderSide.none);
       final mapped = side({
         'side.color': '#00FF00',
@@ -313,7 +333,7 @@ themes:
       expect(mapped.width, 3);
       expect(mapped.strokeAlign, BorderSide.strokeAlignOutside);
       expect(
-        () => side({'side.colour': 'primary'}),
+        () => side({'side.colour': r'$colors.primary'}),
         invalid('components.chip.side.colour', "did you mean 'color'"),
       );
     });
@@ -349,7 +369,7 @@ themes:
         'label-style.style': 'label-small',
         'label-style.size': '20',
         'label-style.weight': 'bold',
-        'label-style.color': 'error',
+        'label-style.color': r'$colors.error',
         'label-style.italic': 'true',
         'label-style.decoration': 'underline',
         'label-style.letter-spacing': '1.5',
@@ -470,7 +490,7 @@ themes:
     test('icon themes, decorations, input borders, animation styles', () {
       final nav = material(
         c('bottom-navigation-bar', {
-          'selected-icon-theme.color': 'primary',
+          'selected-icon-theme.color': r'$colors.primary',
           'selected-icon-theme.size': '30',
           'unselected-icon-theme': '#999999',
         }),
@@ -480,9 +500,9 @@ themes:
       final tab =
           material(
                 c('tab-bar', {
-                  'indicator.color': 'primary',
+                  'indicator.color': r'$colors.primary',
                   'indicator.radius': 'small',
-                  'indicator.border': 'error',
+                  'indicator.border': r'$colors.error',
                 }),
               ).tabBarTheme.indicator!
               as BoxDecoration;
@@ -515,9 +535,9 @@ themes:
     test('nested groups of a component: button styles, input decoration', () {
       final picker = material(
         c('date-picker', {
-          'cancel-button-style.foreground-color.default': 'error',
-          'cancel-button-style.foreground-color.hovered': 'primary',
-          'input-decoration.fill-color': 'surface',
+          'cancel-button-style.foreground-color.default': r'$colors.error',
+          'cancel-button-style.foreground-color.hovered': r'$colors.primary',
+          'input-decoration.fill-color': r'$colors.surface',
           'input-decoration.filled': 'true',
         }),
       ).datePickerTheme;
@@ -549,11 +569,12 @@ themes:
       final t = material({
         ...c('button', {
           'padding': '4, 2',
-          'background-color.hovered': 'tertiary',
-          'overlay-color.pressed': 'primary@20%',
+          'background-color.hovered': r'$colors.tertiary',
+          'overlay-color.pressed.color': r'$colors.primary',
+          'overlay-color.pressed.alpha': '20%',
           'min-height': '40',
         }),
-        ...c('filled-button', {'background-color.hovered': 'error'}),
+        ...c('filled-button', {'background-color.hovered': r'$colors.error'}),
       });
       final filled = t.filledButtonTheme.style!;
       final elevated = t.elevatedButtonTheme.style!;
@@ -683,14 +704,17 @@ themes:
         ...c('app-bar', {
           'center-title': 'true',
           'title-style': 'title-large',
-          'background': 'surface',
+          'background': r'$colors.surface',
         }),
-        ...c('dialog', {'background': 'surface', 'shape': 'large'}),
+        ...c('dialog', {'background': r'$colors.surface', 'shape': 'large'}),
         ...c('snack-bar', {
           'behavior': 'floating',
-          'background': 'inverse-surface',
+          'background': r'$colors.inverse-surface',
         }),
-        ...c('card', {'elevation': 'level0', 'color': 'surface-container-low'}),
+        ...c('card', {
+          'elevation': 'level0',
+          'color': r'$colors.surface-container-low',
+        }),
       });
       expect(t.appBarTheme.centerTitle, isTrue);
       expect(t.appBarTheme.titleTextStyle, t.textTheme.titleLarge);
@@ -704,35 +728,41 @@ themes:
       final t = material({
         ...c('slider', {
           'track-height': '6',
-          'active-track-color': 'primary',
+          'active-track-color': r'$colors.primary',
           'show-value-indicator': 'on-drag',
           'thumb-size.hovered': '24, 24',
         }),
         ...c('data-table', {
-          'heading-row-color.default': 'surface-container',
-          'data-row-color.selected': 'primary-container',
+          'heading-row-color.default': r'$colors.surface-container',
+          'data-row-color.selected': r'$colors.primary-container',
           'heading-text-style': 'title-small',
           'column-spacing': '32',
           'heading-row-alignment': 'center',
         }),
         ...c('navigation-bar', {
           'label-text-style.selected.weight': 'bold',
-          'icon-theme.selected.color': 'primary',
-          'icon-theme.default.color': 'outline',
+          'icon-theme.selected.color': r'$colors.primary',
+          'icon-theme.default.color': r'$colors.outline',
         }),
         ...c('search-bar', {
-          'background-color.focused': 'surface-container-high',
-          'side.default': 'outline',
+          'background-color.focused': r'$colors.surface-container-high',
+          'side.default': r'$colors.outline',
           'elevation.default': 'level0',
         }),
-        ...c('menu', {'background-color': 'surface', 'shape': 'small'}),
-        ...c('text-selection', {'cursor-color': 'error'}),
-        ...c('badge', {'background-color': 'error', 'small-size': '8'}),
+        ...c('menu', {
+          'background-color': r'$colors.surface',
+          'shape': 'small',
+        }),
+        ...c('text-selection', {'cursor-color': r'$colors.error'}),
+        ...c('badge', {
+          'background-color': r'$colors.error',
+          'small-size': '8',
+        }),
         ...c('drawer', {'width': '300', 'shape': 'large'}),
-        ...c('icon', {'color': 'primary', 'size': '28'}),
-        ...c('time-picker', {'dial-hand-color': 'tertiary'}),
+        ...c('icon', {'color': r'$colors.primary', 'size': '28'}),
+        ...c('time-picker', {'dial-hand-color': r'$colors.tertiary'}),
         ...c('dropdown-menu', {
-          'menu-style.background-color': 'surface',
+          'menu-style.background-color': r'$colors.surface',
           'text-style': 'body-small',
         }),
       });
@@ -792,8 +822,9 @@ themes:
 
     test('the same property in a theme that extends another', () {
       final themes = SpringThemes({
-        'components.checkbox.fill-color.selected': 'primary',
-        'themes.ocean.components.checkbox.fill-color.selected': 'tertiary',
+        'components.checkbox.fill-color.selected': r'$colors.primary',
+        'themes.ocean.components.checkbox.fill-color.selected':
+            r'$colors.tertiary',
       });
       expect(
         themes.material('ocean').checkboxTheme.fillColor!.resolve({
@@ -807,15 +838,15 @@ themes:
   group('Cupertino', () {
     test('colors and text styles of CupertinoThemeData', () {
       final t = theme({
-        'cupertino.primary-color': 'tertiary',
+        'cupertino.primary-color': r'$colors.tertiary',
         'cupertino.primary-contrasting-color': '#FFFFFF',
         'cupertino.scaffold-background-color': '#F0F0F0',
-        'cupertino.bar-background-color': 'surface',
+        'cupertino.bar-background-color': r'$colors.surface',
         'cupertino.selection-handle-color': '#00FF00',
         'cupertino.apply-theme-to-all': 'true',
         'cupertino.text-theme.text-style.size': '17',
         'cupertino.text-theme.nav-title-text-style': 'title-large',
-        'cupertino.text-theme.action-text-style.color': 'error',
+        'cupertino.text-theme.action-text-style.color': r'$colors.error',
       }).toCupertino();
       final scheme = theme({}).colorScheme;
       expect(t.primaryColor, scheme.tertiary);
@@ -873,7 +904,7 @@ themes:
         return '0.5';
       }
       return switch (kind) {
-        'color' => 'primary',
+        'color' => r'$colors.primary',
         'number' => '3',
         'elevation' => 'level2',
         'true / false' => 'true',
@@ -883,14 +914,14 @@ themes:
         'size' => '40, 20',
         'offset' => '1, 2',
         'shape' => 'medium',
-        'border side' => 'outline',
+        'border side' => r'$colors.outline',
         'text style' => 'body-small',
-        'icon theme' => 'primary',
+        'icon theme' => r'$colors.primary',
         'mouse cursor' => 'click',
         'alignment' => 'center',
         'corner radius' => 'small',
         'visual density' => 'compact',
-        'decoration' => 'primary',
+        'decoration' => r'$colors.primary',
         'input border' => 'outline',
         _ => throw StateError('no sample for $kind of ${p.name}'),
       };
@@ -988,25 +1019,27 @@ themes:
   group('mistakes name the valid keys', () {
     test('an unknown component, with a suggestion', () {
       expect(
-        () => theme({'components.chek-box.fill-color': 'primary'}),
+        () => theme({'components.chek-box.fill-color': r'$colors.primary'}),
         invalid('components.chekbox', "did you mean 'checkbox'"),
       );
       expect(
-        () => theme({'components.widget.color': 'primary'}),
+        () => theme({'components.widget.color': r'$colors.primary'}),
         invalid('components.widget', 'a component: app-bar, badge'),
       );
     });
 
     test('an unknown property lists the component\'s', () {
       expect(
-        () => theme({'components.card.shadow-colour': 'primary'}),
+        () => theme({'components.card.shadow-colour': r'$colors.primary'}),
         invalid(
           'components.card.shadowcolour',
           "a property of card: clip-behavior, color, shadow-color, surface-tint-color, elevation, margin, shape (did you mean 'shadow-color'?)",
         ),
       );
       expect(
-        () => theme({'components.switch.thumb-color.selectd': 'primary'}),
+        () => theme({
+          'components.switch.thumb-color.selectd': r'$colors.primary',
+        }),
         invalid(
           'components.switch.thumbcolor.selectd',
           "did you mean 'selected'",

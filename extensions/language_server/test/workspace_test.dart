@@ -188,6 +188,17 @@ void main() {
         contains("bean 'cash': CashPayments"),
       );
     });
+
+    test('a key set nowhere: the hover names the default it falls back to', () {
+      expect(
+        workspace.hover(shopPath, at(r'${shop.port:80}') + 4),
+        contains('the default after the colon is used: `80`'),
+      );
+      expect(
+        workspace.hover(shopPath, at(r'${shop.missing}') + 4),
+        isNot(contains('default')),
+      );
+    });
   });
 
   group('resources', () {
@@ -230,30 +241,6 @@ class LegacyConfig {
       expect(
         workspace.hover(path, config.indexOf('optional:resources:none') + 3),
         contains('not found'),
-      );
-    });
-
-    test('the former classpath: prefix goes to the file as well', () {
-      const config = '''
-@PropertySource(['classpath:old.properties'])
-class OldConfig {}
-''';
-      final path = '${root.path}/lib/external/old_config.dart';
-      File(path)
-        ..createSync(recursive: true)
-        ..writeAsStringSync(config);
-      File('${root.path}/lib/resources/old.properties')
-          .writeAsStringSync('old=1\n');
-      workspace.refresh(force: true);
-      expect(
-        [
-          for (final range in workspace.definition(
-            path,
-            config.indexOf('classpath:old') + 3,
-          ))
-            range.path.substring(root.path.length),
-        ],
-        ['/lib/resources/old.properties'],
       );
     });
 

@@ -6,7 +6,7 @@ library;
 // the URL of its config file, and a @DynamicPropertySource method hands over
 // the address of a container of any image. Skipped without Docker (a failure
 // with CONTAINERS_REQUIRED=true). The generator writes
-// spring/data_test/container_spring_boot.test.spring.dart.
+// spring_gen/data_test/container_spring_boot.test.spring.dart.
 import 'dart:io';
 
 import 'package:spring_boot_starter_data/spring_auto_configuration.dart';
@@ -15,7 +15,7 @@ import 'package:spring_boot_starter_test/containers.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/container_spring_boot.test.spring.dart';
+import '../spring_gen/data_test/container_spring_boot.test.spring.dart';
 import 'postgres_app/postgres_data_app.dart';
 
 @SpringBootTest(

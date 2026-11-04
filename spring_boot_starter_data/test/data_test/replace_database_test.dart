@@ -1,13 +1,13 @@
 // @DataTest(replaceDatabase: false): the configured database is used, here
 // a file in a temporary directory, and the tests still roll back. The
-// generator writes spring/data_test/replace_database.test.spring.dart.
+// generator writes spring_gen/data_test/replace_database.test.spring.dart.
 import 'dart:io';
 
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../spring/data_test/replace_database.test.spring.dart';
+import '../spring_gen/data_test/replace_database.test.spring.dart';
 import 'app/data_test_app.dart';
 
 @DataTest(

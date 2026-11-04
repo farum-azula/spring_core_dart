@@ -1,8 +1,11 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/did_you_mean.dart';
 import 'package:spring_core_dart_generator/src/part_tree.dart';
+import 'package:spring_core_dart_generator/src/part_tree_reader.dart';
+
+export 'package:spring_core_dart_generator/src/part_tree_reader.dart'
+    show QueryProblem;
 
 // The types of spring_boot_starter_data a query method may take or return,
 // matched by URL so the generator does not depend on the starter.
@@ -15,28 +18,9 @@ const _pageRequest = TypeChecker.fromUrl(
 const _page = TypeChecker.fromUrl('$_repositoryUrl/page.dart#Page');
 const _slice = TypeChecker.fromUrl('$_repositoryUrl/page.dart#Slice');
 
-/// A repository method that is no valid query: its name is not one, or it
-/// does not fit the entity, its parameters or its return type.
-///
-/// [reason] says what is wrong, without the method's name; for an unknown
-/// property it lists the entity's properties and suggests the closest.
-///
-/// Spring (Java):
-/// `org.springframework.data.repository.query.QueryCreationException`.
-final class QueryProblem implements Exception {
-  /// A problem described by [reason].
-  QueryProblem(this.reason);
-
-  /// What is wrong.
-  final String reason;
-
-  @override
-  String toString() => reason;
-}
-
 /// A property the data layer stores for an entity: a field of the class
 /// that is not `@Transient`.
-final class StoredProperty {
+final class StoredProperty implements PartTreeProperty {
   /// The property [name] of [type].
   StoredProperty(
     this.name,
@@ -45,16 +29,18 @@ final class StoredProperty {
     this.referencedId,
   });
 
-  /// The Dart name.
+  @override
   final String name;
 
   /// The declared type, with nullability; for an `AggregateReference`, the
   /// reference type itself.
   final DartType type;
 
-  /// Whether it holds children in tables of their own (`@MappedCollection`),
-  /// which a derived query cannot use.
+  @override
   final bool isMappedCollection;
+
+  @override
+  bool get isString => type.isDartCoreString;
 
   /// For an `AggregateReference<X, ID>`, the type `ID`; `null` otherwise.
   final DartType? referencedId;
@@ -62,7 +48,7 @@ final class StoredProperty {
 
 /// The entity of a repository as a derived query sees it: its name and the
 /// properties it stores.
-final class QueryEntity {
+final class QueryEntity implements PartTreeEntity {
   /// The entity [element] with its stored [properties], in declaration
   /// order.
   QueryEntity(this.element, List<StoredProperty> properties)
@@ -72,19 +58,18 @@ final class QueryEntity {
   /// The entity's class.
   final InterfaceElement element;
 
-  /// The class name.
+  @override
   String get name => element.name!;
 
-  /// The stored properties.
+  @override
   final List<StoredProperty> properties;
 
   final Map<String, StoredProperty> _byName;
 
-  /// The stored property named [name], or `null`.
+  @override
   StoredProperty? property(String name) => _byName[name];
 
-  /// The properties stored in the entity's own table: all but the
-  /// `@MappedCollection`s.
+  @override
   Iterable<StoredProperty> get columns =>
       properties.where((p) => !p.isMappedCollection);
 
@@ -139,32 +124,16 @@ final class PartTreeParser {
   /// A parser.
   const PartTreeParser();
 
-  static final RegExp _subject = RegExp(
-    '^(find|read|get|query|search|stream|count|exists|delete|remove)'
-    r'((\p{Lu}.*?))??By',
-    unicode: true,
-  );
-  static final RegExp _orderBy = RegExp(r'OrderBy(?=\p{Lu})', unicode: true);
-  static final RegExp _or = RegExp(r'Or(?=\p{Lu})', unicode: true);
-  static final RegExp _and = RegExp(r'And(?=\p{Lu})', unicode: true);
-  static final RegExp _allIgnoreCase = RegExp('AllIgnor(ing|e)Case');
-  static final RegExp _ignoreCase = RegExp('Ignor(ing|e)Case');
-  static final RegExp _limit = RegExp(
-    r'^(First|Top)(\d*)(?=\p{Lu}|$)',
-    unicode: true,
-  );
-  static final RegExp _orderBlocks = RegExp(
-    r'(?<=Asc|Desc)(?=\p{Lu})',
-    unicode: true,
-  );
-  static final RegExp _orderBlock = RegExp(r'^(.+?)(Asc|Desc)?$');
-
-  /// Whether [methodName] starts like a derived query: a prefix (`find`,
-  /// `read`, `get`, `query`, `search`, `stream`, `count`, `exists`,
-  /// `delete`, `remove`), optional words starting with an upper-case
-  /// letter, then `By`. It says nothing about the rest of the name.
+  /// Whether [methodName] starts like a derived query (see
+  /// [PartTreeReader.isDerivedQuery]).
   static bool isDerivedQuery(String methodName) =>
-      _subject.hasMatch(methodName);
+      PartTreeReader.isDerivedQuery(methodName);
+
+  /// Parses [methodName] into a [PartTreeModel] for [entity]; see
+  /// [PartTreeReader.parse]. Throws a [QueryProblem] for a name that is no
+  /// derived query or names no stored property.
+  PartTreeModel parse(String methodName, QueryEntity entity) =>
+      const PartTreeReader().parse(methodName, entity);
 
   /// Whether a parameter of [type] is a `Pageable` (or `PageRequest`),
   /// which windows the result instead of filtering it.
@@ -178,59 +147,6 @@ final class PartTreeParser {
   /// find method, or the `Stream` itself.
   static ResultShape shapeOf(DartType type) =>
       wrapped(type)?.$1 ?? ResultShape.single;
-
-  /// Parses [methodName] into a [PartTreeModel] for [entity].
-  ///
-  /// Throws a [QueryProblem] when the name is not a derived query (no
-  /// prefix and `By`), has two `OrderBy`, an unknown property, a property
-  /// that is not a column of the entity's own table (a `@MappedCollection`),
-  /// a nested path (`AddressCity`, `Address_City`: not supported yet), or
-  /// an empty part.
-  ///
-  /// An empty predicate (`findAllBy`, `findBy`, `countBy`,
-  /// `findAllByOrderByTitleAsc`) matches every aggregate, as in Spring.
-  PartTreeModel parse(String methodName, QueryEntity entity) {
-    final match = _subject.firstMatch(methodName);
-    if (match == null) {
-      throw QueryProblem(
-        'the name is not a derived query: it must start with find, read, '
-        'get, query, search, stream, count, exists, delete or remove, '
-        'optionally followed by words, and then "By"',
-      );
-    }
-    final prefix = match.group(1)!;
-    final middle = match.group(2) ?? '';
-    final subject = _subjectOf(prefix, middle);
-
-    var predicate = methodName.substring(match.end);
-    var allIgnoreCase = false;
-    if (_allIgnoreCase.firstMatch(predicate) case final all?) {
-      allIgnoreCase = true;
-      predicate = predicate.replaceRange(all.start, all.end, '');
-    }
-
-    final blocks = _split(predicate, _orderBy);
-    if (blocks.length > 2) {
-      throw QueryProblem('the name has more than one "OrderBy"');
-    }
-    final or = <OrPartModel>[];
-    for (final alternative in _split(blocks.first, _or)) {
-      if (alternative.isEmpty) {
-        continue;
-      }
-      final parts = <PartModel>[
-        for (final text in _split(alternative, _and))
-          if (text.isNotEmpty) _parsePart(text, entity, allIgnoreCase),
-      ];
-      if (parts.isNotEmpty) {
-        or.add(OrPartModel(parts));
-      }
-    }
-    final sort = blocks.length == 2
-        ? _parseOrder(blocks[1], entity)
-        : const <SortOrderModel>[];
-    return PartTreeModel(methodName, subject, or, sort);
-  }
 
   /// Checks [tree] (from [parse]) against the method's [parameters] and
   /// [returnType] (the type inside the `Future`, or the `Stream` or the
@@ -314,7 +230,7 @@ final class PartTreeParser {
     for (final part in tree.parts) {
       final property = entity.property(part.property);
       if (property == null) {
-        throw _unknownProperty(part.property, entity);
+        throw PartTreeReader.unknownProperty(part.property, entity);
       }
       final args = queryParameters.sublist(
         index,
@@ -330,143 +246,6 @@ final class PartTreeParser {
       returnType,
       isFuture: isFuture,
       hasPageable: pageable != null,
-    );
-  }
-
-  SubjectModel _subjectOf(String prefix, String middle) {
-    final distinct = middle.contains('Distinct');
-    switch (prefix) {
-      case 'count':
-        return SubjectModel(SubjectKind.count, distinct: distinct);
-      case 'exists':
-        return SubjectModel(SubjectKind.exists, distinct: distinct);
-      case 'delete' || 'remove':
-        return SubjectModel(SubjectKind.delete, distinct: distinct);
-    }
-    int? max;
-    final limit = _limit.firstMatch(middle.replaceFirst('Distinct', ''));
-    if (limit != null) {
-      final digits = limit.group(2)!;
-      max = digits.isEmpty ? 1 : int.parse(digits);
-    }
-    return SubjectModel(SubjectKind.find, maxResults: max, distinct: distinct);
-  }
-
-  PartModel _parsePart(
-    String source,
-    QueryEntity entity,
-    bool allIgnoreCase,
-  ) {
-    var text = source;
-    var ignoreCase = false;
-    if (_ignoreCase.firstMatch(text) case final m?) {
-      ignoreCase = true;
-      text = text.replaceRange(m.start, m.end, '');
-    }
-    if (text.isEmpty) {
-      throw QueryProblem('the part "$source" names no property');
-    }
-
-    String? firstRest;
-    for (final kind in PartKind.values) {
-      for (final keyword in kind.keywords) {
-        if (!text.endsWith(keyword) || text.length == keyword.length) {
-          continue;
-        }
-        final rest = text.substring(0, text.length - keyword.length);
-        firstRest ??= rest;
-        final property = _resolve(rest, entity);
-        if (property != null) {
-          return _part(property, kind, ignoreCase, allIgnoreCase);
-        }
-      }
-    }
-    final property = _resolve(text, entity);
-    if (property != null) {
-      return _part(
-        property,
-        PartKind.simpleProperty,
-        ignoreCase,
-        allIgnoreCase,
-      );
-    }
-    throw _unresolved(firstRest ?? text, entity);
-  }
-
-  PartModel _part(
-    StoredProperty property,
-    PartKind kind,
-    bool ignoreCase,
-    bool allIgnoreCase,
-  ) {
-    _requireColumn(property, 'in a condition');
-    final always =
-        allIgnoreCase && kind.argumentCount > 0 && _isString(property.type);
-    return PartModel(property.name, kind, ignoreCase: ignoreCase || always);
-  }
-
-  List<SortOrderModel> _parseOrder(String clause, QueryEntity entity) {
-    final orders = <SortOrderModel>[];
-    for (final block in _split(clause, _orderBlocks)) {
-      final match = _orderBlock.firstMatch(block);
-      final property = _resolve(match!.group(1)!, entity);
-      if (property == null) {
-        throw _unresolved(match.group(1)!, entity);
-      }
-      _requireColumn(property, 'in OrderBy');
-      orders.add(
-        SortOrderModel(property.name, descending: match.group(2) == 'Desc'),
-      );
-    }
-    return orders;
-  }
-
-  StoredProperty? _resolve(String text, QueryEntity entity) {
-    final uncapitalized = _uncapitalize(text);
-    return entity.property(uncapitalized) ?? entity.property(text);
-  }
-
-  void _requireColumn(StoredProperty property, String where) {
-    if (property.isMappedCollection) {
-      throw QueryProblem(
-        "property '${property.name}' cannot be used $where: it holds child "
-        'entities, and derived queries stay within the columns of the root '
-        "entity's own table",
-      );
-    }
-  }
-
-  QueryProblem _unresolved(String text, QueryEntity entity) {
-    final name = _uncapitalize(text);
-    if (name.contains('_')) {
-      return QueryProblem(
-        "nested property path '$name' is not supported yet; only "
-        "properties of '${entity.name}' can be used",
-      );
-    }
-    for (final property in entity.properties) {
-      final p = property.name;
-      if (name.length > p.length &&
-          name.startsWith(p) &&
-          name[p.length].toUpperCase() == name[p.length] &&
-          name[p.length].toLowerCase() != name[p.length]) {
-        return QueryProblem(
-          "nested property path '$name' (property '$p' and then "
-          "'${_uncapitalize(name.substring(p.length))}') is not supported "
-          'yet; only properties of the entity can be used',
-        );
-      }
-    }
-    return _unknownProperty(name, entity);
-  }
-
-  QueryProblem _unknownProperty(String name, QueryEntity entity) {
-    final names = [for (final p in entity.columns) p.name];
-    final best = closestName(name, names);
-    final hint = best == null ? '' : "; did you mean '$best'?";
-    return QueryProblem(
-      "No property '$name' found for type '${entity.name}'$hint "
-      'Available properties: ${names.join(', ')}.',
     );
   }
 
@@ -699,18 +478,4 @@ final class PartTreeParser {
   bool _isString(DartType type) => type.isDartCoreString;
 
   String _show(DartType type) => type.getDisplayString();
-
-  static List<String> _split(String text, RegExp pattern) {
-    final out = <String>[];
-    var last = 0;
-    for (final m in pattern.allMatches(text)) {
-      out.add(text.substring(last, m.start));
-      last = m.end;
-    }
-    out.add(text.substring(last));
-    return out;
-  }
-
-  static String _uncapitalize(String text) =>
-      text.isEmpty ? text : text[0].toLowerCase() + text.substring(1);
 }

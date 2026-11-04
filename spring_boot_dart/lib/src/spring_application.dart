@@ -13,6 +13,8 @@ import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/hot_reload.dart';
+import 'package:spring_boot_dart/src/properties/boot_properties.dart';
+import 'package:spring_boot_dart/src/properties/properties.dart';
 import 'package:spring_boot_dart/src/renamed_properties.dart';
 import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
@@ -237,6 +239,14 @@ class SpringApplication {
   }) =>
       _listeners.add(ApplicationListenerAdapter.of<E>(listener, order: order));
 
+  /// Told how far the start has come, for a splash screen: the share of
+  /// the bean definitions created and of the runners called. Set it
+  /// before [run] or [runAsync]; the calls come from the starting
+  /// isolate, in order, and the last one is complete (`done == total`).
+  /// Spring Boot has no such hook (the nearest is the startup step
+  /// recorder, `ApplicationStartup`).
+  void Function(StartupProgress progress)? progressListener;
+
   final Map<String, Object?> _defaultProperties;
 
   /// Properties with the lowest precedence: every other source, config
@@ -313,26 +323,21 @@ class SpringApplication {
   /// `spring.main.banner-mode` (`off`, `console` or `log`) wins when set.
   final BannerMode bannerMode;
 
+  // `spring.main.*`; the constructor's banner mode and shutdown hook are
+  // what the properties change.
+  MainProperties _mainProperties(Environment environment) => bindBootProperties(
+    environment,
+    MainProperties()
+      ..bannerMode = bannerMode
+      ..registerShutdownHook = registerShutdownHook,
+  );
+
   // Boot's printBanner: after the environment is prepared, before the
   // context is created. [preloaded] is the banner file read
   // asynchronously (runAsync: Flutter assets).
   void _printBanner(StandardEnvironment environment, [Resource? preloaded]) {
-    final property = environment
-        .getProperty('spring.main.banner-mode')
-        ?.trim()
-        .toLowerCase();
-    final mode = switch (property) {
-      null || '' => bannerMode,
-      'off' || 'false' => BannerMode.off,
-      'console' => BannerMode.console,
-      'log' => BannerMode.log,
-      _ => throw ConfigurationPropertiesBindException('spring.main', null, [
-        // One element, split for the line width.
-        // ignore: no_adjacent_strings_in_list
-        'spring.main.banner-mode: failed to convert to BannerMode (one of '
-            'off, console, log) (was "$property")',
-      ]),
-    };
+    // `false` (YAML's `off`) is `off` too: the binder's enum conversion.
+    final mode = _mainProperties(environment).bannerMode;
     if (mode == BannerMode.off) {
       return;
     }
@@ -348,8 +353,7 @@ class SpringApplication {
 
   Resource _bannerResource(Environment environment) =>
       (resourceLoader ?? DefaultResourceLoader()).getResource(
-        environment.getProperty('spring.banner.location') ??
-            'resources:banner.txt',
+        bindBootProperties(environment, BannerProperties()).location,
       );
 
   // The banner file when it can only be read asynchronously (a Flutter
@@ -585,6 +589,7 @@ class SpringApplication {
     if (!context.isActive) {
       return;
     }
+    _progressTrackers[context]?.finish();
     try {
       run.ready(context, watch.elapsed);
     } catch (error, stackTrace) {
@@ -1007,7 +1012,9 @@ class SpringApplication {
     ConfigurableApplicationContext context, {
     bool crash = false,
   }) {
-    if (_isSet(context.environment, 'debug')) {
+    if (_isSet(
+      bindBootProperties(context.environment, DebugProperties()).debug,
+    )) {
       _reportLog.info('${ConditionEvaluationReport.of(context)}');
     } else if (crash) {
       _reportLog.info(
@@ -1041,9 +1048,12 @@ class SpringApplication {
     (Map<String, String>?, Map<String, Object?>, List<String>) launch,
   ) {
     // Spring Boot's ContextIdApplicationContextInitializer.
-    final applicationName = environment
-        .getProperty('spring.application.name')
-        ?.trim();
+    final main = _mainProperties(environment);
+    final application = bindBootProperties(
+      environment,
+      ApplicationProperties(),
+    );
+    final applicationName = application.name?.trim();
     final context = AnnotationConfigApplicationContext(
       [...modules, ..._selectedAutoConfigurations(environment)],
       environment: environment,
@@ -1060,16 +1070,11 @@ class SpringApplication {
       launch.$3,
     );
     final arguments = ApplicationArguments(args);
-    final logStartupInfo =
-        environment.getPropertyAs<bool>('spring.main.log-startup-info') ?? true;
-    final name =
-        environment.getProperty('spring.application.name') ?? 'application';
+    final logStartupInfo = main.logStartupInfo;
+    final name = application.name ?? 'application';
     (context.beanFactory as DefaultListableBeanFactory)
             .allowBeanDefinitionOverriding =
-        environment.getPropertyAs<bool>(
-          'spring.main.allow-bean-definition-overriding',
-        ) ??
-        false;
+        main.allowBeanDefinitionOverriding;
     context.beanFactory
       ..registerSingleton(
         'springApplicationArguments',
@@ -1088,8 +1093,7 @@ class SpringApplication {
           beanFactory: context.beanFactory,
         ),
       );
-    if (environment.getPropertyAs<bool>('spring.main.lazy-initialization') ??
-        false) {
+    if (main.lazyInitialization) {
       context.addBeanFactoryPostProcessor(
         LazyInitializationBeanFactoryPostProcessor(),
       );
@@ -1103,6 +1107,14 @@ class SpringApplication {
         _StartupInfoLogger(name, environment),
         types: const [BeanFactoryPostProcessor, Ordered],
       );
+    }
+    final progress = progressListener;
+    if (progress != null) {
+      final tracker = _progressTrackers[context] = _ProgressTracker(
+        context,
+        progress,
+      );
+      context.beanFactory.addBeanPostProcessor(tracker);
     }
     for (final initializer in OrderComparator.sort(initializers)) {
       initializer.initialize(context);
@@ -1124,8 +1136,7 @@ class SpringApplication {
     StandardEnvironment environment,
     ConfigurableApplicationContext context,
   ) {
-    if (environment.getPropertyAs<bool>('spring.main.register-shutdown-hook') ??
-        registerShutdownHook) {
+    if (_mainProperties(environment).registerShutdownHook) {
       context.registerShutdownHook();
     }
   }
@@ -1335,6 +1346,7 @@ class SpringApplication {
           context.getBeanByName(name): _definitionOrder(context, name),
     };
     final beans = OrderComparator.sort(orders.keys, (bean) => orders[bean]);
+    final tracker = _progressTrackers[context];
     final calls = <FutureOr<void> Function()>[
       for (final runner in beans) ...[
         // A bean implementing both is called as both, like in Spring Boot.
@@ -1342,6 +1354,19 @@ class SpringApplication {
         if (runner is CommandLineRunner) () => runner.run(arguments.sourceArgs),
       ],
     ];
+    tracker?.runners(calls.length);
+    if (tracker != null) {
+      for (var i = 0; i < calls.length; i++) {
+        final call = calls[i];
+        calls[i] = () {
+          final result = call();
+          if (result is Future<Object?>) {
+            return result.then<void>((_) => tracker.runnerDone());
+          }
+          tracker.runnerDone();
+        };
+      }
+    }
     return _inOrder(context, calls.iterator);
   }
 
@@ -1360,8 +1385,7 @@ class SpringApplication {
 
   // Boot's LoggingApplicationListener.isSet: `debug` and `trace` are on
   // when present, unless `false` (`--debug` alone has an empty value).
-  static bool _isSet(Environment environment, String property) {
-    final value = environment.getProperty(property);
+  static bool _isSet(String? value) {
     return value != null && value.trim().toLowerCase() != 'false';
   }
 
@@ -1493,11 +1517,12 @@ class SpringApplication {
     SpringLog.resetLevels();
     // `--debug` and `--trace` come first: the levels of the properties win,
     // as in Boot's LoggingApplicationListener.
-    for (final (property, level, loggers) in [
-      ('debug', SpringLogLevel.debug, debugLoggers),
-      ('trace', SpringLogLevel.trace, traceLoggers),
+    final debug = bindBootProperties(environment, DebugProperties());
+    for (final (value, level, loggers) in [
+      (debug.debug, SpringLogLevel.debug, debugLoggers),
+      (debug.trace, SpringLogLevel.trace, traceLoggers),
     ]) {
-      if (_isSet(environment, property)) {
+      if (_isSet(value)) {
         for (final name in loggers) {
           SpringLog.setLevel(name, level);
         }
@@ -1861,4 +1886,91 @@ final class _Launch {
   final Map<String, String>? systemEnvironment;
   final Map<String, Object?> properties;
   final List<String> additionalProfiles;
+}
+
+/// How far an application's start has come, as `SpringApplication`
+/// reports it to [SpringApplication.progressListener]: [done] of [total]
+/// steps, where a step is a bean definition created or a runner called.
+///
+/// The total grows while the start goes on (a bean can register more
+/// definitions, the runners are known once the beans exist), so
+/// [fraction] never goes back: it is the highest share seen.
+final class StartupProgress {
+  /// [done] steps of [total].
+  const StartupProgress(this.done, this.total, this.fraction);
+
+  /// The steps finished.
+  final int done;
+
+  /// The steps known so far.
+  final int total;
+
+  /// The share finished, from 0 to 1; never decreases.
+  final double fraction;
+
+  @override
+  String toString() => 'StartupProgress($done/$total)';
+}
+
+final _progressTrackers = Expando<_ProgressTracker>('startup progress');
+
+// Counts the beans created (a post-processor) and the runners called, and
+// reports after each.
+final class _ProgressTracker extends BeanPostProcessor {
+  _ProgressTracker(this._context, this._listener);
+
+  final ConfigurableApplicationContext _context;
+  final void Function(StartupProgress progress) _listener;
+  var _done = 0;
+  var _runners = 0;
+  var _runnersDone = 0;
+  var _best = 0.0;
+
+  @override
+  Object postProcessAfterInitialization(Object bean, String beanName) {
+    if (_done == 0) {
+      // The runners are steps too: counted from the first bean on, so the
+      // beans alone never reach the end.
+      _runners = {
+        for (final type in const [ApplicationRunner, CommandLineRunner])
+          ..._context.getBeanNamesForType(type),
+      }.length;
+    }
+    _done++;
+    _report();
+    return bean;
+  }
+
+  void runners(int count) {
+    _runners = count;
+    _report();
+  }
+
+  void runnerDone() {
+    _runnersDone++;
+    _report();
+  }
+
+  // The start is over: lazy beans stay uncreated, so the end is told
+  // here, complete.
+  void finish() {
+    final total = _done + _runnersDone;
+    _best = 1;
+    _listener(StartupProgress(total, total, 1));
+  }
+
+  void _report() {
+    final beans = _done;
+    final total =
+        [_context.beanDefinitionCount, beans].reduce(
+          (a, b) => a > b ? a : b,
+        ) +
+        _runners;
+    final done = beans + _runnersDone;
+    final share = total == 0 ? 0.0 : (done / total).clamp(0.0, 0.99);
+    if (share > _best) {
+      _best = share;
+    }
+    _listener(StartupProgress(done, total, _best));
+  }
 }

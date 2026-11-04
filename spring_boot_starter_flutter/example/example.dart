@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 /// The count: state in a bean instead of a `State`, so any widget (and any
 /// service) can read and change it. The generator makes it a

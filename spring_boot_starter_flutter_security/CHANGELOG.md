@@ -1,3 +1,11 @@
+## Unreleased
+
+### Changes
+
+- The editor metadata of `spring.flutter.security.*` is made from code: the new `FlutterSecurityProperties` (`application-id`, `ephemeral-session`) and `FlutterWebSecurityProperties` (the `mode` values come from `WebLoginMode`); the hand-written `spring_metadata_additional.json` is gone. Both are bound by the Binder (`lib/src/properties/`, module `flutterSecurityConfigBeans`) and no key is read as a string any more: the `bind` factories and `rawMode` are gone, and `FlutterSecurityProperties.web` with them. `FlutterWebSecurityProperties` is a `@Profile(['web'])` bean, so a bad `spring.flutter.security.web.*` value stops an app in a browser only, never one on a phone. Keys and defaults are unchanged; a bad value fails the start with the standard `Binding to target properties under '...' failed` report (a `ConfigurationPropertiesBindException`, not an `ArgumentError`), same texts for the URL and endpoint checks. Values are not trimmed any more and a blank endpoint is an error (it used to be the default); a blank `server-url` is still "not set".
+- Windows: the first move of the 0.4.x secret files tries the files that are in use in rounds, each one once per round, so the one-second budget is shared by all of them; a busy file listed first can no longer use it up and leave another (the login token) behind until the next start.
+- macOS: the legacy login keychain is asked without a prompt through an `LAContext` with `interactionNotAllowed` instead of the deprecated `kSecUseAuthenticationUIFail`; same behaviour, no deprecation warning in the app's build.
+
 ## 0.6.2
 
 - No changes of its own; released with the family version 0.6.2.

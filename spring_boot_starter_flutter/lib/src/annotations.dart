@@ -37,3 +37,33 @@ class BuildContextAccess {
   /// (the default) uses the bean's name.
   final String? name;
 }
+
+/// Marks a loader kind of the app's own, used by `loaders.<name>.kind` in a
+/// theme: a class that extends `ThemeLoaderPainter<P>` (it paints a
+/// canvas) or `ThemeLoaderWidget<P>` (it builds widgets).
+///
+/// The generator registers the class under [name] in `ThemeLoaderKinds`
+/// and writes `P`, a props class (for `doors`, `DoorsLoaderProps`) from
+/// the keys the theme gives the loaders of that kind, so the painter
+/// reads typed values. A theme that names a kind nobody registered, or a
+/// key the kind does not take, stops the build and the start.
+///
+/// ```dart
+/// @ThemeLoaderKind('doors')
+/// class DoorsLoader extends ThemeLoaderPainter<DoorsLoaderProps> {
+///   @override
+///   void paint(Canvas canvas, Size size, LoaderFrame<DoorsLoaderProps> frame) {
+///     final close = frame.phase('close'); // 0..1
+///     // ...
+///   }
+/// }
+/// ```
+///
+/// Spring has no counterpart: a UI-only idea.
+class ThemeLoaderKind {
+  /// Registers the annotated class as the loader kind [name].
+  const ThemeLoaderKind(this.name);
+
+  /// The value of `kind` in the theme, such as `'doors'`.
+  final String name;
+}

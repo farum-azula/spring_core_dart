@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.spring.dart';
+import 'spring_gen/main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -98,7 +98,9 @@ Future<String> _build(String beans) async {
   );
   expect(result.errors, isEmpty);
   return readerWriter.testing.readString(
-    result.outputs.singleWhere((o) => o.path == 'bin/main.spring.dart'),
+    result.outputs.singleWhere(
+      (o) => o.path == 'bin/spring_gen/main.spring.dart',
+    ),
   );
 }
 
@@ -147,7 +149,9 @@ Future<String> _app() async {
   );
   expect(result.errors, isEmpty);
   return readerWriter.testing.readString(
-    result.outputs.singleWhere((o) => o.path == 'bin/main.spring.dart'),
+    result.outputs.singleWhere(
+      (o) => o.path == 'bin/spring_gen/main.spring.dart',
+    ),
   );
 }
 
@@ -261,7 +265,7 @@ class Metrics {
   group('@ComponentScan modules', () {
     const scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.spring.dart';
+import 'package:pkg/spring_gen/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -306,7 +310,9 @@ class Orders {
       );
       expect(result.errors, isEmpty);
       return readerWriter.testing.readString(
-        result.outputs.singleWhere((o) => o.path == 'lib/src/scan.spring.dart'),
+        result.outputs.singleWhere(
+          (o) => o.path == 'lib/spring_gen/src/scan.spring.dart',
+        ),
       );
     }
 

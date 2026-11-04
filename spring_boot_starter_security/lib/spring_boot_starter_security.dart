@@ -63,6 +63,7 @@ export 'package:spring_boot_starter_security/src/oauth2/authorized_client_reposi
 export 'package:spring_boot_starter_security/src/oauth2/login.dart';
 export 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
 export 'package:spring_boot_starter_security/src/oauth2/oidc_logout.dart';
+export 'package:spring_boot_starter_security/src/properties/security_properties.dart';
 export 'package:spring_boot_starter_security/src/web/access.dart';
 export 'package:spring_boot_starter_security/src/web/arguments.dart';
 export 'package:spring_boot_starter_security/src/web/authentication.dart';

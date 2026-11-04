@@ -11,7 +11,7 @@ import 'package:neon_books_server/src/shop/payments.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'spring/lifecycle_class.test.spring.dart';
+import 'spring_gen/lifecycle_class.test.spring.dart';
 
 class FakeGateway implements PaymentGateway {
   @override

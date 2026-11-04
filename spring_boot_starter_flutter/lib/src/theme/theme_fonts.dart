@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
+import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 
 /// Loads the app's font files from its assets, so a theme can name a font
 /// family without the files being listed under `flutter: fonts:`.
@@ -188,22 +190,14 @@ abstract final class ThemeFonts {
     Set<String> themeFamilies = const {},
   }) async {
     final environment = context.environment;
-    if (environment
-            .getProperty('spring.flutter.fonts.auto-load')
-            ?.trim()
-            .toLowerCase() ==
-        'false') {
+    final properties = boundProperties<FlutterFontsProperties>(
+      environment,
+      'flutterFontsProperties',
+    );
+    if (!properties.autoLoad) {
       return;
     }
-    final exclude = environment is ConfigurableEnvironment
-        ? Binder.get(environment)
-              .bind(
-                'spring.flutter.fonts.exclude',
-                const ListType(ClassType<String>()),
-              )
-              .orElse(const [])
-              .cast<String>()
-        : const <String>[];
+    final exclude = properties.exclude ?? const <String>[];
     final loaded = await load(bundle, assets, exclude: exclude);
     final missing = themeFamilies.difference({
       ...loaded.keys,

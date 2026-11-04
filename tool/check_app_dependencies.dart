@@ -379,7 +379,7 @@ linter:
   file('lib/app.dart', '''
 import '${starter.library}';
 
-import 'app.spring.dart';
+import 'spring_gen/app.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -394,7 +394,7 @@ void main(List<String> args) => app.main(args);
     r'''
 import 'package:STARTER';
 
-import 'package:app/app.spring.dart';
+import 'package:app/spring_gen/app.spring.dart';
 
 /// spring_core_dart's annotations, the logger of @Log.
 @Service()
@@ -421,7 +421,7 @@ class Greeter {
   file('test/app_test.dart', '''
 import '${starter.library}';
 import 'package:${starter.package}/spring_auto_configuration.dart';
-import 'package:app/app.spring.dart';
+import 'package:app/spring_gen/app.spring.dart';
 import 'package:app/src/greeter.dart';
 ${starter.feature.isEmpty ? '' : "import 'package:app/src/feature.dart';"}
 ${starter.testImports.map((library) => "import '$library';").join('\n')}
@@ -454,7 +454,7 @@ import 'package:app/src/greeter.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'spring/greeter_class.test.spring.dart';
+import 'spring_gen/greeter_class.test.spring.dart';
 
 @SpringBootTest(properties: {'greeting.name': 'Bo'})
 class GreeterTest {

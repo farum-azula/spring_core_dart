@@ -1,7 +1,7 @@
 // A resource server: stateless, bearer JWTs from the test keys.
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
-import 'jwt.spring.dart';
+import '../../spring_gen/app/jwt/jwt.spring.dart';
 import 'keys.dart';
 
 @ComponentScan()

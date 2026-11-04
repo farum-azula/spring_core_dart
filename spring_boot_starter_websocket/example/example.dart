@@ -11,7 +11,7 @@ import 'dart:io' as io;
 
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 @WebSocketClient('chat', url: r'${chat.url}')
 abstract interface class ChatSocket {

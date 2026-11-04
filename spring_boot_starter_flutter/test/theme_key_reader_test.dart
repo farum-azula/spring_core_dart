@@ -1,4 +1,4 @@
-// ThemeKeyReader: what the generated context.theme (lib/spring_keys.dart)
+// ThemeKeyReader: what the generated context.theme (main.spring.dart)
 // reads, live from the theme shown now.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +26,36 @@ void main() {
     expect(reader.tokenColor('brand.accent'), const Color(0xFFFF6B00));
     expect(reader.tokenNumber('brand.hero-height'), 240);
     expect(reader.token('brand.name'), 'Neon');
+  });
+
+  test('a name in any spelling reaches the same style, motion, token', () {
+    final reader = ThemeKeyReader(
+      SpringThemes({
+        'styles.neon-chip.radius': '8',
+        'motion.durations.fast-in': '120ms',
+        'motion.curves.soft-out': 'ease-out',
+        'animations.border-spin.duration': '4s',
+        'tokens.neon-ui.hero-image.source': 'assets/bg.jpg',
+        'tokens.neon-ui.modal.border-width': '2',
+        'background.color': 'white',
+      }).data('light'),
+    );
+    for (final name in ['neon-chip', 'neonChip', 'neon_chip']) {
+      expect(reader.style(name).resolve({}).number('radius'), 8);
+    }
+    expect(reader.motionDuration('fast-in'), const Duration(milliseconds: 120));
+    expect(reader.motionDuration('fastIn'), const Duration(milliseconds: 120));
+    expect(reader.motionCurve('softOut'), Curves.easeOut);
+    expect(
+      reader.animation('border-spin').duration,
+      const Duration(seconds: 4),
+    );
+    expect(reader.animation('borderSpin').duration, const Duration(seconds: 4));
+    expect(reader.tokenNumber('neon-ui.modal.border-width'), 2);
+    expect(reader.tokenNumber('neonUi.modal.borderWidth'), 2);
+    expect(reader.tokenImage('neon-ui.hero-image').source, 'assets/bg.jpg');
+    expect(reader.tokenImage('neonUi.heroImage').source, 'assets/bg.jpg');
+    expect(reader.background(), isNotNull);
   });
 
   test('a role the theme does not declare is the Material one', () {

@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_boot_dart/src/conditions.dart';
+import 'package:spring_boot_dart/src/properties/boot_properties.dart';
+import 'package:spring_boot_dart/src/properties/properties.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 /// The `messageSource` bean that serves translated texts from
@@ -65,17 +66,14 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
       ),
     ],
     create: (r) {
-      final environment = r.dependency<Environment>();
+      final properties = r.dependency<MessagesProperties>();
       final source = ReloadableResourceBundleMessageSource(
         basenames: [
-          for (final basename in MessagesBundleCondition.basenames(environment))
+          for (final basename in _basenames(properties.basename))
             'resources:$basename',
         ],
       );
-      bool flag(String name, {required bool orElse}) =>
-          environment.getPropertyAs<bool>(name) ?? orElse;
-      // Booleans bind case-insensitively, like Boot's binding.
-      final encoding = environment.getProperty('spring.messages.encoding');
+      final encoding = properties.encoding;
       if (encoding != null && encoding.trim().isNotEmpty) {
         source.defaultEncoding =
             Encoding.getByName(encoding.trim()) ??
@@ -85,12 +83,7 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
               'Unsupported encoding',
             ));
       }
-      final common = Binder.get(r.dependency<ConfigurableEnvironment>())
-          .bind(
-            'spring.messages.common-messages',
-            const ListType<String>(ClassType<String>()),
-          )
-          .orElse(const []);
+      final common = properties.commonMessages ?? const [];
       if (common.isNotEmpty) {
         final loader = r.dependency<ResourceLoader>();
         source.commonMessages = {
@@ -102,34 +95,13 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
         };
       }
       source
-        ..useCodeAsDefaultMessage = flag(
-          'spring.messages.use-code-as-default-message',
-          orElse: false,
-        )
-        ..alwaysUseMessageFormat = flag(
-          'spring.messages.always-use-message-format',
-          orElse: false,
-        )
-        ..fallbackToSystemLocale = flag(
-          'spring.messages.fallback-to-system-locale',
-          orElse: true,
-        );
-      final cacheDuration = environment.getProperty(
-        'spring.messages.cache-duration',
-      );
-      if (cacheDuration != null && cacheDuration.trim().isNotEmpty) {
-        // Seconds without a unit (Boot's @DurationUnit(SECONDS)), any
-        // unit otherwise: `500ms` caches for half a second.
-        final value = cacheDuration.trim();
-        final seconds = int.tryParse(value);
-        source.cacheMillis = seconds != null
-            ? seconds * 1000
-            : environment
-                  .getPropertyAs<Duration>('spring.messages.cache-duration')!
-                  .inMilliseconds;
+        ..useCodeAsDefaultMessage = properties.useCodeAsDefaultMessage
+        ..alwaysUseMessageFormat = properties.alwaysUseMessageFormat
+        ..fallbackToSystemLocale = properties.fallbackToSystemLocale;
+      if (properties.cacheDuration case final cacheDuration?) {
+        source.cacheMillis = cacheDuration.inMilliseconds;
       }
-      final locale = environment.getProperty('spring.messages.default-locale');
-      if (locale != null) {
+      if (properties.defaultLocale case final locale?) {
         source.defaultLocale = locale;
       }
       return source;
@@ -163,22 +135,9 @@ class MessagesBundleCondition implements Condition {
   /// The property is a comma list (`a,b`) or a YAML list
   /// (`spring.messages.basename[0]`). Dots are read as slashes, so
   /// `config.i18n.messages` is `config/i18n/messages`.
-  static List<String> basenames(Environment environment) => [
-    for (final name
-        in environment is ConfigurableEnvironment
-            ? Binder.get(environment)
-                  .bind(
-                    'spring.messages.basename',
-                    const ListType<String>(ClassType<String>()),
-                  )
-                  .orElse(const ['messages'])
-            : (environment.getProperty('spring.messages.basename') ??
-                      'messages')
-                  .split(','))
-      // `config.i18n.messages` is `config/i18n/messages`, like Boot's
-      // ResourceBundleCondition.
-      if (name.trim().isNotEmpty) name.trim().replaceAll('.', '/'),
-  ];
+  static List<String> basenames(Environment environment) => _basenames(
+    bindBootProperties(environment, MessagesProperties()).basename,
+  );
 
   @override
   bool matches(ConditionContext context) => basenames(context.environment).any(
@@ -187,3 +146,10 @@ class MessagesBundleCondition implements Condition {
         .exists(),
   );
 }
+
+// `config.i18n.messages` is `config/i18n/messages`, like Boot's
+// ResourceBundleCondition.
+List<String> _basenames(List<String> names) => [
+  for (final name in names)
+    if (name.trim().isNotEmpty) name.trim().replaceAll('.', '/'),
+];

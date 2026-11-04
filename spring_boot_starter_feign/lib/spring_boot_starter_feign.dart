@@ -42,6 +42,7 @@ library;
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 export 'package:spring_web_dart/spring_web_dart.dart';
 
+export 'src/config/feign_properties.dart';
 export 'src/feign_client.dart';
 export 'src/feign_client_config.dart';
 export 'src/feign_client_factory.dart';

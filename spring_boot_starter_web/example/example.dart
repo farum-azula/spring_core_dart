@@ -12,7 +12,7 @@ import 'dart:async';
 
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
-import 'example.spring.dart';
+import 'spring_gen/example.spring.dart';
 
 class Book {
   const Book({required this.isbn, required this.title});

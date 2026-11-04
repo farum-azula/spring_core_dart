@@ -427,5 +427,5 @@ final class DartDefineKeys {
 }
 
 const _configurationProperties = TypeChecker.fromUrl(
-  'package:spring_boot_dart/src/annotations.dart#ConfigurationProperties',
+  'package:spring_core_dart/src/context/property_annotations.dart#ConfigurationProperties',
 );

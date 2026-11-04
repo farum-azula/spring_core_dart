@@ -6,6 +6,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import 'support/client_properties.dart';
 import 'support/fake_provider.dart';
 
 Environment environment(Map<String, Object> properties) {
@@ -20,7 +21,7 @@ Future<Map<String, ClientRegistration>> mapped(
   HttpTransport? transport,
 }) async {
   final suppliers = OAuth2ClientPropertiesMapper(
-    OAuth2ClientProperties.of(environment(properties)),
+    boundClientProperties(environment(properties)),
     transport: transport ?? MockHttpTransport(),
   ).asClientRegistrations();
   return {
@@ -361,7 +362,7 @@ void main() {
     test('an issuer is discovered at first use, not at startup', () async {
       final provider = FakeProvider();
       final suppliers = OAuth2ClientPropertiesMapper(
-        OAuth2ClientProperties.of(
+        boundClientProperties(
           environment({
             '$_r.keycloak.client-id': clientId,
             '$_r.keycloak.scope': 'openid,profile',
@@ -527,7 +528,7 @@ void main() {
               );
             });
         final suppliers = OAuth2ClientPropertiesMapper(
-          OAuth2ClientProperties.of(
+          boundClientProperties(
             environment({
               '$_r.keycloak.client-id': clientId,
               '$_r.keycloak.redirect-uri': 'neonbooks:/oauth2/callback',

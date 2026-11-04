@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 
 const _app = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'app.spring.dart';
+import 'spring_gen/app.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -19,7 +19,7 @@ void main(List<String> args) => runApplication(args);
 const _imports = '''
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart' as t;
-import 'spring/shop.test.spring.dart';
+import 'spring_gen/shop.test.spring.dart';
 ''';
 
 Future<TestBuilderResult> _build(
@@ -51,7 +51,7 @@ Future<String> _generated(
   final result = await _build(testClass, files: files);
   expect(result.errors, isEmpty);
   return result.readerWriter.testing.readString(
-    AssetId('pkg', 'test/spring/shop.test.spring.dart'),
+    AssetId('pkg', 'test/spring_gen/shop.test.spring.dart'),
   );
 }
 
@@ -79,14 +79,14 @@ void runApplication(List<String> args) {}
 Future<List<String>> _compileErrors(Map<String, String> files) =>
     resolveSources<List<String>>(
       {
-        'pkg|bin/app.spring.dart': _appSpring,
+        'pkg|bin/spring_gen/app.spring.dart': _appSpring,
         for (final MapEntry(:key, :value) in files.entries) 'pkg|$key': value,
       },
       (resolver) async {
         final messages = <String>[];
         for (final path in [
           'test/shop_test.dart',
-          'test/spring/shop.test.spring.dart',
+          'test/spring_gen/shop.test.spring.dart',
         ]) {
           final library = await resolver.libraryFor(AssetId('pkg', path));
           final errors = await library.session.getErrors(
@@ -103,7 +103,7 @@ Future<List<String>> _compileErrors(Map<String, String> files) =>
         return messages;
       },
       rootPackage: 'pkg',
-      resolverFor: 'pkg|test/spring/shop.test.spring.dart',
+      resolverFor: 'pkg|test/spring_gen/shop.test.spring.dart',
       readAllSourcesFromFilesystem: true,
     );
 
@@ -164,7 +164,10 @@ class ShopTest {}
 ''');
     expect(source, _has("import 'package:test/test.dart' as t;"));
     expect(source, _has("import '../shop_test.dart';"));
-    expect(source, _has("import '../../bin/app.spring.dart' as _app0;"));
+    expect(
+      source,
+      _has("import '../../bin/spring_gen/app.spring.dart' as _app0;"),
+    );
     expect(source, isNot(contains('shop.test.spring.dart')));
     // Copied imports may be unused here: a warning type=lint does not
     // cover (an app analyzed with --fatal-warnings would fail).
@@ -183,7 +186,10 @@ class ShopTest {}
       '@SpringBootTest()\nclass ShopTest {}\n',
       files: {'lib/main.dart': _app},
     );
-    expect(source, _has("import 'package:pkg/main.spring.dart' as _app0;"));
+    expect(
+      source,
+      _has("import 'package:pkg/spring_gen/main.spring.dart' as _app0;"),
+    );
   });
 
   test('the class annotations become springBootTest arguments', () async {
@@ -513,7 +519,7 @@ class ShopTest {
         ...files,
         'test/shop_test.dart':
             '$_imports\n$testClass\nvoid main() => runSpringTests();\n',
-        'test/spring/shop.test.spring.dart': source,
+        'test/spring_gen/shop.test.spring.dart': source,
       });
       expect(errors, isEmpty, reason: source);
     });
@@ -614,7 +620,7 @@ class ShopTest {
         ...files,
         'test/shop_test.dart':
             '$_imports\n$testClass\nvoid main() => runSpringTests();\n',
-        'test/spring/shop.test.spring.dart': source,
+        'test/spring_gen/shop.test.spring.dart': source,
       });
       expect(errors, isEmpty, reason: source);
     });
@@ -806,7 +812,7 @@ class EmptyBasket {
   });
 
   test(
-    'relative imports of the test are re-pointed from test/spring/',
+    'relative imports of the test are re-pointed from test/spring_gen/',
     () async {
       final source = await _generated(
         "import 'support.dart';\nimport '../tool/fixtures.dart' as f;\n"
@@ -817,7 +823,7 @@ class EmptyBasket {
     },
   );
 
-  test('a test in a folder keeps the folder under test/spring/', () async {
+  test('a test in a folder keeps the folder under test/spring_gen/', () async {
     final readerWriter = TestReaderWriter(
       rootPackage: 'pkg',
       flattenOutput: true,
@@ -827,7 +833,7 @@ class EmptyBasket {
       {
         'pkg|test/orders/basket_test.dart':
             "import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';\n"
-            "import '../spring/orders/basket.test.spring.dart';\n"
+            "import '../spring_gen/orders/basket.test.spring.dart';\n"
             "import 'helpers.dart';\n"
             '@SpringBootTest()\nclass BasketTest {}\n',
         'pkg|bin/app.dart': _app,
@@ -838,15 +844,18 @@ class EmptyBasket {
     );
     expect(result.errors, isEmpty);
     final source = result.readerWriter.testing.readString(
-      AssetId('pkg', 'test/spring/orders/basket.test.spring.dart'),
+      AssetId('pkg', 'test/spring_gen/orders/basket.test.spring.dart'),
     );
     expect(source, _has("import '../../orders/basket_test.dart';"));
     expect(source, _has("import '../../orders/helpers.dart';"));
-    expect(source, _has("import '../../../bin/app.spring.dart' as _app0;"));
+    expect(
+      source,
+      _has("import '../../../bin/spring_gen/app.spring.dart' as _app0;"),
+    );
     expect(source, isNot(contains('basket.test.spring.dart')));
     expect(
       springTestOutput(AssetId('pkg', 'test/orders/basket_test.dart')).path,
-      'test/spring/orders/basket.test.spring.dart',
+      'test/spring_gen/orders/basket.test.spring.dart',
     );
   });
 
@@ -868,7 +877,10 @@ class BTest {}
         "@SpringBootTest(application: 'bin/admin.dart')\nclass ShopTest {}\n",
         files: {'bin/app.dart': _app, 'bin/admin.dart': _app},
       );
-      expect(source, _has("import '../../bin/admin.spring.dart' as _app0;"));
+      expect(
+        source,
+        _has("import '../../bin/spring_gen/admin.spring.dart' as _app0;"),
+      );
     });
 
     test('several entry points without a name fail', () async {
@@ -908,7 +920,7 @@ class BTest {}
           'lib/doc.dart': '/// @SpringBootApplication()\nvoid f() {}\n',
         },
       );
-      expect(source, _has('../bin/app.spring.dart'));
+      expect(source, _has('../bin/spring_gen/app.spring.dart'));
     });
   });
 
@@ -1190,7 +1202,7 @@ class ShopTest {
         'bin/app.dart': _app,
         'test/shop_test.dart':
             '$_imports$imports\n$testClass\nvoid main() => runSpringTests();\n',
-        'test/spring/shop.test.spring.dart': source,
+        'test/spring_gen/shop.test.spring.dart': source,
       });
       expect(errors, isEmpty, reason: source);
     });
@@ -1277,8 +1289,8 @@ class ShopTest {
     expect(
       logs.join('\n'),
       contains(
-        "does not import 'spring/shop.test.spring.dart': add import "
-        "'spring/shop.test.spring.dart';",
+        "does not import 'spring_gen/shop.test.spring.dart': add import "
+        "'spring_gen/shop.test.spring.dart';",
       ),
     );
   });
@@ -1439,13 +1451,16 @@ class ShopTest {
         files: {
           'bin/app.dart':
               "import 'package:spring_boot_dart/spring_boot_dart.dart';\n"
-              "import 'app.spring.dart';\n"
+              "import 'spring_gen/app.spring.dart';\n"
               "@pragma('vm:entry-point') @SpringBootApplication()\n"
               'void main(List<String> args) => runApplication(args);\n',
           'lib/template.dart': "const template = '''\n@SpringBootApplication()\nvoid main() {}\n''';\n",
         },
       );
-      expect(source, contains("import '../../bin/app.spring.dart' as _app0;"));
+      expect(
+        source,
+        contains("import '../../bin/spring_gen/app.spring.dart' as _app0;"),
+      );
     });
 
     test('annotations on a @Nested field apply to its group', () async {

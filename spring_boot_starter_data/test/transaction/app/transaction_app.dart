@@ -9,8 +9,8 @@ import 'dart:async';
 
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
+import '../../spring_gen/transaction/app/transaction_app.spring.dart';
 import '../support/recording_transaction_manager.dart';
-import 'transaction_app.spring.dart';
 
 /// Thrown when there is no stock; the order is still booked.
 class OutOfStock implements Exception {}

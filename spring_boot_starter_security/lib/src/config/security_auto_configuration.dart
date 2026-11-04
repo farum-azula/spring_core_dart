@@ -1,4 +1,4 @@
-// The documentation has Markdown table rows, which cannot be wrapped.
+// The source names below are single strings that cannot be wrapped.
 // ignore_for_file: lines_longer_than_80_chars
 
 import 'dart:math';
@@ -12,11 +12,11 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
         OidcIdTokenDecoder;
 import 'package:spring_boot_starter_security/src/config/http_security.dart';
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
-import 'package:spring_boot_starter_security/src/jwt/jose.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
 import 'package:spring_boot_starter_security/src/oauth2/authorized_client_repository.dart';
 import 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
+import 'package:spring_boot_starter_security/src/properties/security_properties.dart';
 import 'package:spring_boot_starter_security/src/web/arguments.dart';
 import 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
@@ -29,185 +29,18 @@ const _source =
     'package:spring_boot_starter_security#SecurityAutoConfiguration';
 const _log = SpringLog('spring.security.autoconfigure');
 
-/// The `spring.security.*` properties the starter reads: the default user,
-/// the place of the security filter, and the JWT resource server.
-///
-/// Set them in `application.properties` (or YAML, or the environment).
-/// Applications rarely use this class; the auto-configuration reads it.
-///
-/// | Property | Default |
-/// |---|---|
-/// | `spring.security.user.name` | `user` |
-/// | `spring.security.user.password` | a random one, logged at startup |
-/// | `spring.security.user.roles` | — |
-/// | `spring.security.filter.order` | `-100` |
-/// | `spring.security.oauth2.resourceserver.jwt.issuer-uri` | — |
-/// | `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | — |
-/// | `spring.security.oauth2.resourceserver.jwt.jws-algorithms` | `RS256` |
-/// | `spring.security.oauth2.resourceserver.jwt.audiences` | — |
-/// | `spring.security.oauth2.resourceserver.jwt.authority-prefix` | `SCOPE_` |
-/// | `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | `scope`, else `scp` |
-/// | `spring.security.oauth2.resourceserver.jwt.authorities-claim-delimiter` | a space |
-/// | `spring.security.oauth2.resourceserver.jwt.principal-claim-name` | `sub` |
-/// | `spring.security.session.maximum-sessions` | `10` (`-1`: no limit) |
-/// | `spring.security.session.max-sessions-prevents-login` | `false` |
-/// | `spring.security.cookie.secret` | a random key of the process |
-///
-/// The `spring.security.session.*` properties (not in Spring Boot, where
-/// `maximumSessions` is set in code only) apply to the chains that keep
-/// logins in sessions (form login, `oauth2Login()`); `stateless` chains,
-/// bearer tokens and HTTP Basic make no sessions. A chain's own
-/// `sessionManagement((s) => s.maximumSessions(...))` wins.
-///
-/// ```properties
-/// # A development user instead of the generated password.
-/// spring.security.user.name=admin
-/// spring.security.user.password=change-me
-/// spring.security.user.roles=ADMIN
-///
-/// # Or an API that accepts the identity provider's tokens.
-/// spring.security.oauth2.resourceserver.jwt.issuer-uri=https://login.example.com
-/// spring.security.oauth2.resourceserver.jwt.audiences=orders-api
-/// ```
-///
-/// With `issuer-uri` or `jwk-set-uri` set, every request needs a valid
-/// bearer token and there is no default user. With `jwk-set-uri`, the
-/// issuer (when also set) and the audiences are checked too; with
-/// `issuer-uri` alone, the keys come from the issuer's metadata and
-/// `jws-algorithms` is not used.
-///
-/// Spring (Java): Spring Boot's `SecurityProperties` and
-/// `OAuth2ResourceServerProperties`, with the same names.
-final class SecurityProperties {
-  SecurityProperties._(this._environment);
-
-  /// The properties as [environment] holds them now; each getter reads
-  /// the environment when called.
-  factory SecurityProperties.of(Environment environment) =>
-      SecurityProperties._(environment);
-
-  final Environment _environment;
-
-  String? _text(String key) {
-    final value = _environment.getProperty(key)?.trim();
-    return value == null || value.isEmpty ? null : value;
-  }
-
-  List<String> _list(String key) {
-    final binder = Binder.get(_environment as ConfigurableEnvironment);
-    return binder
-        .bind(key, const ListType<String>(ClassType<String>()))
-        .map<List<String>>(
-          (values) => [
-            for (final v in values)
-              if (v.trim().isNotEmpty) v.trim(),
-          ],
-        )
-        .orElse(const []);
-  }
-
-  static const _jwt = 'spring.security.oauth2.resourceserver.jwt';
-
-  /// `spring.security.user.name`: the default user's name, `user` when
-  /// unset.
-  String get userName => _text('spring.security.user.name') ?? 'user';
-
-  /// `spring.security.user.password`: the default user's password, or
-  /// `null` when unset (a random one is then generated and logged).
-  String? get userPassword => _text('spring.security.user.password');
-
-  /// `spring.security.user.roles`: the default user's roles, without
-  /// `ROLE_`; none when unset.
-  List<String> get userRoles => _list('spring.security.user.roles');
-
-  /// `spring.security.filter.order`: the place of the security filter
-  /// among the web filters, `-100` when unset or not a number.
-  int get filterOrder =>
-      int.tryParse(_text('spring.security.filter.order') ?? '') ??
-      FilterChainProxy.defaultFilterOrder;
-
-  /// `spring.security.session.maximum-sessions`: the most sessions per
-  /// user of the chains with sessions, 10 by default, `-1` for no limit.
-  ///
-  /// Throws an [ArgumentError] for `0`, a value below `-1` or text that
-  /// is not a number.
-  int get maximumSessions {
-    final text = _text('spring.security.session.maximum-sessions');
-    if (text == null) {
-      return SessionManagementConfigurer.defaultMaximumSessions;
-    }
-    final value = int.tryParse(text);
-    if (value == null || value == 0 || value < -1) {
-      throw ArgumentError(
-        'spring.security.session.maximum-sessions must be -1 or positive: '
-        '$text',
-      );
-    }
-    return value;
-  }
-
-  /// `spring.security.session.max-sessions-prevents-login`: whether a
-  /// login above [maximumSessions] is refused instead of ending the
-  /// user's least recently used session; `false` by default.
-  bool get maxSessionsPreventsLogin => switch (_text(
-    'spring.security.session.max-sessions-prevents-login',
-  )?.toLowerCase()) {
-    null || 'false' => false,
-    'true' => true,
-    final other => throw ArgumentError(
-      'spring.security.session.max-sessions-prevents-login must be true '
-      'or false: $other',
-    ),
-  };
-
-  /// `spring.security.oauth2.resourceserver.jwt.issuer-uri`: the identity
-  /// provider whose tokens are accepted, or `null`.
-  String? get issuerUri => _text('$_jwt.issuer-uri');
-
-  /// `spring.security.oauth2.resourceserver.jwt.jwk-set-uri`: the URL of
-  /// the provider's public keys, or `null`.
-  String? get jwkSetUri => _text('$_jwt.jwk-set-uri');
-
-  /// `spring.security.oauth2.resourceserver.jwt.jws-algorithms`: the
-  /// signature algorithms accepted with `jwk-set-uri`, `RS256` when unset.
-  ///
-  /// Throws an [ArgumentError] for an unknown name.
-  Set<JwsAlgorithm> get jwsAlgorithms {
-    final names = _list('$_jwt.jws-algorithms');
-    if (names.isEmpty) {
-      return const {JwsAlgorithm.rs256};
-    }
-    return {
-      for (final name in names)
-        JwsAlgorithm.from(name) ??
-            (throw ArgumentError('$_jwt.jws-algorithms: unknown $name')),
-    };
-  }
-
-  /// `spring.security.oauth2.resourceserver.jwt.audiences`: tokens must
-  /// name one of them in `aud`; no audience check when empty.
-  List<String> get audiences => _list('$_jwt.audiences');
-
-  /// Whether `issuer-uri` or `jwk-set-uri` is set, which makes the
-  /// application a JWT resource server.
-  bool get hasResourceServer => issuerUri != null || jwkSetUri != null;
-
-  /// A [JwtAuthenticationConverter] following `authority-prefix`
-  /// (`SCOPE_`, may be empty), `authorities-claim-name`,
-  /// `authorities-claim-delimiter` (a space) and `principal-claim-name`
-  /// (`sub`).
-  JwtAuthenticationConverter get jwtAuthenticationConverter =>
-      JwtAuthenticationConverter(
-        authoritiesConverter: JwtGrantedAuthoritiesConverter(
-          authorityPrefix:
-              _environment.getProperty('$_jwt.authority-prefix') ?? 'SCOPE_',
-          authoritiesClaimName: _text('$_jwt.authorities-claim-name'),
-          authoritiesClaimDelimiter:
-              _environment.getProperty('$_jwt.authorities-claim-delimiter') ??
-              ' ',
-        ),
-        principalClaimName: _text('$_jwt.principal-claim-name') ?? 'sub',
-      );
+// Whether issuer-uri or jwk-set-uri is set (SecurityProperties describes
+// the keys); a condition runs before any bean exists.
+bool _hasResourceServer(Environment environment) {
+  bool set(String key) =>
+      (environment
+                  .getProperty(
+                    'spring.security.oauth2.resourceserver.jwt.$key',
+                  )
+                  ?.trim() ??
+              '')
+          .isNotEmpty;
+  return set('issuer-uri') || set('jwk-set-uri');
 }
 
 // spring.security.oauth2.resourceserver.jwt.issuer-uri or jwk-set-uri.
@@ -216,7 +49,7 @@ final class _OnResourceServerProperties implements Condition {
 
   @override
   bool matches(ConditionContext context) =>
-      SecurityProperties.of(context.environment).hasResourceServer;
+      _hasResourceServer(context.environment);
 }
 
 // No resource server properties (the default user backs off with them).
@@ -225,7 +58,7 @@ final class _OnNoResourceServerProperties implements Condition {
 
   @override
   bool matches(ConditionContext context) =>
-      !SecurityProperties.of(context.environment).hasResourceServer;
+      !_hasResourceServer(context.environment);
 }
 
 // OAuth2 clients: a ClientRegistrationRepository bean registered before
@@ -341,8 +174,8 @@ String _generatedPassword() {
 ///   `UserDetailsService`, an `AuthenticationProvider`, an
 ///   `AuthenticationManager` or a `JwtDecoder`, or sets the resource server
 ///   properties, or has OAuth2 clients (unless `spring.security.user.name`
-///   or `.password` is set). Without a password property, a random one is generated
-///   and logged at startup, for development only. Without a
+///   or `.password` is set). Without a password property, a random one is
+///   generated and logged at startup, for development only. Without a
 ///   `PasswordEncoder` bean the password is stored as `{noop}` unless it
 ///   already starts with an `{id}`; with one, it is stored as given, so it
 ///   must already be encoded (and a generated password cannot log in).
@@ -374,7 +207,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     create: (r) {
       final environment = r.dependency<Environment>();
-      final properties = SecurityProperties.of(environment);
+      final properties = r.dependency<SecurityProperties>();
       return HttpSecurity(
         r.dependency<BeanFactory>(),
         contextPath: ServerProperties.of(environment).contextPath,
@@ -394,7 +227,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) => CookieSigner.fromSecret(
-      r.dependency<Environment>().getProperty('spring.security.cookie.secret')!,
+      r.dependency<SecurityProperties>().cookie.secret!,
     ),
   ),
   BeanDefinition<JwtDecoder>(
@@ -408,7 +241,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) {
-      final properties = SecurityProperties.of(r.dependency<Environment>());
+      final properties = r.dependency<SecurityProperties>();
       final jwkSetUri = properties.jwkSetUri;
       final issuer = properties.issuerUri;
       final audiences = properties.audiences;
@@ -437,8 +270,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) =>
-        SecurityProperties.of(r.dependency<Environment>())
-            .jwtAuthenticationConverter,
+        r.dependency<SecurityProperties>().jwtAuthenticationConverter,
   ),
   BeanDefinition<InMemoryUserDetailsManager>(
     name: 'inMemoryUserDetailsManager',
@@ -465,7 +297,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) {
-      final properties = SecurityProperties.of(r.dependency<Environment>());
+      final properties = r.dependency<SecurityProperties>();
       var password = properties.userPassword;
       if (password == null) {
         password = _generatedPassword();
@@ -541,7 +373,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) {
       final chains =
           r.optionalDependencyList<SecurityFilterChain>() ?? const [];
-      final properties = SecurityProperties.of(r.dependency<Environment>());
+      final properties = r.dependency<SecurityProperties>();
       _check(chains);
       return FilterChainProxy(
         chains,

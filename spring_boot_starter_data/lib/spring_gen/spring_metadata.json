@@ -1,0 +1,3114 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_data",
+  "properties": [
+    {
+      "name": "spring.data.jdbc.format-sql",
+      "type": "bool",
+      "description": "Whether the SQL in the log is on several lines.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 64,
+      "class": "DataJdbcProperties"
+    },
+    {
+      "name": "spring.data.jdbc.schema",
+      "type": "SchemaMode",
+      "description": "What the starter does with the schema: `none`, `validate` (tables and columns of the entities must exist and fit), `create`, `create-drop` (from the entities; not with migrations or scripts).",
+      "default": "validate",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 57,
+      "class": "DataJdbcProperties"
+    },
+    {
+      "name": "spring.data.jdbc.show-parameters",
+      "type": "bool",
+      "description": "Whether the bound values are logged at info too, instead of trace; those of secret-looking names stay masked.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 68,
+      "class": "DataJdbcProperties"
+    },
+    {
+      "name": "spring.data.jdbc.show-sql",
+      "type": "bool",
+      "description": "Whether the statements are logged at info, so they show with the default level (Spring Boot's `spring.jpa.show-sql`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 61,
+      "class": "DataJdbcProperties"
+    },
+    {
+      "name": "spring.data.jdbc.slow-query-threshold",
+      "type": "Duration?",
+      "description": "A slower statement is logged at warn. Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 71,
+      "class": "DataJdbcProperties"
+    },
+    {
+      "name": "spring.data.memory.lock-timeout",
+      "type": "Duration",
+      "description": "The in-memory store's wait for a row lock, such as `500ms` or `10s`; zero fails at once, as `nowait` does. Default: 10s.",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 81,
+      "class": "DataMemoryProperties"
+    },
+    {
+      "name": "spring.data.web.pageable.default-page-size",
+      "type": "int",
+      "description": "The page size when the request has no `size`.",
+      "default": 20,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 113,
+      "class": "DataPageableProperties"
+    },
+    {
+      "name": "spring.data.web.pageable.max-page-size",
+      "type": "int",
+      "description": "The largest page size; a larger `size` is cut to it.",
+      "default": 2000,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 116,
+      "class": "DataPageableProperties"
+    },
+    {
+      "name": "spring.data.web.pageable.one-indexed-parameters",
+      "type": "bool",
+      "description": "Whether the `page` parameter starts at 1 instead of 0.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 119,
+      "class": "DataPageableProperties"
+    },
+    {
+      "name": "spring.data.web.pageable.page-parameter",
+      "type": "String",
+      "description": "The name of the page number parameter.",
+      "default": "page",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 122,
+      "class": "DataPageableProperties"
+    },
+    {
+      "name": "spring.data.web.pageable.prefix",
+      "type": "String",
+      "description": "A prefix put before the page and size parameter names.",
+      "default": "",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 128,
+      "class": "DataPageableProperties"
+    },
+    {
+      "name": "spring.data.web.pageable.qualifier-delimiter",
+      "type": "String",
+      "description": "The delimiter between a `@Qualifier` and the parameter name (`x_page`).",
+      "default": "_",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 131,
+      "class": "DataPageableProperties"
+    },
+    {
+      "name": "spring.data.web.pageable.size-parameter",
+      "type": "String",
+      "description": "The name of the page size parameter.",
+      "default": "size",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 125,
+      "class": "DataPageableProperties"
+    },
+    {
+      "name": "spring.data.web.sort.sort-parameter",
+      "type": "String",
+      "description": "The name of the sort parameter.",
+      "default": "sort",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 140,
+      "class": "DataSortProperties"
+    },
+    {
+      "name": "spring.datasource.driver",
+      "type": "String?",
+      "description": "The driver's name (`sqlite3`, `postgres`), when two drivers handle the scheme.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 211,
+      "class": "DataSourceConfigProperties"
+    },
+    {
+      "name": "spring.datasource.password",
+      "type": "String?",
+      "description": "The database password.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 207,
+      "class": "DataSourceConfigProperties"
+    },
+    {
+      "name": "spring.datasource.pool.connection-timeout",
+      "type": "Duration",
+      "description": "The longest wait for a connection, then `CannotGetJdbcConnectionException`. Default: 30s.",
+      "default": "30s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 381,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasource.pool.idle-timeout",
+      "type": "Duration",
+      "description": "An idle connection above `min-idle` older than this is closed; zero keeps them forever. Default: 10m.",
+      "default": "10m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 385,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasource.pool.max-lifetime",
+      "type": "Duration",
+      "description": "A connection older than this is closed when it comes back to the pool; zero: no limit. Default: 30m.",
+      "default": "30m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 389,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasource.pool.max-size",
+      "type": "int",
+      "description": "Most connections at once, at least 1.",
+      "default": 10,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 373,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasource.pool.min-idle",
+      "type": "int",
+      "description": "Connections kept open when idle, from 0 to `max-size` (Hikari keeps as many as `max-size`).",
+      "default": 0,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 377,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasource.pool.validation",
+      "type": "bool",
+      "description": "Whether a connection that waited in the pool is checked with `isValid` before it is handed out.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 393,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasource.postgresql.application-name",
+      "type": "String?",
+      "description": "Shown in `pg_stat_activity`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 352,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasource.postgresql.connect-timeout",
+      "type": "Duration",
+      "description": "The longest wait for the connection and the TLS handshake (`500ms`, `30s`, `1m`, or milliseconds; this key does not take `PT30S`). Default: 15s.",
+      "default": "15s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 349,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasource.postgresql.search-path",
+      "type": "String?",
+      "description": "The schemas of `search_path`, comma separated (the URL's `currentSchema`). Default: the server's.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 356,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasource.postgresql.ssl-root-cert",
+      "type": "String?",
+      "description": "PEM file of the certificate authorities a `verify-*` mode checks the server against. Default: system roots.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 344,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasource.postgresql.sslmode",
+      "type": "PostgresSslSetting",
+      "description": "Whether and how the connection uses TLS (libpq's `sslmode`).",
+      "default": "prefer",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 340,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasource.sqlite.base-directory",
+      "type": "String?",
+      "description": "Where relative `sqlite:file:` names are looked for; in a Flutter app the starter sets it (SQLite databases). Default: working directory.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 314,
+      "class": "SqliteConfigProperties"
+    },
+    {
+      "name": "spring.datasource.sqlite.busy-timeout",
+      "type": "int",
+      "description": "Milliseconds a connection waits for SQLite's lock.",
+      "default": 5000,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 317,
+      "class": "SqliteConfigProperties"
+    },
+    {
+      "name": "spring.datasource.sqlite.isolate",
+      "type": "bool",
+      "description": "`true` opens each connection inside an isolate of its own, so a long query or a busy wait does not hold the caller's isolate (the UI's, the web server's); in a Flutter app the starter sets it to `true`.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 322,
+      "class": "SqliteConfigProperties"
+    },
+    {
+      "name": "spring.datasource.url",
+      "type": "String?",
+      "description": "The database URL: `sqlite:file:books.db`, `sqlite::memory:` or `postgresql://user:password@host/db`; the scheme chooses the driver.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 201,
+      "class": "DataSourceConfigProperties"
+    },
+    {
+      "name": "spring.datasource.username",
+      "type": "String?",
+      "description": "The database user.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 204,
+      "class": "DataSourceConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.data.jdbc.schema",
+      "type": "SchemaMode",
+      "description": "What the starter does with the schema of this data source: `none`, `validate` (tables and columns of the entities must exist and fit), `create`, `create-drop` (from the entities; not with migrations or scripts).",
+      "default": "validate",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 298,
+      "class": "NamedDataJdbcProperties"
+    },
+    {
+      "name": "spring.datasources.*.driver",
+      "type": "String?",
+      "description": "The driver's name (`sqlite3`, `postgres`), when two drivers handle the scheme.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 262,
+      "class": "NamedDataSourceProperties"
+    },
+    {
+      "name": "spring.datasources.*.password",
+      "type": "String?",
+      "description": "The database password.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 258,
+      "class": "NamedDataSourceProperties"
+    },
+    {
+      "name": "spring.datasources.*.pool.connection-timeout",
+      "type": "Duration",
+      "description": "The longest wait for a connection, then `CannotGetJdbcConnectionException`. Default: 30s.",
+      "default": "30s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 381,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasources.*.pool.idle-timeout",
+      "type": "Duration",
+      "description": "An idle connection above `min-idle` older than this is closed; zero keeps them forever. Default: 10m.",
+      "default": "10m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 385,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasources.*.pool.max-lifetime",
+      "type": "Duration",
+      "description": "A connection older than this is closed when it comes back to the pool; zero: no limit. Default: 30m.",
+      "default": "30m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 389,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasources.*.pool.max-size",
+      "type": "int",
+      "description": "Most connections at once, at least 1.",
+      "default": 10,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 373,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasources.*.pool.min-idle",
+      "type": "int",
+      "description": "Connections kept open when idle, from 0 to `max-size` (Hikari keeps as many as `max-size`).",
+      "default": 0,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 377,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasources.*.pool.validation",
+      "type": "bool",
+      "description": "Whether a connection that waited in the pool is checked with `isValid` before it is handed out.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 393,
+      "class": "DataSourcePoolProperties"
+    },
+    {
+      "name": "spring.datasources.*.postgresql.application-name",
+      "type": "String?",
+      "description": "Shown in `pg_stat_activity`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 352,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.postgresql.connect-timeout",
+      "type": "Duration",
+      "description": "The longest wait for the connection and the TLS handshake (`500ms`, `30s`, `1m`, or milliseconds; this key does not take `PT30S`). Default: 15s.",
+      "default": "15s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 349,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.postgresql.search-path",
+      "type": "String?",
+      "description": "The schemas of `search_path`, comma separated (the URL's `currentSchema`). Default: the server's.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 356,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.postgresql.ssl-root-cert",
+      "type": "String?",
+      "description": "PEM file of the certificate authorities a `verify-*` mode checks the server against. Default: system roots.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 344,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.postgresql.sslmode",
+      "type": "PostgresSslSetting",
+      "description": "Whether and how the connection uses TLS (libpq's `sslmode`).",
+      "default": "prefer",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 340,
+      "class": "PostgresqlConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.sql.init.continue-on-error",
+      "type": "bool",
+      "description": "Whether a failed statement is logged and skipped instead of stopping the start (`continue-on-error`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 61,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.init.data-locations",
+      "type": "List<String>",
+      "description": "The locations of the data scripts (`data-locations`); empty for the default, `resources:data.sql` and `resources:data-PLATFORM.sql`.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 53,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.init.encoding",
+      "type": "String",
+      "description": "The encoding of the script files (`encoding`).",
+      "default": "utf-8",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 67,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.init.mode",
+      "type": "SqlInitMode",
+      "description": "When `schema.sql` / `data.sql` run: `embedded` (in-memory databases only), `always`, `never`.",
+      "default": "embedded",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 43,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.init.platform",
+      "type": "String",
+      "description": "The platform in the names of the platform scripts (`platform`); `all` by default.",
+      "default": "all",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 57,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.init.schema-locations",
+      "type": "List<String>",
+      "description": "The locations of the schema scripts (`schema-locations`); empty for the default, `resources:schema.sql` and `resources:schema-PLATFORM. sql`, both optional. A location you give must exist, unless it starts with `optional:`; `@@platform@@` in it is replaced by the platform.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 49,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.init.separator",
+      "type": "String",
+      "description": "The separator of the statements (`separator`).",
+      "default": ";",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 64,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.baseline-description",
+      "type": "String",
+      "description": "The description of the baseline (`baseline-description`).",
+      "default": "<< Baseline >>",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 76,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.baseline-on-migrate",
+      "type": "bool",
+      "description": "Whether a database with tables and no history is taken as being at the [baselineVersion] instead of stopping the start (`baseline-on-migrate`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 70,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.baseline-version",
+      "type": "String",
+      "description": "The version of the baseline (`baseline-version`).",
+      "default": "1",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 73,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.connect-retries",
+      "type": "int",
+      "description": "How many times a failed connection to the database is retried at startup (`connect-retries`).",
+      "default": 0,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 101,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.connect-retries-interval",
+      "type": "Duration",
+      "description": "How long to wait between two of those attempts (`connect-retries-interval`).",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 105,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.enabled",
+      "type": "bool",
+      "description": "Whether migrations run: `lib/resources/db/migration/V<version>__<name>.sql` and `R__<name>.sql`; with no files nothing runs anyway (`enabled`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 40,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.group",
+      "type": "bool",
+      "description": "Whether all the pending migrations run in one transaction instead of each in its own (`group`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 97,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.ignore-migration-patterns",
+      "type": "List<String>",
+      "description": "Which problems of the history are ignored (`ignore-migration- patterns`): `type:status` with the type `versioned`, `repeatable` or `*` and the status `missing` (applied, not in the files, below the latest file), `future` (applied, newer than every file), `ignored` (a file below the latest applied, never applied) or `*`. The default `*:future` lets a database from a later version of the application start.",
+      "default": [
+        "*:future"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 65,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.locations",
+      "type": "List<String>",
+      "description": "Where the files are (`locations`); `{vendor}` is replaced by the dialect's name (`sqlite`, `postgresql`).",
+      "default": [
+        "resources:db/migration"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 44,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.lock-timeout",
+      "type": "Duration",
+      "description": "How long the runner waits for the migration lock another process holds before it gives up (`lock-timeout`, one minute).",
+      "default": "1m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 109,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.out-of-order",
+      "type": "bool",
+      "description": "Whether a file with a version below the latest applied one still runs (`out-of-order`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 56,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.placeholder-prefix",
+      "type": "String",
+      "description": "What a placeholder starts with (`placeholder-prefix`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 90,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.placeholder-replacement",
+      "type": "bool",
+      "description": "Whether the scripts have their placeholders replaced (`placeholder-replacement`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 87,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.placeholder-suffix",
+      "type": "String",
+      "description": "What a placeholder ends with (`placeholder-suffix`).",
+      "default": "}",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 93,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.placeholders.*",
+      "type": "String",
+      "description": "The values of the placeholders of the scripts (`placeholders.<name>`).",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 83,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.table",
+      "type": "String",
+      "description": "The history table (`table`).",
+      "default": "schema_history",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 47,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.target",
+      "type": "String",
+      "description": "The version to migrate to, or `latest` (`target`). Repeatable migrations run only for `latest`.",
+      "default": "latest",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 80,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sql.migration.validate-on-migrate",
+      "type": "bool",
+      "description": "Whether an applied migration whose checksum changed, or that is missing from the files, or a file older than the applied ones that was never applied, stops the start (`validate-on-migrate`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 52,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.datasources.*.sqlite.base-directory",
+      "type": "String?",
+      "description": "Where relative `sqlite:file:` names are looked for; in a Flutter app the starter sets it (SQLite databases). Default: working directory.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 314,
+      "class": "SqliteConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.sqlite.busy-timeout",
+      "type": "int",
+      "description": "Milliseconds a connection waits for SQLite's lock.",
+      "default": 5000,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 317,
+      "class": "SqliteConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.sqlite.isolate",
+      "type": "bool",
+      "description": "`true` opens each connection inside an isolate of its own, so a long query or a busy wait does not hold the caller's isolate (the UI's, the web server's); in a Flutter app the starter sets it to `true`.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 322,
+      "class": "SqliteConfigProperties"
+    },
+    {
+      "name": "spring.datasources.*.url",
+      "type": "String?",
+      "description": "The database URL: `sqlite:file:books.db`, `sqlite::memory:` or `postgresql://user:password@host/db`; the scheme chooses the driver.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 252,
+      "class": "NamedDataSourceProperties"
+    },
+    {
+      "name": "spring.datasources.*.username",
+      "type": "String?",
+      "description": "The database user.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 255,
+      "class": "NamedDataSourceProperties"
+    },
+    {
+      "name": "spring.jdbc.template.query-timeout",
+      "type": "Duration?",
+      "description": "Bounds each statement of the `JdbcTemplate` beans, such as `500ms` or `10s`. Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 160,
+      "class": "JdbcTemplateProperties"
+    },
+    {
+      "name": "spring.sql.init.continue-on-error",
+      "type": "bool",
+      "description": "Whether a failed statement is logged and skipped instead of stopping the start (`continue-on-error`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 61,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.sql.init.data-locations",
+      "type": "List<String>",
+      "description": "The locations of the data scripts (`data-locations`); empty for the default, `resources:data.sql` and `resources:data-PLATFORM.sql`.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 53,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.sql.init.encoding",
+      "type": "String",
+      "description": "The encoding of the script files (`encoding`).",
+      "default": "utf-8",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 67,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.sql.init.mode",
+      "type": "SqlInitMode",
+      "description": "When `schema.sql` / `data.sql` run: `embedded` (in-memory databases only), `always`, `never`.",
+      "default": "embedded",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 43,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.sql.init.platform",
+      "type": "String",
+      "description": "The platform in the names of the platform scripts (`platform`); `all` by default.",
+      "default": "all",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 57,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.sql.init.schema-locations",
+      "type": "List<String>",
+      "description": "The locations of the schema scripts (`schema-locations`); empty for the default, `resources:schema.sql` and `resources:schema-PLATFORM. sql`, both optional. A location you give must exist, unless it starts with `optional:`; `@@platform@@` in it is replaced by the platform.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 49,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.sql.init.separator",
+      "type": "String",
+      "description": "The separator of the statements (`separator`).",
+      "default": ";",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/script_database_initializer.dart",
+      "line": 64,
+      "class": "SqlInitSettings"
+    },
+    {
+      "name": "spring.sql.migration.baseline-description",
+      "type": "String",
+      "description": "The description of the baseline (`baseline-description`).",
+      "default": "<< Baseline >>",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 76,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.baseline-on-migrate",
+      "type": "bool",
+      "description": "Whether a database with tables and no history is taken as being at the [baselineVersion] instead of stopping the start (`baseline-on-migrate`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 70,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.baseline-version",
+      "type": "String",
+      "description": "The version of the baseline (`baseline-version`).",
+      "default": "1",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 73,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.connect-retries",
+      "type": "int",
+      "description": "How many times a failed connection to the database is retried at startup (`connect-retries`).",
+      "default": 0,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 101,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.connect-retries-interval",
+      "type": "Duration",
+      "description": "How long to wait between two of those attempts (`connect-retries-interval`).",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 105,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.enabled",
+      "type": "bool",
+      "description": "Whether migrations run: `lib/resources/db/migration/V<version>__<name>.sql` and `R__<name>.sql`; with no files nothing runs anyway (`enabled`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 40,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.group",
+      "type": "bool",
+      "description": "Whether all the pending migrations run in one transaction instead of each in its own (`group`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 97,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.ignore-migration-patterns",
+      "type": "List<String>",
+      "description": "Which problems of the history are ignored (`ignore-migration- patterns`): `type:status` with the type `versioned`, `repeatable` or `*` and the status `missing` (applied, not in the files, below the latest file), `future` (applied, newer than every file), `ignored` (a file below the latest applied, never applied) or `*`. The default `*:future` lets a database from a later version of the application start.",
+      "default": [
+        "*:future"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 65,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.locations",
+      "type": "List<String>",
+      "description": "Where the files are (`locations`); `{vendor}` is replaced by the dialect's name (`sqlite`, `postgresql`).",
+      "default": [
+        "resources:db/migration"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 44,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.lock-timeout",
+      "type": "Duration",
+      "description": "How long the runner waits for the migration lock another process holds before it gives up (`lock-timeout`, one minute).",
+      "default": "1m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 109,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.out-of-order",
+      "type": "bool",
+      "description": "Whether a file with a version below the latest applied one still runs (`out-of-order`).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 56,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.placeholder-prefix",
+      "type": "String",
+      "description": "What a placeholder starts with (`placeholder-prefix`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 90,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.placeholder-replacement",
+      "type": "bool",
+      "description": "Whether the scripts have their placeholders replaced (`placeholder-replacement`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 87,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.placeholder-suffix",
+      "type": "String",
+      "description": "What a placeholder ends with (`placeholder-suffix`).",
+      "default": "}",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 93,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.placeholders.*",
+      "type": "String",
+      "description": "The values of the placeholders of the scripts (`placeholders.<name>`).",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 83,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.table",
+      "type": "String",
+      "description": "The history table (`table`).",
+      "default": "schema_history",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 47,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.target",
+      "type": "String",
+      "description": "The version to migrate to, or `latest` (`target`). Repeatable migrations run only for `latest`.",
+      "default": "latest",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 80,
+      "class": "MigrationSettings"
+    },
+    {
+      "name": "spring.sql.migration.validate-on-migrate",
+      "type": "bool",
+      "description": "Whether an applied migration whose checksum changed, or that is missing from the files, or a file older than the applied ones that was never applied, stops the start (`validate-on-migrate`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart",
+      "line": 52,
+      "class": "MigrationSettings"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.data.jdbc.schema",
+      "values": [
+        {
+          "value": "none",
+          "description": "Does nothing."
+        },
+        {
+          "value": "validate",
+          "description": "Checks that the entities' tables and columns exist and fit; the default."
+        },
+        {
+          "value": "create",
+          "description": "Creates the missing tables from the entities."
+        },
+        {
+          "value": "create-drop",
+          "description": "Creates the tables and drops them when the context closes."
+        }
+      ]
+    },
+    {
+      "name": "spring.datasource.postgresql.sslmode",
+      "values": [
+        {
+          "value": "disable",
+          "description": "`disable`."
+        },
+        {
+          "value": "allow",
+          "description": "`allow`: tried with TLS first, like `prefer`."
+        },
+        {
+          "value": "prefer",
+          "description": "`prefer`, the default."
+        },
+        {
+          "value": "require",
+          "description": "`require`."
+        },
+        {
+          "value": "verify-ca",
+          "description": "`verify-ca`: as strict as `verify-full`."
+        },
+        {
+          "value": "verify-full",
+          "description": "`verify-full`."
+        }
+      ]
+    },
+    {
+      "name": "spring.datasources.*.data.jdbc.schema",
+      "values": [
+        {
+          "value": "none",
+          "description": "Does nothing."
+        },
+        {
+          "value": "validate",
+          "description": "Checks that the entities' tables and columns exist and fit; the default."
+        },
+        {
+          "value": "create",
+          "description": "Creates the missing tables from the entities."
+        },
+        {
+          "value": "create-drop",
+          "description": "Creates the tables and drops them when the context closes."
+        }
+      ]
+    },
+    {
+      "name": "spring.datasources.*.postgresql.sslmode",
+      "values": [
+        {
+          "value": "disable",
+          "description": "`disable`."
+        },
+        {
+          "value": "allow",
+          "description": "`allow`: tried with TLS first, like `prefer`."
+        },
+        {
+          "value": "prefer",
+          "description": "`prefer`, the default."
+        },
+        {
+          "value": "require",
+          "description": "`require`."
+        },
+        {
+          "value": "verify-ca",
+          "description": "`verify-ca`: as strict as `verify-full`."
+        },
+        {
+          "value": "verify-full",
+          "description": "`verify-full`."
+        }
+      ]
+    },
+    {
+      "name": "spring.datasources.*.sql.init.mode",
+      "values": [
+        {
+          "value": "embedded",
+          "description": "Only on an embedded database: an in-memory one (`sqlite::memory:`). The default, as in Boot."
+        },
+        {
+          "value": "always",
+          "description": "On every database."
+        },
+        {
+          "value": "never",
+          "description": "Never."
+        }
+      ]
+    },
+    {
+      "name": "spring.sql.init.mode",
+      "values": [
+        {
+          "value": "embedded",
+          "description": "Only on an embedded database: an in-memory one (`sqlite::memory:`). The default, as in Boot."
+        },
+        {
+          "value": "always",
+          "description": "On every database."
+        },
+        {
+          "value": "never",
+          "description": "Never."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "auditingHandler",
+      "type": "AuditingHandler",
+      "types": [
+        "AuditingHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean.where(annotations: [EnableDataAuditing])",
+        "@ConditionalOnMissingBean(AuditingHandler)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 273,
+      "injects": [],
+      "members": [
+        {
+          "name": "auditorAware",
+          "kind": "field",
+          "type": "AuditorAware<Object>?"
+        },
+        {
+          "name": "converter",
+          "kind": "field",
+          "type": "EntityConverter"
+        },
+        {
+          "name": "dateTimeProvider",
+          "kind": "field",
+          "type": "DateTimeProvider"
+        },
+        {
+          "name": "markCreated",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance"
+          ]
+        },
+        {
+          "name": "markModified",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance"
+          ]
+        },
+        {
+          "name": "modifyOnCreate",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "setDates",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "dataFailureAnalyzer",
+      "type": "DataFailureAnalyzer",
+      "types": [
+        "DataFailureAnalyzer",
+        "FailureAnalyzer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 375,
+      "injects": [],
+      "members": [
+        {
+          "name": "analyze",
+          "kind": "method",
+          "type": "FailureAnalysis?",
+          "parameters": [
+            "Object failure"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dataProperties",
+      "type": "DataProperties",
+      "types": [
+        "DataProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 23,
+      "injects": [],
+      "members": [
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "DataJdbcProperties"
+        },
+        {
+          "name": "memory",
+          "kind": "field",
+          "type": "DataMemoryProperties"
+        },
+        {
+          "name": "web",
+          "kind": "field",
+          "type": "DataWebProperties"
+        }
+      ]
+    },
+    {
+      "name": "dataSource",
+      "type": "InitializingDataSource",
+      "types": [
+        "InitializingDataSource",
+        "DataSource",
+        "InitializingBean",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.datasource.url')",
+        "@ConditionalOnMissingBean(DataSource)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 392,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterPropertiesSet",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "dialect",
+          "kind": "getter",
+          "type": "SqlDialect"
+        },
+        {
+          "name": "driver",
+          "kind": "field",
+          "type": "JdbcDriver"
+        },
+        {
+          "name": "getConnection",
+          "kind": "method",
+          "type": "Future<JdbcConnection>",
+          "parameters": []
+        },
+        {
+          "name": "initializer",
+          "kind": "field",
+          "type": "DatabaseInitializer"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "pool",
+          "kind": "field",
+          "type": "PooledDataSource"
+        },
+        {
+          "name": "ready",
+          "kind": "getter",
+          "type": "Future<void>"
+        },
+        {
+          "name": "releaseConnection",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "JdbcConnection connection"
+          ]
+        },
+        {
+          "name": "settings",
+          "kind": "field",
+          "type": "ConnectionSettings"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "dataSourceConfigProperties",
+      "type": "DataSourceConfigProperties",
+      "types": [
+        "DataSourceConfigProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 187,
+      "injects": [],
+      "members": [
+        {
+          "name": "driver",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "password",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "pool",
+          "kind": "field",
+          "type": "DataSourcePoolProperties"
+        },
+        {
+          "name": "postgresql",
+          "kind": "field",
+          "type": "PostgresqlConfigProperties"
+        },
+        {
+          "name": "sqlite",
+          "kind": "field",
+          "type": "SqliteConfigProperties"
+        },
+        {
+          "name": "url",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "username",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "dataSourceInitialization",
+      "type": "DataSourceInitialization",
+      "types": [
+        "DataSourceInitialization",
+        "InitializingBean",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnSingleCandidate(DataSource)",
+        "@ConditionalOnMissingBean(InitializingDataSource)",
+        "@ConditionalOnMissingBean(DataSourceInitialization)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 411,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterPropertiesSet",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "initializer",
+          "kind": "field",
+          "type": "DatabaseInitializer"
+        }
+      ]
+    },
+    {
+      "name": "dataSourceRegistrar",
+      "type": "DataSourceRegistrar",
+      "types": [
+        "DataSourceRegistrar",
+        "BeanDefinitionRegistryPostProcessor",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 439,
+      "injects": [],
+      "members": [
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "postProcessBeanDefinitionRegistry",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanDefinitionRegistry registry"
+          ]
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dataSourceTransactionManagerRegistrar",
+      "type": "DataSourceTransactionManagerRegistrar",
+      "types": [
+        "DataSourceTransactionManagerRegistrar",
+        "BeanDefinitionRegistryPostProcessor",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 262,
+      "injects": [],
+      "members": [
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment?"
+        },
+        {
+          "name": "postProcessBeanDefinitionRegistry",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanDefinitionRegistry registry"
+          ]
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "entityConverter",
+      "type": "EntityConverter",
+      "types": [
+        "EntityConverter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(EntityConverter)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 208,
+      "injects": [],
+      "members": [
+        {
+          "name": "fromColumnValue",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "Object? value",
+            "TypeInfo<Object?> type",
+            "{String where}"
+          ]
+        },
+        {
+          "name": "idOf",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "PersistentEntity<Object> entity",
+            "Object instance"
+          ]
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector"
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Map<String, Object?> row",
+            "{Map<String, Object?> children}"
+          ]
+        },
+        {
+          "name": "setId",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "PersistentEntity<Object> entity",
+            "Object instance",
+            "Object? id"
+          ]
+        },
+        {
+          "name": "setVersion",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "PersistentEntity<Object> entity",
+            "Object instance",
+            "Object? version"
+          ]
+        },
+        {
+          "name": "toColumnValue",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "Object? value"
+          ]
+        },
+        {
+          "name": "versionOf",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "PersistentEntity<Object> entity",
+            "Object instance"
+          ]
+        },
+        {
+          "name": "withId",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance",
+            "Object? id"
+          ]
+        },
+        {
+          "name": "withValues",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance",
+            "Map<String, Object?> changes"
+          ]
+        },
+        {
+          "name": "withVersion",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance",
+            "Object? version"
+          ]
+        },
+        {
+          "name": "write",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "PersistentEntity<Object> entity",
+            "Object instance"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inMemoryDataSources",
+      "type": "InMemoryDataSources",
+      "types": [
+        "InMemoryDataSources"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(InMemoryDataSources)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 235,
+      "injects": [],
+      "members": [
+        {
+          "name": "converter",
+          "kind": "field",
+          "type": "EntityConverter"
+        },
+        {
+          "name": "lockTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "names",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "storeFor",
+          "kind": "method",
+          "type": "InMemoryDataStore",
+          "parameters": [
+            "String name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inMemoryDataStore",
+      "type": "InMemoryDataStore",
+      "types": [
+        "InMemoryDataStore",
+        "DataStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(InMemoryDataStore)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 220,
+      "injects": [],
+      "members": [
+        {
+          "name": "begin",
+          "kind": "method",
+          "type": "InMemoryTransaction",
+          "parameters": [
+            "{Isolation isolation}",
+            "{bool readOnly}",
+            "{String? name}"
+          ]
+        },
+        {
+          "name": "clear",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "commit",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "InMemoryTransaction tx"
+          ]
+        },
+        {
+          "name": "converter",
+          "kind": "field",
+          "type": "EntityConverter"
+        },
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "createSavepoint",
+          "kind": "method",
+          "type": "InMemorySavepoint",
+          "parameters": [
+            "InMemoryTransaction tx"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Object id",
+            "{Object? expectedVersion}"
+          ]
+        },
+        {
+          "name": "deleteWhere",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "deleteWhereAndReturn",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "exists",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}",
+            "{Sort sort}",
+            "{int? offset}",
+            "{int? limit}",
+            "{bool distinct}",
+            "{LockMode? lock}",
+            "{Duration? lockTimeout}",
+            "{bool skipLocked}"
+          ]
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Iterable<Object> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<T?>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Object id",
+            "{LockMode? lock}",
+            "{Duration? lockTimeout}",
+            "{bool skipLocked}"
+          ]
+        },
+        {
+          "name": "insert",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance"
+          ]
+        },
+        {
+          "name": "lockTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "releaseSavepoint",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InMemoryTransaction tx",
+            "InMemorySavepoint savepoint"
+          ]
+        },
+        {
+          "name": "rollback",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "InMemoryTransaction tx"
+          ]
+        },
+        {
+          "name": "rollbackToSavepoint",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InMemoryTransaction tx",
+            "InMemorySavepoint savepoint"
+          ]
+        },
+        {
+          "name": "size",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "PersistentEntity<Object> entity"
+          ]
+        },
+        {
+          "name": "update",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance",
+            "{Object? expectedVersion}"
+          ]
+        },
+        {
+          "name": "waitingCount",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "jdbcClient",
+      "type": "JdbcClient",
+      "types": [
+        "JdbcClient"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnSingleCandidate(JdbcTemplate)",
+        "@ConditionalOnMissingBean(JdbcClient)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 486,
+      "injects": [],
+      "members": [
+        {
+          "name": "named",
+          "kind": "field",
+          "type": "NamedParameterJdbcTemplate"
+        },
+        {
+          "name": "sql",
+          "kind": "method",
+          "type": "StatementSpec",
+          "parameters": [
+            "String sql"
+          ]
+        },
+        {
+          "name": "template",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        }
+      ]
+    },
+    {
+      "name": "jdbcLogSettings",
+      "type": "JdbcLogSettings",
+      "types": [
+        "JdbcLogSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(JdbcLogSettings)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 381,
+      "injects": [],
+      "members": [
+        {
+          "name": "formatSql",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "showParameters",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "showSql",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "slowQueryThreshold",
+          "kind": "field",
+          "type": "Duration?"
+        }
+      ]
+    },
+    {
+      "name": "jdbcProperties",
+      "type": "JdbcProperties",
+      "types": [
+        "JdbcProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 145,
+      "injects": [],
+      "members": [
+        {
+          "name": "template",
+          "kind": "field",
+          "type": "JdbcTemplateProperties"
+        }
+      ]
+    },
+    {
+      "name": "jdbcTemplate",
+      "type": "JdbcTemplate",
+      "types": [
+        "JdbcTemplate"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnSingleCandidate(DataSource)",
+        "@ConditionalOnMissingBean(JdbcTemplate)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 462,
+      "injects": [],
+      "members": [
+        {
+          "name": "batchUpdate",
+          "kind": "method",
+          "type": "Future<List<int>>",
+          "parameters": [
+            "String sql",
+            "List<List<Object?>> batch"
+          ]
+        },
+        {
+          "name": "converter",
+          "kind": "field",
+          "type": "EntityConverter"
+        },
+        {
+          "name": "dataClassRowMapper",
+          "kind": "method",
+          "type": "T Function(JdbcRow)",
+          "parameters": []
+        },
+        {
+          "name": "dataSource",
+          "kind": "field",
+          "type": "DataSource"
+        },
+        {
+          "name": "dialect",
+          "kind": "getter",
+          "type": "SqlDialect"
+        },
+        {
+          "name": "execute",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String sql"
+          ]
+        },
+        {
+          "name": "executeWithConnection",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "Future<T> Function(JdbcConnection) action"
+          ]
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector"
+        },
+        {
+          "name": "logSettings",
+          "kind": "field",
+          "type": "JdbcLogSettings"
+        },
+        {
+          "name": "query",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "String sql",
+            "List<Object?> params",
+            "T Function(JdbcRow) mapper"
+          ]
+        },
+        {
+          "name": "queryForList",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "String sql",
+            "[List<Object?> params]",
+            "[T Function(JdbcRow)? mapper]"
+          ]
+        },
+        {
+          "name": "queryForMap",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": [
+            "String sql",
+            "[List<Object?> params]"
+          ]
+        },
+        {
+          "name": "queryForMaps",
+          "kind": "method",
+          "type": "Future<List<Map<String, Object?>>>",
+          "parameters": [
+            "String sql",
+            "[List<Object?> params]"
+          ]
+        },
+        {
+          "name": "queryForObject",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "String sql",
+            "[List<Object?> params]",
+            "[T Function(JdbcRow)? mapper]"
+          ]
+        },
+        {
+          "name": "queryForStream",
+          "kind": "method",
+          "type": "Stream<T>",
+          "parameters": [
+            "String sql",
+            "List<Object?> params",
+            "T Function(JdbcRow) mapper"
+          ]
+        },
+        {
+          "name": "queryTimeout",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "queryWithExtractor",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "String sql",
+            "List<Object?> params",
+            "T Function(JdbcResult) extractor"
+          ]
+        },
+        {
+          "name": "rowMapperFor",
+          "kind": "method",
+          "type": "T Function(JdbcRow)",
+          "parameters": []
+        },
+        {
+          "name": "singleColumnRowMapper",
+          "kind": "method",
+          "type": "T Function(JdbcRow)",
+          "parameters": []
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "update",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "String sql",
+            "[List<Object?> params]"
+          ]
+        },
+        {
+          "name": "updateReturningKey",
+          "kind": "method",
+          "type": "Future<Object?>",
+          "parameters": [
+            "String sql",
+            "[List<Object?> params]"
+          ]
+        },
+        {
+          "name": "updateWithKeyHolder",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "String sql",
+            "List<Object?> params",
+            "KeyHolder holder",
+            "{String? keyColumn}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "namedDataSourcesProperties",
+      "type": "NamedDataSourcesProperties",
+      "types": [
+        "NamedDataSourcesProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 227,
+      "injects": [],
+      "members": [
+        {
+          "name": "datasources",
+          "kind": "field",
+          "type": "Map<String, NamedDataSourceProperties>?"
+        }
+      ]
+    },
+    {
+      "name": "namedParameterJdbcTemplate",
+      "type": "NamedParameterJdbcTemplate",
+      "types": [
+        "NamedParameterJdbcTemplate"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnSingleCandidate(JdbcTemplate)",
+        "@ConditionalOnMissingBean(NamedParameterJdbcTemplate)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 474,
+      "injects": [],
+      "members": [
+        {
+          "name": "batchUpdate",
+          "kind": "method",
+          "type": "Future<List<int>>",
+          "parameters": [
+            "String sql",
+            "List<Object> batch"
+          ]
+        },
+        {
+          "name": "execute",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String sql"
+          ]
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "query",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "String sql",
+            "Object params",
+            "T Function(JdbcRow) mapper"
+          ]
+        },
+        {
+          "name": "queryForList",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "String sql",
+            "Object params",
+            "[T Function(JdbcRow)? mapper]"
+          ]
+        },
+        {
+          "name": "queryForMap",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": [
+            "String sql",
+            "Object params"
+          ]
+        },
+        {
+          "name": "queryForMaps",
+          "kind": "method",
+          "type": "Future<List<Map<String, Object?>>>",
+          "parameters": [
+            "String sql",
+            "Object params"
+          ]
+        },
+        {
+          "name": "queryForObject",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "String sql",
+            "Object params",
+            "[T Function(JdbcRow)? mapper]"
+          ]
+        },
+        {
+          "name": "queryForStream",
+          "kind": "method",
+          "type": "Stream<T>",
+          "parameters": [
+            "String sql",
+            "Object params",
+            "T Function(JdbcRow) mapper"
+          ]
+        },
+        {
+          "name": "queryWithExtractor",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "String sql",
+            "Object params",
+            "T Function(JdbcResult) extractor"
+          ]
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "update",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "String sql",
+            "Object params"
+          ]
+        },
+        {
+          "name": "updateReturningKey",
+          "kind": "method",
+          "type": "Future<Object?>",
+          "parameters": [
+            "String sql",
+            "Object params"
+          ]
+        },
+        {
+          "name": "updateWithKeyHolder",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "String sql",
+            "Object params",
+            "KeyHolder holder",
+            "{String? keyColumn}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "relationalMappingContext",
+      "type": "RelationalMappingContext",
+      "types": [
+        "RelationalMappingContext"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(RelationalMappingContext)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 187,
+      "injects": [],
+      "members": [
+        {
+          "name": "fromIntrospection",
+          "kind": "method",
+          "type": "PersistentEntity<T>",
+          "parameters": [
+            "EntityIntrospection<T> introspection"
+          ]
+        },
+        {
+          "name": "getPersistentEntity",
+          "kind": "method",
+          "type": "PersistentEntity<Object>?",
+          "parameters": [
+            "Type type"
+          ]
+        },
+        {
+          "name": "getRequiredPersistentEntity",
+          "kind": "method",
+          "type": "PersistentEntity<T>",
+          "parameters": []
+        },
+        {
+          "name": "getRequiredPersistentEntityOfType",
+          "kind": "method",
+          "type": "PersistentEntity<Object>",
+          "parameters": [
+            "Type type"
+          ]
+        },
+        {
+          "name": "introspectionOf",
+          "kind": "method",
+          "type": "EntityIntrospection<Object>?",
+          "parameters": [
+            "Type type"
+          ]
+        },
+        {
+          "name": "introspections",
+          "kind": "getter",
+          "type": "Iterable<EntityIntrospection<Object>>"
+        },
+        {
+          "name": "keyColumnName",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "PersistentEntity<Object> root",
+            "MappedCollection? m"
+          ]
+        },
+        {
+          "name": "namingStrategy",
+          "kind": "field",
+          "type": "NamingStrategy"
+        },
+        {
+          "name": "reverseColumnName",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "PersistentEntity<Object> root",
+            "MappedCollection? m"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "repositoryFactory",
+      "type": "RepositoryFactory",
+      "types": [
+        "RepositoryFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(RepositoryFactory)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 288,
+      "injects": [],
+      "members": [
+        {
+          "name": "auditing",
+          "kind": "field",
+          "type": "AuditingHandler?"
+        },
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "BeanFactory?"
+        },
+        {
+          "name": "converter",
+          "kind": "field",
+          "type": "EntityConverter"
+        },
+        {
+          "name": "dataSources",
+          "kind": "field",
+          "type": "InMemoryDataSources"
+        },
+        {
+          "name": "defaultStore",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment?"
+        },
+        {
+          "name": "isNewStrategy",
+          "kind": "field",
+          "type": "IsNewStrategy"
+        },
+        {
+          "name": "jdbcDataSources",
+          "kind": "field",
+          "type": "Map<String, DataSource>"
+        },
+        {
+          "name": "jdbcLogSettings",
+          "kind": "field",
+          "type": "JdbcLogSettings"
+        },
+        {
+          "name": "jdbcStoreFor",
+          "kind": "method",
+          "type": "JdbcDataStore?",
+          "parameters": [
+            "[String? name]"
+          ]
+        },
+        {
+          "name": "mappingContext",
+          "kind": "field",
+          "type": "RelationalMappingContext"
+        },
+        {
+          "name": "operations",
+          "kind": "method",
+          "type": "RepositoryOperations<T, ID>",
+          "parameters": [
+            "String typeName",
+            "{List<Object> annotations}",
+            "{List<QueryMethod> queries}"
+          ]
+        },
+        {
+          "name": "stores",
+          "kind": "field",
+          "type": "Map<String, DataStore>"
+        },
+        {
+          "name": "transactionManagers",
+          "kind": "getter",
+          "type": "List<PlatformTransactionManager>"
+        }
+      ]
+    },
+    {
+      "name": "sqlProperties",
+      "type": "SqlProperties",
+      "types": [
+        "SqlProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 165,
+      "injects": [],
+      "members": [
+        {
+          "name": "init",
+          "kind": "field",
+          "type": "SqlInitSettings"
+        },
+        {
+          "name": "migration",
+          "kind": "field",
+          "type": "MigrationSettings"
+        }
+      ]
+    },
+    {
+      "name": "transactionAdvisor",
+      "type": "DefaultPointcutAdvisor",
+      "types": [
+        "DefaultPointcutAdvisor",
+        "PointcutAdvisor",
+        "Advisor",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 336,
+      "injects": [],
+      "members": [
+        {
+          "name": "advice",
+          "kind": "field",
+          "type": "MethodInterceptor"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "pointcut",
+          "kind": "field",
+          "type": "AopPointcut"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "transactionInterceptor",
+      "type": "TransactionInterceptor",
+      "types": [
+        "TransactionInterceptor",
+        "MethodInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 321,
+      "injects": [],
+      "members": [
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "BeanFactory?"
+        },
+        {
+          "name": "hasFixedManager",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector"
+        },
+        {
+          "name": "invoke",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "MethodInvocation invocation"
+          ]
+        },
+        {
+          "name": "managerFor",
+          "kind": "method",
+          "type": "PlatformTransactionManager",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "planOf",
+          "kind": "method",
+          "type": "TransactionPlan?",
+          "parameters": [
+            "MethodSignature signature"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "transactionManager",
+      "type": "InMemoryTransactionManager",
+      "types": [
+        "InMemoryTransactionManager",
+        "AbstractPlatformTransactionManager",
+        "PlatformTransactionManager",
+        "TransactionManagerHooks"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(PlatformTransactionManager)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 249,
+      "injects": [],
+      "members": [
+        {
+          "name": "commit",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "TransactionStatus status"
+          ]
+        },
+        {
+          "name": "createSavepoint",
+          "kind": "method",
+          "type": "Future<Object>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "doBegin",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction",
+            "TransactionDefinition definition"
+          ]
+        },
+        {
+          "name": "doCleanupAfterCompletion",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "doCommit",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "doGetTransaction",
+          "kind": "method",
+          "type": "Object",
+          "parameters": []
+        },
+        {
+          "name": "doRollback",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "doSetRollbackOnly",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "getTransaction",
+          "kind": "method",
+          "type": "Future<TransactionStatus>",
+          "parameters": [
+            "[TransactionDefinition? definition]"
+          ]
+        },
+        {
+          "name": "isExistingTransaction",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "isRollbackOnly",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "releaseSavepoint",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction",
+            "Object savepoint"
+          ]
+        },
+        {
+          "name": "resourceKey",
+          "kind": "getter",
+          "type": "Object"
+        },
+        {
+          "name": "rollback",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "TransactionStatus status"
+          ]
+        },
+        {
+          "name": "rollbackToSavepoint",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction",
+            "Object savepoint"
+          ]
+        },
+        {
+          "name": "store",
+          "kind": "field",
+          "type": "InMemoryDataStore"
+        },
+        {
+          "name": "supportsSavepoints",
+          "kind": "getter",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "transactionManager",
+      "type": "DataSourceTransactionManager",
+      "types": [
+        "DataSourceTransactionManager",
+        "AbstractPlatformTransactionManager",
+        "PlatformTransactionManager",
+        "TransactionManagerHooks"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnSingleCandidate(DataSource)",
+        "@ConditionalOnMissingBean(PlatformTransactionManager)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 449,
+      "injects": [],
+      "members": [
+        {
+          "name": "commit",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "TransactionStatus status"
+          ]
+        },
+        {
+          "name": "createSavepoint",
+          "kind": "method",
+          "type": "Future<Object>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "dataSource",
+          "kind": "field",
+          "type": "DataSource"
+        },
+        {
+          "name": "doBegin",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction",
+            "TransactionDefinition definition"
+          ]
+        },
+        {
+          "name": "doCleanupAfterCompletion",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "doCommit",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "doGetTransaction",
+          "kind": "method",
+          "type": "Object",
+          "parameters": []
+        },
+        {
+          "name": "doRollback",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "doSetRollbackOnly",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "getTransaction",
+          "kind": "method",
+          "type": "Future<TransactionStatus>",
+          "parameters": [
+            "[TransactionDefinition? definition]"
+          ]
+        },
+        {
+          "name": "isExistingTransaction",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "isRollbackOnly",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object transaction"
+          ]
+        },
+        {
+          "name": "releaseSavepoint",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction",
+            "Object savepoint"
+          ]
+        },
+        {
+          "name": "resourceKey",
+          "kind": "getter",
+          "type": "Object"
+        },
+        {
+          "name": "rollback",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "TransactionStatus status"
+          ]
+        },
+        {
+          "name": "rollbackToSavepoint",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object transaction",
+            "Object savepoint"
+          ]
+        },
+        {
+          "name": "supportsSavepoints",
+          "kind": "getter",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "transactionTemplate",
+      "type": "TransactionTemplate",
+      "types": [
+        "TransactionTemplate"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnSingleCandidate(PlatformTransactionManager)",
+        "@ConditionalOnMissingBean(TransactionTemplate)"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 345,
+      "injects": [],
+      "members": [
+        {
+          "name": "definition",
+          "kind": "field",
+          "type": "TransactionDefinition"
+        },
+        {
+          "name": "execute",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "FutureOr<T> Function(TransactionStatus) action"
+          ]
+        },
+        {
+          "name": "executeWithoutResult",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "FutureOr<void> Function(TransactionStatus) action"
+          ]
+        },
+        {
+          "name": "manager",
+          "kind": "field",
+          "type": "PlatformTransactionManager"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "transactionValidator",
+      "type": "TransactionValidator",
+      "types": [
+        "TransactionValidator",
+        "BeanPostProcessor",
+        "BeanFactoryAware",
+        "Aware"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
+      "line": 330,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "problems",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}
