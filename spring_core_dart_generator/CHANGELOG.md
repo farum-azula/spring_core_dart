@@ -1,3 +1,7 @@
+## Unreleased
+
+- A package that depends on `spring_boot_dart` but not on `spring_core_dart` (a starter, an app) gets the container API through `package:spring_boot_dart/spring_boot_dart.dart`, which re-exports it, instead of a direct import of `spring_core_dart`: pub.dev refuses a package whose `lib/` imports a package missing from its `dependencies`.
+
 ## 0.6.3
 
 ### Changes

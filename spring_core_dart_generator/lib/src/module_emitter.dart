@@ -390,7 +390,10 @@ class ModuleEmitter {
         ]),
     );
     final emitter = DartEmitter(
-      allocator: Allocator.simplePrefixing(),
+      allocator: _ReexportingAllocator(
+        Allocator.simplePrefixing(),
+        _reexports(dependencies),
+      ),
       orderDirectives: true,
       useNullSafetySyntax: true,
     );
@@ -3443,4 +3446,36 @@ class ModuleEmitter {
       [bindings],
     );
   }
+}
+
+// The container API through `spring_boot_dart`, which re-exports it, when
+// the package depends on `spring_boot_dart` but not on `spring_core_dart`
+// (a starter): pub.dev refuses a package whose lib/ imports a package that
+// is not in its `dependencies`, and the user's code reaches the API the
+// same way.
+Map<String, String> _reexports(Set<String>? dependencies) => {
+  if (dependencies != null &&
+      !dependencies.contains('spring_core_dart') &&
+      dependencies.contains('spring_boot_dart'))
+    _springUrl: 'package:spring_boot_dart/spring_boot_dart.dart',
+};
+
+// An allocator that imports the libraries of [_redirects] through the
+// library that re-exports them.
+class _ReexportingAllocator implements Allocator {
+  _ReexportingAllocator(this._inner, this._redirects);
+
+  final Allocator _inner;
+  final Map<String, String> _redirects;
+
+  @override
+  String allocate(Reference reference) {
+    final url = _redirects[reference.url];
+    return _inner.allocate(
+      url == null ? reference : Reference(reference.symbol, url),
+    );
+  }
+
+  @override
+  Iterable<Directive> get imports => _inner.imports;
 }

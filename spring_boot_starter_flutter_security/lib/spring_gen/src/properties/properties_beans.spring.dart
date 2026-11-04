@@ -7,10 +7,9 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart'
     as _i2;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
 class _$FlutterWebSecurityPropertiesProxy
     implements _i1.Validator, _i1.Advised {
@@ -76,7 +75,7 @@ _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
         ),
       ],
       create: (r) =>
-          _i3.ConstructorBound.from<_i2.FlutterWebSecurityProperties>(
+          _i1.ConstructorBound.from<_i2.FlutterWebSecurityProperties>(
             r,
             r'flutterWebSecurityProperties',
           ),
@@ -127,7 +126,7 @@ _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
       name: r'flutterSecurityProperties',
       source: r'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart#FlutterSecurityProperties',
       types: const [_i2.FlutterSecurityProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterSecurityProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterSecurityProperties>(
         r,
         r'flutterSecurityProperties',
       ),

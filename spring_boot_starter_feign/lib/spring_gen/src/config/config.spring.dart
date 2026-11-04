@@ -7,10 +7,10 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_feign/src/config/feign_properties.dart'
     as _i1;
 import 'package:spring_boot_starter_feign/src/feign_client_config.dart' as _i3;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 class _$FeignPropertiesProxy implements _i1.FeignProperties, _i2.Advised {
   _$FeignPropertiesProxy(this._target, this._invoker);

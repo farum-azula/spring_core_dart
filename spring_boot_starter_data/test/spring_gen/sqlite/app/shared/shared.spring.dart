@@ -11,8 +11,8 @@ import 'dart:async' as _i7;
 import 'dart:io' as _i6;
 
 import 'package:postgres/postgres.dart' as _i5;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:sqlite3/sqlite3.dart' as _i4;
 
 import '../../../../sqlite/app/shared/shared.dart' as _i1;

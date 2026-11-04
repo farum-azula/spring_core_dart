@@ -17,6 +17,12 @@
 //   dart run tool/publish.dart                     # publish every package
 //   dart run tool/publish.dart --package <name>    # only one (one CI job each)
 //   dart run tool/publish.dart --dry-run           # validate only
+//   dart run tool/publish.dart --dry-run --dart    # only the Dart packages
+//   dart run tool/publish.dart --dry-run --flutter # only the Flutter ones
+//
+// CI validates every package with --dry-run on each push, so what pub.dev
+// would refuse (a package imported from lib/ but not in `dependencies`, a
+// file too large, a missing field) fails there and not in the release.
 import 'dart:io';
 
 import 'version.dart' as family;
@@ -24,6 +30,8 @@ import 'version.dart' as family;
 Future<void> main(List<String> args) async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final dryRun = args.contains('--dry-run');
+  final dartOnly = args.contains('--dart');
+  final flutterOnly = args.contains('--flutter');
   final only = args.contains('--package')
       ? args[args.indexOf('--package') + 1]
       : null;
@@ -55,6 +63,10 @@ Future<void> main(List<String> args) async {
   }
   // `family` is already in dependency order: core, generator, Boot, starters.
   for (final package in [?only, if (only == null) ...family.family]) {
+    if ((dartOnly && _usesFlutter(package)) ||
+        (flutterOnly && !_usesFlutter(package))) {
+      continue;
+    }
     if (!dryRun && await _isPublished(package, version)) {
       stdout.writeln('$package $version is already on pub.dev, skipped.');
       continue;

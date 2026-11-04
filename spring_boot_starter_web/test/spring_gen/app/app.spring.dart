@@ -10,6 +10,7 @@
 import 'dart:async' as _i3;
 import 'dart:typed_data' as _i11;
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i20;
 import 'package:spring_boot_starter_web/src/handler_method.dart' as _i26;
 import 'package:spring_boot_starter_web/src/response_writer.dart' as _i15;
@@ -18,7 +19,6 @@ import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dar
     as _i25;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
     as _i24;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_web_dart/src/annotations.dart' as _i22;
 import 'package:spring_web_dart/src/controller_annotations.dart' as _i23;
 import 'package:spring_web_dart/src/multipart/multipart.dart' as _i14;

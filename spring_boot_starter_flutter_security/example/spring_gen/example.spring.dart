@@ -9,26 +9,25 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i9;
+    as _i8;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i10;
+    as _i9;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i6;
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
-    as _i11;
+    as _i10;
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart'
     as _i4;
 import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart'
     as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i12;
+    as _i11;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i13;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i14;
+    as _i12;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
 
 import '../example.dart' as _i1;
 
@@ -275,20 +274,20 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i7.SpringApplication get springApplication => _i7.SpringApplication(
+_i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i8.springBootAutoConfiguration,
-    _i9.springBootStarterFeignAutoConfiguration,
-    _i10.springBootStarterFlutterAutoConfiguration,
-    _i11.springBootStarterFlutterSecurityAutoConfiguration,
-    _i12.springBootStarterLoggingAutoConfiguration,
-    _i13.springBootStarterOauth2ClientAutoConfiguration,
-    _i14.springSecurityCoreAutoConfiguration,
+    _i7.springBootAutoConfiguration,
+    _i8.springBootStarterFeignAutoConfiguration,
+    _i9.springBootStarterFlutterAutoConfiguration,
+    _i10.springBootStarterFlutterSecurityAutoConfiguration,
+    _i11.springBootStarterLoggingAutoConfiguration,
+    _i12.springBootStarterOauth2ClientAutoConfiguration,
+    _i13.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i11.springBootStarterFlutterSecurityAutoConfiguration:
-        const _i7.AutoConfigurationModule(
+    _i10.springBootStarterFlutterSecurityAutoConfiguration:
+        const _i2.AutoConfigurationModule(
           before: [
             'springBootStarterOauth2ClientAutoConfiguration',
             'springBootStarterFeignAutoConfiguration',
@@ -341,31 +340,31 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'edbf3b27',
+  fingerprint: '842461f6',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i7.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i7.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i7.ConfigurableApplicationContext reloadApplication(
-  _i7.ConfigurableApplicationContext running, {
+_i2.ConfigurableApplicationContext reloadApplication(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i7.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i7.ConfigurableApplicationContext running, {
+Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

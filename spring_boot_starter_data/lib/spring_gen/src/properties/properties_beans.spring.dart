@@ -7,19 +7,18 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
-import 'package:spring_boot_dart/src/annotations.dart' as _i7;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
+import 'package:spring_boot_dart/src/annotations.dart' as _i6;
 import 'package:spring_boot_starter_data/src/jdbc/postgres/postgres_jdbc_driver.dart'
-    as _i8;
+    as _i7;
 import 'package:spring_boot_starter_data/src/properties/data_properties.dart'
     as _i2;
 import 'package:spring_boot_starter_data/src/schema/database_initializer.dart'
-    as _i4;
+    as _i3;
 import 'package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart'
-    as _i6;
-import 'package:spring_boot_starter_data/src/schema/script_database_initializer.dart'
     as _i5;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
+import 'package:spring_boot_starter_data/src/schema/script_database_initializer.dart'
+    as _i4;
 
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
 _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
@@ -30,7 +29,7 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#DataProperties',
       types: const [_i2.DataProperties],
       create: (r) =>
-          _i3.ConstructorBound.from<_i2.DataProperties>(r, r'dataProperties'),
+          _i1.ConstructorBound.from<_i2.DataProperties>(r, r'dataProperties'),
       annotations: const [
         _i1.ConfigurationProperties(r'spring.data', ignoreInvalidFields: true),
       ],
@@ -90,7 +89,7 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#JdbcProperties',
       types: const [_i2.JdbcProperties],
       create: (r) =>
-          _i3.ConstructorBound.from<_i2.JdbcProperties>(r, r'jdbcProperties'),
+          _i1.ConstructorBound.from<_i2.JdbcProperties>(r, r'jdbcProperties'),
       annotations: const [
         _i1.ConfigurationProperties(r'spring.jdbc', ignoreInvalidFields: true),
       ],
@@ -120,7 +119,7 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#SqlProperties',
       types: const [_i2.SqlProperties],
       create: (r) =>
-          _i3.ConstructorBound.from<_i2.SqlProperties>(r, r'sqlProperties'),
+          _i1.ConstructorBound.from<_i2.SqlProperties>(r, r'sqlProperties'),
       annotations: const [
         _i1.ConfigurationProperties(r'spring.sql', ignoreInvalidFields: true),
       ],
@@ -164,7 +163,7 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       name: r'dataSourceConfigProperties',
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#DataSourceConfigProperties',
       types: const [_i2.DataSourceConfigProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.DataSourceConfigProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.DataSourceConfigProperties>(
         r,
         r'dataSourceConfigProperties',
       ),
@@ -289,7 +288,7 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       name: r'namedDataSourcesProperties',
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#NamedDataSourcesProperties',
       types: const [_i2.NamedDataSourcesProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.NamedDataSourcesProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.NamedDataSourcesProperties>(
         r,
         r'namedDataSourcesProperties',
       ),
@@ -377,8 +376,8 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       properties: [
         _i1.BeanProperty<_i2.DataJdbcProperties>(
           r'schema',
-          type: _i4.SchemaMode,
-          typeInfo: const _i1.EnumType<_i4.SchemaMode>(_i4.SchemaMode.values),
+          type: _i3.SchemaMode,
+          typeInfo: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
           get: (bean) => bean.schema,
         ),
         _i1.BeanProperty<_i2.DataJdbcProperties>(
@@ -413,10 +412,10 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
         parameters: [
           _i1.BeanParameter(
             r'schema',
-            type: const _i1.EnumType<_i4.SchemaMode>(_i4.SchemaMode.values),
+            type: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
             symbol: #schema,
             hasDefaultValue: true,
-            defaultValue: _i4.SchemaMode.validate,
+            defaultValue: _i3.SchemaMode.validate,
           ),
           _i1.BeanParameter(
             r'showSql',
@@ -710,14 +709,14 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       properties: [
         _i1.BeanProperty<_i2.SqlProperties>(
           r'init',
-          type: _i5.SqlInitSettings,
-          typeInfo: const _i1.ClassType<_i5.SqlInitSettings>(),
+          type: _i4.SqlInitSettings,
+          typeInfo: const _i1.ClassType<_i4.SqlInitSettings>(),
           get: (bean) => bean.init,
         ),
         _i1.BeanProperty<_i2.SqlProperties>(
           r'migration',
-          type: _i6.MigrationSettings,
-          typeInfo: const _i1.ClassType<_i6.MigrationSettings>(),
+          type: _i5.MigrationSettings,
+          typeInfo: const _i1.ClassType<_i5.MigrationSettings>(),
           get: (bean) => bean.migration,
         ),
       ],
@@ -730,17 +729,17 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
         parameters: [
           _i1.BeanParameter(
             r'init',
-            type: const _i1.ClassType<_i5.SqlInitSettings>(),
+            type: const _i1.ClassType<_i4.SqlInitSettings>(),
             symbol: #init,
             hasDefaultValue: true,
-            defaultValue: const _i5.SqlInitSettings(),
+            defaultValue: const _i4.SqlInitSettings(),
           ),
           _i1.BeanParameter(
             r'migration',
-            type: const _i1.ClassType<_i6.MigrationSettings>(),
+            type: const _i1.ClassType<_i5.MigrationSettings>(),
             symbol: #migration,
             hasDefaultValue: true,
-            defaultValue: const _i6.MigrationSettings(),
+            defaultValue: const _i5.MigrationSettings(),
           ),
         ],
         create: (positional, named) =>
@@ -748,46 +747,46 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
                 as _i2.SqlProperties),
       ),
     ),
-    _i1.BeanIntrospection<_i5.SqlInitSettings>(
+    _i1.BeanIntrospection<_i4.SqlInitSettings>(
       className: r'SqlInitSettings',
       properties: [
-        _i1.BeanProperty<_i5.SqlInitSettings>(
+        _i1.BeanProperty<_i4.SqlInitSettings>(
           r'mode',
-          type: _i5.SqlInitMode,
-          typeInfo: const _i1.EnumType<_i5.SqlInitMode>(_i5.SqlInitMode.values),
+          type: _i4.SqlInitMode,
+          typeInfo: const _i1.EnumType<_i4.SqlInitMode>(_i4.SqlInitMode.values),
           get: (bean) => bean.mode,
         ),
-        _i1.BeanProperty<_i5.SqlInitSettings>(
+        _i1.BeanProperty<_i4.SqlInitSettings>(
           r'schemaLocations',
           type: List<String>,
           typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
           get: (bean) => bean.schemaLocations,
         ),
-        _i1.BeanProperty<_i5.SqlInitSettings>(
+        _i1.BeanProperty<_i4.SqlInitSettings>(
           r'dataLocations',
           type: List<String>,
           typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
           get: (bean) => bean.dataLocations,
         ),
-        _i1.BeanProperty<_i5.SqlInitSettings>(
+        _i1.BeanProperty<_i4.SqlInitSettings>(
           r'platform',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.platform,
         ),
-        _i1.BeanProperty<_i5.SqlInitSettings>(
+        _i1.BeanProperty<_i4.SqlInitSettings>(
           r'continueOnError',
           type: bool,
           typeInfo: const _i1.ClassType<bool>(),
           get: (bean) => bean.continueOnError,
         ),
-        _i1.BeanProperty<_i5.SqlInitSettings>(
+        _i1.BeanProperty<_i4.SqlInitSettings>(
           r'separator',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.separator,
         ),
-        _i1.BeanProperty<_i5.SqlInitSettings>(
+        _i1.BeanProperty<_i4.SqlInitSettings>(
           r'encoding',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
@@ -795,15 +794,15 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
         ),
       ],
       parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i5.SqlInitSettings(),
-      constructor: _i1.BeanConstructor<_i5.SqlInitSettings>(
+      instantiate: () => _i4.SqlInitSettings(),
+      constructor: _i1.BeanConstructor<_i4.SqlInitSettings>(
         parameters: [
           _i1.BeanParameter(
             r'mode',
-            type: const _i1.EnumType<_i5.SqlInitMode>(_i5.SqlInitMode.values),
+            type: const _i1.EnumType<_i4.SqlInitMode>(_i4.SqlInitMode.values),
             symbol: #mode,
             hasDefaultValue: true,
-            defaultValue: _i5.SqlInitMode.embedded,
+            defaultValue: _i4.SqlInitMode.embedded,
           ),
           _i1.BeanParameter(
             r'schemaLocations',
@@ -849,74 +848,74 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i5.SqlInitSettings.new, positional, named)
-                as _i5.SqlInitSettings),
+            (Function.apply(_i4.SqlInitSettings.new, positional, named)
+                as _i4.SqlInitSettings),
       ),
     ),
-    _i1.BeanIntrospection<_i6.MigrationSettings>(
+    _i1.BeanIntrospection<_i5.MigrationSettings>(
       className: r'MigrationSettings',
       properties: [
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'enabled',
           type: bool,
           typeInfo: const _i1.ClassType<bool>(),
           get: (bean) => bean.enabled,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'locations',
           type: List<String>,
           typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
           get: (bean) => bean.locations,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'table',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.table,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'validateOnMigrate',
           type: bool,
           typeInfo: const _i1.ClassType<bool>(),
           get: (bean) => bean.validateOnMigrate,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'outOfOrder',
           type: bool,
           typeInfo: const _i1.ClassType<bool>(),
           get: (bean) => bean.outOfOrder,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'ignoreMigrationPatterns',
           type: List<String>,
           typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
           get: (bean) => bean.ignoreMigrationPatterns,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'baselineOnMigrate',
           type: bool,
           typeInfo: const _i1.ClassType<bool>(),
           get: (bean) => bean.baselineOnMigrate,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'baselineVersion',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.baselineVersion,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'baselineDescription',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.baselineDescription,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'target',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.target,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholders',
           type: Map<String, String>,
           typeInfo: const _i1.MapType<String, String>(
@@ -925,43 +924,43 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
           ),
           get: (bean) => bean.placeholders,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholderReplacement',
           type: bool,
           typeInfo: const _i1.ClassType<bool>(),
           get: (bean) => bean.placeholderReplacement,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholderPrefix',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.placeholderPrefix,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholderSuffix',
           type: String,
           typeInfo: const _i1.ClassType<String>(),
           get: (bean) => bean.placeholderSuffix,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'group',
           type: bool,
           typeInfo: const _i1.ClassType<bool>(),
           get: (bean) => bean.group,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'connectRetries',
           type: int,
           typeInfo: const _i1.ClassType<int>(),
           get: (bean) => bean.connectRetries,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'connectRetriesInterval',
           type: Duration,
           typeInfo: const _i1.ClassType<Duration>(),
           get: (bean) => bean.connectRetriesInterval,
         ),
-        _i1.BeanProperty<_i6.MigrationSettings>(
+        _i1.BeanProperty<_i5.MigrationSettings>(
           r'lockTimeout',
           type: Duration,
           typeInfo: const _i1.ClassType<Duration>(),
@@ -969,8 +968,8 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
         ),
       ],
       parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i6.MigrationSettings(),
-      constructor: _i1.BeanConstructor<_i6.MigrationSettings>(
+      instantiate: () => _i5.MigrationSettings(),
+      constructor: _i1.BeanConstructor<_i5.MigrationSettings>(
         parameters: [
           _i1.BeanParameter(
             r'enabled',
@@ -1093,7 +1092,7 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
             symbol: #connectRetriesInterval,
             hasDefaultValue: true,
             defaultValue: const Duration(seconds: 10),
-            annotations: const [_i7.DurationUnit(_i1.ChronoUnit.seconds)],
+            annotations: const [_i6.DurationUnit(_i1.ChronoUnit.seconds)],
           ),
           _i1.BeanParameter(
             r'lockTimeout',
@@ -1101,12 +1100,12 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
             symbol: #lockTimeout,
             hasDefaultValue: true,
             defaultValue: const Duration(minutes: 1),
-            annotations: const [_i7.DurationUnit(_i1.ChronoUnit.seconds)],
+            annotations: const [_i6.DurationUnit(_i1.ChronoUnit.seconds)],
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i6.MigrationSettings.new, positional, named)
-                as _i6.MigrationSettings),
+            (Function.apply(_i5.MigrationSettings.new, positional, named)
+                as _i5.MigrationSettings),
       ),
     ),
     _i1.BeanIntrospection<_i2.DataSourceConfigProperties>(
@@ -1367,9 +1366,9 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       properties: [
         _i1.BeanProperty<_i2.PostgresqlConfigProperties>(
           r'sslmode',
-          type: _i8.PostgresSslSetting,
-          typeInfo: const _i1.EnumType<_i8.PostgresSslSetting>(
-            _i8.PostgresSslSetting.values,
+          type: _i7.PostgresSslSetting,
+          typeInfo: const _i1.EnumType<_i7.PostgresSslSetting>(
+            _i7.PostgresSslSetting.values,
           ),
           get: (bean) => bean.sslmode,
         ),
@@ -1407,12 +1406,12 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
         parameters: [
           _i1.BeanParameter(
             r'sslmode',
-            type: const _i1.EnumType<_i8.PostgresSslSetting>(
-              _i8.PostgresSslSetting.values,
+            type: const _i1.EnumType<_i7.PostgresSslSetting>(
+              _i7.PostgresSslSetting.values,
             ),
             symbol: #sslmode,
             hasDefaultValue: true,
-            defaultValue: _i8.PostgresSslSetting.prefer,
+            defaultValue: _i7.PostgresSslSetting.prefer,
           ),
           _i1.BeanParameter(
             r'sslRootCert',
@@ -1644,8 +1643,8 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       properties: [
         _i1.BeanProperty<_i2.NamedDataJdbcProperties>(
           r'schema',
-          type: _i4.SchemaMode,
-          typeInfo: const _i1.EnumType<_i4.SchemaMode>(_i4.SchemaMode.values),
+          type: _i3.SchemaMode,
+          typeInfo: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
           get: (bean) => bean.schema,
         ),
       ],
@@ -1655,10 +1654,10 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
         parameters: [
           _i1.BeanParameter(
             r'schema',
-            type: const _i1.EnumType<_i4.SchemaMode>(_i4.SchemaMode.values),
+            type: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
             symbol: #schema,
             hasDefaultValue: true,
-            defaultValue: _i4.SchemaMode.validate,
+            defaultValue: _i3.SchemaMode.validate,
           ),
         ],
         create: (positional, named) =>

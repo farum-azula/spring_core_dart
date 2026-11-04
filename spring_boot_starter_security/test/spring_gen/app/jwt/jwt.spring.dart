@@ -9,13 +9,13 @@
 
 import 'dart:async' as _i6;
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i9;
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart' as _i7;
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart' as _i5;
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i1;
 import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i4;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_web_dart/src/server/server_http_request.dart' as _i3;
 
 import '../../../app/jwt/jwt.dart' as _i8;

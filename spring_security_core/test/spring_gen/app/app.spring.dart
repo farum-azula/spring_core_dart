@@ -9,8 +9,8 @@
 
 import 'dart:async' as _i3;
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_cache/src/annotations.dart' as _i9;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_security_core/src/authorization/authorization_manager.dart'
     as _i6;
 import 'package:spring_security_core/src/core/authentication.dart' as _i5;

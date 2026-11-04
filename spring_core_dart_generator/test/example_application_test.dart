@@ -159,4 +159,36 @@ void main() {
     expect(output, contains('ExampleGreeter'));
     expect(output, contains('StarterService'));
   });
+
+  // pub.dev refuses a package whose lib/ imports a package that is not in
+  // its `dependencies`: a starter has spring_boot_dart (which re-exports
+  // the container) and not spring_core_dart.
+  test('without spring_core_dart in the dependencies, the container API '
+      'comes through spring_boot_dart', () async {
+    final output = await _generate(
+      'bin/main.dart',
+      pubspec: 'name: pkg\ndependencies:\n  spring_boot_dart: any\n',
+    );
+    expect(
+      output,
+      contains("import 'package:spring_boot_dart/spring_boot_dart.dart'"),
+    );
+    expect(output, isNot(contains('package:spring_core_dart/')));
+  });
+
+  test(
+    'with spring_core_dart in the dependencies, it is imported directly',
+    () async {
+      final output = await _generate(
+        'bin/main.dart',
+        pubspec:
+            'name: pkg\ndependencies:\n  spring_boot_dart: any\n'
+            '  spring_core_dart: any\n',
+      );
+      expect(
+        output,
+        contains("import 'package:spring_core_dart/spring_core_dart.dart'"),
+      );
+    },
+  );
 }

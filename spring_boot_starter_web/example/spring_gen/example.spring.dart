@@ -9,16 +9,15 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i9;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i11;
+    as _i10;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i12;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i13;
+    as _i11;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i12;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i14;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+    as _i13;
 import 'package:spring_web_dart/src/annotations.dart' as _i4;
 import 'package:spring_web_dart/src/controller_annotations.dart' as _i8;
 import 'package:spring_web_dart/src/problem_detail.dart' as _i7;
@@ -327,14 +326,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i9.SpringApplication get springApplication => _i9.SpringApplication(
+_i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i10.springBootAutoConfiguration,
-    _i11.springBootStarterFeignAutoConfiguration,
-    _i12.springBootStarterLoggingAutoConfiguration,
-    _i13.springBootStarterWebAutoConfiguration,
-    _i14.springBootStarterWebsocketAutoConfiguration,
+    _i9.springBootAutoConfiguration,
+    _i10.springBootStarterFeignAutoConfiguration,
+    _i11.springBootStarterLoggingAutoConfiguration,
+    _i12.springBootStarterWebAutoConfiguration,
+    _i13.springBootStarterWebsocketAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -386,31 +385,31 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'a8627ff0',
+  fingerprint: '9dea70a1',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i9.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i9.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i9.ConfigurableApplicationContext reloadApplication(
-  _i9.ConfigurableApplicationContext running, {
+_i2.ConfigurableApplicationContext reloadApplication(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i9.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i9.ConfigurableApplicationContext running, {
+Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

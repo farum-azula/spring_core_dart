@@ -7,12 +7,11 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i4;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart'
     as _i1;
 import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart'
     as _i3;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 class _$FeignOAuth2PropertiesProxy
     implements _i1.FeignOAuth2Properties, _i2.Advised {
@@ -157,7 +156,7 @@ _i2.BeanModule get $oauth2ClientConfigBeans => _i2.BeanModule(
       name: r'OAuth2ClientProperties',
       source: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart#OAuth2ClientProperties',
       types: const [_i3.OAuth2ClientProperties],
-      create: (r) => _i4.ConstructorBound.from<_i3.OAuth2ClientProperties>(
+      create: (r) => _i2.ConstructorBound.from<_i3.OAuth2ClientProperties>(
         r,
         r'OAuth2ClientProperties',
       ),

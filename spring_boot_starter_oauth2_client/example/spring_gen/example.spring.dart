@@ -9,20 +9,19 @@
 
 import 'dart:async' as _i5;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_dart/src/runners.dart' as _i6;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i10;
+    as _i9;
 import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i3;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i11;
+    as _i10;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i12;
+    as _i11;
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart'
     as _i7;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
 import 'package:spring_web_dart/src/annotations.dart' as _i4;
 
 import '../example.dart' as _i1;
@@ -103,14 +102,14 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i8.SpringApplication get springApplication => _i8.SpringApplication(
+_i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i9.springBootAutoConfiguration,
-    _i10.springBootStarterFeignAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
-    _i12.springBootStarterOauth2ClientAutoConfiguration,
-    _i13.springSecurityCoreAutoConfiguration,
+    _i8.springBootAutoConfiguration,
+    _i9.springBootStarterFeignAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
+    _i11.springBootStarterOauth2ClientAutoConfiguration,
+    _i12.springSecurityCoreAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -162,32 +161,32 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '035d5de1',
+  fingerprint: '1888d6ed',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i8.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i8.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i8.ConfigurableApplicationContext reloadApplication(
-  _i8.ConfigurableApplicationContext running, {
+_i2.ConfigurableApplicationContext reloadApplication(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i8.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i8.ConfigurableApplicationContext running, {
+Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 

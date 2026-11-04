@@ -159,6 +159,11 @@ jobs:
       - name: Tests of the tools
         run: dart test tool/test
 
+      # What pub.dev checks when the release publishes (a package imported
+      # from lib/ but not in `dependencies`, ...), on every push.
+      - name: pub.dev accepts the Dart packages (publish --dry-run)
+        run: dart run tool/publish.dart --dry-run --dart
+
       - name: Zed extension dart_spring builds
         working-directory: extensions/zed/dart_spring
         run: |
@@ -649,6 +654,10 @@ jobs:
           (cd example/flutter_guide && flutter build apk --config-only)
           (cd example/flutter_guide/android && ./gradlew -q -I ../../../tool/gradle/build_classpath.init.gradle help) > "$RUNNER_TEMP/classpath.txt"
           dart run tool/check_vulnerabilities.dart --maven "$RUNNER_TEMP/classpath.txt"
+
+      # What pub.dev checks when the release publishes, on every push.
+      - name: pub.dev accepts the Flutter packages (publish --dry-run)
+        run: dart run tool/publish.dart --dry-run --flutter
 
       - name: Generated code is up to date (Flutter guide, theme examples and packages)
         run: |

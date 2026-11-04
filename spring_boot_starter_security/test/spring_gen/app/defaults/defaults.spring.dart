@@ -7,7 +7,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 
 /// Beans found by `@ComponentScan` in `test/app/defaults`.
 _i1.BeanModule get $defaultSecurityBeans =>

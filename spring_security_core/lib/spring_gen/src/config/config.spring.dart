@@ -7,7 +7,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_security_core/src/config/security_core_properties.dart'
     as _i1;
 

@@ -10,10 +10,10 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:neon_ui/src/neon_gate_loader.dart' as _i3;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i2;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
 part 'theme.spring.dart';
 

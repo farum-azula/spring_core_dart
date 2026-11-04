@@ -7,9 +7,9 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart'
     as _i1;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 class _$SchedulingPropertiesProxy
     implements _i1.SchedulingProperties, _i2.Advised {

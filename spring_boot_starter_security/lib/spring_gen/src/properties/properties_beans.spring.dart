@@ -7,9 +7,9 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_security/src/properties/security_properties.dart'
     as _i1;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 class _$SecurityPropertiesProxy implements _i1.SecurityProperties, _i2.Advised {
   _$SecurityPropertiesProxy(this._target, this._invoker);

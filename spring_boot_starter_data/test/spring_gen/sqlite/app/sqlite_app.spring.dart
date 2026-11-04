@@ -11,16 +11,15 @@ import 'dart:async' as _i9;
 import 'dart:io' as _i8;
 
 import 'package:postgres/postgres.dart' as _i7;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i10;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i12;
+    as _i11;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
 import 'package:spring_boot_starter_data/src/properties/properties_beans.dart'
     as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i13;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
+    as _i12;
 import 'package:sqlite3/sqlite3.dart' as _i6;
 
 import '../../../sqlite/app/shared/shared.dart' as _i5;
@@ -335,12 +334,12 @@ _i3.JdbcDriver _$postgresJdbcDriver() =>
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i10.SpringApplication get springApplication => _i10.SpringApplication(
+_i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i11.springBootAutoConfiguration,
-    _i12.springBootStarterCacheAutoConfiguration,
-    _i13.springBootStarterLoggingAutoConfiguration,
+    _i10.springBootAutoConfiguration,
+    _i11.springBootStarterCacheAutoConfiguration,
+    _i12.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -388,31 +387,31 @@ _i10.SpringApplication get springApplication => _i10.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '2fd3304f',
+  fingerprint: '718ab0f4',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i10.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i10.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i10.ConfigurableApplicationContext reloadApplication(
-  _i10.ConfigurableApplicationContext running, {
+_i1.ConfigurableApplicationContext reloadApplication(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i10.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i10.ConfigurableApplicationContext running, {
+Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

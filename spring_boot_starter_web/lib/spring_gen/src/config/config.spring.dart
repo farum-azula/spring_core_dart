@@ -7,11 +7,11 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_dart/src/annotations.dart' as _i5;
 import 'package:spring_boot_starter_web/src/config/web_properties.dart' as _i1;
 import 'package:spring_boot_starter_web/src/forwarded_headers.dart' as _i4;
 import 'package:spring_boot_starter_web/src/web_server.dart' as _i3;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 class _$ServerSettingsProxy implements _i1.ServerSettings, _i2.Advised {
   _$ServerSettingsProxy(this._target, this._invoker);

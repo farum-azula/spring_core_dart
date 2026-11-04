@@ -7,6 +7,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i8;
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i3;
@@ -15,7 +16,6 @@ import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dar
     as _i10;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
     as _i9;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_security_core/src/userdetails/user_details.dart' as _i7;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
     as _i6;

@@ -7,12 +7,11 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart'
     as _i2;
-import 'package:spring_boot_starter_flutter/src/spring_app.dart' as _i4;
-import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart' as _i5;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
+import 'package:spring_boot_starter_flutter/src/spring_app.dart' as _i3;
+import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart' as _i4;
 
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
 _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
@@ -22,7 +21,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'flutterAppProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterAppProperties',
       types: const [_i2.FlutterAppProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterAppProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterAppProperties>(
         r,
         r'flutterAppProperties',
       ),
@@ -85,7 +84,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'flutterProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterProperties',
       types: const [_i2.FlutterProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterProperties>(
         r,
         r'flutterProperties',
       ),
@@ -110,7 +109,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'flutterLifecycleProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterLifecycleProperties',
       types: const [_i2.FlutterLifecycleProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterLifecycleProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterLifecycleProperties>(
         r,
         r'flutterLifecycleProperties',
       ),
@@ -139,7 +138,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'flutterFontsProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterFontsProperties',
       types: const [_i2.FlutterFontsProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterFontsProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterFontsProperties>(
         r,
         r'flutterFontsProperties',
       ),
@@ -178,7 +177,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'desktopWindowProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#DesktopWindowProperties',
       types: const [_i2.DesktopWindowProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.DesktopWindowProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.DesktopWindowProperties>(
         r,
         r'desktopWindowProperties',
       ),
@@ -259,7 +258,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'flutterWebProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterWebProperties',
       types: const [_i2.FlutterWebProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterWebProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterWebProperties>(
         r,
         r'flutterWebProperties',
       ),
@@ -473,7 +472,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'flutterRestartProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterRestartProperties',
       types: const [_i2.FlutterRestartProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterRestartProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterRestartProperties>(
         r,
         r'flutterRestartProperties',
       ),
@@ -502,7 +501,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       name: r'flutterDataSourceProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterDataSourceProperties',
       types: const [_i2.FlutterDataSourceProperties],
-      create: (r) => _i3.ConstructorBound.from<_i2.FlutterDataSourceProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.FlutterDataSourceProperties>(
         r,
         r'flutterDataSourceProperties',
       ),
@@ -542,7 +541,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterDataSourcesProperties',
       types: const [_i2.FlutterDataSourcesProperties],
       create: (r) =>
-          _i3.ConstructorBound.from<_i2.FlutterDataSourcesProperties>(
+          _i1.ConstructorBound.from<_i2.FlutterDataSourcesProperties>(
             r,
             r'flutterDataSourcesProperties',
           ),
@@ -570,8 +569,8 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       properties: [
         _i1.BeanProperty<_i2.FlutterAppProperties>(
           r'type',
-          type: _i4.AppType,
-          typeInfo: const _i1.EnumType<_i4.AppType>(_i4.AppType.values),
+          type: _i3.AppType,
+          typeInfo: const _i1.EnumType<_i3.AppType>(_i3.AppType.values),
           get: (bean) => bean.type,
         ),
         _i1.BeanProperty<_i2.FlutterAppProperties>(
@@ -605,10 +604,10 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
         parameters: [
           _i1.BeanParameter(
             r'type',
-            type: const _i1.EnumType<_i4.AppType>(_i4.AppType.values),
+            type: const _i1.EnumType<_i3.AppType>(_i3.AppType.values),
             symbol: #type,
             hasDefaultValue: true,
-            defaultValue: _i4.AppType.widgets,
+            defaultValue: _i3.AppType.widgets,
           ),
           _i1.BeanParameter(
             r'title',
@@ -1233,9 +1232,9 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       properties: [
         _i1.BeanProperty<_i2.FlutterSqliteProperties>(
           r'location',
-          type: _i5.SqliteLocation,
-          typeInfo: const _i1.EnumType<_i5.SqliteLocation>(
-            _i5.SqliteLocation.values,
+          type: _i4.SqliteLocation,
+          typeInfo: const _i1.EnumType<_i4.SqliteLocation>(
+            _i4.SqliteLocation.values,
           ),
           get: (bean) => bean.location,
         ),
@@ -1246,12 +1245,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
         parameters: [
           _i1.BeanParameter(
             r'location',
-            type: const _i1.EnumType<_i5.SqliteLocation>(
-              _i5.SqliteLocation.values,
+            type: const _i1.EnumType<_i4.SqliteLocation>(
+              _i4.SqliteLocation.values,
             ),
             symbol: #location,
             hasDefaultValue: true,
-            defaultValue: _i5.SqliteLocation.support,
+            defaultValue: _i4.SqliteLocation.support,
           ),
         ],
         create: (positional, named) =>

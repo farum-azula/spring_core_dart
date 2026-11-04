@@ -7,13 +7,12 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i5;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i5;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_dart/src/runners.dart' as _i3;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i7;
+    as _i6;
 import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i4;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
 import '../example.dart' as _i2;
 
@@ -57,11 +56,11 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i5.SpringApplication get springApplication => _i5.SpringApplication(
+_i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
-    _i7.springBootStarterLoggingAutoConfiguration,
+    _i5.springBootAutoConfiguration,
+    _i6.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -109,32 +108,32 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'e4174f90',
+  fingerprint: '59acda19',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i5.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i5.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i5.ConfigurableApplicationContext reloadApplication(
-  _i5.ConfigurableApplicationContext running, {
+_i1.ConfigurableApplicationContext reloadApplication(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i5.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i5.ConfigurableApplicationContext running, {
+Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
