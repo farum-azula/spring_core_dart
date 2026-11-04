@@ -171,6 +171,7 @@ keys that give the same Dart name fail the build.
 | [Styles and states](styles-and-states.md) | A look per state for your own widgets, state precedence, `ThemeStates`, per-state values of components |
 | [Motion and animations](motion-and-animations.md) | Durations, curves, page transitions, `animations.*`, reduced motion |
 | [Background](background.md) | A color, an image, an overlay and a slow animation behind every screen |
+| [Loaders and the splash](loaders.md) | Spinners, dots, bars, skeletons, loaders of your own and the splash shown while the app starts |
 | [Images](images.md) | Images from assets or the network, with a cache, a refresh, a checksum and a fallback |
 | [Cupertino](cupertino.md) | `CupertinoThemeData` for iOS-style apps |
 | [Components](components/index.md) | One page per Material component, with every property it accepts |

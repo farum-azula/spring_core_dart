@@ -454,18 +454,25 @@ final class ThemeScope {
   /// without [insets] that is text). A token map at least
   /// `tokens.<group>.<key>` deep with a `source` and only image keys is
   /// [ValueKind.image] when [image] (the runtime's rule: any other child
-  /// makes it a group). Problems are reported.
+  /// makes it a group). With [groups] a map with a `color` and other keys
+  /// is a group, not a color object (the keys of a loader). Problems are
+  /// reported.
   ValueKind? nodeKind(
     ThemeNode node, {
     bool insets = false,
     bool image = false,
+    bool groups = false,
   }) {
     if (node.entry != null && node.children.isEmpty) {
       final kind = _evaluate(node.entry!);
       return kind == ValueKind.insets && !insets ? ValueKind.text : kind;
     }
-    // A map with a `color` is a color.
-    if (node.entry == null && node.children.containsKey('color')) {
+    // A map with a `color` is a color; with [groups] only when it has
+    // nothing but the keys of a color object (`door: {color, edge}` is a
+    // group with a color in it).
+    if (node.entry == null &&
+        node.children.containsKey('color') &&
+        (!groups || node.children.keys.every(_objectKeys.contains))) {
       return _colorObject(node);
     }
     if (node.isList) {

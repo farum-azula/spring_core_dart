@@ -48,7 +48,8 @@ All of the look is in this one commented file:
 | `tokens.neon` | accents, surfaces, sizes, `tone` / `tone-soft` for the badges, `modal` (a group: width, barrier, `border.colors` a list) |
 | `tokens.logs` | the colors of the log panel |
 | `styles.*` | `neon-button`, `neon-button-outline`, `neon-chip`, `neon-text-field`, `neon-resize-handle`: a value per state |
-| `motion`, `animations` | `border-spin` (the modal's turning border), `background-drift` |
+| `loaders` | `neon-gate`: the gate loader (phases `enter`, `fill` by progress with a `min-duration`, `exit`; gate, edge, flicker, box and label looks; `web` file) |
+| `motion`, `animations` | `border-spin` (the modal's turning border), `gate-enter`, `gate-exit` and `gate-flicker` (the gate loader), `background-drift` |
 | `background` | the picture with a veil, drifting, and the `stage` screen |
 
 The widgets read it as `context.theme.*`, typed, from the library's own
@@ -70,6 +71,7 @@ make it `extends: neon`.
 | `NeonCode` | a code block |
 | `NeonGlowBorder`, `showNeonModal` | the border that turns (`ThemeAnimation`, still with reduce motion) and the dialog around it |
 | `NeonResizeHandle` | a horizontal grip for resizable panels |
+| `NeonGateLoader` | the `neon-gate` loader kind (`@ThemeLoaderKind('neon-gate')`), drawn by a painter: dark panels slide in one after the other from different sides and close like a gate (two halves meeting at a slanted seam, platforms over them), their edges glowing in cyan and red with a little flicker; an angled red box in the middle fills by the progress with its number (`label-small`). When the work is done the box goes and the panels part the way they came, over the app with the splash's `exit.reveal`. Its keys are `loaders.neon-gate` in `themes/neon.yml` (colors are tokens, times are `animations.gate-enter`, `gate-exit` and `gate-flicker`); the geometry is in `lib/src/neon_gate_loader.dart`, the same numbers as its look for the web page before Flutter runs, `lib/resources/loaders/neon-gate.html` |
 | `NeonLogsPanel` | a `LogBuffer` in the colors of the Spring console (no `dart:io`: works on the web; give it a `processId` to show one) |
 
 The background is not a widget: the theme's `background` goes under every

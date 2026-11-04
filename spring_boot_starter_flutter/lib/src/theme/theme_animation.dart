@@ -36,8 +36,12 @@ final class AnimationSpec {
 
   /// Reads `animations.<name>` of [p]; throws a [ThemePropertyException]
   /// for a missing duration, a wrong value or an unknown key.
-  factory AnimationSpec.parse(ThemeProperties p, String name) {
-    final base = 'animations.$name';
+  factory AnimationSpec.parse(ThemeProperties p, String name) =>
+      AnimationSpec.parseAt(p, 'animations.$name');
+
+  /// Reads the animation written at [base] of [p] (a loader's phase has
+  /// the same keys); errors are those of [AnimationSpec.parse].
+  factory AnimationSpec.parseAt(ThemeProperties p, String base) {
     const keys = ['duration', 'curve', 'repeat'];
     for (final key in p.children(base)) {
       if (!keys.contains(key)) {

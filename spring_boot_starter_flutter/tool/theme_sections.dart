@@ -1,7 +1,7 @@
 // The theme keys that are not Material components, for `properties` in
 // tool/theme_metadata.json (see tool/theme_metadata.dart): the root keys,
 // colors, typography, shape, spacing, elevation, motion, animations,
-// background, styles and tokens, plus a flat form of the components.
+// background, loaders, splash, styles and tokens, plus a flat form of the components.
 //
 // Names and rules come from the theme reader (lib/src/theme) and the
 // hand-written pages in docs/flutter/theme. The color roles and their
@@ -58,6 +58,8 @@ List<ThemeProp> themeSections() => [
   ..._shape(),
   ..._motion(),
   ..._background(),
+  ..._loaders(),
+  ..._splash(),
   _p(
     'tokens.*',
     'map',
@@ -550,3 +552,226 @@ List<ThemeProp> _background() {
     ...keys('background.screens.*', 'of this screen'),
   ];
 }
+
+// The loaders and the splash: docs/flutter/theme/loaders.md.
+List<ThemeProp> _loaders() => [
+  _p(
+    'loaders.*.kind',
+    'choice',
+    'What the loader looks like: a built-in kind, or a kind of the app\'s '
+        'own (`@ThemeLoaderKind`). Required. An unknown kind stops the '
+        'start.',
+    values: ['spinner', 'dots', 'pulse', 'bar', 'skeleton'],
+  ),
+  _p(
+    'loaders.*.color',
+    'color',
+    'The color of the moving part (spinner, dots, pulse, bar).',
+    defaultValue: "the theme's `primary`",
+  ),
+  _p(
+    'loaders.*.size',
+    'number',
+    'The diameter of a spinner or pulse, the size of one dot.',
+    defaultValue: '24 (spinner, pulse), 8 (dots)',
+  ),
+  _p(
+    'loaders.*.stroke',
+    'number',
+    'The line width of a spinner.',
+    defaultValue: '3',
+  ),
+  _p(
+    'loaders.*.track',
+    'color',
+    'The color of the track behind a spinner or bar.',
+    defaultValue: 'none (spinner), the color at 20 % (bar)',
+  ),
+  _p(
+    'loaders.*.count',
+    'number',
+    'The number of dots, a whole number of 1 or more.',
+    defaultValue: '3',
+  ),
+  _p(
+    'loaders.*.gap',
+    'number',
+    'The space between dots.',
+    defaultValue: 'half the dot size',
+  ),
+  _p(
+    'loaders.*.height',
+    'number',
+    'The thickness of a bar.',
+    defaultValue: '4',
+  ),
+  _p(
+    'loaders.*.width',
+    'number',
+    'The length of a bar.',
+    defaultValue: '120',
+  ),
+  _p(
+    'loaders.*.radius',
+    'number',
+    'The corner radius of a bar or a skeleton.',
+    defaultValue: 'half the height (bar), 8 (skeleton)',
+  ),
+  _p(
+    'loaders.*.base',
+    'color',
+    'The color of a skeleton.',
+    defaultValue: '#E0E0E0',
+  ),
+  _p(
+    'loaders.*.highlight',
+    'color',
+    'The color of the highlight that crosses a skeleton.',
+    defaultValue: '#F5F5F5',
+  ),
+  _p(
+    'loaders.*.shimmer.duration',
+    'duration',
+    'How long the highlight takes to cross a skeleton.',
+    defaultValue: '1.2s',
+  ),
+  _p(
+    'loaders.*.shimmer.curve',
+    'text',
+    'The curve of the highlight: a name or four numbers.',
+    defaultValue: 'linear',
+  ),
+  _p(
+    'loaders.*.shimmer.angle',
+    'number',
+    'The slant of the highlight in degrees.',
+    defaultValue: '20',
+  ),
+  _p(
+    'loaders.*.animation.duration',
+    'duration',
+    'How long one run of a built-in loader takes. `animation` may also be '
+        'the name of an `animations.<name>`.',
+    defaultValue: 'per kind: 1s, 900ms, 1.2s, 1.4s',
+  ),
+  _p(
+    'loaders.*.animation.curve',
+    'text',
+    'The curve of the run: a name or four numbers.',
+    defaultValue: 'per kind',
+  ),
+  _p(
+    'loaders.*.animation.repeat',
+    'choice',
+    'What happens at the end of a run.',
+    defaultValue: 'loop (back and forth for pulse)',
+    values: ['none', 'loop', 'reverse'],
+  ),
+  _p(
+    'loaders.*.phases.*.duration',
+    'duration',
+    'A kind of the app\'s own: how long the phase takes. Phases play in '
+        'the order written.',
+  ),
+  _p(
+    'loaders.*.phases.*.curve',
+    'text',
+    'The curve of the phase: a name or four numbers.',
+    defaultValue: 'linear',
+  ),
+  _p(
+    'loaders.*.phases.*.repeat',
+    'choice',
+    'A looping phase goes on until the loader is ready.',
+    defaultValue: 'none',
+    values: ['none', 'loop', 'reverse'],
+  ),
+  _p(
+    'loaders.*.phases.*.progress',
+    'true / false',
+    'A phase that follows the progress the loader is given (`true`).',
+  ),
+  _p(
+    'loaders.*.phases.*.min-duration',
+    'duration',
+    'A phase that follows progress fills in no less than this: it shows '
+        'the smaller of the real progress and the time in the phase (eased) '
+        'over this, so a fast start does not jump to the end.',
+    defaultValue: '0',
+  ),
+  _p(
+    'loaders.*.web',
+    'text',
+    'A kind of the app\'s own: the HTML file that shows it before Flutter '
+        'runs (the web page loader).',
+  ),
+  _p(
+    'loaders.*.*',
+    'map',
+    'A kind of the app\'s own takes the keys it registered; their values '
+        'are read like tokens.',
+    open: true,
+  ),
+];
+
+List<ThemeProp> _splash() => [
+  ..._background()
+      .where(
+        (p) =>
+            !(p['name'] as String).contains('.screens.') &&
+            (p['name'] as String).startsWith('background.'),
+      )
+      .map(
+        (p) => {
+          ...p,
+          'name': (p['name'] as String).replaceFirst(
+            'background.',
+            'splash.background.',
+          ),
+        },
+      ),
+  _p(
+    'splash.logo.source',
+    'text',
+    'The logo: an asset path or an https URL. It takes the other image '
+        'keys of `background.image` (`refresh`, `fallback`, ...).',
+  ),
+  _p(
+    'splash.logo.size',
+    'number',
+    'The width of the logo.',
+    defaultValue: '96',
+  ),
+  _p('splash.title', 'text', 'The text under the logo.'),
+  _p(
+    'splash.loader',
+    'text',
+    'The name of a `loaders.<name>` shown under the title; a kind of the '
+        "app's own may cover the whole splash.",
+  ),
+  _p(
+    'splash.animation',
+    'text',
+    'The name of an `animations.<name>` that fades and grows the logo.',
+  ),
+  _p(
+    'splash.min-duration',
+    'duration',
+    'The splash stays at least this long, even when the app is ready.',
+    defaultValue: '0',
+  ),
+  _p(
+    'splash.exit.transition',
+    'text',
+    'The fade out when the app is ready: `<duration> [<curve>]`.',
+    defaultValue: '300ms ease-out',
+  ),
+  _p(
+    'splash.exit.reveal',
+    'true / false',
+    'When the last phase of a loader with phases of its own starts, the '
+        'background, the logo and the title go at once: the loader plays '
+        'its way out over the app, which is built under the splash.',
+    defaultValue: 'false',
+  ),
+];

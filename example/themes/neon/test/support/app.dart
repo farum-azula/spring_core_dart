@@ -18,6 +18,7 @@ Future<ConfigurableApplicationContext> startApp(
   Size size = const Size(1280, 800),
   int page = 0,
   List<String> args = const [],
+  bool keepSplash = false,
 }) async {
   tester.view
     ..physicalSize = size * 2
@@ -48,9 +49,27 @@ Future<ConfigurableApplicationContext> startApp(
   await tester.runAsync(
     () => Future<void>.delayed(const Duration(milliseconds: 200)),
   );
-  await settle(tester);
+  if (keepSplash) {
+    await tester.pump();
+  } else {
+    await settle(tester);
+    await endSplash(tester);
+  }
   return SpringScope.of(tester.element(find.byType(Shell)))
       as ConfigurableApplicationContext;
+}
+
+/// Lets the splash of the theme finish: the layers slide out and it fades out
+/// (at least its `min-duration`). A test that taps the app calls
+/// [startApp], which waits for it.
+Future<void> endSplash(WidgetTester tester) async {
+  for (var i = 0; i < 100; i++) {
+    if (find.byType(ThemeSplash).evaluate().isEmpty) {
+      return;
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  fail('The splash is still on screen after 10 seconds.');
 }
 
 /// Closes the context of [startApp] (its timers end with it).
@@ -86,6 +105,7 @@ const pageTitles = {
   'components': ('Components', 'Components'),
   'states': ('States', 'States'),
   'motion': ('Motion', 'Motion'),
+  'loaders': ('Loaders', 'Loaders'),
   'background': ('Background', 'Background'),
   'tokens': ('Tokens', 'Tokens and references'),
   'logs': ('Logs', 'Logs'),

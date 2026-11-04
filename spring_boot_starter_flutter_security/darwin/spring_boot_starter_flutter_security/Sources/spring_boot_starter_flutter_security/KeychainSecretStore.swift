@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 import Security
 
 /// A failed Keychain call; the message has the OSStatus, never a value.
@@ -151,7 +152,9 @@ final class KeychainSecretStore {
     } else {
       #if os(macOS)
         // Never show the login keychain's password prompt.
-        query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
+        let context = LAContext()
+        context.interactionNotAllowed = true
+        query[kSecUseAuthenticationContext as String] = context
       #endif
     }
     return query

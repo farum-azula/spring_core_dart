@@ -85,11 +85,46 @@ export 'src/annotations.dart';
 export 'src/notify_listeners.dart';
 export 'src/spring_scope.dart';
 export 'src/spring_widgets.dart';
+export 'src/theme/theme_loader.dart';
+''',
+  'spring_boot_starter_flutter|lib/src/theme/theme_loader.dart': '''
+class Canvas {}
+
+class Size {}
+
+class LoaderValues {}
+
+class LoaderFrame<P> {}
+
+abstract class ThemeLoaderPainter<P> {
+  const ThemeLoaderPainter();
+  void paint(Canvas canvas, Size size, LoaderFrame<P> frame);
+}
+
+abstract class ThemeLoaderWidget<P> {
+  const ThemeLoaderWidget();
+  Object build(Object context, LoaderFrame<P> frame);
+}
+
+abstract final class ThemeLoaderKinds {
+  static void register<P>(
+    String name, {
+    ThemeLoaderPainter<P>? painter,
+    ThemeLoaderWidget<P>? widget,
+    P Function(LoaderValues values)? props,
+    Iterable<String>? keys,
+  }) {}
+}
 ''',
   'spring_boot_starter_flutter|lib/src/annotations.dart': '''
 class BuildContextAccess {
   const BuildContextAccess({this.name});
   final String? name;
+}
+
+class ThemeLoaderKind {
+  const ThemeLoaderKind(this.name);
+  final String name;
 }
 ''',
   'spring_boot_starter_flutter|lib/src/spring_scope.dart': '''
@@ -240,6 +275,99 @@ Future<String> _errors(String beans) async {
 }
 
 void main() {
+  group('@ThemeLoaderKind', () {
+    test('the module registers the kind before it is built', () async {
+      final result = await _build('''
+@ThemeLoaderKind('doors')
+class DoorsLoader extends ThemeLoaderPainter<DoorsLoaderProps> {
+  const DoorsLoader();
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<DoorsLoaderProps> frame) {}
+}
+
+@ThemeLoaderKind('neon-fog')
+class FogLoader extends ThemeLoaderWidget<LoaderValues> {
+  @override
+  Object build(Object context, LoaderFrame<LoaderValues> frame) => context;
+}
+''');
+      expect(result.errors, isEmpty);
+      final output = result.readerWriter.testing.readString(
+        result.outputs.singleWhere(
+          (o) => o.path == 'lib/spring_gen/src/beans.spring.dart',
+        ),
+      );
+      final code = _normalize(output);
+      expect(
+        code,
+        contains(
+          _normalize(
+            "ThemeLoaderKinds.register<DoorsLoaderProps>(r'doors', "
+            'painter: DoorsLoader(), props: DoorsLoaderProps._, '
+            'keys: DoorsLoaderProps.keys);',
+          ),
+        ),
+      );
+      expect(
+        code,
+        contains(
+          _normalize(
+            "ThemeLoaderKinds.register<LoaderValues>(r'neon-fog', "
+            'widget: FogLoader());',
+          ),
+        ),
+      );
+    });
+
+    test('the kind is checked', () async {
+      expect(
+        await _errors('''
+@ThemeLoaderKind('spinner')
+class A extends ThemeLoaderPainter<LoaderValues> {
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<LoaderValues> frame) {}
+}
+'''),
+        contains('"spinner" is a built-in loader kind'),
+      );
+      expect(
+        await _errors('''
+@ThemeLoaderKind('x')
+class B {}
+'''),
+        contains(
+          'it must extend ThemeLoaderPainter<P> or ThemeLoaderWidget<P>',
+        ),
+      );
+      expect(
+        await _errors('''
+@ThemeLoaderKind('x')
+class C extends ThemeLoaderPainter<String> {
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<String> frame) {}
+}
+'''),
+        contains('its props type is String; use XLoaderProps'),
+      );
+      expect(
+        await _errors('''
+@ThemeLoaderKind('x')
+class D extends ThemeLoaderPainter<LoaderValues> {
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<LoaderValues> frame) {}
+}
+
+@ThemeLoaderKind('X')
+class E extends ThemeLoaderPainter<LoaderValues> {
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<LoaderValues> frame) {}
+}
+'''),
+        contains('declared twice'),
+      );
+    });
+  });
+
   group('@BuildContextAccess', () {
     test('a getter per marked bean, named after the bean or name:', () async {
       final output = await _generate('''

@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # The icons of the Cupertino widgets (CupertinoIcons); see flutter: below.
+  cupertino_icons: ^1.0.8
   # SpringApplicationWidget, the theme (spring.flutter.theme.*), the typed
   # keys, ThemeStates, ThemeAnimation, ThemeBackground, ThemeImage.
   spring_boot_starter_flutter: ^0.6.2
@@ -29,6 +31,9 @@ dev_dependencies:
   spring_web_dart: ^0.6.2
 
 flutter:
+  # MaterialApp and CupertinoApp are both in the starter (the theme picks
+  # one at run time), so the build looks for both icon fonts; the unused
+  # glyphs are cut out of a release build.
   uses-material-design: true
   assets:
     # The images of the image and background examples (an asset is the

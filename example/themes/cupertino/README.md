@@ -40,9 +40,13 @@ the result. A test checks that every quoted line is in `lib/resources/`.
    a value per state, and `transition`.
 5. **Controls**: a gallery of Cupertino controls under the theme.
 6. **Motion**: `motion.*`, `ThemeAnimation`, reduce motion, the iOS page slide.
-7. **Background**: `background` and `ThemeBackground`.
-8. **Images**: asset images and the network profile.
-9. **Themes**: switching with `ThemeSelection`, a theme from a URL.
+7. **Loaders**: `loaders.*` in the iOS look (pulse, dots, a thin bar, a quiet
+   skeleton) shown by `ThemeLoader` and `ThemeSkeleton`, and the `splash`
+   (logo, title, dots) the app starts with. On the web the generator writes
+   the splash into `web/index.html`, so the page shows it before Flutter runs.
+8. **Background**: `background` and `ThemeBackground`.
+9. **Images**: asset images and the network profile.
+10. **Themes**: switching with `ThemeSelection`, a theme from a URL.
 
 `application-network.yml` (profile `network`, off by default) points the
 images at https with the assets as fallback.

@@ -33,6 +33,134 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+<!-- spring:loader:start -->
+<!-- Written by spring_core_dart_generator from the splash of the active theme; rewritten on every build. -->
+<style id="spring-loader-style">
+#spring-loader{position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--spring-progress:0}
+#spring-loader .sl-body{display:flex;flex-direction:column;align-items:center;gap:20px;padding:24px;text-align:center}
+#spring-loader .sl-logo{display:block;object-fit:contain}
+#spring-loader .sl-title{font-size:28px;font-weight:600;letter-spacing:.04em}
+#spring-loader .sl-kind{display:flex;align-items:center;justify-content:center}
+@keyframes sl-spin{to{transform:rotate(360deg)}}
+@keyframes sl-bounce{0%,80%,100%{transform:scale(.55);opacity:.45}40%{transform:scale(1);opacity:1}}
+@keyframes sl-pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+@keyframes sl-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){#spring-loader *{animation:none!important;transition:none!important}}
+#spring-loader{background:#f2f2f7;color:#1a1a1a;--spring-logo-size:96px;--color:#007aff;--size:8;--count:3}
+#spring-loader .sl-dots{display:flex;gap:calc(calc(var(--size,10) * 1px) * .6)}#spring-loader .sl-dots span{display:block;width:calc(var(--size,10) * 1px);height:calc(var(--size,10) * 1px);border-radius:50%;background:var(--color,#007aff);animation:sl-bounce var(--animation-duration,900ms) var(--animation-curve,ease-in-out) infinite both}#spring-loader .sl-dots span:nth-child(2){animation-delay:calc(var(--animation-duration,900ms) * 0.3333333333333333)}#spring-loader .sl-dots span:nth-child(3){animation-delay:calc(var(--animation-duration,900ms) * 0.6666666666666666)}#spring-loader .sl-logo{width:var(--spring-logo-size);height:var(--spring-logo-size)}
+</style>
+<div id="spring-loader" role="status" aria-busy="true" aria-label="Loading" data-kind="dots" data-stage="start"><div class="sl-body"><img class="sl-logo" src="assets/assets/images/badge.png" alt="" decoding="async"><div class="sl-title">Theme Showcase</div><div class="sl-kind"><div class="sl-dots"><span></span><span></span><span></span></div></div></div></div>
+<script>
+(function () {
+  var root = document.getElementById('spring-loader');
+  if (!root) return;
+  var done = false, progress = 0, shown = 0, floor = 0, cap = 0.4, timer;
+  function now() {
+    return window.performance && performance.now ? performance.now() : Date.now();
+  }
+  var started = now(), last = 0;
+  var fillMin = +root.getAttribute('data-fill-min') || 0;
+  var fillAt = +root.getAttribute('data-fill-at') || 0;
+  var still = !!(window.matchMedia &&
+    matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function ease(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2;
+  }
+  function target() {
+    if (!fillMin || still) return progress;
+    var t = (now() - started - fillAt) / fillMin;
+    return Math.min(progress, t <= 0 ? 0 : t >= 1 ? 1 : ease(t));
+  }
+  var stages = {
+    load: [0.08, 0.45], app: [0.5, 0.6], engine: [0.6, 0.88],
+    run: [0.9, 0.95], done: [1, 1]
+  };
+  function show(stage) {
+    var s = stages[stage];
+    if (done || !s) return;
+    floor = s[0]; cap = s[1];
+    if (progress < floor) progress = floor;
+    root.setAttribute('data-stage', stage);
+  }
+  function paint(time) {
+    if (done) return;
+    var dt = last ? time - last : 16, to = target(), step = dt / 300;
+    last = time;
+    shown = to > shown ? Math.min(to, shown + step) : Math.max(to, shown - step);
+    root.style.setProperty('--spring-progress', shown.toFixed(3));
+    requestAnimationFrame(paint);
+  }
+  function remove() {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    clearInterval(creep);
+    if (root.parentNode) root.parentNode.removeChild(root);
+    var style = document.getElementById('spring-loader-style');
+    if (style && style.parentNode) style.parentNode.removeChild(style);
+  }
+  var creep = setInterval(function () {
+    if (progress < cap) progress += (cap - progress) * 0.04;
+  }, 150);
+  window.springLoader = {
+    get progress() { return shown; },
+    get stage() { return root.getAttribute('data-stage'); },
+    get elapsed() { return now() - started; },
+    handOff: remove
+  };
+  window.springLoaderHandOff = remove;
+  timer = setTimeout(remove, 60000);
+  window.addEventListener('flutter-first-frame', function () {
+    show('done');
+    clearTimeout(timer);
+    timer = setTimeout(remove, 3000);
+  });
+  function wrap(loader) {
+    if (!loader || loader.__springLoader || typeof loader.load !== 'function') return;
+    loader.__springLoader = true;
+    var load = loader.load;
+    loader.load = function (options) {
+      options = options || {};
+      var next = options.onEntrypointLoaded;
+      var config = options.config || {};
+      show('load');
+      options.onEntrypointLoaded = function (initializer) {
+        show('app');
+        var initialize = initializer.initializeEngine;
+        try {
+          initializer.initializeEngine = function () {
+            show('engine');
+            return initialize.apply(initializer, arguments).then(function (runner) {
+              show('run');
+              return runner;
+            });
+          };
+        } catch (e) {}
+        if (next) return next(initializer);
+        return initializer.initializeEngine(config).then(function (runner) {
+          return runner.runApp();
+        });
+      };
+      return load.call(loader, options);
+    };
+  }
+  var flutter = window._flutter = window._flutter || {};
+  if (flutter.loader) {
+    wrap(flutter.loader);
+  } else {
+    var held;
+    Object.defineProperty(flutter, 'loader', {
+      configurable: true,
+      enumerable: true,
+      get: function () { return held; },
+      set: function (value) { held = value; wrap(value); }
+    });
+  }
+  show('load');
+  requestAnimationFrame(paint);
+})();
+</script>
+<!-- spring:loader:end -->
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

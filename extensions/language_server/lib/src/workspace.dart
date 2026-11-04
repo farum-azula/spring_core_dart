@@ -1644,6 +1644,9 @@ final class SpringWorkspace {
 
   final _packageRoots = <String, String>{};
 
+  /// The root directory of the package of the file [path].
+  String packageRootOf(String path) => _packageRoot(path);
+
   // The nearest directory with a pubspec.yaml (else the workspace root).
   String _packageRoot(String path) {
     final directory = File(path).parent.path;

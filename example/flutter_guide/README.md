@@ -312,11 +312,25 @@ spring:
 - **Checked at the start.** A misspelled key or value fails the start,
   naming the property.
 
+- **Loaders and the splash.** `loaders.*` and `splash` in
+  `lib/resources/application.yml`. The app starts with the splash (the leaf,
+  "NEON Books" and a bar that follows the start; at least a second), and on
+  the web the page shows the same splash before Flutter runs (build_runner
+  writes it into `web/index.html`). Where the app really waits for the server
+  it uses them: the catalog and the orders show a skeleton of the list
+  (`ThemeSkeleton`, `BookTilePlaceholder`), a book and About a bar, and
+  "Order" a bar under the button while the order is sent. Settings has a
+  Loaders section with a skeleton, an indeterminate bar and a bar with the
+  progress of a fake download, next to the YAML that makes them
+  (`lib/src/settings/loaders_preview.dart`).
+
 Try: More → Settings and pick each theme. `flutter run
 --dart-define=SPRING_FLUTTER_THEME_ACTIVE=neon` starts in one.
 
 Test: `test/themes_test.dart` (the themes and their order, `extends`,
-the fonts, switching, `loadYaml`, a broken property), and the
+the fonts, switching, `loadYaml`, a broken property), `test/loaders_test.dart`
+(the splash and its hand-over, the catalog's skeleton until the server
+answers, the Loaders section, the quoted YAML lines) and the
 screenshots of Settings in every theme (chapter 11).
 
 ## 4. Texts

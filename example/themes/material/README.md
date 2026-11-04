@@ -54,11 +54,18 @@ flutter run --dart-define=SPRING_PROFILES_ACTIVE=network
 6. **Motion**: `motion.durations`, `motion.curves`, animations with
    `repeat: none | loop | reverse` played by `ThemeAnimation` (a glow border,
    a pulse, an entrance), a reduce-motion switch, and page transitions.
-7. **Background**: the theme's background (color, image, gradient, `drift`
+7. **Loaders**: `loaders.*` shown by `ThemeLoader` and `ThemeSkeleton`: a
+   spinner for a fake refresh, a bar (indeterminate and with the progress of
+   a fake upload), a skeleton of a list that appears after a short wait, and
+   the `splash` the app starts with (a logo and a bar that follows the
+   start). On the web the generator writes the same splash into
+   `web/index.html` (between `<!-- spring:loader:start -->` and `end`), so
+   the page shows it before Flutter runs.
+8. **Background**: the theme's background (color, image, gradient, `drift`
    effect), `ThemeBackground.screen('showcase')` and `ThemeBackground.none`.
-8. **Images**: `ThemeImage` from an asset, and the same from https with a
+9. **Images**: `ThemeImage` from an asset, and the same from https with a
    cache and an asset `fallback` (profile `network`).
-9. **Themes**: six themes (`light`, `dark`, `ocean`, `ocean-night` which
+10. **Themes**: six themes (`light`, `dark`, `ocean`, `ocean-night` which
    `extends` ocean, `neon`, `high-contrast`), switched with `ThemeSelection`
    and the generated `AppThemes.*` constants.
 
@@ -67,7 +74,7 @@ flutter run --dart-define=SPRING_PROFILES_ACTIVE=network
 - `lib/main.dart`: `@SpringBootApplication` and `SpringApplicationWidget`.
 - `lib/src/app/`: the shell (navigation rail, or a drawer when narrow), the
   theme menu, and the Spring logger (`@Log`, never `print`).
-- `lib/src/pages/`: the nine pages; they read `context.theme.*` from the
+- `lib/src/pages/`: the ten pages; they read `context.theme.*` from the
   generated `lib/spring_gen/theme.spring.dart` (import `spring_gen/main.spring.dart`).
 - `lib/src/widgets/styled_widgets.dart`: the widgets of our own, built with
   `ThemeStates` and `ThemeAnimation`.

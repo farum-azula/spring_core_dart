@@ -7,6 +7,7 @@ import 'package:theme_showcase_material/src/pages/background_page.dart';
 import 'package:theme_showcase_material/src/pages/colors_page.dart';
 import 'package:theme_showcase_material/src/pages/components_page.dart';
 import 'package:theme_showcase_material/src/pages/images_page.dart';
+import 'package:theme_showcase_material/src/pages/loaders_page.dart';
 import 'package:theme_showcase_material/src/pages/motion_page.dart';
 import 'package:theme_showcase_material/src/pages/states_page.dart';
 import 'package:theme_showcase_material/src/pages/themes_page.dart';
@@ -25,7 +26,7 @@ class ShowcasePage {
   final WidgetBuilder builder;
 }
 
-/// The nine pages, in the order of the navigation.
+/// The ten pages, in the order of the navigation.
 final pages = <ShowcasePage>[
   ShowcasePage(
     'colors',
@@ -62,6 +63,12 @@ final pages = <ShowcasePage>[
     Icons.animation,
     (m) => m.motion,
     (_) => const MotionPage(),
+  ),
+  ShowcasePage(
+    'loaders',
+    Icons.hourglass_empty,
+    (m) => m.loaders,
+    (_) => const LoadersPage(),
   ),
   ShowcasePage(
     'background',

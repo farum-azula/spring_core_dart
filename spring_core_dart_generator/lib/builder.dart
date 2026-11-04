@@ -71,6 +71,7 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_metadata_builder.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
+import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
 
 /// Creates the main builder ([SpringBuilder]), which writes the
 /// `*.spring.dart` files; `build.yaml` names it in `builder_factories`.
@@ -168,6 +169,25 @@ Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();
 /// ```
 Builder springFlutterWebBuilder(BuilderOptions options) =>
     WebDevConfigBuilder();
+
+/// Creates the builder of the page loader ([WebPageLoaderBuilder]),
+/// registered in `build.yaml` as `spring_flutter_page_loader`.
+///
+/// For an app that depends on `spring_boot_starter_flutter` and has a
+/// `web/index.html` it writes the page loader of the `splash` of the active
+/// theme between `<!-- spring:loader:start -->` and
+/// `<!-- spring:loader:end -->`, so the browser shows the app's look from
+/// the first byte; the Flutter splash takes over without a jump. It takes
+/// no options.
+///
+/// ```yaml
+/// # lib/resources/application.yaml
+/// spring.flutter.theme:
+///   splash: { title: NEON, loader: dots }
+///   loaders: { dots: { kind: dots } }
+/// ```
+Builder springFlutterPageLoaderBuilder(BuilderOptions options) =>
+    WebPageLoaderBuilder();
 
 /// Creates the builder of the typed keys, `lib/spring_gen/theme.spring.dart`
 /// and `lib/spring_gen/messages.spring.dart` ([FlutterKeysBuilder]),

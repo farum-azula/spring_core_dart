@@ -37,6 +37,15 @@ builders:
     build_extensions: {"$package$": []}
     auto_apply: dependents
     build_to: source
+  # Writes the page loader of the active theme's splash into web/index.html,
+  # between <!-- spring:loader:start --> and <!-- spring:loader:end -->. No
+  # declared outputs: web/index.html is the app's own file.
+  spring_flutter_page_loader:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springFlutterPageLoaderBuilder"]
+    build_extensions: {"$package$": []}
+    auto_apply: dependents
+    build_to: source
   # Writes lib/spring_gen/theme.spring.dart (context.theme) and
   # lib/spring_gen/messages.spring.dart
   # (context.messages), the typed keys of spring.flutter.theme.* and

@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import LocalAuthentication
 import Security
 
 /// A failed DPoP key call; the message has the OSStatus or the reason,
@@ -204,7 +205,9 @@ final class DPoPKeyStore {
         query[kSecUseDataProtectionKeychain as String] = true
       } else {
         // Never show the login keychain's prompt.
-        query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
+        let context = LAContext()
+        context.interactionNotAllowed = true
+        query[kSecUseAuthenticationContext as String] = context
       }
     #endif
     return query

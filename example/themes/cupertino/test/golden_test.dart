@@ -76,7 +76,7 @@ void main() {
   });
 
   goldenTest('the themes page in sunset', (tester) async {
-    await startApp(tester, theme: AppThemes.sunset, page: 8);
+    await startApp(tester, theme: AppThemes.sunset, page: 9);
     await loadImages(tester);
     await matchesScreen(tester, 'themes_sunset');
   });

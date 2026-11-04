@@ -133,6 +133,9 @@ motion:
   curves: { out: ease-out }
 animations:
   border-spin: { duration: 4s, curve: linear, repeat: loop }
+  gate-enter: { duration: 2s, curve: linear, repeat: none }
+  gate-exit: { duration: 1400ms, curve: linear, repeat: none }
+  gate-flicker: { duration: 2400ms, curve: linear, repeat: loop }
   background-drift: { duration: 40s, curve: ease-in-out, repeat: reverse }''',
           ),
         ),

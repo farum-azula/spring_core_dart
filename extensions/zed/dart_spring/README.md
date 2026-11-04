@@ -144,9 +144,17 @@ From it, in `application*.yml`, `.properties` and YAML under
   browsers refuse), the theme (`spring.flutter.theme.*`: unknown keys,
   colors, the color object `color` / `alpha` / `mix: { with, amount }`, the
   one-line forms that are gone) and a broken `$` reference;
+- **loaders and the splash** (`loaders.<name>`, `splash`): the `kind` values
+  (the built-in ones and the `@ThemeLoaderKind` classes of the workspace,
+  from `loaderKinds` of the metadata), the keys each kind takes (a typo is
+  an error with "did you mean"), `splash.loader` and `splash.animation`
+  checked and completed from the declared names, and the `web:` file of a
+  loader checked for existence and completed from the `.html` files;
 - **go to definition** of a `$` reference to where it is declared, also in a
-  dependency's theme (`$neon.cyan` in `neon_ui`'s `themes/neon.yml`), and of
-  a `${key}` to every profile file that sets it;
+  dependency's theme (`$neon.cyan` in `neon_ui`'s `themes/neon.yml`), of
+  `splash.loader: name` to `loaders.<name>` (and `splash.animation` to
+  `animations.<name>`), of `web:` to the file, and of a `${key}` to every
+  profile file that sets it;
 - **SpEL** `#{@bean.member}` in config values and in Dart strings:
   completion of beans after `@` and of members after a `.`, hovers with
   the type, go to a bean, and an error for an unknown bean or member (with
@@ -201,6 +209,7 @@ Flutter (`spring_boot_starter_flutter`):
 | `spasset` | a `@Value('asset:...')` parameter |
 | `splifecycle` | an `@EventListener` for `AppLifecycleStateEvent` |
 | `spwidgettest` | a widget test with `springBootTest` and `SpringScope` |
+| `sploaderpainter` | a `@ThemeLoaderKind` painter (`ThemeLoaderPainter<P>`) |
 
 Themes and the app widget, in `application.yml` and in `.properties` files
 (the same prefixes in both):
@@ -215,6 +224,8 @@ Themes and the app widget, in `application.yml` and in `.properties` files
 | `spcolorobject` | a color with `alpha` and/or `mix: { with, amount }`, the object form |
 | `spcomponents`, `sptokens` | Material components from the tokens, the app's own tokens |
 | `spfonts` | `spring.flutter.fonts`: auto-load, exclude |
+| `sploader`, `sploaderkind` | a built-in loader (`loaders.<name>`), a loader of a `@ThemeLoaderKind` class with phases and `web:` |
+| `spsplash` | `splash`: background, logo, title, loader, minimum time, exit |
 
 ## New project
 

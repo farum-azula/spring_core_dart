@@ -215,7 +215,9 @@ Map<String, String> _literalKeys(Directory package) {
     final lines = file.readAsLinesSync();
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
-      if (line.trimLeft().startsWith('//')) {
+      // A `'name'.toJS` is the name of a JavaScript property (`window`
+      // reads in the web hand-off), not a configuration property.
+      if (line.trimLeft().startsWith('//') || line.contains('.toJS')) {
         continue;
       }
       void add(String key) {

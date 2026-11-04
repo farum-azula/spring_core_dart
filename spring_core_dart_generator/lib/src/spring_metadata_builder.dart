@@ -10,7 +10,11 @@ import 'package:spring_core_dart_generator/src/metadata_beans.dart';
 import 'package:spring_core_dart_generator/src/metadata_properties.dart';
 import 'package:spring_core_dart_generator/src/metadata_read_keys.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
+import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/spring_metadata.dart';
+import 'package:spring_core_dart_generator/src/theme_references.dart';
+import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 
 /// Writes `lib/spring_gen/spring_metadata.json`, what editors and tools
 /// need to know about the Spring side of a package: its configuration
@@ -50,6 +54,7 @@ final class SpringMetadataBuilder implements Builder {
     '@Service',
     '@Configuration',
     '@Bean',
+    '@ThemeLoaderKind',
   ];
 
   @override
@@ -117,6 +122,7 @@ final class SpringMetadataBuilder implements Builder {
     final readKeys = ReadKeyScanner();
     final profiles = <String>{};
     final defined = <Map<String, Object?>>[];
+    final loaderKinds = <Map<String, Object?>>[];
     for (final asset in assets) {
       if (!await resolver.isLibrary(asset)) {
         continue;
@@ -129,7 +135,16 @@ final class SpringMetadataBuilder implements Builder {
       scanner.scanLibrary(library);
       await properties.scanLibrary(library);
       readKeys.scanLibrary(library);
-      if ((await buildStep.readAsString(asset)).contains('BeanDefinition<')) {
+      final text = await buildStep.readAsString(asset);
+      for (final kind in SpringKeyFiles.scanLoaderKinds(text)) {
+        loaderKinds.add({
+          'name': kind.name,
+          'class': kind.className,
+          'source': 'package:$package/${asset.path.substring('lib/'.length)}',
+          'line': kind.line,
+        });
+      }
+      if (text.contains('BeanDefinition<')) {
         final unit = await resolver.astNodeFor(
           library.firstFragment,
           resolve: true,
@@ -159,11 +174,62 @@ final class SpringMetadataBuilder implements Builder {
         profiles: profiles,
         entities: scanner.entityMetadata(),
         repositories: scanner.repositoryMetadata(),
+        loaderKinds: await _loaderKinds(buildStep, loaderKinds),
         theme: package == 'spring_boot_starter_flutter'
             ? await _theme(buildStep)
             : null,
       ),
     );
+  }
+
+  // The keys each kind takes, as far as the package's own themes show them:
+  // the top-level keys of its loaders, except `kind`, `phases` and `web`.
+  Future<List<Map<String, Object?>>> _loaderKinds(
+    BuildStep buildStep,
+    List<Map<String, Object?>> kinds,
+  ) async {
+    if (kinds.isEmpty) {
+      return kinds;
+    }
+    final resources = await SpringBuilder.resources(buildStep, warn: false);
+    final diagnostics = KeysDiagnostics();
+    final set = ThemeSet.read(
+      SpringKeyFiles.readProperties({
+        for (final MapEntry(:key, value: (:text, base64: _))
+            in resources.entries)
+          key: ?text,
+      }, diagnostics),
+      diagnostics,
+    );
+    final keys = <String, Set<String>>{};
+    if (set != null) {
+      for (final name in set.names) {
+        final loaders = set.scope(name).node(const ['loaders']);
+        for (final loader in loaders?.children.values ?? const <ThemeNode>[]) {
+          final kind = loader.children['kind']?.entry?.value.trim();
+          if (kind == null) {
+            continue;
+          }
+          keys.putIfAbsent(canonicalName(kind), () => {}).addAll([
+            for (final MapEntry(:key, :value) in loader.children.entries)
+              if (!const {'kind', 'phases', 'web'}.contains(key))
+                value.spelling,
+          ]);
+        }
+      }
+    }
+    return [
+      for (final kind in kinds)
+        {
+          ...kind,
+          if (keys['${kind['name']}'.toLowerCase().replaceAll(
+                RegExp('[-_]'),
+                '',
+              )]
+              case final found?)
+            'props': found.toList()..sort(),
+        },
+    ];
   }
 
   // `application-dev.yml` names the profile `dev`.

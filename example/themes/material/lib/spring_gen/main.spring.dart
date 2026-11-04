@@ -145,10 +145,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
       '# The network profile: NOT active by default (the app never goes online on\n# its own). Start it with\n#\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=network\n#\n# It points the neon background and the badge token at https images. Each\n# is downloaded once, cached in the app\'s files (IndexedDB on the web) and\n# shown at once on the next start; until then, and offline, the asset named\n# by `fallback` is shown. Replace the hosts with your own.\n# (On the web the server must allow this origin with CORS headers.)\nspring:\n  flutter:\n    theme:\n      themes:\n        neon:\n          background:\n            image:\n              source: https://cdn.example.com/theme-showcase-material/neon-grid.png\n              fallback: assets/images/neon-grid.png\n              refresh: 1d\n              timeout: 10s\n              # source-sha256: <64 hexadecimal digits>   pins the content\n              # headers: { Authorization: \'Bearer \${cdn.token}\' }\n      tokens:\n        brand:\n          badge:\n            source: https://cdn.example.com/theme-showcase-material/badge.png\n            fallback: assets/images/badge.png\n            refresh: 1d\n\n      # A whole theme from a URL works the same way: it is downloaded,\n      # cached, and replaced in the background every `refresh`. The file is\n      # written like a theme of themes/*.yml. Uncomment, and add the name\n      # to the lists of the Themes page if you want a button for it.\n      #\n      # themes:\n      #   brand:\n      #     source: https://themes.example.com/theme-showcase-material/brand.yml\n      #     source-sha256: 3f9a1c5e7b2d4a6f8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d1f3a\n      #     refresh: 1h\n      #   brand-dark:\n      #     extends: brand\n      #     brightness: dark\n',
     ),
     r'application.yml': _i2.EmbeddedResource.text(
-      '# THEME SHOWCASE MATERIAL: the whole look of this app is in this file and in\n# themes/*.yml. There is no ThemeData in the Dart code. The pages show each\n# part of the theme next to the YAML line that makes it (their little grey\n# code boxes quote this file; a test checks they do).\n#\n# Read it top to bottom:\n#   1. the app and the theme list                (this block)\n#   2. colors, references and color objects      (colors, tokens.palette)\n#   3. typography, spacing, shapes               (typography, spacing, shape)\n#   4. tokens: groups, lists, durations, an image (tokens)\n#   5. components: Flutter\'s widgets, per state  (components)\n#   6. styles for our own widgets                (styles)\n#   7. motion, animations                        (motion, animations)\n#   8. themes: light, dark, ocean, ocean-night, neon, high-contrast\nspring:\n  config:\n    import: >-\n      resources:themes/ocean.yml, resources:themes/neon.yml,\n      resources:themes/high-contrast.yml\n\n  flutter:\n    web:\n      # `flutter run -d chrome` serves the app on http://localhost:5070/.\n      port: 5070\n    app:\n      # A MaterialApp: Scaffold, AppBar and the other Material widgets.\n      type: material\n      title: Theme Showcase Material\n      debug-banner: false\n\n    theme:\n      # The theme shown at the start. `system` follows the device and picks\n      # system-light or system-dark.\n      # Names: light | dark | ocean | ocean-night | neon | high-contrast\n      active: light\n      system-light: light\n      system-dark: dark\n\n      # ---------------------------------------------------------------- 2\n      # Everything below is the "root": shared by every theme. A theme under\n      # `themes:` (or in themes/*.yml) holds only what it changes.\n\n      # One color makes the whole Material 3 palette (primary, surfaces...).\n      seed-color: \'#3F51B5\'\n      scheme-variant: tonalSpot\n      colors:\n        # Declared colors win over the palette made from the seed.\n        secondary: \'#00897B\'\n        error: \'#B3261E\'\n        surface-container-low: grey.shade100\n        # A reference to a color the palette makes and we never wrote down.\n        outline-variant: { color: \$colors.outline, alpha: 50% }\n        # A reference to a declared color, mixed with white.\n        tertiary: { color: \$colors.secondary, mix: { with: white, amount: 35% } }\n\n      # ---------------------------------------------------------------- 3\n      typography:\n        defaults: { letter-spacing: 0.1 }\n        display: { weight: bold }\n        headline: { weight: semibold }\n        title-large: { size: 24, weight: semibold }\n        body-medium: { height: 1.5 }\n        code: { font-family: monospace, size: 13 }\n      spacing:\n        xs: 4\n        s: 8\n        m: 16\n        l: 24\n        xl: 32\n        gutter: 20\n      shape:\n        medium: 16\n        large: 24\n      splash: ripple\n\n      # ---------------------------------------------------------------- 4\n      # Tokens: values of our own. Groups nest, lists and durations work.\n      tokens:\n        brand:\n          name: Theme Showcase\n          tagline: Every look in this app is a line of YAML\n          accent: \$colors.primary\n          # A token with a `source` is an image (see the Images page).\n          badge: { source: assets/images/badge.png }\n        palette:\n          # Color objects: alpha, mix, and a reference to a reference.\n          soft: { color: \$colors.primary, alpha: 12% }\n          hover: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n          deep: { color: \$palette.hover, mix: { with: black, amount: 30% } }\n          # Roles we never declared, by reference.\n          edge: \$colors.outline\n          lowest: \$colors.surface-container-lowest\n        corner:\n          # The Material shape scale by reference.\n          tiny: \$shape.extra-small\n          roomy: \$shape.extra-large\n        chart:\n          # A list of colors (List<Color>), of numbers and of texts.\n          colors: [\$colors.primary, \$colors.secondary, \$colors.tertiary, \$palette.deep]\n          bars: [4, 9, 6, 11, 7]\n          days: [Mon, Tue, Wed, Thu, Fri]\n        timing:\n          # Durations, and a reference to a motion duration.\n          intro: 600ms\n          stagger: \$motion.durations.fast\n        layout:\n          content-width: 980\n          card:\n            padding: 20\n            radius: \$shape.large\n\n      # ---------------------------------------------------------------- 5\n      # Flutter\'s own components, adjusted from here. A property that takes\n      # a state takes a map: default, hovered, focused, pressed, disabled,\n      # selected, error...\n      components:\n        app-bar: { center-title: false, scrolled-under-elevation: level2, title-text-style: title-large }\n        # `button` holds what the four buttons share.\n        button: { shape: full, min-height: 44 }\n        filled-button:\n          background-color:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, alpha: 85% }\n            pressed: \$colors.tertiary\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          side:\n            default: none\n            focused: { color: \$colors.secondary, width: 2 }\n          text-style: { style: label-large, weight: bold }\n        elevated-button:\n          elevation: { default: level1, hovered: level3, pressed: level0 }\n        outlined-button:\n          side:\n            default: { color: \$colors.outline, width: 1 }\n            hovered: { color: \$colors.primary, width: 2 }\n            disabled: { color: { color: \$colors.on-surface, alpha: 12% }, width: 1 }\n        text-button:\n          foreground-color: { default: \$colors.primary, hovered: \$colors.tertiary, disabled: { color: \$colors.on-surface, alpha: 38% } }\n          overlay-color: { hovered: { color: \$colors.primary, alpha: 8% }, pressed: { color: \$colors.primary, alpha: 16% } }\n        icon-button:\n          foreground-color: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary }\n        segmented-button:\n          background-color: { selected: \$colors.secondary-container }\n          foreground-color: { selected: \$colors.on-secondary-container }\n        floating-action-button: { shape: large, elevation: level2 }\n        checkbox:\n          fill-color: { default: \$colors.outline, selected: \$colors.primary, error: \$colors.error, disabled: { color: \$colors.on-surface, alpha: 12% } }\n          shape: { type: rounded, radius: extra-small }\n        radio:\n          fill-color: { default: \$colors.outline, selected: \$colors.primary, disabled: { color: \$colors.on-surface, alpha: 38% } }\n        switch:\n          thumb-color: { default: \$colors.outline, selected: \$colors.on-primary }\n          track-color: { default: \$colors.surface-container-highest, selected: \$colors.primary }\n        slider:\n          track-height: 6\n          active-track-color: \$colors.primary\n          inactive-track-color: { color: \$colors.primary, alpha: 24% }\n          thumb-color: \$colors.tertiary\n          value-indicator-color: \$colors.tertiary\n          show-value-indicator: on-drag\n        chip:\n          shape: stadium\n          side: \$colors.outline-variant\n          selected-color: \$colors.secondary-container\n          label-style: label-large\n        input:\n          style: outline\n          shape: small\n          filled: true\n          fill-color: \$colors.surface-container-low\n          focused-border: { type: outline, radius: small, side: { color: \$colors.primary, width: 2 } }\n          error-border: { type: outline, radius: small, side: { color: \$colors.error, width: 2 } }\n        card: { shape: large, color: \$colors.surface-container-low, elevation: level0 }\n        list-tile: { shape: medium, selected-tile-color: { color: \$colors.primary, alpha: 12% }, selected-color: \$colors.primary }\n        divider: { color: \$colors.outline-variant, thickness: 1 }\n        expansion-tile: { shape: medium, collapsed-shape: medium }\n        progress-indicator: { color: \$colors.primary, linear-track-color: { color: \$colors.primary, alpha: 16% }, stroke-cap: round, linear-min-height: 6 }\n        badge: { background-color: \$colors.tertiary, text-color: \$colors.on-tertiary }\n        navigation-bar: { height: 72, label-behavior: only-show-selected, indicator-color: \$colors.secondary-container }\n        navigation-rail: { label-type: all, use-indicator: true, indicator-color: \$colors.secondary-container }\n        tab-bar:\n          indicator-size: tab\n          indicator-color: \$colors.tertiary\n          label-color: \$colors.primary\n          unselected-label-color: \$colors.on-surface-variant\n          divider-height: 0\n        dialog: { shape: extra-large, elevation: level3, title-text-style: headline-small }\n        snack-bar:\n          behavior: floating\n          shape: medium\n          show-close-icon: true\n          background-color: \$colors.inverse-surface\n          content-text-style: { style: body-medium, color: \$colors.on-inverse-surface }\n        banner: { background-color: \$colors.secondary-container, content-text-style: { style: body-medium, color: \$colors.on-secondary-container } }\n        tooltip:\n          decoration: { color: \$colors.inverse-surface, radius: small }\n          text-style: { style: label-medium, color: \$colors.on-inverse-surface }\n          padding: 12, 8\n          wait-duration: 300ms\n        popup-menu: { shape: medium, elevation: level3 }\n        bottom-sheet: { shape: extra-large, constraints: { max-width: 640 } }\n        scrollbar: { thumb-color: { default: \$colors.outline, hovered: \$colors.primary }, thickness: { default: 6, hovered: 10 } }\n      # CupertinoThemeData (the iOS look) has a root of its own; the Components\n      # page shows it.\n      cupertino:\n        primary-color: \$colors.primary\n        scaffold-background-color: \$colors.surface\n        bar-background-color: \$colors.surface-container\n        text-theme:\n          primary-color: \$colors.primary\n          nav-title-text-style: { style: title-large, weight: 600 }\n\n      # ---------------------------------------------------------------- 6\n      # Looks for our own widgets (ThemeStates): one value, or a value per\n      # state; `transition` animates between them.\n      styles:\n        pill:\n          padding: [12, 6]\n          radius: 999\n          border: { default: \$colors.outline, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline-variant, error: \$colors.error }\n          fill: { default: transparent, hovered: { color: \$colors.primary, alpha: 8% }, selected: { color: \$colors.primary, alpha: 18% }, disabled: transparent }\n          text: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline, error: \$colors.error }\n          transition: 120ms ease-out\n        action:\n          padding: [24, 14]\n          radius: 12\n          fill:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            focused: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            pressed: \$colors.tertiary\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          text: { default: \$colors.on-primary, disabled: \$colors.outline }\n          border: { default: transparent, focused: \$colors.secondary }\n          # The glow (a blur radius) grows on hover and shrinks when pressed.\n          glow: { default: 0, hovered: 14, pressed: 4, disabled: 0 }\n          transition: 160ms ease-out\n        field:\n          padding: [16, 12]\n          radius: 12\n          border: { default: \$colors.outline, hovered: \$colors.on-surface-variant, focused: \$colors.primary, error: \$colors.error, disabled: \$colors.outline-variant }\n          fill: { default: \$colors.surface-container-low, focused: \$colors.surface-container, disabled: transparent }\n          glow: { default: 0, focused: 10, error: 10 }\n          transition: 140ms ease-out\n        tile:\n          padding: [20]\n          radius: 20\n          border: { default: \$colors.outline-variant, hovered: \$colors.secondary, selected: \$colors.primary }\n          fill: { default: \$colors.surface-container-low, hovered: \$colors.surface-container, selected: { color: \$colors.primary, alpha: 10% } }\n          glow: { default: 0, hovered: 12, selected: 18 }\n          transition: 200ms ease-out\n\n      # ---------------------------------------------------------------- 7\n      motion:\n        # What a new page does: platform | fade-upwards | zoom | cupertino | none\n        page-transition: fade-upwards\n        durations:\n          fast: 120ms\n          medium: 250ms\n          slow: 600ms\n        curves:\n          emphasized: [0.2, 0, 0, 1]\n          out: ease-out\n          standard: ease-in-out\n      animations:\n        # repeat: none (once) | loop (again and again) | reverse (back and forth)\n        border-spin: { duration: 4s, curve: linear, repeat: loop }\n        glow-pulse: { duration: 1.6s, curve: ease-in-out, repeat: reverse }\n        enter: { duration: \$motion.durations.slow, curve: ease-out, repeat: none }\n        background-drift: { duration: 24s, curve: ease-in-out, repeat: reverse }\n\n      # ---------------------------------------------------------------- 8\n      themes:\n        # `light` is the root above; `dark` is the root with these changes.\n        dark:\n          seed-color: \'#7986CB\'\n          colors:\n            surface-container-low: grey.shade900\n',
+      '# THEME SHOWCASE MATERIAL: the whole look of this app is in this file and in\n# themes/*.yml. There is no ThemeData in the Dart code. The pages show each\n# part of the theme next to the YAML line that makes it (their little grey\n# code boxes quote this file; a test checks they do).\n#\n# Read it top to bottom:\n#   1. the app and the theme list                (this block)\n#   2. colors, references and color objects      (colors, tokens.palette)\n#   3. typography, spacing, shapes               (typography, spacing, shape)\n#   4. tokens: groups, lists, durations, an image (tokens)\n#   5. components: Flutter\'s widgets, per state  (components)\n#   6. styles for our own widgets                (styles)\n#   7. motion, animations, loaders, the splash   (motion, animations, loaders, splash)\n#   8. themes: light, dark, ocean, ocean-night, neon, high-contrast\nspring:\n  config:\n    import: >-\n      resources:themes/ocean.yml, resources:themes/neon.yml,\n      resources:themes/high-contrast.yml\n\n  flutter:\n    web:\n      # `flutter run -d chrome` serves the app on http://localhost:5070/.\n      port: 5070\n    app:\n      # A MaterialApp: Scaffold, AppBar and the other Material widgets.\n      type: material\n      title: Theme Showcase Material\n      debug-banner: false\n\n    theme:\n      # The theme shown at the start. `system` follows the device and picks\n      # system-light or system-dark.\n      # Names: light | dark | ocean | ocean-night | neon | high-contrast\n      active: light\n      system-light: light\n      system-dark: dark\n\n      # ---------------------------------------------------------------- 2\n      # Everything below is the "root": shared by every theme. A theme under\n      # `themes:` (or in themes/*.yml) holds only what it changes.\n\n      # One color makes the whole Material 3 palette (primary, surfaces...).\n      seed-color: \'#3F51B5\'\n      scheme-variant: tonalSpot\n      colors:\n        # Declared colors win over the palette made from the seed.\n        secondary: \'#00897B\'\n        error: \'#B3261E\'\n        surface-container-low: grey.shade100\n        # A reference to a color the palette makes and we never wrote down.\n        outline-variant: { color: \$colors.outline, alpha: 50% }\n        # A reference to a declared color, mixed with white.\n        tertiary: { color: \$colors.secondary, mix: { with: white, amount: 35% } }\n\n      # ---------------------------------------------------------------- 3\n      typography:\n        defaults: { letter-spacing: 0.1 }\n        display: { weight: bold }\n        headline: { weight: semibold }\n        title-large: { size: 24, weight: semibold }\n        body-medium: { height: 1.5 }\n        code: { font-family: monospace, size: 13 }\n      spacing:\n        xs: 4\n        s: 8\n        m: 16\n        l: 24\n        xl: 32\n        gutter: 20\n      shape:\n        medium: 16\n        large: 24\n\n      # ---------------------------------------------------------------- 4\n      # Tokens: values of our own. Groups nest, lists and durations work.\n      tokens:\n        brand:\n          name: Theme Showcase\n          tagline: Every look in this app is a line of YAML\n          accent: \$colors.primary\n          # A token with a `source` is an image (see the Images page).\n          badge: { source: assets/images/badge.png }\n        palette:\n          # Color objects: alpha, mix, and a reference to a reference.\n          soft: { color: \$colors.primary, alpha: 12% }\n          hover: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n          deep: { color: \$palette.hover, mix: { with: black, amount: 30% } }\n          # Roles we never declared, by reference.\n          edge: \$colors.outline\n          lowest: \$colors.surface-container-lowest\n        corner:\n          # The Material shape scale by reference.\n          tiny: \$shape.extra-small\n          roomy: \$shape.extra-large\n        chart:\n          # A list of colors (List<Color>), of numbers and of texts.\n          colors: [\$colors.primary, \$colors.secondary, \$colors.tertiary, \$palette.deep]\n          bars: [4, 9, 6, 11, 7]\n          days: [Mon, Tue, Wed, Thu, Fri]\n        timing:\n          # Durations, and a reference to a motion duration.\n          intro: 600ms\n          stagger: \$motion.durations.fast\n        layout:\n          content-width: 980\n          card:\n            padding: 20\n            radius: \$shape.large\n\n      # ---------------------------------------------------------------- 5\n      # Flutter\'s own components, adjusted from here. A property that takes\n      # a state takes a map: default, hovered, focused, pressed, disabled,\n      # selected, error...\n      components:\n        app-bar: { center-title: false, scrolled-under-elevation: level2, title-text-style: title-large }\n        # `button` holds what the four buttons share.\n        button: { shape: full, min-height: 44 }\n        filled-button:\n          background-color:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, alpha: 85% }\n            pressed: \$colors.tertiary\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          side:\n            default: none\n            focused: { color: \$colors.secondary, width: 2 }\n          text-style: { style: label-large, weight: bold }\n        elevated-button:\n          elevation: { default: level1, hovered: level3, pressed: level0 }\n        outlined-button:\n          side:\n            default: { color: \$colors.outline, width: 1 }\n            hovered: { color: \$colors.primary, width: 2 }\n            disabled: { color: { color: \$colors.on-surface, alpha: 12% }, width: 1 }\n        text-button:\n          foreground-color: { default: \$colors.primary, hovered: \$colors.tertiary, disabled: { color: \$colors.on-surface, alpha: 38% } }\n          overlay-color: { hovered: { color: \$colors.primary, alpha: 8% }, pressed: { color: \$colors.primary, alpha: 16% } }\n        icon-button:\n          foreground-color: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary }\n        segmented-button:\n          background-color: { selected: \$colors.secondary-container }\n          foreground-color: { selected: \$colors.on-secondary-container }\n        floating-action-button: { shape: large, elevation: level2 }\n        checkbox:\n          fill-color: { default: \$colors.outline, selected: \$colors.primary, error: \$colors.error, disabled: { color: \$colors.on-surface, alpha: 12% } }\n          shape: { type: rounded, radius: extra-small }\n        radio:\n          fill-color: { default: \$colors.outline, selected: \$colors.primary, disabled: { color: \$colors.on-surface, alpha: 38% } }\n        switch:\n          thumb-color: { default: \$colors.outline, selected: \$colors.on-primary }\n          track-color: { default: \$colors.surface-container-highest, selected: \$colors.primary }\n        slider:\n          track-height: 6\n          active-track-color: \$colors.primary\n          inactive-track-color: { color: \$colors.primary, alpha: 24% }\n          thumb-color: \$colors.tertiary\n          value-indicator-color: \$colors.tertiary\n          show-value-indicator: on-drag\n        chip:\n          shape: stadium\n          side: \$colors.outline-variant\n          selected-color: \$colors.secondary-container\n          label-style: label-large\n        input:\n          style: outline\n          shape: small\n          filled: true\n          fill-color: \$colors.surface-container-low\n          focused-border: { type: outline, radius: small, side: { color: \$colors.primary, width: 2 } }\n          error-border: { type: outline, radius: small, side: { color: \$colors.error, width: 2 } }\n        card: { shape: large, color: \$colors.surface-container-low, elevation: level0 }\n        list-tile: { shape: medium, selected-tile-color: { color: \$colors.primary, alpha: 12% }, selected-color: \$colors.primary }\n        divider: { color: \$colors.outline-variant, thickness: 1 }\n        expansion-tile: { shape: medium, collapsed-shape: medium }\n        progress-indicator: { color: \$colors.primary, linear-track-color: { color: \$colors.primary, alpha: 16% }, stroke-cap: round, linear-min-height: 6 }\n        badge: { background-color: \$colors.tertiary, text-color: \$colors.on-tertiary }\n        navigation-bar: { height: 72, label-behavior: only-show-selected, indicator-color: \$colors.secondary-container }\n        navigation-rail: { label-type: all, use-indicator: true, indicator-color: \$colors.secondary-container }\n        tab-bar:\n          indicator-size: tab\n          indicator-color: \$colors.tertiary\n          label-color: \$colors.primary\n          unselected-label-color: \$colors.on-surface-variant\n          divider-height: 0\n        dialog: { shape: extra-large, elevation: level3, title-text-style: headline-small }\n        snack-bar:\n          behavior: floating\n          shape: medium\n          show-close-icon: true\n          background-color: \$colors.inverse-surface\n          content-text-style: { style: body-medium, color: \$colors.on-inverse-surface }\n        banner: { background-color: \$colors.secondary-container, content-text-style: { style: body-medium, color: \$colors.on-secondary-container } }\n        tooltip:\n          decoration: { color: \$colors.inverse-surface, radius: small }\n          text-style: { style: label-medium, color: \$colors.on-inverse-surface }\n          padding: 12, 8\n          wait-duration: 300ms\n        popup-menu: { shape: medium, elevation: level3 }\n        bottom-sheet: { shape: extra-large, constraints: { max-width: 640 } }\n        scrollbar: { thumb-color: { default: \$colors.outline, hovered: \$colors.primary }, thickness: { default: 6, hovered: 10 } }\n      # CupertinoThemeData (the iOS look) has a root of its own; the Components\n      # page shows it.\n      cupertino:\n        primary-color: \$colors.primary\n        scaffold-background-color: \$colors.surface\n        bar-background-color: \$colors.surface-container\n        text-theme:\n          primary-color: \$colors.primary\n          nav-title-text-style: { style: title-large, weight: 600 }\n\n      # ---------------------------------------------------------------- 6\n      # Looks for our own widgets (ThemeStates): one value, or a value per\n      # state; `transition` animates between them.\n      styles:\n        pill:\n          padding: [12, 6]\n          radius: 999\n          border: { default: \$colors.outline, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline-variant, error: \$colors.error }\n          fill: { default: transparent, hovered: { color: \$colors.primary, alpha: 8% }, selected: { color: \$colors.primary, alpha: 18% }, disabled: transparent }\n          text: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline, error: \$colors.error }\n          transition: 120ms ease-out\n        action:\n          padding: [24, 14]\n          radius: 12\n          fill:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            focused: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            pressed: \$colors.tertiary\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          text: { default: \$colors.on-primary, disabled: \$colors.outline }\n          border: { default: transparent, focused: \$colors.secondary }\n          # The glow (a blur radius) grows on hover and shrinks when pressed.\n          glow: { default: 0, hovered: 14, pressed: 4, disabled: 0 }\n          transition: 160ms ease-out\n        field:\n          padding: [16, 12]\n          radius: 12\n          border: { default: \$colors.outline, hovered: \$colors.on-surface-variant, focused: \$colors.primary, error: \$colors.error, disabled: \$colors.outline-variant }\n          fill: { default: \$colors.surface-container-low, focused: \$colors.surface-container, disabled: transparent }\n          glow: { default: 0, focused: 10, error: 10 }\n          transition: 140ms ease-out\n        tile:\n          padding: [20]\n          radius: 20\n          border: { default: \$colors.outline-variant, hovered: \$colors.secondary, selected: \$colors.primary }\n          fill: { default: \$colors.surface-container-low, hovered: \$colors.surface-container, selected: { color: \$colors.primary, alpha: 10% } }\n          glow: { default: 0, hovered: 12, selected: 18 }\n          transition: 200ms ease-out\n\n      # ---------------------------------------------------------------- 7\n      motion:\n        # What a new page does: platform | fade-upwards | zoom | cupertino | none\n        page-transition: fade-upwards\n        durations:\n          fast: 120ms\n          medium: 250ms\n          slow: 600ms\n        curves:\n          emphasized: [0.2, 0, 0, 1]\n          out: ease-out\n          standard: ease-in-out\n      animations:\n        # repeat: none (once) | loop (again and again) | reverse (back and forth)\n        border-spin: { duration: 4s, curve: linear, repeat: loop }\n        glow-pulse: { duration: 1.6s, curve: ease-in-out, repeat: reverse }\n        enter: { duration: \$motion.durations.slow, curve: ease-out, repeat: none }\n        background-drift: { duration: 24s, curve: ease-in-out, repeat: reverse }\n\n      # Loaders: ThemeLoader and ThemeSkeleton show them, by name. A built-in\n      # kind is spinner, dots, pulse, bar or skeleton.\n      loaders:\n        spinner: { kind: spinner, size: 32, stroke: 3, track: { color: \$colors.primary, alpha: 20% } }\n        bar: { kind: bar, color: \$colors.primary, track: { color: \$colors.primary, alpha: 20% }, height: 4, width: 240 }\n        card:\n          kind: skeleton\n          base: \$colors.surface-container-high\n          highlight: \$colors.surface-container-highest\n          radius: \$shape.medium\n          shimmer: { duration: 1.2s, angle: 20 }\n\n      # The splash: what shows while the app starts (and, on the web, before\n      # Flutter runs: the generator writes it into web/index.html). The bar\n      # follows the start\'s progress. A plain `splash: ripple` would be the\n      # ink of taps instead; this map is the start screen.\n      splash:\n        background: { color: \$colors.surface }\n        logo: { source: assets/images/badge.png, size: 96 }\n        title: Theme Showcase\n        loader: bar\n        min-duration: 1.2s\n        exit: { transition: 400ms ease-out }\n\n      # ---------------------------------------------------------------- 8\n      themes:\n        # `light` is the root above; `dark` is the root with these changes.\n        dark:\n          seed-color: \'#7986CB\'\n          colors:\n            surface-container-low: grey.shade900\n',
     ),
     r'messages.properties': _i2.EmbeddedResource.text(
-      '# Typed messages: context.messages.nav.colors, context.messages.themes.active(name).\nnav.colors=Colors\nnav.type=Type and space\nnav.tokens=Tokens\nnav.components=Components\nnav.states=Own widgets\nnav.motion=Motion\nnav.background=Background\nnav.images=Images\nnav.themes=Themes\nthemes.active=Active theme: {0}\nthemes.switch=Switch theme\n',
+      '# Typed messages: context.messages.nav.colors, context.messages.themes.active(name).\nnav.colors=Colors\nnav.type=Type and space\nnav.tokens=Tokens\nnav.components=Components\nnav.states=Own widgets\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.images=Images\nnav.themes=Themes\nthemes.active=Active theme: {0}\nthemes.switch=Switch theme\n',
     ),
     r'themes/high-contrast.yml': _i2.EmbeddedResource.text(
       '# High contrast: black on white, thick borders, no motion between pages.\nspring:\n  flutter:\n    theme:\n      themes:\n        high-contrast:\n          extends: light\n          seed-color: \'#000000\'\n          contrast: 1\n          colors:\n            primary: \'#000000\'\n            on-primary: \'#FFFFFF\'\n            secondary: \'#0000CC\'\n            tertiary: \'#8A0000\'\n            surface: \'#FFFFFF\'\n            on-surface: \'#000000\'\n            surface-container-low: \'#FFFFFF\'\n            outline: \'#000000\'\n          components:\n            outlined-button:\n              side:\n                default: { color: \$colors.outline, width: 3 }\n                hovered: { color: \$colors.secondary, width: 4 }\n                disabled: { color: \$colors.on-surface, width: 2 }\n            input:\n              focused-border: { type: outline, radius: small, side: { color: \$colors.secondary, width: 4 } }\n              enabled-border: { type: outline, radius: small, side: { color: \$colors.outline, width: 2 } }\n            card:\n              color: \$colors.surface\n              shape:\n                type: rounded\n                radius: large\n                side: { color: \$colors.outline, width: 2 }\n          motion:\n            page-transition: none\n          tokens:\n            brand:\n              name: High contrast\n              tagline: Black, white and thick lines\n',
@@ -1315,6 +1315,98 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
           const String.fromEnvironment(
             'SPRING_FLUTTER_THEME_CUPERTINO_TEXTTHEME_PRIMARYCOLOR',
           ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_KIND',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_BASE'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_KIND',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_SPINNER_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_SPINNER_KIND',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_SPINNER_SIZE'))
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_SIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_SPINNER_SIZE',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_STROKE',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_STROKE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_SPINNER_STROKE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_TRACK_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_TRACK_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_SPINNER_TRACK_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_TRACK_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_SPINNER_TRACK_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_SPINNER_TRACK_COLOR',
+          ),
     if (const bool.hasEnvironment(
       'SPRING_FLUTTER_THEME_MOTION_CURVES_EMPHASIZED_0',
     ))
@@ -1416,9 +1508,39 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
       'SPRING_FLUTTER_THEME_SPACING_XS': const String.fromEnvironment(
         'SPRING_FLUTTER_THEME_SPACING_XS',
       ),
-    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH'))
-      'SPRING_FLUTTER_THEME_SPLASH': const String.fromEnvironment(
-        'SPRING_FLUTTER_THEME_SPLASH',
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION',
+    ))
+      'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOADER'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOADER': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOADER',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_MINDURATION'))
+      'SPRING_FLUTTER_THEME_SPLASH_MINDURATION': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_MINDURATION',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_TITLE'))
+      'SPRING_FLUTTER_THEME_SPLASH_TITLE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_TITLE',
       ),
     if (const bool.hasEnvironment(
       'SPRING_FLUTTER_THEME_STYLES_ACTION_BORDER_DEFAULT',
@@ -3351,6 +3473,98 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
           const String.fromEnvironment(
             'spring.flutter.theme.cupertino.text-theme.primary-color',
           ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.color'))
+      'spring.flutter.theme.loaders.bar.color': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.color',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.height'))
+      'spring.flutter.theme.loaders.bar.height': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.height',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.kind'))
+      'spring.flutter.theme.loaders.bar.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.kind',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.bar.track.alpha',
+    ))
+      'spring.flutter.theme.loaders.bar.track.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.bar.track.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.bar.track.color',
+    ))
+      'spring.flutter.theme.loaders.bar.track.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.bar.track.color',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.width'))
+      'spring.flutter.theme.loaders.bar.width': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.width',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.base'))
+      'spring.flutter.theme.loaders.card.base': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.base',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.highlight',
+    ))
+      'spring.flutter.theme.loaders.card.highlight':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.highlight',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.kind'))
+      'spring.flutter.theme.loaders.card.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.kind',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.radius'))
+      'spring.flutter.theme.loaders.card.radius': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.radius',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.shimmer.angle',
+    ))
+      'spring.flutter.theme.loaders.card.shimmer.angle':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.shimmer.angle',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.shimmer.duration',
+    ))
+      'spring.flutter.theme.loaders.card.shimmer.duration':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.shimmer.duration',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.spinner.kind'))
+      'spring.flutter.theme.loaders.spinner.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.spinner.kind',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.spinner.size'))
+      'spring.flutter.theme.loaders.spinner.size': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.spinner.size',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.spinner.stroke',
+    ))
+      'spring.flutter.theme.loaders.spinner.stroke':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.spinner.stroke',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.spinner.track.alpha',
+    ))
+      'spring.flutter.theme.loaders.spinner.track.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.spinner.track.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.spinner.track.color',
+    ))
+      'spring.flutter.theme.loaders.spinner.track.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.spinner.track.color',
+          ),
     if (const bool.hasEnvironment(
       'spring.flutter.theme.motion.curves.emphasized[0]',
     ))
@@ -3454,9 +3668,39 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
       'spring.flutter.theme.spacing.xs': const String.fromEnvironment(
         'spring.flutter.theme.spacing.xs',
       ),
-    if (const bool.hasEnvironment('spring.flutter.theme.splash'))
-      'spring.flutter.theme.splash': const String.fromEnvironment(
-        'spring.flutter.theme.splash',
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.splash.background.color',
+    ))
+      'spring.flutter.theme.splash.background.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.splash.background.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.splash.exit.transition',
+    ))
+      'spring.flutter.theme.splash.exit.transition':
+          const String.fromEnvironment(
+            'spring.flutter.theme.splash.exit.transition',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.loader'))
+      'spring.flutter.theme.splash.loader': const String.fromEnvironment(
+        'spring.flutter.theme.splash.loader',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.logo.size'))
+      'spring.flutter.theme.splash.logo.size': const String.fromEnvironment(
+        'spring.flutter.theme.splash.logo.size',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.logo.source'))
+      'spring.flutter.theme.splash.logo.source': const String.fromEnvironment(
+        'spring.flutter.theme.splash.logo.source',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.min-duration'))
+      'spring.flutter.theme.splash.min-duration': const String.fromEnvironment(
+        'spring.flutter.theme.splash.min-duration',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.title'))
+      'spring.flutter.theme.splash.title': const String.fromEnvironment(
+        'spring.flutter.theme.splash.title',
       ),
     if (const bool.hasEnvironment(
       'spring.flutter.theme.styles.action.border.default',
@@ -4262,7 +4506,7 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '4ff93a9d',
+  fingerprint: '7d53d1e2',
 );
 
 /// Starts the application: config files, environment, context, runners

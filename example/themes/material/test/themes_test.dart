@@ -244,7 +244,7 @@ void main() {
       (AppThemes.oceanNight, false, true),
       (AppThemes.light, false, false),
     ]) {
-      await startApp(tester, theme: theme, page: 6);
+      await startApp(tester, theme: theme, page: 7);
       final background = tester.element(find.byType(Shell)).theme.background;
       expect(background == null, !gradient, reason: theme);
       expect(background?.image != null, image, reason: theme);
@@ -261,7 +261,7 @@ void main() {
   testWidgets('a screen background only where the theme names it', (
     tester,
   ) async {
-    await startApp(tester, theme: AppThemes.neon, page: 6);
+    await startApp(tester, theme: AppThemes.neon, page: 7);
     final background = tester.element(find.byType(Shell)).theme.background!;
     expect(background.screens.keys, ['showcase']);
     expect(background.effect, BackgroundEffect.drift);
@@ -272,7 +272,7 @@ void main() {
   testWidgets('images: assets by default, nothing from the network', (
     tester,
   ) async {
-    await startApp(tester, page: 7);
+    await startApp(tester, page: 8);
     final element = tester.element(find.byType(Shell));
     final background = element.theme.background!.image!.image!;
     expect(background.isNetwork, isFalse);

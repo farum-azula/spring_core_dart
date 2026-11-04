@@ -680,6 +680,7 @@ class BeanScanner {
       // spring_boot_starter_flutter: widgets whose bean records the module
       // fills.
       collectErrors(() => scanSpringWidget(element, module));
+      collectErrors(() => scanThemeLoaderKind(element, module));
       collectErrors(() => checkChangeNotifierComponent(element));
       collectErrors(() => scanLog(element, module));
     }

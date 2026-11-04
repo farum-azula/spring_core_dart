@@ -51,6 +51,7 @@ void main() {
       'Components',
       'Own widgets',
       'Motion',
+      'Loaders',
       'Background',
       'Images',
       'Themes',

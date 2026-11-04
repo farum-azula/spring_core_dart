@@ -86,7 +86,7 @@ void main() {
   });
 
   testWidgets('the Logs page writes a line on request', (tester) async {
-    await startApp(tester, page: 6);
+    await startApp(tester, page: 7);
     await tester.tap(_button('Warning'));
     await settle(tester);
     expect(
@@ -170,7 +170,7 @@ void main() {
   testWidgets('a tile of the app\'s own style is selected by a tap', (
     tester,
   ) async {
-    await startApp(tester, page: 7);
+    await startApp(tester, page: 8);
     final tiles = find.byType(StateTile);
     Color border(int i) =>
         ((tester
@@ -266,7 +266,7 @@ void main() {
   });
 
   testWidgets('Background: the theme\'s, a screen\'s and none', (tester) async {
-    await startApp(tester, page: 4);
+    await startApp(tester, page: 5);
     // The one under the whole app and the three tiles.
     expect(find.byType(ThemeBackground), findsNWidgets(4));
     await stopApp(tester);
@@ -275,7 +275,7 @@ void main() {
   testWidgets('Tokens: the list of colors and the app\'s own token', (
     tester,
   ) async {
-    await startApp(tester, page: 5);
+    await startApp(tester, page: 6);
     expect(find.text('colors[3]'), findsOneWidget);
     expect(find.text('showcase.content-width: 980'), findsOneWidget);
     await stopApp(tester);

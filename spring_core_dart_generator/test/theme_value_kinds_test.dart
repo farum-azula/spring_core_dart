@@ -4,7 +4,7 @@
 // ignore_for_file: lines_longer_than_80_chars
 import 'dart:io';
 
-import 'package:spring_core_dart_generator/src/material_color_names.dart';
+import 'package:spring_core_dart_generator/src/material_color_values.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/theme_value_syntax.dart';
@@ -134,7 +134,7 @@ void main() {
         ).allMatches(source))
           m[1]!,
       };
-      expect(materialColorNames, names);
+      expect(materialColorValues.keys.toSet(), names);
     });
   });
 

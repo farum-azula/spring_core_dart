@@ -41,6 +41,7 @@ void main() {
       'Own widgets',
       'Controls',
       'Motion',
+      'Loaders',
       'Background',
       'Images',
       'Themes',

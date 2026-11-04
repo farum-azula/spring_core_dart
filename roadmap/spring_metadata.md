@@ -149,13 +149,26 @@ compares the class with the reader.
   type and the `methods` the generated class writes (the CRUD methods of the
   starter are not listed): `kind` is `query` (with `query` and `countQuery`
   as written), `derived` or `locked`; `parameters`, `returns` and `line`.
+- `loaderKinds`: only for a package with `@ThemeLoaderKind` classes
+  (`spring_boot_starter_flutter`): `{name, class, source, line, props}`,
+  where `name` is the value of `kind` in a theme, `class` the painter or
+  widget, `source`/`line` where it is, and `props` the top-level keys the
+  package's own themes give the loaders of that kind (besides `kind`,
+  `phases` and `web`), left out when no theme uses it. The language server
+  completes and checks `kind` and the keys of a loader from it, and the keys
+  builder of a package that depends on this one knows the kind exists
+  (`kind: doors` needs no class of its own). The `splash` and `loaders.*`
+  keys of a theme are `theme` properties like the others (`loaders.*.*` is
+  `open`: a kind of the app's own takes keys the metadata cannot list).
 - `theme`: only in `spring_boot_starter_flutter`'s file (from
   `tool/theme_metadata.json`: `types`, the type schema incl. the color
   object, and `properties`). `properties` lists every key below
   `spring.flutter.theme` with names relative to a theme: the root keys
   (`active`, `extends`, `brightness`, `seed-color`, ...), `colors.<role>`,
   `typography.<style>.<key>`, `shape.*`, `spacing.*`, `elevation.*`,
-  `motion.*`, `animations.*.{duration,curve,repeat}`, `background.*` (also
+  `motion.*`, `animations.*.{duration,curve,repeat}`, `loaders.*.*`,
+  `splash.*` (the splash screen; a scalar `splash: ripple` is the tap ink),
+  `background.*` (also
   under `background.screens.*`), `cupertino.*`, `components.<name>.*`, and
   the free maps `styles.*` and `tokens.*` (`open: true`: anything may
   follow). `scope` is `root` (only at the root of the theme) or `theme`

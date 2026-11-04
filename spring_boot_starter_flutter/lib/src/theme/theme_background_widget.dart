@@ -30,7 +30,18 @@ class ThemeBackground extends StatefulWidget {
   /// theme has none (or there is no `SpringTheme` above).
   const ThemeBackground({required this.child, super.key})
     : _screen = null,
-      _none = false;
+      _none = false,
+      _data = null;
+
+  /// Shows [data] (a background that is not the theme's, such as the
+  /// splash's) under [child]. Needs a `SpringTheme` above, for the
+  /// animations and the surface color.
+  const ThemeBackground.data(
+    ThemeBackgroundData this._data, {
+    required this.child,
+    super.key,
+  }) : _screen = null,
+       _none = false;
 
   /// Shows `background.screens.<name>` over the theme's background under
   /// [child]. A name the theme does not have throws a `FlutterError` in
@@ -41,19 +52,22 @@ class ThemeBackground extends StatefulWidget {
     required this.child,
     super.key,
   }) : _screen = name,
-       _none = false;
+       _none = false,
+       _data = null;
 
   /// An opaque surface-colored background under [child], hiding the
   /// theme's background.
   const ThemeBackground.none({required this.child, super.key})
     : _screen = null,
-      _none = true;
+      _none = true,
+      _data = null;
 
   /// What is shown over the background.
   final Widget child;
 
   final String? _screen;
   final bool _none;
+  final ThemeBackgroundData? _data;
 
   @override
   State<ThemeBackground> createState() => _ThemeBackgroundState();
@@ -75,7 +89,7 @@ class _ThemeBackgroundState extends State<ThemeBackground> {
         ),
       );
     }
-    var data = theme?.background;
+    var data = widget._data ?? theme?.background;
     if (data != null && widget._screen != null) {
       final name = ThemeValues.canonical(widget._screen!);
       assert(() {

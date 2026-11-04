@@ -8,6 +8,8 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
+    show LoaderKinds;
 
 /// Recognises `@BuildContextAccess` of `spring_boot_starter_flutter`, which
 /// asks for a `BuildContext` getter for a bean. Matched by URL, so the
@@ -27,6 +29,22 @@ const springWidgetChecker = TypeChecker.fromUrl(
 /// argument (`SpringState<W, R>`).
 const springStateChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/spring_widgets.dart#SpringState',
+);
+
+/// Recognises `@ThemeLoaderKind` of `spring_boot_starter_flutter`, which
+/// names a loader kind of the app's own.
+const themeLoaderKindChecker = TypeChecker.fromUrl(
+  'package:spring_boot_starter_flutter/src/annotations.dart#ThemeLoaderKind',
+);
+
+/// Recognises `ThemeLoaderPainter` of `spring_boot_starter_flutter`.
+const themeLoaderPainterChecker = TypeChecker.fromUrl(
+  'package:spring_boot_starter_flutter/src/theme/theme_loader.dart#ThemeLoaderPainter',
+);
+
+/// Recognises `ThemeLoaderWidget` of `spring_boot_starter_flutter`.
+const themeLoaderWidgetChecker = TypeChecker.fromUrl(
+  'package:spring_boot_starter_flutter/src/theme/theme_loader.dart#ThemeLoaderWidget',
 );
 
 /// A getter to generate in `extension SpringBeans on BuildContext` for a
@@ -469,4 +487,138 @@ void checkChangeNotifierComponent(ClassElement element) {
       }
     }
   }
+}
+
+/// A class marked `@ThemeLoaderKind('doors')`: registered into
+/// `ThemeLoaderKinds` by the module, with the props class the keys builder
+/// writes from the loaders' keys.
+///
+/// ```dart
+/// // Input:
+/// @ThemeLoaderKind('doors')
+/// class DoorsLoader extends ThemeLoaderPainter<DoorsLoaderProps> { ... }
+///
+/// // Output (in the module's getter, before the module is built):
+/// ThemeLoaderKinds.register<DoorsLoaderProps>(
+///   'doors',
+///   painter: DoorsLoader(),
+///   props: DoorsLoaderProps._,
+///   keys: DoorsLoaderProps.keys,
+/// );
+/// ```
+class ThemeLoaderKindModel {
+  /// The kind [name] of [element], a painter when [painter].
+  ThemeLoaderKindModel(
+    this.element,
+    this.name, {
+    required this.painter,
+    required this.typedProps,
+  });
+
+  /// The class.
+  final ClassElement element;
+
+  /// The kind's name in the theme.
+  final String name;
+
+  /// Whether the class paints a canvas (else it builds widgets).
+  final bool painter;
+
+  /// Whether its props are the generated class (else `LoaderValues`).
+  final bool typedProps;
+}
+
+/// Adds a [ThemeLoaderKindModel] for [element] to `module.loaderKinds` when
+/// it is marked `@ThemeLoaderKind`. Throws `InvalidGenerationSource` for a
+/// class that is abstract, extends neither `ThemeLoaderPainter` nor
+/// `ThemeLoaderWidget`, has no constructor without arguments, takes a
+/// props type that is neither the generated class nor `LoaderValues`,
+/// or a kind name used twice.
+void scanThemeLoaderKind(ClassElement element, ModuleModel module) {
+  final annotation = themeLoaderKindChecker.firstAnnotationOf(element);
+  if (annotation == null) {
+    return;
+  }
+  final name = annotation.getField('name')?.toStringValue();
+  final className = element.name ?? '?';
+  if (name == null || name.trim().isEmpty) {
+    throw InvalidGenerationSource(
+      '@ThemeLoaderKind on $className needs the kind name, such as '
+      "@ThemeLoaderKind('doors').",
+      element: element,
+    );
+  }
+  const builtIn = {'spinner', 'dots', 'pulse', 'bar', 'skeleton'};
+  final canonical = name.toLowerCase().replaceAll(RegExp('[-_]'), '');
+  if (builtIn.contains(canonical)) {
+    throw InvalidGenerationSource(
+      '@ThemeLoaderKind(\'$name\') on $className: "$name" is a built-in '
+      'loader kind, choose another name.',
+      element: element,
+    );
+  }
+  if (element.isAbstract) {
+    throw InvalidGenerationSource(
+      '@ThemeLoaderKind on $className: the class is abstract.',
+      element: element,
+    );
+  }
+  final supertype = element.allSupertypes
+      .where(
+        (type) =>
+            themeLoaderPainterChecker.isExactly(type.element) ||
+            themeLoaderWidgetChecker.isExactly(type.element),
+      )
+      .firstOrNull;
+  if (supertype == null) {
+    throw InvalidGenerationSource(
+      '@ThemeLoaderKind on $className: it must extend '
+      'ThemeLoaderPainter<P> or ThemeLoaderWidget<P>.',
+      element: element,
+    );
+  }
+  final constructor = element.constructors
+      .where((c) => (c.name ?? 'new') == 'new')
+      .firstOrNull;
+  if (constructor == null ||
+      constructor.formalParameters.any((p) => p.isRequired)) {
+    throw InvalidGenerationSource(
+      '@ThemeLoaderKind on $className: it needs a constructor without '
+      'required arguments (the registration creates it).',
+      element: element,
+    );
+  }
+  final props = supertype.typeArguments.firstOrNull;
+  final expected = LoaderKinds.propsClass(name);
+  // The props class is written by the keys builder in the same build, so
+  // it may not exist yet: an unresolved type is the generated one.
+  final shown = props?.getDisplayString().replaceAll('?', '') ?? expected;
+  final unresolved =
+      props == null || props is InvalidType || props is DynamicType;
+  if (!unresolved && shown != expected && shown != 'LoaderValues') {
+    throw InvalidGenerationSource(
+      "@ThemeLoaderKind('$name') on $className: its props type is $shown; "
+      'use $expected (written from the keys of the loaders) or '
+      'LoaderValues.',
+      element: element,
+    );
+  }
+  final typed = unresolved || shown == expected;
+  if (module.loaderKinds.any(
+    (k) => k.name.toLowerCase() == name.toLowerCase(),
+  )) {
+    throw InvalidGenerationSource(
+      'The loader kind "$name" is declared twice: rename one '
+      '@ThemeLoaderKind.',
+      element: element,
+    );
+  }
+  module.loaderKinds.add(
+    ThemeLoaderKindModel(
+      element,
+      name,
+      painter: themeLoaderPainterChecker.isExactly(supertype.element),
+      typedProps: typed,
+    ),
+  );
 }

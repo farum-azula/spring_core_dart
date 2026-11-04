@@ -3,6 +3,7 @@
 // widget's settings are read. Keeps the reference in step with the starter.
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
@@ -12,7 +13,25 @@ final _doc = File('docs/configuration.md').existsSync()
     ? 'docs/configuration.md'
     : '../docs/configuration.md';
 
+// The kinds the examples name (`kind: doors`, `kind: neon-gate`): an app of its own has one
+// (@ThemeLoaderKind); the starter alone has none, so the test brings one.
+class _Doors extends ThemeLoaderPainter<Object?> {
+  const _Doors();
+
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<Object?> frame) {}
+}
+
+void registerDoors() {
+  setUpAll(() {
+    ThemeLoaderKinds.register<Object?>('doors', painter: const _Doors());
+    ThemeLoaderKinds.register<Object?>('neon-gate', painter: const _Doors());
+  });
+  tearDownAll(ThemeLoaderKinds.clear);
+}
+
 void main() {
+  registerDoors();
   final available = File(_doc).existsSync();
   final examples = <(String, String, int)>[];
   if (available) {

@@ -32,20 +32,32 @@ that every quoted line is in the resources.
    press; a style of the app's own (`styles.showcase-tile`).
 4. **Motion**: the glow modal whose border turns (`ThemeAnimation`,
    `animations.border-spin`), `motion.*` durations, reduce motion.
-5. **Background**: the theme's `background` (a picture, a veil, a drift),
+5. **Loaders**: the **gate** loader of `neon_ui` (`neon-gate`: dark panels
+   slide in from different sides and close like a gate, their edges glowing
+   in cyan and red with a little flicker; an angled red box in the middle
+   fills by the real progress with its number, in 2.5 s at least; the panels
+   part when it is done) with a progress slider, the built-in kinds in the
+   neon colors (a spinner, dots, a bar with a fake upload), a skeleton, and
+   the `splash` the app starts with, which is the gate alone (no image: the
+   loader draws it all) and parts over the app (`exit.reveal`). On the web
+   the page shows the same picture (CSS and SVG) and percentage before
+   Flutter runs, and the splash goes on from the page's progress and time
+   without a jump (the generator writes it into `web/index.html` from
+   `neon_ui`'s `lib/resources/loaders/neon-gate.html`).
+6. **Background**: the theme's `background` (a picture, a veil, a drift),
    `ThemeBackground.screen('stage')` and `ThemeBackground.none`.
-6. **Tokens**: nested groups, a `List<Color>`, references and color
+7. **Tokens**: nested groups, a `List<Color>`, references and color
    expressions.
-7. **Logs**: `NeonLogsPanel` on the app's `LogBuffer`; the pages and the
+8. **Logs**: `NeonLogsPanel` on the app's `LogBuffer`; the pages and the
    theme switches write there through the Spring logger (never `print`).
-8. **Themes**: `neon` and `neon-ice`, switched with `ThemeSelection` and the
+9. **Themes**: `neon` and `neon-ice`, switched with `ThemeSelection` and the
    generated `AppThemes.*` constants.
 
 ## The code
 
 - `lib/main.dart`: `@SpringBootApplication` and `SpringApplicationWidget`.
 - `lib/src/app/`: the shell, the theme switcher, the logging beans.
-- `lib/src/pages/`: the eight pages; they read `context.theme.*` from the
+- `lib/src/pages/`: the nine pages; they read `context.theme.*` from the
   generated `lib/spring_gen/theme.spring.dart`. The app's keys include the library's
   theme: the generator follows `spring.config.import: resources:...` into
   the packages the app depends on.

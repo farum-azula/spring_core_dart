@@ -14,6 +14,7 @@ const _titles = {
   'components': 'Components',
   'states': 'Own widgets',
   'motion': 'Motion',
+  'loaders': 'Loaders',
   'background': 'Background',
   'images': 'Images',
   'themes': 'Themes',

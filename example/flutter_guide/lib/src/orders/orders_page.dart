@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/account/login_page.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/app/messages.dart';
+import 'package:neon_books_app/src/catalog/book_tile.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
@@ -64,7 +66,10 @@ class _OrdersPageState extends SpringState<OrdersPage, OrdersPageBeans> {
           }
           final orders = snapshot.data;
           if (orders == null) {
-            return const Center(child: CircularProgressIndicator());
+            return ThemeSkeleton(
+              context.theme.loaders.card,
+              placeholder: const BookTilePlaceholder(count: 4),
+            );
           }
           if (orders.isEmpty) {
             return ListView(

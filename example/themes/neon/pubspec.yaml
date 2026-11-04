@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # The icons of the Cupertino widgets (CupertinoIcons); see flutter: below.
+  cupertino_icons: ^1.0.8
   # The design system: widgets, fonts, the background picture and the theme
   # themes/neon.yml, which the app imports.
   neon_ui:
@@ -30,5 +32,7 @@ dev_dependencies:
   spring_core_dart_generator: ^0.6.2
 
 flutter:
-  # No Material widgets: no Material icons font.
-  uses-material-design: false
+  # MaterialApp and CupertinoApp are both in the starter (the theme picks
+  # one at run time), so the build looks for both icon fonts; the unused
+  # glyphs are cut out of a release build.
+  uses-material-design: true

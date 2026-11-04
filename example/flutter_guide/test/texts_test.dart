@@ -36,6 +36,9 @@ void main() {
     await tester.tap(find.text('日本語'));
     await tester.pumpAndSettle();
     expect(find.text('設定'), findsOneWidget); // the app bar of Settings
+    // The list is longer now (the loaders are below): back to the heading.
+    await tester.drag(find.byType(ListView).first, const Offset(0, 300));
+    await tester.pumpAndSettle();
     expect(find.text('言語'), findsOneWidget);
 
     await tester.tap(find.text('端末の設定に合わせる').last);

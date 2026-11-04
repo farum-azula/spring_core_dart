@@ -243,8 +243,13 @@ final class Schema {
       themes.open = true;
       return;
     }
+    final kinds = [for (final k in view.loaderKinds) k.name];
     for (final property in view.themeProperties) {
-      final key = _ThemeKey.from(property);
+      var key = _ThemeKey.from(property);
+      // A kind of the app's own is a kind too.
+      if (key.path.join('.') == 'loaders.*.kind') {
+        key = key.withValues([...key.values, ...kinds]);
+      }
       if (property.scope != 'theme') {
         _addThemeKey(themeRoot, key);
       }
@@ -342,6 +347,17 @@ class _ThemeKey {
     flutter: p.flutter,
     defaultValue: p.defaultValue,
     open: p.open,
+  );
+
+  _ThemeKey withValues(List<String> more) => _ThemeKey(
+    path,
+    type,
+    values: more,
+    description: description,
+    states: states,
+    open: open,
+    flutter: flutter,
+    defaultValue: defaultValue,
   );
 
   final List<String> path;

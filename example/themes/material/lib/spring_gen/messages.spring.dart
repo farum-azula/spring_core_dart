@@ -42,6 +42,9 @@ final class AppMessagesNav {
   /// `nav.images`: Images
   String get images => _context.message('nav.images');
 
+  /// `nav.loaders`: Loaders
+  String get loaders => _context.message('nav.loaders');
+
   /// `nav.motion`: Motion
   String get motion => _context.message('nav.motion');
 

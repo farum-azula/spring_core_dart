@@ -177,5 +177,59 @@
       "  exclude: [${2:assets/pdf/**}]",
       "$0"
     ]
+  },
+  "Theme loaders": {
+    "prefix": "sploader",
+    "description": "spring.flutter.theme.loaders: a built-in loader (spinner, dots, pulse, bar, skeleton)",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      loaders:",
+      "        ${1:dots}:",
+      "          kind: ${2:dots}               # spinner | dots | pulse | bar | skeleton | a @ThemeLoaderKind",
+      "          color: \\$colors.primary",
+      "          size: ${3:10}",
+      "          animation: { duration: ${4:900ms}, curve: ease-in-out, repeat: loop }",
+      "$0"
+    ]
+  },
+  "Theme loader of the app's own kind": {
+    "prefix": "sploaderkind",
+    "description": "A loader of a @ThemeLoaderKind class, with phases and the web page loader file",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      loaders:",
+      "        ${1:neon-doors}:",
+      "          kind: ${2:doors}               # @ThemeLoaderKind('${2:doors}')",
+      "          phases:",
+      "            close: { duration: 500ms, curve: ease-in }",
+      "            fill: { progress: true }     # follows the real progress",
+      "            open: { duration: 450ms, curve: emphasized }",
+      "          ${3:door}: { color: ${4:'#0B0D14'}, edge: { color: \\$colors.primary, width: 2 } }",
+      "          web: ${5:web/loaders/neon-doors.html}   # how it looks before Flutter runs",
+      "$0"
+    ]
+  },
+  "Theme splash": {
+    "prefix": "spsplash",
+    "description": "spring.flutter.theme.splash: the splash screen and the web page loader",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      loaders:",
+      "        ${5:dots}: { kind: dots, color: \\$colors.primary }",
+      "      splash:",
+      "        background: { color: \\$colors.${1:surface-container-lowest} }",
+      "        logo: { source: ${2:assets/images/logo.png}, size: ${3:96} }",
+      "        title: ${4:My app}",
+      "        loader: ${5:dots}                # a loaders.* name",
+      "        min-duration: ${6:1.2s}",
+      "        exit: { transition: 400ms ease-out }",
+      "$0"
+    ]
   }
 }

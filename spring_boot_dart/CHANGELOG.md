@@ -2,6 +2,7 @@
 
 ### Changes
 
+- `SpringApplication.progressListener` and `StartupProgress` (`done`, `total`, `fraction`): how far a start has come (bean definitions created and runners called, never going back, 1 when the application is ready), for a splash screen. Nothing is counted without a listener.
 - The settings of `SpringApplication` and the auto-configurations (`spring.main.*`, `spring.application.*`, `spring.banner.*`, `spring.devtools.restart.*`, `spring.lifecycle.*`, `spring.messages.*`, `spring.json.*`, `debug`, `trace`) are now read through their `@ConfigurationProperties` classes (`lib/src/properties/boot_properties.dart`, bound by the generated code), so the editor metadata and the reading cannot drift apart. Keys and defaults are unchanged. `spring.json.*` booleans are bound strictly like other properties: a value that is not a boolean fails with a `ConfigurationPropertiesBindException` instead of turning the flag off. The `spring.json.datatype.datetime.*` keys have no default of their own in the metadata (they follow the `serialization.` / `deserialization.` ones).
 - The binder accepts `false` (what YAML makes of an unquoted `off`) for an enum with an `off` constant, and `true` for one with `on`: `spring.main.banner-mode: off` in YAML.
 - `spring.messages.cache-duration` is a `Duration` with `@DurationUnit(ChronoUnit.seconds)`; the lifecycle processor and the message source take their properties classes as beans.

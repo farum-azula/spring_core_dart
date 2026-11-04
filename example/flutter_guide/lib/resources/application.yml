@@ -70,6 +70,26 @@ spring:
       animations:
         rise: { duration: $motion.durations.medium, curve: ease-out }
 
+      # Loaders (ThemeLoader, ThemeSkeleton): a skeleton of the lists that
+      # come from the server, and a bar for the work that takes a while.
+      loaders:
+        card:
+          kind: skeleton
+          base: $colors.surface-container-high
+          highlight: $colors.surface-container-highest
+          radius: $shape.medium
+          shimmer: { duration: 1.2s, angle: 20 }
+        bar: { kind: bar, color: $colors.primary, track: { color: $colors.primary, alpha: 20% }, height: 4, width: 220 }
+      # The splash: what shows while the app starts, and on the web before
+      # Flutter runs (the generator writes it into web/index.html).
+      splash:
+        background: { color: $colors.surface }
+        logo: { source: assets/images/leaf.png, size: 96 }
+        title: NEON Books
+        loader: bar
+        min-duration: 1s
+        exit: { transition: 400ms ease-out }
+
       themes:
         dark:
           seed-color: deepPurple.shade200

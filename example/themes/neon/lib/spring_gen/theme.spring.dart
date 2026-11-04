@@ -30,9 +30,13 @@ final class AppTheme {
   AppThemeStyles get styles => AppThemeStyles._(_values);
   AppThemeMotion get motion => AppThemeMotion._(_values);
   AppThemeAnimations get animations => AppThemeAnimations._(_values);
+  AppThemeLoaders get loaders => AppThemeLoaders._(_values);
 
   /// The `background` of the active theme; null in a theme without one.
   ThemeBackgroundData? get background => _values.theme.background;
+
+  /// The `splash` of the active theme; throws when it has none.
+  ThemeSplashData get splash => _values.splash();
 }
 
 /// `colors.*` of the active theme.
@@ -260,6 +264,9 @@ final class AppThemeTokensNeon {
   /// `tokens.neon.modal`
   AppThemeTokensNeonModal get modal => AppThemeTokensNeonModal._(_values);
 
+  /// `tokens.neon.navy`
+  Color get navy => _values.tokenColor('neon.navy');
+
   /// `tokens.neon.panel`
   Color get panel => _values.tokenColor('neon.panel');
 
@@ -271,6 +278,9 @@ final class AppThemeTokensNeon {
 
   /// `tokens.neon.radius`
   double get radius => _values.tokenNumber('neon.radius');
+
+  /// `tokens.neon.red`
+  Color get red => _values.tokenColor('neon.red');
 
   /// `tokens.neon.tone`
   AppThemeTokensNeonTone get tone => AppThemeTokensNeonTone._(_values);
@@ -645,6 +655,37 @@ final class AppThemeAnimations {
 
   /// `animations.border-spin`
   AnimationSpec get borderSpin => _values.animation('border-spin');
+
+  /// `animations.gate-enter`
+  AnimationSpec get gateEnter => _values.animation('gate-enter');
+
+  /// `animations.gate-exit`
+  AnimationSpec get gateExit => _values.animation('gate-exit');
+
+  /// `animations.gate-flicker`
+  AnimationSpec get gateFlicker => _values.animation('gate-flicker');
+}
+
+/// `loaders.*` of the active theme: a `ThemeLoaderSpec` per
+/// loader, for `ThemeLoader` and the splash.
+final class AppThemeLoaders {
+  const AppThemeLoaders._(this._values);
+  final ThemeKeyReader _values;
+
+  /// `loaders.card`
+  ThemeLoaderSpec get card => _values.loader('card');
+
+  /// `loaders.dots`
+  ThemeLoaderSpec get dots => _values.loader('dots');
+
+  /// `loaders.neon-gate`
+  ThemeLoaderSpec get neonGate => _values.loader('neon-gate');
+
+  /// `loaders.spinner`
+  ThemeLoaderSpec get spinner => _values.loader('spinner');
+
+  /// `loaders.upload`
+  ThemeLoaderSpec get upload => _values.loader('upload');
 }
 
 /// The names of the themes, for `ThemeSelection.select`.

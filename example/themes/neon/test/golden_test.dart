@@ -72,13 +72,13 @@ void main() {
   });
 
   goldenTest('the background page in neon', (tester) async {
-    await startApp(tester, page: 4);
+    await startApp(tester, page: 5);
     await loadImages(tester);
     await matchesScreen(tester, 'background_neon');
   });
 
   goldenTest('themes in neon-ice', (tester) async {
-    await startApp(tester, theme: AppThemes.neonIce, page: 7);
+    await startApp(tester, theme: AppThemes.neonIce, page: 8);
     await loadImages(tester);
     await matchesScreen(tester, 'themes_neon-ice');
   });

@@ -70,6 +70,20 @@ export 'src/theme/theme_background.dart';
 export 'src/theme/theme_background_widget.dart' show ThemeBackground;
 export 'src/theme/theme_fonts.dart';
 export 'src/theme/theme_image.dart' show ThemeImage;
+export 'src/theme/theme_loader.dart'
+    show
+        BuiltInLoaderLook,
+        LoaderFrame,
+        LoaderKindRegistration,
+        LoaderValues,
+        ThemeLoaderKinds,
+        ThemeLoaderPainter,
+        ThemeLoaderPhase,
+        ThemeLoaderSpec,
+        ThemeLoaderWidget;
+export 'src/theme/theme_loader_widget.dart'
+    show LoaderTimeline, ThemeLoader, ThemeSkeleton;
+export 'src/theme/theme_splash.dart' show ThemeSplash, ThemeSplashData;
 export 'src/theme/theme_key_reader.dart';
 export 'src/theme/theme_states.dart';
 export 'src/theme/theme_styles.dart';

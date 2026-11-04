@@ -116,5 +116,49 @@
       "spring.flutter.fonts.exclude=${2:assets/pdf/**}",
       "$0"
     ]
+  },
+  "Theme loaders": {
+    "prefix": "sploader",
+    "description": "spring.flutter.theme.loaders: a built-in loader (spinner, dots, pulse, bar, skeleton)",
+    "body": [
+      "spring.flutter.theme.loaders.${1:dots}.kind=${2:dots}",
+      "spring.flutter.theme.loaders.${1:dots}.color=\\$colors.primary",
+      "spring.flutter.theme.loaders.${1:dots}.size=${3:10}",
+      "spring.flutter.theme.loaders.${1:dots}.animation.duration=${4:900ms}",
+      "spring.flutter.theme.loaders.${1:dots}.animation.curve=ease-in-out",
+      "spring.flutter.theme.loaders.${1:dots}.animation.repeat=loop",
+      "$0"
+    ]
+  },
+  "Theme loader of the app's own kind": {
+    "prefix": "sploaderkind",
+    "description": "A loader of a @ThemeLoaderKind class, with phases and the web page loader file",
+    "body": [
+      "spring.flutter.theme.loaders.${1:neon-doors}.kind=${2:doors}",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.close.duration=500ms",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.close.curve=ease-in",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.fill.progress=true",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.open.duration=450ms",
+      "spring.flutter.theme.loaders.${1:neon-doors}.phases.open.curve=emphasized",
+      "spring.flutter.theme.loaders.${1:neon-doors}.${3:door}.color=${4:#0B0D14}",
+      "spring.flutter.theme.loaders.${1:neon-doors}.web=${5:web/loaders/neon-doors.html}",
+      "$0"
+    ]
+  },
+  "Theme splash": {
+    "prefix": "spsplash",
+    "description": "spring.flutter.theme.splash: the splash screen and the web page loader",
+    "body": [
+      "spring.flutter.theme.loaders.${5:dots}.kind=dots",
+      "spring.flutter.theme.loaders.${5:dots}.color=\\$colors.primary",
+      "spring.flutter.theme.splash.background.color=\\$colors.${1:surface-container-lowest}",
+      "spring.flutter.theme.splash.logo.source=${2:assets/images/logo.png}",
+      "spring.flutter.theme.splash.logo.size=${3:96}",
+      "spring.flutter.theme.splash.title=${4:My app}",
+      "spring.flutter.theme.splash.loader=${5:dots}",
+      "spring.flutter.theme.splash.min-duration=${6:1.2s}",
+      "spring.flutter.theme.splash.exit.transition=400ms ease-out",
+      "$0"
+    ]
   }
 }

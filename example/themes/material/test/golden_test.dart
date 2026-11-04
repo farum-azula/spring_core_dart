@@ -58,7 +58,7 @@ void main() {
 
   // The page that is all about themes, in a theme of a file.
   goldenTest('themes in ocean', (tester) async {
-    await startApp(tester, theme: AppThemes.ocean, page: 8);
+    await startApp(tester, theme: AppThemes.ocean, page: 9);
     await loadImages(tester);
     await matchesScreen(tester, 'themes_ocean');
   });
@@ -76,7 +76,7 @@ void main() {
   });
 
   goldenTest('the background page in neon', (tester) async {
-    await startApp(tester, page: 6);
+    await startApp(tester, page: 7);
     await loadImages(tester);
     await matchesScreen(tester, 'background_neon');
   });

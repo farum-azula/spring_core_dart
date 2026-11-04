@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # The icons of the Cupertino widgets (CupertinoIcons); see flutter: below.
+  cupertino_icons: ^1.0.8
   # The app: SpringApplicationWidget, Spring widgets, themes, assets
   # (spring_boot_starter_flutter), and its security (chapter 7): the
   # Keycloak login of the app (OAuth2LoginService) in the system's login
@@ -52,6 +54,9 @@ dev_dependencies:
   pointycastle: ^4.0.0
 
 flutter:
+  # MaterialApp and CupertinoApp are both in the starter (the theme picks
+  # one at run time), so the build looks for both icon fonts; the unused
+  # glyphs are cut out of a release build.
   uses-material-design: true
   assets:
     # Injected with @Value('asset:...') (lib/src/about/app_assets.dart).

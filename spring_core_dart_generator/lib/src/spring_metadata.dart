@@ -41,6 +41,8 @@ abstract final class SpringMetadata {
     'members',
   ];
 
+  static const _loaderKindKeys = ['name', 'class', 'source', 'line', 'props'];
+
   static const _entityKeys = [
     'class',
     'table',
@@ -61,7 +63,9 @@ abstract final class SpringMetadata {
 
   /// The metadata of [package] as a JSON-ready map.
   ///
-  /// [theme] is the `{types, properties}` of the
+  /// [loaderKinds] are the `{name, class, source, line, props}` of the
+  /// `@ThemeLoaderKind` classes, left out when empty. [theme] is the
+  /// `{types, properties}` of the
   /// theme, left out when `null`.
   static Map<String, Object?> assemble({
     required String package,
@@ -71,6 +75,7 @@ abstract final class SpringMetadata {
     required Iterable<String> profiles,
     List<Map<String, Object?>> entities = const [],
     List<Map<String, Object?>> repositories = const [],
+    List<Map<String, Object?>> loaderKinds = const [],
     Map<String, Object?>? theme,
   }) {
     // The first entry of a name wins (a class beats a read key).
@@ -105,6 +110,12 @@ abstract final class SpringMetadata {
         'repositories': [
           for (final repository in _byName(repositories, 'name'))
             _ordered(repository, _repositoryKeys, nullable: true),
+        ],
+      // `@ThemeLoaderKind` classes of the package.
+      if (loaderKinds.isNotEmpty)
+        'loaderKinds': [
+          for (final kind in _byName(loaderKinds, 'name'))
+            _ordered(kind, _loaderKindKeys, nullable: true),
         ],
       'theme': ?theme,
     };

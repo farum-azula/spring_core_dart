@@ -17,6 +17,7 @@ Future<ConfigurableApplicationContext> startApp(
   List<String> args = const [],
   Size size = const Size(390, 844),
   TargetPlatform? platform,
+  bool keepSplash = false,
 }) async {
   debugDefaultTargetPlatformOverride = platform;
   addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -53,9 +54,30 @@ Future<ConfigurableApplicationContext> startApp(
   await tester.runAsync(
     () => Future<void>.delayed(const Duration(milliseconds: 200)),
   );
-  await tester.pumpAndSettle();
+  if (keepSplash) {
+    await tester.pump();
+  } else {
+    await tester.pumpAndSettle();
+    await endSplash(tester);
+  }
   return SpringScope.of(tester.element(find.byType(HomePage)))
       as ConfigurableApplicationContext;
+}
+
+/// Lets the splash of the theme finish: at least its `min-duration`, then
+/// the fade out. [startApp] waits for it, so tests can tap the app.
+Future<void> endSplash(WidgetTester tester, {bool settle = true}) async {
+  for (var i = 0; i < 100; i++) {
+    if (find.byType(ThemeSplash).evaluate().isEmpty) {
+      // Not for a screen that waits behind a skeleton: it never settles.
+      if (settle) {
+        await tester.pumpAndSettle();
+      }
+      return;
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  fail('The splash is still on screen after 10 seconds.');
 }
 
 /// Closes the context of [startApp] (its timers end with it).

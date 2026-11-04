@@ -734,4 +734,42 @@ class MailProperties {
       expect(other.json!.containsKey('theme'), isFalse);
     });
   });
+
+  group('loader kinds', () {
+    test('the @ThemeLoaderKind classes and the keys the themes give', () async {
+      final result = await _run({
+        'lib/loaders/doors.dart':
+            '''
+$_header
+class ThemeLoaderKind {
+  const ThemeLoaderKind(this.name);
+  final String name;
+}
+
+@ThemeLoaderKind('doors')
+final class DoorsLoader {}
+''',
+        'lib/resources/application.yaml': '''
+spring.flutter.theme:
+  loaders:
+    neon-doors: { kind: doors, door: { color: red }, seam: { width: 1 }, web: x }
+''',
+      });
+      final kinds = _list(result.json!, 'loaderKinds');
+      expect(kinds, [
+        {
+          'name': 'doors',
+          'class': 'DoorsLoader',
+          'source': 'package:pkg/loaders/doors.dart',
+          'line': 9,
+          'props': ['door', 'seam'],
+        },
+      ]);
+    });
+
+    test('a package without loader kinds has no entry', () async {
+      final result = await _run({'lib/shop.dart': _properties});
+      expect(result.json!.containsKey('loaderKinds'), isFalse);
+    });
+  });
 }

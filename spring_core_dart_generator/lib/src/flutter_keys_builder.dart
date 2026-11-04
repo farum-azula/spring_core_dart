@@ -61,7 +61,11 @@ final class FlutterKeysBuilder implements Builder {
         key: ?text,
     });
     final diagnostics = KeysDiagnostics();
-    final parts = SpringKeyFiles.generate(texts, diagnostics);
+    final parts = SpringKeyFiles.generate(
+      texts,
+      diagnostics,
+      loaderKinds: await SpringKeyFiles.loaderKinds(buildStep),
+    );
     diagnostics.warnings.forEach(log.warning);
     diagnostics.errors.forEach(log.severe);
     if (parts.theme == null && parts.messages == null) {

@@ -131,10 +131,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
       '# The network profile: NOT active by default (the app never goes online on\n# its own). Start it with\n#\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=network\n#\n# It points the sunset background and the badge token at https images. Each\n# is downloaded once, cached in the app\'s files (IndexedDB on the web) and\n# shown at once on the next start; until then, and offline, the asset named\n# by `fallback` is shown. Replace the hosts with your own.\n# (On the web the server must allow this origin with CORS headers.)\nspring:\n  flutter:\n    theme:\n      themes:\n        sunset:\n          background:\n            image:\n              source: https://cdn.example.com/theme-showcase-cupertino/sunset-sky.png\n              fallback: assets/images/sunset-sky.png\n              refresh: 1d\n              timeout: 10s\n              # source-sha256: <64 hexadecimal digits>   pins the content\n              # headers: { Authorization: \'Bearer \${cdn.token}\' }\n      tokens:\n        brand:\n          badge:\n            source: https://cdn.example.com/theme-showcase-cupertino/badge.png\n            fallback: assets/images/badge.png\n            refresh: 1d\n\n      # A whole theme from a URL works the same way: it is downloaded,\n      # cached, and replaced in the background every `refresh`. The file is\n      # written like a theme of themes/*.yml. Uncomment, and add the name\n      # to the lists of the Themes page if you want a button for it.\n      #\n      # themes:\n      #   brand:\n      #     source: https://themes.example.com/theme-showcase-cupertino/brand.yml\n      #     source-sha256: 3f9a1c5e7b2d4a6f8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d1f3a\n      #     refresh: 1h\n      #   brand-dark:\n      #     extends: brand\n      #     brightness: dark\n',
     ),
     r'application.yml': _i2.EmbeddedResource.text(
-      '# THEME SHOWCASE CUPERTINO: a CupertinoApp whose whole look is in this file\n# and in themes/*.yml. There is no CupertinoThemeData in the Dart code. The\n# pages show each part of the theme next to the YAML line that makes it\n# (their little grey code boxes quote this file; a test checks they do).\n#\n# Read it top to bottom:\n#   1. the app and the theme list                (this block)\n#   2. colors, references, color expressions     (colors, tokens.palette)\n#   3. typography, spacing, shapes               (typography, spacing, shape)\n#   4. the CupertinoThemeData                    (cupertino)\n#   5. tokens: groups, lists, durations, image   (tokens)\n#   6. styles for our own widgets                (styles)\n#   7. motion, animations                        (motion, animations)\n#   8. themes: light, dark, graphite, sunset\nspring:\n  config:\n    import: >-\n      resources:themes/graphite.yml, resources:themes/sunset.yml\n\n  flutter:\n    web:\n      # `flutter run -d chrome` serves the app on http://localhost:5080/.\n      port: 5080\n    app:\n      # A CupertinoApp: CupertinoPageScaffold, CupertinoTabScaffold and the\n      # other iOS widgets. Its theme is the `cupertino` block below.\n      type: cupertino\n      title: Theme Showcase Cupertino\n      debug-banner: false\n\n    theme:\n      # The theme shown at the start. `system` follows the device and picks\n      # system-light or system-dark.\n      # Names: light | dark | graphite | sunset\n      active: light\n      system-light: light\n      system-dark: dark\n\n      # ---------------------------------------------------------------- 2\n      # Everything below is the "root": it is the theme `light`, and every\n      # other theme starts from it (or from the theme it `extends`).\n\n      # The seed makes the palette roles nobody declared (see the Colors page).\n      seed-color: \'#007AFF\'\n      colors:\n        # The iOS system colors, light mode. Declared colors win over the\n        # palette made from the seed.\n        primary: \'#007AFF\'\n        on-primary: \'#FFFFFF\'\n        secondary: \'#34C759\'\n        on-secondary: \'#FFFFFF\'\n        tertiary: \'#FF9500\'\n        on-tertiary: \'#FFFFFF\'\n        error: \'#FF3B30\'\n        # The page (systemGroupedBackground) and the cards on it.\n        surface: \'#F2F2F7\'\n        on-surface: \'#000000\'\n        on-surface-variant: \'#6C6C70\'\n        surface-container-lowest: \'#FFFFFF\'\n        # The fill of a field or a segmented control.\n        surface-container-high: \'#E9E9EB\'\n        outline: \'#C6C6C8\'\n        # A reference to another color of this theme.\n        outline-variant: { color: \$colors.outline, alpha: 50% }\n\n      # ---------------------------------------------------------------- 3\n      typography:\n        defaults: { letter-spacing: -0.2 }\n        body-large: { size: 17, height: 1.3 }\n        label-large: { size: 17, weight: 500 }\n        label-small: { size: 10, weight: 500 }\n        title-large: { size: 22, weight: bold }\n        display-small: { size: 34, weight: bold, letter-spacing: 0.4 }\n        code: { font-family: monospace, size: 13, letter-spacing: 0 }\n      spacing:\n        xs: 4\n        s: 8\n        m: 16\n        l: 24\n        xl: 32\n        gutter: 20\n      # iOS corner radii.\n      shape:\n        small: 8\n        medium: 10\n        large: 14\n        extra-large: 20\n\n      # ---------------------------------------------------------------- 4\n      # The CupertinoThemeData of the CupertinoApp. A color is a role of\n      # `colors` (or a hex value, or a reference with an expression).\n      cupertino:\n        primary-color: \$colors.primary\n        primary-contrasting-color: \$colors.on-primary\n        scaffold-background-color: \$colors.surface\n        # A bar that lets the page show through, like iOS\'s.\n        bar-background-color: { color: \$colors.surface, alpha: 80% }\n        selection-handle-color: \$colors.tertiary\n        # Text styles: from `typography` when not written here.\n        text-theme:\n          # The actions and links of the text styles use the primary color.\n          primary-color: \$colors.primary\n          nav-title-text-style: { size: 17, weight: 600 }\n          picker-text-style: { size: 21 }\n          date-time-picker-text-style: { size: 21 }\n\n      # ---------------------------------------------------------------- 5\n      # Tokens: values of our own. Groups nest, lists and durations work.\n      tokens:\n        brand:\n          name: Light\n          tagline: The iOS look, written in YAML\n          accent: \$colors.primary\n          # A token with a `source` is an image (see the Images page).\n          badge: { source: assets/images/badge.png }\n        palette:\n          # Color expressions: alpha, mix, and a reference to a reference.\n          soft: { color: \$colors.primary, alpha: 12% }\n          hover: { color: \$colors.primary, mix: { with: white, amount: 20% } }\n          deep: { color: \$palette.hover, mix: { with: black, amount: 30% } }\n          # A role nobody declared, by reference: the palette makes it.\n          container: \$colors.surface-container\n          edge: \$colors.outline\n        corner:\n          # The shape scale by reference.\n          tiny: \$shape.small\n          roomy: \$shape.extra-large\n        chart:\n          # A list of colors (List<Color>), of numbers and of texts.\n          colors: [\$colors.primary, \$colors.secondary, \$colors.tertiary, \$palette.deep]\n          bars: [4, 9, 6, 11, 7]\n          days: [Mon, Tue, Wed, Thu, Fri]\n        timing:\n          # Durations, and a reference to a motion duration.\n          intro: 600ms\n          stagger: \$motion.durations.fast\n        layout:\n          content-width: 720\n          sidebar-width: 280\n          card:\n            padding: 16\n            radius: \$shape.large\n\n      # ---------------------------------------------------------------- 6\n      # Looks for our own widgets (ThemeStates): one value, or a value per\n      # state; `transition` animates between them. iOS shows a press by\n      # fading, so these have an `opacity` that drops when pressed.\n      styles:\n        ios-button:\n          padding: [20, 12]\n          radius: \$shape.large\n          fill:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            focused: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          text: { default: \$colors.on-primary, disabled: \$colors.outline }\n          border: { default: transparent, focused: \$colors.tertiary }\n          opacity: { default: 1, hovered: 0.9, pressed: 0.55, disabled: 0.6 }\n          transition: 120ms ease-out\n        ios-chip:\n          padding: [14, 7]\n          radius: 999\n          border: { default: \$colors.outline, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline-variant, error: \$colors.error }\n          fill: { default: \$colors.surface-container-lowest, hovered: { color: \$colors.primary, alpha: 8% }, selected: { color: \$colors.primary, alpha: 16% }, disabled: transparent }\n          text: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline, error: \$colors.error }\n          opacity: { default: 1, pressed: 0.55 }\n          transition: 120ms ease-out\n        ios-field:\n          padding: [14, 12]\n          radius: \$shape.medium\n          border: { default: transparent, hovered: \$colors.outline, focused: \$colors.primary, error: \$colors.error, disabled: transparent }\n          fill: { default: \$colors.surface-container-high, focused: \$colors.surface-container-lowest, disabled: { color: \$colors.surface-container-high, alpha: 50% } }\n          # The width of the border grows when it is focused or wrong.\n          width: { default: 0, hovered: 1, focused: 2, error: 2 }\n          transition: 140ms ease-out\n        ios-card:\n          padding: [16]\n          radius: \$shape.large\n          border: { default: \$colors.outline-variant, hovered: \$colors.outline, selected: \$colors.primary }\n          fill: { default: \$colors.surface-container-lowest, selected: { color: \$colors.primary, alpha: 8% } }\n          width: { default: 1, selected: 2 }\n          opacity: { default: 1, pressed: 0.7 }\n          transition: 200ms ease-out\n\n      # ---------------------------------------------------------------- 7\n      motion:\n        durations:\n          fast: 120ms\n          medium: 250ms\n          slow: 500ms\n        curves:\n          ios: [0.25, 0.1, 0.25, 1]\n          out: ease-out\n          standard: ease-in-out\n      animations:\n        # repeat: none (once) | loop (again and again) | reverse (back and forth)\n        spin: { duration: 2s, curve: linear, repeat: loop }\n        pulse: { duration: 1.4s, curve: ease-in-out, repeat: reverse }\n        enter: { duration: \$motion.durations.slow, curve: ease-out, repeat: none }\n        background-drift: { duration: 30s, curve: ease-in-out, repeat: reverse }\n\n      # ---------------------------------------------------------------- 8\n      themes:\n        # `light` is the root above. `dark` is `light` turned around, with\n        # the iOS dark-mode colors; every color that refers to the palette\n        # (\$colors.primary...) follows.\n        dark:\n          extends: light\n          brightness: dark\n          colors:\n            primary: \'#0A84FF\'\n            on-primary: \'#FFFFFF\'\n            secondary: \'#30D158\'\n            tertiary: \'#FF9F0A\'\n            error: \'#FF453A\'\n            surface: \'#000000\'\n            on-surface: \'#FFFFFF\'\n            on-surface-variant: \'#98989F\'\n            surface-container-lowest: \'#1C1C1E\'\n            surface-container-high: \'#2C2C2E\'\n            outline: \'#38383A\'\n          tokens:\n            brand:\n              name: Dark\n',
+      '# THEME SHOWCASE CUPERTINO: a CupertinoApp whose whole look is in this file\n# and in themes/*.yml. There is no CupertinoThemeData in the Dart code. The\n# pages show each part of the theme next to the YAML line that makes it\n# (their little grey code boxes quote this file; a test checks they do).\n#\n# Read it top to bottom:\n#   1. the app and the theme list                (this block)\n#   2. colors, references, color expressions     (colors, tokens.palette)\n#   3. typography, spacing, shapes               (typography, spacing, shape)\n#   4. the CupertinoThemeData                    (cupertino)\n#   5. tokens: groups, lists, durations, image   (tokens)\n#   6. styles for our own widgets                (styles)\n#   7. motion, animations, loaders, the splash   (motion, animations, loaders, splash)\n#   8. themes: light, dark, graphite, sunset\nspring:\n  config:\n    import: >-\n      resources:themes/graphite.yml, resources:themes/sunset.yml\n\n  flutter:\n    web:\n      # `flutter run -d chrome` serves the app on http://localhost:5080/.\n      port: 5080\n    app:\n      # A CupertinoApp: CupertinoPageScaffold, CupertinoTabScaffold and the\n      # other iOS widgets. Its theme is the `cupertino` block below.\n      type: cupertino\n      title: Theme Showcase Cupertino\n      debug-banner: false\n\n    theme:\n      # The theme shown at the start. `system` follows the device and picks\n      # system-light or system-dark.\n      # Names: light | dark | graphite | sunset\n      active: light\n      system-light: light\n      system-dark: dark\n\n      # ---------------------------------------------------------------- 2\n      # Everything below is the "root": it is the theme `light`, and every\n      # other theme starts from it (or from the theme it `extends`).\n\n      # The seed makes the palette roles nobody declared (see the Colors page).\n      seed-color: \'#007AFF\'\n      colors:\n        # The iOS system colors, light mode. Declared colors win over the\n        # palette made from the seed.\n        primary: \'#007AFF\'\n        on-primary: \'#FFFFFF\'\n        secondary: \'#34C759\'\n        on-secondary: \'#FFFFFF\'\n        tertiary: \'#FF9500\'\n        on-tertiary: \'#FFFFFF\'\n        error: \'#FF3B30\'\n        # The page (systemGroupedBackground) and the cards on it.\n        surface: \'#F2F2F7\'\n        on-surface: \'#000000\'\n        on-surface-variant: \'#6C6C70\'\n        surface-container-lowest: \'#FFFFFF\'\n        # The fill of a field or a segmented control.\n        surface-container-high: \'#E9E9EB\'\n        outline: \'#C6C6C8\'\n        # A reference to another color of this theme.\n        outline-variant: { color: \$colors.outline, alpha: 50% }\n\n      # ---------------------------------------------------------------- 3\n      typography:\n        defaults: { letter-spacing: -0.2 }\n        body-large: { size: 17, height: 1.3 }\n        label-large: { size: 17, weight: 500 }\n        label-small: { size: 10, weight: 500 }\n        title-large: { size: 22, weight: bold }\n        display-small: { size: 34, weight: bold, letter-spacing: 0.4 }\n        code: { font-family: monospace, size: 13, letter-spacing: 0 }\n      spacing:\n        xs: 4\n        s: 8\n        m: 16\n        l: 24\n        xl: 32\n        gutter: 20\n      # iOS corner radii.\n      shape:\n        small: 8\n        medium: 10\n        large: 14\n        extra-large: 20\n\n      # ---------------------------------------------------------------- 4\n      # The CupertinoThemeData of the CupertinoApp. A color is a role of\n      # `colors` (or a hex value, or a reference with an expression).\n      cupertino:\n        primary-color: \$colors.primary\n        primary-contrasting-color: \$colors.on-primary\n        scaffold-background-color: \$colors.surface\n        # A bar that lets the page show through, like iOS\'s.\n        bar-background-color: { color: \$colors.surface, alpha: 80% }\n        selection-handle-color: \$colors.tertiary\n        # Text styles: from `typography` when not written here.\n        text-theme:\n          # The actions and links of the text styles use the primary color.\n          primary-color: \$colors.primary\n          nav-title-text-style: { size: 17, weight: 600 }\n          picker-text-style: { size: 21 }\n          date-time-picker-text-style: { size: 21 }\n\n      # ---------------------------------------------------------------- 5\n      # Tokens: values of our own. Groups nest, lists and durations work.\n      tokens:\n        brand:\n          name: Light\n          tagline: The iOS look, written in YAML\n          accent: \$colors.primary\n          # A token with a `source` is an image (see the Images page).\n          badge: { source: assets/images/badge.png }\n        palette:\n          # Color expressions: alpha, mix, and a reference to a reference.\n          soft: { color: \$colors.primary, alpha: 12% }\n          hover: { color: \$colors.primary, mix: { with: white, amount: 20% } }\n          deep: { color: \$palette.hover, mix: { with: black, amount: 30% } }\n          # A role nobody declared, by reference: the palette makes it.\n          container: \$colors.surface-container\n          edge: \$colors.outline\n        corner:\n          # The shape scale by reference.\n          tiny: \$shape.small\n          roomy: \$shape.extra-large\n        chart:\n          # A list of colors (List<Color>), of numbers and of texts.\n          colors: [\$colors.primary, \$colors.secondary, \$colors.tertiary, \$palette.deep]\n          bars: [4, 9, 6, 11, 7]\n          days: [Mon, Tue, Wed, Thu, Fri]\n        timing:\n          # Durations, and a reference to a motion duration.\n          intro: 600ms\n          stagger: \$motion.durations.fast\n        layout:\n          content-width: 720\n          sidebar-width: 280\n          card:\n            padding: 16\n            radius: \$shape.large\n\n      # ---------------------------------------------------------------- 6\n      # Looks for our own widgets (ThemeStates): one value, or a value per\n      # state; `transition` animates between them. iOS shows a press by\n      # fading, so these have an `opacity` that drops when pressed.\n      styles:\n        ios-button:\n          padding: [20, 12]\n          radius: \$shape.large\n          fill:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            focused: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          text: { default: \$colors.on-primary, disabled: \$colors.outline }\n          border: { default: transparent, focused: \$colors.tertiary }\n          opacity: { default: 1, hovered: 0.9, pressed: 0.55, disabled: 0.6 }\n          transition: 120ms ease-out\n        ios-chip:\n          padding: [14, 7]\n          radius: 999\n          border: { default: \$colors.outline, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline-variant, error: \$colors.error }\n          fill: { default: \$colors.surface-container-lowest, hovered: { color: \$colors.primary, alpha: 8% }, selected: { color: \$colors.primary, alpha: 16% }, disabled: transparent }\n          text: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline, error: \$colors.error }\n          opacity: { default: 1, pressed: 0.55 }\n          transition: 120ms ease-out\n        ios-field:\n          padding: [14, 12]\n          radius: \$shape.medium\n          border: { default: transparent, hovered: \$colors.outline, focused: \$colors.primary, error: \$colors.error, disabled: transparent }\n          fill: { default: \$colors.surface-container-high, focused: \$colors.surface-container-lowest, disabled: { color: \$colors.surface-container-high, alpha: 50% } }\n          # The width of the border grows when it is focused or wrong.\n          width: { default: 0, hovered: 1, focused: 2, error: 2 }\n          transition: 140ms ease-out\n        ios-card:\n          padding: [16]\n          radius: \$shape.large\n          border: { default: \$colors.outline-variant, hovered: \$colors.outline, selected: \$colors.primary }\n          fill: { default: \$colors.surface-container-lowest, selected: { color: \$colors.primary, alpha: 8% } }\n          width: { default: 1, selected: 2 }\n          opacity: { default: 1, pressed: 0.7 }\n          transition: 200ms ease-out\n\n      # ---------------------------------------------------------------- 7\n      motion:\n        durations:\n          fast: 120ms\n          medium: 250ms\n          slow: 500ms\n        curves:\n          ios: [0.25, 0.1, 0.25, 1]\n          out: ease-out\n          standard: ease-in-out\n      animations:\n        # repeat: none (once) | loop (again and again) | reverse (back and forth)\n        spin: { duration: 2s, curve: linear, repeat: loop }\n        pulse: { duration: 1.4s, curve: ease-in-out, repeat: reverse }\n        enter: { duration: \$motion.durations.slow, curve: ease-out, repeat: none }\n        background-drift: { duration: 30s, curve: ease-in-out, repeat: reverse }\n\n      # Loaders: ThemeLoader and ThemeSkeleton show them, by name. These are\n      # in the iOS look: a pulse like a breathing dot, small dots, a thin\n      # rounded bar and a quiet skeleton.\n      loaders:\n        pulse: { kind: pulse, color: \$colors.primary, size: 28, animation: { duration: 1.2s, curve: ease-in-out, repeat: reverse } }\n        dots: { kind: dots, color: \$colors.primary, size: 8, count: 3 }\n        bar: { kind: bar, color: \$colors.primary, track: { color: \$colors.primary, alpha: 20% }, height: 4, width: 220, radius: 2 }\n        card:\n          kind: skeleton\n          base: { color: \$colors.on-surface, alpha: 8% }\n          highlight: { color: \$colors.on-surface, alpha: 16% }\n          radius: 10\n          shimmer: { duration: 1.4s, angle: 20 }\n\n      # The splash: what shows while the app starts (and, on the web, before\n      # Flutter runs: the generator writes it into web/index.html).\n      splash:\n        background: { color: \$colors.surface }\n        logo: { source: assets/images/badge.png, size: 96 }\n        title: Theme Showcase\n        loader: dots\n        min-duration: 1.2s\n        exit: { transition: 400ms ease-out }\n\n      # ---------------------------------------------------------------- 8\n      themes:\n        # `light` is the root above. `dark` is `light` turned around, with\n        # the iOS dark-mode colors; every color that refers to the palette\n        # (\$colors.primary...) follows.\n        dark:\n          extends: light\n          brightness: dark\n          colors:\n            primary: \'#0A84FF\'\n            on-primary: \'#FFFFFF\'\n            secondary: \'#30D158\'\n            tertiary: \'#FF9F0A\'\n            error: \'#FF453A\'\n            surface: \'#000000\'\n            on-surface: \'#FFFFFF\'\n            on-surface-variant: \'#98989F\'\n            surface-container-lowest: \'#1C1C1E\'\n            surface-container-high: \'#2C2C2E\'\n            outline: \'#38383A\'\n          tokens:\n            brand:\n              name: Dark\n',
     ),
     r'messages.properties': _i2.EmbeddedResource.text(
-      '# Typed messages: context.messages.nav.colors, context.messages.themes.active(name).\nnav.colors=Colors\nnav.type=Typography\nnav.tokens=Tokens\nnav.styles=Own widgets\nnav.controls=Controls\nnav.motion=Motion\nnav.background=Background\nnav.images=Images\nnav.themes=Themes\nnav.more=More\nthemes.active=Theme: {0}\nthemes.switch=Switch theme\nthemes.cancel=Cancel\n',
+      '# Typed messages: context.messages.nav.colors, context.messages.themes.active(name).\nnav.colors=Colors\nnav.type=Typography\nnav.tokens=Tokens\nnav.styles=Own widgets\nnav.controls=Controls\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.images=Images\nnav.themes=Themes\nnav.more=More\nthemes.active=Theme: {0}\nthemes.switch=Switch theme\nthemes.cancel=Cancel\n',
     ),
     r'themes/graphite.yml': _i2.EmbeddedResource.text(
       '# GRAPHITE: `dark` with a warm orange instead of blue, grey cards, a bar\n# that lets the page through, and a gradient background. `extends` copies\n# the theme `dark` (which itself extends `light`) and this one changes only\n# what is different; every reference (\$colors.primary...) follows.\nspring:\n  flutter:\n    theme:\n      themes:\n        graphite:\n          extends: dark\n          colors:\n            primary: \'#FF9F0A\'\n            on-primary: \'#1C1C1E\'\n            secondary: \'#64D2FF\'\n            tertiary: \'#FF375F\'\n            surface: \'#141416\'\n            surface-container-lowest: \'#232326\'\n            surface-container-high: \'#323236\'\n            outline: \'#48484A\'\n          cupertino:\n            # The scaffolds let the gradient behind them show.\n            scaffold-background-color: transparent\n            bar-background-color: { color: \$colors.surface, alpha: 70% }\n            text-theme:\n              nav-large-title-text-style: { size: 34, weight: 800, letter-spacing: 0.4 }\n          tokens:\n            brand:\n              name: Graphite\n              tagline: Dark grey with an orange tint\n          # The page behind everything: a color, and a gradient over it. The\n          # Cupertino scaffolds are made transparent, so it shows through.\n          background:\n            color: \$colors.surface\n            overlay:\n              gradient:\n                type: linear\n                begin: top\n                end: bottom\n                colors: [transparent, { color: \$colors.primary, alpha: 14% }]\n            transition: 400ms ease-out\n            # ThemeBackground.screen(\'showcase\') shows this over the background.\n            screens:\n              showcase:\n                overlay:\n                  gradient: { type: radial, begin: center, colors: [{ color: \$colors.secondary, alpha: 24% }, transparent] }\n',
@@ -429,6 +429,139 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
           const String.fromEnvironment(
             'SPRING_FLUTTER_THEME_CUPERTINO_TEXTTHEME_PRIMARYCOLOR',
           ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_KIND',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_RADIUS'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_RADIUS': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_RADIUS',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT_COLOR',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_KIND',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_DOTS_COLOR'))
+      'SPRING_FLUTTER_THEME_LOADERS_DOTS_COLOR': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_DOTS_COLOR',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_DOTS_COUNT'))
+      'SPRING_FLUTTER_THEME_LOADERS_DOTS_COUNT': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_DOTS_COUNT',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_DOTS_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_DOTS_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_DOTS_KIND',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_DOTS_SIZE'))
+      'SPRING_FLUTTER_THEME_LOADERS_DOTS_SIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_DOTS_SIZE',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_CURVE',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_CURVE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_CURVE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_DURATION',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_DURATION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_DURATION',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_REPEAT',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_REPEAT':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_PULSE_ANIMATION_REPEAT',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_PULSE_COLOR'))
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_COLOR': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_PULSE_COLOR',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_PULSE_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_PULSE_KIND',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_PULSE_SIZE'))
+      'SPRING_FLUTTER_THEME_LOADERS_PULSE_SIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_PULSE_SIZE',
+      ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_MOTION_CURVES_IOS_0'))
       'SPRING_FLUTTER_THEME_MOTION_CURVES_IOS_0': const String.fromEnvironment(
         'SPRING_FLUTTER_THEME_MOTION_CURVES_IOS_0',
@@ -516,6 +649,40 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPACING_XS'))
       'SPRING_FLUTTER_THEME_SPACING_XS': const String.fromEnvironment(
         'SPRING_FLUTTER_THEME_SPACING_XS',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION',
+    ))
+      'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOADER'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOADER': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOADER',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_MINDURATION'))
+      'SPRING_FLUTTER_THEME_SPLASH_MINDURATION': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_MINDURATION',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_TITLE'))
+      'SPRING_FLUTTER_THEME_SPLASH_TITLE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_TITLE',
       ),
     if (const bool.hasEnvironment(
       'SPRING_FLUTTER_THEME_STYLES_IOSBUTTON_BORDER_DEFAULT',
@@ -1755,6 +1922,139 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
           const String.fromEnvironment(
             'spring.flutter.theme.cupertino.text-theme.primary-color',
           ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.color'))
+      'spring.flutter.theme.loaders.bar.color': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.color',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.height'))
+      'spring.flutter.theme.loaders.bar.height': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.height',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.kind'))
+      'spring.flutter.theme.loaders.bar.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.kind',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.radius'))
+      'spring.flutter.theme.loaders.bar.radius': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.radius',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.bar.track.alpha',
+    ))
+      'spring.flutter.theme.loaders.bar.track.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.bar.track.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.bar.track.color',
+    ))
+      'spring.flutter.theme.loaders.bar.track.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.bar.track.color',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.width'))
+      'spring.flutter.theme.loaders.bar.width': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.width',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.base.alpha',
+    ))
+      'spring.flutter.theme.loaders.card.base.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.base.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.base.color',
+    ))
+      'spring.flutter.theme.loaders.card.base.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.base.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.highlight.alpha',
+    ))
+      'spring.flutter.theme.loaders.card.highlight.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.highlight.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.highlight.color',
+    ))
+      'spring.flutter.theme.loaders.card.highlight.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.highlight.color',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.kind'))
+      'spring.flutter.theme.loaders.card.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.kind',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.radius'))
+      'spring.flutter.theme.loaders.card.radius': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.radius',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.shimmer.angle',
+    ))
+      'spring.flutter.theme.loaders.card.shimmer.angle':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.shimmer.angle',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.shimmer.duration',
+    ))
+      'spring.flutter.theme.loaders.card.shimmer.duration':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.shimmer.duration',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.dots.color'))
+      'spring.flutter.theme.loaders.dots.color': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.dots.color',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.dots.count'))
+      'spring.flutter.theme.loaders.dots.count': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.dots.count',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.dots.kind'))
+      'spring.flutter.theme.loaders.dots.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.dots.kind',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.dots.size'))
+      'spring.flutter.theme.loaders.dots.size': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.dots.size',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.pulse.animation.curve',
+    ))
+      'spring.flutter.theme.loaders.pulse.animation.curve':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.pulse.animation.curve',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.pulse.animation.duration',
+    ))
+      'spring.flutter.theme.loaders.pulse.animation.duration':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.pulse.animation.duration',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.pulse.animation.repeat',
+    ))
+      'spring.flutter.theme.loaders.pulse.animation.repeat':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.pulse.animation.repeat',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.pulse.color'))
+      'spring.flutter.theme.loaders.pulse.color': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.pulse.color',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.pulse.kind'))
+      'spring.flutter.theme.loaders.pulse.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.pulse.kind',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.pulse.size'))
+      'spring.flutter.theme.loaders.pulse.size': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.pulse.size',
+      ),
     if (const bool.hasEnvironment('spring.flutter.theme.motion.curves.ios[0]'))
       'spring.flutter.theme.motion.curves.ios[0]': const String.fromEnvironment(
         'spring.flutter.theme.motion.curves.ios[0]',
@@ -1842,6 +2142,40 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('spring.flutter.theme.spacing.xs'))
       'spring.flutter.theme.spacing.xs': const String.fromEnvironment(
         'spring.flutter.theme.spacing.xs',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.splash.background.color',
+    ))
+      'spring.flutter.theme.splash.background.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.splash.background.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.splash.exit.transition',
+    ))
+      'spring.flutter.theme.splash.exit.transition':
+          const String.fromEnvironment(
+            'spring.flutter.theme.splash.exit.transition',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.loader'))
+      'spring.flutter.theme.splash.loader': const String.fromEnvironment(
+        'spring.flutter.theme.splash.loader',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.logo.size'))
+      'spring.flutter.theme.splash.logo.size': const String.fromEnvironment(
+        'spring.flutter.theme.splash.logo.size',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.logo.source'))
+      'spring.flutter.theme.splash.logo.source': const String.fromEnvironment(
+        'spring.flutter.theme.splash.logo.source',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.min-duration'))
+      'spring.flutter.theme.splash.min-duration': const String.fromEnvironment(
+        'spring.flutter.theme.splash.min-duration',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.title'))
+      'spring.flutter.theme.splash.title': const String.fromEnvironment(
+        'spring.flutter.theme.splash.title',
       ),
     if (const bool.hasEnvironment(
       'spring.flutter.theme.styles.ios-button.border.default',
@@ -2819,7 +3153,7 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '0f3a2b99',
+  fingerprint: '1acad448',
 );
 
 /// Starts the application: config files, environment, context, runners

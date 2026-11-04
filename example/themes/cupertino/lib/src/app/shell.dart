@@ -9,6 +9,7 @@ import 'package:theme_showcase_cupertino/src/pages/background_page.dart';
 import 'package:theme_showcase_cupertino/src/pages/colors_page.dart';
 import 'package:theme_showcase_cupertino/src/pages/controls_page.dart';
 import 'package:theme_showcase_cupertino/src/pages/images_page.dart';
+import 'package:theme_showcase_cupertino/src/pages/loaders_page.dart';
 import 'package:theme_showcase_cupertino/src/pages/motion_page.dart';
 import 'package:theme_showcase_cupertino/src/pages/styles_page.dart';
 import 'package:theme_showcase_cupertino/src/pages/themes_page.dart';
@@ -27,7 +28,7 @@ class ShowcasePage {
   final WidgetBuilder builder;
 }
 
-/// The nine pages, in the order of the sidebar.
+/// The ten pages, in the order of the sidebar.
 final pages = <ShowcasePage>[
   ShowcasePage(
     'colors',
@@ -64,6 +65,12 @@ final pages = <ShowcasePage>[
     CupertinoIcons.waveform,
     (m) => m.motion,
     (_) => const MotionPage(),
+  ),
+  ShowcasePage(
+    'loaders',
+    CupertinoIcons.time,
+    (m) => m.loaders,
+    (_) => const LoadersPage(),
   ),
   ShowcasePage(
     'background',

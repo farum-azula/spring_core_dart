@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:build/build.dart' hide Resource;
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
 import 'package:spring_core_dart_generator/src/generated_path.dart';
+import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_message_keys.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 import 'package:yaml/yaml.dart';
@@ -38,16 +41,23 @@ abstract final class SpringKeyFiles {
   /// error is `null`.
   static KeyParts generate(
     Map<String, String> texts,
-    KeysDiagnostics diagnostics,
-  ) {
+    KeysDiagnostics diagnostics, {
+    LoaderKinds loaderKinds = LoaderKinds.none,
+  }) {
     final properties = readProperties(texts, diagnostics);
-    final theme = TypedThemeKeys.generate(properties, diagnostics);
+    final theme = TypedThemeKeys.generate(
+      properties,
+      diagnostics,
+      kinds: loaderKinds,
+    );
     final messages = TypedMessageKeys.generate(texts, properties, diagnostics);
     if (diagnostics.errors.isNotEmpty) {
       return (theme: null, messages: null);
     }
     return (
-      theme: theme == null ? null : '$_themeExtension\n$theme',
+      theme: theme == null
+          ? null
+          : '${theme.hasTheme ? '$_themeExtension\n' : ''}${theme.code}',
       messages: messages == null ? null : '$_messagesExtension\n$messages',
     );
   }
@@ -74,6 +84,92 @@ extension SpringMessageKeys on BuildContext {
   AppMessages get messages => AppMessages._(this);
 }
 ''';
+
+  /// The loader kinds the keys know: the `@ThemeLoaderKind` classes of
+  /// the package's own `lib/` (found in the source text, as
+  /// [scanLibraries] finds its annotations) and the `loaderKinds` of the
+  /// `spring_metadata.json` of the packages it depends on.
+  static Future<LoaderKinds> loaderKinds(BuildStep buildStep) async {
+    final package = buildStep.inputId.package;
+    final own = <String, ({String name, String className})>{};
+    final assets = await buildStep
+        .findAssets(Glob('lib/**.dart'))
+        .where((asset) => asset.package == package)
+        .where((asset) => !asset.path.endsWith('.spring.dart'))
+        .toList();
+    assets.sort((a, b) => a.path.compareTo(b.path));
+    for (final asset in assets) {
+      final text = await buildStep.readAsString(asset);
+      if (!text.contains('@ThemeLoaderKind')) {
+        continue;
+      }
+      for (final kind in scanLoaderKinds(text)) {
+        own.putIfAbsent(
+          canonicalName(kind.name),
+          () => (name: kind.name, className: kind.className),
+        );
+      }
+    }
+    final foreign = <String, String>{};
+    final pubspecId = AssetId(package, 'pubspec.yaml');
+    if (await buildStep.canRead(pubspecId)) {
+      try {
+        final pubspec = loadYaml(await buildStep.readAsString(pubspecId));
+        final dependencies = pubspec is YamlMap
+            ? pubspec['dependencies']
+            : null;
+        if (dependencies is YamlMap) {
+          for (final name in dependencies.keys) {
+            final id = AssetId('$name', 'lib/spring_gen/spring_metadata.json');
+            if (!await buildStep.canRead(id)) {
+              continue;
+            }
+            final kinds = _kindsOfMetadata(await buildStep.readAsString(id));
+            for (final kind in kinds) {
+              foreign.putIfAbsent(canonicalName(kind), () => kind);
+            }
+          }
+        }
+      } on YamlException {
+        // The pubspec is the build's concern, not ours.
+      }
+    }
+    return LoaderKinds(own: own, foreign: foreign);
+  }
+
+  static final _loaderKind = RegExp(
+    r'@ThemeLoaderKind\(\s*([\x27"])([^\x27"]+)\1\s*\)\s*'
+    r'(?:@\w+(?:\([^)]*\))?\s*)*(?:(?:final|base|abstract|interface)\s+)*'
+    r'class\s+(\w+)',
+  );
+
+  /// The `@ThemeLoaderKind('name') class X` declarations in the source
+  /// [text], with the 1-based line of each.
+  static List<({String name, String className, int line})> scanLoaderKinds(
+    String text,
+  ) => [
+    for (final match in _loaderKind.allMatches(text))
+      (
+        name: match[2]!,
+        className: match[3]!,
+        line: '\n'.allMatches(text.substring(0, match.start)).length + 1,
+      ),
+  ];
+
+  // The names in `loaderKinds` of a spring_metadata.json.
+  static List<String> _kindsOfMetadata(String json) {
+    try {
+      final data = jsonDecode(json);
+      final kinds = data is Map ? data['loaderKinds'] : null;
+      return [
+        if (kinds is List)
+          for (final kind in kinds)
+            if (kind is Map && kind['name'] is String) kind['name'] as String,
+      ];
+    } on FormatException {
+      return const [];
+    }
+  }
 
   /// The `.dart` files of `lib/` with a `@ComponentScan` or a
   /// `@SpringBootApplication` (the two annotations that make the main

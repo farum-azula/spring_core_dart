@@ -6,6 +6,7 @@ import 'package:theme_showcase_neon/src/app/logs.dart';
 import 'package:theme_showcase_neon/src/app/theme_switcher.dart';
 import 'package:theme_showcase_neon/src/pages/background_page.dart';
 import 'package:theme_showcase_neon/src/pages/components_page.dart';
+import 'package:theme_showcase_neon/src/pages/loaders_page.dart';
 import 'package:theme_showcase_neon/src/pages/logs_page.dart';
 import 'package:theme_showcase_neon/src/pages/motion_page.dart';
 import 'package:theme_showcase_neon/src/pages/overview_page.dart';
@@ -23,7 +24,7 @@ class ShowcasePage {
   final WidgetBuilder builder;
 }
 
-/// The eight pages, in the order of the navigation.
+/// The nine pages, in the order of the navigation.
 final pages = <ShowcasePage>[
   ShowcasePage('overview', (m) => m.overview, (_) => const OverviewPage()),
   ShowcasePage(
@@ -33,6 +34,7 @@ final pages = <ShowcasePage>[
   ),
   ShowcasePage('states', (m) => m.states, (_) => const StatesPage()),
   ShowcasePage('motion', (m) => m.motion, (_) => const MotionPage()),
+  ShowcasePage('loaders', (m) => m.loaders, (_) => const LoadersPage()),
   ShowcasePage(
     'background',
     (m) => m.background,

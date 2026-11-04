@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_background.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_loader.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_splash.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_components.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
@@ -347,6 +349,10 @@ final class SpringThemeData {
       animations[name] = AnimationSpec.parse(p, name);
     }
     background = ThemeBackgroundData.parse(p);
+    for (final name in p.children('loaders')) {
+      loaders[name] = ThemeLoaderSpec.parse(p, name);
+    }
+    splash = ThemeSplashData.parse(p);
     _readImageTokens(p);
     for (final name in p.children('styles')) {
       styles[name] = StateStyle.parse(p, name);
@@ -408,6 +414,7 @@ final class SpringThemeData {
     'styles', //
     'animations',
     'background',
+    'loaders',
   ];
 
   static const _textSpecProperties = {
@@ -565,6 +572,14 @@ final class SpringThemeData {
   /// animation, per-screen overrides); `null` when the theme has none.
   late final ThemeBackgroundData? background;
 
+  /// The loaders of `loaders.*` by canonical name (`neondoors`).
+  final Map<String, ThemeLoaderSpec> loaders = {};
+
+  /// The `splash` map of the theme (what shows while the application
+  /// starts); `null` when the theme has none. (A plain `splash: ripple` is
+  /// the ink splash of taps, [splashFactory].)
+  late final ThemeSplashData? splash;
+
   final Map<String, ThemeImage> _tokenImages = {};
 
   /// The image token `tokens.<path>` (a token that is a map with
@@ -575,6 +590,7 @@ final class SpringThemeData {
   /// image tokens'; the starter loads those from the network.
   Iterable<ThemeImage> get images => [
     ...?background?.images,
+    ...?splash?.images,
     ..._tokenImages.values,
   ];
 

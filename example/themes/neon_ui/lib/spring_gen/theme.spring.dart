@@ -30,6 +30,7 @@ final class AppTheme {
   AppThemeStyles get styles => AppThemeStyles._(_values);
   AppThemeMotion get motion => AppThemeMotion._(_values);
   AppThemeAnimations get animations => AppThemeAnimations._(_values);
+  AppThemeLoaders get loaders => AppThemeLoaders._(_values);
 
   /// The `background` of the active theme; null in a theme without one.
   ThemeBackgroundData? get background => _values.theme.background;
@@ -257,6 +258,9 @@ final class AppThemeTokensNeon {
   /// `tokens.neon.modal`
   AppThemeTokensNeonModal get modal => AppThemeTokensNeonModal._(_values);
 
+  /// `tokens.neon.navy`
+  Color get navy => _values.tokenColor('neon.navy');
+
   /// `tokens.neon.panel`
   Color get panel => _values.tokenColor('neon.panel');
 
@@ -268,6 +272,9 @@ final class AppThemeTokensNeon {
 
   /// `tokens.neon.radius`
   double get radius => _values.tokenNumber('neon.radius');
+
+  /// `tokens.neon.red`
+  Color get red => _values.tokenColor('neon.red');
 
   /// `tokens.neon.tone`
   AppThemeTokensNeonTone get tone => AppThemeTokensNeonTone._(_values);
@@ -591,6 +598,147 @@ final class AppThemeAnimations {
 
   /// `animations.border-spin`
   AnimationSpec get borderSpin => _values.animation('border-spin');
+
+  /// `animations.gate-enter`
+  AnimationSpec get gateEnter => _values.animation('gate-enter');
+
+  /// `animations.gate-exit`
+  AnimationSpec get gateExit => _values.animation('gate-exit');
+
+  /// `animations.gate-flicker`
+  AnimationSpec get gateFlicker => _values.animation('gate-flicker');
+}
+
+/// `loaders.*` of the active theme: a `ThemeLoaderSpec` per
+/// loader, for `ThemeLoader` and the splash.
+final class AppThemeLoaders {
+  const AppThemeLoaders._(this._values);
+  final ThemeKeyReader _values;
+
+  /// `loaders.neon-gate`
+  ThemeLoaderSpec get neonGate => _values.loader('neon-gate');
+}
+
+/// The keys of the loaders of the kind `neon-gate`, as the
+/// painter or widget of that kind reads them.
+final class NeonGateLoaderProps {
+  const NeonGateLoaderProps._(this.values);
+
+  /// The keys of the loader, untyped.
+  final LoaderValues values;
+
+  /// The keys a loader of this kind takes besides `kind`,
+  /// `phases` and `web`; `null` while no theme gives any.
+  static const List<String>? keys = ['gate', 'edge', 'flicker', 'box', 'label'];
+
+  /// `loaders.*.box`
+  NeonGateLoaderPropsBox get box => NeonGateLoaderPropsBox._(values.at('box'));
+
+  /// `loaders.*.edge`
+  NeonGateLoaderPropsEdge get edge =>
+      NeonGateLoaderPropsEdge._(values.at('edge'));
+
+  /// `loaders.*.flicker`
+  NeonGateLoaderPropsFlicker get flicker =>
+      NeonGateLoaderPropsFlicker._(values.at('flicker'));
+
+  /// `loaders.*.gate`
+  NeonGateLoaderPropsGate get gate =>
+      NeonGateLoaderPropsGate._(values.at('gate'));
+
+  /// `loaders.*.label`
+  NeonGateLoaderPropsLabel get label =>
+      NeonGateLoaderPropsLabel._(values.at('label'));
+}
+
+/// `loaders.*.box`
+final class NeonGateLoaderPropsBox {
+  const NeonGateLoaderPropsBox._(this._v);
+  final LoaderValues _v;
+
+  /// `loaders.*.box.color`
+  Color get color => _v.color('color');
+
+  /// `loaders.*.box.fill`
+  Color get fill => _v.color('fill');
+
+  /// `loaders.*.box.glow`
+  double get glow => _v.number('glow');
+
+  /// `loaders.*.box.height`
+  double get height => _v.number('height');
+
+  /// `loaders.*.box.skew`
+  double get skew => _v.number('skew');
+
+  /// `loaders.*.box.text`
+  Color get text => _v.color('text');
+
+  /// `loaders.*.box.width`
+  double get width => _v.number('width');
+}
+
+/// `loaders.*.edge`
+final class NeonGateLoaderPropsEdge {
+  const NeonGateLoaderPropsEdge._(this._v);
+  final LoaderValues _v;
+
+  /// `loaders.*.edge.accent`
+  Color get accent => _v.color('accent');
+
+  /// `loaders.*.edge.color`
+  Color get color => _v.color('color');
+
+  /// `loaders.*.edge.glow`
+  double get glow => _v.number('glow');
+
+  /// `loaders.*.edge.width`
+  double get width => _v.number('width');
+}
+
+/// `loaders.*.flicker`
+final class NeonGateLoaderPropsFlicker {
+  const NeonGateLoaderPropsFlicker._(this._v);
+  final LoaderValues _v;
+
+  /// `loaders.*.flicker.curve`
+  Curve get curve => _v.curve('curve');
+
+  /// `loaders.*.flicker.dim`
+  double get dim => _v.number('dim');
+
+  /// `loaders.*.flicker.duration`
+  Duration get duration => _v.duration('duration');
+
+  /// `loaders.*.flicker.repeat`
+  String get repeat => _v.text('repeat');
+}
+
+/// `loaders.*.gate`
+final class NeonGateLoaderPropsGate {
+  const NeonGateLoaderPropsGate._(this._v);
+  final LoaderValues _v;
+
+  /// `loaders.*.gate.color`
+  Color get color => _v.color('color');
+
+  /// `loaders.*.gate.panel`
+  Color get panel => _v.color('panel');
+}
+
+/// `loaders.*.label`
+final class NeonGateLoaderPropsLabel {
+  const NeonGateLoaderPropsLabel._(this._v);
+  final LoaderValues _v;
+
+  /// `loaders.*.label.letter-spacing`
+  double get letterSpacing => _v.number('letter-spacing');
+
+  /// `loaders.*.label.size`
+  double get size => _v.number('size');
+
+  /// `loaders.*.label.text`
+  String get text => _v.text('text');
 }
 
 /// The names of the themes, for `ThemeSelection.select`.

@@ -15,4 +15,5 @@ export 'package:neon_ui/src/neon_modal.dart';
 export 'package:neon_ui/src/neon_panel.dart';
 export 'package:neon_ui/src/neon_resize_handle.dart';
 export 'package:neon_ui/src/neon_text_field.dart';
+export 'package:neon_ui/src/neon_gate_loader.dart';
 export 'package:neon_ui/src/neon_tone.dart';

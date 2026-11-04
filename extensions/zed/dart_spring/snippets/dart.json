@@ -419,5 +419,21 @@
       "  });",
       "}"
     ]
+  },
+  "Theme loader kind (painter)": {
+    "prefix": "sploaderpainter",
+    "description": "@ThemeLoaderKind painter; the generator writes the props class from the theme's keys",
+    "body": [
+      "@ThemeLoaderKind('${1:doors}')",
+      "class ${2:Doors}Loader extends ThemeLoaderPainter<${2:Doors}LoaderProps> {",
+      "  const ${2:Doors}Loader();",
+      "",
+      "  @override",
+      "  void paint(Canvas canvas, Size size, LoaderFrame<${2:Doors}LoaderProps> frame) {",
+      "    final ${3:close} = frame.phase('${3:close}'); // 0..1",
+      "    $0",
+      "  }",
+      "}"
+    ]
   }
 }

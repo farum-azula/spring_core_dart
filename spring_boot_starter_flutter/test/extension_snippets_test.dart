@@ -47,7 +47,24 @@ Future<ConfigurableApplicationContext> start(String file, String content) =>
       bannerMode: BannerMode.off,
     ).runAsync(const []);
 
+// The kind the examples name (`kind: doors`): an app of its own has one
+// (@ThemeLoaderKind); the starter alone has none, so the test brings one.
+class _Doors extends ThemeLoaderPainter<Object?> {
+  const _Doors();
+
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<Object?> frame) {}
+}
+
+void registerDoors() {
+  setUpAll(
+    () => ThemeLoaderKinds.register<Object?>('doors', painter: const _Doors()),
+  );
+  tearDownAll(ThemeLoaderKinds.clear);
+}
+
 void main() {
+  registerDoors();
   final available = Directory(_snippets).existsSync();
 
   for (final (file, config) in [

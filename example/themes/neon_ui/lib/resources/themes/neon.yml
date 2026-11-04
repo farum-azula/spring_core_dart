@@ -73,6 +73,10 @@ spring:
               pink: '#F0508C'
               lavender: '#A89BF5'
               green: '#7BE495'
+              # The splash's colors: a hot red for the loader and the
+              # edges, and the deep blue of its panels.
+              red: '#FF2A55'
+              navy: '#060B1E'
               # The accent of the page: the logo, the panel mark, the glow.
               accent: $colors.primary
               glow: { color: $neon.accent, alpha: 35% }
@@ -205,6 +209,57 @@ spring:
               color: { default: $colors.outline, hovered: $colors.primary, pressed: $colors.primary }
               transition: 120ms ease-out
 
+          # ----------------------------------------------------- loaders
+          # The neon-gate loader (NeonGateLoader, a kind of this package) is
+          # the splash of NEON: dark panels slide in from different sides and
+          # close like a gate, their edges glowing in cyan and red with a
+          # little flicker, and an angled red box in the middle fills by the
+          # real progress with its number. When the work is done the panels
+          # part the way they came (over the app, with the splash's
+          # `exit.reveal`). Each panel eases on its own share of a phase, so
+          # the phases are linear. `web` is the same picture in the browser
+          # before Flutter runs; it reads these keys as CSS variables.
+          loaders:
+            neon-gate:
+              kind: neon-gate
+              phases:
+                enter: { duration: $animations.gate-enter.duration, curve: linear }
+                # The box fills by the progress, but takes 2.5 s at least.
+                fill: { progress: true, min-duration: 2.5s }
+                exit: { duration: $animations.gate-exit.duration, curve: linear }
+              # The panels: the gate's two halves, the platforms over them.
+              gate:
+                color: $neon.navy
+                panel: '#0C1330'
+              # Their glowing edges (glow is the blur, in logical pixels).
+              edge:
+                color: $neon.cyan
+                accent: $neon.red
+                width: 2
+                glow: 6
+              # The edges dim for a moment now and then, by this much.
+              flicker:
+                duration: $animations.gate-flicker.duration
+                curve: linear
+                repeat: loop
+                dim: 0.5
+              # The loader: an angled box outlined in red, filled by the
+              # progress, with the number.
+              box:
+                color: $neon.red
+                fill: { color: $neon.red, alpha: 82% }
+                text: $colors.on-surface
+                width: 420
+                height: 46
+                skew: -18
+                glow: 10
+              # The word in the box is the style `label-small`.
+              label:
+                text: LOADING
+                size: $typography.label-small.size
+                letter-spacing: $typography.label-small.letter-spacing
+              web: loaders/neon-gate.html
+
           # ------------------------------------------------------ motion
           motion:
             durations: { fast: 120ms, medium: 250ms }
@@ -213,6 +268,12 @@ spring:
             # The modal's border turns once in four seconds; with "reduce
             # motion" it stands still.
             border-spin: { duration: 4s, curve: linear, repeat: loop }
+            # The panels of the neon-gate splash slide in, one after the
+            # other, in this time; they part in the other.
+            gate-enter: { duration: 2s, curve: linear, repeat: none }
+            gate-exit: { duration: 1400ms, curve: linear, repeat: none }
+            # Their edges flicker: one cycle of dimming here and there.
+            gate-flicker: { duration: 2400ms, curve: linear, repeat: loop }
             # The picture behind the page drifts slowly.
             background-drift: { duration: 40s, curve: ease-in-out, repeat: reverse }
 

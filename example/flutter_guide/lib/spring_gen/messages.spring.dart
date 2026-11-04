@@ -409,6 +409,9 @@ final class AppMessagesSettings {
   /// `settings.loadTheme`: Load a theme from the server
   String get loadTheme => _context.message('settings.loadTheme');
 
+  /// `settings.loaders`: Loaders
+  String get loaders => _context.message('settings.loaders');
+
   /// `settings.preview`: Preview
   String get preview => _context.message('settings.preview');
 

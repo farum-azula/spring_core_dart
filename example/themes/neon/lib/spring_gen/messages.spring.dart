@@ -36,6 +36,9 @@ final class AppMessagesNav {
   /// `nav.components`: Components
   String get components => _context.message('nav.components');
 
+  /// `nav.loaders`: Loaders
+  String get loaders => _context.message('nav.loaders');
+
   /// `nav.logs`: Logs
   String get logs => _context.message('nav.logs');
 

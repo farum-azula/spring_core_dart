@@ -4518,13 +4518,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
       '# NEON Books, the app. The platform profiles (mobile, android, ios,\n# desktop, macos, windows, linux, web) add their own files:\n# application-<profile>.properties. The theme is in application.yml.\n\napp.title=NEON Books\n\n# The server guide (example/server_guide): `dart run bin/main.dart` there.\n# The Feign clients use api.base-url, the support chat api.ws-url.\n# `flutter run --dart-define=API_HOST=192.168.1.20:8080` for a phone on\n# the LAN.\napi.host=localhost:8080\napi.base-url=http://\${api.host}\napi.ws-url=ws://\${api.host}\napi.connect-timeout=5s\n\n# The Feign clients: a short read timeout (the default is 60s), the calls\n# logged at debug level (the Logs screen shows them).\nspring.feign.client.config.default.read-timeout=10s\nspring.feign.client.config.default.logger-level=basic\n# The stock events reconnect after 2s and give up after 10 silent tries.\nspring.feign.client.config.stock.event-stream.reconnect-delay=2s\nspring.feign.client.config.stock.event-stream.max-attempts=10\n\n# The support chat\'s socket reconnects, waiting 1s, 2s, 4s, ... up to 30s.\nspring.websocket.client.config.support.reconnect.delay=1s\nspring.websocket.client.config.support.reconnect.max-delay=30s\n\n# The catalog refresh (lib/src/catalog/catalog_refresh.dart).\ncatalog.refresh-interval=5m\n\n# The caches of lib/src/catalog/catalog_service.dart, in memory.\nspring.cache.cache-names=catalog,books,covers\n\n# Logging: the console in Boot\'s format, and the in-memory LogBuffer the\n# Logs screen shows (debug and up, the last 500 lines).\nlogging.level.root=info\nlogging.level.neon=debug\nlogging.level.feign=debug\nlogging.buffer.capacity=500\nlogging.threshold.buffer=debug\n\n# The app widget: a MaterialApp (Scaffold and AppBar need it) without the\n# debug banner. The locales come from messages.properties and\n# messages_ja.properties.\nspring.flutter.app.type=material\nspring.flutter.app.title=\${app.title}\nspring.flutter.app.debug-banner=false\nspring.cache.simple.caches.covers.max-size=50\n\n# Single sign-on with Keycloak (chapter 7): off, the app logs in with a\n# name and password (the server\'s form login). The `sso` profile turns it\n# on (application-sso.properties):\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\nneon.sso.enabled=false\n\n#---\nspring.config.activate.on-profile=sso & !web\n# With `sso`, the native apps log in themselves at Keycloak: a public\n# client (no secret in an app), PKCE, the system\'s login window. A\n# document guarded by profiles, here and not in application-sso.properties,\n# because only the native apps have it (a profile file cannot be guarded,\n# as in Spring Boot): a web page never holds tokens, its server logs it in.\nspring.security.oauth2.client.registration.keycloak.client-id=neon-app\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# iOS, Android, macOS: the app\'s own scheme; the system\'s login window\n# hands the redirect to the app (Android: RedirectReceiverActivity in the manifest).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=books.neon.app:/oauth2/callback\nneon.sso.post-logout-redirect-uri=books.neon.app:/oauth2/logout\n# Discovery: the endpoints come from the realm\'s metadata at the first\n# login, not at startup (the app starts offline too). The Android\n# emulator reaches it through `adb reverse tcp:8180 tcp:8180`: the issuer\n# must be the same address everywhere, or the server refuses the tokens.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# `ada` or `root`, the names the server knows, not Keycloak\'s ids.\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n#---\nspring.config.activate.on-profile=sso & (windows | linux)\n# Windows and Linux have no app schemes to catch: the redirect goes to a\n# server of the app on 127.0.0.1, any free port (RFC 8252 §7.3).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=http://127.0.0.1/oauth2/callback\nneon.sso.post-logout-redirect-uri=http://127.0.0.1/oauth2/logout\n',
     ),
     r'application.yml': _i2.EmbeddedResource.text(
-      '# The look of the app: the shared part of every theme and the standard\n# `dark` theme\'s differences. Each custom theme has a file of its own in\n# themes/. No ThemeData in the code.\nspring:\n  config:\n    import: >-\n      resources:themes/neon.yml, resources:themes/neon-night.yml,\n      resources:themes/sepia.yml, resources:themes/high-contrast.yml\n\n  flutter:\n    theme:\n      # system | light | dark | neon | neon-night | sepia | high-contrast\n      # (and `winter` once loaded at run time, see Settings)\n      active: system\n      system-dark: dark\n\n      seed-color: deepPurple\n      typography:\n        font-family: Roboto\n        # Japanese glyphs: the system\'s fonts on devices, in tests the\n        # cut-down font of test/fonts/.\n        font-family-fallback: [Noto Sans JP]\n        display: { font-family: Roboto Condensed, weight: bold }\n        headline: { font-family: Roboto Condensed }\n        title-large: { weight: 500 }\n        # A monospaced font file would go into res/fonts/ like the others;\n        # Roboto Condensed stands in (the Logs screen).\n        code: { font-family: Roboto Condensed, size: 12 }\n      shape:\n        medium: 16\n      components:\n        app-bar:\n          scrolled-under-elevation: level2\n        card:\n          shape: large\n          color: \$colors.surface-container-low\n        input:\n          style: outline\n          shape: small\n        snack-bar:\n          behavior: floating\n      spacing:\n        s: 8\n        m: 16\n        l: 24\n      tokens:\n        brand:\n          accent: \'#FF40A0\'\n          # A reference with a color object: follows a theme that\n          # changes brand.accent.\n          accent-soft: { color: \$brand.accent, alpha: 16% }\n          banner-height: 96\n          # A nested group with a list: context.theme.tokens.brand.tag.\n          tag:\n            radius: 14\n            labels: [New, Staff pick, Sale]\n      motion:\n        durations: { fast: 120ms, medium: 300ms }\n      # A look per widget state for the app\'s own widgets (ThemeTag).\n      styles:\n        tag:\n          padding: [12, 6]\n          radius: \$brand.tag.radius\n          fill:\n            default: \$brand.accent-soft\n            hovered: { color: \$brand.accent, alpha: 28% }\n            selected: \$brand.accent\n          transition: \$motion.durations.fast ease-out\n      # Played by ThemeAnimation (the tags rise into place).\n      animations:\n        rise: { duration: \$motion.durations.medium, curve: ease-out }\n\n      themes:\n        dark:\n          seed-color: deepPurple.shade200\n          components:\n            card: { color: \$colors.surface-container }\n',
+      '# The look of the app: the shared part of every theme and the standard\n# `dark` theme\'s differences. Each custom theme has a file of its own in\n# themes/. No ThemeData in the code.\nspring:\n  config:\n    import: >-\n      resources:themes/neon.yml, resources:themes/neon-night.yml,\n      resources:themes/sepia.yml, resources:themes/high-contrast.yml\n\n  flutter:\n    theme:\n      # system | light | dark | neon | neon-night | sepia | high-contrast\n      # (and `winter` once loaded at run time, see Settings)\n      active: system\n      system-dark: dark\n\n      seed-color: deepPurple\n      typography:\n        font-family: Roboto\n        # Japanese glyphs: the system\'s fonts on devices, in tests the\n        # cut-down font of test/fonts/.\n        font-family-fallback: [Noto Sans JP]\n        display: { font-family: Roboto Condensed, weight: bold }\n        headline: { font-family: Roboto Condensed }\n        title-large: { weight: 500 }\n        # A monospaced font file would go into res/fonts/ like the others;\n        # Roboto Condensed stands in (the Logs screen).\n        code: { font-family: Roboto Condensed, size: 12 }\n      shape:\n        medium: 16\n      components:\n        app-bar:\n          scrolled-under-elevation: level2\n        card:\n          shape: large\n          color: \$colors.surface-container-low\n        input:\n          style: outline\n          shape: small\n        snack-bar:\n          behavior: floating\n      spacing:\n        s: 8\n        m: 16\n        l: 24\n      tokens:\n        brand:\n          accent: \'#FF40A0\'\n          # A reference with a color object: follows a theme that\n          # changes brand.accent.\n          accent-soft: { color: \$brand.accent, alpha: 16% }\n          banner-height: 96\n          # A nested group with a list: context.theme.tokens.brand.tag.\n          tag:\n            radius: 14\n            labels: [New, Staff pick, Sale]\n      motion:\n        durations: { fast: 120ms, medium: 300ms }\n      # A look per widget state for the app\'s own widgets (ThemeTag).\n      styles:\n        tag:\n          padding: [12, 6]\n          radius: \$brand.tag.radius\n          fill:\n            default: \$brand.accent-soft\n            hovered: { color: \$brand.accent, alpha: 28% }\n            selected: \$brand.accent\n          transition: \$motion.durations.fast ease-out\n      # Played by ThemeAnimation (the tags rise into place).\n      animations:\n        rise: { duration: \$motion.durations.medium, curve: ease-out }\n\n      # Loaders (ThemeLoader, ThemeSkeleton): a skeleton of the lists that\n      # come from the server, and a bar for the work that takes a while.\n      loaders:\n        card:\n          kind: skeleton\n          base: \$colors.surface-container-high\n          highlight: \$colors.surface-container-highest\n          radius: \$shape.medium\n          shimmer: { duration: 1.2s, angle: 20 }\n        bar: { kind: bar, color: \$colors.primary, track: { color: \$colors.primary, alpha: 20% }, height: 4, width: 220 }\n      # The splash: what shows while the app starts, and on the web before\n      # Flutter runs (the generator writes it into web/index.html).\n      splash:\n        background: { color: \$colors.surface }\n        logo: { source: assets/images/leaf.png, size: 96 }\n        title: NEON Books\n        loader: bar\n        min-duration: 1s\n        exit: { transition: 400ms ease-out }\n\n      themes:\n        dark:\n          seed-color: deepPurple.shade200\n          components:\n            card: { color: \$colors.surface-container }\n',
     ),
     r'messages.properties': _i2.EmbeddedResource.text(
-      "# The app's texts in English; messages_ja.properties has the Japanese ones.\n# context.message('key', args: [...]) reads them in the app's language.\n\nsection.catalog=Catalog\nsection.basket=Basket\nsection.orders=Orders\nsection.stock=Live stock\nsection.more=More\n\ncatalog.search=Search the catalog\ncatalog.empty=No books found\ncatalog.retry=Try again\ncatalog.previous=Previous page\ncatalog.next=Next page\ncatalog.page=Page {0} of {1}\n\nbook.title=Book\nbook.notFound=There is no book {0}\nbook.inStock={0} in stock\nbook.soldOut=Sold out\n\nbasket.add=Add to basket\nbasket.added={0} is in the basket\nbasket.empty=The basket is empty\nbasket.less=One less\nbasket.more=One more\nbasket.total=Total\nbasket.order=Order\nbasket.loginToOrder=Log in to order\nbasket.ordered=Order {0} placed\n\norders.login=Log in to see your orders\norders.none=No orders yet\norders.order=Order {0}\n\nstock.live=Live: changes appear as they happen\nstock.offline=Not connected\nstock.waiting=Waiting for stock changes\nstock.available={0} left\n\nsupport.title=Support\nsupport.login=Log in to chat with us\nsupport.empty=Ask us anything\nsupport.hint=Your message\nsupport.send=Send\n\nlogin.open=Log in\nlogin.title=Log in\nlogin.hint=Log in to order and chat (ada / ada-secret, or root / root-secret for the admin).\nlogin.username=User name\nlogin.password=Password\nlogin.submit=Log in\nlogin.failed=Wrong user name or password\nlogin.keycloak=Sign in with Keycloak\nlogin.keycloakHint=Log in at Keycloak, the bookstore's single sign-on (ada / ada-secret, or root / root-secret for the admin).\naccount.menu=Account\naccount.logout=Log out\n\nadmin.title=Admin\nadmin.newBook=New book\nadmin.field.isbn=ISBN\nadmin.field.title=Title\nadmin.field.author=Author\nadmin.field.price=Price\nadmin.add=Add the book\nadmin.added={0} added\nadmin.uploadCover=Upload the sample cover\nadmin.coverUploaded=Cover uploaded\nadmin.delete=Delete the book\nadmin.deleted={0} deleted\nadmin.serverLog=The server's log\nadmin.loadServerLog=Load the server's log\n\nsettings.title=Settings\nsettings.theme=Theme\nsettings.loadTheme=Load a theme from the server\nsettings.themeLoaded=Theme {0} loaded\nsettings.language=Language\nsettings.preview=Preview\n\ntheme.system=As on the device\ntheme.light=Light\ntheme.dark=Dark\ntheme.neon=Neon\ntheme.neon-night=Neon at night\ntheme.sepia=Sepia\ntheme.high-contrast=High contrast\ntheme.winter=Winter\n\nlanguage.system=As on the device\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=Logs\nlogs.clear=Clear\nlogs.empty=Nothing logged at this level\nlogs.debug=Debug\nlogs.info=Info\nlogs.warning=Warning\nlogs.error=Error\n\nabout.title=About\nabout.source=Loaded from {0} and {1}\n\nerror.offline=The server cannot be reached\nerror.denied=Not allowed\nerror.login=The login failed\nerror.status=The server answered {0}\n\n# Validation of the Admin form (BookForm): Spring's error codes, the most\n# specific first (NotBlank.newBook.title, NotBlank.title, NotBlank).\nNotBlank=must not be blank\nPattern.newBook.isbn=must be 10 or 13 digits\nSize=must be at most {1} characters\nPositive=must be more than 0\nMax=must be at most {1}\ntypeMismatch.newBook.price=must be a number\n",
+      "# The app's texts in English; messages_ja.properties has the Japanese ones.\n# context.message('key', args: [...]) reads them in the app's language.\n\nsection.catalog=Catalog\nsection.basket=Basket\nsection.orders=Orders\nsection.stock=Live stock\nsection.more=More\n\ncatalog.search=Search the catalog\ncatalog.empty=No books found\ncatalog.retry=Try again\ncatalog.previous=Previous page\ncatalog.next=Next page\ncatalog.page=Page {0} of {1}\n\nbook.title=Book\nbook.notFound=There is no book {0}\nbook.inStock={0} in stock\nbook.soldOut=Sold out\n\nbasket.add=Add to basket\nbasket.added={0} is in the basket\nbasket.empty=The basket is empty\nbasket.less=One less\nbasket.more=One more\nbasket.total=Total\nbasket.order=Order\nbasket.loginToOrder=Log in to order\nbasket.ordered=Order {0} placed\n\norders.login=Log in to see your orders\norders.none=No orders yet\norders.order=Order {0}\n\nstock.live=Live: changes appear as they happen\nstock.offline=Not connected\nstock.waiting=Waiting for stock changes\nstock.available={0} left\n\nsupport.title=Support\nsupport.login=Log in to chat with us\nsupport.empty=Ask us anything\nsupport.hint=Your message\nsupport.send=Send\n\nlogin.open=Log in\nlogin.title=Log in\nlogin.hint=Log in to order and chat (ada / ada-secret, or root / root-secret for the admin).\nlogin.username=User name\nlogin.password=Password\nlogin.submit=Log in\nlogin.failed=Wrong user name or password\nlogin.keycloak=Sign in with Keycloak\nlogin.keycloakHint=Log in at Keycloak, the bookstore's single sign-on (ada / ada-secret, or root / root-secret for the admin).\naccount.menu=Account\naccount.logout=Log out\n\nadmin.title=Admin\nadmin.newBook=New book\nadmin.field.isbn=ISBN\nadmin.field.title=Title\nadmin.field.author=Author\nadmin.field.price=Price\nadmin.add=Add the book\nadmin.added={0} added\nadmin.uploadCover=Upload the sample cover\nadmin.coverUploaded=Cover uploaded\nadmin.delete=Delete the book\nadmin.deleted={0} deleted\nadmin.serverLog=The server's log\nadmin.loadServerLog=Load the server's log\n\nsettings.title=Settings\nsettings.theme=Theme\nsettings.loadTheme=Load a theme from the server\nsettings.themeLoaded=Theme {0} loaded\nsettings.language=Language\nsettings.preview=Preview\nsettings.loaders=Loaders\n\ntheme.system=As on the device\ntheme.light=Light\ntheme.dark=Dark\ntheme.neon=Neon\ntheme.neon-night=Neon at night\ntheme.sepia=Sepia\ntheme.high-contrast=High contrast\ntheme.winter=Winter\n\nlanguage.system=As on the device\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=Logs\nlogs.clear=Clear\nlogs.empty=Nothing logged at this level\nlogs.debug=Debug\nlogs.info=Info\nlogs.warning=Warning\nlogs.error=Error\n\nabout.title=About\nabout.source=Loaded from {0} and {1}\n\nerror.offline=The server cannot be reached\nerror.denied=Not allowed\nerror.login=The login failed\nerror.status=The server answered {0}\n\n# Validation of the Admin form (BookForm): Spring's error codes, the most\n# specific first (NotBlank.newBook.title, NotBlank.title, NotBlank).\nNotBlank=must not be blank\nPattern.newBook.isbn=must be 10 or 13 digits\nSize=must be at most {1} characters\nPositive=must be more than 0\nMax=must be at most {1}\ntypeMismatch.newBook.price=must be a number\n",
     ),
     r'messages_ja.properties': _i2.EmbeddedResource.text(
-      'section.catalog=カタログ\nsection.basket=かご\nsection.orders=注文\nsection.stock=在庫\nsection.more=その他\n\ncatalog.search=カタログを検索\ncatalog.empty=本が見つかりません\ncatalog.retry=再試行\ncatalog.previous=前のページ\ncatalog.next=次のページ\ncatalog.page={0} / {1} ページ\n\nbook.title=本\nbook.notFound=本 {0} はありません\nbook.inStock=在庫 {0} 冊\nbook.soldOut=売り切れ\n\nbasket.add=かごに入れる\nbasket.added={0} をかごに入れました\nbasket.empty=かごは空です\nbasket.less=一冊減らす\nbasket.more=一冊増やす\nbasket.total=合計\nbasket.order=注文する\nbasket.loginToOrder=ログインして注文\nbasket.ordered=注文 {0} を受け付けました\n\norders.login=ログインして注文を表示\norders.none=注文はまだありません\norders.order=注文 {0}\n\nstock.live=ライブ：変更がすぐに表示されます\nstock.offline=未接続\nstock.waiting=在庫の変更を待っています\nstock.available=残り {0} 冊\n\nsupport.title=サポート\nsupport.login=ログインしてチャット\nsupport.empty=何でも聞いてください\nsupport.hint=メッセージ\nsupport.send=送信\n\nlogin.open=ログイン\nlogin.title=ログイン\nlogin.hint=ログインすると注文とチャットができます（ada / ada-secret、管理者は root / root-secret）。\nlogin.username=ユーザー名\nlogin.password=パスワード\nlogin.submit=ログイン\nlogin.failed=ユーザー名またはパスワードが違います\nlogin.keycloak=Keycloakでサインイン\nlogin.keycloakHint=書店のSSO、Keycloakでログインします（ada / ada-secret、管理者は root / root-secret）。\naccount.menu=アカウント\naccount.logout=ログアウト\n\nadmin.title=管理\nadmin.newBook=新しい本\nadmin.field.isbn=ISBN\nadmin.field.title=タイトル\nadmin.field.author=著者\nadmin.field.price=価格\nadmin.add=本を追加\nadmin.added={0} を追加しました\nadmin.uploadCover=サンプルの表紙をアップロード\nadmin.coverUploaded=表紙をアップロードしました\nadmin.delete=本を削除\nadmin.deleted={0} を削除しました\nadmin.serverLog=サーバーのログ\nadmin.loadServerLog=サーバーのログを読み込む\n\nsettings.title=設定\nsettings.theme=テーマ\nsettings.loadTheme=サーバーからテーマを読み込む\nsettings.themeLoaded=テーマ {0} を読み込みました\nsettings.language=言語\nsettings.preview=プレビュー\n\ntheme.system=端末の設定に合わせる\ntheme.light=ライト\ntheme.dark=ダーク\ntheme.neon=ネオン\ntheme.neon-night=夜のネオン\ntheme.sepia=セピア\ntheme.high-contrast=ハイコントラスト\ntheme.winter=冬\n\nlanguage.system=端末の設定に合わせる\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=ログ\nlogs.clear=消去\nlogs.empty=このレベルのログはありません\nlogs.debug=デバッグ\nlogs.info=情報\nlogs.warning=警告\nlogs.error=エラー\n\nabout.title=このアプリについて\nabout.source={0} と {1} から読み込み\n\nerror.offline=サーバーに接続できません\nerror.denied=許可されていません\nerror.login=ログインに失敗しました\nerror.status=サーバーの応答：{0}\n\nNotBlank=入力してください\nPattern.newBook.isbn=10桁または13桁の数字にしてください\nSize={1} 文字以内にしてください\nPositive=0 より大きくしてください\nMax={1} 以下にしてください\ntypeMismatch.newBook.price=数字を入力してください\n',
+      'section.catalog=カタログ\nsection.basket=かご\nsection.orders=注文\nsection.stock=在庫\nsection.more=その他\n\ncatalog.search=カタログを検索\ncatalog.empty=本が見つかりません\ncatalog.retry=再試行\ncatalog.previous=前のページ\ncatalog.next=次のページ\ncatalog.page={0} / {1} ページ\n\nbook.title=本\nbook.notFound=本 {0} はありません\nbook.inStock=在庫 {0} 冊\nbook.soldOut=売り切れ\n\nbasket.add=かごに入れる\nbasket.added={0} をかごに入れました\nbasket.empty=かごは空です\nbasket.less=一冊減らす\nbasket.more=一冊増やす\nbasket.total=合計\nbasket.order=注文する\nbasket.loginToOrder=ログインして注文\nbasket.ordered=注文 {0} を受け付けました\n\norders.login=ログインして注文を表示\norders.none=注文はまだありません\norders.order=注文 {0}\n\nstock.live=ライブ：変更がすぐに表示されます\nstock.offline=未接続\nstock.waiting=在庫の変更を待っています\nstock.available=残り {0} 冊\n\nsupport.title=サポート\nsupport.login=ログインしてチャット\nsupport.empty=何でも聞いてください\nsupport.hint=メッセージ\nsupport.send=送信\n\nlogin.open=ログイン\nlogin.title=ログイン\nlogin.hint=ログインすると注文とチャットができます（ada / ada-secret、管理者は root / root-secret）。\nlogin.username=ユーザー名\nlogin.password=パスワード\nlogin.submit=ログイン\nlogin.failed=ユーザー名またはパスワードが違います\nlogin.keycloak=Keycloakでサインイン\nlogin.keycloakHint=書店のSSO、Keycloakでログインします（ada / ada-secret、管理者は root / root-secret）。\naccount.menu=アカウント\naccount.logout=ログアウト\n\nadmin.title=管理\nadmin.newBook=新しい本\nadmin.field.isbn=ISBN\nadmin.field.title=タイトル\nadmin.field.author=著者\nadmin.field.price=価格\nadmin.add=本を追加\nadmin.added={0} を追加しました\nadmin.uploadCover=サンプルの表紙をアップロード\nadmin.coverUploaded=表紙をアップロードしました\nadmin.delete=本を削除\nadmin.deleted={0} を削除しました\nadmin.serverLog=サーバーのログ\nadmin.loadServerLog=サーバーのログを読み込む\n\nsettings.title=設定\nsettings.theme=テーマ\nsettings.loadTheme=サーバーからテーマを読み込む\nsettings.themeLoaded=テーマ {0} を読み込みました\nsettings.language=言語\nsettings.preview=プレビュー\nsettings.loaders=ローダー\n\ntheme.system=端末の設定に合わせる\ntheme.light=ライト\ntheme.dark=ダーク\ntheme.neon=ネオン\ntheme.neon-night=夜のネオン\ntheme.sepia=セピア\ntheme.high-contrast=ハイコントラスト\ntheme.winter=冬\n\nlanguage.system=端末の設定に合わせる\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=ログ\nlogs.clear=消去\nlogs.empty=このレベルのログはありません\nlogs.debug=デバッグ\nlogs.info=情報\nlogs.warning=警告\nlogs.error=エラー\n\nabout.title=このアプリについて\nabout.source={0} と {1} から読み込み\n\nerror.offline=サーバーに接続できません\nerror.denied=許可されていません\nerror.login=ログインに失敗しました\nerror.status=サーバーの応答：{0}\n\nNotBlank=入力してください\nPattern.newBook.isbn=10桁または13桁の数字にしてください\nSize={1} 文字以内にしてください\nPositive=0 より大きくしてください\nMax={1} 以下にしてください\ntypeMismatch.newBook.price=数字を入力してください\n',
     ),
     r'themes/high-contrast.yml': _i2.EmbeddedResource.text(
       'spring:\n  flutter:\n    theme:\n      themes:\n        high-contrast:\n          extends: light\n          contrast: 1.0\n          typography:\n            defaults: { weight: 500 }\n          components:\n            divider: { thickness: 2, color: \$colors.outline }\n            outlined-button: { border-color: \$colors.on-surface }\n',
@@ -5366,6 +5366,69 @@ _i71.SpringApplication get springApplication => _i71.SpringApplication(
           const String.fromEnvironment(
             'SPRING_FLUTTER_THEME_COMPONENTS_SNACKBAR_BEHAVIOR',
           ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_COLOR',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_HEIGHT',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_KIND',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_BAR_TRACK_COLOR',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH'))
+      'SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_BAR_WIDTH',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_BASE'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_BASE',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_HIGHLIGHT',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_KIND'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_KIND': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_KIND',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS'))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_LOADERS_CARD_RADIUS',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_ANGLE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION',
+    ))
+      'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_LOADERS_CARD_SHIMMER_DURATION',
+          ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_MOTION_DURATIONS_FAST'))
       'SPRING_FLUTTER_THEME_MOTION_DURATIONS_FAST':
           const String.fromEnvironment(
@@ -5397,6 +5460,40 @@ _i71.SpringApplication get springApplication => _i71.SpringApplication(
     if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPACING_S'))
       'SPRING_FLUTTER_THEME_SPACING_S': const String.fromEnvironment(
         'SPRING_FLUTTER_THEME_SPACING_S',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_SPLASH_BACKGROUND_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION',
+    ))
+      'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_SPLASH_EXIT_TRANSITION',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOADER'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOADER': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOADER',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOGO_SIZE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE'))
+      'SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_LOGO_SOURCE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_MINDURATION'))
+      'SPRING_FLUTTER_THEME_SPLASH_MINDURATION': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_MINDURATION',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_SPLASH_TITLE'))
+      'SPRING_FLUTTER_THEME_SPLASH_TITLE': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_SPLASH_TITLE',
       ),
     if (const bool.hasEnvironment(
       'SPRING_FLUTTER_THEME_STYLES_TAG_FILL_DEFAULT',
@@ -5838,6 +5935,69 @@ _i71.SpringApplication get springApplication => _i71.SpringApplication(
           const String.fromEnvironment(
             'spring.flutter.theme.components.snack-bar.behavior',
           ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.color'))
+      'spring.flutter.theme.loaders.bar.color': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.color',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.height'))
+      'spring.flutter.theme.loaders.bar.height': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.height',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.kind'))
+      'spring.flutter.theme.loaders.bar.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.kind',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.bar.track.alpha',
+    ))
+      'spring.flutter.theme.loaders.bar.track.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.bar.track.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.bar.track.color',
+    ))
+      'spring.flutter.theme.loaders.bar.track.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.bar.track.color',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.bar.width'))
+      'spring.flutter.theme.loaders.bar.width': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.bar.width',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.base'))
+      'spring.flutter.theme.loaders.card.base': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.base',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.highlight',
+    ))
+      'spring.flutter.theme.loaders.card.highlight':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.highlight',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.kind'))
+      'spring.flutter.theme.loaders.card.kind': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.kind',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.loaders.card.radius'))
+      'spring.flutter.theme.loaders.card.radius': const String.fromEnvironment(
+        'spring.flutter.theme.loaders.card.radius',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.shimmer.angle',
+    ))
+      'spring.flutter.theme.loaders.card.shimmer.angle':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.shimmer.angle',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.loaders.card.shimmer.duration',
+    ))
+      'spring.flutter.theme.loaders.card.shimmer.duration':
+          const String.fromEnvironment(
+            'spring.flutter.theme.loaders.card.shimmer.duration',
+          ),
     if (const bool.hasEnvironment('spring.flutter.theme.motion.durations.fast'))
       'spring.flutter.theme.motion.durations.fast':
           const String.fromEnvironment(
@@ -5869,6 +6029,40 @@ _i71.SpringApplication get springApplication => _i71.SpringApplication(
     if (const bool.hasEnvironment('spring.flutter.theme.spacing.s'))
       'spring.flutter.theme.spacing.s': const String.fromEnvironment(
         'spring.flutter.theme.spacing.s',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.splash.background.color',
+    ))
+      'spring.flutter.theme.splash.background.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.splash.background.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.splash.exit.transition',
+    ))
+      'spring.flutter.theme.splash.exit.transition':
+          const String.fromEnvironment(
+            'spring.flutter.theme.splash.exit.transition',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.loader'))
+      'spring.flutter.theme.splash.loader': const String.fromEnvironment(
+        'spring.flutter.theme.splash.loader',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.logo.size'))
+      'spring.flutter.theme.splash.logo.size': const String.fromEnvironment(
+        'spring.flutter.theme.splash.logo.size',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.logo.source'))
+      'spring.flutter.theme.splash.logo.source': const String.fromEnvironment(
+        'spring.flutter.theme.splash.logo.source',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.min-duration'))
+      'spring.flutter.theme.splash.min-duration': const String.fromEnvironment(
+        'spring.flutter.theme.splash.min-duration',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.theme.splash.title'))
+      'spring.flutter.theme.splash.title': const String.fromEnvironment(
+        'spring.flutter.theme.splash.title',
       ),
     if (const bool.hasEnvironment(
       'spring.flutter.theme.styles.tag.fill.default',
@@ -6128,7 +6322,7 @@ _i71.SpringApplication get springApplication => _i71.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '16fe3f88',
+  fingerprint: '855d38bd',
 );
 
 /// Starts the application: config files, environment, context, runners

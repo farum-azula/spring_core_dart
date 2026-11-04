@@ -171,10 +171,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
       '# Desktops: the window opens wide and cannot get small.\nspring.flutter.desktop.window.title=Theme Showcase NEON\nspring.flutter.desktop.window.initial-size=1280x800\nspring.flutter.desktop.window.min-size=900x600\n',
     ),
     r'application.yml': _i2.EmbeddedResource.text(
-      '# THEME SHOWCASE NEON: a custom design system on the theme, with no\n# Material and no Cupertino. The look of every widget is in neon_ui\'s\n# themes/neon.yml (imported below); this file holds the app and a second theme\n# of its own that extends it. The pages quote lines of these two files in\n# their code boxes (a test checks that they do).\nspring:\n   config:\n      # The theme of the library: `neon_ui` embeds its lib/resources/, so the\n      # file is found as if it were ours.\n      import: resources:themes/neon.yml\n\n   flutter:\n      web:\n         port: 1010\n      app:\n         # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino\n         # widgets. Everything on screen is a neon_ui widget or our own.\n         type: widgets\n         title: Theme Showcase NEON\n         debug-banner: false\n\n      theme:\n         # The theme shown at the start. `neon` is the library\'s.\n         active: neon\n\n         themes:\n            # A theme of our own: neon with cyan as its primary color. Only\n            # what changes is written; `extends` brings the rest. The accent,\n            # the glow, the button fills and the modal border all say\n            # `\$colors.primary` or `\$neon.accent`, so they turn cyan too.\n            neon-ice:\n               extends: neon\n               colors:\n                  primary: \$neon.cyan\n                  secondary: \$neon.yellow\n               tokens:\n                  neon:\n                     panel: "#CC0B1218"\n                     input-fill: "#B3081016"\n\n         # The tokens of this app (the library\'s are neon_ui\'s).\n         tokens:\n            showcase:\n               content-width: 980\n               tile-height: 150\n               tagline: Yellow, cyan and pink after dark\n         styles:\n            # A tile of the theme switcher: our own style, per state, made with\n            # the same ThemeStates as the library\'s widgets.\n            showcase-tile:\n               padding: [16, 14]\n               radius: \$shape.extra-small\n               border:\n                  default: \$colors.outline\n                  hovered: \$colors.secondary\n                  focused: \$colors.secondary\n                  selected: \$colors.primary\n               fill:\n                  default: { color: \$colors.surface-container-low, alpha: 80% }\n                  hovered: { color: \$colors.surface-container, alpha: 90% }\n                  selected: { color: \$colors.primary, alpha: 12% }\n               glow: { default: 0, hovered: 8, selected: 14 }\n               transition: 160ms ease-out\n',
+      '# THEME SHOWCASE NEON: a custom design system on the theme, with no\n# Material and no Cupertino. The look of every widget is in neon_ui\'s\n# themes/neon.yml (imported below); this file holds the app and a second theme\n# of its own that extends it. The pages quote lines of these two files in\n# their code boxes (a test checks that they do).\nspring:\n   config:\n      # The theme of the library: `neon_ui` embeds its lib/resources/, so the\n      # file is found as if it were ours.\n      import: resources:themes/neon.yml\n\n   flutter:\n      web:\n         port: 1010\n      app:\n         # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino\n         # widgets. Everything on screen is a neon_ui widget or our own.\n         type: widgets\n         title: Theme Showcase NEON\n         debug-banner: false\n\n      theme:\n         # The theme shown at the start. `neon` is the library\'s.\n         active: neon\n\n         themes:\n            # The library\'s theme again, to add what is the app\'s: the splash\n            # that shows while the app starts, and loaders in the neon colors.\n            # The splash is the neon-gate loader of neon_ui\'s themes/neon.yml\n            # (a kind of the library): a gate of panels it draws itself, so\n            # the splash has no logo or title. With `reveal` the panels part\n            # over the app, not over the background. The built-in kinds are\n            # written here.\n            neon:\n               splash:\n                  background: { color: \$colors.surface-container-lowest }\n                  loader: neon-gate\n                  exit: { transition: 200ms ease-out, reveal: true }\n               loaders:\n                  spinner: { kind: spinner, color: \$neon.cyan, size: 28, stroke: 3, track: { color: \$neon.cyan, alpha: 20% } }\n                  dots: { kind: dots, color: \$neon.pink, size: 10, count: 3 }\n                  upload: { kind: bar, color: \$neon.yellow, track: { color: \$neon.yellow, alpha: 20% }, height: 4, width: 240 }\n                  card:\n                     kind: skeleton\n                     base: \$colors.surface-container-high\n                     highlight: \$colors.surface-container-highest\n                     radius: \$shape.extra-small\n                     shimmer: { duration: 1.2s, angle: 20 }\n            # A theme of our own: neon with cyan as its primary color. Only\n            # what changes is written; `extends` brings the rest. The accent,\n            # the glow, the button fills and the modal border all say\n            # `\$colors.primary` or `\$neon.accent`, so they turn cyan too.\n            neon-ice:\n               extends: neon\n               colors:\n                  primary: \$neon.cyan\n                  secondary: \$neon.yellow\n               tokens:\n                  neon:\n                     panel: "#CC0B1218"\n                     input-fill: "#B3081016"\n\n         # The tokens of this app (the library\'s are neon_ui\'s).\n         tokens:\n            showcase:\n               content-width: 980\n               tile-height: 150\n               tagline: Yellow, cyan and pink after dark\n         styles:\n            # A tile of the theme switcher: our own style, per state, made with\n            # the same ThemeStates as the library\'s widgets.\n            showcase-tile:\n               padding: [16, 14]\n               radius: \$shape.extra-small\n               border:\n                  default: \$colors.outline\n                  hovered: \$colors.secondary\n                  focused: \$colors.secondary\n                  selected: \$colors.primary\n               fill:\n                  default: { color: \$colors.surface-container-low, alpha: 80% }\n                  hovered: { color: \$colors.surface-container, alpha: 90% }\n                  selected: { color: \$colors.primary, alpha: 12% }\n               glow: { default: 0, hovered: 8, selected: 14 }\n               transition: 160ms ease-out\n',
     ),
     r'messages.properties': _i2.EmbeddedResource.text(
-      '# Typed messages: context.messages.nav.overview, context.messages.themes.active(name).\nnav.overview=Overview\nnav.components=Components\nnav.states=States\nnav.motion=Motion\nnav.background=Background\nnav.tokens=Tokens\nnav.logs=Logs\nnav.themes=Themes\nthemes.active=Theme: {0}\n',
+      '# Typed messages: context.messages.nav.overview, context.messages.themes.active(name).\nnav.overview=Overview\nnav.components=Components\nnav.states=States\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.tokens=Tokens\nnav.logs=Logs\nnav.themes=Themes\nthemes.active=Theme: {0}\n',
     ),
   },
 );
@@ -383,6 +383,188 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
       'SPRING_FLUTTER_THEME_THEMES_NEONICE_TOKENS_NEON_PANEL':
           const String.fromEnvironment(
             'SPRING_FLUTTER_THEME_THEMES_NEONICE_TOKENS_NEON_PANEL',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_BASE',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_BASE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_BASE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_HIGHLIGHT',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_HIGHLIGHT':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_HIGHLIGHT',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_KIND',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_KIND':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_KIND',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_RADIUS',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_RADIUS':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_RADIUS',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_SHIMMER_ANGLE',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_SHIMMER_ANGLE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_SHIMMER_ANGLE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_SHIMMER_DURATION',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_SHIMMER_DURATION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_CARD_SHIMMER_DURATION',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_COUNT',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_COUNT':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_COUNT',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_KIND',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_KIND':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_KIND',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_SIZE',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_SIZE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_DOTS_SIZE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_KIND',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_KIND':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_KIND',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_SIZE',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_SIZE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_SIZE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_STROKE',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_STROKE':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_STROKE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_TRACK_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_TRACK_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_TRACK_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_TRACK_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_TRACK_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_SPINNER_TRACK_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_HEIGHT',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_HEIGHT':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_HEIGHT',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_KIND',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_KIND':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_KIND',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_TRACK_ALPHA',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_TRACK_ALPHA':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_TRACK_ALPHA',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_TRACK_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_TRACK_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_TRACK_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_WIDTH',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_WIDTH':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_LOADERS_UPLOAD_WIDTH',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_BACKGROUND_COLOR',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_BACKGROUND_COLOR':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_BACKGROUND_COLOR',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_EXIT_REVEAL',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_EXIT_REVEAL':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_EXIT_REVEAL',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_EXIT_TRANSITION',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_EXIT_TRANSITION':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_EXIT_TRANSITION',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_LOADER',
+    ))
+      'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_LOADER':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_THEMES_NEON_SPLASH_LOADER',
           ),
     if (const bool.hasEnvironment(
       'SPRING_FLUTTER_THEME_TOKENS_SHOWCASE_CONTENTWIDTH',
@@ -619,6 +801,188 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
             'spring.flutter.theme.themes.neon-ice.tokens.neon.panel',
           ),
     if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.card.base',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.card.base':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.card.base',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.card.highlight',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.card.highlight':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.card.highlight',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.card.kind',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.card.kind':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.card.kind',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.card.radius',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.card.radius':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.card.radius',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.card.shimmer.angle',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.card.shimmer.angle':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.card.shimmer.angle',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.card.shimmer.duration',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.card.shimmer.duration':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.card.shimmer.duration',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.dots.color',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.dots.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.dots.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.dots.count',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.dots.count':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.dots.count',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.dots.kind',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.dots.kind':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.dots.kind',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.dots.size',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.dots.size':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.dots.size',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.spinner.color',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.spinner.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.spinner.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.spinner.kind',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.spinner.kind':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.spinner.kind',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.spinner.size',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.spinner.size':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.spinner.size',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.spinner.stroke',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.spinner.stroke':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.spinner.stroke',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.spinner.track.alpha',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.spinner.track.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.spinner.track.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.spinner.track.color',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.spinner.track.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.spinner.track.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.upload.color',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.upload.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.upload.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.upload.height',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.upload.height':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.upload.height',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.upload.kind',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.upload.kind':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.upload.kind',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.upload.track.alpha',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.upload.track.alpha':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.upload.track.alpha',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.upload.track.color',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.upload.track.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.upload.track.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.loaders.upload.width',
+    ))
+      'spring.flutter.theme.themes.neon.loaders.upload.width':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.loaders.upload.width',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.splash.background.color',
+    ))
+      'spring.flutter.theme.themes.neon.splash.background.color':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.splash.background.color',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.splash.exit.reveal',
+    ))
+      'spring.flutter.theme.themes.neon.splash.exit.reveal':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.splash.exit.reveal',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.splash.exit.transition',
+    ))
+      'spring.flutter.theme.themes.neon.splash.exit.transition':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.splash.exit.transition',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.theme.themes.neon.splash.loader',
+    ))
+      'spring.flutter.theme.themes.neon.splash.loader':
+          const String.fromEnvironment(
+            'spring.flutter.theme.themes.neon.splash.loader',
+          ),
+    if (const bool.hasEnvironment(
       'spring.flutter.theme.tokens.showcase.content-width',
     ))
       'spring.flutter.theme.tokens.showcase.content-width':
@@ -658,7 +1022,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'c29f5957',
+  fingerprint: '2cee03b4',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -467,6 +467,63 @@ final class AppMessagesBasket {
 
 The files hold keys, not values.
 
+### Loaders and the splash
+
+For `loaders.<name>` and `splash` the keys add `context.theme.loaders.<name>`
+(a `ThemeLoaderSpec`) and `context.theme.splash` (a `ThemeSplashData`). A
+loader of a kind of the app's own, a class marked
+`@ThemeLoaderKind('doors')` that extends `ThemeLoaderPainter<P>` or
+`ThemeLoaderWidget<P>`, gets its props class `P` (`DoorsLoaderProps`),
+written from the keys the themes give the loaders of that kind, typed like
+tokens (`Color`, `double`, `Duration`, `bool`, `Curve` for a `curve`, an
+`AnimationSpec` for a `{duration, curve, repeat}` map, `String`, lists; nested
+maps are nested classes). The module registers the class into
+`ThemeLoaderKinds` before it is built, so `kind: doors` finds it. A `kind`
+that is neither built in nor declared in the package or a dependency (its
+`spring_metadata.json` lists `loaderKinds`), a loader without a kind, a
+`splash.loader` that names no loader, and keys that differ between themes or
+between loaders of one kind stop the build, with a "did you mean".
+
+```dart
+// lib/spring_gen/theme.spring.dart (generated)
+final class DoorsLoaderProps {
+  const DoorsLoaderProps._(this.values);
+  final LoaderValues values;
+  static const List<String>? keys = ['door', 'seam'];
+  DoorsLoaderPropsDoor get door => DoorsLoaderPropsDoor._(values.at('door'));
+}
+final class DoorsLoaderPropsDoor {
+  Color get color => _v.color('color');
+}
+// lib/spring_gen/main.spring.dart (generated), in the module's getter
+ThemeLoaderKinds.register<DoorsLoaderProps>(r'doors',
+    painter: DoorsLoader(), props: DoorsLoaderProps._, keys: DoorsLoaderProps.keys);
+```
+
+**`spring_flutter_page_loader`** writes the page loader of the active
+theme's `splash` into `web/index.html`: a block between
+`<!-- spring:loader:start -->` and `<!-- spring:loader:end -->` (the markers
+are inserted after `<body>` when missing; nothing else of the file is
+touched; the block is rewritten on every build and removed, markers
+included, when the theme has no splash; a page that does not exist is not
+created). It is HTML, CSS and one small script, no external file: the
+background, logo and title of the splash, the built-in loader kinds in CSS,
+or for a kind of the app's own its `web:` HTML file (below the app's
+directory, else `lib/resources/` of a package it uses) with the loader's keys
+as CSS variables named after the key path (`door.edge.color` is
+`--door-edge-color`; colors are `#rrggbb` / `rgba()`, numbers are unitless,
+durations `500ms`, curves CSS timing functions, texts quoted CSS strings; the
+text of a theme never leaves its string or the page). Colors, references and
+Material roles are resolved at build time from the theme (the seed makes the
+roles). With `system` the dark theme's values go into a
+`prefers-color-scheme: dark` rule. The script follows Flutter's loader
+(`--spring-progress` 0 to 1 and `data-stage` `load`, `app`, `engine`, `run`,
+`done` on the loader), honours `prefers-reduced-motion`, and removes the
+loader when the Flutter side calls `window.springLoaderHandOff(progress)`, or
+after a timeout. Its text never changes, so spa mode's Content-Security-Policy
+allows it by hash; with your own policy add that hash
+(`WebPageLoader.scriptHash`) to `script-src`.
+
 ## Metadata for editors
 
 For every package with Spring code the generator writes
@@ -647,6 +704,7 @@ names; applications do not import it.
 |---|---|---|
 | `springCoreDartBuilder` | the main builder, with the `aop_proxies` and `aop_prune` options | `spring_core_dart`: `auto_apply: dependents`, `build_to: source`, `lib/{{}}.dart` → `lib/spring_gen/{{}}.spring.dart` (the same for `bin/`, `test/`, `example/`) |
 | `springTestBuilder` | the test builder, no options | `spring_test`: `auto_apply: dependents`, `build_to: source`, `test/<name>_test.dart` → `test/spring_gen/<name>.test.spring.dart` |
+| `springFlutterPageLoaderBuilder` | the page loader builder, no options | `spring_flutter_page_loader`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web/index.html` itself) |
 | `springFlutterWebBuilder` | the `web_dev_config.yaml` builder, no options | `spring_flutter_web`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web_dev_config.yaml` itself) |
 
 ## Dependencies
@@ -693,6 +751,7 @@ lib/
     dart_define_keys.dart       --dart-define keys
     test_builder.dart           @SpringBootTest, @DataTest → test/spring_gen/*.test.spring.dart
     web_dev_config_builder.dart spring.flutter.web.* → web_dev_config.yaml
+    web_page_loader.dart        the page loader block of web/index.html; web_page_loader_builder.dart writes it
 build.yaml
 test/                           generated output and every rejected declaration
 ```

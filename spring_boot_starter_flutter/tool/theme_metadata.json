@@ -2554,6 +2554,468 @@
       "default": "300ms ease-out"
     },
     {
+      "name": "loaders.*.kind",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "spinner",
+        "dots",
+        "pulse",
+        "bar",
+        "skeleton"
+      ],
+      "description": "What the loader looks like: a built-in kind, or a kind of the app's own (`@ThemeLoaderKind`). Required. An unknown kind stops the start.",
+      "default": null
+    },
+    {
+      "name": "loaders.*.color",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "The color of the moving part (spinner, dots, pulse, bar).",
+      "default": "the theme's `primary`"
+    },
+    {
+      "name": "loaders.*.size",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The diameter of a spinner or pulse, the size of one dot.",
+      "default": "24 (spinner, pulse), 8 (dots)"
+    },
+    {
+      "name": "loaders.*.stroke",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The line width of a spinner.",
+      "default": "3"
+    },
+    {
+      "name": "loaders.*.track",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "The color of the track behind a spinner or bar.",
+      "default": "none (spinner), the color at 20 % (bar)"
+    },
+    {
+      "name": "loaders.*.count",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The number of dots, a whole number of 1 or more.",
+      "default": "3"
+    },
+    {
+      "name": "loaders.*.gap",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The space between dots.",
+      "default": "half the dot size"
+    },
+    {
+      "name": "loaders.*.height",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The thickness of a bar.",
+      "default": "4"
+    },
+    {
+      "name": "loaders.*.width",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The length of a bar.",
+      "default": "120"
+    },
+    {
+      "name": "loaders.*.radius",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The corner radius of a bar or a skeleton.",
+      "default": "half the height (bar), 8 (skeleton)"
+    },
+    {
+      "name": "loaders.*.base",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "The color of a skeleton.",
+      "default": "#E0E0E0"
+    },
+    {
+      "name": "loaders.*.highlight",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "The color of the highlight that crosses a skeleton.",
+      "default": "#F5F5F5"
+    },
+    {
+      "name": "loaders.*.shimmer.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How long the highlight takes to cross a skeleton.",
+      "default": "1.2s"
+    },
+    {
+      "name": "loaders.*.shimmer.curve",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The curve of the highlight: a name or four numbers.",
+      "default": "linear"
+    },
+    {
+      "name": "loaders.*.shimmer.angle",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The slant of the highlight in degrees.",
+      "default": "20"
+    },
+    {
+      "name": "loaders.*.animation.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How long one run of a built-in loader takes. `animation` may also be the name of an `animations.<name>`.",
+      "default": "per kind: 1s, 900ms, 1.2s, 1.4s"
+    },
+    {
+      "name": "loaders.*.animation.curve",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The curve of the run: a name or four numbers.",
+      "default": "per kind"
+    },
+    {
+      "name": "loaders.*.animation.repeat",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "none",
+        "loop",
+        "reverse"
+      ],
+      "description": "What happens at the end of a run.",
+      "default": "loop (back and forth for pulse)"
+    },
+    {
+      "name": "loaders.*.phases.*.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "A kind of the app's own: how long the phase takes. Phases play in the order written.",
+      "default": null
+    },
+    {
+      "name": "loaders.*.phases.*.curve",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The curve of the phase: a name or four numbers.",
+      "default": "linear"
+    },
+    {
+      "name": "loaders.*.phases.*.repeat",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "none",
+        "loop",
+        "reverse"
+      ],
+      "description": "A looping phase goes on until the loader is ready.",
+      "default": "none"
+    },
+    {
+      "name": "loaders.*.phases.*.progress",
+      "type": "true / false",
+      "states": false,
+      "values": [],
+      "description": "A phase that follows the progress the loader is given (`true`).",
+      "default": null
+    },
+    {
+      "name": "loaders.*.phases.*.min-duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "A phase that follows progress fills in no less than this: it shows the smaller of the real progress and the time in the phase (eased) over this, so a fast start does not jump to the end.",
+      "default": "0"
+    },
+    {
+      "name": "loaders.*.web",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "A kind of the app's own: the HTML file that shows it before Flutter runs (the web page loader).",
+      "default": null
+    },
+    {
+      "name": "loaders.*.*",
+      "type": "map",
+      "states": false,
+      "values": [],
+      "description": "A kind of the app's own takes the keys it registered; their values are read like tokens.",
+      "default": null,
+      "open": true
+    },
+    {
+      "name": "splash.background.color",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "The base layer under everything else of every screen. It also shows while the image loads.",
+      "default": "the theme's `surface`"
+    },
+    {
+      "name": "splash.background.image.source",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The picture: an asset path, an https URL, or an http URL with `allow-http`. Required.",
+      "default": null
+    },
+    {
+      "name": "splash.background.image.refresh",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How old the cache may get before the picture is looked at again in the background.",
+      "default": null
+    },
+    {
+      "name": "splash.background.image.source-sha256",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The file must have exactly this SHA-256 digest (64 hexadecimal digits).",
+      "default": null
+    },
+    {
+      "name": "splash.background.image.headers.*",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "A request header, such as `Authorization`; `${...}` placeholders are resolved by the configuration.",
+      "default": null
+    },
+    {
+      "name": "splash.background.image.timeout",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "The longest a download may take.",
+      "default": "10s"
+    },
+    {
+      "name": "splash.background.image.fallback",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "An asset shown while a network image is not there yet.",
+      "default": null
+    },
+    {
+      "name": "splash.background.image.allow-http",
+      "type": "true / false",
+      "states": false,
+      "values": [],
+      "description": "Allows an `http://` source. Without it an `http://` source stops the start.",
+      "default": "false"
+    },
+    {
+      "name": "splash.background.image.fit",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "cover",
+        "contain",
+        "fill",
+        "fit-width",
+        "fit-height",
+        "none",
+        "scale-down"
+      ],
+      "description": "How the picture fills the screen.",
+      "default": "cover"
+    },
+    {
+      "name": "splash.background.image.alignment",
+      "type": "alignment",
+      "states": false,
+      "values": [],
+      "description": "Which part of the picture stays in view: `center`, `top-left`, ..., or `x, y` from -1 to 1.",
+      "default": "center"
+    },
+    {
+      "name": "splash.background.image.opacity",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "How opaque the picture is, from 0 to 1.",
+      "default": "1"
+    },
+    {
+      "name": "splash.background.image.blur",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "A Gaussian blur radius in logical pixels; 0 is sharp.",
+      "default": "0"
+    },
+    {
+      "name": "splash.background.overlay.color",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "A flat color painted over the whole image; use some transparency.",
+      "default": null
+    },
+    {
+      "name": "splash.background.overlay.gradient.type",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "linear",
+        "radial"
+      ],
+      "description": "The kind of gradient.",
+      "default": "linear"
+    },
+    {
+      "name": "splash.background.overlay.gradient.begin",
+      "type": "alignment",
+      "states": false,
+      "values": [],
+      "description": "Where a linear gradient starts; the centre of a radial one.",
+      "default": "top (linear), center (radial)"
+    },
+    {
+      "name": "splash.background.overlay.gradient.end",
+      "type": "alignment",
+      "states": false,
+      "values": [],
+      "description": "Where a linear gradient ends. A radial gradient does not use it.",
+      "default": "bottom"
+    },
+    {
+      "name": "splash.background.overlay.gradient.colors",
+      "type": "list of colors",
+      "states": false,
+      "values": [],
+      "description": "The colors of the gradient, at least two.",
+      "default": null
+    },
+    {
+      "name": "splash.background.overlay.gradient.stops",
+      "type": "list of numbers",
+      "states": false,
+      "values": [],
+      "description": "Where each color sits along the gradient, from 0 to 1.",
+      "default": "even spacing"
+    },
+    {
+      "name": "splash.background.animation",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The name of an `animations.<name>` that moves the image.",
+      "default": null
+    },
+    {
+      "name": "splash.background.effect",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "drift",
+        "zoom",
+        "pulse"
+      ],
+      "description": "How the image moves.",
+      "default": "drift when `animation` is set"
+    },
+    {
+      "name": "splash.background.transition",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The cross-fade when the background changes: `<duration> [<curve>]`.",
+      "default": "300ms ease-out"
+    },
+    {
+      "name": "splash.logo.source",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The logo: an asset path or an https URL. It takes the other image keys of `background.image` (`refresh`, `fallback`, ...).",
+      "default": null
+    },
+    {
+      "name": "splash.logo.size",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The width of the logo.",
+      "default": "96"
+    },
+    {
+      "name": "splash.title",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The text under the logo.",
+      "default": null
+    },
+    {
+      "name": "splash.loader",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The name of a `loaders.<name>` shown under the title; a kind of the app's own may cover the whole splash.",
+      "default": null
+    },
+    {
+      "name": "splash.animation",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The name of an `animations.<name>` that fades and grows the logo.",
+      "default": null
+    },
+    {
+      "name": "splash.min-duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "The splash stays at least this long, even when the app is ready.",
+      "default": "0"
+    },
+    {
+      "name": "splash.exit.transition",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The fade out when the app is ready: `<duration> [<curve>]`.",
+      "default": "300ms ease-out"
+    },
+    {
+      "name": "splash.exit.reveal",
+      "type": "true / false",
+      "states": false,
+      "values": [],
+      "description": "When the last phase of a loader with phases of its own starts, the background, the logo and the title go at once: the loader plays its way out over the app, which is built under the splash.",
+      "default": "false"
+    },
+    {
       "name": "tokens.*",
       "type": "map",
       "states": false,

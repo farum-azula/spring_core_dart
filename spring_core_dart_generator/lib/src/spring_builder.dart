@@ -408,6 +408,7 @@ class SpringBuilder implements Builder {
     final parts = SpringKeyFiles.generate(
       await SpringKeyFiles.withImports(buildStep, _texts(resources)),
       KeysDiagnostics(),
+      loaderKinds: await SpringKeyFiles.loaderKinds(buildStep),
     );
     final parent = SpringKeyFiles.parentOf(buildStep.inputId);
     return [

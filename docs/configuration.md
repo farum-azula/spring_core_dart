@@ -3694,6 +3694,57 @@ runs, which the policy forbids: use
 `content-security-policy-report-only=true` in a development profile when
 it gets in the way.
 
+### The page loader
+
+While the browser downloads Flutter it shows what the generator writes into
+`web/index.html` from the `splash` of the active theme (`active`; with
+`system` the light theme, and the dark one under `prefers-color-scheme:
+dark`): the background, logo and title of the splash, and its loader. The
+block lies between `<!-- spring:loader:start -->` and
+`<!-- spring:loader:end -->`; the generator adds the markers after `<body>`
+when they are missing, rewrites the block on every build, and removes it when
+the theme has no splash. The rest of the page is yours, and a page that does
+not exist is not created.
+
+```yaml
+spring.flutter.theme:
+  splash:
+    background: { color: $colors.surface-container-lowest }
+    logo: { source: assets/images/logo.png, size: 96 }
+    title: NEON
+    loader: neon-gate
+  loaders:
+    neon-gate:
+      kind: neon-gate                     # @ThemeLoaderKind('neon-gate')
+      bar: { color: $colors.error, glow: 22 }
+      edge: { color: $colors.primary, width: 2 }
+      web: web/loaders/neon-gate.html     # how it looks before Flutter runs
+```
+
+- The built-in kinds (`spinner`, `dots`, `pulse`, `bar`, `skeleton`) have a
+  CSS form made from their keys. A kind of the app's own gives a `web:` HTML
+  file, below the app's directory (or `lib/resources/` of a package it
+  uses). The keys of the loader are CSS variables on the loader, named after
+  the key path in kebab case: `bar.color` is `--bar-color`,
+  `edge.width` is `--edge-width`. Colors are resolved (references, color
+  objects, the Material roles of the seed) to `#rrggbb` or `rgba()`; numbers
+  are unitless (`calc(var(--box-width) * 1px)`); durations are `500ms`;
+  texts are quoted CSS strings. The page also has `--spring-progress` (0 to
+  1, from Flutter's loading stages) and `data-stage` (`load`, `app`,
+  `engine`, `run`, `done`) on `#spring-loader`.
+- Nothing in a theme can leave its place in the page: texts are escaped for
+  HTML and CSS, and a logo must be an asset, an `http(s)` URL or a
+  `data:image/` URL (an asset path `assets/x.png` is served as
+  `assets/assets/x.png`, as Flutter does).
+- The loader shows at once, follows `_flutter.loader` as its progress,
+  stops its animations under `prefers-reduced-motion`, and is removed when
+  the Flutter splash has painted and calls `window.springLoaderHandOff`, or
+  after 60 seconds (3 seconds after the first Flutter frame). The script is
+  the same in every app; the generated content-security policy of spa mode
+  allows it by its hash. If you set your own policy
+  (`content-security-policy`), add `WebPageLoader.scriptHash` (the
+  `'sha256-...'` of the block's script) to its `script-src`.
+
 ### The web login
 
 `spring_boot_starter_flutter_security` reads the `web.*` keys in a

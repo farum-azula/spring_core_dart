@@ -10,7 +10,7 @@
 #   4. the CupertinoThemeData                    (cupertino)
 #   5. tokens: groups, lists, durations, image   (tokens)
 #   6. styles for our own widgets                (styles)
-#   7. motion, animations                        (motion, animations)
+#   7. motion, animations, loaders, the splash   (motion, animations, loaders, splash)
 #   8. themes: light, dark, graphite, sunset
 spring:
   config:
@@ -199,6 +199,30 @@ spring:
         pulse: { duration: 1.4s, curve: ease-in-out, repeat: reverse }
         enter: { duration: $motion.durations.slow, curve: ease-out, repeat: none }
         background-drift: { duration: 30s, curve: ease-in-out, repeat: reverse }
+
+      # Loaders: ThemeLoader and ThemeSkeleton show them, by name. These are
+      # in the iOS look: a pulse like a breathing dot, small dots, a thin
+      # rounded bar and a quiet skeleton.
+      loaders:
+        pulse: { kind: pulse, color: $colors.primary, size: 28, animation: { duration: 1.2s, curve: ease-in-out, repeat: reverse } }
+        dots: { kind: dots, color: $colors.primary, size: 8, count: 3 }
+        bar: { kind: bar, color: $colors.primary, track: { color: $colors.primary, alpha: 20% }, height: 4, width: 220, radius: 2 }
+        card:
+          kind: skeleton
+          base: { color: $colors.on-surface, alpha: 8% }
+          highlight: { color: $colors.on-surface, alpha: 16% }
+          radius: 10
+          shimmer: { duration: 1.4s, angle: 20 }
+
+      # The splash: what shows while the app starts (and, on the web, before
+      # Flutter runs: the generator writes it into web/index.html).
+      splash:
+        background: { color: $colors.surface }
+        logo: { source: assets/images/badge.png, size: 96 }
+        title: Theme Showcase
+        loader: dots
+        min-duration: 1.2s
+        exit: { transition: 400ms ease-out }
 
       # ---------------------------------------------------------------- 8
       themes:

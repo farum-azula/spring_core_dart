@@ -803,6 +803,153 @@ The widgets read the theme and are named for it: `ThemeStates`,
 `ThemeStyle<V>`, `AnimationSpec`. Not `ImageSource` (`image_picker`'s
 name). `SpringTheme` / `SpringThemeData` stay.
 
+## Loaders and the splash (0.6.3; the owner, November 2026)
+
+**In 0.6.3.** Three kinds of loader, all from the theme, one look from the
+first byte of the page to the first screen:
+
+1. **Component loaders** — `loaders.<name>` in a theme, shown by
+   `ThemeLoader` (indeterminate or with `progress: 0..1`) and
+   `ThemeSkeleton` (the content, or a placeholder while `loading`).
+2. **The splash** — `splash` in a theme, shown by `SpringApplicationWidget`
+   while the context starts (its `splash:` builder still wins).
+3. **The web page loader** — what the browser shows while it downloads
+   Flutter (today a thin blue bar): generated at build time from the
+   theme's `splash` into the app's web page, and handed over to the
+   Flutter splash without a jump.
+
+### `loaders.<name>`
+
+```yaml
+loaders:
+  dots:     { kind: dots, color: $colors.primary, size: 10, count: 3,
+              animation: { duration: 900ms, curve: ease-in-out, repeat: loop } }
+  upload:   { kind: bar, color: $colors.primary,
+              track: { color: $colors.primary, alpha: 20% }, height: 3 }
+  card:     { kind: skeleton, base: $colors.surface-container-high,
+              highlight: $colors.surface-container-highest, radius: $shape.medium,
+              shimmer: { duration: 1.2s, angle: 20 } }
+  neon-doors:
+    kind: doors                    # a kind of the app's own, see below
+    phases:
+      close: { duration: 500ms, curve: ease-in }
+      fill:  { progress: true }    # follows the real progress
+      open:  { duration: 450ms, curve: emphasized }
+    door: { color: '#0B0D14', edge: { color: $neon.cyan, width: 2, glow: 12 } }
+    seam: { width: 6, fill: $neon.pink,
+            glow: { color: { color: $neon.pink, alpha: 60% }, blur: 24 },
+            flicker: { duration: 120ms, repeat: reverse } }
+    web: web/loaders/neon-doors.html   # how the kind looks before Flutter runs
+```
+
+- Built-in kinds: `spinner`, `dots`, `pulse`, `bar`, `skeleton` (each with
+  its documented keys; colours in the theme's one colour form, durations
+  in the one syntax, `$` references).
+- `phases`: named steps; a phase is an animation spec (`duration`,
+  `curve`, `repeat`) or `{progress: true}` (driven by the progress the
+  loader is given). Built-in kinds have one implicit phase.
+- A kind of the app's own: a class with `@ThemeLoaderKind('doors')`
+  extending `ThemeLoaderPainter<P>` (`paint(canvas, size, frame)`, where
+  `frame.phase('close')` is 0..1 and `frame.props` is `P`) — or
+  `ThemeLoaderWidget<P>` building widgets. The generator writes `P`
+  (`DoorsLoaderProps`) from the keys the theme gives that loader (typed
+  like tokens), and the typed key `context.theme.loaders.neonDoors`.
+  An unknown `kind` or a key the kind does not take stops the build and
+  the start.
+- Reduce motion: no animation, the end state of each phase, no flicker
+  or shimmer.
+
+### `splash`
+
+```yaml
+splash:
+  background: { color: $colors.surface-container-lowest }   # the keys of `background`
+  logo: { source: assets/images/logo.png, size: 96 }        # a ThemeImage
+  title: NEON                                               # text
+  loader: neon-doors                                        # a loaders.* name
+  animation: splash-in                                      # an animations.* name for the logo
+  min-duration: 1.2s
+  exit: { transition: 400ms ease-out }
+```
+
+- The splash gets the start's progress (`SpringApplication` reports the
+  share of bean definitions and runners done) for a `{progress: true}`
+  phase; when the context is ready the loader's last phase (`open`)
+  plays, then the splash fades out over `exit`, not before `min-duration`.
+
+### The web page loader
+
+- The generator (with the web dev config) writes the page loader of the
+  active theme's `splash` into the app's web output: a self-contained
+  block in `web/index.html` between markers (`<!-- spring:loader -->`),
+  rewritten on every build, plain HTML + CSS + a few lines of JS, no
+  external files; built-in kinds have a CSS form; a kind of the app's own
+  gives its `web:` HTML file (CSS variables filled from the theme:
+  `--door-color`, `--seam-fill` ...).
+- It shows at once, follows Flutter's loading (`_flutter.loader` stages:
+  downloading the engine, the app, the first frame) as its progress, and
+  is removed when the Flutter splash paints its first frame, which starts
+  from the same state, so there is no jump. `prefers-reduced-motion`
+  stops its animations. Nothing is written for an app without a
+  `splash`.
+
+### The runtime API (as built)
+
+- `ThemeLoaderSpec` (`name`, `kind`, `phases`, `values`, `look`, `web`),
+  read by `ThemeKeyReader.loader(name)` and `SpringThemeData.loaders`
+  (canonical names: `neondoors`). `ThemeSplashData` by
+  `ThemeKeyReader.splash()` / `SpringThemeData.splash` (`background`,
+  `logo`, `logoSize`, `title`, `loader`, `animation`, `minDuration`, `exit`).
+  Note: `splash: ripple` (a scalar) stays the ink splash of taps; the
+  splash of this section is the map form.
+- Widgets: `ThemeLoader(spec, {progress, ready, size, onFinished})`,
+  `ThemeSkeleton(spec, {loading, child, placeholder})`, `ThemeSplash`.
+- Custom kinds: `@ThemeLoaderKind('name')` (annotation, `annotations.dart`);
+  `ThemeLoaderPainter<P>.paint(Canvas, Size, LoaderFrame<P>)`,
+  `ThemeLoaderWidget<P>.build(BuildContext, LoaderFrame<P>)`;
+  `LoaderFrame<P>` has `phase(name)`, `progress`, `props`, `values`
+  (`LoaderValues`: `color`, `number`, `duration`, `text`, `boolean`, `curve`,
+  `animation`, each with an `...OrNull` form, `at(key)`, `has(key)`,
+  `keys([key])`; a dot goes one level down) and `reduceMotion`.
+- The registry the generated code fills, before the context starts (the
+  themes check every `kind` when they are read):
+  `ThemeLoaderKinds.register<P>(name, {painter | widget, props: P Function(LoaderValues), keys})`.
+  `keys` are the keys the kind takes besides `kind`, `phases` and `web`
+  (`null`: any); `props` runs once at the start, so a missing or wrong key
+  fails it with a `ThemePropertyException`.
+- Start progress: `SpringApplication.progressListener(StartupProgress)`
+  (`done`, `total`, `fraction`; beans created + runners called, never goes
+  back, 1 when ready). `SpringApplicationWidget` reads the properties as
+  soon as the environment is prepared (`ApplicationEnvironmentPreparedEvent`)
+  and shows the active theme's splash from then on.
+- Web hand-off: `window.springLoaderHandOff(progress)` is called once (if
+  defined) after the first frame that paints the Flutter splash (or the
+  `splash:` builder, or when the theme has no splash, or on a failed start).
+
+### Generator, page loader and editor (as built)
+
+- Markers in `web/index.html`: `<!-- spring:loader:start -->` and
+  `<!-- spring:loader:end -->` (builder `spring_flutter_page_loader`). The
+  script exposes `window.springLoader` (`progress`, `stage`, `handOff`), sets
+  `--spring-progress` and `data-stage` (`load`, `app`, `engine`, `run`,
+  `done`) on `#spring-loader`, and `window.springLoaderHandOff(progress)`
+  removes it (timeout 60 s, 3 s after `flutter-first-frame`). The `web:` file
+  is found below the app's directory, else in `lib/resources/` of a
+  dependency. The CSS variables of a loader are the key path in kebab case.
+- The props class of a kind is `<Kind>LoaderProps`, written in the package
+  that declares the `@ThemeLoaderKind` class; kinds of dependencies are known
+  from `loaderKinds` of their `spring_metadata.json`. The registration is in
+  the module getter, before the `BeanModule` is built.
+- The editor knows `loaders.*` (kind values incl. `loaderKinds`, the keys of
+  each kind), `splash.loader` / `splash.animation` (completion, errors,
+  go to definition) and `web:` (existence, completion, go to the file).
+
+### Examples
+
+Every example app shows all three: the Flutter guide, `example/themes/`
+material, cupertino and neon (neon: the title-screen loader, its kind in
+`neon_ui`, so a library can ship loader kinds with its theme).
+
 ## Navigation
 
 A starter of its own, the next release:

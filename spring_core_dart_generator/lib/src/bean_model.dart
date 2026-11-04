@@ -2822,6 +2822,10 @@ class ModuleModel {
   /// (`spring_boot_starter_flutter`), in scan order.
   final springWidgets = <SpringWidgetModel>[];
 
+  /// The `@ThemeLoaderKind` classes (`spring_boot_starter_flutter`), which
+  /// the module registers into `ThemeLoaderKinds`.
+  final loaderKinds = <ThemeLoaderKindModel>[];
+
   /// The `@Log` classes, each of which gets a logger getter.
   final loggers = <LogModel>[];
 

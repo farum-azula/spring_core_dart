@@ -157,7 +157,19 @@ final class EditorFixture {
       // The real theme keys, as the Flutter starter publishes them.
       'theme': _realTheme(),
     });
-    metadata('neon_ui', {});
+    metadata('neon_ui', {
+      // A loader kind a library ships with its theme.
+      'loaderKinds': [
+        {
+          'name': 'doors',
+          'class': 'DoorsLoader',
+          'source': 'package:neon_ui/src/doors_loader.dart',
+          'line': 5,
+          'props': ['door', 'seam'],
+        },
+      ],
+    });
+    write('neon_ui/lib/resources/web/loaders/neon-doors.html', '<div></div>');
     if (withAppMetadata) {
       metadata('app', {
         'properties': [

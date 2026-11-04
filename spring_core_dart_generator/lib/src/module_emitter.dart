@@ -18,6 +18,8 @@ import 'package:spring_core_dart_generator/src/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/part_tree.dart';
 import 'package:spring_core_dart_generator/src/query_expressions.dart';
 import 'package:spring_core_dart_generator/src/spel_compiler.dart';
+import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
+    show LoaderKinds;
 
 part 'configuration_emitter.dart';
 part 'entity_emitter.dart';
@@ -368,8 +370,16 @@ class ModuleEmitter {
               ..type = MethodType.getter
               ..returns = _spring('BeanModule')
               ..name = variableName
-              ..lambda = true
-              ..body = moduleExpression.code,
+              ..lambda = module.loaderKinds.isEmpty
+              ..body = module.loaderKinds.isEmpty
+                  ? moduleExpression.code
+                  : Block.of([
+                      // The kinds are known before the themes are read.
+                      ..._loaderKindRegistrations(module).map(
+                        (e) => e.statement,
+                      ),
+                      moduleExpression.returned.statement,
+                    ]),
           ),
         )
         ..body.addAll(extra)
@@ -3314,6 +3324,38 @@ class ModuleEmitter {
           ),
       ]),
   );
+
+  // `ThemeLoaderKinds.register<P>('doors', painter: DoorsLoader(), ...)` for
+  // each `@ThemeLoaderKind` class of the module.
+  List<Expression> _loaderKindRegistrations(ModuleModel module) {
+    final kinds = refer('ThemeLoaderKinds', _flutterSpringUrl);
+    return [
+      for (final kind in module.loaderKinds)
+        () {
+          final props = LoaderKinds.propsClass(kind.name);
+          final instance = _type(
+            kind.element.thisType,
+            kind.element,
+          ).newInstance([]);
+          return kinds.property('register').call(
+            [_str(kind.name)],
+            {
+              if (kind.painter) 'painter': instance else 'widget': instance,
+              if (kind.typedProps) ...{
+                'props': refer('$props._'),
+                'keys': refer('$props.keys'),
+              },
+            },
+            [
+              if (kind.typedProps)
+                refer(props)
+              else
+                refer('LoaderValues', _flutterSpringUrl),
+            ],
+          );
+        }(),
+    ];
+  }
 
   // The `SpringWidgetBindings` bean of the module: how the bean record of
   // each `SpringStatelessWidget<R>` is filled (one binding per distinct R, the

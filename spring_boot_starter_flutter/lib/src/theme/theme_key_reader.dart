@@ -4,6 +4,8 @@ import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_background.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_loader.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_splash.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart'
     show didYouMean;
 import 'package:spring_boot_starter_flutter/src/theme/theme_styles.dart';
@@ -124,6 +126,25 @@ final class ThemeKeyReader {
       (throw StateError(
         "Theme '${theme.name}' has no background "
         '(spring.flutter.theme.background).',
+      ));
+
+  /// The loader `loaders.<name>` (`-`, `_` and case do not matter).
+  /// Throws a [StateError] for a missing one.
+  ThemeLoaderSpec loader(String name) =>
+      theme.loaders[_canonical(name)] ??
+      (throw StateError(
+        "Theme '${theme.name}' has no loader '$name' "
+        '(spring.flutter.theme.loaders.$name)'
+        '${didYouMean(name, theme.loaders.keys.toList())}.',
+      ));
+
+  /// The theme's `splash` (a map). Throws a [StateError] when the theme
+  /// has none.
+  ThemeSplashData splash() =>
+      theme.splash ??
+      (throw StateError(
+        "Theme '${theme.name}' has no splash "
+        '(spring.flutter.theme.splash).',
       ));
 
   /// The image token `tokens.<group>.<key>`: a token that is a map with

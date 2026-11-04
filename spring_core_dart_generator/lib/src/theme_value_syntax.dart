@@ -1,4 +1,4 @@
-import 'package:spring_core_dart_generator/src/material_color_names.dart';
+import 'package:spring_core_dart_generator/src/material_color_values.dart';
 
 /// How the text of a theme value is read, the same as the starter's
 /// `ThemeValues` (its test fixture `theme_value_kinds.yaml` is the truth,
@@ -10,7 +10,7 @@ abstract final class ThemeValueSyntax {
     'brightness', 'seedcolor', 'schemevariant', 'contrast', 'colors', //
     'typography', 'shape', 'elevation', 'spacing', 'visualdensity', //
     'taptargetsize', 'splash', 'motion', 'components', 'tokens', //
-    'cupertino', 'styles', 'animations', 'background',
+    'cupertino', 'styles', 'animations', 'background', 'loaders',
   };
 
   /// The keys of an image token, canonical: a token map with `source` and
@@ -57,8 +57,8 @@ abstract final class ThemeValueSyntax {
       RegExp('[-_]([a-z])'),
       (m) => m[1]!.toUpperCase(),
     );
-    return materialColorNames.contains(word) ||
-        materialColorNames.contains(camel);
+    return materialColorValues.containsKey(word) ||
+        materialColorValues.containsKey(camel);
   }
 
   /// Whether [value] (trimmed) is a percent: `0%` to `100%` or `0` to `1`.

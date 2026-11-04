@@ -341,6 +341,45 @@ final class MetaRepository {
   final List<MetaRepositoryMethod> methods;
 }
 
+/// A loader kind of the app's own (`@ThemeLoaderKind('doors')`), from
+/// `loaderKinds` of a metadata file.
+final class MetaLoaderKind {
+  const MetaLoaderKind({
+    required this.name,
+    required this.package,
+    this.className,
+    this.source,
+    this.line,
+    this.props,
+  });
+
+  factory MetaLoaderKind.fromJson(Map<String, Object?> json, String package) =>
+      MetaLoaderKind(
+        name: json['name']! as String,
+        package: package,
+        className: json['class'] as String?,
+        source: json['source'] as String?,
+        line: json['line'] as int?,
+        props: (json['props'] as List?)?.map((e) => '$e').toList(),
+      );
+
+  /// The value of `kind` in a theme.
+  final String name;
+
+  /// The package that declares it.
+  final String package;
+
+  /// The painter or widget class.
+  final String? className;
+
+  /// `package:` URI of the library of the class.
+  final String? source;
+  final int? line;
+
+  /// The keys the themes of its package give its loaders, when known.
+  final List<String>? props;
+}
+
 /// A theme property of the metadata (`theme.properties`), named relative
 /// to a theme (`components.app-bar.background-color`).
 final class MetaThemeProperty {
@@ -398,6 +437,7 @@ final class SpringMetadata {
     required this.profiles,
     required this.themeTypes,
     required this.themeProperties,
+    required this.loaderKinds,
   });
 
   /// Parses [json] read from the package at [root]. Throws on a document
@@ -432,6 +472,11 @@ final class SpringMetadata {
       profiles: [
         for (final p in (json['profiles'] as List?) ?? const []) '$p',
       ],
+      loaderKinds: [
+        for (final k in (json['loaderKinds'] as List?) ?? const [])
+          if (k is Map)
+            MetaLoaderKind.fromJson(k.cast<String, Object?>(), package),
+      ],
       themeTypes:
           (theme?['types'] as Map?)?.cast<String, Object?>() ?? const {},
       themeProperties: [
@@ -459,6 +504,9 @@ final class SpringMetadata {
   /// `theme.types`, kept as JSON (the schema of the color object and such).
   final Map<String, Object?> themeTypes;
   final List<MetaThemeProperty> themeProperties;
+
+  /// The `@ThemeLoaderKind` classes of the package.
+  final List<MetaLoaderKind> loaderKinds;
 }
 
 /// The metadata that applies to one package: its own and that of all its
@@ -524,6 +572,12 @@ final class MetadataView {
       metadata.expand((m) => m.repositories);
   Iterable<MetaProperty> get properties => metadata.expand((m) => m.properties);
   Iterable<MetaHint> get hints => metadata.expand((m) => m.hints);
+
+  /// The loader kinds of the app's own that the package and its
+  /// dependencies declare.
+  List<MetaLoaderKind> get loaderKinds => [
+    for (final m in metadata) ...m.loaderKinds,
+  ];
 
   /// The profile names the metadata lists.
   Set<String> get profiles => {for (final m in metadata) ...m.profiles};

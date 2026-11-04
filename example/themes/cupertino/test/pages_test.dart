@@ -13,6 +13,7 @@ const _titles = {
   'styles': 'Own widgets',
   'controls': 'Controls',
   'motion': 'Motion',
+  'loaders': 'Loaders',
   'background': 'Background',
   'images': 'Images',
   'themes': 'Themes',

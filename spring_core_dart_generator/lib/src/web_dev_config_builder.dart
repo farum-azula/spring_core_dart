@@ -6,6 +6,10 @@ import 'package:build/build.dart' hide Resource;
 import 'package:spring_core_dart/core.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/theme_references.dart';
+import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 
 /// Writes the Flutter web dev server's `web_dev_config.yaml` from the
 /// `spring.flutter.web.*` properties in `lib/resources/`.
@@ -191,6 +195,7 @@ final class WebDevConfigBuilder implements Builder {
         texts,
         generated: generated,
         binary: binary,
+        scriptHashes: await _pageLoaderHashes(buildStep, texts),
       );
     } on WebDevConfigException catch (e) {
       log.severe('$e\n$fileName is left as it is.');
@@ -220,6 +225,28 @@ final class WebDevConfigBuilder implements Builder {
       await _files.write(buildStep, package, content);
     }
   }
+}
+
+// The hash of the page loader's script when the app has a splash, so the
+// policy of spa mode lets the inline script run.
+Future<List<String>> _pageLoaderHashes(
+  BuildStep buildStep,
+  Map<String, String> texts,
+) async {
+  if (!await SpringKeyFiles.usesFlutterStarter(buildStep)) {
+    return const [];
+  }
+  final diagnostics = KeysDiagnostics();
+  final set = ThemeSet.read(
+    SpringKeyFiles.readProperties(
+      await SpringKeyFiles.withImports(buildStep, texts),
+      diagnostics,
+    ),
+    diagnostics,
+  );
+  return set != null && WebPageLoader.hasSplash(set)
+      ? [WebPageLoader.scriptHash]
+      : const [];
 }
 
 /// Reads, writes and deletes the `web_dev_config.yaml` of a package for
@@ -344,7 +371,10 @@ final class WebDevServerSettings {
   ///   `data:` and `blob:`;
   /// - no plugins, `<base>` and forms on the origin only, and no framing
   ///   by other sites (`frame-ancestors 'none'`, clickjacking).
-  static String spaContentSecurityPolicy(Iterable<String> connectOrigins) {
+  static String spaContentSecurityPolicy(
+    Iterable<String> connectOrigins, {
+    Iterable<String> scriptHashes = const [],
+  }) {
     final connect = {
       "'self'",
       'https://www.gstatic.com',
@@ -353,7 +383,10 @@ final class WebDevServerSettings {
     };
     return [
       "default-src 'self'",
-      "script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com",
+      [
+        "script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com",
+        ...scriptHashes,
+      ].join(' '),
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' https://fonts.gstatic.com",
@@ -453,12 +486,16 @@ final class WebDevServerSettings {
   /// whose `spring.config.activate.*` guard has one is skipped), with a
   /// warning.
   ///
+  /// [scriptHashes] are `'sha256-...'` sources the policy of spa mode
+  /// allows in `script-src`: the page loader's script.
+  ///
   /// Throws [WebDevConfigException] for an invalid value and for a config
   /// file that does not parse or cannot be read.
   static WebDevServerSettings? read(
     Map<String, String> files, {
     bool generated = false,
     Map<String, Uint8List> binary = const {},
+    Iterable<String> scriptHashes = const [],
   }) {
     final config = _StaticConfig(files, binary);
     if (!config.setsWebKeys && !(generated && config.unparsed.isNotEmpty)) {
@@ -486,7 +523,7 @@ final class WebDevServerSettings {
       return null;
     }
     reading.warnings.forEach(log.warning);
-    final settings = _Reader(environment).read();
+    final settings = _Reader(environment, scriptHashes).read();
     // Only an app with something to write hears of a required import a
     // browser cannot read.
     final unreadable = reading.unreadable;
@@ -1410,9 +1447,13 @@ final class _BuildTimeLoader extends PropertySourceLoader {
 // Reads the settings from an environment the config files were loaded
 // into, sources in precedence order.
 final class _Reader {
-  _Reader(this._environment);
+  _Reader(this._environment, this._scriptHashes);
 
   final StandardEnvironment _environment;
+
+  // Hashes of the inline scripts the app's page has (the page loader),
+  // which the policy of spa mode allows.
+  final Iterable<String> _scriptHashes;
 
   static final _web = ConfigurationPropertyName.of(WebDevConfigBuilder.prefix);
 
@@ -1663,7 +1704,7 @@ final class _Reader {
             ? WebDevServerSettings.spaContentSecurityPolicy({
                 ..._providerOrigins(),
                 ...?connectSrc,
-              })
+              }, scriptHashes: _scriptHashes)
             : null);
     if (value == null) {
       return headers;

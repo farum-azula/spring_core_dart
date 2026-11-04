@@ -1,9 +1,13 @@
 // The members are described where they are used; one doc per class suffices.
 // ignore_for_file: public_member_api_docs
+import 'dart:io';
+
 import 'package:dart_spring_language_server/src/properties_index.dart';
 import 'package:dart_spring_language_server/src/schema.dart';
 import 'package:dart_spring_language_server/src/templates.dart';
 import 'package:dart_spring_language_server/src/workspace.dart';
+
+part 'loader_editor.dart';
 
 /// One completion proposal.
 final class Completion {
@@ -572,6 +576,7 @@ final class ConfigEditor {
         _checkTemplate(path, key, problems);
       }
     }
+    _checkLoaders(path, keys, problems);
     for (final MapEntry(key: objectPath, value: parts) in objects.entries) {
       if (parts.isEmpty) {
         continue;
@@ -689,6 +694,11 @@ final class ConfigEditor {
       return;
     }
     if (rest.isNotEmpty) {
+      return;
+    }
+    // A `$` reference stands for any value; its target is checked by
+    // _checkReferences.
+    if (prop.theme && value.trimLeft().startsWith(r'$')) {
       return;
     }
     final base = type.replaceAll('?', '').trim();
@@ -1115,6 +1125,10 @@ final class ConfigEditor {
     if (_isTheme(valueKey.segments)) {
       final relative = column - valueKey.valueStart;
       final theme = _themeOf(valueKey.segments);
+      final named = _loaderDefinition(path, valueKey);
+      if (named.isNotEmpty) {
+        return named;
+      }
       for (final ref in _references(valueKey.value!)) {
         if (relative >= ref.start && relative <= ref.end) {
           return _RefIndex(workspace, path).definitions(ref.path, theme);
@@ -1372,6 +1386,23 @@ final class ConfigEditor {
     if (resolution.isUnknown) {
       return null;
     }
+    final loaderKeys = _loaderKeyCompletion(
+      path,
+      line,
+      start,
+      column,
+      parents,
+      keys,
+      yaml,
+      _keyIndent(lines[line]),
+      lines[line]
+          .replaceAll('\r', '')
+          .substring(column.clamp(0, lines[line].length))
+          .contains(':'),
+    );
+    if (loaderKeys != null) {
+      return loaderKeys;
+    }
     final node = resolution.node;
     if (node != null &&
         resolution.rest.isEmpty &&
@@ -1562,6 +1593,17 @@ final class ConfigEditor {
             ? null
             : CompletionResult(_range(path, line, from, column), items);
       }
+    }
+    final named = _loaderValueCompletion(
+      path,
+      line,
+      column,
+      segments,
+      valueText,
+      valueStart,
+    );
+    if (named != null) {
+      return named;
     }
     final resolution = schema.resolve(segments);
     final prop = resolution.isUnknown ? null : resolution.node?.prop;
@@ -1810,7 +1852,7 @@ final class _RefIndex {
     'brightness', 'seedcolor', 'schemevariant', 'contrast', 'colors', //
     'typography', 'shape', 'elevation', 'spacing', 'visualdensity',
     'taptargetsize', 'splash', 'motion', 'components', 'tokens',
-    'cupertino', 'styles', 'animations', 'background',
+    'cupertino', 'styles', 'animations', 'background', 'loaders',
   };
 
   // The built-in names a reference may use without writing them.

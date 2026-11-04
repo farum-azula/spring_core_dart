@@ -239,6 +239,14 @@ class SpringApplication {
   }) =>
       _listeners.add(ApplicationListenerAdapter.of<E>(listener, order: order));
 
+  /// Told how far the start has come, for a splash screen: the share of
+  /// the bean definitions created and of the runners called. Set it
+  /// before [run] or [runAsync]; the calls come from the starting
+  /// isolate, in order, and the last one is complete (`done == total`).
+  /// Spring Boot has no such hook (the nearest is the startup step
+  /// recorder, `ApplicationStartup`).
+  void Function(StartupProgress progress)? progressListener;
+
   final Map<String, Object?> _defaultProperties;
 
   /// Properties with the lowest precedence: every other source, config
@@ -581,6 +589,7 @@ class SpringApplication {
     if (!context.isActive) {
       return;
     }
+    _progressTrackers[context]?.finish();
     try {
       run.ready(context, watch.elapsed);
     } catch (error, stackTrace) {
@@ -1099,6 +1108,14 @@ class SpringApplication {
         types: const [BeanFactoryPostProcessor, Ordered],
       );
     }
+    final progress = progressListener;
+    if (progress != null) {
+      final tracker = _progressTrackers[context] = _ProgressTracker(
+        context,
+        progress,
+      );
+      context.beanFactory.addBeanPostProcessor(tracker);
+    }
     for (final initializer in OrderComparator.sort(initializers)) {
       initializer.initialize(context);
     }
@@ -1329,6 +1346,7 @@ class SpringApplication {
           context.getBeanByName(name): _definitionOrder(context, name),
     };
     final beans = OrderComparator.sort(orders.keys, (bean) => orders[bean]);
+    final tracker = _progressTrackers[context];
     final calls = <FutureOr<void> Function()>[
       for (final runner in beans) ...[
         // A bean implementing both is called as both, like in Spring Boot.
@@ -1336,6 +1354,19 @@ class SpringApplication {
         if (runner is CommandLineRunner) () => runner.run(arguments.sourceArgs),
       ],
     ];
+    tracker?.runners(calls.length);
+    if (tracker != null) {
+      for (var i = 0; i < calls.length; i++) {
+        final call = calls[i];
+        calls[i] = () {
+          final result = call();
+          if (result is Future<Object?>) {
+            return result.then<void>((_) => tracker.runnerDone());
+          }
+          tracker.runnerDone();
+        };
+      }
+    }
     return _inOrder(context, calls.iterator);
   }
 
@@ -1855,4 +1886,91 @@ final class _Launch {
   final Map<String, String>? systemEnvironment;
   final Map<String, Object?> properties;
   final List<String> additionalProfiles;
+}
+
+/// How far an application's start has come, as `SpringApplication`
+/// reports it to [SpringApplication.progressListener]: [done] of [total]
+/// steps, where a step is a bean definition created or a runner called.
+///
+/// The total grows while the start goes on (a bean can register more
+/// definitions, the runners are known once the beans exist), so
+/// [fraction] never goes back: it is the highest share seen.
+final class StartupProgress {
+  /// [done] steps of [total].
+  const StartupProgress(this.done, this.total, this.fraction);
+
+  /// The steps finished.
+  final int done;
+
+  /// The steps known so far.
+  final int total;
+
+  /// The share finished, from 0 to 1; never decreases.
+  final double fraction;
+
+  @override
+  String toString() => 'StartupProgress($done/$total)';
+}
+
+final _progressTrackers = Expando<_ProgressTracker>('startup progress');
+
+// Counts the beans created (a post-processor) and the runners called, and
+// reports after each.
+final class _ProgressTracker extends BeanPostProcessor {
+  _ProgressTracker(this._context, this._listener);
+
+  final ConfigurableApplicationContext _context;
+  final void Function(StartupProgress progress) _listener;
+  var _done = 0;
+  var _runners = 0;
+  var _runnersDone = 0;
+  var _best = 0.0;
+
+  @override
+  Object postProcessAfterInitialization(Object bean, String beanName) {
+    if (_done == 0) {
+      // The runners are steps too: counted from the first bean on, so the
+      // beans alone never reach the end.
+      _runners = {
+        for (final type in const [ApplicationRunner, CommandLineRunner])
+          ..._context.getBeanNamesForType(type),
+      }.length;
+    }
+    _done++;
+    _report();
+    return bean;
+  }
+
+  void runners(int count) {
+    _runners = count;
+    _report();
+  }
+
+  void runnerDone() {
+    _runnersDone++;
+    _report();
+  }
+
+  // The start is over: lazy beans stay uncreated, so the end is told
+  // here, complete.
+  void finish() {
+    final total = _done + _runnersDone;
+    _best = 1;
+    _listener(StartupProgress(total, total, 1));
+  }
+
+  void _report() {
+    final beans = _done;
+    final total =
+        [_context.beanDefinitionCount, beans].reduce(
+          (a, b) => a > b ? a : b,
+        ) +
+        _runners;
+    final done = beans + _runnersDone;
+    final share = total == 0 ? 0.0 : (done / total).clamp(0.0, 0.99);
+    if (share > _best) {
+      _best = share;
+    }
+    _listener(StartupProgress(done, total, _best));
+  }
 }

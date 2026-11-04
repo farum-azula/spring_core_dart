@@ -30,9 +30,13 @@ final class AppTheme {
   AppThemeStyles get styles => AppThemeStyles._(_values);
   AppThemeMotion get motion => AppThemeMotion._(_values);
   AppThemeAnimations get animations => AppThemeAnimations._(_values);
+  AppThemeLoaders get loaders => AppThemeLoaders._(_values);
 
   /// The `background` of the active theme; null in a theme without one.
   ThemeBackgroundData? get background => _values.theme.background;
+
+  /// The `splash` of the active theme; throws when it has none.
+  ThemeSplashData get splash => _values.splash();
 }
 
 /// `colors.*` of the active theme.
@@ -438,6 +442,22 @@ final class AppThemeAnimations {
 
   /// `animations.glow-pulse`
   AnimationSpec get glowPulse => _values.animation('glow-pulse');
+}
+
+/// `loaders.*` of the active theme: a `ThemeLoaderSpec` per
+/// loader, for `ThemeLoader` and the splash.
+final class AppThemeLoaders {
+  const AppThemeLoaders._(this._values);
+  final ThemeKeyReader _values;
+
+  /// `loaders.bar`
+  ThemeLoaderSpec get bar => _values.loader('bar');
+
+  /// `loaders.card`
+  ThemeLoaderSpec get card => _values.loader('card');
+
+  /// `loaders.spinner`
+  ThemeLoaderSpec get spinner => _values.loader('spinner');
 }
 
 /// The names of the themes, for `ThemeSelection.select`.

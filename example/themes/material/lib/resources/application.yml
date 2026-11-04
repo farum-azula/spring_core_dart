@@ -10,7 +10,7 @@
 #   4. tokens: groups, lists, durations, an image (tokens)
 #   5. components: Flutter's widgets, per state  (components)
 #   6. styles for our own widgets                (styles)
-#   7. motion, animations                        (motion, animations)
+#   7. motion, animations, loaders, the splash   (motion, animations, loaders, splash)
 #   8. themes: light, dark, ocean, ocean-night, neon, high-contrast
 spring:
   config:
@@ -71,7 +71,6 @@ spring:
       shape:
         medium: 16
         large: 24
-      splash: ripple
 
       # ---------------------------------------------------------------- 4
       # Tokens: values of our own. Groups nest, lists and durations work.
@@ -268,6 +267,30 @@ spring:
         glow-pulse: { duration: 1.6s, curve: ease-in-out, repeat: reverse }
         enter: { duration: $motion.durations.slow, curve: ease-out, repeat: none }
         background-drift: { duration: 24s, curve: ease-in-out, repeat: reverse }
+
+      # Loaders: ThemeLoader and ThemeSkeleton show them, by name. A built-in
+      # kind is spinner, dots, pulse, bar or skeleton.
+      loaders:
+        spinner: { kind: spinner, size: 32, stroke: 3, track: { color: $colors.primary, alpha: 20% } }
+        bar: { kind: bar, color: $colors.primary, track: { color: $colors.primary, alpha: 20% }, height: 4, width: 240 }
+        card:
+          kind: skeleton
+          base: $colors.surface-container-high
+          highlight: $colors.surface-container-highest
+          radius: $shape.medium
+          shimmer: { duration: 1.2s, angle: 20 }
+
+      # The splash: what shows while the app starts (and, on the web, before
+      # Flutter runs: the generator writes it into web/index.html). The bar
+      # follows the start's progress. A plain `splash: ripple` would be the
+      # ink of taps instead; this map is the start screen.
+      splash:
+        background: { color: $colors.surface }
+        logo: { source: assets/images/badge.png, size: 96 }
+        title: Theme Showcase
+        loader: bar
+        min-duration: 1.2s
+        exit: { transition: 400ms ease-out }
 
       # ---------------------------------------------------------------- 8
       themes:

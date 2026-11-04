@@ -466,6 +466,12 @@ final class ThemeBackgroundData {
     return _parse(p, 'background', top: true);
   }
 
+  /// Reads the background written at [path] of [p] (the splash's
+  /// `background` has the keys of the theme's, without `screens`); `null`
+  /// when there is nothing at [path].
+  static ThemeBackgroundData? parseAt(ThemeProperties p, String path) =>
+      p.children(path).isEmpty ? null : _parse(p, path);
+
   static ThemeBackgroundData _parse(
     ThemeProperties p,
     String path, {
