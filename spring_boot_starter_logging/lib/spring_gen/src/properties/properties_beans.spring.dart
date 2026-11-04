@@ -12,295 +12,6 @@ import 'package:spring_boot_dart/src/annotations.dart' as _i3;
 import 'package:spring_boot_starter_logging/src/properties/logging_properties.dart'
     as _i2;
 
-class _$LoggingPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.LoggingProperties {
-  _$LoggingPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.LoggingProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get enabled => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as bool);
-
-  @override
-  Map<String, String> get level => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.level,
-  ) as Map<String, String>);
-
-  @override
-  Map<String, List<String>> get group => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.group,
-  ) as Map<String, List<String>>);
-
-  @override
-  String get exceptionConversionWord => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.exceptionConversionWord,
-  ) as String);
-
-  @override
-  bool get includeApplicationGroup => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.includeApplicationGroup,
-  ) as bool);
-
-  @override
-  bool get includeApplicationName => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.includeApplicationName,
-  ) as bool);
-
-  @override
-  _i2.LoggingPatternProperties get pattern => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    6,
-    const [],
-    (_) => this._target.pattern,
-  ) as _i2.LoggingPatternProperties);
-
-  @override
-  _i2.LoggingThresholdProperties get threshold => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    7,
-    const [],
-    (_) => this._target.threshold,
-  ) as _i2.LoggingThresholdProperties);
-
-  @override
-  _i2.LoggingConsoleProperties get console => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    8,
-    const [],
-    (_) => this._target.console,
-  ) as _i2.LoggingConsoleProperties);
-
-  @override
-  _i2.LoggingBufferProperties get buffer => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    9,
-    const [],
-    (_) => this._target.buffer,
-  ) as _i2.LoggingBufferProperties);
-
-  @override
-  _i2.LoggingFileProperties get file => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    10,
-    const [],
-    (_) => this._target.file,
-  ) as _i2.LoggingFileProperties);
-
-  @override
-  _i2.LoggingCharsetProperties get charset => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    11,
-    const [],
-    (_) => this._target.charset,
-  ) as _i2.LoggingCharsetProperties);
-
-  @override
-  set enabled(bool value) {
-    this.aopInvoker.invoke(this, this._target, 12, [value], (args) {
-      this._target.enabled = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set level(Map<String, String> value) {
-    this.aopInvoker.invoke(this, this._target, 13, [value], (args) {
-      this._target.level = (args[0] as Map<String, String>);
-      return null;
-    });
-  }
-
-  @override
-  set group(Map<String, List<String>> value) {
-    this.aopInvoker.invoke(this, this._target, 14, [value], (args) {
-      this._target.group = (args[0] as Map<String, List<String>>);
-      return null;
-    });
-  }
-
-  @override
-  set exceptionConversionWord(String value) {
-    this.aopInvoker.invoke(this, this._target, 15, [value], (args) {
-      this._target.exceptionConversionWord = (args[0] as String);
-      return null;
-    });
-  }
-
-  @override
-  set includeApplicationGroup(bool value) {
-    this.aopInvoker.invoke(this, this._target, 16, [value], (args) {
-      this._target.includeApplicationGroup = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set includeApplicationName(bool value) {
-    this.aopInvoker.invoke(this, this._target, 17, [value], (args) {
-      this._target.includeApplicationName = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set pattern(_i2.LoggingPatternProperties value) {
-    this.aopInvoker.invoke(this, this._target, 18, [value], (args) {
-      this._target.pattern = (args[0] as _i2.LoggingPatternProperties);
-      return null;
-    });
-  }
-
-  @override
-  set threshold(_i2.LoggingThresholdProperties value) {
-    this.aopInvoker.invoke(this, this._target, 19, [value], (args) {
-      this._target.threshold = (args[0] as _i2.LoggingThresholdProperties);
-      return null;
-    });
-  }
-
-  @override
-  set console(_i2.LoggingConsoleProperties value) {
-    this.aopInvoker.invoke(this, this._target, 20, [value], (args) {
-      this._target.console = (args[0] as _i2.LoggingConsoleProperties);
-      return null;
-    });
-  }
-
-  @override
-  set buffer(_i2.LoggingBufferProperties value) {
-    this.aopInvoker.invoke(this, this._target, 21, [value], (args) {
-      this._target.buffer = (args[0] as _i2.LoggingBufferProperties);
-      return null;
-    });
-  }
-
-  @override
-  set file(_i2.LoggingFileProperties value) {
-    this.aopInvoker.invoke(this, this._target, 22, [value], (args) {
-      this._target.file = (args[0] as _i2.LoggingFileProperties);
-      return null;
-    });
-  }
-
-  @override
-  set charset(_i2.LoggingCharsetProperties value) {
-    this.aopInvoker.invoke(this, this._target, 23, [value], (args) {
-      this._target.charset = (args[0] as _i2.LoggingCharsetProperties);
-      return null;
-    });
-  }
-}
-
-class _$ApplicationGroupPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.ApplicationGroupProperties {
-  _$ApplicationGroupPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.ApplicationGroupProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get group => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.group,
-  ) as String?);
-
-  @override
-  set group(String? value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.group = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$AnsiPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.AnsiProperties {
-  _$AnsiPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.AnsiProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i2.AnsiOutput? get enabled => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as _i2.AnsiOutput?);
-
-  @override
-  set enabled(_i2.AnsiOutput? value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.enabled = (args[0] as _i2.AnsiOutput?);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'LoggingProperties',
   types: [r'LoggingProperties'],
@@ -475,8 +186,8 @@ _i1.BeanModule get $loggingConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#LoggingProperties',
       create: (r) => _i2.LoggingProperties(),
       annotations: const [_i1.ConfigurationProperties(r'logging')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'enabled',
             _$target0,
@@ -652,10 +363,6 @@ _i1.BeanModule get $loggingConfigBeans => _i1.BeanModule(
             returnType: r'LoggingCharsetProperties',
           ),
         ],
-        create: (target, invoker) => _$LoggingPropertiesProxy(
-          (target as _i2.LoggingProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.ApplicationGroupProperties>(
@@ -663,8 +370,8 @@ _i1.BeanModule get $loggingConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#ApplicationGroupProperties',
       create: (r) => _i2.ApplicationGroupProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.application')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'group',
             _$target1,
@@ -678,10 +385,6 @@ _i1.BeanModule get $loggingConfigBeans => _i1.BeanModule(
             returnType: r'String',
           ),
         ],
-        create: (target, invoker) => _$ApplicationGroupPropertiesProxy(
-          (target as _i2.ApplicationGroupProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.AnsiProperties>(
@@ -689,8 +392,8 @@ _i1.BeanModule get $loggingConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#AnsiProperties',
       create: (r) => _i2.AnsiProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.output.ansi')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'enabled',
             _$target2,
@@ -704,8 +407,6 @@ _i1.BeanModule get $loggingConfigBeans => _i1.BeanModule(
             returnType: r'AnsiOutput',
           ),
         ],
-        create: (target, invoker) =>
-            _$AnsiPropertiesProxy((target as _i2.AnsiProperties), invoker),
       ),
     ),
   ],

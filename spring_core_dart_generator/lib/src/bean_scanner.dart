@@ -2444,6 +2444,13 @@ class BeanScanner {
       !_configuration.hasAnnotationOf(element) &&
       !_notProxied.any((c) => c.isAssignableFromType(element.thisType));
 
+  /// The model of the wrapper proxy of [type], a bean class of a library
+  /// package whose module left the proxy to the application
+  /// (`AopProxyFactory.deferred`); the class name is made unique in the
+  /// module. `null` when proxies are off.
+  ProxyModel? foreignProxyModel(InterfaceType type) =>
+      _proxyModel(type, '_\$${type.element.name}Proxy', implementSelf: true);
+
   /// The proxy model of [targetType], to be generated as [className];
   /// `null` when proxies are off or the type is from the SDK.
   ///

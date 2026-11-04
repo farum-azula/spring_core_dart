@@ -2,7 +2,12 @@ import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:analyzer/dart/ast/ast.dart'
-    show Comment, InstanceCreationExpression, SimpleIdentifier;
+    show
+        Comment,
+        InstanceCreationExpression,
+        NamedArgument,
+        SimpleIdentifier,
+        StringLiteral;
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -360,16 +365,28 @@ class SpringBuilder implements Builder {
     scanner.throwErrors();
 
     // In a library package any module may import this one, so its beans
-    // may be advised by aspects the build cannot see: no proxy is pruned.
-    // In an application (`publish_to: none`) nothing outside imports it:
-    // it is pruned knowing the advice of the package's other libraries and
-    // of the auto-configurations, as the @SpringBootApplication output.
+    // may be advised by aspects the build cannot see: no proxy is pruned,
+    // and the `lib/` modules leave to the application's build the proxies
+    // only its aspects can match. In an application (`publish_to: none`)
+    // nothing outside imports it: it is pruned knowing the advice of the
+    // package's other libraries and of the auto-configurations, as the
+    // @SpringBootApplication output.
     final dependencies = await _dependencies(buildStep);
     final glue = await driverGlueFor(buildStep, dependencies);
-    final prune = pruneProxies && await _isApplication(buildStep);
+    final application = await _isApplication(buildStep);
+    final prune = pruneProxies && application;
     return ModuleEmitter(
       output,
       dependencies: dependencies,
+      // Only a starter's (a package with an auto-configuration library):
+      // the application's build finds its modules.
+      deferProxies:
+          pruneProxies &&
+          !application &&
+          output.path.startsWith('lib/') &&
+          await buildStep.canRead(
+            AssetId(output.package, autoConfigurationLibrary),
+          ),
       pruneProxies: prune,
       foreignAdvice: prune
           ? await _foreignAdvice(
@@ -601,6 +618,26 @@ class SpringBuilder implements Builder {
       buildStep,
       includeOwn: example,
     );
+    // The beans of the auto-configurations' modules whose proxy class is
+    // left to the application.
+    if (proxyMode != ProxyMode.none) {
+      for (final (source, beanName, type) in await _deferredProxies(
+        buildStep,
+        assets,
+        includeOwn: example,
+      )) {
+        if (scanner.foreignProxyModel(type) case final proxy?) {
+          module.foreignProxies.add(
+            ForeignProxyModel(
+              source: source,
+              beanName: beanName,
+              proxy: proxy,
+              element: type.element,
+            ),
+          );
+        }
+      }
+    }
     final springApplication = refer('springApplication');
     final dependencies = await _dependencies(buildStep);
     final glue = await driverGlueFor(buildStep, dependencies);
@@ -1018,6 +1055,90 @@ class SpringBuilder implements Builder {
       for (final (ordering, _, name, url) in found)
         (refer(name, url), ordering),
     ];
+  }
+
+  // The beans whose module left their proxy class to the application
+  // (`AopProxyFactory.deferred`), in the generated modules of the packages
+  // with an auto-configuration library (the only ones that defer): those
+  // the auto-configuration library reaches and those the application's
+  // [assets] import, through the libraries of the same package they
+  // import. The `source` and name of each definition, and its class.
+  static Future<List<(String, String, InterfaceType)>> _deferredProxies(
+    BuildStep buildStep,
+    List<AssetId> assets, {
+    bool includeOwn = false,
+  }) async {
+    final root = buildStep.inputId.package;
+    final resolver = buildStep.resolver;
+    final config = await buildStep.packageConfig;
+    final reachable = await _reachablePackages(buildStep);
+    final found = <(String, String, InterfaceType)>[];
+    final sources = <String>{};
+    // The libraries of other packages the application imports.
+    final imported = <String, List<LibraryElement>>{};
+    for (final asset in assets) {
+      if (!await resolver.isLibrary(asset)) {
+        continue;
+      }
+      final library = await resolver.libraryFor(asset);
+      for (final fragment in library.fragments) {
+        for (final other in fragment.importedLibraries) {
+          if (other.uri.scheme == 'package') {
+            (imported[other.uri.pathSegments.first] ??= []).add(other);
+          }
+        }
+      }
+    }
+    for (final package in config.packages) {
+      if ((package.name == root && !includeOwn) ||
+          (reachable != null && !reachable.contains(package.name))) {
+        continue;
+      }
+      final id = AssetId(package.name, autoConfigurationLibrary);
+      if (!await buildStep.canRead(id) || !await resolver.isLibrary(id)) {
+        continue;
+      }
+      final pending = [
+        await resolver.libraryFor(id),
+        ...?imported[package.name],
+      ];
+      final seen = <Uri>{};
+      while (pending.isNotEmpty) {
+        final library = pending.removeLast();
+        if (!seen.add(library.uri)) {
+          continue;
+        }
+        for (final fragment in library.fragments) {
+          for (final imported in fragment.importedLibraries) {
+            final uri = imported.uri;
+            if (uri.scheme == 'package' &&
+                uri.pathSegments.first == package.name) {
+              pending.add(imported);
+            }
+          }
+        }
+        if (!library.uri.path.endsWith('.spring.dart')) {
+          continue;
+        }
+        final text = await buildStep.readAsString(AssetId.resolve(library.uri));
+        if (!text.contains('AopProxyFactory.deferred')) {
+          continue;
+        }
+        final visitor = _DeferredProxies();
+        for (final getter in library.getters) {
+          (await resolver.astNodeFor(
+            getter.firstFragment,
+            resolve: true,
+          ))?.accept(visitor);
+        }
+        for (final entry in visitor.found) {
+          if (sources.add(entry.$1)) {
+            found.add(entry);
+          }
+        }
+      }
+    }
+    return found;
   }
 
   // `const AutoConfigurationModule(order:, before:, after:)` with the
@@ -1463,6 +1584,46 @@ const _annotationMatchingPointcutChecker = TypeChecker.fromUrl(
 // outside `package:spring_core_dart` (the annotations pruning keeps the
 // beans of). Registered without a creation the build sees counts as not
 // annotation-driven.
+// The `BeanDefinition<T>(name:, source:, aopProxy:
+// AopProxyFactory.deferred(...))` of a generated module: source, name and
+// `T` of each.
+class _DeferredProxies extends RecursiveAstVisitor<void> {
+  final found = <(String, String, InterfaceType)>[];
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    super.visitInstanceCreationExpression(node);
+    final type = node.staticType;
+    if (type is! InterfaceType ||
+        type.element.name != 'BeanDefinition' ||
+        type.typeArguments.length != 1) {
+      return;
+    }
+    final arguments = {
+      for (final argument in node.argumentList.arguments)
+        if (argument is NamedArgument)
+          argument.name.lexeme: argument.argumentExpression,
+    };
+    final proxy = arguments['aopProxy'];
+    final bean = type.typeArguments.single;
+    if (proxy is! InstanceCreationExpression ||
+        proxy.constructorName.name?.name != 'deferred' ||
+        bean is! InterfaceType) {
+      return;
+    }
+    final source = arguments['source'];
+    final name = arguments['name'];
+    if (source is StringLiteral && name is StringLiteral) {
+      if ((source.stringValue, name.stringValue) case (
+        final source?,
+        final name?,
+      )) {
+        found.add((source, name, bean));
+      }
+    }
+  }
+}
+
 class _AdvisorCreations extends RecursiveAstVisitor<void> {
   bool mentioned = false;
   var _found = false;

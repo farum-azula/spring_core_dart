@@ -13,57 +13,6 @@ import 'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_pr
 import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart'
     as _i3;
 
-class _$FeignOAuth2PropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.FeignOAuth2Properties {
-  _$FeignOAuth2PropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.FeignOAuth2Properties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get enabled => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as bool);
-
-  @override
-  String? get clientRegistrationId => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.clientRegistrationId,
-  ) as String?);
-
-  @override
-  set enabled(bool value) {
-    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.enabled = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set clientRegistrationId(String? value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.clientRegistrationId = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'FeignOAuth2Properties',
   types: [r'FeignOAuth2Properties'],
@@ -194,8 +143,8 @@ _i1.BeanModule get $oauth2ClientConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart#FeignOAuth2Properties',
       create: (r) => _i2.FeignOAuth2Properties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.feign.oauth2')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'enabled',
             _$target0,
@@ -221,10 +170,6 @@ _i1.BeanModule get $oauth2ClientConfigBeans => _i1.BeanModule(
             returnType: r'String',
           ),
         ],
-        create: (target, invoker) => _$FeignOAuth2PropertiesProxy(
-          (target as _i2.FeignOAuth2Properties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i3.OAuth2ClientProperties>(

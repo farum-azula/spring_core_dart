@@ -1748,6 +1748,11 @@ class ProxyModel {
   /// signatures are emitted either (`AopProxyFactory.pruned`).
   bool pruned = false;
 
+  /// Whether the module of a library package leaves the proxy class to the
+  /// application's build (`AopProxyFactory.deferred`, with the
+  /// signatures): only an aspect of the application can match the bean.
+  bool deferred = false;
+
   /// The members some pointcut the build knows may match, when the build
   /// pruned the others (`null`: every member is advisable). Only these get
   /// a `MethodSignature` and run through the advice; a wrapper proxy
@@ -1771,6 +1776,43 @@ class ProxyModel {
   /// `@DeclareParents` introductions the proxy class implements, in the
   /// order of their runtime index.
   final introductions = <IntroductionModel>[];
+}
+
+/// A bean of a library package whose module left its proxy class to the
+/// application (`AopProxyFactory.deferred`), as the
+/// `@SpringBootApplication` build found it in the modules of the
+/// auto-configurations.
+///
+/// The application's module writes [proxy]'s class, only when one of the
+/// application's pointcuts may match the bean, and registers its factory
+/// under [source] (`BeanModule.aopProxies`).
+///
+/// ```dart
+/// // Found in spring_boot_starter_logging's module:
+/// BeanDefinition<LoggingProperties>(name: r'loggingProperties',
+///     source: r'package:...#LoggingProperties',
+///     aopProxy: const AopProxyFactory.deferred(signatures: [...]))
+/// ```
+class ForeignProxyModel {
+  /// Creates the model.
+  ForeignProxyModel({
+    required this.source,
+    required this.beanName,
+    required this.proxy,
+    required this.element,
+  });
+
+  /// The `source` of the bean's definition, the key of its factory.
+  final String source;
+
+  /// The bean's name, for `bean(...)` pointcuts.
+  final String beanName;
+
+  /// The proxy to write.
+  final ProxyModel proxy;
+
+  /// The bean's class, for imports and messages.
+  final Element element;
 }
 
 /// The extra data of a subclass proxy: a generated class that extends the
@@ -2825,6 +2867,11 @@ class ModuleModel {
   /// The lazy proxies for `@Lazy` injection points, one per type, keyed by
   /// library URI and type name.
   final lazyProxies = <String, ProxyModel>{};
+
+  /// The beans of library packages whose proxy class the application's
+  /// module may write (see [ForeignProxyModel]); only the
+  /// `@SpringBootApplication` output has some.
+  final foreignProxies = <ForeignProxyModel>[];
 
   /// Every public class of the scanned libraries. The emitter needs it for
   /// `@args(...)` pointcuts: which classes carry an annotation.

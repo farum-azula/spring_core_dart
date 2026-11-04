@@ -11,74 +11,6 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/src/config/cache_properties.dart'
     as _i2;
 
-class _$CachePropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.CacheProperties {
-  _$CachePropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.CacheProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i2.CacheType? get type => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.type,
-  ) as _i2.CacheType?);
-
-  @override
-  List<String> get cacheNames => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.cacheNames,
-  ) as List<String>);
-
-  @override
-  _i2.SimpleCacheProperties get simple => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.simple,
-  ) as _i2.SimpleCacheProperties);
-
-  @override
-  set type(_i2.CacheType? value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.type = (args[0] as _i2.CacheType?);
-      return null;
-    });
-  }
-
-  @override
-  set cacheNames(List<String> value) {
-    this.aopInvoker.invoke(this, this._target, 4, [value], (args) {
-      this._target.cacheNames = (args[0] as List<String>);
-      return null;
-    });
-  }
-
-  @override
-  set simple(_i2.SimpleCacheProperties value) {
-    this.aopInvoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.simple = (args[0] as _i2.SimpleCacheProperties);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'CacheProperties',
   types: [r'CacheProperties'],
@@ -131,8 +63,8 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_cache/src/config/cache_properties.dart#CacheProperties',
       create: (r) => _i2.CacheProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.cache')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'type',
             _$target0,
@@ -170,8 +102,6 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
             returnType: r'SimpleCacheProperties',
           ),
         ],
-        create: (target, invoker) =>
-            _$CachePropertiesProxy((target as _i2.CacheProperties), invoker),
       ),
     ),
   ],

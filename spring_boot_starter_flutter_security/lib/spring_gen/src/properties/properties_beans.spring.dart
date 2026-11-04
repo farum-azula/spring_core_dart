@@ -11,40 +11,6 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart'
     as _i2;
 
-class _$FlutterWebSecurityPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i1.Validator {
-  _$FlutterWebSecurityPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.FlutterWebSecurityProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool supports(Object target) => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    [target],
-    (args) => this._target.supports((args[0] as Object)),
-  ) as bool);
-
-  @override
-  void validate(Object target, _i1.Errors errors) {
-    this.aopInvoker.invoke(this, this._target, 1, [target, errors], (args) {
-      this._target.validate((args[0] as Object), (args[1] as _i1.Errors));
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'FlutterWebSecurityProperties',
   types: [r'FlutterWebSecurityProperties', r'Validator'],
@@ -116,8 +82,8 @@ _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
         _i1.Profile([r'web']),
         _i1.ConfigurationProperties(r'spring.flutter.security.web'),
       ],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'supports',
             _$target0,
@@ -135,10 +101,6 @@ _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
             parameterNames: [r'target', r'errors'],
           ),
         ],
-        create: (target, invoker) => _$FlutterWebSecurityPropertiesProxy(
-          (target as _i2.FlutterWebSecurityProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.FlutterSecurityProperties>(

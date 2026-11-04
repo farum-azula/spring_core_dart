@@ -12,57 +12,6 @@ import 'package:spring_boot_starter_feign/src/config/feign_properties.dart'
     as _i2;
 import 'package:spring_boot_starter_feign/src/feign_client_config.dart' as _i3;
 
-class _$FeignPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.FeignProperties {
-  _$FeignPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.FeignProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get decodeSlash => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.decodeSlash,
-  ) as bool);
-
-  @override
-  Map<String, _i2.FeignClientSettings> get config => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.config,
-  ) as Map<String, _i2.FeignClientSettings>);
-
-  @override
-  set decodeSlash(bool value) {
-    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.decodeSlash = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set config(Map<String, _i2.FeignClientSettings> value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.config = (args[0] as Map<String, _i2.FeignClientSettings>);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'FeignProperties',
   types: [r'FeignProperties'],
@@ -148,8 +97,8 @@ _i1.BeanModule get $feignConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_feign/src/config/feign_properties.dart#FeignProperties',
       create: (r) => _i2.FeignProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.feign.client')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'decodeSlash',
             _$target0,
@@ -175,8 +124,6 @@ _i1.BeanModule get $feignConfigBeans => _i1.BeanModule(
             returnType: r'Map',
           ),
         ],
-        create: (target, invoker) =>
-            _$FeignPropertiesProxy((target as _i2.FeignProperties), invoker),
       ),
     ),
   ],

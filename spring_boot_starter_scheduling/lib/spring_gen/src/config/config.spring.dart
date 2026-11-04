@@ -11,57 +11,6 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart'
     as _i2;
 
-class _$SchedulingPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.SchedulingProperties {
-  _$SchedulingPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.SchedulingProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get enabled => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as bool);
-
-  @override
-  _i2.SchedulingShutdown get shutdown => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.shutdown,
-  ) as _i2.SchedulingShutdown);
-
-  @override
-  set enabled(bool value) {
-    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.enabled = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set shutdown(_i2.SchedulingShutdown value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.shutdown = (args[0] as _i2.SchedulingShutdown);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'SchedulingProperties',
   types: [r'SchedulingProperties'],
@@ -100,8 +49,8 @@ _i1.BeanModule get $schedulingProperties => _i1.BeanModule(
       annotations: const [
         _i1.ConfigurationProperties(r'spring.task.scheduling'),
       ],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'enabled',
             _$target0,
@@ -127,10 +76,6 @@ _i1.BeanModule get $schedulingProperties => _i1.BeanModule(
             returnType: r'SchedulingShutdown',
           ),
         ],
-        create: (target, invoker) => _$SchedulingPropertiesProxy(
-          (target as _i2.SchedulingProperties),
-          invoker,
-        ),
       ),
     ),
   ],

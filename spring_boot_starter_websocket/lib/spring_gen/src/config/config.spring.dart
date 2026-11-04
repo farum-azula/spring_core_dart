@@ -11,76 +11,6 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart'
     as _i2;
 
-class _$WebSocketPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.WebSocketProperties {
-  _$WebSocketPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.WebSocketProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i1.DataSize get maxTextMessageSize => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.maxTextMessageSize,
-  ) as _i1.DataSize);
-
-  @override
-  _i1.DataSize get maxBinaryMessageSize => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.maxBinaryMessageSize,
-  ) as _i1.DataSize);
-
-  @override
-  Map<String, _i2.WebSocketClientSettings> get config =>
-      (this.aopInvoker.invoke(
-        this,
-        this._target,
-        2,
-        const [],
-        (_) => this._target.config,
-      ) as Map<String, _i2.WebSocketClientSettings>);
-
-  @override
-  set maxTextMessageSize(_i1.DataSize value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.maxTextMessageSize = (args[0] as _i1.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set maxBinaryMessageSize(_i1.DataSize value) {
-    this.aopInvoker.invoke(this, this._target, 4, [value], (args) {
-      this._target.maxBinaryMessageSize = (args[0] as _i1.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set config(Map<String, _i2.WebSocketClientSettings> value) {
-    this.aopInvoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.config =
-          (args[0] as Map<String, _i2.WebSocketClientSettings>);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'WebSocketProperties',
   types: [r'WebSocketProperties'],
@@ -150,8 +80,8 @@ _i1.BeanModule get $webSocketConfigBeans => _i1.BeanModule(
       annotations: const [
         _i1.ConfigurationProperties(r'spring.websocket.client'),
       ],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'maxTextMessageSize',
             _$target0,
@@ -189,10 +119,6 @@ _i1.BeanModule get $webSocketConfigBeans => _i1.BeanModule(
             returnType: r'Map',
           ),
         ],
-        create: (target, invoker) => _$WebSocketPropertiesProxy(
-          (target as _i2.WebSocketProperties),
-          invoker,
-        ),
       ),
     ),
   ],

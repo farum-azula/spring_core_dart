@@ -623,6 +623,61 @@ void main() {
       context.close();
     });
 
+    group('a proxy left to the application (AopProxyFactory.deferred)', () {
+      const source = 'package:lib/src/prices.dart#PriceService';
+      BeanDefinition<PriceService> deferred() => BeanDefinition<PriceService>(
+        name: 'priceService',
+        source: source,
+        types: const [PriceService, Service],
+        aopProxy: AopProxyFactory.deferred(signatures: ServiceProxy.signatures),
+        create: (_) => PriceService(),
+      );
+      BeanModule library() => BeanModule('library', [deferred()]);
+      BeanModule application() =>
+          BeanModule('application', [aspect()], aopProxies: {source: factory});
+
+      for (final (order, modules) in [
+        ('application first', () => [application(), library()]),
+        ('library first', () => [library(), application()]),
+      ]) {
+        test('takes the factory the application brings ($order)', () {
+          final context = AnnotationConfigApplicationContext(
+            modules(),
+            environment: StandardEnvironment(systemEnvironment: {}),
+          )..refresh();
+          final proxy = context.getBean<Service>();
+          expect(proxy, isA<Advised>());
+          expect(proxy.price(3), 6);
+          expect(log, ['recorder:before', 'recorder:returned 6']);
+          context.close();
+        });
+      }
+
+      test('without it, matching advice fails the startup', () {
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('aspects', [aspect()]),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(
+          context.refresh,
+          throwsA(
+            predicate(
+              (Object? e) => '$e'.contains('declared in a library package'),
+            ),
+          ),
+        );
+      });
+
+      test('without it and without matching advice, the bean is plain', () {
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('aspects', [aspect(expression: 'bean(nothing)')]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(context.getBean<Service>(), isNot(isA<Advised>()));
+        context.close();
+      });
+    });
+
     test(
       'beans without matching advice stay unproxied; no AOP without aspects',
       () {

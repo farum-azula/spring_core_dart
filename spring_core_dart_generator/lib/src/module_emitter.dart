@@ -136,7 +136,13 @@ class ModuleEmitter {
     this.dependencies,
     this.pruneProxies = true,
     this.foreignAdvice,
+    this.deferProxies = false,
   });
+
+  /// Whether the module (a `lib/` module of a library package) leaves to
+  /// the application the proxy classes only its aspects can match
+  /// (`AopProxyFactory.deferred`, see [analyzeAop]).
+  final bool deferProxies;
 
   /// The aspects and advisors of the application's other modules. Only the
   /// `@SpringBootApplication` output knows them all and passes them; when
@@ -211,13 +217,23 @@ class ModuleEmitter {
     _usesTypeOf = false;
     _annotationTypes.clear();
     _functions.clear();
-    analyzeAop(module, prune: pruneProxies, foreign: foreignAdvice);
+    analyzeAop(
+      module,
+      prune: pruneProxies,
+      foreign: foreignAdvice,
+      defer: deferProxies,
+    );
     // Classes and definitions first: the types in their annotations go
     // into the module's typeTests.
     final classes = <Spec>[
       for (final bean in module.beans)
-        if (bean.proxy case final proxy? when proxy.unavailableReason == null)
+        if (bean.proxy case final proxy?
+            when proxy.unavailableReason == null && !proxy.deferred)
           _proxyClass(proxy, bean.element, lookup: _lookupOf(bean)),
+      // Those of beans of library packages an aspect may match.
+      for (final foreign in module.foreignProxies)
+        if (foreign.proxy.unavailableReason == null)
+          _proxyClass(foreign.proxy, foreign.element),
       for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
       for (final bean in module.beans)
         if (bean.creation case InterfaceProxyCreation(:final model))
@@ -285,6 +301,15 @@ class ModuleEmitter {
               },
             ),
         ]),
+      if (module.foreignProxies.any((f) => f.proxy.unavailableReason == null))
+        'aopProxies': literalMap({
+          for (final foreign in module.foreignProxies)
+            if (foreign.proxy.unavailableReason == null)
+              _str(foreign.source): _proxyFactory(
+                foreign.proxy,
+                foreign.element,
+              ),
+        }),
       if (module.introspections.isNotEmpty)
         'introspections': literalList([
           for (final introspection in module.introspections)
@@ -1733,6 +1758,12 @@ class ModuleEmitter {
       for (final member in advisable)
         _signature(proxy, member, target!, element),
     ]);
+    // The application's module brings the class (BeanModule.aopProxies).
+    if (proxy.deferred) {
+      return _spring(
+        'AopProxyFactory',
+      ).constInstanceNamed('deferred', [], {'signatures': signatures});
+    }
     if (proxy.unavailableReason case final reason?) {
       return _spring('AopProxyFactory').newInstanceNamed('unavailable', [], {
         'signatures': signatures,

@@ -11,57 +11,6 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_security_core/src/config/security_core_properties.dart'
     as _i2;
 
-class _$PasswordChecksPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.PasswordChecksProperties {
-  _$PasswordChecksPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.PasswordChecksProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  int? get maxConcurrent => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.maxConcurrent,
-  ) as int?);
-
-  @override
-  int? get maxQueued => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.maxQueued,
-  ) as int?);
-
-  @override
-  set maxConcurrent(int? value) {
-    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.maxConcurrent = (args[0] as int?);
-      return null;
-    });
-  }
-
-  @override
-  set maxQueued(int? value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.maxQueued = (args[0] as int?);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'PasswordChecksProperties',
   types: [r'PasswordChecksProperties'],
@@ -92,8 +41,8 @@ _i1.BeanModule get $securityCoreConfigBeans => _i1.BeanModule(
       annotations: const [
         _i1.ConfigurationProperties(r'spring.security.password-checks'),
       ],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'maxConcurrent',
             _$target0,
@@ -119,10 +68,6 @@ _i1.BeanModule get $securityCoreConfigBeans => _i1.BeanModule(
             returnType: r'int',
           ),
         ],
-        create: (target, invoker) => _$PasswordChecksPropertiesProxy(
-          (target as _i2.PasswordChecksProperties),
-          invoker,
-        ),
       ),
     ),
   ],

@@ -11,108 +11,6 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_security/src/properties/security_properties.dart'
     as _i2;
 
-class _$SecurityPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.SecurityProperties {
-  _$SecurityPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.SecurityProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i2.SecurityUserProperties get user => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.user,
-  ) as _i2.SecurityUserProperties);
-
-  @override
-  _i2.SecurityFilterProperties get filter => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.filter,
-  ) as _i2.SecurityFilterProperties);
-
-  @override
-  _i2.SecuritySessionProperties get session => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.session,
-  ) as _i2.SecuritySessionProperties);
-
-  @override
-  _i2.SecurityCookieProperties get cookie => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.cookie,
-  ) as _i2.SecurityCookieProperties);
-
-  @override
-  _i2.SecurityOAuth2Properties get oauth2 => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.oauth2,
-  ) as _i2.SecurityOAuth2Properties);
-
-  @override
-  set user(_i2.SecurityUserProperties value) {
-    this.aopInvoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.user = (args[0] as _i2.SecurityUserProperties);
-      return null;
-    });
-  }
-
-  @override
-  set filter(_i2.SecurityFilterProperties value) {
-    this.aopInvoker.invoke(this, this._target, 6, [value], (args) {
-      this._target.filter = (args[0] as _i2.SecurityFilterProperties);
-      return null;
-    });
-  }
-
-  @override
-  set session(_i2.SecuritySessionProperties value) {
-    this.aopInvoker.invoke(this, this._target, 7, [value], (args) {
-      this._target.session = (args[0] as _i2.SecuritySessionProperties);
-      return null;
-    });
-  }
-
-  @override
-  set cookie(_i2.SecurityCookieProperties value) {
-    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.cookie = (args[0] as _i2.SecurityCookieProperties);
-      return null;
-    });
-  }
-
-  @override
-  set oauth2(_i2.SecurityOAuth2Properties value) {
-    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.oauth2 = (args[0] as _i2.SecurityOAuth2Properties);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'SecurityProperties',
   types: [r'SecurityProperties'],
@@ -229,8 +127,8 @@ _i1.BeanModule get $securityConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_security/src/properties/security_properties.dart#SecurityProperties',
       create: (r) => _i2.SecurityProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.security')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'user',
             _$target0,
@@ -292,10 +190,6 @@ _i1.BeanModule get $securityConfigBeans => _i1.BeanModule(
             returnType: r'SecurityOAuth2Properties',
           ),
         ],
-        create: (target, invoker) => _$SecurityPropertiesProxy(
-          (target as _i2.SecurityProperties),
-          invoker,
-        ),
       ),
     ),
   ],

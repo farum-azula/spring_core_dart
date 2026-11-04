@@ -321,7 +321,8 @@ final class AopProxyFactory {
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _advise = null,
-       unavailableReason = null;
+       unavailableReason = null,
+       isDeferred = false;
 
   /// A placeholder for a bean whose class cannot be proxied, with the
   /// [reason].
@@ -337,7 +338,31 @@ final class AopProxyFactory {
        introductions = const [],
        _create = null,
        _advise = null,
-       unavailableReason = reason;
+       unavailableReason = reason,
+       isDeferred = false;
+
+  /// A bean of a library package whose proxy class the build of the
+  /// application writes, only when one of its pointcuts may match it: the
+  /// library's build cannot know the application's aspects.
+  ///
+  /// [signatures] are the bean's members. The application's
+  /// `@SpringBootApplication` output brings the factory with the proxy
+  /// class (`BeanModule.aopProxies`), which the context puts in the
+  /// definition's place. Without it (a context built without that output),
+  /// advice that matches the bean fails the startup with an
+  /// [AopConfigException] saying so ([deferredReason]), instead of being
+  /// silently skipped.
+  ///
+  /// ```dart
+  /// // In a starter's generated module:
+  /// aopProxy: const AopProxyFactory.deferred(signatures: [...]),
+  /// ```
+  const AopProxyFactory.deferred({required this.signatures})
+    : introductions = const [],
+      _create = null,
+      _advise = null,
+      unavailableReason = deferredReason,
+      isDeferred = true;
 
   /// A bean the build gave no proxy class: no pointcut it knows of matches
   /// the bean ([reason] says so, [prunedReason] when not given). Nothing
@@ -350,7 +375,8 @@ final class AopProxyFactory {
       introductions = const [],
       _create = null,
       _advise = null,
-      unavailableReason = reason ?? prunedReason;
+      unavailableReason = reason ?? prunedReason,
+      isDeferred = false;
 
   /// A factory for a bean whose class cannot be implemented but can be
   /// extended, which the container creates as a generated subclass.
@@ -379,7 +405,16 @@ final class AopProxyFactory {
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _create = null,
-       unavailableReason = null;
+       unavailableReason = null,
+       isDeferred = false;
+
+  /// The [unavailableReason] of [AopProxyFactory.deferred].
+  static const deferredReason =
+      'its class is declared in a library package, whose build writes no '
+      'proxy class for it: the build of the application writes it when one '
+      'of its pointcuts may match the bean. Build the application with its '
+      '@SpringBootApplication (or with the option aop_prune: false), or '
+      'declare the bean yourself (a @Bean method) to have it proxied.';
 
   /// The [unavailableReason] of [AopProxyFactory.pruned] when the build
   /// gave none (it writes none, so release builds carry one copy of it).
@@ -401,6 +436,10 @@ final class AopProxyFactory {
 
   /// Why the bean cannot be proxied; `null` when it can.
   final String? unavailableReason;
+
+  /// Whether this is an [AopProxyFactory.deferred] placeholder, which the
+  /// application's factory for the bean replaces.
+  final bool isDeferred;
 
   /// Whether the bean is created as a generated subclass that advice is
   /// attached to, instead of being wrapped.

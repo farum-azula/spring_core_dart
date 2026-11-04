@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/auto_proxy_creator.dart';
+import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/aware.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
@@ -1148,11 +1149,41 @@ class AnnotationConfigApplicationContext
       }
     }
 
+    // The proxy factories the application's module brings for beans of
+    // library packages (`BeanModule.aopProxies`), and the definitions still
+    // waiting for one (`AopProxyFactory.deferred`), by source: whichever
+    // comes first, the factory takes the placeholder's place.
+    final aopProxies = <String, AopProxyFactory>{};
+    final deferredProxies = <String, List<BeanDefinition<Object>>>{};
+    void useAopProxies(BeanModule module) {
+      aopProxies.addAll(module.aopProxies);
+      for (final MapEntry(key: source, value: factory)
+          in module.aopProxies.entries) {
+        for (final definition
+            in deferredProxies.remove(source) ??
+                const <BeanDefinition<Object>>[]) {
+          definition.aopProxy = factory;
+        }
+      }
+      for (final definition in module.definitions) {
+        final source = definition.source;
+        if (source == null || !(definition.aopProxy?.isDeferred ?? false)) {
+          continue;
+        }
+        if (aopProxies[source] case final factory?) {
+          definition.aopProxy = factory;
+        } else {
+          (deferredProxies[source] ??= []).add(definition);
+        }
+      }
+    }
+
     void load(BeanModule module, _ConfigurationClass? importedBy) {
       if (!seen.add(module)) {
         importAgain(module, importedBy, {});
         return;
       }
+      useAopProxies(module);
       final moduleOwn = moduleClasses[module] = [];
       _ConfigurationClass newClass(String? key, List<Condition> conditions) {
         final configurationClass = _ConfigurationClass(

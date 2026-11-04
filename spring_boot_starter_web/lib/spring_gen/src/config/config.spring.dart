@@ -13,533 +13,6 @@ import 'package:spring_boot_starter_web/src/config/web_properties.dart' as _i2;
 import 'package:spring_boot_starter_web/src/forwarded_headers.dart' as _i4;
 import 'package:spring_boot_starter_web/src/web_server.dart' as _i3;
 
-class _$ServerSettingsProxy
-    with _i1.AdvisedWrapper
-    implements _i2.ServerSettings {
-  _$ServerSettingsProxy(this._target, this.aopInvoker);
-
-  final _i2.ServerSettings _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  int get port => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.port,
-  ) as int);
-
-  @override
-  String? get address => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.address,
-  ) as String?);
-
-  @override
-  _i3.Shutdown get shutdown => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.shutdown,
-  ) as _i3.Shutdown);
-
-  @override
-  String? get contextPath => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.contextPath,
-  ) as String?);
-
-  @override
-  _i1.DataSize get maxHttpRequestBodySize => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.maxHttpRequestBodySize,
-  ) as _i1.DataSize);
-
-  @override
-  Duration get connectionTimeout => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.connectionTimeout,
-  ) as Duration);
-
-  @override
-  Duration? get requestTimeout => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    6,
-    const [],
-    (_) => this._target.requestTimeout,
-  ) as Duration?);
-
-  @override
-  _i4.ForwardHeadersStrategy get forwardHeadersStrategy =>
-      (this.aopInvoker.invoke(
-        this,
-        this._target,
-        7,
-        const [],
-        (_) => this._target.forwardHeadersStrategy,
-      ) as _i4.ForwardHeadersStrategy);
-
-  @override
-  _i2.ForwardHeadersSettings get forwardHeaders => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    8,
-    const [],
-    (_) => this._target.forwardHeaders,
-  ) as _i2.ForwardHeadersSettings);
-
-  @override
-  _i2.ServerSslSettings get ssl => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    9,
-    const [],
-    (_) => this._target.ssl,
-  ) as _i2.ServerSslSettings);
-
-  @override
-  _i2.ServerCompressionSettings get compression => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    10,
-    const [],
-    (_) => this._target.compression,
-  ) as _i2.ServerCompressionSettings);
-
-  @override
-  _i2.ServerWebSocketSettings get websocket => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    11,
-    const [],
-    (_) => this._target.websocket,
-  ) as _i2.ServerWebSocketSettings);
-
-  @override
-  _i2.ServerSessionSettings get session => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    12,
-    const [],
-    (_) => this._target.session,
-  ) as _i2.ServerSessionSettings);
-
-  @override
-  set port(int value) {
-    this.aopInvoker.invoke(this, this._target, 13, [value], (args) {
-      this._target.port = (args[0] as int);
-      return null;
-    });
-  }
-
-  @override
-  set address(String? value) {
-    this.aopInvoker.invoke(this, this._target, 14, [value], (args) {
-      this._target.address = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set shutdown(_i3.Shutdown value) {
-    this.aopInvoker.invoke(this, this._target, 15, [value], (args) {
-      this._target.shutdown = (args[0] as _i3.Shutdown);
-      return null;
-    });
-  }
-
-  @override
-  set contextPath(String? value) {
-    this.aopInvoker.invoke(this, this._target, 16, [value], (args) {
-      this._target.contextPath = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set maxHttpRequestBodySize(_i1.DataSize value) {
-    this.aopInvoker.invoke(this, this._target, 17, [value], (args) {
-      this._target.maxHttpRequestBodySize = (args[0] as _i1.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set connectionTimeout(Duration value) {
-    this.aopInvoker.invoke(this, this._target, 18, [value], (args) {
-      this._target.connectionTimeout = (args[0] as Duration);
-      return null;
-    });
-  }
-
-  @override
-  set requestTimeout(Duration? value) {
-    this.aopInvoker.invoke(this, this._target, 19, [value], (args) {
-      this._target.requestTimeout = (args[0] as Duration?);
-      return null;
-    });
-  }
-
-  @override
-  set forwardHeadersStrategy(_i4.ForwardHeadersStrategy value) {
-    this.aopInvoker.invoke(this, this._target, 20, [value], (args) {
-      this._target.forwardHeadersStrategy =
-          (args[0] as _i4.ForwardHeadersStrategy);
-      return null;
-    });
-  }
-
-  @override
-  set forwardHeaders(_i2.ForwardHeadersSettings value) {
-    this.aopInvoker.invoke(this, this._target, 21, [value], (args) {
-      this._target.forwardHeaders = (args[0] as _i2.ForwardHeadersSettings);
-      return null;
-    });
-  }
-
-  @override
-  set ssl(_i2.ServerSslSettings value) {
-    this.aopInvoker.invoke(this, this._target, 22, [value], (args) {
-      this._target.ssl = (args[0] as _i2.ServerSslSettings);
-      return null;
-    });
-  }
-
-  @override
-  set compression(_i2.ServerCompressionSettings value) {
-    this.aopInvoker.invoke(this, this._target, 23, [value], (args) {
-      this._target.compression = (args[0] as _i2.ServerCompressionSettings);
-      return null;
-    });
-  }
-
-  @override
-  set websocket(_i2.ServerWebSocketSettings value) {
-    this.aopInvoker.invoke(this, this._target, 24, [value], (args) {
-      this._target.websocket = (args[0] as _i2.ServerWebSocketSettings);
-      return null;
-    });
-  }
-
-  @override
-  set session(_i2.ServerSessionSettings value) {
-    this.aopInvoker.invoke(this, this._target, 25, [value], (args) {
-      this._target.session = (args[0] as _i2.ServerSessionSettings);
-      return null;
-    });
-  }
-}
-
-class _$MultipartSettingsProxy
-    with _i1.AdvisedWrapper
-    implements _i2.MultipartSettings {
-  _$MultipartSettingsProxy(this._target, this.aopInvoker);
-
-  final _i2.MultipartSettings _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get enabled => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as bool);
-
-  @override
-  _i1.DataSize get maxFileSize => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.maxFileSize,
-  ) as _i1.DataSize);
-
-  @override
-  _i1.DataSize get maxRequestSize => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.maxRequestSize,
-  ) as _i1.DataSize);
-
-  @override
-  int get maxPartCount => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.maxPartCount,
-  ) as int);
-
-  @override
-  _i1.DataSize get fileSizeThreshold => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.fileSizeThreshold,
-  ) as _i1.DataSize);
-
-  @override
-  String? get location => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.location,
-  ) as String?);
-
-  @override
-  set enabled(bool value) {
-    this.aopInvoker.invoke(this, this._target, 6, [value], (args) {
-      this._target.enabled = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set maxFileSize(_i1.DataSize value) {
-    this.aopInvoker.invoke(this, this._target, 7, [value], (args) {
-      this._target.maxFileSize = (args[0] as _i1.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set maxRequestSize(_i1.DataSize value) {
-    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.maxRequestSize = (args[0] as _i1.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set maxPartCount(int value) {
-    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.maxPartCount = (args[0] as int);
-      return null;
-    });
-  }
-
-  @override
-  set fileSizeThreshold(_i1.DataSize value) {
-    this.aopInvoker.invoke(this, this._target, 10, [value], (args) {
-      this._target.fileSizeThreshold = (args[0] as _i1.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set location(String? value) {
-    this.aopInvoker.invoke(this, this._target, 11, [value], (args) {
-      this._target.location = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$MvcSettingsProxy with _i1.AdvisedWrapper implements _i2.MvcSettings {
-  _$MvcSettingsProxy(this._target, this.aopInvoker);
-
-  final _i2.MvcSettings _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get logRequestDetails => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.logRequestDetails,
-  ) as bool);
-
-  @override
-  _i2.MvcAsyncSettings get async => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.async,
-  ) as _i2.MvcAsyncSettings);
-
-  @override
-  _i2.MvcSseSettings get sse => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.sse,
-  ) as _i2.MvcSseSettings);
-
-  @override
-  set logRequestDetails(bool value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.logRequestDetails = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set async(_i2.MvcAsyncSettings value) {
-    this.aopInvoker.invoke(this, this._target, 4, [value], (args) {
-      this._target.async = (args[0] as _i2.MvcAsyncSettings);
-      return null;
-    });
-  }
-
-  @override
-  set sse(_i2.MvcSseSettings value) {
-    this.aopInvoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.sse = (args[0] as _i2.MvcSseSettings);
-      return null;
-    });
-  }
-}
-
-class _$WebMainSettingsProxy
-    with _i1.AdvisedWrapper
-    implements _i2.WebMainSettings {
-  _$WebMainSettingsProxy(this._target, this.aopInvoker);
-
-  final _i2.WebMainSettings _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get webApplicationType => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.webApplicationType,
-  ) as String?);
-
-  @override
-  set webApplicationType(String? value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.webApplicationType = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$WebTestSettingsProxy
-    with _i1.AdvisedWrapper
-    implements _i2.WebTestSettings {
-  _$WebTestSettingsProxy(this._target, this.aopInvoker);
-
-  final _i2.WebTestSettings _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get webEnvironment => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.webEnvironment,
-  ) as String?);
-
-  @override
-  set webEnvironment(String? value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.webEnvironment = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$LocalServerSettingsProxy
-    with _i1.AdvisedWrapper
-    implements _i2.LocalServerSettings {
-  _$LocalServerSettingsProxy(this._target, this.aopInvoker);
-
-  final _i2.LocalServerSettings _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  int? get port => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.port,
-  ) as int?);
-
-  @override
-  set port(int? value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.port = (args[0] as int?);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'ServerSettings',
   types: [r'ServerSettings'],
@@ -792,8 +265,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#ServerSettings',
       create: (r) => _i2.ServerSettings(),
       annotations: const [_i1.ConfigurationProperties(r'server')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'port',
             _$target0,
@@ -951,8 +424,6 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             returnType: r'ServerSessionSettings',
           ),
         ],
-        create: (target, invoker) =>
-            _$ServerSettingsProxy((target as _i2.ServerSettings), invoker),
       ),
     ),
     _i1.BeanDefinition<_i2.MultipartSettings>(
@@ -960,8 +431,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#MultipartSettings',
       create: (r) => _i2.MultipartSettings(),
       annotations: const [_i1.ConfigurationProperties(r'spring.web.multipart')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'enabled',
             _$target1,
@@ -1035,10 +506,6 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             returnType: r'String',
           ),
         ],
-        create: (target, invoker) => _$MultipartSettingsProxy(
-          (target as _i2.MultipartSettings),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.MvcSettings>(
@@ -1046,8 +513,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#MvcSettings',
       create: (r) => _i2.MvcSettings(),
       annotations: const [_i1.ConfigurationProperties(r'spring.mvc')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'logRequestDetails',
             _$target2,
@@ -1085,8 +552,6 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             returnType: r'MvcSseSettings',
           ),
         ],
-        create: (target, invoker) =>
-            _$MvcSettingsProxy((target as _i2.MvcSettings), invoker),
       ),
     ),
     _i1.BeanDefinition<_i2.WebMainSettings>(
@@ -1094,8 +559,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#WebMainSettings',
       create: (r) => _i2.WebMainSettings(),
       annotations: const [_i1.ConfigurationProperties(r'spring.main')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'webApplicationType',
             _$target3,
@@ -1117,8 +582,6 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             annotationTypes: [r'PropertyValues'],
           ),
         ],
-        create: (target, invoker) =>
-            _$WebMainSettingsProxy((target as _i2.WebMainSettings), invoker),
       ),
     ),
     _i1.BeanDefinition<_i2.WebTestSettings>(
@@ -1126,8 +589,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#WebTestSettings',
       create: (r) => _i2.WebTestSettings(),
       annotations: const [_i1.ConfigurationProperties(r'spring.test')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'webEnvironment',
             _$target4,
@@ -1159,8 +622,6 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             annotationTypes: [r'PropertyValues'],
           ),
         ],
-        create: (target, invoker) =>
-            _$WebTestSettingsProxy((target as _i2.WebTestSettings), invoker),
       ),
     ),
     _i1.BeanDefinition<_i2.LocalServerSettings>(
@@ -1168,8 +629,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#LocalServerSettings',
       create: (r) => _i2.LocalServerSettings(),
       annotations: const [_i1.ConfigurationProperties(r'local.server')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'port',
             _$target5,
@@ -1183,10 +644,6 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             returnType: r'int',
           ),
         ],
-        create: (target, invoker) => _$LocalServerSettingsProxy(
-          (target as _i2.LocalServerSettings),
-          invoker,
-        ),
       ),
     ),
   ],

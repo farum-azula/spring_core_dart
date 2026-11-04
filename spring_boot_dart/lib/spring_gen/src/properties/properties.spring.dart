@@ -12,637 +12,6 @@ import 'package:spring_boot_dart/src/banner.dart' as _i3;
 import 'package:spring_boot_dart/src/properties/boot_properties.dart' as _i2;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
-class _$MainPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.MainProperties {
-  _$MainPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.MainProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get allowBeanDefinitionOverriding => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.allowBeanDefinitionOverriding,
-  ) as bool);
-
-  @override
-  _i3.BannerMode get bannerMode => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.bannerMode,
-  ) as _i3.BannerMode);
-
-  @override
-  bool get lazyInitialization => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.lazyInitialization,
-  ) as bool);
-
-  @override
-  bool get logStartupInfo => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.logStartupInfo,
-  ) as bool);
-
-  @override
-  bool get registerShutdownHook => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.registerShutdownHook,
-  ) as bool);
-
-  @override
-  set allowBeanDefinitionOverriding(bool value) {
-    this.aopInvoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.allowBeanDefinitionOverriding = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set bannerMode(_i3.BannerMode value) {
-    this.aopInvoker.invoke(this, this._target, 6, [value], (args) {
-      this._target.bannerMode = (args[0] as _i3.BannerMode);
-      return null;
-    });
-  }
-
-  @override
-  set lazyInitialization(bool value) {
-    this.aopInvoker.invoke(this, this._target, 7, [value], (args) {
-      this._target.lazyInitialization = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set logStartupInfo(bool value) {
-    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.logStartupInfo = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set registerShutdownHook(bool value) {
-    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.registerShutdownHook = (args[0] as bool);
-      return null;
-    });
-  }
-}
-
-class _$AutoconfigurePropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.AutoconfigureProperties {
-  _$AutoconfigurePropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.AutoconfigureProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  List<String>? get exclude => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.exclude,
-  ) as List<String>?);
-
-  @override
-  set exclude(List<String>? value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.exclude = (args[0] as List<String>?);
-      return null;
-    });
-  }
-}
-
-class _$ApplicationPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.ApplicationProperties {
-  _$ApplicationPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.ApplicationProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get json => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.json,
-  ) as String?);
-
-  @override
-  String? get name => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.name,
-  ) as String?);
-
-  @override
-  set json(String? value) {
-    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.json = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set name(String? value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.name = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$BannerPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.BannerProperties {
-  _$BannerPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.BannerProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String get location => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.location,
-  ) as String);
-
-  @override
-  set location(String value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.location = (args[0] as String);
-      return null;
-    });
-  }
-}
-
-class _$DevtoolsRestartPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.DevtoolsRestartProperties {
-  _$DevtoolsRestartPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.DevtoolsRestartProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get enabled => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as bool);
-
-  @override
-  set enabled(bool value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.enabled = (args[0] as bool);
-      return null;
-    });
-  }
-}
-
-class _$LifecyclePropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.LifecycleProperties {
-  _$LifecyclePropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.LifecycleProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  Duration get timeoutPerShutdownPhase => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.timeoutPerShutdownPhase,
-  ) as Duration);
-
-  @override
-  set timeoutPerShutdownPhase(Duration value) {
-    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.timeoutPerShutdownPhase = (args[0] as Duration);
-      return null;
-    });
-  }
-}
-
-class _$DebugPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.DebugProperties {
-  _$DebugPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.DebugProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get debug => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.debug,
-  ) as String?);
-
-  @override
-  String? get trace => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.trace,
-  ) as String?);
-
-  @override
-  set debug(String? value) {
-    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
-      this._target.debug = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set trace(String? value) {
-    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.trace = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$MessagesPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.MessagesProperties {
-  _$MessagesPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.MessagesProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get alwaysUseMessageFormat => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.alwaysUseMessageFormat,
-  ) as bool);
-
-  @override
-  List<String> get basename => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.basename,
-  ) as List<String>);
-
-  @override
-  Duration? get cacheDuration => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.cacheDuration,
-  ) as Duration?);
-
-  @override
-  List<String>? get commonMessages => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.commonMessages,
-  ) as List<String>?);
-
-  @override
-  String? get defaultLocale => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.defaultLocale,
-  ) as String?);
-
-  @override
-  String? get encoding => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.encoding,
-  ) as String?);
-
-  @override
-  bool get fallbackToSystemLocale => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    6,
-    const [],
-    (_) => this._target.fallbackToSystemLocale,
-  ) as bool);
-
-  @override
-  bool get useCodeAsDefaultMessage => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    7,
-    const [],
-    (_) => this._target.useCodeAsDefaultMessage,
-  ) as bool);
-
-  @override
-  set alwaysUseMessageFormat(bool value) {
-    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.alwaysUseMessageFormat = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set basename(List<String> value) {
-    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.basename = (args[0] as List<String>);
-      return null;
-    });
-  }
-
-  @override
-  set cacheDuration(Duration? value) {
-    this.aopInvoker.invoke(this, this._target, 10, [value], (args) {
-      this._target.cacheDuration = (args[0] as Duration?);
-      return null;
-    });
-  }
-
-  @override
-  set commonMessages(List<String>? value) {
-    this.aopInvoker.invoke(this, this._target, 11, [value], (args) {
-      this._target.commonMessages = (args[0] as List<String>?);
-      return null;
-    });
-  }
-
-  @override
-  set defaultLocale(String? value) {
-    this.aopInvoker.invoke(this, this._target, 12, [value], (args) {
-      this._target.defaultLocale = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set encoding(String? value) {
-    this.aopInvoker.invoke(this, this._target, 13, [value], (args) {
-      this._target.encoding = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set fallbackToSystemLocale(bool value) {
-    this.aopInvoker.invoke(this, this._target, 14, [value], (args) {
-      this._target.fallbackToSystemLocale = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set useCodeAsDefaultMessage(bool value) {
-    this.aopInvoker.invoke(this, this._target, 15, [value], (args) {
-      this._target.useCodeAsDefaultMessage = (args[0] as bool);
-      return null;
-    });
-  }
-}
-
-class _$JsonPropertiesProxy
-    with _i1.AdvisedWrapper
-    implements _i2.JsonProperties {
-  _$JsonPropertiesProxy(this._target, this.aopInvoker);
-
-  final _i2.JsonProperties _target;
-
-  @override
-  final _i1.ProxyInvoker aopInvoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String get propertyNamingStrategy => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.propertyNamingStrategy,
-  ) as String);
-
-  @override
-  _i1.JsonInclusion get defaultPropertyInclusion => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.defaultPropertyInclusion,
-  ) as _i1.JsonInclusion);
-
-  @override
-  String? get timeZone => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.timeZone,
-  ) as String?);
-
-  @override
-  _i2.JsonDeserializationProperties get deserialization =>
-      (this.aopInvoker.invoke(
-        this,
-        this._target,
-        3,
-        const [],
-        (_) => this._target.deserialization,
-      ) as _i2.JsonDeserializationProperties);
-
-  @override
-  _i2.JsonSerializationProperties get serialization => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.serialization,
-  ) as _i2.JsonSerializationProperties);
-
-  @override
-  _i2.JsonMapperProperties get mapper => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.mapper,
-  ) as _i2.JsonMapperProperties);
-
-  @override
-  _i2.JsonDatatypeProperties get datatype => (this.aopInvoker.invoke(
-    this,
-    this._target,
-    6,
-    const [],
-    (_) => this._target.datatype,
-  ) as _i2.JsonDatatypeProperties);
-
-  @override
-  set propertyNamingStrategy(String value) {
-    this.aopInvoker.invoke(this, this._target, 7, [value], (args) {
-      this._target.propertyNamingStrategy = (args[0] as String);
-      return null;
-    });
-  }
-
-  @override
-  set defaultPropertyInclusion(_i1.JsonInclusion value) {
-    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.defaultPropertyInclusion = (args[0] as _i1.JsonInclusion);
-      return null;
-    });
-  }
-
-  @override
-  set timeZone(String? value) {
-    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.timeZone = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set deserialization(_i2.JsonDeserializationProperties value) {
-    this.aopInvoker.invoke(this, this._target, 10, [value], (args) {
-      this._target.deserialization =
-          (args[0] as _i2.JsonDeserializationProperties);
-      return null;
-    });
-  }
-
-  @override
-  set serialization(_i2.JsonSerializationProperties value) {
-    this.aopInvoker.invoke(this, this._target, 11, [value], (args) {
-      this._target.serialization = (args[0] as _i2.JsonSerializationProperties);
-      return null;
-    });
-  }
-
-  @override
-  set mapper(_i2.JsonMapperProperties value) {
-    this.aopInvoker.invoke(this, this._target, 12, [value], (args) {
-      this._target.mapper = (args[0] as _i2.JsonMapperProperties);
-      return null;
-    });
-  }
-
-  @override
-  set datatype(_i2.JsonDatatypeProperties value) {
-    this.aopInvoker.invoke(this, this._target, 13, [value], (args) {
-      this._target.datatype = (args[0] as _i2.JsonDatatypeProperties);
-      return null;
-    });
-  }
-}
-
 const _$target0 = _i1.AopTarget(
   r'MainProperties',
   types: [r'MainProperties'],
@@ -904,8 +273,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#MainProperties',
       create: (r) => _i2.MainProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.main')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'allowBeanDefinitionOverriding',
             _$target0,
@@ -967,8 +336,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'bool',
           ),
         ],
-        create: (target, invoker) =>
-            _$MainPropertiesProxy((target as _i2.MainProperties), invoker),
       ),
     ),
     _i1.BeanDefinition<_i2.AutoconfigureProperties>(
@@ -976,8 +343,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#AutoconfigureProperties',
       create: (r) => _i2.AutoconfigureProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.autoconfigure')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'exclude',
             _$target1,
@@ -991,10 +358,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'List',
           ),
         ],
-        create: (target, invoker) => _$AutoconfigurePropertiesProxy(
-          (target as _i2.AutoconfigureProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.ApplicationProperties>(
@@ -1002,8 +365,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#ApplicationProperties',
       create: (r) => _i2.ApplicationProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.application')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'json',
             _$target2,
@@ -1029,10 +392,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'String',
           ),
         ],
-        create: (target, invoker) => _$ApplicationPropertiesProxy(
-          (target as _i2.ApplicationProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.BannerProperties>(
@@ -1040,8 +399,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#BannerProperties',
       create: (r) => _i2.BannerProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.banner')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'location',
             _$target3,
@@ -1055,8 +414,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'String',
           ),
         ],
-        create: (target, invoker) =>
-            _$BannerPropertiesProxy((target as _i2.BannerProperties), invoker),
       ),
     ),
     _i1.BeanDefinition<_i2.DevtoolsRestartProperties>(
@@ -1066,8 +423,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       annotations: const [
         _i1.ConfigurationProperties(r'spring.devtools.restart'),
       ],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'enabled',
             _$target4,
@@ -1081,10 +438,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'bool',
           ),
         ],
-        create: (target, invoker) => _$DevtoolsRestartPropertiesProxy(
-          (target as _i2.DevtoolsRestartProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.LifecycleProperties>(
@@ -1092,8 +445,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#LifecycleProperties',
       create: (r) => _i2.LifecycleProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.lifecycle')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'timeoutPerShutdownPhase',
             _$target5,
@@ -1107,10 +460,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'Duration',
           ),
         ],
-        create: (target, invoker) => _$LifecyclePropertiesProxy(
-          (target as _i2.LifecycleProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.DebugProperties>(
@@ -1118,8 +467,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#DebugProperties',
       create: (r) => _i2.DebugProperties(),
       annotations: const [_i1.ConfigurationProperties(r'')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'debug',
             _$target6,
@@ -1145,8 +494,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'String',
           ),
         ],
-        create: (target, invoker) =>
-            _$DebugPropertiesProxy((target as _i2.DebugProperties), invoker),
       ),
     ),
     _i1.BeanDefinition<_i2.MessagesProperties>(
@@ -1154,8 +501,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#MessagesProperties',
       create: (r) => _i2.MessagesProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.messages')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'alwaysUseMessageFormat',
             _$target7,
@@ -1257,10 +604,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'bool',
           ),
         ],
-        create: (target, invoker) => _$MessagesPropertiesProxy(
-          (target as _i2.MessagesProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.JsonProperties>(
@@ -1268,8 +611,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#JsonProperties',
       create: (r) => _i2.JsonProperties(),
       annotations: const [_i1.ConfigurationProperties(r'spring.json')],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
           _i1.MethodSignature.of(
             r'propertyNamingStrategy',
             _$target8,
@@ -1379,8 +722,6 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'JsonDatatypeProperties',
           ),
         ],
-        create: (target, invoker) =>
-            _$JsonPropertiesProxy((target as _i2.JsonProperties), invoker),
       ),
     ),
   ],

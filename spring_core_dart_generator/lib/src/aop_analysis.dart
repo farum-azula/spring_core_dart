@@ -53,6 +53,16 @@ import 'package:spring_core_dart_generator/src/flutter_scanning.dart'
 /// created as its own class. Annotations of the SDK (`@override`) and of
 /// `package:meta` never keep a proxy.
 ///
+///
+/// With [defer] (the `lib/` modules of a starter), a wrapper proxy
+/// that only an aspect of the application can match (no annotation of the
+/// bean is one an advisor may match, no pointcut of the module matches
+/// it) is left to the application ([ProxyModel.deferred]): its module
+/// keeps the signatures, the `@SpringBootApplication` output writes the
+/// class when one of the application's pointcuts may match the bean
+/// ([ModuleModel.foreignProxies], decided like the module's own beans;
+/// all of them when it does not prune).
+///
 /// ```dart
 /// // In the @SpringBootApplication output: prune, knowing the advice of
 /// // the nested modules and the auto-configurations.
@@ -62,6 +72,7 @@ void analyzeAop(
   ModuleModel module, {
   required bool prune,
   ForeignAdvice? foreign,
+  bool defer = false,
 }) {
   final aspects = [
     for (final bean in module.beans)
@@ -178,13 +189,39 @@ void analyzeAop(
       bean.advisorPointcut?.annotations ?? const {},
     );
   }
+  if (defer && complete && !unknownAdvisor && advisors.isEmpty) {
+    _defer(module, expressions);
+  }
   if (!prune ||
       foreign == null ||
       foreign.unknown ||
       foreign.advisors ||
       !complete ||
       unknownAdvisor) {
+    // Nothing can be pruned: every proxy left to the application is
+    // written, with all its members.
     return;
+  }
+  for (final foreignProxy in module.foreignProxies) {
+    final proxy = foreignProxy.proxy;
+    final advised = {
+      for (final member in proxy.members)
+        if (expressions.any(
+          (pointcut) => pointcut.matchesBean(
+            _signature(proxy, member),
+            foreignProxy.beanName,
+            const [],
+          ),
+        ))
+          member,
+    };
+    if (advised.isEmpty) {
+      proxy
+        ..pruned = true
+        ..unavailableReason = AopProxyFactory.deferredReason;
+    } else if (advised.length < proxy.members.length) {
+      proxy.advisedMembers = advised;
+    }
   }
   for (final bean in module.beans) {
     final proxy = bean.proxy;
@@ -223,6 +260,65 @@ void analyzeAop(
           'for every bean).';
     }
   }
+}
+
+// Marks the wrapper proxies of [module] (a `lib/` module of a library
+// package) that only an aspect of the application can match: no
+// annotation on the class, its members or their parameters is one an
+// advisor may match ([_isInert]), and none of the module's own
+// [expressions] matches a member.
+void _defer(ModuleModel module, List<ExpressionPointcut> expressions) {
+  for (final bean in module.beans) {
+    final proxy = bean.proxy;
+    if (proxy == null ||
+        proxy.unavailableReason != null ||
+        proxy.subclass != null ||
+        proxy.introductions.isNotEmpty ||
+        bean.aspect != null ||
+        mixesChangeNotifierIn(proxy.classAnnotations, proxy.targetType)) {
+      continue;
+    }
+    final annotations = [
+      ...proxy.classAnnotations,
+      for (final member in proxy.members) ...[
+        ...member.mergedAnnotations,
+        ...member.implementingTypeAnnotations,
+        for (final level in member.superclassAnnotations) ...level,
+        for (final parameter in member.parameters) ...parameter.annotations,
+      ],
+    ];
+    if (!annotations.every(_isInert)) {
+      continue;
+    }
+    final names = [...bean.aliases, ...bean.qualifiers];
+    if (proxy.members.any(
+      (member) => expressions.any(
+        (pointcut) =>
+            pointcut.matchesBean(_signature(proxy, member), bean.name, names),
+      ),
+    )) {
+      continue;
+    }
+    proxy.deferred = true;
+  }
+}
+
+// An annotation no advisor matches: of the SDK (`@override`),
+// `package:meta`, `spring_core_dart` or `spring_boot_dart`
+// (`@ConfigurationProperties`, `@RawValue`, the metadata hints), but
+// `@Validated` (method validation). The annotations advisors match are the
+// starters' (`@Transactional`, `@Cacheable`, `@Secured`, ...).
+bool _isInert(DartObject annotation) {
+  final element = annotation.type?.element;
+  if (element == null || element.name == 'Validated') {
+    return false;
+  }
+  final library = element.library!;
+  final uri = library.uri.toString();
+  return library.isInSdk ||
+      uri.startsWith('package:meta/') ||
+      uri.startsWith('package:spring_core_dart/') ||
+      uri.startsWith('package:spring_boot_dart/');
 }
 
 // Adds every `@DeclareParents` of [aspects] to the generated proxy classes
