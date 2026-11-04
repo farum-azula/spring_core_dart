@@ -97,11 +97,12 @@ loaders:
   neon-gate:
     kind: neon-gate
     phases:
-      enter: { duration: 1200ms, curve: emphasized }
-      fill:  { progress: true }          # follows the real progress
-      exit:  { duration: 600ms, curve: emphasized }
-    bar: { color: $neon.red, glow: 22 }
-    title: { text: NEON, color: $colors.primary, size: 230 }
+      enter: { duration: 2s, curve: linear }
+      fill:  { progress: true, min-duration: 2.5s }   # the real progress, 2.5 s at least
+      exit:  { duration: 1400ms, curve: linear }
+    edge: { color: $neon.cyan, accent: $neon.red, width: 2, glow: 6 }
+    box:  { color: $neon.red, width: 420, height: 46, skew: -18 }
+    web: loaders/neon-gate.html
 ```
 
 ```dart
@@ -112,7 +113,7 @@ class NeonGateLoader extends ThemeLoaderWidget<NeonGateLoaderProps> {
   @override
   Widget build(BuildContext context, LoaderFrame<NeonGateLoaderProps> frame) {
     final enter = frame.phase('enter'); // 0..1
-    final bar = frame.props.bar;        // typed from the theme's keys
+    final box = frame.props.box;        // typed from the theme's keys
     // ... return a widget (a CustomPaint, for example)
   }
 }
@@ -121,30 +122,32 @@ class NeonGateLoader extends ThemeLoaderWidget<NeonGateLoaderProps> {
 - `frame.phase(name)` is 0 (not started) to 1 (done); `frame.progress` is the
   progress given to the loader (`null` when indeterminate); `frame.props` is
   `P`; `frame.values` reads the loader's keys untyped
-  (`values.color('bar.color')`); `frame.reduceMotion` is true when the
+  (`values.color('box.color')`); `frame.reduceMotion` is true when the
   system asks for less motion.
 - Phases play in the order written. An animated phase (`duration`, `curve`,
   `repeat`) plays and the next starts; a looping phase goes on until the
   loader is ready; `{progress: true}` follows the progress and ends when it
-  reaches 1; the last of several waits for ready.
+  reaches 1; the last of several waits for ready. A progress phase with a
+  `min-duration` shows no more than its eased clock over that time, so a fast
+  start still fills slowly (the web page loader honours it too).
 - The generator writes `P` from the keys the theme gives the loaders of that
   kind and registers the class in `ThemeLoaderKinds`. Without the generator
   call `ThemeLoaderKinds.register<P>('neon-gate', widget: NeonGateLoader(),
   props: NeonGateLoaderProps.from, keys: [...])` before the application starts, since
   the themes are read at the start and check every `kind`.
 - `web` names an HTML file that shows the kind in the web page loader before
-  Flutter runs. The loader's keys are CSS variables in it (`bar.glow` is
-  `--bar-glow`; a list of colors also gives `--<name>-first`, so a conic
+  Flutter runs. The loader's keys are CSS variables in it (`edge.glow` is
+  `--edge-glow`; a list of colors also gives `--<name>-first`, so a conic
   gradient can close its circle). The page's script exposes
   `springLoader.progress` and `springLoader.elapsed` (milliseconds); the splash
   starts its phases from the progress (`ThemeLoader.resumeFrom`) and
   `LoaderFrame.elapsed` from the elapsed time (`ThemeLoader.resumeElapsed`), so
   a flicker or a glitch goes on where the page left it.
-- A kind that draws the whole picture, title included, is a `ThemeLoaderPainter`
-  or `ThemeLoaderWidget`; a splash with such a loader needs no `logo` or
-  `title`. NEON's title screen does this: layers that slide in from different
-  sides and flicker, a glitching title and a skewed box with the progress, all
-  drawn from the theme's keys (CSS and SVG on the web page).
+- A kind that draws the whole picture is a `ThemeLoaderPainter` or
+  `ThemeLoaderWidget`; a splash with such a loader needs no `logo` or
+  `title`. NEON's splash does this: dark panels that slide in from different
+  sides with glowing, flickering edges and a skewed red box with the progress,
+  all drawn from the theme's keys (CSS and SVG on the web page).
 
 A library can ship loader kinds with its theme: the kind lives in the library,
 the theme that uses it in the library's configuration.
@@ -162,6 +165,7 @@ the theme that uses it in the library's configuration.
 | `animation` | The name of an `animations.<name>` that fades and grows the logo |
 | `min-duration` | The splash stays at least this long (default none) |
 | `exit.transition` | The fade out: `<duration> [<curve>]` (default `300ms ease-out`) |
+| `exit.reveal` | `true`: when the loader's last phase starts, the splash's background goes and the loader plays over the app, which is built under it (panels that part over the page). Default `false` |
 
 `SpringApplicationWidget` shows the active theme's splash from the moment the
 properties are read, until the context is ready:
