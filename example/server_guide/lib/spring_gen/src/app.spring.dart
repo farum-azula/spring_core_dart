@@ -1586,7 +1586,7 @@ _i3.LogLine _$create59(List<Object?> positional, Map<Symbol, Object?> named) =>
       level: (named[#level] as String),
       logger: (named[#logger] as String),
       message: (named[#message] as String),
-      fields: named.argumentOr(#fields, const {}),
+      fields: named.argumentOr(#fields, const <String, String>{}),
     );
 Object? _$get60(_i7.Book bean) => bean.isbn;
 Object? _$get61(_i7.Book bean) => bean.title;
@@ -1607,7 +1607,7 @@ _i7.Book _$create70(List<Object?> positional, Map<Symbol, Object?> named) =>
       author: (named[#author] as String),
       price: (named[#price] as double),
       year: named.argumentOr(#year, null),
-      tags: named.argumentOr(#tags, const []),
+      tags: named.argumentOr(#tags, const <String>[]),
       format: named.argumentOr(#format, _i7.BookFormat.paperback),
       available: named.argumentOr(#available, 0),
     );
@@ -1639,7 +1639,7 @@ _i7.NewBook _$create85(List<Object?> positional, Map<Symbol, Object?> named) =>
       author: named.argumentOr(#author, r''),
       price: named.argumentOr(#price, 0.0),
       year: named.argumentOr(#year, null),
-      tags: named.argumentOr(#tags, const []),
+      tags: named.argumentOr(#tags, const <String>[]),
       format: named.argumentOr(#format, _i7.BookFormat.paperback),
       stock: named.argumentOr(#stock, 0),
     );
@@ -4864,7 +4864,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
             symbol: #fields,
             hasDefaultValue: true,
-            defaultValue: {},
+            defaultValue: <String, String>{},
           ),
         ],
         create: _$create59,
@@ -4967,7 +4967,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             type: const _i1.ListType<String>(_i1.ClassType<String>()),
             symbol: #tags,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: const <String>[],
           ),
           _i1.BeanParameter(
             r'format',
@@ -5152,7 +5152,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             type: const _i1.ListType<String>(_i1.ClassType<String>()),
             symbol: #tags,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: const <String>[],
           ),
           _i1.BeanParameter(
             r'format',

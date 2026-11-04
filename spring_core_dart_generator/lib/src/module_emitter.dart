@@ -926,7 +926,8 @@ class ModuleEmitter {
     if (parameters.any(
       (p) =>
           (p.hasDefault && p.defaultValue == null) ||
-          (named == null && p.isNamed && p.isRequired),
+          (named == null && p.isNamed && p.isRequired) ||
+          _hasFreeTypeParameter(p.type),
     )) {
       return null;
     }
@@ -966,6 +967,49 @@ class ModuleEmitter {
     }
     return (positionalArguments, namedArguments);
   }
+
+  // [type] as [_type] writes it, its free type parameters (see
+  // [_hasFreeTypeParameter]) written as `dynamic`: `List<E>` of a method
+  // of `Crud<E>` described for `BookCrud` is a `List<dynamic>`.
+  TypeReference _typeWithoutFreeParameters(
+    InterfaceType type,
+    Element element,
+  ) {
+    if (!_hasFreeTypeParameter(type)) {
+      return _type(type, element);
+    }
+    return _type(type, element).rebuild(
+      (t) => t
+        ..types.clear()
+        ..types.addAll([
+          for (final argument in type.typeArguments)
+            if (_hasFreeTypeParameter(argument))
+              refer('dynamic')
+            else
+              _anyType(argument, element),
+        ]),
+    );
+  }
+
+  // Whether [type] names a type parameter the generated code has no name
+  // for: one of the class that declares a method of a generic base class
+  // (`save(E entity)` of `Crud<E>`, called on a `BookCrud extends
+  // Crud<Book>`). Those of the generic class being described are erased or
+  // captured.
+  bool _hasFreeTypeParameter(DartType type) => switch (type) {
+    TypeParameterType(:final element) =>
+      !_erased.containsKey(element) && !_captured.containsKey(element),
+    InterfaceType(:final typeArguments) => typeArguments.any(
+      _hasFreeTypeParameter,
+    ),
+    FunctionType() =>
+      _hasFreeTypeParameter(type.returnType) ||
+          type.formalParameters.any((p) => _hasFreeTypeParameter(p.type)),
+    RecordType() =>
+      type.positionalFields.any((f) => _hasFreeTypeParameter(f.type)) ||
+          type.namedFields.any((f) => _hasFreeTypeParameter(f.type)),
+    _ => false,
+  };
 
   // The methods to describe: all of them when expressions may call them,
   // else those a JSON annotation makes part of writing (`@JsonValue`,
@@ -1029,12 +1073,13 @@ class ModuleEmitter {
           [_str(method.name)],
           {
             if (method.returnType case final returnType?)
-              'returnType': _type(returnType, element),
+              'returnType': _typeWithoutFreeParameters(returnType, element),
             if (method.parameterTypes.isNotEmpty)
               // Not const when a type uses a captured type parameter.
               'parameterTypes':
                   (_captured.isEmpty ? literalConstList : literalList)([
-                    for (final t in method.parameterTypes) _type(t, element),
+                    for (final t in method.parameterTypes)
+                      _typeWithoutFreeParameters(t, element),
                   ]),
             // `Function.apply` checks the arguments an expression passes
             // (their number and types) as the method declares them.
@@ -1210,7 +1255,11 @@ class ModuleEmitter {
       'typeInfo': typeInfo,
       if (initial != null) ...{
         'hasInitialValue': literalTrue,
-        'initialValue': _initialValue(initial.value, element),
+        'initialValue': _initialValue(
+          initial.value,
+          element,
+          property.declaredType,
+        ),
       },
       // Validation reads the properties that have rules only.
       if (reads || (validates && property.validated))
@@ -3223,24 +3272,77 @@ class ModuleEmitter {
 
   /// Writes the initial value of a field (see `InitialValue`): a literal, a
   /// referenced constant, or a `const` collection of those.
-  Expression _initialValue(Object? value, Element element) => switch (value) {
-    null => literalNull,
-    final bool value => literalBool(value),
-    final num value => literalNum(value),
-    final String value => _str(value),
-    final DartObject value => _constant(value, element),
-    final List<Object?> value => literalConstList([
-      for (final item in value) _initialValue(item, element),
-    ]),
-    final Set<Object?> value => literalConstSet({
-      for (final item in value) _initialValue(item, element),
-    }),
-    final Map<Object?, Object?> value => literalConstMap({
-      for (final MapEntry(:key, value: item) in value.entries)
-        _initialValue(key, element): _initialValue(item, element),
-    }),
-    _ => throw StateError('Unsupported initial value $value'),
+  ///
+  /// [type] is the field's declared type: an empty collection gets its
+  /// type arguments, as Dart infers them from the field
+  /// (`const <String>[]` for a `List<String>`), so the value keeps its
+  /// runtime type outside the field; the elements of another one give
+  /// them.
+  Expression _initialValue(Object? value, Element element, [DartType? type]) {
+    final arguments = type is InterfaceType ? type.typeArguments : null;
+    DartType? argument(int index) =>
+        arguments != null && index < arguments.length ? arguments[index] : null;
+    Reference? written(int index, bool empty) =>
+        empty ? _typeArgument(argument(index), element) : null;
+    return switch (value) {
+      null => literalNull,
+      final bool value => literalBool(value),
+      final num value => _number(value),
+      final String value => _str(value),
+      final DartObject value => _constant(value, element),
+      final List<Object?> value => literalConstList([
+        for (final item in value) _initialValue(item, element, argument(0)),
+      ], written(0, value.isEmpty)),
+      final Set<Object?> value => literalConstSet({
+        for (final item in value) _initialValue(item, element, argument(0)),
+      }, written(0, value.isEmpty)),
+      final Map<Object?, Object?> value => literalConstMap(
+        {
+          for (final MapEntry(:key, value: item) in value.entries)
+            _initialValue(key, element, argument(0)): _initialValue(
+              item,
+              element,
+              argument(1),
+            ),
+        },
+        written(0, value.isEmpty),
+        written(1, value.isEmpty),
+      ),
+      _ => throw StateError('Unsupported initial value $value'),
+    };
+  }
+
+  // A number as code: a literal, or `double.infinity`,
+  // `double.negativeInfinity` and `double.nan`, which have none (their
+  // `toString` is `Infinity` and `NaN`).
+  static Expression _number(num value) => switch (value) {
+    double(isNaN: true) => refer('double').property('nan'),
+    double(isInfinite: true) => refer(
+      'double',
+    ).property(value > 0 ? 'infinity' : 'negativeInfinity'),
+    _ => literalNum(value),
   };
+
+  // The type argument [type] of a constant collection, when it can be
+  // written there: `null` (none, inferred) for `dynamic` and for a type
+  // that names a type parameter or cannot be imported.
+  Reference? _typeArgument(DartType? type, Element element) {
+    if (type == null ||
+        type is DynamicType ||
+        type is NeverType ||
+        _hasFreeTypeParameter(type)) {
+      return null;
+    }
+    final types = Map.of(_annotationTypes);
+    try {
+      return _anyType(type, element);
+    } on InvalidGenerationSource {
+      _annotationTypes
+        ..clear()
+        ..addAll(types);
+      return null;
+    }
+  }
 
   /// Writes a constant value (a default value, an annotation instance) as
   /// code that re-creates it: literals, lists, maps, sets, records, types,
@@ -3257,7 +3359,7 @@ class ModuleEmitter {
       return literalNum(reader.intValue);
     }
     if (reader.isDouble) {
-      return literalNum(reader.doubleValue);
+      return _number(reader.doubleValue);
     }
     if (reader.isString) {
       return _str(reader.stringValue);
@@ -3287,21 +3389,41 @@ class ModuleEmitter {
         },
       );
     }
+    // Collections with their type arguments when the elements do not give
+    // them (`const <int>[]`, `const <Object>[1]`), so the value keeps its
+    // runtime type; `const [Tag()]` stays as it is.
+    final arguments = switch (value.type) {
+      final InterfaceType type => type.typeArguments,
+      _ => const <DartType>[],
+    };
+    Reference? argument(int index, Iterable<DartObject?> elements) =>
+        index < arguments.length &&
+            (elements.isEmpty ||
+                elements.any((e) => e?.type != arguments[index]))
+        ? _typeArgument(arguments[index], element)
+        : null;
     if (reader.isList) {
+      final items = reader.listValue;
       return literalConstList([
-        for (final item in reader.listValue) _constant(item, element),
-      ]);
+        for (final item in items) _constant(item, element),
+      ], argument(0, items));
     }
     if (reader.isSet) {
+      final items = reader.setValue;
       return literalConstSet({
-        for (final item in reader.setValue) _constant(item, element),
-      });
+        for (final item in items) _constant(item, element),
+      }, argument(0, items));
     }
     if (reader.isMap) {
-      return literalConstMap({
-        for (final MapEntry(:key, :value) in reader.mapValue.entries)
-          _constant(key!, element): _constant(value!, element),
-      });
+      final entries = reader.mapValue;
+      return literalConstMap(
+        {
+          for (final MapEntry(:key, :value) in entries.entries)
+            _constant(key!, element): _constant(value!, element),
+        },
+        argument(0, entries.keys),
+        argument(1, entries.values),
+      );
     }
     final function = value.toFunctionValue();
     if (function != null) {

@@ -175,8 +175,14 @@ _i3.OAuth2ClientProperties _$create38(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i3.OAuth2ClientProperties(
-  registration: named.argumentOr(#registration, const {}),
-  provider: named.argumentOr(#provider, const {}),
+  registration: named.argumentOr(
+    #registration,
+    const <String, _i3.OAuth2ClientRegistrationProperties>{},
+  ),
+  provider: named.argumentOr(
+    #provider,
+    const <String, _i3.OAuth2ClientProviderProperties>{},
+  ),
 );
 
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
@@ -664,7 +670,7 @@ _i1.BeanModule get $oauth2ClientConfigBeans => _i1.BeanModule(
             ),
             symbol: #registration,
             hasDefaultValue: true,
-            defaultValue: {},
+            defaultValue: <String, _i3.OAuth2ClientRegistrationProperties>{},
           ),
           _i1.BeanParameter(
             r'provider',
@@ -674,7 +680,7 @@ _i1.BeanModule get $oauth2ClientConfigBeans => _i1.BeanModule(
             ),
             symbol: #provider,
             hasDefaultValue: true,
-            defaultValue: {},
+            defaultValue: <String, _i3.OAuth2ClientProviderProperties>{},
           ),
         ],
         create: _$create38,

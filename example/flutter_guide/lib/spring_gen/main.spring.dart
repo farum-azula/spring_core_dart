@@ -1558,7 +1558,7 @@ Object? _$get24(_i7.Me bean) => bean.roles;
 _i7.Me _$create25(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.Me(
       name: (named[#name] as String),
-      roles: named.argumentOr(#roles, const []),
+      roles: named.argumentOr(#roles, const <String>[]),
     );
 Object? _$get26(_i7.Book bean) => bean.isbn;
 Object? _$get27(_i7.Book bean) => bean.title;
@@ -1606,7 +1606,7 @@ _i7.PageOfBooks _$create53(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i7.PageOfBooks(
-  items: named.argumentOr(#items, const []),
+  items: named.argumentOr(#items, const <_i7.Book>[]),
   page: named.argumentOr(#page, 0),
   size: named.argumentOr(#size, 0),
   total: named.argumentOr(#total, 0),
@@ -1635,7 +1635,8 @@ Object? _$get61(_i7.ServerBasket bean) => bean.items;
 _i7.ServerBasket _$create62(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i7.ServerBasket(items: named.argumentOr(#items, const []));
+) =>
+    _i7.ServerBasket(items: named.argumentOr(#items, const <_i7.BasketLine>[]));
 Object? _$get63(_i7.Quantity bean) => bean.quantity;
 _i7.Quantity _$create64(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.Quantity((positional[0] as int));
@@ -1650,7 +1651,7 @@ _i7.ShopOrder _$create70(
 ) => _i7.ShopOrder(
   id: (named[#id] as Object),
   user: named.argumentOr(#user, r''),
-  lines: named.argumentOr(#lines, const []),
+  lines: named.argumentOr(#lines, const <_i7.BasketLine>[]),
   total: named.argumentOr(#total, 0.0),
   placedAt: named.argumentOr(#placedAt, null),
 );
@@ -3166,7 +3167,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             type: _i3.ListType<String>(_i3.ClassType<String>()),
             symbol: #roles,
             hasDefaultValue: true,
-            defaultValue: [],
+            defaultValue: <String>[],
           ),
         ],
         create: _$create25,
@@ -3354,7 +3355,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             type: _i3.ListType<_i7.Book>(_i3.ClassType<_i7.Book>()),
             symbol: #items,
             hasDefaultValue: true,
-            defaultValue: [],
+            defaultValue: <_i7.Book>[],
           ),
           _i3.BeanParameter(
             r'page',
@@ -3477,7 +3478,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             type: _i3.ListType<_i7.BasketLine>(_i3.ClassType<_i7.BasketLine>()),
             symbol: #items,
             hasDefaultValue: true,
-            defaultValue: [],
+            defaultValue: <_i7.BasketLine>[],
           ),
         ],
         create: _$create62,
@@ -3556,7 +3557,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             type: _i3.ListType<_i7.BasketLine>(_i3.ClassType<_i7.BasketLine>()),
             symbol: #lines,
             hasDefaultValue: true,
-            defaultValue: [],
+            defaultValue: <_i7.BasketLine>[],
           ),
           _i3.BeanParameter(
             r'total',
@@ -4819,7 +4820,7 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'b4e9c9aa',
+  fingerprint: '22eb4a2a',
 );
 
 /// Starts the application: config files, environment, context, runners

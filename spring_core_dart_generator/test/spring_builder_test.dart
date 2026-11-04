@@ -2983,6 +2983,97 @@ class Api {
       },
     );
 
+    group('direct calls', () {
+      // What a direct call cannot write: a type parameter of the class that
+      // declares the method (a generic base controller), and defaults that
+      // are no literals (double.infinity, double.nan, typed empty lists).
+      const source = '''
+@BeanMethodAnnotation()
+class Handles {
+  const Handles();
+}
+
+class Book {}
+
+abstract class Crud<E> {
+  @Handles()
+  void save(E entity) {}
+
+  @Handles()
+  List<E> all({int limit = 10}) => [];
+
+  E? current;
+}
+
+@Component()
+@Introspected()
+class BookCrud extends Crud<Book> {}
+
+@Component()
+class Ticker {
+  @Handles()
+  void tick({
+    double max = double.infinity,
+    double min = double.negativeInfinity,
+    double unset = double.nan,
+    List<int> ids = const <int>[],
+    Map<String, int> named = const <String, int>{},
+    Set<String> few = const <String>{'a'},
+  }) {}
+}
+
+@Introspected()
+class Limits {
+  Limits({this.max = double.infinity, this.ids = const <int>[]});
+  final double max;
+  final List<int> ids;
+  double rate = double.nan;
+  List<String> tags = const <String>[];
+}
+''';
+
+      test('the generated code compiles', () async {
+        expect(
+          await _compileErrors({'lib/src/service.dart': source}),
+          isEmpty,
+        );
+      });
+
+      test('a type parameter of the declaring class: Function.apply', () async {
+        final output = await _generate(source);
+        expect(
+          output,
+          _has(
+            '(BookCrud bean, List<Object?> arguments) => '
+            'Function.apply(bean.save, arguments);',
+          ),
+        );
+        expect(output, isNot(contains('asE)')));
+      });
+
+      test('defaults that are no literals keep their meaning', () async {
+        final output = await _generate(source);
+        expect(output, _has('named.argumentOr(#max, double.infinity)'));
+        expect(
+          output,
+          _has('named.argumentOr(#min, double.negativeInfinity)'),
+        );
+        expect(output, _has('named.argumentOr(#unset, double.nan)'));
+        expect(output, _has('named.argumentOr(#ids, const <int>[])'));
+        expect(
+          output,
+          _has('named.argumentOr(#named, const <String, int>{})'),
+        );
+        // The elements give the type of a non-empty one.
+        expect(output, _has("named.argumentOr(#few, const {r'a'})"));
+        expect(output, _has('initialValue: double.nan'));
+        expect(output, _has('initialValue: <String>[]'));
+        expect(output, _has('defaultValue: double.infinity'));
+        expect(output, isNot(contains('Infinity,')));
+        expect(output, isNot(contains('NaN')));
+      });
+    });
+
     test('private, static and generic methods are rejected', () async {
       const every = '''
 @BeanMethodAnnotation()
@@ -3130,7 +3221,7 @@ class Holder {
         _has(
           '(List<Object?> positional, Map<Symbol, Object?> named) => '
           'Book(isbn: (named[#isbn] as String), '
-          'tags: named.argumentOr(#tags, const []),',
+          'tags: named.argumentOr(#tags, const <String>[]),',
         ),
       );
       // Author (used by Book, same package) is introspected automatically,

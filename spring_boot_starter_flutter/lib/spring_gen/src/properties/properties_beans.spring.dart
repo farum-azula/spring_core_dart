@@ -399,7 +399,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             annotations: [
               _i1.Range(0, 65535),
               _i1.WarnValues(
-                [
+                <Object>[
                   1,
                   7,
                   9,
@@ -858,7 +858,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           annotations: [
             _i1.Range(0, 65535),
             _i1.WarnValues(
-              [
+              <Object>[
                 1,
                 7,
                 9,

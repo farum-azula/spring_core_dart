@@ -482,7 +482,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: [],
+              defaultValue: <_i2.OrderLine>[],
             ),
           ],
           annotations: const [_i5.Table(r'orders')],
@@ -961,7 +961,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '6758a513',
+  fingerprint: '9be00057',
 );
 
 /// Starts the application: config files, environment, context, runners

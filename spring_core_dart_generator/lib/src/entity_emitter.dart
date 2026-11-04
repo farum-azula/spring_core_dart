@@ -67,7 +67,11 @@ extension _EntityEmitter on ModuleEmitter {
             if (property.writable) 'writable': literalTrue,
             if (property.defaultValue case final initial?) ...{
               'hasDefaultValue': literalTrue,
-              'defaultValue': _initialValue(initial.value, element),
+              'defaultValue': _initialValue(
+                initial.value,
+                element,
+                property.type,
+              ),
             },
           },
         ),
