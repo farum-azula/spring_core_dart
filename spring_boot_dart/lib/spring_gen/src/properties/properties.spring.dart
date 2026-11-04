@@ -9,43 +9,27 @@
 
 import 'package:spring_boot_dart/src/annotations.dart' as _i4;
 import 'package:spring_boot_dart/src/banner.dart' as _i3;
-import 'package:spring_boot_dart/src/properties/boot_properties.dart' as _i1;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_boot_dart/src/properties/boot_properties.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
-class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
-  _$MainPropertiesProxy(this._target, this._invoker);
+class _$MainPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.MainProperties {
+  _$MainPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.MainProperties _target;
+  final _i2.MainProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool get allowBeanDefinitionOverriding => (this._invoker.invoke(
+  bool get allowBeanDefinitionOverriding => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -54,7 +38,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
   ) as bool);
 
   @override
-  _i3.BannerMode get bannerMode => (this._invoker.invoke(
+  _i3.BannerMode get bannerMode => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -63,7 +47,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
   ) as _i3.BannerMode);
 
   @override
-  bool get lazyInitialization => (this._invoker.invoke(
+  bool get lazyInitialization => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
@@ -72,7 +56,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
   ) as bool);
 
   @override
-  bool get logStartupInfo => (this._invoker.invoke(
+  bool get logStartupInfo => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -81,7 +65,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
   ) as bool);
 
   @override
-  bool get registerShutdownHook => (this._invoker.invoke(
+  bool get registerShutdownHook => (this.aopInvoker.invoke(
     this,
     this._target,
     4,
@@ -91,7 +75,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
 
   @override
   set allowBeanDefinitionOverriding(bool value) {
-    this._invoker.invoke(this, this._target, 5, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 5, [value], (args) {
       this._target.allowBeanDefinitionOverriding = (args[0] as bool);
       return null;
     });
@@ -99,7 +83,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
 
   @override
   set bannerMode(_i3.BannerMode value) {
-    this._invoker.invoke(this, this._target, 6, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 6, [value], (args) {
       this._target.bannerMode = (args[0] as _i3.BannerMode);
       return null;
     });
@@ -107,7 +91,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
 
   @override
   set lazyInitialization(bool value) {
-    this._invoker.invoke(this, this._target, 7, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 7, [value], (args) {
       this._target.lazyInitialization = (args[0] as bool);
       return null;
     });
@@ -115,7 +99,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
 
   @override
   set logStartupInfo(bool value) {
-    this._invoker.invoke(this, this._target, 8, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
       this._target.logStartupInfo = (args[0] as bool);
       return null;
     });
@@ -123,7 +107,7 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
 
   @override
   set registerShutdownHook(bool value) {
-    this._invoker.invoke(this, this._target, 9, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
       this._target.registerShutdownHook = (args[0] as bool);
       return null;
     });
@@ -131,40 +115,23 @@ class _$MainPropertiesProxy implements _i1.MainProperties, _i2.Advised {
 }
 
 class _$AutoconfigurePropertiesProxy
-    implements _i1.AutoconfigureProperties, _i2.Advised {
-  _$AutoconfigurePropertiesProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.AutoconfigureProperties {
+  _$AutoconfigurePropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.AutoconfigureProperties _target;
+  final _i2.AutoconfigureProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  List<String>? get exclude => (this._invoker.invoke(
+  List<String>? get exclude => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -174,7 +141,7 @@ class _$AutoconfigurePropertiesProxy
 
   @override
   set exclude(List<String>? value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
       this._target.exclude = (args[0] as List<String>?);
       return null;
     });
@@ -182,40 +149,23 @@ class _$AutoconfigurePropertiesProxy
 }
 
 class _$ApplicationPropertiesProxy
-    implements _i1.ApplicationProperties, _i2.Advised {
-  _$ApplicationPropertiesProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.ApplicationProperties {
+  _$ApplicationPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.ApplicationProperties _target;
+  final _i2.ApplicationProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String? get json => (this._invoker.invoke(
+  String? get json => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -224,7 +174,7 @@ class _$ApplicationPropertiesProxy
   ) as String?);
 
   @override
-  String? get name => (this._invoker.invoke(
+  String? get name => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -234,7 +184,7 @@ class _$ApplicationPropertiesProxy
 
   @override
   set json(String? value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.json = (args[0] as String?);
       return null;
     });
@@ -242,47 +192,31 @@ class _$ApplicationPropertiesProxy
 
   @override
   set name(String? value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
       this._target.name = (args[0] as String?);
       return null;
     });
   }
 }
 
-class _$BannerPropertiesProxy implements _i1.BannerProperties, _i2.Advised {
-  _$BannerPropertiesProxy(this._target, this._invoker);
+class _$BannerPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.BannerProperties {
+  _$BannerPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.BannerProperties _target;
+  final _i2.BannerProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String get location => (this._invoker.invoke(
+  String get location => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -292,7 +226,7 @@ class _$BannerPropertiesProxy implements _i1.BannerProperties, _i2.Advised {
 
   @override
   set location(String value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
       this._target.location = (args[0] as String);
       return null;
     });
@@ -300,40 +234,23 @@ class _$BannerPropertiesProxy implements _i1.BannerProperties, _i2.Advised {
 }
 
 class _$DevtoolsRestartPropertiesProxy
-    implements _i1.DevtoolsRestartProperties, _i2.Advised {
-  _$DevtoolsRestartPropertiesProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.DevtoolsRestartProperties {
+  _$DevtoolsRestartPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.DevtoolsRestartProperties _target;
+  final _i2.DevtoolsRestartProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool get enabled => (this._invoker.invoke(
+  bool get enabled => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -343,7 +260,7 @@ class _$DevtoolsRestartPropertiesProxy
 
   @override
   set enabled(bool value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
       this._target.enabled = (args[0] as bool);
       return null;
     });
@@ -351,40 +268,23 @@ class _$DevtoolsRestartPropertiesProxy
 }
 
 class _$LifecyclePropertiesProxy
-    implements _i1.LifecycleProperties, _i2.Advised {
-  _$LifecyclePropertiesProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.LifecycleProperties {
+  _$LifecyclePropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.LifecycleProperties _target;
+  final _i2.LifecycleProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  Duration get timeoutPerShutdownPhase => (this._invoker.invoke(
+  Duration get timeoutPerShutdownPhase => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -394,47 +294,31 @@ class _$LifecyclePropertiesProxy
 
   @override
   set timeoutPerShutdownPhase(Duration value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 1, [value], (args) {
       this._target.timeoutPerShutdownPhase = (args[0] as Duration);
       return null;
     });
   }
 }
 
-class _$DebugPropertiesProxy implements _i1.DebugProperties, _i2.Advised {
-  _$DebugPropertiesProxy(this._target, this._invoker);
+class _$DebugPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.DebugProperties {
+  _$DebugPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.DebugProperties _target;
+  final _i2.DebugProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String? get debug => (this._invoker.invoke(
+  String? get debug => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -443,7 +327,7 @@ class _$DebugPropertiesProxy implements _i1.DebugProperties, _i2.Advised {
   ) as String?);
 
   @override
-  String? get trace => (this._invoker.invoke(
+  String? get trace => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -453,7 +337,7 @@ class _$DebugPropertiesProxy implements _i1.DebugProperties, _i2.Advised {
 
   @override
   set debug(String? value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.debug = (args[0] as String?);
       return null;
     });
@@ -461,47 +345,31 @@ class _$DebugPropertiesProxy implements _i1.DebugProperties, _i2.Advised {
 
   @override
   set trace(String? value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
       this._target.trace = (args[0] as String?);
       return null;
     });
   }
 }
 
-class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
-  _$MessagesPropertiesProxy(this._target, this._invoker);
+class _$MessagesPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.MessagesProperties {
+  _$MessagesPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.MessagesProperties _target;
+  final _i2.MessagesProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool get alwaysUseMessageFormat => (this._invoker.invoke(
+  bool get alwaysUseMessageFormat => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -510,7 +378,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
   ) as bool);
 
   @override
-  List<String> get basename => (this._invoker.invoke(
+  List<String> get basename => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -519,7 +387,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
   ) as List<String>);
 
   @override
-  Duration? get cacheDuration => (this._invoker.invoke(
+  Duration? get cacheDuration => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
@@ -528,7 +396,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
   ) as Duration?);
 
   @override
-  List<String>? get commonMessages => (this._invoker.invoke(
+  List<String>? get commonMessages => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -537,7 +405,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
   ) as List<String>?);
 
   @override
-  String? get defaultLocale => (this._invoker.invoke(
+  String? get defaultLocale => (this.aopInvoker.invoke(
     this,
     this._target,
     4,
@@ -546,7 +414,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
   ) as String?);
 
   @override
-  String? get encoding => (this._invoker.invoke(
+  String? get encoding => (this.aopInvoker.invoke(
     this,
     this._target,
     5,
@@ -555,7 +423,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
   ) as String?);
 
   @override
-  bool get fallbackToSystemLocale => (this._invoker.invoke(
+  bool get fallbackToSystemLocale => (this.aopInvoker.invoke(
     this,
     this._target,
     6,
@@ -564,7 +432,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
   ) as bool);
 
   @override
-  bool get useCodeAsDefaultMessage => (this._invoker.invoke(
+  bool get useCodeAsDefaultMessage => (this.aopInvoker.invoke(
     this,
     this._target,
     7,
@@ -574,7 +442,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set alwaysUseMessageFormat(bool value) {
-    this._invoker.invoke(this, this._target, 8, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
       this._target.alwaysUseMessageFormat = (args[0] as bool);
       return null;
     });
@@ -582,7 +450,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set basename(List<String> value) {
-    this._invoker.invoke(this, this._target, 9, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
       this._target.basename = (args[0] as List<String>);
       return null;
     });
@@ -590,7 +458,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set cacheDuration(Duration? value) {
-    this._invoker.invoke(this, this._target, 10, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 10, [value], (args) {
       this._target.cacheDuration = (args[0] as Duration?);
       return null;
     });
@@ -598,7 +466,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set commonMessages(List<String>? value) {
-    this._invoker.invoke(this, this._target, 11, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 11, [value], (args) {
       this._target.commonMessages = (args[0] as List<String>?);
       return null;
     });
@@ -606,7 +474,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set defaultLocale(String? value) {
-    this._invoker.invoke(this, this._target, 12, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 12, [value], (args) {
       this._target.defaultLocale = (args[0] as String?);
       return null;
     });
@@ -614,7 +482,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set encoding(String? value) {
-    this._invoker.invoke(this, this._target, 13, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 13, [value], (args) {
       this._target.encoding = (args[0] as String?);
       return null;
     });
@@ -622,7 +490,7 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set fallbackToSystemLocale(bool value) {
-    this._invoker.invoke(this, this._target, 14, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 14, [value], (args) {
       this._target.fallbackToSystemLocale = (args[0] as bool);
       return null;
     });
@@ -630,47 +498,31 @@ class _$MessagesPropertiesProxy implements _i1.MessagesProperties, _i2.Advised {
 
   @override
   set useCodeAsDefaultMessage(bool value) {
-    this._invoker.invoke(this, this._target, 15, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 15, [value], (args) {
       this._target.useCodeAsDefaultMessage = (args[0] as bool);
       return null;
     });
   }
 }
 
-class _$JsonPropertiesProxy implements _i1.JsonProperties, _i2.Advised {
-  _$JsonPropertiesProxy(this._target, this._invoker);
+class _$JsonPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.JsonProperties {
+  _$JsonPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.JsonProperties _target;
+  final _i2.JsonProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String get propertyNamingStrategy => (this._invoker.invoke(
+  String get propertyNamingStrategy => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -679,16 +531,16 @@ class _$JsonPropertiesProxy implements _i1.JsonProperties, _i2.Advised {
   ) as String);
 
   @override
-  _i2.JsonInclusion get defaultPropertyInclusion => (this._invoker.invoke(
+  _i1.JsonInclusion get defaultPropertyInclusion => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
     const [],
     (_) => this._target.defaultPropertyInclusion,
-  ) as _i2.JsonInclusion);
+  ) as _i1.JsonInclusion);
 
   @override
-  String? get timeZone => (this._invoker.invoke(
+  String? get timeZone => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
@@ -697,755 +549,734 @@ class _$JsonPropertiesProxy implements _i1.JsonProperties, _i2.Advised {
   ) as String?);
 
   @override
-  _i1.JsonDeserializationProperties get deserialization =>
-      (this._invoker.invoke(
+  _i2.JsonDeserializationProperties get deserialization =>
+      (this.aopInvoker.invoke(
         this,
         this._target,
         3,
         const [],
         (_) => this._target.deserialization,
-      ) as _i1.JsonDeserializationProperties);
+      ) as _i2.JsonDeserializationProperties);
 
   @override
-  _i1.JsonSerializationProperties get serialization => (this._invoker.invoke(
+  _i2.JsonSerializationProperties get serialization => (this.aopInvoker.invoke(
     this,
     this._target,
     4,
     const [],
     (_) => this._target.serialization,
-  ) as _i1.JsonSerializationProperties);
+  ) as _i2.JsonSerializationProperties);
 
   @override
-  _i1.JsonMapperProperties get mapper => (this._invoker.invoke(
+  _i2.JsonMapperProperties get mapper => (this.aopInvoker.invoke(
     this,
     this._target,
     5,
     const [],
     (_) => this._target.mapper,
-  ) as _i1.JsonMapperProperties);
+  ) as _i2.JsonMapperProperties);
 
   @override
-  _i1.JsonDatatypeProperties get datatype => (this._invoker.invoke(
+  _i2.JsonDatatypeProperties get datatype => (this.aopInvoker.invoke(
     this,
     this._target,
     6,
     const [],
     (_) => this._target.datatype,
-  ) as _i1.JsonDatatypeProperties);
+  ) as _i2.JsonDatatypeProperties);
 
   @override
   set propertyNamingStrategy(String value) {
-    this._invoker.invoke(this, this._target, 7, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 7, [value], (args) {
       this._target.propertyNamingStrategy = (args[0] as String);
       return null;
     });
   }
 
   @override
-  set defaultPropertyInclusion(_i2.JsonInclusion value) {
-    this._invoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.defaultPropertyInclusion = (args[0] as _i2.JsonInclusion);
+  set defaultPropertyInclusion(_i1.JsonInclusion value) {
+    this.aopInvoker.invoke(this, this._target, 8, [value], (args) {
+      this._target.defaultPropertyInclusion = (args[0] as _i1.JsonInclusion);
       return null;
     });
   }
 
   @override
   set timeZone(String? value) {
-    this._invoker.invoke(this, this._target, 9, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 9, [value], (args) {
       this._target.timeZone = (args[0] as String?);
       return null;
     });
   }
 
   @override
-  set deserialization(_i1.JsonDeserializationProperties value) {
-    this._invoker.invoke(this, this._target, 10, [value], (args) {
+  set deserialization(_i2.JsonDeserializationProperties value) {
+    this.aopInvoker.invoke(this, this._target, 10, [value], (args) {
       this._target.deserialization =
-          (args[0] as _i1.JsonDeserializationProperties);
+          (args[0] as _i2.JsonDeserializationProperties);
       return null;
     });
   }
 
   @override
-  set serialization(_i1.JsonSerializationProperties value) {
-    this._invoker.invoke(this, this._target, 11, [value], (args) {
-      this._target.serialization = (args[0] as _i1.JsonSerializationProperties);
+  set serialization(_i2.JsonSerializationProperties value) {
+    this.aopInvoker.invoke(this, this._target, 11, [value], (args) {
+      this._target.serialization = (args[0] as _i2.JsonSerializationProperties);
       return null;
     });
   }
 
   @override
-  set mapper(_i1.JsonMapperProperties value) {
-    this._invoker.invoke(this, this._target, 12, [value], (args) {
-      this._target.mapper = (args[0] as _i1.JsonMapperProperties);
+  set mapper(_i2.JsonMapperProperties value) {
+    this.aopInvoker.invoke(this, this._target, 12, [value], (args) {
+      this._target.mapper = (args[0] as _i2.JsonMapperProperties);
       return null;
     });
   }
 
   @override
-  set datatype(_i1.JsonDatatypeProperties value) {
-    this._invoker.invoke(this, this._target, 13, [value], (args) {
-      this._target.datatype = (args[0] as _i1.JsonDatatypeProperties);
+  set datatype(_i2.JsonDatatypeProperties value) {
+    this.aopInvoker.invoke(this, this._target, 13, [value], (args) {
+      this._target.datatype = (args[0] as _i2.JsonDatatypeProperties);
       return null;
     });
   }
 }
 
+const _$target0 = _i1.AopTarget(
+  r'MainProperties',
+  types: [r'MainProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.main')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'AutoconfigureProperties',
+  types: [r'AutoconfigureProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.autoconfigure')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target2 = _i1.AopTarget(
+  r'ApplicationProperties',
+  types: [r'ApplicationProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.application')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target3 = _i1.AopTarget(
+  r'BannerProperties',
+  types: [r'BannerProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.banner')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target4 = _i1.AopTarget(
+  r'DevtoolsRestartProperties',
+  types: [r'DevtoolsRestartProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.devtools.restart')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target5 = _i1.AopTarget(
+  r'LifecycleProperties',
+  types: [r'LifecycleProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.lifecycle')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target6 = _i1.AopTarget(
+  r'DebugProperties',
+  types: [r'DebugProperties'],
+  annotations: [_i1.ConfigurationProperties(r'')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target7 = _i1.AopTarget(
+  r'MessagesProperties',
+  types: [r'MessagesProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.messages')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target8 = _i1.AopTarget(
+  r'JsonProperties',
+  types: [r'JsonProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.json')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get9(_i2.MainProperties bean) => bean.allowBeanDefinitionOverriding;
+void _$set10(_i2.MainProperties bean, Object? value) =>
+    bean.allowBeanDefinitionOverriding = (value as bool);
+Object? _$get11(_i2.MainProperties bean) => bean.bannerMode;
+void _$set12(_i2.MainProperties bean, Object? value) =>
+    bean.bannerMode = (value as _i3.BannerMode);
+Object? _$get13(_i2.MainProperties bean) => bean.lazyInitialization;
+void _$set14(_i2.MainProperties bean, Object? value) =>
+    bean.lazyInitialization = (value as bool);
+Object? _$get15(_i2.MainProperties bean) => bean.logStartupInfo;
+void _$set16(_i2.MainProperties bean, Object? value) =>
+    bean.logStartupInfo = (value as bool);
+Object? _$get17(_i2.MainProperties bean) => bean.registerShutdownHook;
+void _$set18(_i2.MainProperties bean, Object? value) =>
+    bean.registerShutdownHook = (value as bool);
+_i2.MainProperties _$create19(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.MainProperties();
+Object? _$get20(_i2.AutoconfigureProperties bean) => bean.exclude;
+void _$set21(_i2.AutoconfigureProperties bean, Object? value) =>
+    bean.exclude = (value as List<String>?);
+_i2.AutoconfigureProperties _$create22(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.AutoconfigureProperties();
+Object? _$get23(_i2.ApplicationProperties bean) => bean.json;
+void _$set24(_i2.ApplicationProperties bean, Object? value) =>
+    bean.json = (value as String?);
+Object? _$get25(_i2.ApplicationProperties bean) => bean.name;
+void _$set26(_i2.ApplicationProperties bean, Object? value) =>
+    bean.name = (value as String?);
+_i2.ApplicationProperties _$create27(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ApplicationProperties();
+Object? _$get28(_i2.BannerProperties bean) => bean.location;
+void _$set29(_i2.BannerProperties bean, Object? value) =>
+    bean.location = (value as String);
+_i2.BannerProperties _$create30(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.BannerProperties();
+Object? _$get31(_i2.DevtoolsRestartProperties bean) => bean.enabled;
+void _$set32(_i2.DevtoolsRestartProperties bean, Object? value) =>
+    bean.enabled = (value as bool);
+_i2.DevtoolsRestartProperties _$create33(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DevtoolsRestartProperties();
+Object? _$get34(_i2.LifecycleProperties bean) => bean.timeoutPerShutdownPhase;
+void _$set35(_i2.LifecycleProperties bean, Object? value) =>
+    bean.timeoutPerShutdownPhase = (value as Duration);
+_i2.LifecycleProperties _$create36(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LifecycleProperties();
+Object? _$get37(_i2.DebugProperties bean) => bean.debug;
+void _$set38(_i2.DebugProperties bean, Object? value) =>
+    bean.debug = (value as String?);
+Object? _$get39(_i2.DebugProperties bean) => bean.trace;
+void _$set40(_i2.DebugProperties bean, Object? value) =>
+    bean.trace = (value as String?);
+_i2.DebugProperties _$create41(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DebugProperties();
+Object? _$get42(_i2.MessagesProperties bean) => bean.alwaysUseMessageFormat;
+void _$set43(_i2.MessagesProperties bean, Object? value) =>
+    bean.alwaysUseMessageFormat = (value as bool);
+Object? _$get44(_i2.MessagesProperties bean) => bean.basename;
+void _$set45(_i2.MessagesProperties bean, Object? value) =>
+    bean.basename = (value as List<String>);
+Object? _$get46(_i2.MessagesProperties bean) => bean.cacheDuration;
+void _$set47(_i2.MessagesProperties bean, Object? value) =>
+    bean.cacheDuration = (value as Duration?);
+Object? _$get48(_i2.MessagesProperties bean) => bean.commonMessages;
+void _$set49(_i2.MessagesProperties bean, Object? value) =>
+    bean.commonMessages = (value as List<String>?);
+Object? _$get50(_i2.MessagesProperties bean) => bean.defaultLocale;
+void _$set51(_i2.MessagesProperties bean, Object? value) =>
+    bean.defaultLocale = (value as String?);
+Object? _$get52(_i2.MessagesProperties bean) => bean.encoding;
+void _$set53(_i2.MessagesProperties bean, Object? value) =>
+    bean.encoding = (value as String?);
+Object? _$get54(_i2.MessagesProperties bean) => bean.fallbackToSystemLocale;
+void _$set55(_i2.MessagesProperties bean, Object? value) =>
+    bean.fallbackToSystemLocale = (value as bool);
+Object? _$get56(_i2.MessagesProperties bean) => bean.useCodeAsDefaultMessage;
+void _$set57(_i2.MessagesProperties bean, Object? value) =>
+    bean.useCodeAsDefaultMessage = (value as bool);
+_i2.MessagesProperties _$create58(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.MessagesProperties();
+Object? _$get59(_i2.JsonProperties bean) => bean.propertyNamingStrategy;
+void _$set60(_i2.JsonProperties bean, Object? value) =>
+    bean.propertyNamingStrategy = (value as String);
+Object? _$get61(_i2.JsonProperties bean) => bean.defaultPropertyInclusion;
+void _$set62(_i2.JsonProperties bean, Object? value) =>
+    bean.defaultPropertyInclusion = (value as _i1.JsonInclusion);
+Object? _$get63(_i2.JsonProperties bean) => bean.timeZone;
+void _$set64(_i2.JsonProperties bean, Object? value) =>
+    bean.timeZone = (value as String?);
+Object? _$get65(_i2.JsonProperties bean) => bean.deserialization;
+void _$set66(_i2.JsonProperties bean, Object? value) =>
+    bean.deserialization = (value as _i2.JsonDeserializationProperties);
+Object? _$get67(_i2.JsonProperties bean) => bean.serialization;
+void _$set68(_i2.JsonProperties bean, Object? value) =>
+    bean.serialization = (value as _i2.JsonSerializationProperties);
+Object? _$get69(_i2.JsonProperties bean) => bean.mapper;
+void _$set70(_i2.JsonProperties bean, Object? value) =>
+    bean.mapper = (value as _i2.JsonMapperProperties);
+Object? _$get71(_i2.JsonProperties bean) => bean.datatype;
+void _$set72(_i2.JsonProperties bean, Object? value) =>
+    bean.datatype = (value as _i2.JsonDatatypeProperties);
+_i2.JsonProperties _$create73(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JsonProperties();
+Object? _$get74(_i2.JsonDeserializationProperties bean) =>
+    bean.acceptFloatAsInt;
+void _$set75(_i2.JsonDeserializationProperties bean, Object? value) =>
+    bean.acceptFloatAsInt = (value as bool);
+Object? _$get76(_i2.JsonDeserializationProperties bean) =>
+    bean.failOnNullForPrimitives;
+void _$set77(_i2.JsonDeserializationProperties bean, Object? value) =>
+    bean.failOnNullForPrimitives = (value as bool);
+Object? _$get78(_i2.JsonDeserializationProperties bean) =>
+    bean.failOnUnknownProperties;
+void _$set79(_i2.JsonDeserializationProperties bean, Object? value) =>
+    bean.failOnUnknownProperties = (value as bool);
+Object? _$get80(_i2.JsonDeserializationProperties bean) =>
+    bean.readDateTimestampsAsNanoseconds;
+void _$set81(_i2.JsonDeserializationProperties bean, Object? value) =>
+    bean.readDateTimestampsAsNanoseconds = (value as bool);
+_i2.JsonDeserializationProperties _$create82(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JsonDeserializationProperties();
+Object? _$get83(_i2.JsonSerializationProperties bean) => bean.indentOutput;
+void _$set84(_i2.JsonSerializationProperties bean, Object? value) =>
+    bean.indentOutput = (value as bool);
+Object? _$get85(_i2.JsonSerializationProperties bean) =>
+    bean.writeDateTimestampsAsNanoseconds;
+void _$set86(_i2.JsonSerializationProperties bean, Object? value) =>
+    bean.writeDateTimestampsAsNanoseconds = (value as bool);
+Object? _$get87(_i2.JsonSerializationProperties bean) =>
+    bean.writeDatesAsTimestamps;
+void _$set88(_i2.JsonSerializationProperties bean, Object? value) =>
+    bean.writeDatesAsTimestamps = (value as bool);
+Object? _$get89(_i2.JsonSerializationProperties bean) =>
+    bean.writeDurationsAsTimestamps;
+void _$set90(_i2.JsonSerializationProperties bean, Object? value) =>
+    bean.writeDurationsAsTimestamps = (value as bool);
+_i2.JsonSerializationProperties _$create91(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JsonSerializationProperties();
+Object? _$get92(_i2.JsonMapperProperties bean) => bean.defaultViewInclusion;
+void _$set93(_i2.JsonMapperProperties bean, Object? value) =>
+    bean.defaultViewInclusion = (value as bool);
+Object? _$get94(_i2.JsonMapperProperties bean) =>
+    bean.sortPropertiesAlphabetically;
+void _$set95(_i2.JsonMapperProperties bean, Object? value) =>
+    bean.sortPropertiesAlphabetically = (value as bool);
+_i2.JsonMapperProperties _$create96(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JsonMapperProperties();
+Object? _$get97(_i2.JsonDatatypeProperties bean) => bean.datetime;
+void _$set98(_i2.JsonDatatypeProperties bean, Object? value) =>
+    bean.datetime = (value as _i2.JsonDatetimeProperties);
+_i2.JsonDatatypeProperties _$create99(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JsonDatatypeProperties();
+Object? _$get100(_i2.JsonDatetimeProperties bean) =>
+    bean.readDateTimestampsAsNanoseconds;
+void _$set101(_i2.JsonDatetimeProperties bean, Object? value) =>
+    bean.readDateTimestampsAsNanoseconds = (value as bool?);
+Object? _$get102(_i2.JsonDatetimeProperties bean) =>
+    bean.writeDateTimestampsAsNanoseconds;
+void _$set103(_i2.JsonDatetimeProperties bean, Object? value) =>
+    bean.writeDateTimestampsAsNanoseconds = (value as bool?);
+Object? _$get104(_i2.JsonDatetimeProperties bean) =>
+    bean.writeDatesAsTimestamps;
+void _$set105(_i2.JsonDatetimeProperties bean, Object? value) =>
+    bean.writeDatesAsTimestamps = (value as bool?);
+Object? _$get106(_i2.JsonDatetimeProperties bean) =>
+    bean.writeDurationsAsTimestamps;
+void _$set107(_i2.JsonDatetimeProperties bean, Object? value) =>
+    bean.writeDurationsAsTimestamps = (value as bool?);
+_i2.JsonDatetimeProperties _$create108(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JsonDatetimeProperties();
+
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
-_i2.BeanModule get $bootPropertiesBeans => _i2.BeanModule(
+_i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
   r'bootPropertiesBeans',
   [
-    _i2.BeanDefinition<_i1.MainProperties>(
+    _i1.BeanDefinition<_i2.MainProperties>(
       name: r'mainProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#MainProperties',
-      types: const [_i1.MainProperties],
-      create: (r) => _i1.MainProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.main')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.MainProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.main')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'allowBeanDefinitionOverriding',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'allowBeanDefinitionOverriding',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'bannerMode',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'bannerMode',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'BannerMode',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'lazyInitialization',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'lazyInitialization',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'logStartupInfo',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'logStartupInfo',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'registerShutdownHook',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'registerShutdownHook',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'allowBeanDefinitionOverriding',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'allowBeanDefinitionOverriding',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'bannerMode',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'bannerMode',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'BannerMode',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'lazyInitialization',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'lazyInitialization',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'logStartupInfo',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'logStartupInfo',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'registerShutdownHook',
-            declaringType: r'MainProperties',
-            targetType: r'MainProperties',
-            declaringTypes: [r'MainProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'registerShutdownHook',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MainProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) =>
-            _$MainPropertiesProxy((target as _i1.MainProperties), invoker),
+            _$MainPropertiesProxy((target as _i2.MainProperties), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.AutoconfigureProperties>(
+    _i1.BeanDefinition<_i2.AutoconfigureProperties>(
       name: r'autoconfigureProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#AutoconfigureProperties',
-      types: const [_i1.AutoconfigureProperties],
-      create: (r) => _i1.AutoconfigureProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.autoconfigure')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.AutoconfigureProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.autoconfigure')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'exclude',
-            declaringType: r'AutoconfigureProperties',
-            targetType: r'AutoconfigureProperties',
-            declaringTypes: [r'AutoconfigureProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'exclude',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'AutoconfigureProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.autoconfigure'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'exclude',
-            declaringType: r'AutoconfigureProperties',
-            targetType: r'AutoconfigureProperties',
-            declaringTypes: [r'AutoconfigureProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'exclude',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'List',
-            targetTypes: [r'AutoconfigureProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.autoconfigure'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$AutoconfigurePropertiesProxy(
-          (target as _i1.AutoconfigureProperties),
+          (target as _i2.AutoconfigureProperties),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i1.ApplicationProperties>(
+    _i1.BeanDefinition<_i2.ApplicationProperties>(
       name: r'applicationProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#ApplicationProperties',
-      types: const [_i1.ApplicationProperties],
-      create: (r) => _i1.ApplicationProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.application')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.ApplicationProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.application')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'json',
-            declaringType: r'ApplicationProperties',
-            targetType: r'ApplicationProperties',
-            declaringTypes: [r'ApplicationProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'json',
+            _$target2,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'ApplicationProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.application'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'name',
-            declaringType: r'ApplicationProperties',
-            targetType: r'ApplicationProperties',
-            declaringTypes: [r'ApplicationProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'name',
+            _$target2,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'ApplicationProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.application'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'json',
-            declaringType: r'ApplicationProperties',
-            targetType: r'ApplicationProperties',
-            declaringTypes: [r'ApplicationProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'json',
+            _$target2,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'ApplicationProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.application'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'name',
-            declaringType: r'ApplicationProperties',
-            targetType: r'ApplicationProperties',
-            declaringTypes: [r'ApplicationProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'name',
+            _$target2,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'ApplicationProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.application'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$ApplicationPropertiesProxy(
-          (target as _i1.ApplicationProperties),
+          (target as _i2.ApplicationProperties),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i1.BannerProperties>(
+    _i1.BeanDefinition<_i2.BannerProperties>(
       name: r'bannerProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#BannerProperties',
-      types: const [_i1.BannerProperties],
-      create: (r) => _i1.BannerProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.banner')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.BannerProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.banner')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'location',
-            declaringType: r'BannerProperties',
-            targetType: r'BannerProperties',
-            declaringTypes: [r'BannerProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'location',
+            _$target3,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'BannerProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.banner')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'location',
-            declaringType: r'BannerProperties',
-            targetType: r'BannerProperties',
-            declaringTypes: [r'BannerProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'location',
+            _$target3,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'BannerProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.banner')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) =>
-            _$BannerPropertiesProxy((target as _i1.BannerProperties), invoker),
+            _$BannerPropertiesProxy((target as _i2.BannerProperties), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.DevtoolsRestartProperties>(
+    _i1.BeanDefinition<_i2.DevtoolsRestartProperties>(
       name: r'devtoolsRestartProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#DevtoolsRestartProperties',
-      types: const [_i1.DevtoolsRestartProperties],
-      create: (r) => _i1.DevtoolsRestartProperties(),
+      create: (r) => _i2.DevtoolsRestartProperties(),
       annotations: const [
-        _i2.ConfigurationProperties(r'spring.devtools.restart'),
+        _i1.ConfigurationProperties(r'spring.devtools.restart'),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'DevtoolsRestartProperties',
-            targetType: r'DevtoolsRestartProperties',
-            declaringTypes: [r'DevtoolsRestartProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target4,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'DevtoolsRestartProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.devtools.restart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'DevtoolsRestartProperties',
-            targetType: r'DevtoolsRestartProperties',
-            declaringTypes: [r'DevtoolsRestartProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target4,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'DevtoolsRestartProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.devtools.restart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$DevtoolsRestartPropertiesProxy(
-          (target as _i1.DevtoolsRestartProperties),
+          (target as _i2.DevtoolsRestartProperties),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i1.LifecycleProperties>(
+    _i1.BeanDefinition<_i2.LifecycleProperties>(
       name: r'lifecycleProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#LifecycleProperties',
-      types: const [_i1.LifecycleProperties],
-      create: (r) => _i1.LifecycleProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.lifecycle')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.LifecycleProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.lifecycle')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'timeoutPerShutdownPhase',
-            declaringType: r'LifecycleProperties',
-            targetType: r'LifecycleProperties',
-            declaringTypes: [r'LifecycleProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'timeoutPerShutdownPhase',
+            _$target5,
+            kind: _i1.MemberKind.getter,
             returnType: r'Duration',
-            targetTypes: [r'LifecycleProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.lifecycle'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'timeoutPerShutdownPhase',
-            declaringType: r'LifecycleProperties',
-            targetType: r'LifecycleProperties',
-            declaringTypes: [r'LifecycleProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'timeoutPerShutdownPhase',
+            _$target5,
+            kind: _i1.MemberKind.setter,
             returnType: r'Duration',
-            targetTypes: [r'LifecycleProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.lifecycle'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$LifecyclePropertiesProxy(
-          (target as _i1.LifecycleProperties),
+          (target as _i2.LifecycleProperties),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i1.DebugProperties>(
+    _i1.BeanDefinition<_i2.DebugProperties>(
       name: r'debugProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#DebugProperties',
-      types: const [_i1.DebugProperties],
-      create: (r) => _i1.DebugProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.DebugProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'debug',
-            declaringType: r'DebugProperties',
-            targetType: r'DebugProperties',
-            declaringTypes: [r'DebugProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'debug',
+            _$target6,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DebugProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'trace',
-            declaringType: r'DebugProperties',
-            targetType: r'DebugProperties',
-            declaringTypes: [r'DebugProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'trace',
+            _$target6,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DebugProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'debug',
-            declaringType: r'DebugProperties',
-            targetType: r'DebugProperties',
-            declaringTypes: [r'DebugProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'debug',
+            _$target6,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'DebugProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'trace',
-            declaringType: r'DebugProperties',
-            targetType: r'DebugProperties',
-            declaringTypes: [r'DebugProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'trace',
+            _$target6,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'DebugProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) =>
-            _$DebugPropertiesProxy((target as _i1.DebugProperties), invoker),
+            _$DebugPropertiesProxy((target as _i2.DebugProperties), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.MessagesProperties>(
+    _i1.BeanDefinition<_i2.MessagesProperties>(
       name: r'messagesProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#MessagesProperties',
-      types: const [_i1.MessagesProperties],
-      create: (r) => _i1.MessagesProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.messages')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.MessagesProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.messages')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'alwaysUseMessageFormat',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'alwaysUseMessageFormat',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'basename',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'basename',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'cacheDuration',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'cacheDuration',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'Duration',
-            annotations: [_i4.DurationUnit(_i2.ChronoUnit.seconds)],
+            annotations: [_i4.DurationUnit(_i1.ChronoUnit.seconds)],
             annotationTypes: [r'DurationUnit'],
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'commonMessages',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'commonMessages',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'defaultLocale',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'defaultLocale',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'encoding',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'encoding',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'fallbackToSystemLocale',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'fallbackToSystemLocale',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'useCodeAsDefaultMessage',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'useCodeAsDefaultMessage',
+            _$target7,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'alwaysUseMessageFormat',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'alwaysUseMessageFormat',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'basename',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'basename',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'List',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'cacheDuration',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'cacheDuration',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'Duration',
-            annotations: [_i4.DurationUnit(_i2.ChronoUnit.seconds)],
+            annotations: [_i4.DurationUnit(_i1.ChronoUnit.seconds)],
             annotationTypes: [r'DurationUnit'],
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'commonMessages',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'commonMessages',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'List',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'defaultLocale',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'defaultLocale',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'encoding',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'encoding',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'fallbackToSystemLocale',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'fallbackToSystemLocale',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'useCodeAsDefaultMessage',
-            declaringType: r'MessagesProperties',
-            targetType: r'MessagesProperties',
-            declaringTypes: [r'MessagesProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'useCodeAsDefaultMessage',
+            _$target7,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MessagesProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.messages'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$MessagesPropertiesProxy(
-          (target as _i1.MessagesProperties),
+          (target as _i2.MessagesProperties),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i1.JsonProperties>(
+    _i1.BeanDefinition<_i2.JsonProperties>(
       name: r'jsonProperties',
       source: r'package:spring_boot_dart/src/properties/boot_properties.dart#JsonProperties',
-      types: const [_i1.JsonProperties],
-      create: (r) => _i1.JsonProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.json')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.JsonProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.json')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'propertyNamingStrategy',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'propertyNamingStrategy',
+            _$target8,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
             annotations: [
-              _i2.PropertyValues([
+              _i1.PropertyValues([
                 r'SNAKE_CASE',
                 r'UPPER_SNAKE_CASE',
                 r'UPPER_CAMEL_CASE',
@@ -1456,85 +1287,50 @@ _i2.BeanModule get $bootPropertiesBeans => _i2.BeanModule(
               ]),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'defaultPropertyInclusion',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'defaultPropertyInclusion',
+            _$target8,
+            kind: _i1.MemberKind.getter,
             returnType: r'JsonInclusion',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'timeZone',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'timeZone',
+            _$target8,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'deserialization',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'deserialization',
+            _$target8,
+            kind: _i1.MemberKind.getter,
             returnType: r'JsonDeserializationProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'serialization',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'serialization',
+            _$target8,
+            kind: _i1.MemberKind.getter,
             returnType: r'JsonSerializationProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'mapper',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'mapper',
+            _$target8,
+            kind: _i1.MemberKind.getter,
             returnType: r'JsonMapperProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'datatype',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'datatype',
+            _$target8,
+            kind: _i1.MemberKind.getter,
             returnType: r'JsonDatatypeProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'propertyNamingStrategy',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'propertyNamingStrategy',
+            _$target8,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
             annotations: [
-              _i2.PropertyValues([
+              _i1.PropertyValues([
                 r'SNAKE_CASE',
                 r'UPPER_SNAKE_CASE',
                 r'UPPER_CAMEL_CASE',
@@ -1545,397 +1341,320 @@ _i2.BeanModule get $bootPropertiesBeans => _i2.BeanModule(
               ]),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'defaultPropertyInclusion',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'defaultPropertyInclusion',
+            _$target8,
+            kind: _i1.MemberKind.setter,
             returnType: r'JsonInclusion',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'timeZone',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'timeZone',
+            _$target8,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'deserialization',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'deserialization',
+            _$target8,
+            kind: _i1.MemberKind.setter,
             returnType: r'JsonDeserializationProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'serialization',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'serialization',
+            _$target8,
+            kind: _i1.MemberKind.setter,
             returnType: r'JsonSerializationProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'mapper',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'mapper',
+            _$target8,
+            kind: _i1.MemberKind.setter,
             returnType: r'JsonMapperProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'datatype',
-            declaringType: r'JsonProperties',
-            targetType: r'JsonProperties',
-            declaringTypes: [r'JsonProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'datatype',
+            _$target8,
+            kind: _i1.MemberKind.setter,
             returnType: r'JsonDatatypeProperties',
-            targetTypes: [r'JsonProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.json')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) =>
-            _$JsonPropertiesProxy((target as _i1.JsonProperties), invoker),
+            _$JsonPropertiesProxy((target as _i2.JsonProperties), invoker),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.MainProperties>(
+    const _i1.BeanIntrospection<_i2.MainProperties>(
       className: r'MainProperties',
       properties: [
-        _i2.BeanProperty<_i1.MainProperties>(
+        _i1.BeanProperty<_i2.MainProperties>(
           r'allowBeanDefinitionOverriding',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.allowBeanDefinitionOverriding,
-          set: (bean, value) =>
-              bean.allowBeanDefinitionOverriding = (value as bool),
+          get: _$get9,
+          set: _$set10,
         ),
-        _i2.BeanProperty<_i1.MainProperties>(
+        _i1.BeanProperty<_i2.MainProperties>(
           r'bannerMode',
-          type: _i3.BannerMode,
-          typeInfo: const _i2.EnumType<_i3.BannerMode>(_i3.BannerMode.values),
+          typeInfo: _i1.EnumType<_i3.BannerMode>(_i3.BannerMode.values),
           hasInitialValue: true,
           initialValue: _i3.BannerMode.console,
-          get: (bean) => bean.bannerMode,
-          set: (bean, value) => bean.bannerMode = (value as _i3.BannerMode),
+          get: _$get11,
+          set: _$set12,
         ),
-        _i2.BeanProperty<_i1.MainProperties>(
+        _i1.BeanProperty<_i2.MainProperties>(
           r'lazyInitialization',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.lazyInitialization,
-          set: (bean, value) => bean.lazyInitialization = (value as bool),
+          get: _$get13,
+          set: _$set14,
         ),
-        _i2.BeanProperty<_i1.MainProperties>(
+        _i1.BeanProperty<_i2.MainProperties>(
           r'logStartupInfo',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.logStartupInfo,
-          set: (bean, value) => bean.logStartupInfo = (value as bool),
+          get: _$get15,
+          set: _$set16,
         ),
-        _i2.BeanProperty<_i1.MainProperties>(
+        _i1.BeanProperty<_i2.MainProperties>(
           r'registerShutdownHook',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.registerShutdownHook,
-          set: (bean, value) => bean.registerShutdownHook = (value as bool),
+          get: _$get17,
+          set: _$set18,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.main')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.MainProperties(),
-      constructor: _i2.BeanConstructor<_i1.MainProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.main')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.MainProperties.new,
+      constructor: _i1.BeanConstructor<_i2.MainProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.MainProperties.new, positional, named)
-                as _i1.MainProperties),
+        create: _$create19,
       ),
     ),
-    _i2.BeanIntrospection<_i1.AutoconfigureProperties>(
+    const _i1.BeanIntrospection<_i2.AutoconfigureProperties>(
       className: r'AutoconfigureProperties',
       properties: [
-        _i2.BeanProperty<_i1.AutoconfigureProperties>(
+        _i1.BeanProperty<_i2.AutoconfigureProperties>(
           r'exclude',
-          type: List<String>,
           nullable: true,
-          typeInfo: const _i2.ListType<String>(
-            _i2.ClassType<String>(),
+          typeInfo: _i1.ListType<String>(
+            _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.exclude,
-          set: (bean, value) => bean.exclude = (value as List<String>?),
+          get: _$get20,
+          set: _$set21,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.autoconfigure')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.AutoconfigureProperties(),
-      constructor: _i2.BeanConstructor<_i1.AutoconfigureProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.autoconfigure')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.AutoconfigureProperties.new,
+      constructor: _i1.BeanConstructor<_i2.AutoconfigureProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.AutoconfigureProperties.new, positional, named)
-                as _i1.AutoconfigureProperties),
+        create: _$create22,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ApplicationProperties>(
+    const _i1.BeanIntrospection<_i2.ApplicationProperties>(
       className: r'ApplicationProperties',
       properties: [
-        _i2.BeanProperty<_i1.ApplicationProperties>(
+        _i1.BeanProperty<_i2.ApplicationProperties>(
           r'json',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.json,
-          set: (bean, value) => bean.json = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get23,
+          set: _$set24,
         ),
-        _i2.BeanProperty<_i1.ApplicationProperties>(
+        _i1.BeanProperty<_i2.ApplicationProperties>(
           r'name',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get25,
+          set: _$set26,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.application')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.ApplicationProperties(),
-      constructor: _i2.BeanConstructor<_i1.ApplicationProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.application')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.ApplicationProperties.new,
+      constructor: _i1.BeanConstructor<_i2.ApplicationProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.ApplicationProperties.new, positional, named)
-                as _i1.ApplicationProperties),
+        create: _$create27,
       ),
     ),
-    _i2.BeanIntrospection<_i1.BannerProperties>(
+    const _i1.BeanIntrospection<_i2.BannerProperties>(
       className: r'BannerProperties',
       properties: [
-        _i2.BeanProperty<_i1.BannerProperties>(
+        _i1.BeanProperty<_i2.BannerProperties>(
           r'location',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'resources:banner.txt',
-          get: (bean) => bean.location,
-          set: (bean, value) => bean.location = (value as String),
+          get: _$get28,
+          set: _$set29,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.banner')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.BannerProperties(),
-      constructor: _i2.BeanConstructor<_i1.BannerProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.banner')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.BannerProperties.new,
+      constructor: _i1.BeanConstructor<_i2.BannerProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.BannerProperties.new, positional, named)
-                as _i1.BannerProperties),
+        create: _$create30,
       ),
     ),
-    _i2.BeanIntrospection<_i1.DevtoolsRestartProperties>(
+    const _i1.BeanIntrospection<_i2.DevtoolsRestartProperties>(
       className: r'DevtoolsRestartProperties',
       properties: [
-        _i2.BeanProperty<_i1.DevtoolsRestartProperties>(
+        _i1.BeanProperty<_i2.DevtoolsRestartProperties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get31,
+          set: _$set32,
         ),
       ],
-      annotations: const [
-        _i2.ConfigurationProperties(r'spring.devtools.restart'),
-      ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.DevtoolsRestartProperties(),
-      constructor: _i2.BeanConstructor<_i1.DevtoolsRestartProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.devtools.restart')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DevtoolsRestartProperties.new,
+      constructor: _i1.BeanConstructor<_i2.DevtoolsRestartProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.DevtoolsRestartProperties.new,
-          positional,
-          named,
-        ) as _i1.DevtoolsRestartProperties),
+        create: _$create33,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LifecycleProperties>(
+    const _i1.BeanIntrospection<_i2.LifecycleProperties>(
       className: r'LifecycleProperties',
       properties: [
-        _i2.BeanProperty<_i1.LifecycleProperties>(
+        _i1.BeanProperty<_i2.LifecycleProperties>(
           r'timeoutPerShutdownPhase',
-          type: Duration,
-          typeInfo: const _i2.ClassType<Duration>(),
-          get: (bean) => bean.timeoutPerShutdownPhase,
-          set: (bean, value) =>
-              bean.timeoutPerShutdownPhase = (value as Duration),
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get34,
+          set: _$set35,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.lifecycle')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LifecycleProperties(),
-      constructor: _i2.BeanConstructor<_i1.LifecycleProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.lifecycle')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LifecycleProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LifecycleProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LifecycleProperties.new, positional, named)
-                as _i1.LifecycleProperties),
+        create: _$create36,
       ),
     ),
-    _i2.BeanIntrospection<_i1.DebugProperties>(
+    const _i1.BeanIntrospection<_i2.DebugProperties>(
       className: r'DebugProperties',
       properties: [
-        _i2.BeanProperty<_i1.DebugProperties>(
+        _i1.BeanProperty<_i2.DebugProperties>(
           r'debug',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.debug,
-          set: (bean, value) => bean.debug = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get37,
+          set: _$set38,
         ),
-        _i2.BeanProperty<_i1.DebugProperties>(
+        _i1.BeanProperty<_i2.DebugProperties>(
           r'trace',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.trace,
-          set: (bean, value) => bean.trace = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get39,
+          set: _$set40,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.DebugProperties(),
-      constructor: _i2.BeanConstructor<_i1.DebugProperties>(
+      annotations: [_i1.ConfigurationProperties(r'')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DebugProperties.new,
+      constructor: _i1.BeanConstructor<_i2.DebugProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.DebugProperties.new, positional, named)
-                as _i1.DebugProperties),
+        create: _$create41,
       ),
     ),
-    _i2.BeanIntrospection<_i1.MessagesProperties>(
+    const _i1.BeanIntrospection<_i2.MessagesProperties>(
       className: r'MessagesProperties',
       properties: [
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'alwaysUseMessageFormat',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.alwaysUseMessageFormat,
-          set: (bean, value) => bean.alwaysUseMessageFormat = (value as bool),
+          get: _$get42,
+          set: _$set43,
         ),
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'basename',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.basename,
-          set: (bean, value) => bean.basename = (value as List<String>),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get44,
+          set: _$set45,
         ),
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'cacheDuration',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.cacheDuration,
-          set: (bean, value) => bean.cacheDuration = (value as Duration?),
-          annotations: const [_i4.DurationUnit(_i2.ChronoUnit.seconds)],
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get46,
+          set: _$set47,
+          annotations: [_i4.DurationUnit(_i1.ChronoUnit.seconds)],
         ),
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'commonMessages',
-          type: List<String>,
           nullable: true,
-          typeInfo: const _i2.ListType<String>(
-            _i2.ClassType<String>(),
+          typeInfo: _i1.ListType<String>(
+            _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.commonMessages,
-          set: (bean, value) => bean.commonMessages = (value as List<String>?),
+          get: _$get48,
+          set: _$set49,
         ),
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'defaultLocale',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.defaultLocale,
-          set: (bean, value) => bean.defaultLocale = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get50,
+          set: _$set51,
         ),
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'encoding',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.encoding,
-          set: (bean, value) => bean.encoding = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get52,
+          set: _$set53,
         ),
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'fallbackToSystemLocale',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.fallbackToSystemLocale,
-          set: (bean, value) => bean.fallbackToSystemLocale = (value as bool),
+          get: _$get54,
+          set: _$set55,
         ),
-        _i2.BeanProperty<_i1.MessagesProperties>(
+        _i1.BeanProperty<_i2.MessagesProperties>(
           r'useCodeAsDefaultMessage',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.useCodeAsDefaultMessage,
-          set: (bean, value) => bean.useCodeAsDefaultMessage = (value as bool),
+          get: _$get56,
+          set: _$set57,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.messages')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.MessagesProperties(),
-      constructor: _i2.BeanConstructor<_i1.MessagesProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.messages')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.MessagesProperties.new,
+      constructor: _i1.BeanConstructor<_i2.MessagesProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.MessagesProperties.new, positional, named)
-                as _i1.MessagesProperties),
+        create: _$create58,
       ),
     ),
-    _i2.BeanIntrospection<_i1.JsonProperties>(
+    const _i1.BeanIntrospection<_i2.JsonProperties>(
       className: r'JsonProperties',
       properties: [
-        _i2.BeanProperty<_i1.JsonProperties>(
+        _i1.BeanProperty<_i2.JsonProperties>(
           r'propertyNamingStrategy',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'LOWER_CAMEL_CASE',
-          get: (bean) => bean.propertyNamingStrategy,
-          set: (bean, value) => bean.propertyNamingStrategy = (value as String),
-          annotations: const [
-            _i2.PropertyValues([
+          get: _$get59,
+          set: _$set60,
+          annotations: [
+            _i1.PropertyValues([
               r'SNAKE_CASE',
               r'UPPER_SNAKE_CASE',
               r'UPPER_CAMEL_CASE',
@@ -1946,273 +1665,221 @@ _i2.BeanModule get $bootPropertiesBeans => _i2.BeanModule(
             ]),
           ],
         ),
-        _i2.BeanProperty<_i1.JsonProperties>(
+        _i1.BeanProperty<_i2.JsonProperties>(
           r'defaultPropertyInclusion',
-          type: _i2.JsonInclusion,
-          typeInfo: const _i2.EnumType<_i2.JsonInclusion>(
-            _i2.JsonInclusion.values,
-          ),
+          typeInfo: _i1.EnumType<_i1.JsonInclusion>(_i1.JsonInclusion.values),
           hasInitialValue: true,
-          initialValue: _i2.JsonInclusion.always,
-          get: (bean) => bean.defaultPropertyInclusion,
-          set: (bean, value) =>
-              bean.defaultPropertyInclusion = (value as _i2.JsonInclusion),
+          initialValue: _i1.JsonInclusion.always,
+          get: _$get61,
+          set: _$set62,
         ),
-        _i2.BeanProperty<_i1.JsonProperties>(
+        _i1.BeanProperty<_i2.JsonProperties>(
           r'timeZone',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.timeZone,
-          set: (bean, value) => bean.timeZone = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get63,
+          set: _$set64,
         ),
-        _i2.BeanProperty<_i1.JsonProperties>(
+        _i1.BeanProperty<_i2.JsonProperties>(
           r'deserialization',
-          type: _i1.JsonDeserializationProperties,
-          typeInfo: const _i2.ClassType<_i1.JsonDeserializationProperties>(),
-          get: (bean) => bean.deserialization,
-          set: (bean, value) => bean.deserialization =
-              (value as _i1.JsonDeserializationProperties),
+          typeInfo: _i1.ClassType<_i2.JsonDeserializationProperties>(),
+          get: _$get65,
+          set: _$set66,
         ),
-        _i2.BeanProperty<_i1.JsonProperties>(
+        _i1.BeanProperty<_i2.JsonProperties>(
           r'serialization',
-          type: _i1.JsonSerializationProperties,
-          typeInfo: const _i2.ClassType<_i1.JsonSerializationProperties>(),
-          get: (bean) => bean.serialization,
-          set: (bean, value) =>
-              bean.serialization = (value as _i1.JsonSerializationProperties),
+          typeInfo: _i1.ClassType<_i2.JsonSerializationProperties>(),
+          get: _$get67,
+          set: _$set68,
         ),
-        _i2.BeanProperty<_i1.JsonProperties>(
+        _i1.BeanProperty<_i2.JsonProperties>(
           r'mapper',
-          type: _i1.JsonMapperProperties,
-          typeInfo: const _i2.ClassType<_i1.JsonMapperProperties>(),
-          get: (bean) => bean.mapper,
-          set: (bean, value) =>
-              bean.mapper = (value as _i1.JsonMapperProperties),
+          typeInfo: _i1.ClassType<_i2.JsonMapperProperties>(),
+          get: _$get69,
+          set: _$set70,
         ),
-        _i2.BeanProperty<_i1.JsonProperties>(
+        _i1.BeanProperty<_i2.JsonProperties>(
           r'datatype',
-          type: _i1.JsonDatatypeProperties,
-          typeInfo: const _i2.ClassType<_i1.JsonDatatypeProperties>(),
-          get: (bean) => bean.datatype,
-          set: (bean, value) =>
-              bean.datatype = (value as _i1.JsonDatatypeProperties),
+          typeInfo: _i1.ClassType<_i2.JsonDatatypeProperties>(),
+          get: _$get71,
+          set: _$set72,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.json')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.JsonProperties(),
-      constructor: _i2.BeanConstructor<_i1.JsonProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.json')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JsonProperties.new,
+      constructor: _i1.BeanConstructor<_i2.JsonProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.JsonProperties.new, positional, named)
-                as _i1.JsonProperties),
+        create: _$create73,
       ),
     ),
-    _i2.BeanIntrospection<_i1.JsonDeserializationProperties>(
+    const _i1.BeanIntrospection<_i2.JsonDeserializationProperties>(
       className: r'JsonDeserializationProperties',
       properties: [
-        _i2.BeanProperty<_i1.JsonDeserializationProperties>(
+        _i1.BeanProperty<_i2.JsonDeserializationProperties>(
           r'acceptFloatAsInt',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.acceptFloatAsInt,
-          set: (bean, value) => bean.acceptFloatAsInt = (value as bool),
+          get: _$get74,
+          set: _$set75,
         ),
-        _i2.BeanProperty<_i1.JsonDeserializationProperties>(
+        _i1.BeanProperty<_i2.JsonDeserializationProperties>(
           r'failOnNullForPrimitives',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.failOnNullForPrimitives,
-          set: (bean, value) => bean.failOnNullForPrimitives = (value as bool),
+          get: _$get76,
+          set: _$set77,
         ),
-        _i2.BeanProperty<_i1.JsonDeserializationProperties>(
+        _i1.BeanProperty<_i2.JsonDeserializationProperties>(
           r'failOnUnknownProperties',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.failOnUnknownProperties,
-          set: (bean, value) => bean.failOnUnknownProperties = (value as bool),
+          get: _$get78,
+          set: _$set79,
         ),
-        _i2.BeanProperty<_i1.JsonDeserializationProperties>(
+        _i1.BeanProperty<_i2.JsonDeserializationProperties>(
           r'readDateTimestampsAsNanoseconds',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.readDateTimestampsAsNanoseconds,
-          set: (bean, value) =>
-              bean.readDateTimestampsAsNanoseconds = (value as bool),
+          get: _$get80,
+          set: _$set81,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.JsonDeserializationProperties(),
-      constructor: _i2.BeanConstructor<_i1.JsonDeserializationProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JsonDeserializationProperties.new,
+      constructor: _i1.BeanConstructor<_i2.JsonDeserializationProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.JsonDeserializationProperties.new,
-          positional,
-          named,
-        ) as _i1.JsonDeserializationProperties),
+        create: _$create82,
       ),
     ),
-    _i2.BeanIntrospection<_i1.JsonSerializationProperties>(
+    const _i1.BeanIntrospection<_i2.JsonSerializationProperties>(
       className: r'JsonSerializationProperties',
       properties: [
-        _i2.BeanProperty<_i1.JsonSerializationProperties>(
+        _i1.BeanProperty<_i2.JsonSerializationProperties>(
           r'indentOutput',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.indentOutput,
-          set: (bean, value) => bean.indentOutput = (value as bool),
+          get: _$get83,
+          set: _$set84,
         ),
-        _i2.BeanProperty<_i1.JsonSerializationProperties>(
+        _i1.BeanProperty<_i2.JsonSerializationProperties>(
           r'writeDateTimestampsAsNanoseconds',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.writeDateTimestampsAsNanoseconds,
-          set: (bean, value) =>
-              bean.writeDateTimestampsAsNanoseconds = (value as bool),
+          get: _$get85,
+          set: _$set86,
         ),
-        _i2.BeanProperty<_i1.JsonSerializationProperties>(
+        _i1.BeanProperty<_i2.JsonSerializationProperties>(
           r'writeDatesAsTimestamps',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.writeDatesAsTimestamps,
-          set: (bean, value) => bean.writeDatesAsTimestamps = (value as bool),
+          get: _$get87,
+          set: _$set88,
         ),
-        _i2.BeanProperty<_i1.JsonSerializationProperties>(
+        _i1.BeanProperty<_i2.JsonSerializationProperties>(
           r'writeDurationsAsTimestamps',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.writeDurationsAsTimestamps,
-          set: (bean, value) =>
-              bean.writeDurationsAsTimestamps = (value as bool),
+          get: _$get89,
+          set: _$set90,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.JsonSerializationProperties(),
-      constructor: _i2.BeanConstructor<_i1.JsonSerializationProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JsonSerializationProperties.new,
+      constructor: _i1.BeanConstructor<_i2.JsonSerializationProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.JsonSerializationProperties.new,
-          positional,
-          named,
-        ) as _i1.JsonSerializationProperties),
+        create: _$create91,
       ),
     ),
-    _i2.BeanIntrospection<_i1.JsonMapperProperties>(
+    const _i1.BeanIntrospection<_i2.JsonMapperProperties>(
       className: r'JsonMapperProperties',
       properties: [
-        _i2.BeanProperty<_i1.JsonMapperProperties>(
+        _i1.BeanProperty<_i2.JsonMapperProperties>(
           r'defaultViewInclusion',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.defaultViewInclusion,
-          set: (bean, value) => bean.defaultViewInclusion = (value as bool),
+          get: _$get92,
+          set: _$set93,
         ),
-        _i2.BeanProperty<_i1.JsonMapperProperties>(
+        _i1.BeanProperty<_i2.JsonMapperProperties>(
           r'sortPropertiesAlphabetically',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.sortPropertiesAlphabetically,
-          set: (bean, value) =>
-              bean.sortPropertiesAlphabetically = (value as bool),
+          get: _$get94,
+          set: _$set95,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.JsonMapperProperties(),
-      constructor: _i2.BeanConstructor<_i1.JsonMapperProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JsonMapperProperties.new,
+      constructor: _i1.BeanConstructor<_i2.JsonMapperProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.JsonMapperProperties.new, positional, named)
-                as _i1.JsonMapperProperties),
+        create: _$create96,
       ),
     ),
-    _i2.BeanIntrospection<_i1.JsonDatatypeProperties>(
+    const _i1.BeanIntrospection<_i2.JsonDatatypeProperties>(
       className: r'JsonDatatypeProperties',
       properties: [
-        _i2.BeanProperty<_i1.JsonDatatypeProperties>(
+        _i1.BeanProperty<_i2.JsonDatatypeProperties>(
           r'datetime',
-          type: _i1.JsonDatetimeProperties,
-          typeInfo: const _i2.ClassType<_i1.JsonDatetimeProperties>(),
-          get: (bean) => bean.datetime,
-          set: (bean, value) =>
-              bean.datetime = (value as _i1.JsonDatetimeProperties),
+          typeInfo: _i1.ClassType<_i2.JsonDatetimeProperties>(),
+          get: _$get97,
+          set: _$set98,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.JsonDatatypeProperties(),
-      constructor: _i2.BeanConstructor<_i1.JsonDatatypeProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JsonDatatypeProperties.new,
+      constructor: _i1.BeanConstructor<_i2.JsonDatatypeProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.JsonDatatypeProperties.new, positional, named)
-                as _i1.JsonDatatypeProperties),
+        create: _$create99,
       ),
     ),
-    _i2.BeanIntrospection<_i1.JsonDatetimeProperties>(
+    const _i1.BeanIntrospection<_i2.JsonDatetimeProperties>(
       className: r'JsonDatetimeProperties',
       properties: [
-        _i2.BeanProperty<_i1.JsonDatetimeProperties>(
+        _i1.BeanProperty<_i2.JsonDatetimeProperties>(
           r'readDateTimestampsAsNanoseconds',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.readDateTimestampsAsNanoseconds,
-          set: (bean, value) =>
-              bean.readDateTimestampsAsNanoseconds = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get100,
+          set: _$set101,
         ),
-        _i2.BeanProperty<_i1.JsonDatetimeProperties>(
+        _i1.BeanProperty<_i2.JsonDatetimeProperties>(
           r'writeDateTimestampsAsNanoseconds',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.writeDateTimestampsAsNanoseconds,
-          set: (bean, value) =>
-              bean.writeDateTimestampsAsNanoseconds = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get102,
+          set: _$set103,
         ),
-        _i2.BeanProperty<_i1.JsonDatetimeProperties>(
+        _i1.BeanProperty<_i2.JsonDatetimeProperties>(
           r'writeDatesAsTimestamps',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.writeDatesAsTimestamps,
-          set: (bean, value) => bean.writeDatesAsTimestamps = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get104,
+          set: _$set105,
         ),
-        _i2.BeanProperty<_i1.JsonDatetimeProperties>(
+        _i1.BeanProperty<_i2.JsonDatetimeProperties>(
           r'writeDurationsAsTimestamps',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.writeDurationsAsTimestamps,
-          set: (bean, value) =>
-              bean.writeDurationsAsTimestamps = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get106,
+          set: _$set107,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.JsonDatetimeProperties(),
-      constructor: _i2.BeanConstructor<_i1.JsonDatetimeProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JsonDatetimeProperties.new,
+      constructor: _i1.BeanConstructor<_i2.JsonDatetimeProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.JsonDatetimeProperties.new, positional, named)
-                as _i1.JsonDatetimeProperties),
+        create: _$create108,
       ),
     ),
   ],

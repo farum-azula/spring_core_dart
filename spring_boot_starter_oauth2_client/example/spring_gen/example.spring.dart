@@ -65,13 +65,10 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
   _i2.BeanDefinition<_i1.OrdersClient>(
     name: r'ordersClient',
     source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#OrdersClient',
-    types: const [_i1.OrdersClient],
     primary: true,
     create: (r) => _$OrdersClientImpl.$create(r),
     annotations: const [_i3.FeignClient(r'orders', url: r'${partner.url}')],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches OrdersClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
   _i2.BeanDefinition<_i1.OrdersTour>(
     name: r'ordersTour',
@@ -94,9 +91,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       _i2.Component(),
       _i2.Log(topic: r'example'),
     ],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches OrdersTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
 ]);
 
@@ -161,7 +156,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '1888d6ed',
+  fingerprint: '0abf0167',
 );
 
 /// Starts the application: config files, environment, context, runners

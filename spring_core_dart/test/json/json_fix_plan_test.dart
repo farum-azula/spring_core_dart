@@ -114,8 +114,8 @@ final _introspector = BeanIntrospector(
       ],
       instantiate: Palette.new,
     ),
-    BeanIntrospection<Note>(
-      annotations: const [
+    const BeanIntrospection<Note>(
+      annotations: [
         JsonTypeInfo(property: 'kind', defaultImpl: TextNote),
         JsonSubTypes([JsonSubType(TextNote, name: 'text')]),
       ],

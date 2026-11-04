@@ -148,6 +148,7 @@ class SpringBuilder implements Builder {
   SpringBuilder({
     this.proxyMode = ProxyMode.all,
     this.pruneProxies = true,
+    this.dartDefinesExclude = const [],
     Future<String?> Function(AssetId output)? readExistingOutput,
     PackageDirectories? packageDirectories,
   }) : _packageDirectories = packageDirectories ?? PackageDirectories.current,
@@ -166,6 +167,12 @@ class SpringBuilder implements Builder {
   /// Only that output prunes: it knows every module of the application.
   /// `@ComponentScan` outputs keep every proxy.
   final bool pruneProxies;
+
+  /// The property name prefixes not offered to `--dart-define` (build
+  /// option `dart_defines_exclude`, empty by default): neither the names
+  /// under them nor their environment-variable forms are written into
+  /// `springApplication.dartDefines`.
+  final List<String> dartDefinesExclude;
 
   final Future<String?> Function(AssetId output) _readExistingOutput;
 
@@ -614,7 +621,10 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
-    final defines = await _dartDefineKeys(buildStep, assets, resources);
+    final defines = DartDefineKeys.without(
+      await _dartDefineKeys(buildStep, assets, resources),
+      dartDefinesExclude,
+    );
     final keyParts = await _keyParts(buildStep);
     final source = emitter.emit(
       moduleName: 'application',
@@ -1569,7 +1579,11 @@ class _AdvisorCreations extends RecursiveAstVisitor<void> {
 /// runs in an earlier phase, so the example sees the files.
 class SpringPropertiesBuilder extends SpringBuilder {
   /// A builder with the options of [SpringBuilder].
-  SpringPropertiesBuilder({super.proxyMode, super.pruneProxies});
+  SpringPropertiesBuilder({
+    super.proxyMode,
+    super.pruneProxies,
+    super.dartDefinesExclude,
+  });
 
   @override
   Map<String, List<String>> get buildExtensions => const {

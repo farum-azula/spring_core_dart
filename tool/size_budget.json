@@ -1,0 +1,15 @@
+{
+   "sources": {
+      "generatedLines": 60051
+   },
+   "apps": {
+      "server_guide": {
+         "generatedInstructions": 198228,
+         "snapshotBytes": 9993600
+      },
+      "data_example": {
+         "generatedInstructions": 87316,
+         "snapshotBytes": 6872288
+      }
+   }
+}

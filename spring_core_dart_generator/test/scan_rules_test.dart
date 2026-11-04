@@ -164,11 +164,11 @@ class BConfig {
     }
     expect(
       _output(result, 'lib/spring_gen/a/beans.spring.dart'),
-      _has("r'email', type: String"),
+      _has("r'email', typeInfo: ClassType<String>()"),
     );
     expect(
       _output(result, 'lib/spring_gen/a/beans.spring.dart'),
-      _has('annotations: const [NotBlank()]'),
+      _has('annotations: [NotBlank()]'),
     );
   });
 

@@ -148,6 +148,26 @@ void main() {
       expect(keys.keys, isNot(contains('#')));
     });
 
+    test('without: the names under a prefix, in both forms', () {
+      expect(
+        DartDefineKeys.without(
+          [
+            'DEBUG',
+            'SPRING_FLUTTER_THEME',
+            'SPRING_FLUTTER_THEME_MODE',
+            'SPRING_FLUTTER_THEMES',
+            'spring.flutter.theme',
+            'spring.flutter.theme.mode',
+            'spring.flutter.theme[0]',
+            'spring.flutter.themes',
+          ],
+          ['spring.flutter.theme'],
+        ),
+        ['DEBUG', 'SPRING_FLUTTER_THEMES', 'spring.flutter.themes'],
+      );
+      expect(DartDefineKeys.without(['a', 'B'], const []), ['a', 'B']);
+    });
+
     test('always includes profiles and the OS environment switch', () {
       expect(
         DartDefineKeys().keys,

@@ -152,12 +152,14 @@ const _cacheable = TypeChecker.fromUrl('$_cacheAnnotations#Cacheable');
 const _cachePut = TypeChecker.fromUrl('$_cacheAnnotations#CachePut');
 const _caching = TypeChecker.fromUrl('$_cacheAnnotations#Caching');
 
-/// The members every generated AOP proxy declares (from `Advised`). A
-/// proxied class must not declare a member with one of these names, since
-/// the proxy's member would replace it.
+/// The members every generated AOP proxy declares (from `Advised`, and the
+/// invoker of `AdvisedWrapper` / `AdvisedSubclass`). A proxied class must
+/// not declare a member with one of these names, since the proxy's member
+/// would replace it.
 const _advisedMembers = {
   'aopTarget',
   'aopAdvisors',
+  'aopInvoker',
   'addAdvisor',
   'removeAdvisor',
   'addAdvice',
@@ -5050,6 +5052,13 @@ class BeanScanner {
               isNamed: parameter.isNamed,
               isRequired: parameter.isRequired,
               hasDefault: parameter.hasDefaultValue,
+              // For a direct call that passes it when an argument is absent.
+              defaultValue: switch (parameter.hasDefaultValue
+                  ? parameter.computeConstantValue()
+                  : null) {
+                final value? when _isRecreatable(value) => value,
+                _ => null,
+              },
               annotations: _userAnnotations(parameter),
             ),
         ];

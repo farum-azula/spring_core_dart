@@ -81,6 +81,29 @@ class Checked {
 class ShopSettings {
   String name = '';
 }
+
+// Private members: a subclass proxy (the bean is created as it).
+@Service()
+class Counted {
+  int _n = 0;
+  int next() => ++_n;
+}
+
+@Service()
+class CountedOrders {
+  int _n = 0;
+  @Transactional()
+  Future<int> place() async => ++_n;
+  int count() => _n;
+}
+
+@Service()
+class MixedOrders {
+  @Transactional()
+  Future<void> place() async {}
+  int count() => 0;
+  String get label => '';
+}
 ''';
 
 Future<String> _build(String beans) async {
@@ -174,6 +197,44 @@ void main() {
     expect(output, isNot(proxyOf('Tagged')));
   });
 
+  test('a subclass proxy nothing advises is pruned too', () {
+    expect(output, isNot(proxyOf('Counted')));
+    final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+    // Created as its own class.
+    expect(normalized, contains('create:(r)=>Counted()'));
+    expect(
+      normalized,
+      matches(
+        RegExp(
+          r'BeanDefinition<Counted>\((?:(?!BeanDefinition<).)*'
+          r'AopProxyFactory\.pruned\(\)',
+        ),
+      ),
+    );
+    // An advised one keeps it, and is created as the generated subclass.
+    expect(output, proxyOf('CountedOrders'));
+    expect(normalized, contains(r'create:(r)=>_$CountedOrdersProxy()'));
+  });
+
+  test('only the members advice may match run through it', () {
+    final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+    String proxy(String name) => normalized
+        .split(RegExp(r'class_\$|///Beansfound'))
+        .singleWhere((part) => part.startsWith('${name}Proxy'));
+    // A wrapper forwards the others to the target, without signatures.
+    final mixed = proxy('MixedOrders');
+    expect(mixed, contains('this.aopInvoker.invokeAsync<void>('));
+    expect(mixed, contains('intcount()=>this._target.count();'));
+    expect(mixed, contains('Stringgetlabel=>this._target.label;'));
+    expect(normalized, contains("MethodSignature.of(r'place',"));
+    expect(normalized, isNot(contains("MethodSignature.of(r'count',")));
+    expect(normalized, isNot(contains("MethodSignature.of(r'label',")));
+    // A subclass inherits them.
+    final counted = proxy('CountedOrders');
+    expect(counted, contains('place()'));
+    expect(counted, isNot(contains('count()')));
+  });
+
   test('the annotations of the starters keep the proxy', () {
     expect(output, proxyOf('Orders'));
     expect(output, proxyOf('ClassLevel'));
@@ -191,12 +252,15 @@ void main() {
     expect(output, proxyOf('Admin'));
   });
 
-  test('a pruned bean says why, for an advisor added at run time', () {
+  test('a pruned bean is marked, for an advisor added at run time', () {
+    // `AopProxyFactory.prunedReason` says why at run time.
     expect(
-      output,
-      contains(
-        'the build found no pointcut of the application that matches '
-        'Plain',
+      output.replaceAll(RegExp(r'\b_i\d+\.|\s'), ''),
+      matches(
+        RegExp(
+          r'BeanDefinition<Plain>\((?:(?!BeanDefinition<).)*'
+          r'AopProxyFactory\.pruned\(\)',
+        ),
       ),
     );
   });

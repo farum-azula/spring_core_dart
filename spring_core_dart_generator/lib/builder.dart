@@ -90,6 +90,12 @@ import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
 ///   proxy classes of beans that no pointcut of the application can match.
 ///   `@ComponentScan` modules are never pruned, because any other module
 ///   may import them and bring aspects the build cannot see.
+/// - `dart_defines_exclude` (a list of property name prefixes, empty by
+///   default; anything but a list of strings throws an [ArgumentError]):
+///   the properties under them, in both their forms (`spring.flutter.theme`
+///   and `SPRING_FLUTTER_THEME`), are not offered to `--dart-define`.
+///   `springApplication.dartDefines` is shorter; such properties are still
+///   read from config files, the environment and the arguments.
 ///
 /// ```yaml
 /// targets:
@@ -117,8 +123,17 @@ Builder springCoreDartBuilder(BuilderOptions options) {
   if (prune is! bool) {
     throw ArgumentError.value(prune, 'aop_prune', 'Expected true or false');
   }
+  final excluded = options.config['dart_defines_exclude'] ?? const <Object>[];
+  if (excluded is! List || excluded.any((prefix) => prefix is! String)) {
+    throw ArgumentError.value(
+      excluded,
+      'dart_defines_exclude',
+      'Expected a list of property name prefixes',
+    );
+  }
   return SpringBuilder(
     pruneProxies: prune,
+    dartDefinesExclude: excluded.cast<String>(),
     proxyMode: ProxyMode.values.firstWhere(
       (m) => m.name == mode,
       orElse: () => throw ArgumentError.value(
@@ -138,6 +153,7 @@ Builder springPropertiesBuilder(BuilderOptions options) {
   return SpringPropertiesBuilder(
     proxyMode: builder.proxyMode,
     pruneProxies: builder.pruneProxies,
+    dartDefinesExclude: builder.dartDefinesExclude,
   );
 }
 

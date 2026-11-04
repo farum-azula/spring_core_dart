@@ -7,45 +7,29 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_feign/src/config/feign_properties.dart'
-    as _i1;
+    as _i2;
 import 'package:spring_boot_starter_feign/src/feign_client_config.dart' as _i3;
 
-class _$FeignPropertiesProxy implements _i1.FeignProperties, _i2.Advised {
-  _$FeignPropertiesProxy(this._target, this._invoker);
+class _$FeignPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.FeignProperties {
+  _$FeignPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.FeignProperties _target;
+  final _i2.FeignProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool get decodeSlash => (this._invoker.invoke(
+  bool get decodeSlash => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -54,303 +38,319 @@ class _$FeignPropertiesProxy implements _i1.FeignProperties, _i2.Advised {
   ) as bool);
 
   @override
-  Map<String, _i1.FeignClientSettings> get config => (this._invoker.invoke(
+  Map<String, _i2.FeignClientSettings> get config => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
     const [],
     (_) => this._target.config,
-  ) as Map<String, _i1.FeignClientSettings>);
+  ) as Map<String, _i2.FeignClientSettings>);
 
   @override
   set decodeSlash(bool value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.decodeSlash = (args[0] as bool);
       return null;
     });
   }
 
   @override
-  set config(Map<String, _i1.FeignClientSettings> value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.config = (args[0] as Map<String, _i1.FeignClientSettings>);
+  set config(Map<String, _i2.FeignClientSettings> value) {
+    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
+      this._target.config = (args[0] as Map<String, _i2.FeignClientSettings>);
       return null;
     });
   }
 }
 
+const _$target0 = _i1.AopTarget(
+  r'FeignProperties',
+  types: [r'FeignProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.feign.client')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get1(_i2.FeignProperties bean) => bean.decodeSlash;
+void _$set2(_i2.FeignProperties bean, Object? value) =>
+    bean.decodeSlash = (value as bool);
+Object? _$get3(_i2.FeignProperties bean) => bean.config;
+void _$set4(_i2.FeignProperties bean, Object? value) =>
+    bean.config = (value as Map<String, _i2.FeignClientSettings>);
+_i2.FeignProperties _$create5(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FeignProperties();
+Object? _$get6(_i2.FeignClientSettings bean) => bean.url;
+void _$set7(_i2.FeignClientSettings bean, Object? value) =>
+    bean.url = (value as String?);
+Object? _$get8(_i2.FeignClientSettings bean) => bean.connectTimeout;
+void _$set9(_i2.FeignClientSettings bean, Object? value) =>
+    bean.connectTimeout = (value as Duration?);
+Object? _$get10(_i2.FeignClientSettings bean) => bean.readTimeout;
+void _$set11(_i2.FeignClientSettings bean, Object? value) =>
+    bean.readTimeout = (value as Duration?);
+Object? _$get12(_i2.FeignClientSettings bean) => bean.callTimeout;
+void _$set13(_i2.FeignClientSettings bean, Object? value) =>
+    bean.callTimeout = (value as Duration?);
+Object? _$get14(_i2.FeignClientSettings bean) => bean.loggerLevel;
+void _$set15(_i2.FeignClientSettings bean, Object? value) =>
+    bean.loggerLevel = (value as _i3.FeignLoggerLevel?);
+Object? _$get16(_i2.FeignClientSettings bean) => bean.dismiss404;
+void _$set17(_i2.FeignClientSettings bean, Object? value) =>
+    bean.dismiss404 = (value as bool?);
+Object? _$get18(_i2.FeignClientSettings bean) => bean.defaultRequestHeaders;
+void _$set19(_i2.FeignClientSettings bean, Object? value) =>
+    bean.defaultRequestHeaders = (value as Map<String, List<String>>);
+Object? _$get20(_i2.FeignClientSettings bean) => bean.defaultQueryParameters;
+void _$set21(_i2.FeignClientSettings bean, Object? value) =>
+    bean.defaultQueryParameters = (value as Map<String, List<String>>);
+Object? _$get22(_i2.FeignClientSettings bean) => bean.followRedirects;
+void _$set23(_i2.FeignClientSettings bean, Object? value) =>
+    bean.followRedirects = (value as bool?);
+Object? _$get24(_i2.FeignClientSettings bean) => bean.eventStream;
+void _$set25(_i2.FeignClientSettings bean, Object? value) =>
+    bean.eventStream = (value as _i2.FeignEventStreamSettings);
+Object? _$get26(_i2.FeignClientSettings bean) => bean.retryer;
+void _$set27(_i2.FeignClientSettings bean, Object? value) =>
+    bean.retryer = (value as String?);
+Object? _$get28(_i2.FeignClientSettings bean) => bean.errorDecoder;
+void _$set29(_i2.FeignClientSettings bean, Object? value) =>
+    bean.errorDecoder = (value as String?);
+Object? _$get30(_i2.FeignClientSettings bean) => bean.requestInterceptors;
+void _$set31(_i2.FeignClientSettings bean, Object? value) =>
+    bean.requestInterceptors = (value as List<String>);
+Object? _$get32(_i2.FeignClientSettings bean) => bean.sensitiveHeaders;
+void _$set33(_i2.FeignClientSettings bean, Object? value) =>
+    bean.sensitiveHeaders = (value as List<String>);
+_i2.FeignClientSettings _$create34(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FeignClientSettings();
+Object? _$get35(_i2.FeignEventStreamSettings bean) => bean.reconnect;
+void _$set36(_i2.FeignEventStreamSettings bean, Object? value) =>
+    bean.reconnect = (value as bool?);
+Object? _$get37(_i2.FeignEventStreamSettings bean) => bean.reconnectDelay;
+void _$set38(_i2.FeignEventStreamSettings bean, Object? value) =>
+    bean.reconnectDelay = (value as Duration?);
+Object? _$get39(_i2.FeignEventStreamSettings bean) => bean.maxAttempts;
+void _$set40(_i2.FeignEventStreamSettings bean, Object? value) =>
+    bean.maxAttempts = (value as int?);
+_i2.FeignEventStreamSettings _$create41(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FeignEventStreamSettings();
+
 /// Beans found by `@ComponentScan` in `lib/src/config`.
-_i2.BeanModule get $feignConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $feignConfigBeans => _i1.BeanModule(
   r'feignConfigBeans',
   [
-    _i2.BeanDefinition<_i1.FeignProperties>(
+    _i1.BeanDefinition<_i2.FeignProperties>(
       name: r'feignProperties',
       source: r'package:spring_boot_starter_feign/src/config/feign_properties.dart#FeignProperties',
-      types: const [_i1.FeignProperties],
-      create: (r) => _i1.FeignProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.feign.client')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.FeignProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.feign.client')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'decodeSlash',
-            declaringType: r'FeignProperties',
-            targetType: r'FeignProperties',
-            declaringTypes: [r'FeignProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'decodeSlash',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FeignProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'config',
-            declaringType: r'FeignProperties',
-            targetType: r'FeignProperties',
-            declaringTypes: [r'FeignProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'config',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'FeignProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'decodeSlash',
-            declaringType: r'FeignProperties',
-            targetType: r'FeignProperties',
-            declaringTypes: [r'FeignProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'decodeSlash',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'FeignProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'config',
-            declaringType: r'FeignProperties',
-            targetType: r'FeignProperties',
-            declaringTypes: [r'FeignProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'config',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'Map',
-            targetTypes: [r'FeignProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) =>
-            _$FeignPropertiesProxy((target as _i1.FeignProperties), invoker),
+            _$FeignPropertiesProxy((target as _i2.FeignProperties), invoker),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.FeignProperties>(
+    const _i1.BeanIntrospection<_i2.FeignProperties>(
       className: r'FeignProperties',
       properties: [
-        _i2.BeanProperty<_i1.FeignProperties>(
+        _i1.BeanProperty<_i2.FeignProperties>(
           r'decodeSlash',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.decodeSlash,
-          set: (bean, value) => bean.decodeSlash = (value as bool),
+          get: _$get1,
+          set: _$set2,
         ),
-        _i2.BeanProperty<_i1.FeignProperties>(
+        _i1.BeanProperty<_i2.FeignProperties>(
           r'config',
-          type: Map<String, _i1.FeignClientSettings>,
-          typeInfo: const _i2.MapType<String, _i1.FeignClientSettings>(
-            _i2.ClassType<String>(),
-            _i2.ClassType<_i1.FeignClientSettings>(),
+          typeInfo: _i1.MapType<String, _i2.FeignClientSettings>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<_i2.FeignClientSettings>(),
           ),
-          get: (bean) => bean.config,
-          set: (bean, value) =>
-              bean.config = (value as Map<String, _i1.FeignClientSettings>),
+          get: _$get3,
+          set: _$set4,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.feign.client')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.FeignProperties(),
-      constructor: _i2.BeanConstructor<_i1.FeignProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.feign.client')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FeignProperties.new,
+      constructor: _i1.BeanConstructor<_i2.FeignProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.FeignProperties.new, positional, named)
-                as _i1.FeignProperties),
+        create: _$create5,
       ),
     ),
-    _i2.BeanIntrospection<_i1.FeignClientSettings>(
+    const _i1.BeanIntrospection<_i2.FeignClientSettings>(
       className: r'FeignClientSettings',
       properties: [
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'url',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.url,
-          set: (bean, value) => bean.url = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get6,
+          set: _$set7,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'connectTimeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.connectTimeout,
-          set: (bean, value) => bean.connectTimeout = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get8,
+          set: _$set9,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'readTimeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.readTimeout,
-          set: (bean, value) => bean.readTimeout = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get10,
+          set: _$set11,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'callTimeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.callTimeout,
-          set: (bean, value) => bean.callTimeout = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get12,
+          set: _$set13,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'loggerLevel',
-          type: _i3.FeignLoggerLevel,
           nullable: true,
-          typeInfo: const _i2.EnumType<_i3.FeignLoggerLevel>(
+          typeInfo: _i1.EnumType<_i3.FeignLoggerLevel>(
             _i3.FeignLoggerLevel.values,
             nullable: true,
           ),
-          get: (bean) => bean.loggerLevel,
-          set: (bean, value) =>
-              bean.loggerLevel = (value as _i3.FeignLoggerLevel?),
+          get: _$get14,
+          set: _$set15,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'dismiss404',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.dismiss404,
-          set: (bean, value) => bean.dismiss404 = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get16,
+          set: _$set17,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'defaultRequestHeaders',
-          type: Map<String, List<String>>,
-          typeInfo: const _i2.MapType<String, List<String>>(
-            _i2.ClassType<String>(),
-            _i2.ListType<String>(_i2.ClassType<String>()),
+          typeInfo: _i1.MapType<String, List<String>>(
+            _i1.ClassType<String>(),
+            _i1.ListType<String>(_i1.ClassType<String>()),
           ),
-          get: (bean) => bean.defaultRequestHeaders,
-          set: (bean, value) =>
-              bean.defaultRequestHeaders = (value as Map<String, List<String>>),
+          get: _$get18,
+          set: _$set19,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'defaultQueryParameters',
-          type: Map<String, List<String>>,
-          typeInfo: const _i2.MapType<String, List<String>>(
-            _i2.ClassType<String>(),
-            _i2.ListType<String>(_i2.ClassType<String>()),
+          typeInfo: _i1.MapType<String, List<String>>(
+            _i1.ClassType<String>(),
+            _i1.ListType<String>(_i1.ClassType<String>()),
           ),
-          get: (bean) => bean.defaultQueryParameters,
-          set: (bean, value) => bean.defaultQueryParameters =
-              (value as Map<String, List<String>>),
+          get: _$get20,
+          set: _$set21,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'followRedirects',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.followRedirects,
-          set: (bean, value) => bean.followRedirects = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get22,
+          set: _$set23,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'eventStream',
-          type: _i1.FeignEventStreamSettings,
-          typeInfo: const _i2.ClassType<_i1.FeignEventStreamSettings>(),
-          get: (bean) => bean.eventStream,
-          set: (bean, value) =>
-              bean.eventStream = (value as _i1.FeignEventStreamSettings),
+          typeInfo: _i1.ClassType<_i2.FeignEventStreamSettings>(),
+          get: _$get24,
+          set: _$set25,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'retryer',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.retryer,
-          set: (bean, value) => bean.retryer = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get26,
+          set: _$set27,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'errorDecoder',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.errorDecoder,
-          set: (bean, value) => bean.errorDecoder = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get28,
+          set: _$set29,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'requestInterceptors',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.requestInterceptors,
-          set: (bean, value) =>
-              bean.requestInterceptors = (value as List<String>),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get30,
+          set: _$set31,
         ),
-        _i2.BeanProperty<_i1.FeignClientSettings>(
+        _i1.BeanProperty<_i2.FeignClientSettings>(
           r'sensitiveHeaders',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.sensitiveHeaders,
-          set: (bean, value) => bean.sensitiveHeaders = (value as List<String>),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get32,
+          set: _$set33,
         ),
       ],
-      instantiate: () => _i1.FeignClientSettings(),
-      constructor: _i2.BeanConstructor<_i1.FeignClientSettings>(
+      instantiate: _i2.FeignClientSettings.new,
+      constructor: _i1.BeanConstructor<_i2.FeignClientSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.FeignClientSettings.new, positional, named)
-                as _i1.FeignClientSettings),
+        create: _$create34,
       ),
     ),
-    _i2.BeanIntrospection<_i1.FeignEventStreamSettings>(
+    const _i1.BeanIntrospection<_i2.FeignEventStreamSettings>(
       className: r'FeignEventStreamSettings',
       properties: [
-        _i2.BeanProperty<_i1.FeignEventStreamSettings>(
+        _i1.BeanProperty<_i2.FeignEventStreamSettings>(
           r'reconnect',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.reconnect,
-          set: (bean, value) => bean.reconnect = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get35,
+          set: _$set36,
         ),
-        _i2.BeanProperty<_i1.FeignEventStreamSettings>(
+        _i1.BeanProperty<_i2.FeignEventStreamSettings>(
           r'reconnectDelay',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.reconnectDelay,
-          set: (bean, value) => bean.reconnectDelay = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get37,
+          set: _$set38,
         ),
-        _i2.BeanProperty<_i1.FeignEventStreamSettings>(
+        _i1.BeanProperty<_i2.FeignEventStreamSettings>(
           r'maxAttempts',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.maxAttempts,
-          set: (bean, value) => bean.maxAttempts = (value as int?),
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get39,
+          set: _$set40,
         ),
       ],
-      instantiate: () => _i1.FeignEventStreamSettings(),
-      constructor: _i2.BeanConstructor<_i1.FeignEventStreamSettings>(
+      instantiate: _i2.FeignEventStreamSettings.new,
+      constructor: _i1.BeanConstructor<_i2.FeignEventStreamSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.FeignEventStreamSettings.new, positional, named)
-                as _i1.FeignEventStreamSettings),
+        create: _$create41,
       ),
     ),
   ],

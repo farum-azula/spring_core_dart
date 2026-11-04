@@ -7,53 +7,37 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/src/config/cache_properties.dart'
-    as _i1;
+    as _i2;
 
-class _$CachePropertiesProxy implements _i1.CacheProperties, _i2.Advised {
-  _$CachePropertiesProxy(this._target, this._invoker);
+class _$CachePropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.CacheProperties {
+  _$CachePropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.CacheProperties _target;
+  final _i2.CacheProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i1.CacheType? get type => (this._invoker.invoke(
+  _i2.CacheType? get type => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
     const [],
     (_) => this._target.type,
-  ) as _i1.CacheType?);
+  ) as _i2.CacheType?);
 
   @override
-  List<String> get cacheNames => (this._invoker.invoke(
+  List<String> get cacheNames => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -62,229 +46,225 @@ class _$CachePropertiesProxy implements _i1.CacheProperties, _i2.Advised {
   ) as List<String>);
 
   @override
-  _i1.SimpleCacheProperties get simple => (this._invoker.invoke(
+  _i2.SimpleCacheProperties get simple => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
     const [],
     (_) => this._target.simple,
-  ) as _i1.SimpleCacheProperties);
+  ) as _i2.SimpleCacheProperties);
 
   @override
-  set type(_i1.CacheType? value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.type = (args[0] as _i1.CacheType?);
+  set type(_i2.CacheType? value) {
+    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
+      this._target.type = (args[0] as _i2.CacheType?);
       return null;
     });
   }
 
   @override
   set cacheNames(List<String> value) {
-    this._invoker.invoke(this, this._target, 4, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 4, [value], (args) {
       this._target.cacheNames = (args[0] as List<String>);
       return null;
     });
   }
 
   @override
-  set simple(_i1.SimpleCacheProperties value) {
-    this._invoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.simple = (args[0] as _i1.SimpleCacheProperties);
+  set simple(_i2.SimpleCacheProperties value) {
+    this.aopInvoker.invoke(this, this._target, 5, [value], (args) {
+      this._target.simple = (args[0] as _i2.SimpleCacheProperties);
       return null;
     });
   }
 }
 
+const _$target0 = _i1.AopTarget(
+  r'CacheProperties',
+  types: [r'CacheProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.cache')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get1(_i2.CacheProperties bean) => bean.type;
+void _$set2(_i2.CacheProperties bean, Object? value) =>
+    bean.type = (value as _i2.CacheType?);
+Object? _$get3(_i2.CacheProperties bean) => bean.cacheNames;
+void _$set4(_i2.CacheProperties bean, Object? value) =>
+    bean.cacheNames = (value as List<String>);
+Object? _$get5(_i2.CacheProperties bean) => bean.simple;
+void _$set6(_i2.CacheProperties bean, Object? value) =>
+    bean.simple = (value as _i2.SimpleCacheProperties);
+_i2.CacheProperties _$create7(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.CacheProperties();
+Object? _$get8(_i2.SimpleCacheProperties bean) => bean.timeToLive;
+void _$set9(_i2.SimpleCacheProperties bean, Object? value) =>
+    bean.timeToLive = (value as Duration?);
+Object? _$get10(_i2.SimpleCacheProperties bean) => bean.maxSize;
+void _$set11(_i2.SimpleCacheProperties bean, Object? value) =>
+    bean.maxSize = (value as int?);
+Object? _$get12(_i2.SimpleCacheProperties bean) => bean.caches;
+void _$set13(_i2.SimpleCacheProperties bean, Object? value) =>
+    bean.caches = (value as Map<String, _i2.CacheLimits>);
+_i2.SimpleCacheProperties _$create14(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SimpleCacheProperties();
+Object? _$get15(_i2.CacheLimits bean) => bean.timeToLive;
+void _$set16(_i2.CacheLimits bean, Object? value) =>
+    bean.timeToLive = (value as Duration?);
+Object? _$get17(_i2.CacheLimits bean) => bean.maxSize;
+void _$set18(_i2.CacheLimits bean, Object? value) =>
+    bean.maxSize = (value as int?);
+_i2.CacheLimits _$create19(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.CacheLimits();
+
 /// Beans found by `@ComponentScan` in `lib/src/config`.
-_i2.BeanModule get $cacheConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
   r'cacheConfigBeans',
   [
-    _i2.BeanDefinition<_i1.CacheProperties>(
+    _i1.BeanDefinition<_i2.CacheProperties>(
       name: r'cacheProperties',
       source: r'package:spring_boot_starter_cache/src/config/cache_properties.dart#CacheProperties',
-      types: const [_i1.CacheProperties],
-      create: (r) => _i1.CacheProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.cache')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.CacheProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.cache')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'type',
-            declaringType: r'CacheProperties',
-            targetType: r'CacheProperties',
-            declaringTypes: [r'CacheProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'type',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'CacheType',
-            targetTypes: [r'CacheProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.cache')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'cacheNames',
-            declaringType: r'CacheProperties',
-            targetType: r'CacheProperties',
-            declaringTypes: [r'CacheProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'cacheNames',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'CacheProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.cache')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'simple',
-            declaringType: r'CacheProperties',
-            targetType: r'CacheProperties',
-            declaringTypes: [r'CacheProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'simple',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'SimpleCacheProperties',
-            targetTypes: [r'CacheProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.cache')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'type',
-            declaringType: r'CacheProperties',
-            targetType: r'CacheProperties',
-            declaringTypes: [r'CacheProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'type',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'CacheType',
-            targetTypes: [r'CacheProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.cache')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'cacheNames',
-            declaringType: r'CacheProperties',
-            targetType: r'CacheProperties',
-            declaringTypes: [r'CacheProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'cacheNames',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'List',
-            targetTypes: [r'CacheProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.cache')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'simple',
-            declaringType: r'CacheProperties',
-            targetType: r'CacheProperties',
-            declaringTypes: [r'CacheProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'simple',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'SimpleCacheProperties',
-            targetTypes: [r'CacheProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.cache')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) =>
-            _$CachePropertiesProxy((target as _i1.CacheProperties), invoker),
+            _$CachePropertiesProxy((target as _i2.CacheProperties), invoker),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.CacheProperties>(
+    const _i1.BeanIntrospection<_i2.CacheProperties>(
       className: r'CacheProperties',
       properties: [
-        _i2.BeanProperty<_i1.CacheProperties>(
+        _i1.BeanProperty<_i2.CacheProperties>(
           r'type',
-          type: _i1.CacheType,
           nullable: true,
-          typeInfo: const _i2.EnumType<_i1.CacheType>(
-            _i1.CacheType.values,
+          typeInfo: _i1.EnumType<_i2.CacheType>(
+            _i2.CacheType.values,
             nullable: true,
           ),
-          get: (bean) => bean.type,
-          set: (bean, value) => bean.type = (value as _i1.CacheType?),
+          get: _$get1,
+          set: _$set2,
         ),
-        _i2.BeanProperty<_i1.CacheProperties>(
+        _i1.BeanProperty<_i2.CacheProperties>(
           r'cacheNames',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.cacheNames,
-          set: (bean, value) => bean.cacheNames = (value as List<String>),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get3,
+          set: _$set4,
         ),
-        _i2.BeanProperty<_i1.CacheProperties>(
+        _i1.BeanProperty<_i2.CacheProperties>(
           r'simple',
-          type: _i1.SimpleCacheProperties,
-          typeInfo: const _i2.ClassType<_i1.SimpleCacheProperties>(),
-          get: (bean) => bean.simple,
-          set: (bean, value) =>
-              bean.simple = (value as _i1.SimpleCacheProperties),
+          typeInfo: _i1.ClassType<_i2.SimpleCacheProperties>(),
+          get: _$get5,
+          set: _$set6,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.cache')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.CacheProperties(),
-      constructor: _i2.BeanConstructor<_i1.CacheProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.cache')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.CacheProperties.new,
+      constructor: _i1.BeanConstructor<_i2.CacheProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.CacheProperties.new, positional, named)
-                as _i1.CacheProperties),
+        create: _$create7,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SimpleCacheProperties>(
+    const _i1.BeanIntrospection<_i2.SimpleCacheProperties>(
       className: r'SimpleCacheProperties',
       properties: [
-        _i2.BeanProperty<_i1.SimpleCacheProperties>(
+        _i1.BeanProperty<_i2.SimpleCacheProperties>(
           r'timeToLive',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.timeToLive,
-          set: (bean, value) => bean.timeToLive = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get8,
+          set: _$set9,
         ),
-        _i2.BeanProperty<_i1.SimpleCacheProperties>(
+        _i1.BeanProperty<_i2.SimpleCacheProperties>(
           r'maxSize',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.maxSize,
-          set: (bean, value) => bean.maxSize = (value as int?),
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get10,
+          set: _$set11,
         ),
-        _i2.BeanProperty<_i1.SimpleCacheProperties>(
+        _i1.BeanProperty<_i2.SimpleCacheProperties>(
           r'caches',
-          type: Map<String, _i1.CacheLimits>,
-          typeInfo: const _i2.MapType<String, _i1.CacheLimits>(
-            _i2.ClassType<String>(),
-            _i2.ClassType<_i1.CacheLimits>(),
+          typeInfo: _i1.MapType<String, _i2.CacheLimits>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<_i2.CacheLimits>(),
           ),
-          get: (bean) => bean.caches,
-          set: (bean, value) =>
-              bean.caches = (value as Map<String, _i1.CacheLimits>),
+          get: _$get12,
+          set: _$set13,
         ),
       ],
-      instantiate: () => _i1.SimpleCacheProperties(),
-      constructor: _i2.BeanConstructor<_i1.SimpleCacheProperties>(
+      instantiate: _i2.SimpleCacheProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SimpleCacheProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SimpleCacheProperties.new, positional, named)
-                as _i1.SimpleCacheProperties),
+        create: _$create14,
       ),
     ),
-    _i2.BeanIntrospection<_i1.CacheLimits>(
+    const _i1.BeanIntrospection<_i2.CacheLimits>(
       className: r'CacheLimits',
       properties: [
-        _i2.BeanProperty<_i1.CacheLimits>(
+        _i1.BeanProperty<_i2.CacheLimits>(
           r'timeToLive',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.timeToLive,
-          set: (bean, value) => bean.timeToLive = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get15,
+          set: _$set16,
         ),
-        _i2.BeanProperty<_i1.CacheLimits>(
+        _i1.BeanProperty<_i2.CacheLimits>(
           r'maxSize',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.maxSize,
-          set: (bean, value) => bean.maxSize = (value as int?),
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get17,
+          set: _$set18,
         ),
       ],
-      instantiate: () => _i1.CacheLimits(),
-      constructor: _i2.BeanConstructor<_i1.CacheLimits>(
+      instantiate: _i2.CacheLimits.new,
+      constructor: _i1.BeanConstructor<_i2.CacheLimits>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.CacheLimits.new, positional, named)
-                as _i1.CacheLimits),
+        create: _$create19,
       ),
     ),
   ],

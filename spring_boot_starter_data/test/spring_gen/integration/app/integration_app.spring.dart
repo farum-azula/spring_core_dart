@@ -12,7 +12,7 @@ import 'dart:io' as _i13;
 
 import 'package:postgres/postgres.dart' as _i12;
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i14;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i15;
 import 'package:spring_boot_starter_cache/src/annotations.dart' as _i9;
@@ -28,115 +28,24 @@ import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i16;
 import 'package:sqlite3/sqlite3.dart' as _i11;
 
-import '../../../integration/app/integration_app.dart' as _i1;
+import '../../../integration/app/integration_app.dart' as _i2;
 
-class _$GateProxy extends _i1.Gate implements _i2.Advised {
-  _$GateProxy();
+class _$AuditorProxy with _i1.AdvisedWrapper implements _i2.Auditor {
+  _$AuditorProxy(this._target, this.aopInvoker);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$GateProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
+  final _i2.Auditor _target;
 
   @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<void> pause() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.pause()
-        : _$i.invokeAsync<void>(
-            this,
-            this,
-            0,
-            const [],
-            (args) => super.pause(),
-          );
-  }
-
-  @override
-  _i3.Future<void> Function()? get once {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.once
-        : (_$i.invoke(this, this, 1, const [], (_) => super.once)
-              as _i3.Future<void> Function()?);
-  }
-
-  @override
-  set once(_i3.Future<void> Function() value) {
-    final _$i = this._$invoker;
-    if (_$i == null) {
-      super.once = value;
-    } else {
-      _$i.invoke(this, this, 2, [value], (args) {
-        super.once = (args[0] as _i3.Future<void> Function());
-        return null;
-      });
-    }
-  }
-}
-
-class _$AuditorProxy implements _i1.Auditor, _i2.Advised {
-  _$AuditorProxy(this._target, this._invoker);
-
-  final _i1.Auditor _target;
-
-  final _i2.ProxyInvoker _invoker;
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i3.Future<void> record(String text) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> record(String text) => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
     0,
@@ -146,13 +55,13 @@ class _$AuditorProxy implements _i1.Auditor, _i2.Advised {
 
   @override
   _i3.Future<void> nested(String text, bool fail) =>
-      this._invoker.invokeAsync<void>(this, this._target, 1, [
+      this.aopInvoker.invokeAsync<void>(this, this._target, 1, [
         text,
         fail,
       ], (args) => this._target.nested((args[0] as String), (args[1] as bool)));
 
   @override
-  _i3.Future<void> mandatory(String text) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> mandatory(String text) => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
     2,
@@ -161,7 +70,7 @@ class _$AuditorProxy implements _i1.Auditor, _i2.Advised {
   );
 
   @override
-  _i3.Future<int> never() => this._invoker.invokeAsync<int>(
+  _i3.Future<int> never() => this.aopInvoker.invokeAsync<int>(
     this,
     this._target,
     3,
@@ -170,50 +79,26 @@ class _$AuditorProxy implements _i1.Auditor, _i2.Advised {
   );
 
   @override
-  _i1.AuditRepository get lines => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.lines,
-  ) as _i1.AuditRepository);
+  _i2.AuditRepository get lines => this._target.lines;
 }
 
-class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
-  _$WarehouseProxy(this._target, this._invoker);
+class _$WarehouseProxy with _i1.AdvisedWrapper implements _i2.Warehouse {
+  _$WarehouseProxy(this._target, this.aopInvoker);
 
-  final _i1.Warehouse _target;
+  final _i2.Warehouse _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   _i3.Future<void> addItem(String name, [Object? error]) =>
-      this._invoker.invokeAsync<void>(
+      this.aopInvoker.invokeAsync<void>(
         this,
         this._target,
         0,
@@ -224,7 +109,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
 
   @override
   _i3.Future<void> addItemTolerant(String name, Object error) =>
-      this._invoker.invokeAsync<void>(
+      this.aopInvoker.invokeAsync<void>(
         this,
         this._target,
         1,
@@ -237,7 +122,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
 
   @override
   _i3.Future<void> addWithAudit(String name, {required bool fail}) =>
-      this._invoker.invokeAsync<void>(
+      this.aopInvoker.invokeAsync<void>(
         this,
         this._target,
         2,
@@ -250,12 +135,12 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
 
   @override
   _i3.Future<void> addWithNested({required bool failNested}) =>
-      this._invoker.invokeAsync<void>(this, this._target, 3, [
+      this.aopInvoker.invokeAsync<void>(this, this._target, 3, [
         failNested,
       ], (args) => this._target.addWithNested(failNested: (args[0] as bool)));
 
   @override
-  _i3.Future<void> callMandatory() => this._invoker.invokeAsync<void>(
+  _i3.Future<void> callMandatory() => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
     4,
@@ -264,7 +149,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
   );
 
   @override
-  _i3.Future<int> callNever() => this._invoker.invokeAsync<int>(
+  _i3.Future<int> callNever() => this.aopInvoker.invokeAsync<int>(
     this,
     this._target,
     5,
@@ -273,7 +158,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
   );
 
   @override
-  _i3.Future<void> writeReadOnly() => this._invoker.invokeAsync<void>(
+  _i3.Future<void> writeReadOnly() => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
     6,
@@ -282,7 +167,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
   );
 
   @override
-  _i3.Future<int> countReadOnly() => this._invoker.invokeAsync<int>(
+  _i3.Future<int> countReadOnly() => this.aopInvoker.invokeAsync<int>(
     this,
     this._target,
     7,
@@ -292,25 +177,25 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
 
   @override
   _i3.Future<void> ship({required bool fail}) =>
-      this._invoker.invokeAsync<void>(this, this._target, 8, [
+      this.aopInvoker.invokeAsync<void>(this, this._target, 8, [
         fail,
       ], (args) => this._target.ship(fail: (args[0] as bool)));
 
   @override
   _i3.Future<int> sell(String sku, int amount) =>
-      this._invoker.invokeAsync<int>(this, this._target, 9, [
+      this.aopInvoker.invokeAsync<int>(this, this._target, 9, [
         sku,
         amount,
       ], (args) => this._target.sell((args[0] as String), (args[1] as int)));
 
   @override
   _i3.Future<int?> peekWithTimeout(String sku) =>
-      this._invoker.invokeAsync<int?>(this, this._target, 10, [
+      this.aopInvoker.invokeAsync<int?>(this, this._target, 10, [
         sku,
       ], (args) => this._target.peekWithTimeout((args[0] as String)));
 
   @override
-  _i3.Future<String?> takeJob() => this._invoker.invokeAsync<String?>(
+  _i3.Future<String?> takeJob() => this.aopInvoker.invokeAsync<String?>(
     this,
     this._target,
     11,
@@ -320,20 +205,20 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
 
   @override
   _i3.Future<void> rename(int id, String name) =>
-      this._invoker.invokeAsync<void>(this, this._target, 12, [
+      this.aopInvoker.invokeAsync<void>(this, this._target, 12, [
         id,
         name,
       ], (args) => this._target.rename((args[0] as int), (args[1] as String)));
 
   @override
-  _i3.Future<_i1.Stock?> lockFromOtherStore(String sku) =>
-      this._invoker.invokeAsync<_i1.Stock?>(this, this._target, 13, [
+  _i3.Future<_i2.Stock?> lockFromOtherStore(String sku) =>
+      this.aopInvoker.invokeAsync<_i2.Stock?>(this, this._target, 13, [
         sku,
       ], (args) => this._target.lockFromOtherStore((args[0] as String)));
 
   @override
   _i3.Future<_i3.Completer<Object?>> forgetsASave(_i3.Future<void> release) =>
-      this._invoker.invokeAsync<_i3.Completer<Object?>>(
+      this.aopInvoker.invokeAsync<_i3.Completer<Object?>>(
         this,
         this._target,
         14,
@@ -343,7 +228,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
 
   @override
   _i3.Future<void> archiveTitles(List<String> titles, {required bool fail}) =>
-      this._invoker.invokeAsync<void>(
+      this.aopInvoker.invokeAsync<void>(
         this,
         this._target,
         15,
@@ -356,7 +241,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
 
   @override
   _i3.Future<void> addItemAndArchive(String name, {required bool fail}) =>
-      this._invoker.invokeAsync<void>(
+      this.aopInvoker.invokeAsync<void>(
         this,
         this._target,
         16,
@@ -368,122 +253,50 @@ class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
       );
 
   @override
-  _i1.ItemRepository get items => (this._invoker.invoke(
-    this,
-    this._target,
-    17,
-    const [],
-    (_) => this._target.items,
-  ) as _i1.ItemRepository);
+  _i2.ItemRepository get items => this._target.items;
 
   @override
-  _i1.StockRepository get stock => (this._invoker.invoke(
-    this,
-    this._target,
-    18,
-    const [],
-    (_) => this._target.stock,
-  ) as _i1.StockRepository);
+  _i2.StockRepository get stock => this._target.stock;
 
   @override
-  _i1.JobRepository get jobs => (this._invoker.invoke(
-    this,
-    this._target,
-    19,
-    const [],
-    (_) => this._target.jobs,
-  ) as _i1.JobRepository);
+  _i2.JobRepository get jobs => this._target.jobs;
 
   @override
-  _i1.LabelRepository get labels => (this._invoker.invoke(
-    this,
-    this._target,
-    20,
-    const [],
-    (_) => this._target.labels,
-  ) as _i1.LabelRepository);
+  _i2.LabelRepository get labels => this._target.labels;
 
   @override
-  _i1.ShipmentRepository get shipments => (this._invoker.invoke(
-    this,
-    this._target,
-    21,
-    const [],
-    (_) => this._target.shipments,
-  ) as _i1.ShipmentRepository);
+  _i2.ShipmentRepository get shipments => this._target.shipments;
 
   @override
-  _i1.ArchiveRepository get archive => (this._invoker.invoke(
-    this,
-    this._target,
-    22,
-    const [],
-    (_) => this._target.archive,
-  ) as _i1.ArchiveRepository);
+  _i2.ArchiveRepository get archive => this._target.archive;
 
   @override
-  _i1.Auditor get auditor => (this._invoker.invoke(
-    this,
-    this._target,
-    23,
-    const [],
-    (_) => this._target.auditor,
-  ) as _i1.Auditor);
+  _i2.Auditor get auditor => this._target.auditor;
 
   @override
-  _i1.AuditRepository get audit => (this._invoker.invoke(
-    this,
-    this._target,
-    24,
-    const [],
-    (_) => this._target.audit,
-  ) as _i1.AuditRepository);
+  _i2.AuditRepository get audit => this._target.audit;
 
   @override
-  _i1.Gate get gate => (this._invoker.invoke(
-    this,
-    this._target,
-    25,
-    const [],
-    (_) => this._target.gate,
-  ) as _i1.Gate);
+  _i2.Gate get gate => this._target.gate;
 }
 
-class _$CatalogProxy implements _i1.Catalog, _i2.Advised {
-  _$CatalogProxy(this._target, this._invoker);
+class _$CatalogProxy with _i1.AdvisedWrapper implements _i2.Catalog {
+  _$CatalogProxy(this._target, this.aopInvoker);
 
-  final _i1.Catalog _target;
+  final _i2.Catalog _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i3.Future<_i4.Page<_i1.Item>> page(int count, _i4.Pageable pageable) =>
-      this._invoker.invokeAsync<_i4.Page<_i1.Item>>(
+  _i3.Future<_i4.Page<_i2.Item>> page(int count, _i4.Pageable pageable) =>
+      this.aopInvoker.invokeAsync<_i4.Page<_i2.Item>>(
         this,
         this._target,
         0,
@@ -493,35 +306,20 @@ class _$CatalogProxy implements _i1.Catalog, _i2.Advised {
       );
 
   @override
-  _i1.ItemRepository get items => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.items,
-  ) as _i1.ItemRepository);
+  _i2.ItemRepository get items => this._target.items;
 
   @override
-  int get calls => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.calls,
-  ) as int);
+  int get calls => this._target.calls;
 
   @override
   set calls(int value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.calls = (args[0] as int);
-      return null;
-    });
+    this._target.calls = value;
   }
 }
 
 /// Implements `ItemRepository`: `SimpleRepository` has the CRUD methods.
-class _$ItemRepositoryImpl extends _i5.SimpleRepository<_i1.Item, int>
-    implements _i1.ItemRepository {
+class _$ItemRepositoryImpl extends _i5.SimpleRepository<_i2.Item, int>
+    implements _i2.ItemRepository {
   _$ItemRepositoryImpl(super.operations);
 
   static const _findByCountGreaterThan = _i5.PartTree(
@@ -531,23 +329,23 @@ class _$ItemRepositoryImpl extends _i5.SimpleRepository<_i1.Item, int>
     ],
   );
 
-  static _$ItemRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$ItemRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$ItemRepositoryImpl(
-        r.dependency<_i5.RepositoryFactory>().operations<_i1.Item, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Item, int>(
           r'ItemRepository',
         ),
       );
 
   @override
-  _i3.Future<_i4.Page<_i1.Item>> findByCountGreaterThan(
+  _i3.Future<_i4.Page<_i2.Item>> findByCountGreaterThan(
     int count,
     _i4.Pageable pageable,
   ) => this.operations.page(_findByCountGreaterThan, [count], pageable);
 }
 
 /// Implements `StockRepository`: `SimpleRepository` has the CRUD methods.
-class _$StockRepositoryImpl extends _i5.SimpleRepository<_i1.Stock, int>
-    implements _i1.StockRepository {
+class _$StockRepositoryImpl extends _i5.SimpleRepository<_i2.Stock, int>
+    implements _i2.StockRepository {
   _$StockRepositoryImpl(super.operations);
 
   static const _findBySku = _i5.PartTree(r'findBySku', [
@@ -558,22 +356,22 @@ class _$StockRepositoryImpl extends _i5.SimpleRepository<_i1.Stock, int>
     _i5.OrPart([_i5.Part(r'sku')]),
   ]);
 
-  static _$StockRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$StockRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$StockRepositoryImpl(
-        r.dependency<_i5.RepositoryFactory>().operations<_i1.Stock, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Stock, int>(
           r'StockRepository',
         ),
       );
 
   @override
-  _i3.Future<_i1.Stock?> findBySku(String sku) => this.operations.one(
+  _i3.Future<_i2.Stock?> findBySku(String sku) => this.operations.one(
     _findBySku,
     [sku],
     lock: const _i6.Lock(_i6.LockMode.pessimisticWrite),
   );
 
   @override
-  _i3.Future<_i1.Stock?> findOneBySku(String sku) => this.operations.one(
+  _i3.Future<_i2.Stock?> findOneBySku(String sku) => this.operations.one(
     _findOneBySku,
     [sku],
     lock: const _i6.Lock(
@@ -584,8 +382,8 @@ class _$StockRepositoryImpl extends _i5.SimpleRepository<_i1.Stock, int>
 }
 
 /// Implements `JobRepository`: `SimpleRepository` has the CRUD methods.
-class _$JobRepositoryImpl extends _i5.SimpleRepository<_i1.Job, int>
-    implements _i1.JobRepository {
+class _$JobRepositoryImpl extends _i5.SimpleRepository<_i2.Job, int>
+    implements _i2.JobRepository {
   _$JobRepositoryImpl(super.operations);
 
   static const _findFirstByDoneFalseOrderById = _i5.PartTree(
@@ -597,15 +395,15 @@ class _$JobRepositoryImpl extends _i5.SimpleRepository<_i1.Job, int>
     sort: _i5.Sort([_i5.SortOrder.asc(r'id')]),
   );
 
-  static _$JobRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$JobRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$JobRepositoryImpl(
-        r.dependency<_i5.RepositoryFactory>().operations<_i1.Job, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Job, int>(
           r'JobRepository',
         ),
       );
 
   @override
-  _i3.Future<_i1.Job?> findFirstByDoneFalseOrderById() => this.operations.one(
+  _i3.Future<_i2.Job?> findFirstByDoneFalseOrderById() => this.operations.one(
     _findFirstByDoneFalseOrderById,
     const [],
     lock: const _i6.Lock(_i6.LockMode.pessimisticWrite, skipLocked: true),
@@ -613,52 +411,52 @@ class _$JobRepositoryImpl extends _i5.SimpleRepository<_i1.Job, int>
 }
 
 /// Implements `AuditRepository`: `SimpleRepository` has the CRUD methods.
-class _$AuditRepositoryImpl extends _i5.SimpleRepository<_i1.AuditLine, int>
-    implements _i1.AuditRepository {
+class _$AuditRepositoryImpl extends _i5.SimpleRepository<_i2.AuditLine, int>
+    implements _i2.AuditRepository {
   _$AuditRepositoryImpl(super.operations);
 
-  static _$AuditRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$AuditRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$AuditRepositoryImpl(
-        r.dependency<_i5.RepositoryFactory>().operations<_i1.AuditLine, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.AuditLine, int>(
           r'AuditRepository',
         ),
       );
 }
 
 /// Implements `LabelRepository`: `SimpleRepository` has the CRUD methods.
-class _$LabelRepositoryImpl extends _i5.SimpleRepository<_i1.Label, String>
-    implements _i1.LabelRepository {
+class _$LabelRepositoryImpl extends _i5.SimpleRepository<_i2.Label, String>
+    implements _i2.LabelRepository {
   _$LabelRepositoryImpl(super.operations);
 
-  static _$LabelRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$LabelRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$LabelRepositoryImpl(
-        r.dependency<_i5.RepositoryFactory>().operations<_i1.Label, String>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Label, String>(
           r'LabelRepository',
         ),
       );
 }
 
 /// Implements `ShipmentRepository`: `SimpleRepository` has the CRUD methods.
-class _$ShipmentRepositoryImpl extends _i5.SimpleRepository<_i1.Shipment, int>
-    implements _i1.ShipmentRepository {
+class _$ShipmentRepositoryImpl extends _i5.SimpleRepository<_i2.Shipment, int>
+    implements _i2.ShipmentRepository {
   _$ShipmentRepositoryImpl(super.operations);
 
-  static _$ShipmentRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$ShipmentRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$ShipmentRepositoryImpl(
-        r.dependency<_i5.RepositoryFactory>().operations<_i1.Shipment, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Shipment, int>(
           r'ShipmentRepository',
         ),
       );
 }
 
 /// Implements `ArchiveRepository`: `SimpleRepository` has the CRUD methods.
-class _$ArchiveRepositoryImpl extends _i5.SimpleRepository<_i1.Archived, int>
-    implements _i1.ArchiveRepository {
+class _$ArchiveRepositoryImpl extends _i5.SimpleRepository<_i2.Archived, int>
+    implements _i2.ArchiveRepository {
   _$ArchiveRepositoryImpl(super.operations);
 
-  static _$ArchiveRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$ArchiveRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$ArchiveRepositoryImpl(
-        r.dependency<_i5.RepositoryFactory>().operations<_i1.Archived, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Archived, int>(
           r'ArchiveRepository',
           annotations: const [
             _i6.UseStore(r'memory'),
@@ -668,118 +466,125 @@ class _$ArchiveRepositoryImpl extends _i5.SimpleRepository<_i1.Archived, int>
       );
 }
 
+const _$target0 = _i1.AopTarget(
+  r'Auditor',
+  types: [r'Auditor'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+const _$target1 = _i1.AopTarget(
+  r'Warehouse',
+  types: [r'Warehouse'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+const _$target2 = _i1.AopTarget(
+  r'Catalog',
+  types: [r'Catalog'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+
 /// Beans found by `@ComponentScan` in `lib/ and test/integration/app/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i1.ItemRepository>(
+    _i1.BeanDefinition<_i2.ItemRepository>(
       name: r'itemRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ItemRepository',
       types: const [
-        _i1.ItemRepository,
-        _i7.ListCrudRepository<_i1.Item, int>,
-        _i7.CrudRepository<_i1.Item, int>,
-        _i7.DataRepository<_i1.Item, int>,
+        _i2.ItemRepository,
+        _i7.ListCrudRepository<_i2.Item, int>,
+        _i7.CrudRepository<_i2.Item, int>,
+        _i7.DataRepository<_i2.Item, int>,
         _i7.ListCrudRepository<dynamic, dynamic>,
         _i7.CrudRepository<dynamic, dynamic>,
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ItemRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ItemRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.StockRepository>(
+    _i1.BeanDefinition<_i2.StockRepository>(
       name: r'stockRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#StockRepository',
       types: const [
-        _i1.StockRepository,
-        _i7.ListCrudRepository<_i1.Stock, int>,
-        _i7.CrudRepository<_i1.Stock, int>,
-        _i7.DataRepository<_i1.Stock, int>,
+        _i2.StockRepository,
+        _i7.ListCrudRepository<_i2.Stock, int>,
+        _i7.CrudRepository<_i2.Stock, int>,
+        _i7.DataRepository<_i2.Stock, int>,
         _i7.ListCrudRepository<dynamic, dynamic>,
         _i7.CrudRepository<dynamic, dynamic>,
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$StockRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches StockRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.JobRepository>(
+    _i1.BeanDefinition<_i2.JobRepository>(
       name: r'jobRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#JobRepository',
       types: const [
-        _i1.JobRepository,
-        _i7.ListCrudRepository<_i1.Job, int>,
-        _i7.CrudRepository<_i1.Job, int>,
-        _i7.DataRepository<_i1.Job, int>,
+        _i2.JobRepository,
+        _i7.ListCrudRepository<_i2.Job, int>,
+        _i7.CrudRepository<_i2.Job, int>,
+        _i7.DataRepository<_i2.Job, int>,
         _i7.ListCrudRepository<dynamic, dynamic>,
         _i7.CrudRepository<dynamic, dynamic>,
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$JobRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches JobRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.AuditRepository>(
+    _i1.BeanDefinition<_i2.AuditRepository>(
       name: r'auditRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#AuditRepository',
       types: const [
-        _i1.AuditRepository,
-        _i7.ListCrudRepository<_i1.AuditLine, int>,
-        _i7.CrudRepository<_i1.AuditLine, int>,
-        _i7.DataRepository<_i1.AuditLine, int>,
+        _i2.AuditRepository,
+        _i7.ListCrudRepository<_i2.AuditLine, int>,
+        _i7.CrudRepository<_i2.AuditLine, int>,
+        _i7.DataRepository<_i2.AuditLine, int>,
         _i7.ListCrudRepository<dynamic, dynamic>,
         _i7.CrudRepository<dynamic, dynamic>,
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuditRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches AuditRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.LabelRepository>(
+    _i1.BeanDefinition<_i2.LabelRepository>(
       name: r'labelRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#LabelRepository',
       types: const [
-        _i1.LabelRepository,
-        _i7.CrudRepository<_i1.Label, String>,
-        _i7.DataRepository<_i1.Label, String>,
+        _i2.LabelRepository,
+        _i7.CrudRepository<_i2.Label, String>,
+        _i7.DataRepository<_i2.Label, String>,
         _i7.CrudRepository<dynamic, dynamic>,
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$LabelRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches LabelRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.ShipmentRepository>(
+    _i1.BeanDefinition<_i2.ShipmentRepository>(
       name: r'shipmentRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ShipmentRepository',
       types: const [
-        _i1.ShipmentRepository,
-        _i7.ListCrudRepository<_i1.Shipment, int>,
-        _i7.CrudRepository<_i1.Shipment, int>,
-        _i7.DataRepository<_i1.Shipment, int>,
+        _i2.ShipmentRepository,
+        _i7.ListCrudRepository<_i2.Shipment, int>,
+        _i7.CrudRepository<_i2.Shipment, int>,
+        _i7.DataRepository<_i2.Shipment, int>,
         _i7.ListCrudRepository<dynamic, dynamic>,
         _i7.CrudRepository<dynamic, dynamic>,
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ShipmentRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ShipmentRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.ArchiveRepository>(
+    _i1.BeanDefinition<_i2.ArchiveRepository>(
       name: r'archiveRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ArchiveRepository',
       types: const [
-        _i1.ArchiveRepository,
-        _i7.ListCrudRepository<_i1.Archived, int>,
-        _i7.CrudRepository<_i1.Archived, int>,
-        _i7.DataRepository<_i1.Archived, int>,
+        _i2.ArchiveRepository,
+        _i7.ListCrudRepository<_i2.Archived, int>,
+        _i7.CrudRepository<_i2.Archived, int>,
+        _i7.DataRepository<_i2.Archived, int>,
         _i7.ListCrudRepository<dynamic, dynamic>,
         _i7.CrudRepository<dynamic, dynamic>,
         _i7.DataRepository<dynamic, dynamic>,
@@ -789,70 +594,27 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i6.UseStore(r'memory'),
         _i6.UseDataSource(r'archive'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ArchiveRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.Gate>(
+    _i1.BeanDefinition<_i2.Gate>(
       name: r'gate',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Gate',
-      types: const [_i1.Gate],
-      create: (r) => _$GateProxy(),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'pause',
-            declaringType: r'Gate',
-            targetType: r'Gate',
-            declaringTypes: [r'Gate'],
-            returnType: r'Future',
-            targetTypes: [r'Gate'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'once',
-            declaringType: r'Gate',
-            targetType: r'Gate',
-            declaringTypes: [r'Gate'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Function',
-            targetTypes: [r'Gate'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'once',
-            declaringType: r'Gate',
-            targetType: r'Gate',
-            declaringTypes: [r'Gate'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'Function',
-            targetTypes: [r'Gate'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$GateProxy ? bean._$advise(invoker) : null,
-      ),
+      create: (r) => _i2.Gate(),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.Auditor>(
+    _i1.BeanDefinition<_i2.Auditor>(
       name: r'auditor',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Auditor',
-      types: const [_i1.Auditor],
-      dependencies: const [_i2.Dependency(_i1.AuditRepository, name: r'lines')],
+      dependencies: const [_i1.Dependency(_i2.AuditRepository, name: r'lines')],
       create: (r) =>
-          _i1.Auditor(r.dependency<_i1.AuditRepository>(name: r'lines')),
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
+          _i2.Auditor(r.dependency<_i2.AuditRepository>(name: r'lines')),
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'record',
-            declaringType: r'Auditor',
-            targetType: r'Auditor',
-            declaringTypes: [r'Auditor'],
+          _i1.MethodSignature.of(
+            r'record',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
@@ -860,15 +622,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
               _i8.Transactional(propagation: _i8.Propagation.requiresNew),
             ],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Auditor'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'nested',
-            declaringType: r'Auditor',
-            targetType: r'Auditor',
-            declaringTypes: [r'Auditor'],
+          _i1.MethodSignature.of(
+            r'nested',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'text', r'fail'],
@@ -876,15 +633,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
               _i8.Transactional(propagation: _i8.Propagation.nested),
             ],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Auditor'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'mandatory',
-            declaringType: r'Auditor',
-            targetType: r'Auditor',
-            declaringTypes: [r'Auditor'],
+          _i1.MethodSignature.of(
+            r'mandatory',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
@@ -892,489 +644,246 @@ _i2.BeanModule get $application => _i2.BeanModule(
               _i8.Transactional(propagation: _i8.Propagation.mandatory),
             ],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Auditor'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'never',
-            declaringType: r'Auditor',
-            targetType: r'Auditor',
-            declaringTypes: [r'Auditor'],
+          _i1.MethodSignature.of(
+            r'never',
+            _$target0,
             returnType: r'Future',
             annotations: [
               _i8.Transactional(propagation: _i8.Propagation.never),
             ],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Auditor'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'lines',
-            declaringType: r'Auditor',
-            targetType: r'Auditor',
-            declaringTypes: [r'Auditor'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'AuditRepository',
-            targetTypes: [r'Auditor'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         create: (target, invoker) =>
-            _$AuditorProxy((target as _i1.Auditor), invoker),
+            _$AuditorProxy((target as _i2.Auditor), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.Warehouse>(
+    _i1.BeanDefinition<_i2.Warehouse>(
       name: r'warehouse',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Warehouse',
-      types: const [_i1.Warehouse],
       dependencies: const [
-        _i2.Dependency(_i1.ItemRepository, name: r'items'),
-        _i2.Dependency(_i1.StockRepository, name: r'stock'),
-        _i2.Dependency(_i1.JobRepository, name: r'jobs'),
-        _i2.Dependency(_i1.LabelRepository, name: r'labels'),
-        _i2.Dependency(_i1.ShipmentRepository, name: r'shipments'),
-        _i2.Dependency(_i1.ArchiveRepository, name: r'archive'),
-        _i2.Dependency(_i1.Auditor, name: r'auditor'),
-        _i2.Dependency(_i1.AuditRepository, name: r'audit'),
-        _i2.Dependency(_i1.Gate, name: r'gate'),
+        _i1.Dependency(_i2.ItemRepository, name: r'items'),
+        _i1.Dependency(_i2.StockRepository, name: r'stock'),
+        _i1.Dependency(_i2.JobRepository, name: r'jobs'),
+        _i1.Dependency(_i2.LabelRepository, name: r'labels'),
+        _i1.Dependency(_i2.ShipmentRepository, name: r'shipments'),
+        _i1.Dependency(_i2.ArchiveRepository, name: r'archive'),
+        _i1.Dependency(_i2.Auditor, name: r'auditor'),
+        _i1.Dependency(_i2.AuditRepository, name: r'audit'),
+        _i1.Dependency(_i2.Gate, name: r'gate'),
       ],
-      create: (r) => _i1.Warehouse(
-        r.dependency<_i1.ItemRepository>(name: r'items'),
-        r.dependency<_i1.StockRepository>(name: r'stock'),
-        r.dependency<_i1.JobRepository>(name: r'jobs'),
-        r.dependency<_i1.LabelRepository>(name: r'labels'),
-        r.dependency<_i1.ShipmentRepository>(name: r'shipments'),
-        r.dependency<_i1.ArchiveRepository>(name: r'archive'),
-        r.dependency<_i1.Auditor>(name: r'auditor'),
-        r.dependency<_i1.AuditRepository>(name: r'audit'),
-        r.dependency<_i1.Gate>(name: r'gate'),
+      create: (r) => _i2.Warehouse(
+        r.dependency<_i2.ItemRepository>(name: r'items'),
+        r.dependency<_i2.StockRepository>(name: r'stock'),
+        r.dependency<_i2.JobRepository>(name: r'jobs'),
+        r.dependency<_i2.LabelRepository>(name: r'labels'),
+        r.dependency<_i2.ShipmentRepository>(name: r'shipments'),
+        r.dependency<_i2.ArchiveRepository>(name: r'archive'),
+        r.dependency<_i2.Auditor>(name: r'auditor'),
+        r.dependency<_i2.AuditRepository>(name: r'audit'),
+        r.dependency<_i2.Gate>(name: r'gate'),
       ),
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'addItem',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'addItem',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'Object'],
             parameterNames: [r'name', r'error'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'addItemTolerant',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'addItemTolerant',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'Object'],
             parameterNames: [r'name', r'error'],
             annotations: [
-              _i8.Transactional(noRollbackFor: [_i1.Soft]),
+              _i8.Transactional(noRollbackFor: [_i2.Soft]),
             ],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'addWithAudit',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'addWithAudit',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'name', r'fail'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'addWithNested',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'addWithNested',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'failNested'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'callMandatory',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'callMandatory',
+            _$target1,
             returnType: r'Future',
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'callNever',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'callNever',
+            _$target1,
             returnType: r'Future',
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'writeReadOnly',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'writeReadOnly',
+            _$target1,
             returnType: r'Future',
             annotations: [_i8.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'countReadOnly',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'countReadOnly',
+            _$target1,
             returnType: r'Future',
             annotations: [_i8.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'ship',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'ship',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'fail'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'sell',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'sell',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'sku', r'amount'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'peekWithTimeout',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'peekWithTimeout',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'sku'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'takeJob',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'takeJob',
+            _$target1,
             returnType: r'Future',
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'rename',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'rename',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'int', r'String'],
             parameterNames: [r'id', r'name'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'lockFromOtherStore',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'lockFromOtherStore',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'sku'],
             annotations: [_i8.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'forgetsASave',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'forgetsASave',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'Future'],
             parameterNames: [r'release'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'archiveTitles',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'archiveTitles',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'List', r'bool'],
             parameterNames: [r'titles', r'fail'],
             annotations: [_i8.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'addItemAndArchive',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
+          _i1.MethodSignature.of(
+            r'addItemAndArchive',
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'name', r'fail'],
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'items',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'ItemRepository',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'stock',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'StockRepository',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'jobs',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'JobRepository',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'labels',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'LabelRepository',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'shipments',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'ShipmentRepository',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'archive',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'ArchiveRepository',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'auditor',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Auditor',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'audit',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'AuditRepository',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'gate',
-            declaringType: r'Warehouse',
-            targetType: r'Warehouse',
-            declaringTypes: [r'Warehouse'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Gate',
-            targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         create: (target, invoker) =>
-            _$WarehouseProxy((target as _i1.Warehouse), invoker),
+            _$WarehouseProxy((target as _i2.Warehouse), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.Catalog>(
+    _i1.BeanDefinition<_i2.Catalog>(
       name: r'catalog',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Catalog',
-      types: const [_i1.Catalog],
-      dependencies: const [_i2.Dependency(_i1.ItemRepository, name: r'items')],
+      dependencies: const [_i1.Dependency(_i2.ItemRepository, name: r'items')],
       create: (r) =>
-          _i1.Catalog(r.dependency<_i1.ItemRepository>(name: r'items')),
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
+          _i2.Catalog(r.dependency<_i2.ItemRepository>(name: r'items')),
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'page',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
+          _i1.MethodSignature.of(
+            r'page',
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'int', r'Pageable'],
             parameterNames: [r'count', r'pageable'],
             annotations: [_i9.Cacheable(r'items')],
             annotationTypes: [r'Cacheable'],
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'items',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'ItemRepository',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'calls',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'calls',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         create: (target, invoker) =>
-            _$CatalogProxy((target as _i1.Catalog), invoker),
+            _$CatalogProxy((target as _i2.Catalog), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i5.EntityIntrospections>(
+    _i1.BeanDefinition<_i5.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
       types: const [_i5.EntityIntrospections],
       create: (r) => _i5.EntityIntrospections([
-        _i5.EntityIntrospection<_i1.Item>(
+        _i5.EntityIntrospection<_i2.Item>(
           r'Item',
           const [
             _i5.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'name',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'count',
-              _i2.ClassType<int>(),
+              _i1.ClassType<int>(),
               parameter: true,
               writable: true,
               hasDefaultValue: true,
@@ -1382,7 +891,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             ),
             _i5.EntityProperty(
               r'version',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i6.Version()],
               parameter: true,
               writable: true,
@@ -1395,7 +904,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             2 => e.count,
             _ => e.version,
           },
-          create: (v) => _i1.Item(
+          create: (v) => _i2.Item(
             name: v[1] as String,
             count: v[2] as int,
             id: v[0] as int?,
@@ -1409,25 +918,25 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _ => null,
           },
         ),
-        _i5.EntityIntrospection<_i1.Stock>(
+        _i5.EntityIntrospection<_i2.Stock>(
           r'Stock',
           const [
             _i5.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'sku',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'quantity',
-              _i2.ClassType<int>(),
+              _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
@@ -1438,7 +947,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             1 => e.sku,
             _ => e.quantity,
           },
-          create: (v) => _i1.Stock(
+          create: (v) => _i2.Stock(
             sku: v[1] as String,
             quantity: v[2] as int,
             id: v[0] as int?,
@@ -1450,25 +959,25 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _ => null,
           },
         ),
-        _i5.EntityIntrospection<_i1.Job>(
+        _i5.EntityIntrospection<_i2.Job>(
           r'Job',
           const [
             _i5.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'name',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'done',
-              _i2.ClassType<bool>(),
+              _i1.ClassType<bool>(),
               parameter: true,
               writable: true,
               hasDefaultValue: true,
@@ -1481,7 +990,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             1 => e.name,
             _ => e.done,
           },
-          create: (v) => _i1.Job(
+          create: (v) => _i2.Job(
             name: v[1] as String,
             done: v[2] as bool,
             id: v[0] as int?,
@@ -1493,19 +1002,19 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _ => null,
           },
         ),
-        _i5.EntityIntrospection<_i1.AuditLine>(
+        _i5.EntityIntrospection<_i2.AuditLine>(
           r'AuditLine',
           const [
             _i5.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'text',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
@@ -1515,25 +1024,25 @@ _i2.BeanModule get $application => _i2.BeanModule(
             0 => e.id,
             _ => e.text,
           },
-          create: (v) => _i1.AuditLine(text: v[1] as String, id: v[0] as int?),
+          create: (v) => _i2.AuditLine(text: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.text = v as String,
             _ => null,
           },
         ),
-        _i5.EntityIntrospection<_i1.Label>(
+        _i5.EntityIntrospection<_i2.Label>(
           r'Label',
           const [
             _i5.EntityProperty(
               r'name',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               annotations: [_i6.Id()],
               parameter: true,
             ),
             _i5.EntityProperty(
               r'version',
-              _i2.ClassType<int>(),
+              _i1.ClassType<int>(),
               annotations: [_i6.Version()],
               parameter: true,
               hasDefaultValue: true,
@@ -1545,27 +1054,27 @@ _i2.BeanModule get $application => _i2.BeanModule(
             0 => e.name,
             _ => e.version,
           },
-          create: (v) => _i1.Label(v[0] as String, version: v[1] as int),
+          create: (v) => _i2.Label(v[0] as String, version: v[1] as int),
         ),
-        _i5.EntityIntrospection<_i1.Shipment>(
+        _i5.EntityIntrospection<_i2.Shipment>(
           r'Shipment',
           const [
             _i5.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'destination',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'parcels',
-              _i2.ListType<_i1.Parcel>(_i2.ClassType<_i1.Parcel>()),
+              _i1.ListType<_i2.Parcel>(_i1.ClassType<_i2.Parcel>()),
               annotations: [_i6.MappedCollection()],
               parameter: true,
               writable: true,
@@ -1579,49 +1088,49 @@ _i2.BeanModule get $application => _i2.BeanModule(
             1 => e.destination,
             _ => e.parcels,
           },
-          create: (v) => _i1.Shipment(
+          create: (v) => _i2.Shipment(
             destination: v[1] as String,
-            parcels: v[2] as List<_i1.Parcel>,
+            parcels: v[2] as List<_i2.Parcel>,
             id: v[0] as int?,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.destination = v as String,
-            2 => e.parcels = v as List<_i1.Parcel>,
+            2 => e.parcels = v as List<_i2.Parcel>,
             _ => null,
           },
         ),
-        _i5.EntityIntrospection<_i1.Parcel>(
+        _i5.EntityIntrospection<_i2.Parcel>(
           r'Parcel',
           const [
             _i5.EntityProperty(
               r'label',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
           annotations: const [_i6.Table(r'parcels')],
           get: (e, i) => e.label,
-          create: (v) => _i1.Parcel(label: v[0] as String),
+          create: (v) => _i2.Parcel(label: v[0] as String),
           write: (e, i, v) => switch (i) {
             0 => e.label = v as String,
             _ => null,
           },
         ),
-        _i5.EntityIntrospection<_i1.Archived>(
+        _i5.EntityIntrospection<_i2.Archived>(
           r'Archived',
           const [
             _i5.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
             _i5.EntityProperty(
               r'title',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
@@ -1631,7 +1140,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             0 => e.id,
             _ => e.title,
           },
-          create: (v) => _i1.Archived(title: v[1] as String, id: v[0] as int?),
+          create: (v) => _i2.Archived(title: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.title = v as String,
@@ -1640,14 +1149,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ]),
     ),
-    _i2.BeanDefinition<_i5.JdbcDriver>(
+    _i1.BeanDefinition<_i5.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
       types: const [_i5.JdbcDriver],
       conditions: [_i5.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i2.BeanDefinition<_i5.JdbcDriver>(
+    _i1.BeanDefinition<_i5.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
       types: const [_i5.JdbcDriver],
@@ -1656,8 +1165,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   ],
   imports: [_i10.dataConfigBeans],
-  typeTests: {_i1.Soft: (value) => value is _i1.Soft},
-  typeDepths: {_i1.Soft: 2},
+  typeTests: {_i2.Soft: (value) => value is _i2.Soft},
+  typeDepths: {_i2.Soft: 2},
 );
 
 final class _$Sqlite3Binding implements _i5.SqliteBinding {
@@ -1937,7 +1446,7 @@ _i5.JdbcDriver _$postgresJdbcDriver() =>
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i2.SpringApplication get springApplication => _i2.SpringApplication(
+_i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
     _i14.springBootAutoConfiguration,
@@ -1990,31 +1499,31 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '0f8456ed',
+  fingerprint: '27a17127',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i2.ConfigurableApplicationContext reloadApplication(
-  _i2.ConfigurableApplicationContext running, {
+_i1.ConfigurableApplicationContext reloadApplication(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i2.ConfigurableApplicationContext running, {
+Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

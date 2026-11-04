@@ -78,6 +78,99 @@ abstract interface class Advised {
   bool removeAdvice(MethodInterceptor advice);
 }
 
+/// The [Advised] members of a generated wrapper proxy, which holds the
+/// bean and runs its calls through [aopInvoker].
+///
+/// Generated code mixes it in, so each proxy class declares only its
+/// fields and the bean's members. Applications never use it.
+///
+/// ```dart
+/// // The shape of a generated wrapper proxy.
+/// class _$CalculatorProxy with AdvisedWrapper implements Calculator {
+///   _$CalculatorProxy(this._target, this.aopInvoker);
+///   final Calculator _target;
+///   @override
+///   final ProxyInvoker aopInvoker;
+///   @override
+///   Object get aopTarget => _target;
+///   // One override per member, through aopInvoker.
+/// }
+/// ```
+///
+/// Spring (Java): `JdkDynamicAopProxy`, which implements `Advised` by
+/// delegating to its `AdvisedSupport`.
+mixin AdvisedWrapper implements Advised {
+  /// The invoker that runs the proxy's calls through the advice and holds
+  /// its advisors.
+  ProxyInvoker get aopInvoker;
+
+  @override
+  List<PointcutAdvisor> get aopAdvisors => aopInvoker.advisors;
+
+  @override
+  void addAdvisor(PointcutAdvisor advisor) => aopInvoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) =>
+      aopInvoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(MethodInterceptor advice) => aopInvoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) =>
+      aopInvoker.removeAdvice(advice);
+}
+
+/// The [Advised] members of a generated subclass proxy, the bean itself:
+/// its members call `super` directly until advice is attached by setting
+/// [aopInvoker].
+///
+/// Generated code mixes it in, so each proxy class declares only its
+/// constructor and the bean's members. Applications never use it.
+///
+/// ```dart
+/// // The shape of a generated subclass proxy.
+/// class _$CounterProxy extends Counter with AdvisedSubclass {
+///   @override
+///   int next() {
+///     final _$i = this.aopInvoker;
+///     return _$i == null ? super.next() : _$i.invoke(...) as int;
+///   }
+/// }
+/// ```
+///
+/// Spring (Java): a CGLIB proxy, whose `Advised` methods its
+/// `AdvisedSupport` callbacks implement.
+mixin AdvisedSubclass implements Advised {
+  /// The invoker the auto proxy creator attaches when advice matches the
+  /// bean; `null` before (or when none does), and the members then call
+  /// `super` directly.
+  ProxyInvoker? aopInvoker;
+
+  @override
+  Object get aopTarget => this;
+
+  @override
+  List<PointcutAdvisor> get aopAdvisors => aopInvoker?.advisors ?? const [];
+
+  @override
+  void addAdvisor(PointcutAdvisor advisor) =>
+      (aopInvoker ?? ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) =>
+      (aopInvoker ?? ProxyInvoker.notAdvised(this)).removeAdvisor(advisor);
+
+  @override
+  void addAdvice(MethodInterceptor advice) =>
+      (aopInvoker ?? ProxyInvoker.notAdvised(this)).addAdvice(advice);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) =>
+      (aopInvoker ?? ProxyInvoker.notAdvised(this)).removeAdvice(advice);
+}
+
 /// An extra interface that a `@DeclareParents` field adds to the proxies of
 /// matching beans, with the way to create its implementation.
 ///
@@ -247,16 +340,17 @@ final class AopProxyFactory {
        unavailableReason = reason;
 
   /// A bean the build gave no proxy class: no pointcut it knows of matches
-  /// the bean ([reason] says so). Nothing is generated for its members, so
-  /// advice registered at run time without the build seeing it (an
-  /// advisor bean added by hand to a context) is not applied to it; build
-  /// with the option `aop_prune: false` to keep every proxy.
-  const AopProxyFactory.pruned({required String reason})
+  /// the bean ([reason] says so, [prunedReason] when not given). Nothing
+  /// is generated for its members, so advice registered at run time
+  /// without the build seeing it (an advisor bean added by hand to a
+  /// context) is not applied to it; build with the option
+  /// `aop_prune: false` to keep every proxy.
+  const AopProxyFactory.pruned({String? reason})
     : signatures = const [],
       introductions = const [],
       _create = null,
       _advise = null,
-      unavailableReason = reason;
+      unavailableReason = reason ?? prunedReason;
 
   /// A factory for a bean whose class cannot be implemented but can be
   /// extended, which the container creates as a generated subclass.
@@ -286,6 +380,13 @@ final class AopProxyFactory {
        introductions = List.unmodifiable(introductions),
        _create = null,
        unavailableReason = null;
+
+  /// The [unavailableReason] of [AopProxyFactory.pruned] when the build
+  /// gave none (it writes none, so release builds carry one copy of it).
+  static const prunedReason =
+      'the build found no pointcut of the application that matches it, so '
+      'it generated no proxy class for it (set the build option '
+      'aop_prune: false to generate one for every bean).';
 
   /// The bean's advisable members; the generated proxy refers to each by
   /// its index in this list.

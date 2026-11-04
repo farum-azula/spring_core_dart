@@ -8,6 +8,8 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart/aop.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/flutter_scanning.dart'
+    show mixesChangeNotifierIn;
 
 /// Checks the AOP declarations of the scanned [module] and adjusts its
 /// proxies before the module is emitted.
@@ -44,9 +46,12 @@ import 'package:spring_core_dart_generator/src/bean_model.dart';
 /// `@Validated`: the pointcut, or the advisor, declares them in a
 /// `static const annotationTypes` list; when one declares none, any
 /// annotation from outside `package:spring_core_dart` and the SDK keeps
-/// it), when it is a subclass proxy (the proxy is the bean itself), when
-/// it has an introduction, and when a pointcut might match it. Annotations
-/// of the SDK (`@override`) and of `package:meta` never keep a proxy.
+/// it), when it has an introduction, when its proxy class mixes
+/// `ChangeNotifier` in (a `@ChangeNotifierComponent` that is not one), and
+/// when a pointcut might match it. A subclass proxy (the bean is created
+/// as the generated subclass) is pruned like a wrapper: the bean is then
+/// created as its own class. Annotations of the SDK (`@override`) and of
+/// `package:meta` never keep a proxy.
 ///
 /// ```dart
 /// // In the @SpringBootApplication output: prune, knowing the advice of
@@ -185,20 +190,31 @@ void analyzeAop(
     final proxy = bean.proxy;
     if (proxy == null ||
         proxy.unavailableReason != null ||
-        proxy.subclass != null ||
+        mixesChangeNotifierIn(proxy.classAnnotations, proxy.targetType) ||
         proxy.introductions.isNotEmpty ||
         bean.aspect != null ||
-        _mayBeAdvisedElsewhere(proxy, foreign)) {
+        _classMayBeAdvised(proxy, foreign)) {
       continue;
     }
     final names = [...bean.aliases, ...bean.qualifiers];
-    final matched = proxy.members.any((member) {
-      final signature = _signature(proxy, member);
-      return expressions.any(
-        (pointcut) => pointcut.matchesBean(signature, bean.name, names),
-      );
-    });
-    if (!matched) {
+    // The members a pointcut may match, or an annotation-driven advisor
+    // through their own annotations; the others are not proxied.
+    final advised = {
+      for (final member in proxy.members)
+        if (_memberMayBeAdvised(proxy, member, foreign) ||
+            expressions.any(
+              (pointcut) => pointcut.matchesBean(
+                _signature(proxy, member),
+                bean.name,
+                names,
+              ),
+            ))
+          member,
+    };
+    if (advised.isNotEmpty && advised.length < proxy.members.length) {
+      proxy.advisedMembers = advised;
+    }
+    if (advised.isEmpty) {
       proxy.pruned = true;
       proxy.unavailableReason =
           'the build found no pointcut of the application that matches '
@@ -278,31 +294,44 @@ bool _isAdvisor(BeanModel bean) => bean.exposedTypes.any(
 // a bean keeps its proxy when it carries one of the annotations they
 // declare, or, when one of them declares none, any annotation from
 // outside `spring_core_dart` and the SDK.
-bool _mayBeAdvisedElsewhere(ProxyModel proxy, ForeignAdvice foreign) {
+//
+// A class-level annotation (`@Transactional` on the class) concerns every
+// member: the whole proxy is kept.
+bool _classMayBeAdvised(ProxyModel proxy, ForeignAdvice foreign) =>
+    _anyAdvice(proxy, proxy.classAnnotations, foreign);
+
+// The same for the annotations of one member: on it and on the
+// declarations it overrides, on the class (and superclasses) its body is
+// in, on its parameters (`@Valid`).
+bool _memberMayBeAdvised(
+  ProxyModel proxy,
+  ProxyMember member,
+  ForeignAdvice foreign,
+) => _anyAdvice(proxy, [
+  ...member.mergedAnnotations,
+  ...member.implementingTypeAnnotations,
+  for (final level in member.superclassAnnotations) ...level,
+  for (final parameter in member.parameters) ...parameter.annotations,
+], foreign);
+
+bool _anyAdvice(
+  ProxyModel proxy,
+  List<DartObject> annotations,
+  ForeignAdvice foreign,
+) {
   // `@Validated` on a `@ConfigurationProperties` class validates the bound
   // properties once, at startup; method validation leaves such classes out
   // (Spring Boot's `MethodValidationExcludeFilter`), so it advises nothing.
   final configurationProperties = proxy.classAnnotations.any(
     (a) => a.type?.element?.name == 'ConfigurationProperties',
   );
-  return _annotationsOf(proxy).any(
+  return annotations.any(
     (annotation) =>
         !(configurationProperties &&
             annotation.type?.element?.name == 'Validated') &&
         _mayBeAdvice(annotation, foreign),
   );
 }
-
-List<DartObject> _annotationsOf(ProxyModel proxy) => [
-  ...proxy.classAnnotations,
-  for (final member in proxy.members) ...[
-    ...member.mergedAnnotations,
-    ...member.implementingTypeAnnotations,
-    for (final level in member.superclassAnnotations) ...level,
-  ],
-  for (final member in proxy.members)
-    for (final parameter in member.parameters) ...parameter.annotations,
-];
 
 bool _mayBeAdvice(DartObject annotation, ForeignAdvice foreign) {
   final element = annotation.type?.element;

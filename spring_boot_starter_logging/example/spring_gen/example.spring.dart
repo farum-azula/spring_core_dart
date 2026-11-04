@@ -21,15 +21,12 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
   _i1.BeanDefinition<_i2.Checkout>(
     name: r'checkout',
     source: r'asset:spring_boot_starter_logging/example/example.dart#Checkout',
-    types: const [_i2.Checkout],
     create: (r) => _i2.Checkout(),
     annotations: const [
       _i1.Service(),
       _i1.Log(topic: r'shop.checkout'),
     ],
-    aopProxy: _i1.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches Checkout, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i1.AopProxyFactory.pruned(),
   ),
   _i1.BeanDefinition<_i2.PayOnStartup>(
     name: r'payOnStartup',
@@ -48,9 +45,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       _i1.Component(),
       _i1.Log(topic: r'shop.startup'),
     ],
-    aopProxy: _i1.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches PayOnStartup, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i1.AopProxyFactory.pruned(),
   ),
 ]);
 
@@ -108,7 +103,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '59acda19',
+  fingerprint: '76c2c1af',
 );
 
 /// Starts the application: config files, environment, context, runners

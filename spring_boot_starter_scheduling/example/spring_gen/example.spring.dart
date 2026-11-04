@@ -8,7 +8,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_dart/src/runners.dart' as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i7;
@@ -17,62 +17,62 @@ import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i3;
 import 'package:spring_boot_starter_scheduling/src/task_scheduler.dart' as _i5;
 
-import '../example.dart' as _i2;
+import '../example.dart' as _i1;
+
+Object? _$invoke0(_i1.Heartbeat bean, List<Object?> arguments) {
+  bean.beat();
+  return null;
+}
+
+Object? _$invoke1(_i1.Heartbeat bean, List<Object?> arguments) => bean.report();
 
 /// Beans found by `@ComponentScan` in `example/`.
-_i1.BeanModule get $application => _i1.BeanModule(r'application', [
-  _i1.BeanDefinition<_i2.Heartbeat>(
+_i2.BeanModule get $application => _i2.BeanModule(r'application', [
+  _i2.BeanDefinition<_i1.Heartbeat>(
     name: r'heartbeat',
     source:
         r'asset:spring_boot_starter_scheduling/example/example.dart#Heartbeat',
-    types: const [_i2.Heartbeat],
-    create: (r) => _i2.Heartbeat(),
+    create: (r) => _i1.Heartbeat(),
     annotatedMethods: [
-      _i1.BeanMethod<_i2.Heartbeat>(
+      const _i2.BeanMethod<_i1.Heartbeat>(
         r'beat',
         isVoid: true,
-        invoke: (bean, arguments) => Function.apply(bean.beat, arguments),
-        annotations: const [
-          _i3.Scheduled(fixedRateString: r'${heartbeat.rate:1s}'),
-        ],
+        invoke: _$invoke0,
+        annotations: [_i3.Scheduled(fixedRateString: r'${heartbeat.rate:1s}')],
       ),
-      _i1.BeanMethod<_i2.Heartbeat>(
+      const _i2.BeanMethod<_i1.Heartbeat>(
         r'report',
         isFuture: true,
         isVoid: true,
-        invoke: (bean, arguments) => Function.apply(bean.report, arguments),
-        annotations: const [_i3.Scheduled(cron: r'*/2 * * * * *')],
+        invoke: _$invoke1,
+        annotations: [_i3.Scheduled(cron: r'*/2 * * * * *')],
       ),
     ],
     annotations: const [
-      _i1.Component(),
-      _i1.Log(topic: r'example'),
+      _i2.Component(),
+      _i2.Log(topic: r'example'),
     ],
-    aopProxy: _i1.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches Heartbeat, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
-  _i1.BeanDefinition<_i2.Reminder>(
+  _i2.BeanDefinition<_i1.Reminder>(
     name: r'reminder',
     source:
         r'asset:spring_boot_starter_scheduling/example/example.dart#Reminder',
-    types: const [_i2.Reminder, _i4.CommandLineRunner],
-    dependencies: const [_i1.Dependency(_i5.TaskScheduler, name: r'scheduler')],
+    types: const [_i1.Reminder, _i4.CommandLineRunner],
+    dependencies: const [_i2.Dependency(_i5.TaskScheduler, name: r'scheduler')],
     create: (r) =>
-        _i2.Reminder(r.dependency<_i5.TaskScheduler>(name: r'scheduler')),
+        _i1.Reminder(r.dependency<_i5.TaskScheduler>(name: r'scheduler')),
     annotations: const [
-      _i1.Component(),
-      _i1.Log(topic: r'example'),
+      _i2.Component(),
+      _i2.Log(topic: r'example'),
     ],
-    aopProxy: _i1.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches Reminder, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
 ]);
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i1.SpringApplication get springApplication => _i1.SpringApplication(
+_i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
     _i6.springBootAutoConfiguration,
@@ -129,41 +129,41 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '5e1be661',
+  fingerprint: '57024084',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i1.ConfigurableApplicationContext reloadApplication(
-  _i1.ConfigurableApplicationContext running, {
+_i2.ConfigurableApplicationContext reloadApplication(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i1.ConfigurableApplicationContext running, {
+Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i2.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// `@Log` of [Heartbeat]: the logger 'example'.
-extension $HeartbeatLog on _i2.Heartbeat {
-  _i1.SpringLog get log => const _i1.SpringLog(r'example');
+extension $HeartbeatLog on _i1.Heartbeat {
+  _i2.SpringLog get log => const _i2.SpringLog(r'example');
 }
 
 /// `@Log` of [Reminder]: the logger 'example'.
-extension $ReminderLog on _i2.Reminder {
-  _i1.SpringLog get log => const _i1.SpringLog(r'example');
+extension $ReminderLog on _i1.Reminder {
+  _i2.SpringLog get log => const _i2.SpringLog(r'example');
 }

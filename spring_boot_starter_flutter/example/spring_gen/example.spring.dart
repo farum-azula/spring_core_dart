@@ -21,46 +21,12 @@ import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
 import '../example.dart' as _i1;
 
 class _$CounterProxy extends _i1.Counter
-    with _i2.ChangeNotifier
-    implements _i3.Advised {
+    with _i2.ChangeNotifier, _i3.AdvisedSubclass {
   _$CounterProxy();
-
-  _i3.ProxyInvoker? _$invoker;
-
-  _$CounterProxy _$advise(_i3.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
 
   @override
   void increment() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.increment();
     } else {
@@ -73,12 +39,19 @@ class _$CounterProxy extends _i1.Counter
 
   @override
   int get value {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.value
         : (_$i.invoke(this, this, 1, const [], (_) => super.value) as int);
   }
 }
+
+const _$target0 = _i3.AopTarget(
+  r'Counter',
+  types: [r'Counter'],
+  annotations: [_i4.ChangeNotifierComponent()],
+  annotationTypes: [r'ChangeNotifierComponent'],
+);
 
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
@@ -88,35 +61,20 @@ _i3.BeanModule get $application => _i3.BeanModule(r'application', [
   _i3.BeanDefinition<_i1.Counter>(
     name: r'counter',
     source: r'asset:spring_boot_starter_flutter/example/example.dart#Counter',
-    types: const [_i1.Counter],
     create: (r) => _$CounterProxy(),
     annotations: const [_i4.ChangeNotifierComponent()],
     aopProxy: _i3.AopProxyFactory.subclass(
       signatures: const [
-        _i3.MethodSignature(
-          name: r'increment',
-          declaringType: r'Counter',
-          targetType: r'Counter',
-          declaringTypes: [r'Counter'],
-          returnType: r'void',
-          targetTypes: [r'Counter'],
-          targetAnnotations: [_i4.ChangeNotifierComponent()],
-          targetAnnotationTypes: [r'ChangeNotifierComponent'],
-        ),
-        _i3.MethodSignature(
-          name: r'value',
-          declaringType: r'Counter',
-          targetType: r'Counter',
-          declaringTypes: [r'Counter'],
+        _i3.MethodSignature.of(r'increment', _$target0, returnType: r'void'),
+        _i3.MethodSignature.of(
+          r'value',
+          _$target0,
           kind: _i3.MemberKind.getter,
           returnType: r'int',
-          targetTypes: [r'Counter'],
-          targetAnnotations: [_i4.ChangeNotifierComponent()],
-          targetAnnotationTypes: [r'ChangeNotifierComponent'],
         ),
       ],
       advise: (bean, invoker) =>
-          bean is _$CounterProxy ? bean._$advise(invoker) : null,
+          bean is _$CounterProxy ? (bean..aopInvoker = invoker) : null,
     ),
   ),
   _i3.BeanDefinition<_i5.SpringWidgetBindings>(
@@ -194,7 +152,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'e2015ab8',
+  fingerprint: 'ea7ddc73',
 );
 
 /// Starts the application: config files, environment, context, runners

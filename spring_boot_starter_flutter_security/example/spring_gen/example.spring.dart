@@ -7,132 +7,37 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i3;
-
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i8;
+    as _i7;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i9;
+    as _i8;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i6;
-import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
-    as _i10;
-import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart'
-    as _i4;
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart'
     as _i5;
+import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
+    as _i9;
+import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart'
+    as _i3;
+import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart'
+    as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i11;
+    as _i10;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i12;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
+    as _i11;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
 
 import '../example.dart' as _i1;
 
-class _$AccountProxy extends _i1.Account implements _i2.Advised {
-  _$AccountProxy(super.p0, super.p1);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$AccountProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<void> start() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.start()
-        : _$i.invokeAsync<void>(
-            this,
-            this,
-            0,
-            const [],
-            (args) => super.start(),
-          );
-  }
-
-  @override
-  _i3.Future<void> signIn() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.signIn()
-        : _$i.invokeAsync<void>(
-            this,
-            this,
-            1,
-            const [],
-            (args) => super.signIn(),
-          );
-  }
-
-  @override
-  _i3.Future<void> signOut() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.signOut()
-        : _$i.invokeAsync<void>(
-            this,
-            this,
-            2,
-            const [],
-            (args) => super.signOut(),
-          );
-  }
-
-  @override
-  _i3.Future<void> savePin(String hash) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.savePin(hash)
-        : _$i.invokeAsync<void>(this, this, 3, [
-            hash,
-          ], (args) => super.savePin((args[0] as String)));
-  }
-
-  @override
-  _i3.Future<_i1.PinSettings?> pin() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.pin()
-        : _$i.invokeAsync<_i1.PinSettings?>(
-            this,
-            this,
-            4,
-            const [],
-            (args) => super.pin(),
-          );
-  }
-}
+Object? _$get0(_i1.PinSettings bean) => bean.hash;
+Object? _$get1(_i1.PinSettings bean) => bean.attempts;
+_i1.PinSettings _$create2(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.PinSettings(
+  hash: (named[#hash] as String),
+  attempts: (named[#attempts] as int),
+);
 
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
@@ -144,86 +49,28 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i2.BeanDefinition<_i1.Account>(
       name: r'account',
       source: r'asset:spring_boot_starter_flutter_security/example/example.dart#Account',
-      types: const [_i1.Account],
       dependencies: const [
-        _i2.Dependency(_i4.OAuth2LoginService, optional: true, name: r'_login'),
-        _i2.Dependency(_i5.SecretTemplate, name: r'_secrets'),
+        _i2.Dependency(_i3.OAuth2LoginService, optional: true, name: r'_login'),
+        _i2.Dependency(_i4.SecretTemplate, name: r'_secrets'),
       ],
-      create: (r) => _$AccountProxy(
-        r.optionalDependency<_i4.OAuth2LoginService>(name: r'_login'),
-        r.dependency<_i5.SecretTemplate>(name: r'_secrets'),
+      create: (r) => _i1.Account(
+        r.optionalDependency<_i3.OAuth2LoginService>(name: r'_login'),
+        r.dependency<_i4.SecretTemplate>(name: r'_secrets'),
       ),
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'start',
-            declaringType: r'Account',
-            targetType: r'Account',
-            declaringTypes: [r'Account'],
-            returnType: r'Future',
-            targetTypes: [r'Account'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'signIn',
-            declaringType: r'Account',
-            targetType: r'Account',
-            declaringTypes: [r'Account'],
-            returnType: r'Future',
-            targetTypes: [r'Account'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'signOut',
-            declaringType: r'Account',
-            targetType: r'Account',
-            declaringTypes: [r'Account'],
-            returnType: r'Future',
-            targetTypes: [r'Account'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'savePin',
-            declaringType: r'Account',
-            targetType: r'Account',
-            declaringTypes: [r'Account'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'hash'],
-            targetTypes: [r'Account'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'pin',
-            declaringType: r'Account',
-            targetType: r'Account',
-            declaringTypes: [r'Account'],
-            returnType: r'Future',
-            targetTypes: [r'Account'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$AccountProxy ? bean._$advise(invoker) : null,
-      ),
+      aopProxy: const _i2.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i6.SpringWidgetBindings>(
+    _i2.BeanDefinition<_i5.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
-      types: const [_i6.SpringWidgetBindings],
+      types: const [_i5.SpringWidgetBindings],
       autowireCandidate: false,
-      create: (r) => _i6.SpringWidgetBindings([
-        _i6.SpringWidgetBinding(
+      create: (r) => _i5.SpringWidgetBindings([
+        _i5.SpringWidgetBinding(
           widget: r'asset:spring_boot_starter_flutter_security/example/example.dart#HomePage',
           beans: _$typeOf<(_i1.Account,)>(),
           types: const [_i1.Account],
-          resolve: (f) => (_i6.SpringWidgetBinding.bean<_i1.Account>(f),),
+          resolve: (f) => (_i5.SpringWidgetBinding.bean<_i1.Account>(f),),
           values: (r) {
             final v = (r as (_i1.Account,));
             return [v.$1];
@@ -233,40 +80,36 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.PinSettings>(
+    const _i2.BeanIntrospection<_i1.PinSettings>(
       className: r'PinSettings',
       properties: [
         _i2.BeanProperty<_i1.PinSettings>(
           r'hash',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.hash,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get0,
         ),
         _i2.BeanProperty<_i1.PinSettings>(
           r'attempts',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.attempts,
+          typeInfo: _i2.ClassType<int>(),
+          get: _$get1,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.PinSettings>(
         parameters: [
           _i2.BeanParameter(
             r'hash',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #hash,
             isRequired: true,
           ),
           _i2.BeanParameter(
             r'attempts',
-            type: const _i2.ClassType<int>(),
+            type: _i2.ClassType<int>(),
             symbol: #attempts,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i1.PinSettings.new, positional, named)
-                as _i1.PinSettings),
+        create: _$create2,
       ),
     ),
   ],
@@ -277,16 +120,16 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i7.springBootAutoConfiguration,
-    _i8.springBootStarterFeignAutoConfiguration,
-    _i9.springBootStarterFlutterAutoConfiguration,
-    _i10.springBootStarterFlutterSecurityAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
-    _i12.springBootStarterOauth2ClientAutoConfiguration,
-    _i13.springSecurityCoreAutoConfiguration,
+    _i6.springBootAutoConfiguration,
+    _i7.springBootStarterFeignAutoConfiguration,
+    _i8.springBootStarterFlutterAutoConfiguration,
+    _i9.springBootStarterFlutterSecurityAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
+    _i11.springBootStarterOauth2ClientAutoConfiguration,
+    _i12.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i10.springBootStarterFlutterSecurityAutoConfiguration:
+    _i9.springBootStarterFlutterSecurityAutoConfiguration:
         const _i2.AutoConfigurationModule(
           before: [
             'springBootStarterOauth2ClientAutoConfiguration',
@@ -340,7 +183,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '842461f6',
+  fingerprint: '9e786dbb',
 );
 
 /// Starts the application: config files, environment, context, runners

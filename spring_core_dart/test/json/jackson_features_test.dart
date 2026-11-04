@@ -325,8 +325,8 @@ final _introspections = <BeanIntrospection<Object>>[
       const BeanParameter('lives', type: ClassType<int>(), symbol: #lives),
     ]),
   ),
-  BeanIntrospection<Shape>(
-    annotations: const [
+  const BeanIntrospection<Shape>(
+    annotations: [
       JsonTypeInfo(include: JsonTypeInclusion.wrapperObject),
       JsonSubTypes([JsonSubType(Circle, name: 'circle')]),
     ],
@@ -337,8 +337,8 @@ final _introspections = <BeanIntrospection<Object>>[
       const BeanParameter('r', type: ClassType<int>(), isRequired: true),
     ]),
   ),
-  BeanIntrospection<Item>(
-    annotations: const [
+  const BeanIntrospection<Item>(
+    annotations: [
       JsonTypeInfo(include: JsonTypeInclusion.wrapperArray),
       JsonSubTypes([JsonSubType(Thing, name: 'thing')]),
     ],
@@ -349,8 +349,8 @@ final _introspections = <BeanIntrospection<Object>>[
       const BeanParameter('id', type: ClassType<int>(), isRequired: true),
     ]),
   ),
-  BeanIntrospection<Vehicle>(
-    annotations: const [
+  const BeanIntrospection<Vehicle>(
+    annotations: [
       JsonTypeInfo(use: JsonTypeId.deduction),
       JsonSubTypes([JsonSubType(Car), JsonSubType(Bike)]),
     ],
@@ -613,8 +613,8 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  BeanIntrospection<Public>(instantiate: Public.new),
-  BeanIntrospection<Internal>(instantiate: Internal.new),
+  const BeanIntrospection<Public>(instantiate: Public.new),
+  const BeanIntrospection<Internal>(instantiate: Internal.new),
   BeanIntrospection<User>(
     instantiate: User.new,
     properties: [

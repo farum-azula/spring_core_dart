@@ -398,7 +398,7 @@ class Config {
 ''', proxyMode: ProxyMode.all);
     expect(output, isNot(contains(r'class_$Config_counterProxy')));
     expect(output, _has('aopProxy: AopProxyFactory.unavailable('));
-    expect(output, _has("name: r'next'"));
+    expect(output, _has("MethodSignature.of(r'next',"));
     expect(output, _has("annotationTypes: [r'Timed']"));
     expect(
       output,
@@ -482,11 +482,15 @@ class Slow {
       );
       expect(output, contains(r'class_$OrdersProxy'));
       expect(output, isNot(contains(r'_$MailProxy')));
-      // Nothing is generated for its members, only the reason.
-      expect(output, contains('AopProxyFactory.pruned('));
+      // Nothing is generated for its members; the runtime says why.
       expect(
         output,
-        _has('found no pointcut of the application that matches Mail'),
+        matches(
+          RegExp(
+            r'BeanDefinition<Mail>\((?:(?!BeanDefinition<).)*'
+            r'AopProxyFactory\.pruned\(\)',
+          ),
+        ),
       );
     });
 
@@ -588,31 +592,16 @@ class Counter {
         '@Component() $counter',
         proxyMode: ProxyMode.all,
       );
+      // AdvisedSubclass holds the invoker and implements Advised.
       expect(
         output,
-        _has(r'class _$CounterProxy extends Counter implements Advised {'),
+        _has(r'class _$CounterProxy extends Counter with AdvisedSubclass {'),
       );
       expect(output, _has(r'_$CounterProxy(super.p0, {super.name});'));
-      expect(output, _has(r'ProxyInvoker? _$invoker;'));
       expect(
         output,
         _has(
-          r'_$CounterProxy _$advise(ProxyInvoker invoker) { _$invoker = '
-          'invoker; return this; }',
-        ),
-      );
-      expect(output, _has('Object get aopTarget => this;'));
-      expect(
-        output,
-        _has(
-          r'List<PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? '
-          'const [];',
-        ),
-      );
-      expect(
-        output,
-        _has(
-          r'int next() { final _$i = this._$invoker; return _$i == null ? '
+          r'int next() { final _$i = this.aopInvoker; return _$i == null ? '
           r'super.next() : (_$i.invoke(this, this, 0, const [], (args) => '
           'super.next()) as int); '
           '}',
@@ -621,7 +610,7 @@ class Counter {
       expect(
         output,
         _has(
-          r'void reset() { final _$i = this._$invoker; if (_$i == null) { '
+          r'void reset() { final _$i = this.aopInvoker; if (_$i == null) { '
           r'super.reset(); } else { _$i.invoke(this, this, 1, const [], (args) '
           '{ super.reset(); return null; }); } '
           '}',
@@ -644,7 +633,7 @@ class Counter {
       expect(
         output,
         _has(
-          r'int get count { final _$i = this._$invoker; return _$i == null ? '
+          r'int get count { final _$i = this.aopInvoker; return _$i == null ? '
           r'super.count : (_$i.invoke(',
         ),
       );
@@ -660,14 +649,14 @@ class Counter {
         output,
         _has(
           'aopProxy: AopProxyFactory.subclass(signatures: const '
-          '[MethodSignature(',
+          '[MethodSignature.of(',
         ),
       );
       expect(
         output,
         _has(
           r'advise: (bean, invoker) => bean is _$CounterProxy ? '
-          r'bean._$advise(invoker) : null',
+          '(bean..aopInvoker = invoker) : null',
         ),
       );
       expect(output, _has(r'create: (r) => _$CounterProxy('));
@@ -692,7 +681,9 @@ base class Guarded {
       expect(output, _has(r'_$NamedProxy([super.p0]) : super.create();'));
       expect(
         output,
-        _has(r'final class _$GuardedProxy extends Guarded implements Advised'),
+        _has(
+          r'final class _$GuardedProxy extends Guarded with AdvisedSubclass',
+        ),
       );
       expect(
         output,
@@ -1481,42 +1472,64 @@ class NoCtor {
   final int x;
 }
 ''');
-      expect(output, _has('BeanIntrospection<Form>('));
+      // A constant: `const BeanIntrospection<Form>(`, the closures are
+      // top-level functions and each type comes from its typeInfo.
+      expect(output, _has('const BeanIntrospection<Form>('));
       expect(
         output,
-        _has(
-          "BeanProperty<Form>(r'nick', type: String, nullable: true, "
-          'typeInfo: const ClassType<String>(nullable: true), get: (bean) => '
-          'bean.nick, '
-          'set: (bean, value) => bean.nick = (value as String?), annotations: '
-          'const [Size(max: 3)])',
+        matches(
+          RegExp(
+            r"BeanProperty<Form>\(r'nick',nullable:true,"
+            r'typeInfo:ClassType<String>\(nullable:true\),get:_\$get\d+,'
+            r'set:_\$set\d+,annotations:\[Size\(max:3\)\]\)',
+          ),
+        ),
+      );
+      expect(output, _has('(Form bean) => bean.nick;'));
+      expect(
+        output,
+        _has('(Form bean, Object? value) => bean.nick = (value as String?);'),
+      );
+      expect(
+        output,
+        matches(
+          RegExp(
+            r"BeanProperty<Form>\(r'id',typeInfo:ClassType<int>\(\),"
+            r'hasInitialValue:true,initialValue:1,get:_\$get\d+\)',
+          ),
         ),
       );
       expect(
         output,
-        _has(
-          "BeanProperty<Form>(r'id', type: int, typeInfo: const "
-          'ClassType<int>(), hasInitialValue: true, initialValue: 1, '
-          'get: (bean) => bean.id)',
+        matches(
+          RegExp(
+            r"r'computed',typeInfo:ClassType<int>\(\),get:_\$get\d+,"
+            r'set:_\$set\d+',
+          ),
         ),
       );
       expect(
         output,
-        _has(
-          "r'computed', type: int, typeInfo: const ClassType<int>(), get: "
-          '(bean) => bean.computed, set: (bean, value) => bean.computed = '
-          '(value as int)',
-        ),
+        _has('(Form bean, Object? value) => bean.computed = (value as int);'),
       );
-      expect(output, _has('annotations: const [Marker()]'));
+      expect(output, _has('annotations: [Marker()]'));
       expect(output, _has("r'baseName'"));
       expect(output, isNot(contains('callback')));
+      // `Function.apply` checks what an expression passes.
+      expect(
+        output,
+        matches(
+          RegExp(
+            r"BeanMethod<Form>\(r'greet',returnType:String,parameterTypes:"
+            r'\[String,int\],invoke:_\$invoke\d+\)',
+          ),
+        ),
+      );
       expect(
         output,
         _has(
-          "BeanMethod<Form>(r'greet', returnType: String, parameterTypes: "
-          'const [String, int], '
-          'invoke: (bean, arguments) => Function.apply(bean.greet, arguments))',
+          '(Form bean, List<Object?> arguments) => '
+          'Function.apply(bean.greet, arguments);',
         ),
       );
       expect(output, _has("BeanMethod<Form>(r'baseMethod',"));
@@ -1527,7 +1540,7 @@ class NoCtor {
       for (final skipped in ["r'configure'", "r'typed'", "r'util'"]) {
         expect(output, isNot(contains(skipped)));
       }
-      expect(output, _has('instantiate: () => Form()'));
+      expect(output, _has('instantiate: Form.new'));
       final noCtor = output.substring(
         output.indexOf('BeanIntrospection<NoCtor>'),
       );
@@ -1672,18 +1685,26 @@ class Form(var String email, {var int age = 0});
       );
       expect(
         output,
-        _has(r'class _$GatewayProxy extends Gateway implements Advised'),
+        _has(r'class _$GatewayProxy extends Gateway with AdvisedSubclass'),
       );
+      // A constant description: the type comes from typeInfo, the
+      // accessors are top-level functions.
       expect(
         output,
-        _has(
-          "BeanProperty<Form>(r'email', type: String, "
-          'typeInfo: const ClassType<String>(), '
-          'get: (bean) => bean.email, '
-          'set: (bean, value) => bean.email = (value as String))',
+        matches(
+          RegExp(
+            r"BeanProperty<Form>\(r'email',typeInfo:ClassType<String>\(\),"
+            r'get:_\$get\d+,set:_\$set\d+\)',
+          ),
         ),
       );
-      expect(output, _has("BeanProperty<Form>(r'age', type: int"));
+      expect(output, _has(r'Object? _$get'));
+      expect(output, _has('(Form bean) => bean.email;'));
+      expect(
+        output,
+        _has('(Form bean, Object? value) => bean.email = (value as String);'),
+      );
+      expect(output, _has("BeanProperty<Form>(r'age', typeInfo:"));
     });
   });
 
@@ -1802,20 +1823,19 @@ class Impl implements Api {
 ''', proxyMode: ProxyMode.all);
       expect(
         output,
-        _has(r'class _$ImplProxy implements Impl, Api, Advised {'),
+        _has(
+          r'class _$ImplProxy with AdvisedWrapper implements Impl, Api {',
+        ),
       );
-      expect(output, _has(r'_$ImplProxy(this._target, this._invoker);'));
+      expect(output, _has(r'_$ImplProxy(this._target, this.aopInvoker);'));
+      expect(output, _has('@override final ProxyInvoker aopInvoker;'));
       expect(output, _has('Object get aopTarget => _target;'));
-      expect(
-        output,
-        _has('List<PointcutAdvisor> get aopAdvisors => _invoker.advisors;'),
-      );
       expect(output, _has('String toString() => _target.toString();'));
       expect(
         output,
         _has(
           'String plain(int a, [int b = 2, String? c]) => '
-          '(this._invoker.invoke(this, this._target, 0, [a, b, c], '
+          '(this.aopInvoker.invoke(this, this._target, 0, [a, b, c], '
           '(args) => this._target.plain((args[0] as int), (args[1] as int), '
           '(args[2] as String?))) as String);',
         ),
@@ -1825,7 +1845,8 @@ class Impl implements Api {
         _has(
           'T generic<T extends Object>(T value, {required String key, int '
           'retries = 3}) => '
-          '(this._invoker.invoke(this, this._target, 1, [value, key, retries], '
+          '(this.aopInvoker.invoke(this, this._target, 1, '
+          '[value, key, retries], '
           '(args) => this._target.generic<T>((args[0] as T), '
           'key: (args[1] as String), retries: (args[2] as int))) as T);',
         ),
@@ -1833,28 +1854,29 @@ class Impl implements Api {
       expect(
         output,
         _has(
-          'void act() {this._invoker.invoke(this, this._target, 2, const [], '
+          'void act() {this.aopInvoker.invoke(this, this._target, 2, const [], '
           '(args) {this._target.act(); return null;});}',
         ),
       );
       expect(
         output,
         _has(
-          'Future<int> later() => this._invoker.invokeAsync<int>(this, '
+          'Future<int> later() => this.aopInvoker.invokeAsync<int>(this, '
           'this._target, 3, const [], (args) => this._target.later());',
         ),
       );
       expect(
         output,
         _has(
-          'int get count => (this._invoker.invoke(this, this._target, 5, const '
+          'int get count => (this.aopInvoker.invoke(this, this._target, 5, '
+          'const '
           '[], (_) => this._target.count) as int);',
         ),
       );
       expect(
         output,
         _has(
-          'set count(int value) {this._invoker.invoke(this, this._target, 6, '
+          'set count(int value) {this.aopInvoker.invoke(this, this._target, 6, '
           '[value], (args) {this._target.count = (args[0] as int); return '
           'null;});}',
         ),
@@ -1869,12 +1891,19 @@ class Impl implements Api {
       expect(
         output,
         _has(
-          "MethodSignature(name: r'plain', declaringType: r'Api', targetType: "
-          "r'Impl', declaringTypes: [r'Impl', r'Api'], returnType: r'String', "
+          r"MethodSignature.of(r'plain', _$target0, declaringType: r'Api', "
+          "declaringTypes: [r'Impl', r'Api'], returnType: r'String', "
           "parameterTypes: [r'int', r'int', r'String'], parameterNames: [r'a', "
-          "r'b', r'c'], annotations: [Note()], annotationTypes: [r'Note'], "
-          "targetTypes: [r'Impl', r'Api'], targetAnnotations: [Service(), "
-          "Note()], targetAnnotationTypes: [r'Service', r'Note'])",
+          "r'b', r'c'], annotations: [Note()], annotationTypes: [r'Note'])",
+        ),
+      );
+      // The bean class, shared by the signatures of its members.
+      expect(
+        output,
+        _has(
+          r"const _$target0 = AopTarget(r'Impl', types: [r'Impl', r'Api'], "
+          'annotations: [Service(), Note()], '
+          "annotationTypes: [r'Service', r'Note']);",
         ),
       );
       expect(output, _has('kind: MemberKind.getter'));
@@ -1919,23 +1948,24 @@ class Hidden {
           expect(output, contains(proxy));
         }
         // Implementing proxy: field accessors forward through the advice.
-        expect(output, _has('String get title => (this._invoker.invoke('));
-        expect(output, _has('set title(String value) {this._invoker.invoke('));
-        expect(output, _has('int get id => (this._invoker.invoke('));
+        expect(output, _has('String get title => (this.aopInvoker.invoke('));
+        expect(
+          output,
+          _has('set title(String value) {this.aopInvoker.invoke('),
+        );
+        expect(output, _has('int get id => (this.aopInvoker.invoke('));
         expect(output, isNot(contains('setid(')), reason: 'final: no setter');
-        expect(output, _has('String get label => (this._invoker.invoke('));
+        expect(output, _has('String get label => (this.aopInvoker.invoke('));
         expect(
           output,
           isNot(contains('shared')),
           reason: 'static: not a member',
         );
         // The field's annotations reach the pointcut (`@annotation(Note)`).
+        // Declared by the bean class itself: no declaringType.
         expect(
           output,
-          _has(
-            "MethodSignature(name: r'title', declaringType: r'Plain', "
-            "targetType: r'Plain'",
-          ),
+          matches(RegExp(r"MethodSignature\.of\(r'title',_\$target\d+,kind:")),
         );
         expect(output, _has('annotations: [Note()]'));
         expect(output, isNot(contains('annotations:[Note(),Note()]')));
@@ -1948,7 +1978,8 @@ class Hidden {
         expect(
           output,
           _has(
-            r'int get count { final _$i = this._$invoker; return _$i == null ? '
+            r'int get count { final _$i = this.aopInvoker; '
+            r'return _$i == null ? '
             r'super.count : (_$i.invoke(',
           ),
         );
@@ -1980,7 +2011,7 @@ class JobRunner implements Jobs {
 ''', proxyMode: ProxyMode.all);
       expect(
         output,
-        _has('Future<T> run<T>(T value) => this._invoker.invokeAsync<T>('),
+        _has('Future<T> run<T>(T value) => this.aopInvoker.invokeAsync<T>('),
       );
       expect(output, _has('List<void Function()> hooks()'));
       expect(output, _has('Map<String, (int, String)> table()'));
@@ -2027,34 +2058,43 @@ abstract class Base { void base(); }
       expect(
         all,
         contains(
-          r'class_$WithPrivateProxyextendsWithPrivateimplementsAdvised{',
+          r'class_$WithPrivateProxyextendsWithPrivatewithAdvisedSubclass{',
         ),
         reason: 'class with private members: subclass',
       );
-      expect(all, contains(r'class_$PlainProxyimplementsPlain,'));
-      expect(all, contains(r'class_$BothProxyimplementsBoth,Base,Api,'));
+      expect(
+        all,
+        contains(r'class_$PlainProxywithAdvisedWrapperimplementsPlain'),
+      );
+      expect(
+        all,
+        contains(r'class_$BothProxywithAdvisedWrapperimplementsBoth,Base,Api'),
+      );
       // Operators cannot be forwarded: a subclass proxy inherits them.
       expect(
         all,
-        contains(r'class_$OpsProxyextendsOpsimplementsAdvised{'),
+        contains(r'class_$OpsProxyextendsOpswithAdvisedSubclass{'),
         reason: 'operators',
       );
       expect(all, isNot(contains('operator')));
       expect(
         all,
-        contains(r'class_$OnlyOpsProxyextendsOnlyOpsimplementsAdvised{'),
+        contains(r'class_$OnlyOpsProxyextendsOnlyOpswithAdvisedSubclass{'),
       );
       // A constant default value is re-created.
       expect(
         all,
-        contains(r'class_$ComplexDefaultProxyimplementsComplexDefault,Api,'),
+        contains(
+          r'class_$ComplexDefaultProxywithAdvisedWrapper'
+          'implementsComplexDefault,Api',
+        ),
         reason: 'non-literal default',
       );
       expect(all, contains('run([Durationd=constDuration(seconds:1)])'));
       // A member the subclass cannot override stays inherited.
       expect(
         all,
-        contains(r'class_$UntypedProxyextendsUntypedimplementsAdvised{'),
+        contains(r'class_$UntypedProxyextendsUntypedwithAdvisedSubclass{'),
         reason: 'generic function type parameter',
       );
       expect(all, isNot(contains('typed(')));
@@ -2062,18 +2102,26 @@ abstract class Base { void base(); }
         expect(all, isNot(contains('_\$${excluded}Proxy')), reason: excluded);
       }
       // The bean type is inferred from the method body (`Both()`).
-      expect(all, contains(r'class_$Config$ApiProxyimplementsBoth,Base,Api,'));
+      expect(
+        all,
+        contains(
+          r'class_$Config$ApiProxywithAdvisedWrapperimplementsBoth,Base,Api',
+        ),
+      );
       expect(all, isNot(contains(r'_$Config$TextProxy')), reason: 'SDK types');
 
       final interfaces = await _generate(
         source,
         proxyMode: ProxyMode.interfaces,
       );
-      expect(interfaces, contains(r'class_$BothProxyimplementsBase,Api,'));
+      expect(
+        interfaces,
+        contains(r'class_$BothProxywithAdvisedWrapperimplementsBase,Api'),
+      );
       expect(interfaces, isNot(contains(r'_$PlainProxy')));
       expect(
         interfaces,
-        contains(r'class_$Config$ApiProxyimplementsBase,Api,'),
+        contains(r'class_$Config$ApiProxywithAdvisedWrapperimplementsBase,Api'),
       );
 
       final none = await _generate(source);
@@ -2256,7 +2304,7 @@ class CloudConfig {}
         _has(
           "BeanDefinition<CloudData>(name: r'cloudData', "
           "source: r'package:pkg/src/service.dart#CloudData', "
-          "types: const [CloudData], conditions: [ConditionGroup(r'package:pkg/src/service.dart#CloudData', "
+          "conditions: [ConditionGroup(r'package:pkg/src/service.dart#CloudData', "
           "[ConditionGroup(r'package:pkg/src/service.dart#CloudConfig', [const ProfileCondition([r'cloud'])])])]",
         ),
       );
@@ -2466,7 +2514,14 @@ class MailProperties {
         },
       );
       expect(output, contains('ConstructorBound.from<'));
-      expect(output, contains('MailProperties.of,'));
+      // Called directly, an absent optional argument getting its default.
+      expect(
+        output,
+        contains(
+          'MailProperties.of((positional[0]asString),'
+          'positional.argumentOr(1,25))',
+        ),
+      );
     });
 
     test('mutable classes keep the no-argument constructor', () async {
@@ -2799,39 +2854,66 @@ class Config {
 
     test('marked methods become BeanDefinition.annotatedMethods', () async {
       final output = await _generate(source);
+      // A constant, called directly through a top-level function (an
+      // absent optional argument gets its default).
       expect(
         output,
         _has(
-          "annotatedMethods: [BeanMethod<Poller>(r'check', "
-          'parameterTypes: const [int, String], '
-          "parameters: [BeanParameter(r'attempt', type: const "
+          "annotatedMethods: [const BeanMethod<Poller>(r'check', "
+          'parameterTypes: [int, String], '
+          "parameters: [BeanParameter(r'attempt', type: "
           'ClassType<int>(), isRequired: true), '
-          "BeanParameter(r'label', type: const ClassType<String>(nullable: "
+          "BeanParameter(r'label', type: ClassType<String>(nullable: "
           'true))], '
-          'isFuture: true, isVoid: true, '
-          'invoke: (bean, arguments) => Function.apply(bean.check, arguments), '
-          "annotations: const [Every(Duration(seconds: 30), name: r'inbox'), "
-          'Plain()])',
+          'isFuture: true, isVoid: true, invoke: ',
         ),
       );
-      // Declared on the interface, implemented by the bean.
+      expect(
+        output,
+        matches(
+          RegExp(
+            r'isVoid:true,invoke:_\$invoke\d+,'
+            r"annotations:\[Every\(Duration\(seconds:30\),name:r'inbox'\),"
+            r'Plain\(\)\]\)',
+          ),
+        ),
+      );
       expect(
         output,
         _has(
-          "BeanMethod<Poller>(r'tick', isVoid: true, "
-          'invoke: (bean, arguments) => Function.apply(bean.tick, arguments), '
-          'annotations: const [Every(Duration(minutes: 1))])',
+          '(Poller bean, List<Object?> arguments) => '
+          'bean.check((arguments[0] as int), '
+          'arguments.argumentOr(1, null));',
+        ),
+      );
+      // Declared on the interface, implemented by the bean; a void method
+      // answers null.
+      expect(
+        output,
+        matches(
+          RegExp(
+            r"BeanMethod<Poller>\(r'tick',isVoid:true,invoke:_\$invoke\d+,"
+            r'annotations:\[Every\(Duration\(minutes:1\)\)\]\)',
+          ),
+        ),
+      );
+      expect(
+        output,
+        _has(
+          '(Poller bean, List<Object?> arguments) '
+          '{ bean.tick(); return null; }',
         ),
       );
       expect(output, isNot(contains('notMarked')));
       // The return type of a @Bean method is scanned too.
       expect(
         output,
-        _has(
-          "annotatedMethods: [BeanMethod<Report>(r'hourly', isVoid: true, "
-          'invoke: (bean, arguments) => Function.apply(bean.hourly, '
-          'arguments), '
-          'annotations: const [Every(Duration(hours: 1))])]',
+        matches(
+          RegExp(
+            r"annotatedMethods:\[constBeanMethod<Report>\(r'hourly',"
+            r'isVoid:true,invoke:_\$invoke\d+,'
+            r'annotations:\[Every\(Duration\(hours:1\)\)\]\)\]',
+          ),
         ),
       );
     });
@@ -2868,22 +2950,32 @@ class Api {
         expect(
           output,
           _has(
-            "parameters: [BeanParameter(r'query', type: const "
+            "parameters: [BeanParameter(r'query', type: "
             'ClassType<String>(), '
-            "isRequired: true, annotations: const [Param(r'q')]), "
-            "BeanParameter(r'page', type: const ClassType<int>(), symbol: "
+            "isRequired: true, annotations: [Param(r'q')]), "
+            "BeanParameter(r'page', type: ClassType<int>(), symbol: "
             '#page, isRequired: true), '
-            "BeanParameter(r'size', type: const ClassType<int>(), symbol: "
+            "BeanParameter(r'size', type: ClassType<int>(), symbol: "
             '#size)], '
-            'returnTypeInfo: const ListType<Item>(ClassType<Item>()), '
+            'returnTypeInfo: ListType<Item>(ClassType<Item>()), '
             'isFuture: true, ',
+          ),
+        );
+        // Called directly with the named arguments; without them the
+        // required `page` cannot be passed, so `Function.apply` says so.
+        expect(
+          output,
+          _has(
+            '(Api bean, List<Object?> positional, Map<Symbol, Object?> named) '
+            '=> bean.find((positional[0] as String), '
+            'page: (named[#page] as int), size: named.argumentOr(#size, 20));',
           ),
         );
         expect(
           output,
           _has(
-            'invokeNamed: (bean, positional, named) => '
-            'Function.apply(bean.find, positional, named)',
+            '(Api bean, List<Object?> arguments) => '
+            'Function.apply(bean.find, arguments);',
           ),
         );
         // The result type of the bean's package is introspected.
@@ -3000,10 +3092,11 @@ class Holder {
 
     test('types, constructors, JSON hints and used classes', () async {
       final output = await _generate(source);
+      // Its type comes from the typeInfo.
       expect(
         output,
         _has(
-          "BeanProperty<Book>(r'tags', type: List<String>, "
+          "BeanProperty<Book>(r'tags', "
           'typeInfo: const ListType<String>(ClassType<String>()),',
         ),
       );
@@ -3031,11 +3124,13 @@ class Holder {
           'symbol: #isbn, isRequired: true)',
         ),
       );
+      // Called directly; an absent optional argument gets its default.
       expect(
         output,
         _has(
-          'create: (positional, named) => '
-          '(Function.apply(Book.new, positional, named) as Book)',
+          '(List<Object?> positional, Map<Symbol, Object?> named) => '
+          'Book(isbn: (named[#isbn] as String), '
+          'tags: named.argumentOr(#tags, const []),',
         ),
       );
       // Author (used by Book, same package) is introspected automatically,
@@ -3044,29 +3139,32 @@ class Holder {
       expect(
         output,
         _has(
-          "BeanParameter(r'born', type: const ClassType<int>(nullable: true))",
+          "BeanParameter(r'born', type: ClassType<int>(nullable: true))",
         ),
       );
       // @Introspected(classes:) and @JsonCreator.
+      // Wallet's description is a constant: no `const` inside it.
       expect(
         output,
         _has(
-          'typeInfo: const ListType<Money?>( '
+          'typeInfo: ListType<Money?>( '
           'ClassType<Money>(nullable: true))',
         ),
       );
-      expect(
-        output,
-        _has('Function.apply(Money.of, positional, named) as Money'),
-      );
+      expect(output, _has('=> Money.of(cents: (named[#cents] as int));'));
       // A class with its own fromJson / toJson.
       expect(
         output,
         _has(
-          'fromJson: (json) => Legacy.fromJson((json as Map<String, dynamic>))',
+          '(Object? json) => '
+          'Legacy.fromJson((json as Map<String, dynamic>));',
         ),
       );
-      expect(output, _has('toJson: (bean) => bean.toJson()'));
+      expect(output, _has('(Legacy bean) => bean.toJson();'));
+      expect(
+        output,
+        matches(RegExp(r'fromJson:_\$fromJson\d+,toJson:_\$toJson\d+')),
+      );
       // Enums are described by EnumType, not introspected.
       expect(output, isNot(contains('BeanIntrospection<Genre>')));
     });
@@ -3217,7 +3315,7 @@ abstract interface class CatalogClient {
         _has(
           "BeanDefinition<CatalogClient>(name: r'catalogClient', "
           "source: r'package:pkg/src/service.dart#CatalogClient', "
-          'types: const [CatalogClient], primary: true,',
+          'primary: true,',
         ),
       );
       expect(output, _has(r'create: (r) => _$CatalogClientImpl.$create(r)'));
@@ -3255,7 +3353,7 @@ abstract interface class StockClient {
         _has(
           "BeanDefinition<CatalogClient>(name: r'catalogClient', "
           "source: r'package:pkg/src/service.dart#CatalogClient', "
-          'types: const [CatalogClient], qualifiers: const {',
+          'qualifiers: const {',
         ),
       );
       expect(output, _has("r'books', r'catalogFeign'"));
@@ -3264,7 +3362,7 @@ abstract interface class StockClient {
         _has(
           "BeanDefinition<StockClient>(name: r'stockClient', "
           "source: r'package:pkg/src/service.dart#StockClient', "
-          'types: const [StockClient], primary: true,',
+          'primary: true,',
         ),
       );
     });
@@ -4005,9 +4103,12 @@ class Impl implements Api {
 @Configuration(proxyBeanMethods: false)
 class Config { @Bean() Api api() => Impl(); }
 ''', proxyMode: ProxyMode.all);
-      expect(output, contains(r'class_$Config$ApiProxyimplementsImpl,Api'));
-      expect(output, _has("name: r'extra'"));
-      expect(output, _has("targetType: r'Impl'"));
+      expect(
+        output,
+        contains(r'class_$Config$ApiProxywithAdvisedWrapperimplementsImpl,Api'),
+      );
+      expect(output, _has("MethodSignature.of(r'extra',"));
+      expect(output, _has("AopTarget(r'Impl',"));
     });
 
     test('the generated code compiles', () async {

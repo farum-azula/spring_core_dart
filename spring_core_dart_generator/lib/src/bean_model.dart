@@ -1748,6 +1748,22 @@ class ProxyModel {
   /// signatures are emitted either (`AopProxyFactory.pruned`).
   bool pruned = false;
 
+  /// The members some pointcut the build knows may match, when the build
+  /// pruned the others (`null`: every member is advisable). Only these get
+  /// a `MethodSignature` and run through the advice; a wrapper proxy
+  /// forwards the others to the target, a subclass proxy inherits them.
+  Set<ProxyMember>? advisedMembers;
+
+  /// The members that run through the advice, in the order of their
+  /// `MethodSignature` index.
+  List<ProxyMember> get advisableMembers => switch (advisedMembers) {
+    null => members,
+    final advised => [
+      for (final member in members)
+        if (advised.contains(member)) member,
+    ],
+  };
+
   /// Set when the proxy is a subclass of the target, created by the
   /// container as the bean itself, instead of a wrapper around it.
   final SubclassProxy? subclass;

@@ -12,7 +12,7 @@ import 'dart:io' as _i13;
 
 import 'package:postgres/postgres.dart' as _i12;
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i14;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_dart/src/conditions.dart' as _i8;
 import 'package:spring_boot_dart/src/runners.dart' as _i9;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
@@ -28,42 +28,24 @@ import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i16;
 import 'package:sqlite3/sqlite3.dart' as _i11;
 
-import '../../../autoconfig/app/autoconfig_app.dart' as _i1;
+import '../../../autoconfig/app/autoconfig_app.dart' as _i2;
 
-class _$LibraryProxy implements _i1.Library, _i2.Advised {
-  _$LibraryProxy(this._target, this._invoker);
+class _$LibraryProxy with _i1.AdvisedWrapper implements _i2.Library {
+  _$LibraryProxy(this._target, this.aopInvoker);
 
-  final _i1.Library _target;
+  final _i2.Library _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i3.Future<void> addBook(String title) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> addBook(String title) => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
     0,
@@ -73,7 +55,7 @@ class _$LibraryProxy implements _i1.Library, _i2.Advised {
 
   @override
   _i3.Future<void> visit(String page, {bool fail = false}) =>
-      this._invoker.invokeAsync<void>(
+      this.aopInvoker.invokeAsync<void>(
         this,
         this._target,
         1,
@@ -83,88 +65,70 @@ class _$LibraryProxy implements _i1.Library, _i2.Advised {
       );
 
   @override
-  _i1.BookRepository get books => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.books,
-  ) as _i1.BookRepository);
+  _i2.BookRepository get books => this._target.books;
 
   @override
-  _i1.AuthorRepository get authors => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.authors,
-  ) as _i1.AuthorRepository);
+  _i2.AuthorRepository get authors => this._target.authors;
 
   @override
-  _i1.VisitRepository get visits => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.visits,
-  ) as _i1.VisitRepository);
+  _i2.VisitRepository get visits => this._target.visits;
 }
 
 /// Implements `AuthorRepository`: `SimpleRepository` has the CRUD methods.
-class _$AuthorRepositoryImpl extends _i4.SimpleRepository<_i1.Author, int>
-    implements _i1.AuthorRepository {
+class _$AuthorRepositoryImpl extends _i4.SimpleRepository<_i2.Author, int>
+    implements _i2.AuthorRepository {
   _$AuthorRepositoryImpl(super.operations);
 
-  static _$AuthorRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$AuthorRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$AuthorRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i1.Author, int>(
+        r.dependency<_i4.RepositoryFactory>().operations<_i2.Author, int>(
           r'AuthorRepository',
         ),
       );
 }
 
 /// Implements `BookRepository`: `SimpleRepository` has the CRUD methods.
-class _$BookRepositoryImpl extends _i4.SimpleRepository<_i1.Book, int>
-    implements _i1.BookRepository {
+class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
+    implements _i2.BookRepository {
   _$BookRepositoryImpl(super.operations);
 
   static const _findByYearGreaterThan = _i4.PartTree(r'findByYearGreaterThan', [
     _i4.OrPart([_i4.Part(r'year', _i4.PartType.greaterThan)]),
   ]);
 
-  static _$BookRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$BookRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$BookRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i1.Book, int>(
+        r.dependency<_i4.RepositoryFactory>().operations<_i2.Book, int>(
           r'BookRepository',
         ),
       );
 
   @override
-  _i3.Future<List<_i1.Book>> findByYearGreaterThan(int year) =>
+  _i3.Future<List<_i2.Book>> findByYearGreaterThan(int year) =>
       this.operations.list(_findByYearGreaterThan, [year]);
 }
 
 /// Implements `OrderRepository`: `SimpleRepository` has the CRUD methods.
-class _$OrderRepositoryImpl extends _i4.SimpleRepository<_i1.PurchaseOrder, int>
-    implements _i1.OrderRepository {
+class _$OrderRepositoryImpl extends _i4.SimpleRepository<_i2.PurchaseOrder, int>
+    implements _i2.OrderRepository {
   _$OrderRepositoryImpl(super.operations);
 
-  static _$OrderRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$OrderRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$OrderRepositoryImpl(
         r
             .dependency<_i4.RepositoryFactory>()
-            .operations<_i1.PurchaseOrder, int>(r'OrderRepository'),
+            .operations<_i2.PurchaseOrder, int>(r'OrderRepository'),
       );
 }
 
 /// Implements `VisitRepository`: `SimpleRepository` has the CRUD methods.
-class _$VisitRepositoryImpl extends _i4.SimpleRepository<_i1.Visit, int>
-    implements _i1.VisitRepository {
+class _$VisitRepositoryImpl extends _i4.SimpleRepository<_i2.Visit, int>
+    implements _i2.VisitRepository {
   _$VisitRepositoryImpl(super.operations);
 
-  static _$VisitRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$VisitRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$VisitRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i1.Visit, int>(
+        r.dependency<_i4.RepositoryFactory>().operations<_i2.Visit, int>(
           r'VisitRepository',
           annotations: const [_i5.UseDataSource(r'stats')],
         ),
@@ -172,13 +136,13 @@ class _$VisitRepositoryImpl extends _i4.SimpleRepository<_i1.Visit, int>
 }
 
 /// Implements `NoteRepository`: `SimpleRepository` has the CRUD methods.
-class _$NoteRepositoryImpl extends _i4.SimpleRepository<_i1.Note, int>
-    implements _i1.NoteRepository {
+class _$NoteRepositoryImpl extends _i4.SimpleRepository<_i2.Note, int>
+    implements _i2.NoteRepository {
   _$NoteRepositoryImpl(super.operations);
 
-  static _$NoteRepositoryImpl $create(_i2.DependencyResolver r) =>
+  static _$NoteRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$NoteRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i1.Note, int>(
+        r.dependency<_i4.RepositoryFactory>().operations<_i2.Note, int>(
           r'NoteRepository',
           annotations: const [
             _i5.UseStore(r'memory'),
@@ -188,87 +152,86 @@ class _$NoteRepositoryImpl extends _i4.SimpleRepository<_i1.Note, int>
       );
 }
 
+const _$target0 = _i1.AopTarget(
+  r'Library',
+  types: [r'Library'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+
 /// Beans found by `@ComponentScan` in `lib/ and test/autoconfig/app/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i1.AuthorRepository>(
+    _i1.BeanDefinition<_i2.AuthorRepository>(
       name: r'authorRepository',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#AuthorRepository',
       types: const [
-        _i1.AuthorRepository,
-        _i6.ListCrudRepository<_i1.Author, int>,
-        _i6.CrudRepository<_i1.Author, int>,
-        _i6.DataRepository<_i1.Author, int>,
+        _i2.AuthorRepository,
+        _i6.ListCrudRepository<_i2.Author, int>,
+        _i6.CrudRepository<_i2.Author, int>,
+        _i6.DataRepository<_i2.Author, int>,
         _i6.ListCrudRepository<dynamic, dynamic>,
         _i6.CrudRepository<dynamic, dynamic>,
         _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuthorRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches AuthorRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.BookRepository>(
+    _i1.BeanDefinition<_i2.BookRepository>(
       name: r'bookRepository',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#BookRepository',
       types: const [
-        _i1.BookRepository,
-        _i6.ListCrudRepository<_i1.Book, int>,
-        _i6.CrudRepository<_i1.Book, int>,
-        _i6.DataRepository<_i1.Book, int>,
+        _i2.BookRepository,
+        _i6.ListCrudRepository<_i2.Book, int>,
+        _i6.CrudRepository<_i2.Book, int>,
+        _i6.DataRepository<_i2.Book, int>,
         _i6.ListCrudRepository<dynamic, dynamic>,
         _i6.CrudRepository<dynamic, dynamic>,
         _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches BookRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.OrderRepository>(
+    _i1.BeanDefinition<_i2.OrderRepository>(
       name: r'orderRepository',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#OrderRepository',
       types: const [
-        _i1.OrderRepository,
-        _i6.ListCrudRepository<_i1.PurchaseOrder, int>,
-        _i6.CrudRepository<_i1.PurchaseOrder, int>,
-        _i6.DataRepository<_i1.PurchaseOrder, int>,
+        _i2.OrderRepository,
+        _i6.ListCrudRepository<_i2.PurchaseOrder, int>,
+        _i6.CrudRepository<_i2.PurchaseOrder, int>,
+        _i6.DataRepository<_i2.PurchaseOrder, int>,
         _i6.ListCrudRepository<dynamic, dynamic>,
         _i6.CrudRepository<dynamic, dynamic>,
         _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$OrderRepositoryImpl.$create(r),
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches OrderRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.VisitRepository>(
+    _i1.BeanDefinition<_i2.VisitRepository>(
       name: r'visitRepository',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#VisitRepository',
       types: const [
-        _i1.VisitRepository,
-        _i6.ListCrudRepository<_i1.Visit, int>,
-        _i6.CrudRepository<_i1.Visit, int>,
-        _i6.DataRepository<_i1.Visit, int>,
+        _i2.VisitRepository,
+        _i6.ListCrudRepository<_i2.Visit, int>,
+        _i6.CrudRepository<_i2.Visit, int>,
+        _i6.DataRepository<_i2.Visit, int>,
         _i6.ListCrudRepository<dynamic, dynamic>,
         _i6.CrudRepository<dynamic, dynamic>,
         _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$VisitRepositoryImpl.$create(r),
       annotations: const [_i5.UseDataSource(r'stats')],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches VisitRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.NoteRepository>(
+    _i1.BeanDefinition<_i2.NoteRepository>(
       name: r'noteRepository',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#NoteRepository',
       types: const [
-        _i1.NoteRepository,
-        _i6.ListCrudRepository<_i1.Note, int>,
-        _i6.CrudRepository<_i1.Note, int>,
-        _i6.DataRepository<_i1.Note, int>,
+        _i2.NoteRepository,
+        _i6.ListCrudRepository<_i2.Note, int>,
+        _i6.CrudRepository<_i2.Note, int>,
+        _i6.DataRepository<_i2.Note, int>,
         _i6.ListCrudRepository<dynamic, dynamic>,
         _i6.CrudRepository<dynamic, dynamic>,
         _i6.DataRepository<dynamic, dynamic>,
@@ -278,99 +241,52 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i5.UseStore(r'memory'),
         _i5.UseDataSource(r'scratch'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches NoteRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.Library>(
+    _i1.BeanDefinition<_i2.Library>(
       name: r'library',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#Library',
-      types: const [_i1.Library],
       dependencies: const [
-        _i2.Dependency(_i1.BookRepository, name: r'books'),
-        _i2.Dependency(_i1.AuthorRepository, name: r'authors'),
-        _i2.Dependency(_i1.VisitRepository, name: r'visits'),
+        _i1.Dependency(_i2.BookRepository, name: r'books'),
+        _i1.Dependency(_i2.AuthorRepository, name: r'authors'),
+        _i1.Dependency(_i2.VisitRepository, name: r'visits'),
       ],
-      create: (r) => _i1.Library(
-        r.dependency<_i1.BookRepository>(name: r'books'),
-        r.dependency<_i1.AuthorRepository>(name: r'authors'),
-        r.dependency<_i1.VisitRepository>(name: r'visits'),
+      create: (r) => _i2.Library(
+        r.dependency<_i2.BookRepository>(name: r'books'),
+        r.dependency<_i2.AuthorRepository>(name: r'authors'),
+        r.dependency<_i2.VisitRepository>(name: r'visits'),
       ),
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'addBook',
-            declaringType: r'Library',
-            targetType: r'Library',
-            declaringTypes: [r'Library'],
+          _i1.MethodSignature.of(
+            r'addBook',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'title'],
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Library'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'visit',
-            declaringType: r'Library',
-            targetType: r'Library',
-            declaringTypes: [r'Library'],
+          _i1.MethodSignature.of(
+            r'visit',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'page', r'fail'],
             annotations: [_i7.Transactional(transactionManager: r'stats')],
             annotationTypes: [r'Transactional'],
-            targetTypes: [r'Library'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'books',
-            declaringType: r'Library',
-            targetType: r'Library',
-            declaringTypes: [r'Library'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'BookRepository',
-            targetTypes: [r'Library'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'authors',
-            declaringType: r'Library',
-            targetType: r'Library',
-            declaringTypes: [r'Library'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'AuthorRepository',
-            targetTypes: [r'Library'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'visits',
-            declaringType: r'Library',
-            targetType: r'Library',
-            declaringTypes: [r'Library'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'VisitRepository',
-            targetTypes: [r'Library'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         create: (target, invoker) =>
-            _$LibraryProxy((target as _i1.Library), invoker),
+            _$LibraryProxy((target as _i2.Library), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.EagerQuery>(
+    _i1.BeanDefinition<_i2.EagerQuery>(
       name: r'eagerQuery',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#EagerQuery',
-      types: const [_i1.EagerQuery],
       conditions: [
-        _i2.ConditionGroup(
+        _i1.ConditionGroup(
           r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#EagerQuery',
           [
             const _i8.ConditionalOnProperty(
@@ -380,26 +296,23 @@ _i2.BeanModule get $application => _i2.BeanModule(
           ],
         ),
       ],
-      dependencies: const [_i2.Dependency(_i1.BookRepository, name: r'books')],
+      dependencies: const [_i1.Dependency(_i2.BookRepository, name: r'books')],
       create: (r) =>
-          _i1.EagerQuery(r.dependency<_i1.BookRepository>(name: r'books')),
+          _i2.EagerQuery(r.dependency<_i2.BookRepository>(name: r'books')),
       postConstruct: (bean) {
         bean.start();
       },
       annotations: const [
-        _i2.Component(),
+        _i1.Component(),
         _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches EagerQuery, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.AsyncQuery>(
+    _i1.BeanDefinition<_i2.AsyncQuery>(
       name: r'asyncQuery',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#AsyncQuery',
-      types: const [_i1.AsyncQuery],
       conditions: [
-        _i2.ConditionGroup(
+        _i1.ConditionGroup(
           r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#AsyncQuery',
           [
             const _i8.ConditionalOnProperty(
@@ -410,69 +323,63 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i1.BookRepository, name: r'books'),
-        _i2.Dependency(_i1.OrderRepository, name: r'orders'),
+        _i1.Dependency(_i2.BookRepository, name: r'books'),
+        _i1.Dependency(_i2.OrderRepository, name: r'orders'),
       ],
-      create: (r) => _i1.AsyncQuery(
-        r.dependency<_i1.BookRepository>(name: r'books'),
-        r.dependency<_i1.OrderRepository>(name: r'orders'),
+      create: (r) => _i2.AsyncQuery(
+        r.dependency<_i2.BookRepository>(name: r'books'),
+        r.dependency<_i2.OrderRepository>(name: r'orders'),
       ),
       postConstruct: (bean) async {
         await bean.start();
       },
       annotations: const [
-        _i2.Component(),
+        _i1.Component(),
         _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches AsyncQuery, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.SeedRunner>(
+    _i1.BeanDefinition<_i2.SeedRunner>(
       name: r'seedRunner',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#SeedRunner',
-      types: const [_i1.SeedRunner, _i9.CommandLineRunner],
+      types: const [_i2.SeedRunner, _i9.CommandLineRunner],
       dependencies: const [
-        _i2.Dependency(_i1.AuthorRepository, name: r'authors'),
+        _i1.Dependency(_i2.AuthorRepository, name: r'authors'),
       ],
       create: (r) =>
-          _i1.SeedRunner(r.dependency<_i1.AuthorRepository>(name: r'authors')),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SeedRunner, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+          _i2.SeedRunner(r.dependency<_i2.AuthorRepository>(name: r'authors')),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i1.SeedApplicationRunner>(
+    _i1.BeanDefinition<_i2.SeedApplicationRunner>(
       name: r'seedApplicationRunner',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#SeedApplicationRunner',
-      types: const [_i1.SeedApplicationRunner, _i9.ApplicationRunner],
-      dependencies: const [_i2.Dependency(_i1.BookRepository, name: r'books')],
-      create: (r) => _i1.SeedApplicationRunner(
-        r.dependency<_i1.BookRepository>(name: r'books'),
+      types: const [_i2.SeedApplicationRunner, _i9.ApplicationRunner],
+      dependencies: const [_i1.Dependency(_i2.BookRepository, name: r'books')],
+      create: (r) => _i2.SeedApplicationRunner(
+        r.dependency<_i2.BookRepository>(name: r'books'),
       ),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SeedApplicationRunner, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i4.EntityIntrospections>(
+    _i1.BeanDefinition<_i4.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
       types: const [_i4.EntityIntrospections],
       create: (r) => _i4.EntityIntrospections([
-        _i4.EntityIntrospection<_i1.Author>(
+        _i4.EntityIntrospection<_i2.Author>(
           r'Author',
           const [
             _i4.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i5.Id()],
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'name',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
@@ -482,47 +389,47 @@ _i2.BeanModule get $application => _i2.BeanModule(
             0 => e.id,
             _ => e.name,
           },
-          create: (v) => _i1.Author(name: v[1] as String, id: v[0] as int?),
+          create: (v) => _i2.Author(name: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i1.Book>(
+        _i4.EntityIntrospection<_i2.Book>(
           r'Book',
           const [
             _i4.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i5.Id()],
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'title',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'year',
-              _i2.ClassType<int>(),
+              _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'author',
-              _i2.GenericType<_i5.AggregateReference<_i1.Author, int>>([
-                _i2.ClassType<_i1.Author>(),
-                _i2.ClassType<int>(),
+              _i1.GenericType<_i5.AggregateReference<_i2.Author, int>>([
+                _i1.ClassType<_i2.Author>(),
+                _i1.ClassType<int>(),
               ], nullable: true),
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'version',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i5.Version()],
               parameter: true,
               writable: true,
@@ -536,41 +443,41 @@ _i2.BeanModule get $application => _i2.BeanModule(
             3 => e.author,
             _ => e.version,
           },
-          create: (v) => _i1.Book(
+          create: (v) => _i2.Book(
             title: v[1] as String,
             year: v[2] as int,
             id: v[0] as int?,
-            author: v[3] as _i5.AggregateReference<_i1.Author, int>?,
+            author: v[3] as _i5.AggregateReference<_i2.Author, int>?,
             version: v[4] as int?,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.title = v as String,
             2 => e.year = v as int,
-            3 => e.author = v as _i5.AggregateReference<_i1.Author, int>?,
+            3 => e.author = v as _i5.AggregateReference<_i2.Author, int>?,
             4 => e.version = v as int?,
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i1.PurchaseOrder>(
+        _i4.EntityIntrospection<_i2.PurchaseOrder>(
           r'PurchaseOrder',
           const [
             _i4.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i5.Id()],
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'customer',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'lines',
-              _i2.ListType<_i1.OrderLine>(_i2.ClassType<_i1.OrderLine>()),
+              _i1.ListType<_i2.OrderLine>(_i1.ClassType<_i2.OrderLine>()),
               annotations: [_i5.MappedCollection()],
               parameter: true,
               writable: true,
@@ -584,30 +491,30 @@ _i2.BeanModule get $application => _i2.BeanModule(
             1 => e.customer,
             _ => e.lines,
           },
-          create: (v) => _i1.PurchaseOrder(
+          create: (v) => _i2.PurchaseOrder(
             customer: v[1] as String,
             id: v[0] as int?,
-            lines: v[2] as List<_i1.OrderLine>,
+            lines: v[2] as List<_i2.OrderLine>,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.customer = v as String,
-            2 => e.lines = v as List<_i1.OrderLine>,
+            2 => e.lines = v as List<_i2.OrderLine>,
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i1.OrderLine>(
+        _i4.EntityIntrospection<_i2.OrderLine>(
           r'OrderLine',
           const [
             _i4.EntityProperty(
               r'sku',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'quantity',
-              _i2.ClassType<int>(),
+              _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
@@ -618,26 +525,26 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _ => e.quantity,
           },
           create: (v) =>
-              _i1.OrderLine(sku: v[0] as String, quantity: v[1] as int),
+              _i2.OrderLine(sku: v[0] as String, quantity: v[1] as int),
           write: (e, i, v) => switch (i) {
             0 => e.sku = v as String,
             1 => e.quantity = v as int,
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i1.Visit>(
+        _i4.EntityIntrospection<_i2.Visit>(
           r'Visit',
           const [
             _i4.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i5.Id()],
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'page',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
@@ -647,26 +554,26 @@ _i2.BeanModule get $application => _i2.BeanModule(
             0 => e.id,
             _ => e.page,
           },
-          create: (v) => _i1.Visit(page: v[1] as String, id: v[0] as int?),
+          create: (v) => _i2.Visit(page: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.page = v as String,
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i1.Note>(
+        _i4.EntityIntrospection<_i2.Note>(
           r'Note',
           const [
             _i4.EntityProperty(
               r'id',
-              _i2.ClassType<int>(nullable: true),
+              _i1.ClassType<int>(nullable: true),
               annotations: [_i5.Id()],
               parameter: true,
               writable: true,
             ),
             _i4.EntityProperty(
               r'text',
-              _i2.ClassType<String>(),
+              _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
@@ -676,7 +583,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             0 => e.id,
             _ => e.text,
           },
-          create: (v) => _i1.Note(text: v[1] as String, id: v[0] as int?),
+          create: (v) => _i2.Note(text: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.text = v as String,
@@ -685,14 +592,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ]),
     ),
-    _i2.BeanDefinition<_i4.JdbcDriver>(
+    _i1.BeanDefinition<_i4.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
       types: const [_i4.JdbcDriver],
       conditions: [_i4.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i2.BeanDefinition<_i4.JdbcDriver>(
+    _i1.BeanDefinition<_i4.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
       types: const [_i4.JdbcDriver],
@@ -702,19 +609,19 @@ _i2.BeanModule get $application => _i2.BeanModule(
   ],
   imports: [_i10.dataConfigBeans],
   resources: const {
-    r'db/migration/R__book_titles.sql': _i2.EmbeddedResource.text(
+    r'db/migration/R__book_titles.sql': _i1.EmbeddedResource.text(
       'drop view if exists book_titles;\ncreate view book_titles as select id, title from books;\n',
     ),
-    r'db/migration/V1__authors_and_books.sql': _i2.EmbeddedResource.text(
+    r'db/migration/V1__authors_and_books.sql': _i1.EmbeddedResource.text(
       'create table authors (\n  id integer primary key,\n  name text not null\n);\n\ncreate table books (\n  id integer primary key,\n  title text not null,\n  year integer not null,\n  author integer references authors (id),\n  version integer\n);\n',
     ),
-    r'db/migration/V2__orders.sql': _i2.EmbeddedResource.text(
+    r'db/migration/V2__orders.sql': _i1.EmbeddedResource.text(
       'create table orders (\n  id integer primary key,\n  customer text not null\n);\n\ncreate table order_lines (\n  orders_id integer not null references orders (id),\n  orders_key integer not null,\n  sku text not null,\n  quantity integer not null\n);\n',
     ),
-    r'db/partial/V1__books_without_year.sql': _i2.EmbeddedResource.text(
+    r'db/partial/V1__books_without_year.sql': _i1.EmbeddedResource.text(
       'create table authors (\n  id integer primary key,\n  name text not null\n);\n\ncreate table books (\n  id integer primary key,\n  title text not null,\n  author integer,\n  version integer\n);\n\ncreate table orders (\n  id integer primary key,\n  customer text not null\n);\n\ncreate table order_lines (\n  orders_id integer not null,\n  orders_key integer not null,\n  sku text not null,\n  quantity integer not null\n);\n',
     ),
-    r'db/stats/V1__visits.sql': _i2.EmbeddedResource.text(
+    r'db/stats/V1__visits.sql': _i1.EmbeddedResource.text(
       'create table visits (\n  id integer primary key,\n  page text not null\n);\n',
     ),
   },
@@ -997,7 +904,7 @@ _i4.JdbcDriver _$postgresJdbcDriver() =>
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i2.SpringApplication get springApplication => _i2.SpringApplication(
+_i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
     _i14.springBootAutoConfiguration,
@@ -1054,31 +961,31 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '527a81ce',
+  fingerprint: '6758a513',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i2.ConfigurableApplicationContext reloadApplication(
-  _i2.ConfigurableApplicationContext running, {
+_i1.ConfigurableApplicationContext reloadApplication(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i2.ConfigurableApplicationContext running, {
+Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

@@ -157,23 +157,34 @@ final class IntrospectionPartError extends StateError {
 final class BeanProperty<T extends Object> {
   /// Describes the property [name] of [T] with the declared [type]; omit
   /// `set` for a read-only property and `get` for a write-only one.
-  BeanProperty(
+  ///
+  /// [type] may be left out when [typeInfo] is given: it is then the type
+  /// [typeInfo] describes. The generator writes it only when they differ,
+  /// and writes the closures as top-level functions, so its descriptions
+  /// are constants.
+  const BeanProperty(
     this.name, {
-    required this.type,
+    Type? type,
     this._get,
     this._set,
     this.nullable = false,
     this.typeInfo,
     this.hasInitialValue = false,
     this.initialValue,
-    List<Object> annotations = const [],
-  }) : annotations = List.unmodifiable(annotations);
+    this.annotations = const [],
+  }) : _type = type,
+       assert(
+         type != null || typeInfo != null,
+         'A BeanProperty needs a type or a typeInfo',
+       );
 
   /// The name of the field or getter.
   final String name;
 
+  final Type? _type;
+
   /// The declared type, without its nullability (see [nullable]).
-  final Type type;
+  Type get type => _type ?? typeInfo!.type;
 
   /// Whether the declared type is nullable.
   final bool nullable;
@@ -249,7 +260,7 @@ final class BeanProperty<T extends Object> {
     }
     return BeanProperty<T>(
       name,
-      type: type,
+      type: _type ?? earlier._type ?? type,
       get: _get ?? earlier._get,
       set: _set ?? earlier._set,
       nullable: nullable,
@@ -294,20 +305,18 @@ final class BeanProperty<T extends Object> {
 final class BeanMethod<T extends Object> {
   /// Describes the method [name] of [T], called through `invoke` (and
   /// `invokeNamed` when it has named parameters).
-  BeanMethod(
+  const BeanMethod(
     this.name, {
     required this._invoke,
     this._invokeNamed,
     this.returnType,
-    List<Type> parameterTypes = const [],
-    List<BeanParameter> parameters = const [],
+    this.parameterTypes = const [],
+    this.parameters = const [],
     this.returnTypeInfo,
     this.isFuture = false,
     this.isVoid = false,
-    List<Object> annotations = const [],
-  }) : parameterTypes = List.unmodifiable(parameterTypes),
-       parameters = List.unmodifiable(parameters),
-       annotations = List.unmodifiable(annotations);
+    this.annotations = const [],
+  });
 
   /// The method's name.
   final String name;
@@ -457,6 +466,33 @@ final class BeanParameter {
   String toString() => 'BeanParameter($name: $type)';
 }
 
+/// How generated code reads an optional named argument from the map of a
+/// [BeanConstructor] or [BeanMethod] call, as `Function.apply` passes it:
+/// the value when the map has it, else the parameter's default.
+///
+/// ```dart
+/// // Generated: Book(total: named.argumentOr(#total, 0))
+/// ```
+extension NamedArguments on Map<Symbol, Object?> {
+  /// The argument [name] as a [T], or [absent] when it is not passed.
+  T argumentOr<T>(Symbol name, T absent) =>
+      containsKey(name) ? this[name] as T : absent;
+}
+
+/// How generated code reads an optional positional argument from the list
+/// of a [BeanConstructor] or [BeanMethod] call, as `Function.apply`
+/// passes it: the value when the list is long enough, else the
+/// parameter's default.
+///
+/// ```dart
+/// // Generated: greet(arguments[0] as String, arguments.argumentOr(1, 1))
+/// ```
+extension PositionalArguments on List<Object?> {
+  /// The argument at [index] as a [T], or [absent] when it is not passed.
+  T argumentOr<T>(int index, T absent) =>
+      index < length ? this[index] as T : absent;
+}
+
 /// The description of the constructor an introspected class is created
 /// with (the unnamed one, or the one marked `@JsonCreator()`), with a
 /// closure that calls it.
@@ -484,10 +520,10 @@ final class BeanParameter {
 final class BeanConstructor<T extends Object> {
   /// A constructor with [parameters], called through `create` with the
   /// positional and named arguments.
-  BeanConstructor({
-    required List<BeanParameter> parameters,
+  const BeanConstructor({
+    required this.parameters,
     required this._create,
-  }) : parameters = List.unmodifiable(parameters);
+  });
 
   /// The parameters, in declaration order.
   final List<BeanParameter> parameters;
@@ -546,10 +582,14 @@ final class BeanIntrospection<T extends Object> {
   /// generator. [parts] lists what the description holds (the generator
   /// leaves out what the build saw nothing use); a hand-written one holds
   /// everything.
-  BeanIntrospection({
+  ///
+  /// The generator writes it as a constant when it can (a class without
+  /// type parameters, closures as top-level functions); the lookups by
+  /// name are then indexed on first use.
+  const BeanIntrospection({
     List<BeanProperty<T>> properties = const [],
     List<BeanMethod<T>> methods = const [],
-    List<Object> annotations = const [],
+    this.annotations = const [],
     this.parts = const {
       IntrospectionPart.read,
       IntrospectionPart.write,
@@ -561,12 +601,32 @@ final class BeanIntrospection<T extends Object> {
     this._toJson,
     this._className,
     this._specialize,
-  }) : _properties = {for (final p in properties) p.name: p},
-       _methods = {for (final m in methods) m.name: m},
-       annotations = List.unmodifiable(annotations);
+  }) : _propertyList = properties,
+       _methodList = methods;
 
-  final Map<String, BeanProperty<T>> _properties;
-  final Map<String, BeanMethod<T>> _methods;
+  final List<BeanProperty<T>> _propertyList;
+  final List<BeanMethod<T>> _methodList;
+
+  // The lookups by name, built on first use (a constant cannot hold them).
+  static final _propertyIndex = Expando<Map<String, Object>>(
+    'BeanIntrospection.properties',
+  );
+  static final _methodIndex = Expando<Map<String, Object>>(
+    'BeanIntrospection.methods',
+  );
+
+  // Later entries with the same name win, as in a map literal.
+  Map<String, BeanProperty<T>> get _properties =>
+      (_propertyIndex[this] ??= <String, BeanProperty<T>>{
+            for (final p in _propertyList) p.name: p,
+          })
+          as Map<String, BeanProperty<T>>;
+
+  Map<String, BeanMethod<T>> get _methods =>
+      (_methodIndex[this] ??= <String, BeanMethod<T>>{
+            for (final m in _methodList) m.name: m,
+          })
+          as Map<String, BeanMethod<T>>;
   final T Function()? _instantiate;
   final T Function(Object? json)? _fromJson;
   final Object? Function(T bean)? _toJson;

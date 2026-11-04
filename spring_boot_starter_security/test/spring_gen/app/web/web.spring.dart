@@ -7,53 +7,37 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_security/src/web/arguments.dart' as _i10;
 import 'package:spring_security_core/src/context/security_context.dart' as _i5;
 import 'package:spring_security_core/src/core/authentication.dart' as _i3;
 import 'package:spring_security_core/src/method/annotations.dart' as _i11;
 import 'package:spring_security_core/src/userdetails/user_details.dart' as _i4;
-import 'package:spring_web_dart/src/annotations.dart' as _i8;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i9;
+import 'package:spring_web_dart/src/annotations.dart' as _i9;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i8;
 import 'package:spring_web_dart/src/server/server_http_request.dart' as _i7;
 import 'package:spring_web_dart/src/server/server_http_response.dart' as _i6;
 
-import '../../../app/web/controllers.dart' as _i1;
+import '../../../app/web/controllers.dart' as _i2;
 
-class _$PublicControllerProxy implements _i1.PublicController, _i2.Advised {
-  _$PublicControllerProxy(this._target, this._invoker);
+class _$PublicControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i2.PublicController {
+  _$PublicControllerProxy(this._target, this.aopInvoker);
 
-  final _i1.PublicController _target;
+  final _i2.PublicController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String hello() => (this._invoker.invoke(
+  String hello() => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -62,7 +46,7 @@ class _$PublicControllerProxy implements _i1.PublicController, _i2.Advised {
   ) as String);
 
   @override
-  String home() => (this._invoker.invoke(
+  String home() => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -71,41 +55,25 @@ class _$PublicControllerProxy implements _i1.PublicController, _i2.Advised {
   ) as String);
 }
 
-class _$ApiControllerProxy implements _i1.ApiController, _i2.Advised {
-  _$ApiControllerProxy(this._target, this._invoker);
+class _$ApiControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i2.ApiController {
+  _$ApiControllerProxy(this._target, this.aopInvoker);
 
-  final _i1.ApiController _target;
+  final _i2.ApiController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   Map<String, Object?> me(_i3.Authentication authentication) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         0,
@@ -114,16 +82,16 @@ class _$ApiControllerProxy implements _i1.ApiController, _i2.Advised {
       ) as Map<String, Object?>);
 
   @override
-  String principal(_i2.Principal? principal) => (this._invoker.invoke(
+  String principal(_i1.Principal? principal) => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
     [principal],
-    (args) => this._target.principal((args[0] as _i2.Principal?)),
+    (args) => this._target.principal((args[0] as _i1.Principal?)),
   ) as String);
 
   @override
-  String user(_i4.UserDetails? user) => (this._invoker.invoke(
+  String user(_i4.UserDetails? user) => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
@@ -132,7 +100,7 @@ class _$ApiControllerProxy implements _i1.ApiController, _i2.Advised {
   ) as String);
 
   @override
-  String context(_i5.SecurityContext context) => (this._invoker.invoke(
+  String context(_i5.SecurityContext context) => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -141,7 +109,7 @@ class _$ApiControllerProxy implements _i1.ApiController, _i2.Advised {
   ) as String);
 
   @override
-  String admin() => (this._invoker.invoke(
+  String admin() => (this.aopInvoker.invoke(
     this,
     this._target,
     4,
@@ -150,22 +118,22 @@ class _$ApiControllerProxy implements _i1.ApiController, _i2.Advised {
   ) as String);
 
   @override
-  String data(String body) => (this._invoker.invoke(this, this._target, 5, [
+  String data(String body) => (this.aopInvoker.invoke(this, this._target, 5, [
     body,
   ], (args) => this._target.data((args[0] as String))) as String);
 
   @override
-  String userById(String id) => (this._invoker.invoke(this, this._target, 6, [
+  String userById(String id) => (this.aopInvoker.invoke(this, this._target, 6, [
     id,
   ], (args) => this._target.userById((args[0] as String))) as String);
 
   @override
-  String report(String id) => (this._invoker.invoke(this, this._target, 7, [
+  String report(String id) => (this.aopInvoker.invoke(this, this._target, 7, [
     id,
   ], (args) => this._target.report((args[0] as String))) as String);
 
   @override
-  String cors() => (this._invoker.invoke(
+  String cors() => (this.aopInvoker.invoke(
     this,
     this._target,
     8,
@@ -174,7 +142,7 @@ class _$ApiControllerProxy implements _i1.ApiController, _i2.Advised {
   ) as String);
 
   @override
-  String cached(_i6.ServerHttpResponse response) => (this._invoker.invoke(
+  String cached(_i6.ServerHttpResponse response) => (this.aopInvoker.invoke(
     this,
     this._target,
     9,
@@ -183,87 +151,53 @@ class _$ApiControllerProxy implements _i1.ApiController, _i2.Advised {
   ) as String);
 
   @override
-  _i1.Reports get reports => (this._invoker.invoke(
+  _i2.Reports get reports => (this.aopInvoker.invoke(
     this,
     this._target,
     10,
     const [],
     (_) => this._target.reports,
-  ) as _i1.Reports);
+  ) as _i2.Reports);
 }
 
-class _$ReportsProxy implements _i1.Reports, _i2.Advised {
-  _$ReportsProxy(this._target, this._invoker);
+class _$ReportsProxy with _i1.AdvisedWrapper implements _i2.Reports {
+  _$ReportsProxy(this._target, this.aopInvoker);
 
-  final _i1.Reports _target;
+  final _i2.Reports _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String report(String id) => (this._invoker.invoke(this, this._target, 0, [
+  String report(String id) => (this.aopInvoker.invoke(this, this._target, 0, [
     id,
   ], (args) => this._target.report((args[0] as String))) as String);
 }
 
-class _$FormControllerProxy implements _i1.FormController, _i2.Advised {
-  _$FormControllerProxy(this._target, this._invoker);
+class _$FormControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i2.FormController {
+  _$FormControllerProxy(this._target, this.aopInvoker);
 
-  final _i1.FormController _target;
+  final _i2.FormController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String form(_i7.ServerHttpRequest request) => (this._invoker.invoke(
+  String form(_i7.ServerHttpRequest request) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -272,530 +206,468 @@ class _$FormControllerProxy implements _i1.FormController, _i2.Advised {
   ) as String);
 
   @override
-  String submit(String text) => (this._invoker.invoke(this, this._target, 1, [
+  String submit(String text) => (this.aopInvoker.invoke(this, this._target, 1, [
     text,
   ], (args) => this._target.submit((args[0] as String))) as String);
 }
 
+Object? _$invoke0(_i2.PublicController bean, List<Object?> arguments) =>
+    bean.hello();
+Object? _$invoke1(_i2.PublicController bean, List<Object?> arguments) =>
+    bean.home();
+const _$target2 = _i1.AopTarget(
+  r'PublicController',
+  types: [r'PublicController'],
+  annotations: [_i8.RestController()],
+  annotationTypes: [r'RestController'],
+);
+Object? _$invoke3(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.me((arguments[0] as _i3.Authentication));
+Object? _$invoke4(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.principal((arguments[0] as _i1.Principal?));
+Object? _$invoke5(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.user((arguments[0] as _i4.UserDetails?));
+Object? _$invoke6(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.context((arguments[0] as _i5.SecurityContext));
+Object? _$invoke7(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.admin();
+Object? _$invoke8(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.data((arguments[0] as String));
+Object? _$invoke9(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.userById((arguments[0] as String));
+Object? _$invoke10(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.report((arguments[0] as String));
+Object? _$invoke11(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.cors();
+Object? _$invoke12(_i2.ApiController bean, List<Object?> arguments) =>
+    bean.cached((arguments[0] as _i6.ServerHttpResponse));
+const _$target13 = _i1.AopTarget(
+  r'ApiController',
+  types: [r'ApiController'],
+  annotations: [_i8.RestController(), _i9.RequestMapping(r'/api')],
+  annotationTypes: [r'RestController', r'RequestMapping'],
+);
+Object? _$invoke14(_i2.Reports bean, List<Object?> arguments) =>
+    bean.report((arguments[0] as String));
+const _$target15 = _i1.AopTarget(
+  r'Reports',
+  types: [r'Reports'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+Object? _$invoke16(_i2.FormController bean, List<Object?> arguments) =>
+    bean.form((arguments[0] as _i7.ServerHttpRequest));
+Object? _$invoke17(_i2.FormController bean, List<Object?> arguments) =>
+    bean.submit((arguments[0] as String));
+const _$target18 = _i1.AopTarget(
+  r'FormController',
+  types: [r'FormController'],
+  annotations: [_i8.RestController()],
+  annotationTypes: [r'RestController'],
+);
+
 /// Beans found by `@ComponentScan` in `test/app/web`.
-_i2.BeanModule get $securityWebBeans => _i2.BeanModule(r'securityWebBeans', [
-  _i2.BeanDefinition<_i1.PublicController>(
+_i1.BeanModule get $securityWebBeans => _i1.BeanModule(r'securityWebBeans', [
+  _i1.BeanDefinition<_i2.PublicController>(
     name: r'publicController',
     source: r'asset:spring_boot_starter_security/test/app/web/controllers.dart#PublicController',
-    types: const [_i1.PublicController],
-    create: (r) => _i1.PublicController(),
+    create: (r) => _i2.PublicController(),
     annotatedMethods: [
-      _i2.BeanMethod<_i1.PublicController>(
+      const _i1.BeanMethod<_i2.PublicController>(
         r'hello',
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.hello, arguments),
-        annotations: const [_i8.GetMapping(r'/public/hello')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke0,
+        annotations: [_i9.GetMapping(r'/public/hello')],
       ),
-      _i2.BeanMethod<_i1.PublicController>(
+      const _i1.BeanMethod<_i2.PublicController>(
         r'home',
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.home, arguments),
-        annotations: const [_i8.GetMapping(r'/')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke1,
+        annotations: [_i9.GetMapping(r'/')],
       ),
     ],
-    annotations: const [_i9.RestController()],
-    aopProxy: _i2.AopProxyFactory(
+    annotations: const [_i8.RestController()],
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'hello',
-          declaringType: r'PublicController',
-          targetType: r'PublicController',
-          declaringTypes: [r'PublicController'],
+        _i1.MethodSignature.of(
+          r'hello',
+          _$target2,
           returnType: r'String',
-          annotations: [_i8.GetMapping(r'/public/hello')],
+          annotations: [_i9.GetMapping(r'/public/hello')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'PublicController'],
-          targetAnnotations: [_i9.RestController()],
-          targetAnnotationTypes: [r'RestController'],
         ),
-        _i2.MethodSignature(
-          name: r'home',
-          declaringType: r'PublicController',
-          targetType: r'PublicController',
-          declaringTypes: [r'PublicController'],
+        _i1.MethodSignature.of(
+          r'home',
+          _$target2,
           returnType: r'String',
-          annotations: [_i8.GetMapping(r'/')],
+          annotations: [_i9.GetMapping(r'/')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'PublicController'],
-          targetAnnotations: [_i9.RestController()],
-          targetAnnotationTypes: [r'RestController'],
         ),
       ],
       create: (target, invoker) =>
-          _$PublicControllerProxy((target as _i1.PublicController), invoker),
+          _$PublicControllerProxy((target as _i2.PublicController), invoker),
     ),
   ),
-  _i2.BeanDefinition<_i1.ApiController>(
+  _i1.BeanDefinition<_i2.ApiController>(
     name: r'apiController',
     source: r'asset:spring_boot_starter_security/test/app/web/controllers.dart#ApiController',
-    types: const [_i1.ApiController],
-    dependencies: const [_i2.Dependency(_i1.Reports, name: r'reports')],
+    dependencies: const [_i1.Dependency(_i2.Reports, name: r'reports')],
     create: (r) =>
-        _i1.ApiController(r.dependency<_i1.Reports>(name: r'reports')),
+        _i2.ApiController(r.dependency<_i2.Reports>(name: r'reports')),
     annotatedMethods: [
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'me',
-        parameterTypes: const [_i3.Authentication],
+        parameterTypes: [_i3.Authentication],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'authentication',
-            type: const _i2.ClassType<_i3.Authentication>(),
+            type: _i1.ClassType<_i3.Authentication>(),
             isRequired: true,
           ),
         ],
-        returnTypeInfo: const _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
+        returnTypeInfo: _i1.MapType<String, dynamic>(
+          _i1.ClassType<String>(),
+          _i1.DynamicType(),
         ),
-        invoke: (bean, arguments) => Function.apply(bean.me, arguments),
-        annotations: const [_i8.GetMapping(r'/me')],
+        invoke: _$invoke3,
+        annotations: [_i9.GetMapping(r'/me')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'principal',
-        parameterTypes: const [_i2.Principal],
+        parameterTypes: [_i1.Principal],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'principal',
-            type: const _i2.ClassType<_i2.Principal>(nullable: true),
+            type: _i1.ClassType<_i1.Principal>(nullable: true),
             isRequired: true,
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.principal, arguments),
-        annotations: const [_i8.GetMapping(r'/principal')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke4,
+        annotations: [_i9.GetMapping(r'/principal')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'user',
-        parameterTypes: const [_i4.UserDetails],
+        parameterTypes: [_i4.UserDetails],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'user',
-            type: const _i2.ClassType<_i4.UserDetails>(nullable: true),
+            type: _i1.ClassType<_i4.UserDetails>(nullable: true),
             isRequired: true,
-            annotations: const [_i10.AuthenticationPrincipal()],
+            annotations: [_i10.AuthenticationPrincipal()],
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.user, arguments),
-        annotations: const [_i8.GetMapping(r'/user')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke5,
+        annotations: [_i9.GetMapping(r'/user')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'context',
-        parameterTypes: const [_i5.SecurityContext],
+        parameterTypes: [_i5.SecurityContext],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'context',
-            type: const _i2.ClassType<_i5.SecurityContext>(),
+            type: _i1.ClassType<_i5.SecurityContext>(),
             isRequired: true,
-            annotations: const [_i10.CurrentSecurityContext()],
+            annotations: [_i10.CurrentSecurityContext()],
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.context, arguments),
-        annotations: const [_i8.GetMapping(r'/context')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke6,
+        annotations: [_i9.GetMapping(r'/context')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'admin',
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.admin, arguments),
-        annotations: const [_i8.GetMapping(r'/admin')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke7,
+        annotations: [_i9.GetMapping(r'/admin')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'data',
-        parameterTypes: const [String],
+        parameterTypes: [String],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'body',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             isRequired: true,
-            annotations: const [_i8.RequestBody()],
+            annotations: [_i9.RequestBody()],
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.data, arguments),
-        annotations: const [_i8.PostMapping(r'/data')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke8,
+        annotations: [_i9.PostMapping(r'/data')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'userById',
-        parameterTypes: const [String],
+        parameterTypes: [String],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'id',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             isRequired: true,
-            annotations: const [_i8.PathVariable()],
+            annotations: [_i9.PathVariable()],
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.userById, arguments),
-        annotations: const [_i8.GetMapping(r'/users/{id}')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke9,
+        annotations: [_i9.GetMapping(r'/users/{id}')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'report',
-        parameterTypes: const [String],
+        parameterTypes: [String],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'id',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             isRequired: true,
-            annotations: const [_i8.PathVariable()],
+            annotations: [_i9.PathVariable()],
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.report, arguments),
-        annotations: const [_i8.GetMapping(r'/reports/{id}')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke10,
+        annotations: [_i9.GetMapping(r'/reports/{id}')],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'cors',
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.cors, arguments),
-        annotations: const [
-          _i8.GetMapping(r'/cors'),
-          _i9.CrossOrigin(origins: [r'https://app.example']),
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke11,
+        annotations: [
+          _i9.GetMapping(r'/cors'),
+          _i8.CrossOrigin(origins: [r'https://app.example']),
         ],
       ),
-      _i2.BeanMethod<_i1.ApiController>(
+      const _i1.BeanMethod<_i2.ApiController>(
         r'cached',
-        parameterTypes: const [_i6.ServerHttpResponse],
+        parameterTypes: [_i6.ServerHttpResponse],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'response',
-            type: const _i2.ClassType<_i6.ServerHttpResponse>(),
+            type: _i1.ClassType<_i6.ServerHttpResponse>(),
             isRequired: true,
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.cached, arguments),
-        annotations: const [_i8.GetMapping(r'/cached')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke12,
+        annotations: [_i9.GetMapping(r'/cached')],
       ),
     ],
-    annotations: const [_i9.RestController(), _i8.RequestMapping(r'/api')],
-    aopProxy: _i2.AopProxyFactory(
+    annotations: const [_i8.RestController(), _i9.RequestMapping(r'/api')],
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'me',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'me',
+          _$target13,
           returnType: r'Map',
           parameterTypes: [r'Authentication'],
           parameterNames: [r'authentication'],
-          annotations: [_i8.GetMapping(r'/me')],
+          annotations: [_i9.GetMapping(r'/me')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'principal',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'principal',
+          _$target13,
           returnType: r'String',
           parameterTypes: [r'Principal'],
           parameterNames: [r'principal'],
-          annotations: [_i8.GetMapping(r'/principal')],
+          annotations: [_i9.GetMapping(r'/principal')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'user',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'user',
+          _$target13,
           returnType: r'String',
           parameterTypes: [r'UserDetails'],
           parameterNames: [r'user'],
           parameterAnnotations: [
             [_i10.AuthenticationPrincipal()],
           ],
-          annotations: [_i8.GetMapping(r'/user')],
+          annotations: [_i9.GetMapping(r'/user')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'context',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'context',
+          _$target13,
           returnType: r'String',
           parameterTypes: [r'SecurityContext'],
           parameterNames: [r'context'],
           parameterAnnotations: [
             [_i10.CurrentSecurityContext()],
           ],
-          annotations: [_i8.GetMapping(r'/context')],
+          annotations: [_i9.GetMapping(r'/context')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'admin',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'admin',
+          _$target13,
           returnType: r'String',
-          annotations: [_i8.GetMapping(r'/admin')],
+          annotations: [_i9.GetMapping(r'/admin')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'data',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'data',
+          _$target13,
           returnType: r'String',
           parameterTypes: [r'String'],
           parameterNames: [r'body'],
           parameterAnnotations: [
-            [_i8.RequestBody()],
+            [_i9.RequestBody()],
           ],
-          annotations: [_i8.PostMapping(r'/data')],
+          annotations: [_i9.PostMapping(r'/data')],
           annotationTypes: [r'PostMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'userById',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'userById',
+          _$target13,
           returnType: r'String',
           parameterTypes: [r'String'],
           parameterNames: [r'id'],
           parameterAnnotations: [
-            [_i8.PathVariable()],
+            [_i9.PathVariable()],
           ],
-          annotations: [_i8.GetMapping(r'/users/{id}')],
+          annotations: [_i9.GetMapping(r'/users/{id}')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'report',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'report',
+          _$target13,
           returnType: r'String',
           parameterTypes: [r'String'],
           parameterNames: [r'id'],
           parameterAnnotations: [
-            [_i8.PathVariable()],
+            [_i9.PathVariable()],
           ],
-          annotations: [_i8.GetMapping(r'/reports/{id}')],
+          annotations: [_i9.GetMapping(r'/reports/{id}')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'cors',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'cors',
+          _$target13,
           returnType: r'String',
           annotations: [
-            _i8.GetMapping(r'/cors'),
-            _i9.CrossOrigin(origins: [r'https://app.example']),
+            _i9.GetMapping(r'/cors'),
+            _i8.CrossOrigin(origins: [r'https://app.example']),
           ],
           annotationTypes: [r'GetMapping', r'CrossOrigin'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'cached',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
+        _i1.MethodSignature.of(
+          r'cached',
+          _$target13,
           returnType: r'String',
           parameterTypes: [r'ServerHttpResponse'],
           parameterNames: [r'response'],
-          annotations: [_i8.GetMapping(r'/cached')],
+          annotations: [_i9.GetMapping(r'/cached')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
-        _i2.MethodSignature(
-          name: r'reports',
-          declaringType: r'ApiController',
-          targetType: r'ApiController',
-          declaringTypes: [r'ApiController'],
-          kind: _i2.MemberKind.getter,
+        _i1.MethodSignature.of(
+          r'reports',
+          _$target13,
+          kind: _i1.MemberKind.getter,
           returnType: r'Reports',
-          targetTypes: [r'ApiController'],
-          targetAnnotations: [
-            _i9.RestController(),
-            _i8.RequestMapping(r'/api'),
-          ],
-          targetAnnotationTypes: [r'RestController', r'RequestMapping'],
         ),
       ],
       create: (target, invoker) =>
-          _$ApiControllerProxy((target as _i1.ApiController), invoker),
+          _$ApiControllerProxy((target as _i2.ApiController), invoker),
     ),
   ),
-  _i2.BeanDefinition<_i1.Reports>(
+  _i1.BeanDefinition<_i2.Reports>(
     name: r'reports',
     source: r'asset:spring_boot_starter_security/test/app/web/controllers.dart#Reports',
-    types: const [_i1.Reports],
-    create: (r) => _i1.Reports(),
+    create: (r) => _i2.Reports(),
     annotatedMethods: [
-      _i2.BeanMethod<_i1.Reports>(
+      const _i1.BeanMethod<_i2.Reports>(
         r'report',
-        parameterTypes: const [String],
+        parameterTypes: [String],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'id',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             isRequired: true,
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.report, arguments),
-        annotations: const [_i11.PreAuthorize("hasRole('ADMIN')")],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke14,
+        annotations: [_i11.PreAuthorize("hasRole('ADMIN')")],
       ),
     ],
-    annotations: const [_i2.Service()],
-    aopProxy: _i2.AopProxyFactory(
+    annotations: const [_i1.Service()],
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'report',
-          declaringType: r'Reports',
-          targetType: r'Reports',
-          declaringTypes: [r'Reports'],
+        _i1.MethodSignature.of(
+          r'report',
+          _$target15,
           returnType: r'String',
           parameterTypes: [r'String'],
           parameterNames: [r'id'],
           annotations: [_i11.PreAuthorize("hasRole('ADMIN')")],
           annotationTypes: [r'PreAuthorize'],
-          targetTypes: [r'Reports'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
         ),
       ],
       create: (target, invoker) =>
-          _$ReportsProxy((target as _i1.Reports), invoker),
+          _$ReportsProxy((target as _i2.Reports), invoker),
     ),
   ),
-  _i2.BeanDefinition<_i1.FormController>(
+  _i1.BeanDefinition<_i2.FormController>(
     name: r'formController',
     source: r'asset:spring_boot_starter_security/test/app/web/controllers.dart#FormController',
-    types: const [_i1.FormController],
-    create: (r) => _i1.FormController(),
+    create: (r) => _i2.FormController(),
     annotatedMethods: [
-      _i2.BeanMethod<_i1.FormController>(
+      const _i1.BeanMethod<_i2.FormController>(
         r'form',
-        parameterTypes: const [_i7.ServerHttpRequest],
+        parameterTypes: [_i7.ServerHttpRequest],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'request',
-            type: const _i2.ClassType<_i7.ServerHttpRequest>(),
+            type: _i1.ClassType<_i7.ServerHttpRequest>(),
             isRequired: true,
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.form, arguments),
-        annotations: const [_i8.GetMapping(r'/form')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke16,
+        annotations: [_i9.GetMapping(r'/form')],
       ),
-      _i2.BeanMethod<_i1.FormController>(
+      const _i1.BeanMethod<_i2.FormController>(
         r'submit',
-        parameterTypes: const [String],
+        parameterTypes: [String],
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'text',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             isRequired: true,
-            annotations: const [_i8.RequestParam()],
+            annotations: [_i9.RequestParam()],
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.submit, arguments),
-        annotations: const [_i8.PostMapping(r'/form')],
+        returnTypeInfo: _i1.ClassType<String>(),
+        invoke: _$invoke17,
+        annotations: [_i9.PostMapping(r'/form')],
       ),
     ],
-    annotations: const [_i9.RestController()],
-    aopProxy: _i2.AopProxyFactory(
+    annotations: const [_i8.RestController()],
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'form',
-          declaringType: r'FormController',
-          targetType: r'FormController',
-          declaringTypes: [r'FormController'],
+        _i1.MethodSignature.of(
+          r'form',
+          _$target18,
           returnType: r'String',
           parameterTypes: [r'ServerHttpRequest'],
           parameterNames: [r'request'],
-          annotations: [_i8.GetMapping(r'/form')],
+          annotations: [_i9.GetMapping(r'/form')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'FormController'],
-          targetAnnotations: [_i9.RestController()],
-          targetAnnotationTypes: [r'RestController'],
         ),
-        _i2.MethodSignature(
-          name: r'submit',
-          declaringType: r'FormController',
-          targetType: r'FormController',
-          declaringTypes: [r'FormController'],
+        _i1.MethodSignature.of(
+          r'submit',
+          _$target18,
           returnType: r'String',
           parameterTypes: [r'String'],
           parameterNames: [r'text'],
           parameterAnnotations: [
-            [_i8.RequestParam()],
+            [_i9.RequestParam()],
           ],
-          annotations: [_i8.PostMapping(r'/form')],
+          annotations: [_i9.PostMapping(r'/form')],
           annotationTypes: [r'PostMapping'],
-          targetTypes: [r'FormController'],
-          targetAnnotations: [_i9.RestController()],
-          targetAnnotationTypes: [r'RestController'],
         ),
       ],
       create: (target, invoker) =>
-          _$FormControllerProxy((target as _i1.FormController), invoker),
+          _$FormControllerProxy((target as _i2.FormController), invoker),
     ),
   ),
 ]);

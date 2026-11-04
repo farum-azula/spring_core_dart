@@ -27,67 +27,25 @@ import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i18;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i19;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i20;
-import 'package:spring_security_core/src/core/authentication.dart' as _i10;
-import 'package:spring_security_core/src/method/annotations.dart' as _i7;
-import 'package:spring_security_core/src/userdetails/user_details.dart' as _i11;
+import 'package:spring_security_core/src/core/authentication.dart' as _i7;
+import 'package:spring_security_core/src/method/annotations.dart' as _i9;
+import 'package:spring_security_core/src/userdetails/user_details.dart' as _i8;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
     as _i6;
-import 'package:spring_web_dart/src/annotations.dart' as _i8;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i9;
+import 'package:spring_web_dart/src/annotations.dart' as _i10;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i11;
 
 import '../example.dart' as _i1;
 
-class _$BookServiceProxy extends _i1.BookService implements _i2.Advised {
+class _$BookServiceProxy extends _i1.BookService with _i2.AdvisedSubclass {
   _$BookServiceProxy();
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$BookServiceProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  List<String> all() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.all()
-        : (_$i.invoke(this, this, 0, const [], (args) => super.all())
-              as List<String>);
-  }
 
   @override
   _i3.Future<void> remove(String id) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.remove(id)
-        : _$i.invokeAsync<void>(this, this, 1, [
+        : _$i.invokeAsync<void>(this, this, 0, [
             id,
           ], (args) => super.remove((args[0] as String)));
   }
@@ -149,154 +107,147 @@ class _$SecurityConfigConfiguration extends _i1.SecurityConfig {
   _i6.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
 }
 
+Object? _$invoke0(_i1.BookService bean, List<Object?> arguments) =>
+    bean.remove((arguments[0] as String));
+const _$target1 = _i2.AopTarget(
+  r'BookService',
+  types: [r'BookService'],
+  annotations: [_i2.Service()],
+  annotationTypes: [r'Service'],
+);
+Object? _$invoke2(_i1.BookController bean, List<Object?> arguments) =>
+    bean.all();
+Object? _$invoke3(_i1.BookController bean, List<Object?> arguments) =>
+    bean.remove((arguments[0] as String));
+Object? _$invoke4(_i1.BookController bean, List<Object?> arguments) =>
+    bean.me((arguments[0] as _i7.Authentication));
+Object? _$invoke5(_i1.AccountController bean, List<Object?> arguments) =>
+    bean.account((arguments[0] as _i8.UserDetails));
+
 /// Beans found by `@ComponentScan` in `example/`.
 _i2.BeanModule get $application => _i2.BeanModule(r'application', [
   _i2.BeanDefinition<_i1.BookService>(
     name: r'bookService',
     source:
         r'asset:spring_boot_starter_security/example/example.dart#BookService',
-    types: const [_i1.BookService],
     create: (r) => _$BookServiceProxy(),
     annotatedMethods: [
-      _i2.BeanMethod<_i1.BookService>(
+      const _i2.BeanMethod<_i1.BookService>(
         r'remove',
-        parameterTypes: const [String],
+        parameterTypes: [String],
         parameters: [
           _i2.BeanParameter(
             r'id',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             isRequired: true,
           ),
         ],
         isFuture: true,
         isVoid: true,
-        invoke: (bean, arguments) => Function.apply(bean.remove, arguments),
-        annotations: const [_i7.PreAuthorize("hasRole('ADMIN')")],
+        invoke: _$invoke0,
+        annotations: [_i9.PreAuthorize("hasRole('ADMIN')")],
       ),
     ],
     annotations: const [_i2.Service()],
     aopProxy: _i2.AopProxyFactory.subclass(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'all',
-          declaringType: r'BookService',
-          targetType: r'BookService',
-          declaringTypes: [r'BookService'],
-          returnType: r'List',
-          targetTypes: [r'BookService'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-        _i2.MethodSignature(
-          name: r'remove',
-          declaringType: r'BookService',
-          targetType: r'BookService',
-          declaringTypes: [r'BookService'],
+        _i2.MethodSignature.of(
+          r'remove',
+          _$target1,
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'id'],
-          annotations: [_i7.PreAuthorize("hasRole('ADMIN')")],
+          annotations: [_i9.PreAuthorize("hasRole('ADMIN')")],
           annotationTypes: [r'PreAuthorize'],
-          targetTypes: [r'BookService'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
         ),
       ],
       advise: (bean, invoker) =>
-          bean is _$BookServiceProxy ? bean._$advise(invoker) : null,
+          bean is _$BookServiceProxy ? (bean..aopInvoker = invoker) : null,
     ),
   ),
   _i2.BeanDefinition<_i1.BookController>(
     name: r'bookController',
     source: r'asset:spring_boot_starter_security/example/example.dart#BookController',
-    types: const [_i1.BookController],
     dependencies: const [_i2.Dependency(_i1.BookService, name: r'books')],
     create: (r) =>
         _i1.BookController(r.dependency<_i1.BookService>(name: r'books')),
     annotatedMethods: [
-      _i2.BeanMethod<_i1.BookController>(
+      const _i2.BeanMethod<_i1.BookController>(
         r'all',
-        returnTypeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-        invoke: (bean, arguments) => Function.apply(bean.all, arguments),
-        annotations: const [_i8.GetMapping(r'/books')],
+        returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
+        invoke: _$invoke2,
+        annotations: [_i10.GetMapping(r'/books')],
       ),
-      _i2.BeanMethod<_i1.BookController>(
+      const _i2.BeanMethod<_i1.BookController>(
         r'remove',
-        parameterTypes: const [String],
+        parameterTypes: [String],
         parameters: [
           _i2.BeanParameter(
             r'id',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             isRequired: true,
-            annotations: const [_i8.PathVariable()],
+            annotations: [_i10.PathVariable()],
           ),
         ],
         isFuture: true,
         isVoid: true,
-        invoke: (bean, arguments) => Function.apply(bean.remove, arguments),
-        annotations: const [
-          _i8.DeleteMapping(r'/books/{id}'),
-          _i9.ResponseStatus(204),
+        invoke: _$invoke3,
+        annotations: [
+          _i10.DeleteMapping(r'/books/{id}'),
+          _i11.ResponseStatus(204),
         ],
       ),
-      _i2.BeanMethod<_i1.BookController>(
+      const _i2.BeanMethod<_i1.BookController>(
         r'me',
-        parameterTypes: const [_i10.Authentication],
+        parameterTypes: [_i7.Authentication],
         parameters: [
           _i2.BeanParameter(
             r'authentication',
-            type: const _i2.ClassType<_i10.Authentication>(),
+            type: _i2.ClassType<_i7.Authentication>(),
             isRequired: true,
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.me, arguments),
-        annotations: const [_i8.GetMapping(r'/me')],
+        returnTypeInfo: _i2.ClassType<String>(),
+        invoke: _$invoke4,
+        annotations: [_i10.GetMapping(r'/me')],
       ),
     ],
-    annotations: const [_i9.RestController(), _i8.RequestMapping(r'/api')],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches BookController, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    annotations: const [_i11.RestController(), _i10.RequestMapping(r'/api')],
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
   _i2.BeanDefinition<_i1.AccountController>(
     name: r'accountController',
     source: r'asset:spring_boot_starter_security/example/example.dart#AccountController',
-    types: const [_i1.AccountController],
     create: (r) => _i1.AccountController(),
     annotatedMethods: [
-      _i2.BeanMethod<_i1.AccountController>(
+      const _i2.BeanMethod<_i1.AccountController>(
         r'account',
-        parameterTypes: const [_i11.UserDetails],
+        parameterTypes: [_i8.UserDetails],
         parameters: [
           _i2.BeanParameter(
             r'user',
-            type: const _i2.ClassType<_i11.UserDetails>(),
+            type: _i2.ClassType<_i8.UserDetails>(),
             isRequired: true,
-            annotations: const [_i12.AuthenticationPrincipal()],
+            annotations: [_i12.AuthenticationPrincipal()],
           ),
         ],
-        returnTypeInfo: const _i2.ClassType<String>(),
-        invoke: (bean, arguments) => Function.apply(bean.account, arguments),
-        annotations: const [_i8.GetMapping(r'/account')],
+        returnTypeInfo: _i2.ClassType<String>(),
+        invoke: _$invoke5,
+        annotations: [_i10.GetMapping(r'/account')],
       ),
     ],
-    annotations: const [_i9.RestController()],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches AccountController, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    annotations: const [_i11.RestController()],
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
   _i2.BeanDefinition<_i1.SecurityConfig>(
     name: r'securityConfig',
     source: r'asset:spring_boot_starter_security/example/example.dart#SecurityConfig',
-    types: const [_i1.SecurityConfig],
     create: (r) => _$SecurityConfigConfiguration(r),
     annotations: const [_i2.Configuration()],
   ),
   _i2.BeanDefinition<_i4.SecurityFilterChain>(
     name: r'api',
     source: r'asset:spring_boot_starter_security/example/example.dart#SecurityConfig.api',
-    types: const [_i4.SecurityFilterChain],
     factoryBeanName: r'securityConfig',
     factoryMethodName: r'api',
     order: 1,
@@ -308,14 +259,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       qualifier: r'securityConfig',
     ) as _$SecurityConfigConfiguration)._$api(r),
     annotations: const [_i2.Bean(), _i2.Order(1)],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches SecurityFilterChain, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
   _i2.BeanDefinition<_i4.SecurityFilterChain>(
     name: r'pages',
     source: r'asset:spring_boot_starter_security/example/example.dart#SecurityConfig.pages',
-    types: const [_i4.SecurityFilterChain],
     factoryBeanName: r'securityConfig',
     factoryMethodName: r'pages',
     order: 2,
@@ -327,9 +275,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       qualifier: r'securityConfig',
     ) as _$SecurityConfigConfiguration)._$pages(r),
     annotations: const [_i2.Bean(), _i2.Order(2)],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches SecurityFilterChain, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
   _i2.BeanDefinition<_i6.InMemoryUserDetailsManager>(
     name: r'users',
@@ -351,9 +297,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
             ) as _$SecurityConfigConfiguration)._$users(r)
             as _i6.InMemoryUserDetailsManager),
     annotations: const [_i2.Bean()],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches InMemoryUserDetailsManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i2.AopProxyFactory.pruned(),
   ),
 ]);
 
@@ -428,7 +372,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '029801e4',
+  fingerprint: '8090e0e9',
 );
 
 /// Starts the application: config files, environment, context, runners

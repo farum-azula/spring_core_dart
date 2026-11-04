@@ -254,7 +254,7 @@ void main() {
       final child = BeanIntrospector(parent: registry);
       expect(child.forType(Person), same(personIntrospection));
       expect(child.findIntrospection(Address()), same(addressIntrospection));
-      final noCtor = BeanIntrospection<Object>();
+      const noCtor = BeanIntrospection<Object>();
       expect(noCtor.isInstantiable, isFalse);
       expect(noCtor.instantiate, throwsStateError);
     });

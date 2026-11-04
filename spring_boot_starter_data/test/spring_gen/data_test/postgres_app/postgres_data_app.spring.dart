@@ -64,9 +64,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i5.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches BookRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
       name: r'entityIntrospections#application',
@@ -483,7 +481,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '2d217327',
+  fingerprint: 'cd4013f9',
 );
 
 /// Starts the application: config files, environment, context, runners

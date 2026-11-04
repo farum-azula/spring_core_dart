@@ -847,17 +847,23 @@ class Cart extends ChangeNotifier {
 ''');
       expect(
         output,
-        _has(r'class _$CounterProxy extends Counter with ChangeNotifier'),
+        _has(
+          r'class _$CounterProxy extends Counter '
+          'with ChangeNotifier, AdvisedSubclass',
+        ),
       );
       expect(
         output,
-        _has(r'class _$BasketProxy with ChangeNotifier implements Basket'),
+        _has(
+          r'class _$BasketProxy with ChangeNotifier, AdvisedWrapper '
+          'implements Basket',
+        ),
       );
       expect(
         output,
-        isNot(contains(_normalize(r'_$CartProxy extends Cart with'))),
+        isNot(contains(_normalize(r'_$CartProxy extends Cart with Change'))),
       );
-      expect(output, isNot(contains(_normalize(r'_$CartProxy with'))));
+      expect(output, isNot(contains(_normalize(r'_$CartProxy with Change'))));
     });
 
     test('exclude names a member of the class', () async {

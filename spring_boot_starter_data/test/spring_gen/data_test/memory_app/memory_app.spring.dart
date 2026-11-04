@@ -64,21 +64,16 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i5.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$NoteRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches NoteRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
     _i3.BeanDefinition<_i2.NoteService>(
       name: r'noteService',
       source: r'asset:spring_boot_starter_data/test/data_test/memory_app/memory_app.dart#NoteService',
-      types: const [_i2.NoteService],
       dependencies: const [_i3.Dependency(_i2.NoteRepository, name: r'notes')],
       create: (r) =>
           _i2.NoteService(r.dependency<_i2.NoteRepository>(name: r'notes')),
       annotations: const [_i3.Service()],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches NoteService, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
       name: r'entityIntrospections#application',
@@ -464,7 +459,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '99cdedf5',
+  fingerprint: '34e8ac2f',
 );
 
 /// Starts the application: config files, environment, context, runners

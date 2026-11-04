@@ -210,9 +210,10 @@ void main() {
     initial('scale', '-1.5');
     initial('note', 'null');
     initial('state', 'Status.draft');
-    initial('tags', "const [r'a', r'b']");
-    initial('limits', "const {r'x': 1}");
-    initial('ids', 'const {1, 2}');
+    // In a constant description, the collections need no `const`.
+    initial('tags', "[r'a', r'b']");
+    initial('limits', "{r'x': 1}");
+    initial('ids', '{1, 2}');
     initial('limit', '7');
     initial('hidden', '9');
     initial('noInitializer', '0');
@@ -252,7 +253,7 @@ void main() {
     default_('Named', 'level', '4');
     default_('Named', 'status', 'Status.draft');
     default_('Named', 'nothing', 'null');
-    default_('Named', 'tags', "const [r't']");
+    default_('Named', 'tags', "[r't']");
     default_('Named', 'label', "r'x'");
     default_('Named', 'flag', 'false');
     default_('Named', 'limit', '9');

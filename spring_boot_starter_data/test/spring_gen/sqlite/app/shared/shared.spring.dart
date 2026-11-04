@@ -11,67 +11,48 @@ import 'dart:async' as _i7;
 import 'dart:io' as _i6;
 
 import 'package:postgres/postgres.dart' as _i5;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
 import 'package:sqlite3/sqlite3.dart' as _i4;
 
-import '../../../../sqlite/app/shared/shared.dart' as _i1;
+import '../../../../sqlite/app/shared/shared.dart' as _i2;
 
-class _$SharedBeanProxy implements _i1.SharedBean, _i2.Advised {
-  _$SharedBeanProxy(this._target, this._invoker);
+class _$SharedBeanProxy with _i1.AdvisedWrapper implements _i2.SharedBean {
+  _$SharedBeanProxy(this._target, this.aopInvoker);
 
-  final _i1.SharedBean _target;
+  final _i2.SharedBean _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 }
 
 /// Beans found by `@ComponentScan` in `test/sqlite/app/shared`.
-_i2.BeanModule get $sharedBeans => _i2.BeanModule(r'sharedBeans', [
-  _i2.BeanDefinition<_i1.SharedBean>(
+_i1.BeanModule get $sharedBeans => _i1.BeanModule(r'sharedBeans', [
+  _i1.BeanDefinition<_i2.SharedBean>(
     name: r'sharedBean',
     source: r'asset:spring_boot_starter_data/test/sqlite/app/shared/shared.dart#SharedBean',
-    types: const [_i1.SharedBean],
-    create: (r) => _i1.SharedBean(),
-    annotations: const [_i2.Component()],
-    aopProxy: _i2.AopProxyFactory(
+    create: (r) => _i2.SharedBean(),
+    annotations: const [_i1.Component()],
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [],
       create: (target, invoker) =>
-          _$SharedBeanProxy((target as _i1.SharedBean), invoker),
+          _$SharedBeanProxy((target as _i2.SharedBean), invoker),
     ),
   ),
-  _i2.BeanDefinition<_i3.JdbcDriver>(
+  _i1.BeanDefinition<_i3.JdbcDriver>(
     name: r'sqlite3JdbcDriver',
     source: r'package:spring_boot_starter_data#sqlite3',
     types: const [_i3.JdbcDriver],
     conditions: [_i3.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
     create: (r) => _$sqlite3JdbcDriver(),
   ),
-  _i2.BeanDefinition<_i3.JdbcDriver>(
+  _i1.BeanDefinition<_i3.JdbcDriver>(
     name: r'postgresJdbcDriver',
     source: r'package:spring_boot_starter_data#postgres',
     types: const [_i3.JdbcDriver],

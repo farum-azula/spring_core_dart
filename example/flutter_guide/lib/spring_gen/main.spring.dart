@@ -8,327 +8,119 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i3;
-import 'dart:typed_data' as _i5;
-import 'dart:ui' as _i4;
+import 'dart:async' as _i4;
+import 'dart:typed_data' as _i8;
 
-import 'package:flutter/foundation.dart' as _i10;
-import 'package:flutter/src/foundation/change_notifier.dart' as _i61;
-import 'package:flutter/src/painting/image_provider.dart' as _i6;
-import 'package:flutter/src/widgets/navigator.dart' as _i58;
+import 'package:flutter/foundation.dart' as _i2;
+import 'package:flutter/src/foundation/change_notifier.dart' as _i58;
+import 'package:flutter/src/widgets/navigator.dart' as _i55;
 import 'package:flutter/widgets.dart';
-import 'package:flutter/widgets.dart' as _i82;
-import 'package:neon_books_app/src/about/app_assets.dart' as _i1;
-import 'package:neon_books_app/src/account/keycloak.dart' as _i36;
+import 'package:flutter/widgets.dart' as _i79;
+import 'package:neon_books_app/src/about/app_assets.dart' as _i40;
+import 'package:neon_books_app/src/account/keycloak.dart' as _i25;
 import 'package:neon_books_app/src/account/server_authentication_provider.dart'
-    as _i7;
-import 'package:neon_books_app/src/account/session.dart' as _i9;
-import 'package:neon_books_app/src/account/sso_properties.dart' as _i40;
-import 'package:neon_books_app/src/admin/admin_page.dart' as _i63;
-import 'package:neon_books_app/src/admin/admin_service.dart' as _i12;
-import 'package:neon_books_app/src/admin/book_form.dart' as _i14;
-import 'package:neon_books_app/src/api/account_client.dart' as _i27;
-import 'package:neon_books_app/src/api/admin_client.dart' as _i30;
-import 'package:neon_books_app/src/api/api_config.dart' as _i43;
-import 'package:neon_books_app/src/api/api_properties.dart' as _i44;
-import 'package:neon_books_app/src/api/catalog_client.dart' as _i31;
-import 'package:neon_books_app/src/api/cookie_jar.dart' as _i15;
-import 'package:neon_books_app/src/api/models.dart' as _i13;
-import 'package:neon_books_app/src/api/session_transport.dart' as _i53;
-import 'package:neon_books_app/src/api/shop_client.dart' as _i32;
-import 'package:neon_books_app/src/api/stock_client.dart' as _i33;
-import 'package:neon_books_app/src/api/support_handshake.dart' as _i16;
-import 'package:neon_books_app/src/api/support_socket.dart' as _i34;
-import 'package:neon_books_app/src/app/app_properties.dart' as _i54;
-import 'package:neon_books_app/src/app/language.dart' as _i18;
-import 'package:neon_books_app/src/app/lifecycle_log.dart' as _i55;
-import 'package:neon_books_app/src/app/route_log.dart' as _i57;
-import 'package:neon_books_app/src/basket/basket.dart' as _i20;
-import 'package:neon_books_app/src/basket/basket_page.dart' as _i64;
-import 'package:neon_books_app/src/catalog/book_page.dart' as _i65;
-import 'package:neon_books_app/src/catalog/catalog.dart' as _i21;
-import 'package:neon_books_app/src/catalog/catalog_refresh.dart' as _i22;
-import 'package:neon_books_app/src/catalog/catalog_service.dart' as _i23;
-import 'package:neon_books_app/src/orders/order_service.dart' as _i24;
-import 'package:neon_books_app/src/orders/orders_page.dart' as _i67;
-import 'package:neon_books_app/src/settings/settings_page.dart' as _i68;
-import 'package:neon_books_app/src/stock/live_stock.dart' as _i25;
-import 'package:neon_books_app/src/support/support_chat.dart' as _i26;
-import 'package:neon_books_app/src/support/support_page.dart' as _i70;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i72;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i71;
-import 'package:spring_boot_dart/src/events.dart' as _i11;
+    as _i43;
+import 'package:neon_books_app/src/account/session.dart' as _i1;
+import 'package:neon_books_app/src/account/sso_properties.dart' as _i29;
+import 'package:neon_books_app/src/admin/admin_page.dart' as _i60;
+import 'package:neon_books_app/src/admin/admin_service.dart' as _i6;
+import 'package:neon_books_app/src/admin/book_form.dart' as _i47;
+import 'package:neon_books_app/src/api/account_client.dart' as _i16;
+import 'package:neon_books_app/src/api/admin_client.dart' as _i19;
+import 'package:neon_books_app/src/api/api_config.dart' as _i32;
+import 'package:neon_books_app/src/api/api_properties.dart' as _i34;
+import 'package:neon_books_app/src/api/catalog_client.dart' as _i20;
+import 'package:neon_books_app/src/api/cookie_jar.dart' as _i33;
+import 'package:neon_books_app/src/api/models.dart' as _i7;
+import 'package:neon_books_app/src/api/session_transport.dart' as _i48;
+import 'package:neon_books_app/src/api/shop_client.dart' as _i21;
+import 'package:neon_books_app/src/api/stock_client.dart' as _i22;
+import 'package:neon_books_app/src/api/support_handshake.dart' as _i49;
+import 'package:neon_books_app/src/api/support_socket.dart' as _i23;
+import 'package:neon_books_app/src/app/app_properties.dart' as _i39;
+import 'package:neon_books_app/src/app/language.dart' as _i9;
+import 'package:neon_books_app/src/app/lifecycle_log.dart' as _i52;
+import 'package:neon_books_app/src/app/route_log.dart' as _i54;
+import 'package:neon_books_app/src/basket/basket.dart' as _i10;
+import 'package:neon_books_app/src/basket/basket_page.dart' as _i61;
+import 'package:neon_books_app/src/catalog/book_page.dart' as _i62;
+import 'package:neon_books_app/src/catalog/catalog.dart' as _i11;
+import 'package:neon_books_app/src/catalog/catalog_refresh.dart' as _i38;
+import 'package:neon_books_app/src/catalog/catalog_service.dart' as _i12;
+import 'package:neon_books_app/src/orders/order_service.dart' as _i13;
+import 'package:neon_books_app/src/orders/orders_page.dart' as _i64;
+import 'package:neon_books_app/src/settings/settings_page.dart' as _i65;
+import 'package:neon_books_app/src/stock/live_stock.dart' as _i14;
+import 'package:neon_books_app/src/support/support_chat.dart' as _i15;
+import 'package:neon_books_app/src/support/support_page.dart' as _i67;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i69;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i68;
+import 'package:spring_boot_dart/src/events.dart' as _i5;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i73;
-import 'package:spring_boot_starter_cache/src/annotations.dart' as _i60;
+    as _i70;
+import 'package:spring_boot_starter_cache/src/annotations.dart' as _i57;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i74;
+    as _i71;
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    as _i29;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i28;
-import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i42;
-import 'package:spring_boot_starter_feign/src/request_template.dart' as _i46;
-import 'package:spring_boot_starter_feign/src/retryer.dart' as _i45;
+    as _i18;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i17;
+import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i31;
+import 'package:spring_boot_starter_feign/src/request_template.dart' as _i41;
+import 'package:spring_boot_starter_feign/src/retryer.dart' as _i35;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i75;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+    as _i72;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i62;
-import 'package:spring_boot_starter_flutter/src/annotations.dart' as _i51;
-import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart' as _i56;
-import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i50;
-import 'package:spring_boot_starter_flutter/src/spring_app.dart' as _i19;
+    as _i59;
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter/src/annotations.dart' as _i37;
+import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart' as _i53;
+import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i36;
+import 'package:spring_boot_starter_flutter/src/spring_app.dart' as _i51;
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart'
-    as _i69;
+    as _i66;
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
-    as _i76;
+    as _i73;
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart'
-    as _i49;
+    as _i45;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i77;
-import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i66;
+    as _i74;
+import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i63;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i78;
+    as _i75;
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client.dart'
-    as _i39;
+    as _i28;
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart'
-    as _i38;
+    as _i27;
 import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart'
-    as _i41;
+    as _i30;
 import 'package:spring_boot_starter_oauth2_client/src/feign/oauth2_access_token_interceptor.dart'
-    as _i47;
+    as _i42;
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart'
-    as _i79;
-import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i59;
+    as _i76;
+import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i56;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i80;
+    as _i77;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i35;
+    as _i24;
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart'
-    as _i17;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i81;
+    as _i50;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i78;
 import 'package:spring_security_core/src/authentication/authentication_manager.dart'
-    as _i48;
-import 'package:spring_security_core/src/core/authentication.dart' as _i8;
-import 'package:spring_security_core/src/core/authority.dart' as _i37;
-import 'package:spring_security_core/src/method/annotations.dart' as _i52;
+    as _i44;
+import 'package:spring_security_core/src/core/authority.dart' as _i26;
+import 'package:spring_security_core/src/method/annotations.dart' as _i46;
 
 part 'messages.spring.dart';
 part 'theme.spring.dart';
 
-class _$AppAssetsProxy extends _i1.AppAssets implements _i2.Advised {
-  _$AppAssetsProxy(super.p0, super.p1, super.p2, super.p3);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$AppAssetsProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<String> aboutText(_i4.Locale locale) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.aboutText(locale)
-        : _$i.invokeAsync<String>(this, this, 0, [
-            locale,
-          ], (args) => super.aboutText((args[0] as _i4.Locale)));
-  }
-
-  @override
-  _i3.Future<_i5.Uint8List> sampleCoverBytes() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.sampleCoverBytes()
-        : _$i.invokeAsync<_i5.Uint8List>(
-            this,
-            this,
-            1,
-            const [],
-            (args) => super.sampleCoverBytes(),
-          );
-  }
-
-  @override
-  _i2.Resource get logo {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.logo
-        : (_$i.invoke(this, this, 2, const [], (_) => super.logo)
-              as _i2.Resource);
-  }
-
-  @override
-  _i2.Resource get about {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.about
-        : (_$i.invoke(this, this, 3, const [], (_) => super.about)
-              as _i2.Resource);
-  }
-
-  @override
-  _i2.Resource get sampleCover {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.sampleCover
-        : (_$i.invoke(this, this, 4, const [], (_) => super.sampleCover)
-              as _i2.Resource);
-  }
-
-  @override
-  _i2.Resource get winterTheme {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.winterTheme
-        : (_$i.invoke(this, this, 5, const [], (_) => super.winterTheme)
-              as _i2.Resource);
-  }
-
-  @override
-  _i6.ImageProvider<Object> get logoImage {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.logoImage
-        : (_$i.invoke(this, this, 6, const [], (_) => super.logoImage)
-              as _i6.ImageProvider<Object>);
-  }
-}
-
-class _$ServerAuthenticationProviderProxy
-    extends _i7.ServerAuthenticationProvider
-    implements _i2.Advised {
-  _$ServerAuthenticationProviderProxy(super.p0, super.p1);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$ServerAuthenticationProviderProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  bool supports(_i8.Authentication authentication) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.supports(authentication)
-        : (_$i.invoke(
-            this,
-            this,
-            0,
-            [authentication],
-            (args) => super.supports((args[0] as _i8.Authentication)),
-          ) as bool);
-  }
-
-  @override
-  _i3.Future<_i8.Authentication?> authenticate(
-    _i8.Authentication authentication,
-  ) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.authenticate(authentication)
-        : _$i.invokeAsync<_i8.Authentication?>(this, this, 1, [
-            authentication,
-          ], (args) => super.authenticate((args[0] as _i8.Authentication)));
-  }
-}
-
-class _$SessionProxy extends _i9.Session
-    with _i10.ChangeNotifier
-    implements _i2.Advised {
+class _$SessionProxy extends _i1.Session
+    with _i2.ChangeNotifier, _i3.AdvisedSubclass {
   _$SessionProxy(super.p0, super.p1, super.p2, super.p3, super.p4, super.p5);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$SessionProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
   @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<void> login(String username, String password) {
-    final _$i = this._$invoker;
+  _i4.Future<void> login(String username, String password) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.login(username, password)
         : _$i.invokeAsync<void>(this, this, 0, [
@@ -338,8 +130,8 @@ class _$SessionProxy extends _i9.Session
   }
 
   @override
-  _i3.Future<void> signInWithKeycloak() {
-    final _$i = this._$invoker;
+  _i4.Future<void> signInWithKeycloak() {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.signInWithKeycloak()
         : _$i.invokeAsync<void>(
@@ -352,18 +144,18 @@ class _$SessionProxy extends _i9.Session
   }
 
   @override
-  _i3.Future<void> restore(_i11.ApplicationReadyEvent event) {
-    final _$i = this._$invoker;
+  _i4.Future<void> restore(_i5.ApplicationReadyEvent event) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.restore(event)
         : _$i.invokeAsync<void>(this, this, 2, [
             event,
-          ], (args) => super.restore((args[0] as _i11.ApplicationReadyEvent)));
+          ], (args) => super.restore((args[0] as _i5.ApplicationReadyEvent)));
   }
 
   @override
-  _i3.Future<void> logout({bool endSession = false}) {
-    final _$i = this._$invoker;
+  _i4.Future<void> logout({bool endSession = false}) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.logout(endSession: endSession)
         : _$i.invokeAsync<void>(this, this, 3, [
@@ -373,7 +165,7 @@ class _$SessionProxy extends _i9.Session
 
   @override
   bool get isLoggedIn {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.isLoggedIn
         : (_$i.invoke(this, this, 4, const [], (_) => super.isLoggedIn)
@@ -382,7 +174,7 @@ class _$SessionProxy extends _i9.Session
 
   @override
   String? get user {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.user
         : (_$i.invoke(this, this, 5, const [], (_) => super.user) as String?);
@@ -390,7 +182,7 @@ class _$SessionProxy extends _i9.Session
 
   @override
   bool get isAdmin {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.isAdmin
         : (_$i.invoke(this, this, 6, const [], (_) => super.isAdmin) as bool);
@@ -398,7 +190,7 @@ class _$SessionProxy extends _i9.Session
 
   @override
   bool get usesKeycloak {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.usesKeycloak
         : (_$i.invoke(this, this, 7, const [], (_) => super.usesKeycloak)
@@ -406,63 +198,30 @@ class _$SessionProxy extends _i9.Session
   }
 
   @override
-  _i3.Future<void> get restored {
-    final _$i = this._$invoker;
+  _i4.Future<void> get restored {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.restored
         : _$i.invokeAsync<void>(this, this, 8, const [], (_) => super.restored);
   }
 }
 
-class _$AdminServiceProxy extends _i12.AdminService implements _i2.Advised {
+class _$AdminServiceProxy extends _i6.AdminService with _i3.AdvisedSubclass {
   _$AdminServiceProxy(super.p0, super.p1);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$AdminServiceProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
   @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<_i13.Book> addBook(_i13.NewBook book) {
-    final _$i = this._$invoker;
+  _i4.Future<_i7.Book> addBook(_i7.NewBook book) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.addBook(book)
-        : _$i.invokeAsync<_i13.Book>(this, this, 0, [
+        : _$i.invokeAsync<_i7.Book>(this, this, 0, [
             book,
-          ], (args) => super.addBook((args[0] as _i13.NewBook)));
+          ], (args) => super.addBook((args[0] as _i7.NewBook)));
   }
 
   @override
-  _i3.Future<void> uploadCover(String isbn, _i5.Uint8List png) {
-    final _$i = this._$invoker;
+  _i4.Future<void> uploadCover(String isbn, _i8.Uint8List png) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.uploadCover(isbn, png)
         : _$i.invokeAsync<void>(
@@ -472,14 +231,14 @@ class _$AdminServiceProxy extends _i12.AdminService implements _i2.Advised {
             [isbn, png],
             (args) => super.uploadCover(
               (args[0] as String),
-              (args[1] as _i5.Uint8List),
+              (args[1] as _i8.Uint8List),
             ),
           );
   }
 
   @override
-  _i3.Future<void> deleteBook(String isbn) {
-    final _$i = this._$invoker;
+  _i4.Future<void> deleteBook(String isbn) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.deleteBook(isbn)
         : _$i.invokeAsync<void>(this, this, 2, [
@@ -488,8 +247,8 @@ class _$AdminServiceProxy extends _i12.AdminService implements _i2.Advised {
   }
 
   @override
-  _i3.Future<List<String>> serverLogs() {
-    final _$i = this._$invoker;
+  _i4.Future<List<String>> serverLogs() {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.serverLogs()
         : _$i.invokeAsync<List<String>>(
@@ -502,217 +261,13 @@ class _$AdminServiceProxy extends _i12.AdminService implements _i2.Advised {
   }
 }
 
-class _$BookFormProxy extends _i14.BookForm implements _i2.Advised {
-  _$BookFormProxy(super.p0, super.p1);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$BookFormProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  (_i13.NewBook?, _i2.BindingResult) bind(Map<String, String> fields) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.bind(fields)
-        : (_$i.invoke(
-            this,
-            this,
-            0,
-            [fields],
-            (args) => super.bind((args[0] as Map<String, String>)),
-          ) as (_i13.NewBook?, _i2.BindingResult));
-  }
-}
-
-class _$CookieJarProxy extends _i15.CookieJar implements _i2.Advised {
-  _$CookieJarProxy();
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$CookieJarProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  void store(Iterable<String> setCookies) {
-    final _$i = this._$invoker;
-    if (_$i == null) {
-      super.store(setCookies);
-    } else {
-      _$i.invoke(this, this, 0, [setCookies], (args) {
-        super.store((args[0] as Iterable<String>));
-        return null;
-      });
-    }
-  }
-
-  @override
-  void clear() {
-    final _$i = this._$invoker;
-    if (_$i == null) {
-      super.clear();
-    } else {
-      _$i.invoke(this, this, 1, const [], (args) {
-        super.clear();
-        return null;
-      });
-    }
-  }
-
-  @override
-  String? get header {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.header
-        : (_$i.invoke(this, this, 2, const [], (_) => super.header) as String?);
-  }
-}
-
-class _$SupportHandshakeProxy extends _i16.SupportHandshake
-    implements _i2.Advised {
-  _$SupportHandshakeProxy(super.p0, super.p1, super.p2, super.p3);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$SupportHandshakeProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<void> apply(_i17.WebSocketHandshake handshake) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.apply(handshake)
-        : _$i.invokeAsync<void>(this, this, 0, [
-            handshake,
-          ], (args) => super.apply((args[0] as _i17.WebSocketHandshake)));
-  }
-}
-
-class _$LanguageSelectionProxy extends _i18.LanguageSelection
-    with _i10.ChangeNotifier
-    implements _i2.Advised {
+class _$LanguageSelectionProxy extends _i9.LanguageSelection
+    with _i2.ChangeNotifier, _i3.AdvisedSubclass {
   _$LanguageSelectionProxy();
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$LanguageSelectionProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
 
   @override
   void select(String? languageCode) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.select(languageCode);
     } else {
@@ -725,7 +280,7 @@ class _$LanguageSelectionProxy extends _i18.LanguageSelection
 
   @override
   String? get languageCode {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.languageCode
         : (_$i.invoke(this, this, 1, const [], (_) => super.languageCode)
@@ -733,108 +288,23 @@ class _$LanguageSelectionProxy extends _i18.LanguageSelection
   }
 }
 
-class _$LanguageCustomizerProxy extends _i18.LanguageCustomizer
-    implements _i2.Advised {
-  _$LanguageCustomizerProxy(super.p0);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$LanguageCustomizerProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  void customize(_i19.FlutterAppSettings app) {
-    final _$i = this._$invoker;
-    if (_$i == null) {
-      super.customize(app);
-    } else {
-      _$i.invoke(this, this, 0, [app], (args) {
-        super.customize((args[0] as _i19.FlutterAppSettings));
-        return null;
-      });
-    }
-  }
-}
-
-class _$BasketProxy extends _i20.Basket
-    with _i10.ChangeNotifier
-    implements _i2.Advised {
+class _$BasketProxy extends _i10.Basket
+    with _i2.ChangeNotifier, _i3.AdvisedSubclass {
   _$BasketProxy(super.p0);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$BasketProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
   @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<void> add(_i13.Book book) {
-    final _$i = this._$invoker;
+  _i4.Future<void> add(_i7.Book book) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.add(book)
         : _$i.invokeAsync<void>(this, this, 0, [
             book,
-          ], (args) => super.add((args[0] as _i13.Book)));
+          ], (args) => super.add((args[0] as _i7.Book)));
   }
 
   @override
-  _i3.Future<void> setQuantity(String isbn, int quantity, {_i13.Book? book}) {
-    final _$i = this._$invoker;
+  _i4.Future<void> setQuantity(String isbn, int quantity, {_i7.Book? book}) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.setQuantity(isbn, quantity, book: book)
         : _$i.invokeAsync<void>(
@@ -845,14 +315,14 @@ class _$BasketProxy extends _i20.Basket
             (args) => super.setQuantity(
               (args[0] as String),
               (args[1] as int),
-              book: (args[2] as _i13.Book?),
+              book: (args[2] as _i7.Book?),
             ),
           );
   }
 
   @override
   void clear() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.clear();
     } else {
@@ -864,40 +334,40 @@ class _$BasketProxy extends _i20.Basket
   }
 
   @override
-  _i3.Future<void> onLogin(_i9.LoggedIn event) {
-    final _$i = this._$invoker;
+  _i4.Future<void> onLogin(_i1.LoggedIn event) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.onLogin(event)
         : _$i.invokeAsync<void>(this, this, 3, [
             event,
-          ], (args) => super.onLogin((args[0] as _i9.LoggedIn)));
+          ], (args) => super.onLogin((args[0] as _i1.LoggedIn)));
   }
 
   @override
-  void onLogout(_i9.LoggedOut event) {
-    final _$i = this._$invoker;
+  void onLogout(_i1.LoggedOut event) {
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.onLogout(event);
     } else {
       _$i.invoke(this, this, 4, [event], (args) {
-        super.onLogout((args[0] as _i9.LoggedOut));
+        super.onLogout((args[0] as _i1.LoggedOut));
         return null;
       });
     }
   }
 
   @override
-  List<_i20.BasketItem> get items {
-    final _$i = this._$invoker;
+  List<_i10.BasketItem> get items {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.items
         : (_$i.invoke(this, this, 5, const [], (_) => super.items)
-              as List<_i20.BasketItem>);
+              as List<_i10.BasketItem>);
   }
 
   @override
   int get count {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.count
         : (_$i.invoke(this, this, 6, const [], (_) => super.count) as int);
@@ -905,54 +375,20 @@ class _$BasketProxy extends _i20.Basket
 
   @override
   double get total {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.total
         : (_$i.invoke(this, this, 7, const [], (_) => super.total) as double);
   }
 }
 
-class _$CatalogProxy extends _i21.Catalog
-    with _i10.ChangeNotifier
-    implements _i2.Advised {
+class _$CatalogProxy extends _i11.Catalog
+    with _i2.ChangeNotifier, _i3.AdvisedSubclass {
   _$CatalogProxy(super.p0);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$CatalogProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
   @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<void> search(String query) {
-    final _$i = this._$invoker;
+  _i4.Future<void> search(String query) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.search(query)
         : _$i.invokeAsync<void>(this, this, 0, [
@@ -961,8 +397,8 @@ class _$CatalogProxy extends _i21.Catalog
   }
 
   @override
-  _i3.Future<void> showPage(int page) {
-    final _$i = this._$invoker;
+  _i4.Future<void> showPage(int page) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.showPage(page)
         : _$i.invokeAsync<void>(this, this, 1, [
@@ -971,8 +407,8 @@ class _$CatalogProxy extends _i21.Catalog
   }
 
   @override
-  _i3.Future<void> reload() {
-    final _$i = this._$invoker;
+  _i4.Future<void> reload() {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.reload()
         : _$i.invokeAsync<void>(
@@ -986,7 +422,7 @@ class _$CatalogProxy extends _i21.Catalog
 
   @override
   String get query {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.query
         : (_$i.invoke(this, this, 3, const [], (_) => super.query) as String);
@@ -994,151 +430,68 @@ class _$CatalogProxy extends _i21.Catalog
 
   @override
   int get page {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.page
         : (_$i.invoke(this, this, 4, const [], (_) => super.page) as int);
   }
 
   @override
-  _i13.PageOfBooks? get books {
-    final _$i = this._$invoker;
+  _i7.PageOfBooks? get books {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.books
         : (_$i.invoke(this, this, 5, const [], (_) => super.books)
-              as _i13.PageOfBooks?);
+              as _i7.PageOfBooks?);
   }
 
   @override
   Object? get error {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.error
         : (_$i.invoke(this, this, 6, const [], (_) => super.error) as Object?);
   }
 }
 
-class _$CatalogRefreshProxy extends _i22.CatalogRefresh implements _i2.Advised {
-  _$CatalogRefreshProxy(super.p0, super.p1);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$CatalogRefreshProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<void> refresh() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.refresh()
-        : _$i.invokeAsync<void>(
-            this,
-            this,
-            0,
-            const [],
-            (args) => super.refresh(),
-          );
-  }
-}
-
-class _$CatalogServiceProxy extends _i23.CatalogService implements _i2.Advised {
+class _$CatalogServiceProxy extends _i12.CatalogService
+    with _i3.AdvisedSubclass {
   _$CatalogServiceProxy(super.p0);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$CatalogServiceProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
   @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<_i13.PageOfBooks> page(String query, int page) {
-    final _$i = this._$invoker;
+  _i4.Future<_i7.PageOfBooks> page(String query, int page) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.page(query, page)
-        : _$i.invokeAsync<_i13.PageOfBooks>(this, this, 0, [
+        : _$i.invokeAsync<_i7.PageOfBooks>(this, this, 0, [
             query,
             page,
           ], (args) => super.page((args[0] as String), (args[1] as int)));
   }
 
   @override
-  _i3.Future<_i13.Book?> find(String isbn) {
-    final _$i = this._$invoker;
+  _i4.Future<_i7.Book?> find(String isbn) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.find(isbn)
-        : _$i.invokeAsync<_i13.Book?>(this, this, 1, [
+        : _$i.invokeAsync<_i7.Book?>(this, this, 1, [
             isbn,
           ], (args) => super.find((args[0] as String)));
   }
 
   @override
-  _i3.Future<_i5.Uint8List?> cover(String isbn) {
-    final _$i = this._$invoker;
+  _i4.Future<_i8.Uint8List?> cover(String isbn) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.cover(isbn)
-        : _$i.invokeAsync<_i5.Uint8List?>(this, this, 2, [
+        : _$i.invokeAsync<_i8.Uint8List?>(this, this, 2, [
             isbn,
           ], (args) => super.cover((args[0] as String)));
   }
 
   @override
   void refresh() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.refresh();
     } else {
@@ -1151,7 +504,7 @@ class _$CatalogServiceProxy extends _i23.CatalogService implements _i2.Advised {
 
   @override
   void coverChanged(String isbn) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.coverChanged(isbn);
     } else {
@@ -1163,48 +516,15 @@ class _$CatalogServiceProxy extends _i23.CatalogService implements _i2.Advised {
   }
 }
 
-class _$OrderServiceProxy extends _i24.OrderService implements _i2.Advised {
+class _$OrderServiceProxy extends _i13.OrderService with _i3.AdvisedSubclass {
   _$OrderServiceProxy(super.p0, super.p1);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$OrderServiceProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
   @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<_i13.ShopOrder> placeOrder() {
-    final _$i = this._$invoker;
+  _i4.Future<_i7.ShopOrder> placeOrder() {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.placeOrder()
-        : _$i.invokeAsync<_i13.ShopOrder>(
+        : _$i.invokeAsync<_i7.ShopOrder>(
             this,
             this,
             0,
@@ -1214,11 +534,11 @@ class _$OrderServiceProxy extends _i24.OrderService implements _i2.Advised {
   }
 
   @override
-  _i3.Future<List<_i13.ShopOrder>> orders() {
-    final _$i = this._$invoker;
+  _i4.Future<List<_i7.ShopOrder>> orders() {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.orders()
-        : _$i.invokeAsync<List<_i13.ShopOrder>>(
+        : _$i.invokeAsync<List<_i7.ShopOrder>>(
             this,
             this,
             1,
@@ -1228,45 +548,12 @@ class _$OrderServiceProxy extends _i24.OrderService implements _i2.Advised {
   }
 }
 
-class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
+class _$LiveStockProxy extends _i14.LiveStock with _i3.AdvisedSubclass {
   _$LiveStockProxy(super.p0);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$LiveStockProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
 
   @override
   void start() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.start();
     } else {
@@ -1279,7 +566,7 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
 
   @override
   void stop() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.stop();
     } else {
@@ -1292,7 +579,7 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
 
   @override
   bool get live {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.live
         : (_$i.invoke(this, this, 2, const [], (_) => super.live) as bool);
@@ -1300,7 +587,7 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
 
   @override
   Map<String, int> get available {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.available
         : (_$i.invoke(this, this, 3, const [], (_) => super.available)
@@ -1308,17 +595,17 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
   }
 
   @override
-  List<_i13.StockChanged> get recent {
-    final _$i = this._$invoker;
+  List<_i7.StockChanged> get recent {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.recent
         : (_$i.invoke(this, this, 4, const [], (_) => super.recent)
-              as List<_i13.StockChanged>);
+              as List<_i7.StockChanged>);
   }
 
   @override
   void addListener(void Function() listener) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.addListener(listener);
     } else {
@@ -1331,7 +618,7 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
 
   @override
   void removeListener(void Function() listener) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.removeListener(listener);
     } else {
@@ -1344,7 +631,7 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
 
   @override
   void dispose() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.dispose();
     } else {
@@ -1357,7 +644,7 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
 
   @override
   void notifyListeners() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.notifyListeners();
     } else {
@@ -1370,7 +657,7 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
 
   @override
   bool get hasListeners {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.hasListeners
         : (_$i.invoke(this, this, 9, const [], (_) => super.hasListeners)
@@ -1378,45 +665,12 @@ class _$LiveStockProxy extends _i25.LiveStock implements _i2.Advised {
   }
 }
 
-class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
+class _$SupportChatProxy extends _i15.SupportChat with _i3.AdvisedSubclass {
   _$SupportChatProxy(super.p0);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$SupportChatProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
 
   @override
   void join() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.join();
     } else {
@@ -1428,8 +682,8 @@ class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
   }
 
   @override
-  _i3.Future<void> send(String text) {
-    final _$i = this._$invoker;
+  _i4.Future<void> send(String text) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.send(text)
         : _$i.invokeAsync<void>(this, this, 1, [
@@ -1438,40 +692,40 @@ class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
   }
 
   @override
-  void onLogin(_i9.LoggedIn event) {
-    final _$i = this._$invoker;
+  void onLogin(_i1.LoggedIn event) {
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.onLogin(event);
     } else {
       _$i.invoke(this, this, 2, [event], (args) {
-        super.onLogin((args[0] as _i9.LoggedIn));
+        super.onLogin((args[0] as _i1.LoggedIn));
         return null;
       });
     }
   }
 
   @override
-  _i3.Future<void> onLogout(_i9.LoggedOut event) {
-    final _$i = this._$invoker;
+  _i4.Future<void> onLogout(_i1.LoggedOut event) {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.onLogout(event)
         : _$i.invokeAsync<void>(this, this, 3, [
             event,
-          ], (args) => super.onLogout((args[0] as _i9.LoggedOut)));
+          ], (args) => super.onLogout((args[0] as _i1.LoggedOut)));
   }
 
   @override
-  List<_i13.ChatMessage> get messages {
-    final _$i = this._$invoker;
+  List<_i7.ChatMessage> get messages {
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.messages
         : (_$i.invoke(this, this, 4, const [], (_) => super.messages)
-              as List<_i13.ChatMessage>);
+              as List<_i7.ChatMessage>);
   }
 
   @override
   void addListener(void Function() listener) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.addListener(listener);
     } else {
@@ -1484,7 +738,7 @@ class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
 
   @override
   void removeListener(void Function() listener) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.removeListener(listener);
     } else {
@@ -1497,7 +751,7 @@ class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
 
   @override
   void dispose() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.dispose();
     } else {
@@ -1510,7 +764,7 @@ class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
 
   @override
   void notifyListeners() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     if (_$i == null) {
       super.notifyListeners();
     } else {
@@ -1523,7 +777,7 @@ class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
 
   @override
   bool get hasListeners {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.hasListeners
         : (_$i.invoke(this, this, 9, const [], (_) => super.hasListeners)
@@ -1532,542 +786,540 @@ class _$SupportChatProxy extends _i26.SupportChat implements _i2.Advised {
 }
 
 /// Implements `AccountClient` through an `InvocationHandler`.
-class _$AccountClientImpl implements _i27.AccountClient {
+class _$AccountClientImpl implements _i16.AccountClient {
   _$AccountClientImpl(this._handler, this._metadata);
 
-  final _i2.InvocationHandler _handler;
+  final _i3.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i27.AccountClient> _metadata;
+  final _i3.InterfaceMetadata<_i16.AccountClient> _metadata;
 
-  static _$AccountClientImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i27.AccountClient>(
+  static _$AccountClientImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i16.AccountClient>(
       typeName: r'AccountClient',
       annotations: const [
-        _i28.FeignClient(r'account', url: r'${api.base-url}', path: r'/api'),
+        _i17.FeignClient(r'account', url: r'${api.base-url}', path: r'/api'),
       ],
       methods: [
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'login',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'form',
-              type: const _i2.MapType<String, String>(
-                _i2.ClassType<String>(),
-                _i2.ClassType<String>(),
+              type: const _i3.MapType<String, String>(
+                _i3.ClassType<String>(),
+                _i3.ClassType<String>(),
               ),
               isRequired: true,
-              annotations: const [_i29.RequestBody()],
+              annotations: const [_i18.RequestBody()],
             ),
           ],
-          returnType: const _i2.GenericType<_i29.ResponseEntity<void>>([
-            _i2.DynamicType.forVoid(),
+          returnType: const _i3.GenericType<_i18.ResponseEntity<void>>([
+            _i3.DynamicType.forVoid(),
           ]),
           isFuture: true,
           annotations: const [
-            _i29.PostMapping.of(
+            _i18.PostMapping.of(
               path: r'/login',
               consumes: r'application/x-www-form-urlencoded',
             ),
           ],
-          call: (target, arguments) => (target as _i27.AccountClient).login(
+          call: (target, arguments) => (target as _i16.AccountClient).login(
             (arguments[0] as Map<String, String>),
           ),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'logout',
-          returnType: const _i2.GenericType<_i29.ResponseEntity<void>>([
-            _i2.DynamicType.forVoid(),
+          returnType: const _i3.GenericType<_i18.ResponseEntity<void>>([
+            _i3.DynamicType.forVoid(),
           ]),
           isFuture: true,
-          annotations: const [_i29.PostMapping(r'/logout')],
-          call: (target, arguments) => (target as _i27.AccountClient).logout(),
+          annotations: const [_i18.PostMapping(r'/logout')],
+          call: (target, arguments) => (target as _i16.AccountClient).logout(),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'me',
-          returnType: const _i2.ClassType<_i13.Me>(),
+          returnType: const _i3.ClassType<_i7.Me>(),
           isFuture: true,
-          annotations: const [_i29.GetMapping(r'/me')],
-          call: (target, arguments) => (target as _i27.AccountClient).me(),
+          annotations: const [_i18.GetMapping(r'/me')],
+          call: (target, arguments) => (target as _i16.AccountClient).me(),
         ),
       ],
     );
     return _$AccountClientImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
+      _i3.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i3.Future<_i29.ResponseEntity<void>> login(Map<String, String> form) =>
-      _i2.retypeFuture<_i29.ResponseEntity<void>>(
+  _i4.Future<_i18.ResponseEntity<void>> login(Map<String, String> form) =>
+      _i3.retypeFuture<_i18.ResponseEntity<void>>(
         this._handler.invoke(this._metadata.methods[0], [form]),
       );
 
   @override
-  _i3.Future<_i29.ResponseEntity<void>> logout() =>
-      _i2.retypeFuture<_i29.ResponseEntity<void>>(
+  _i4.Future<_i18.ResponseEntity<void>> logout() =>
+      _i3.retypeFuture<_i18.ResponseEntity<void>>(
         this._handler.invoke(this._metadata.methods[1], const []),
       );
 
   @override
-  _i3.Future<_i13.Me> me() => _i2.retypeFuture<_i13.Me>(
+  _i4.Future<_i7.Me> me() => _i3.retypeFuture<_i7.Me>(
     this._handler.invoke(this._metadata.methods[2], const []),
   );
 }
 
 /// Implements `AdminClient` through an `InvocationHandler`.
-class _$AdminClientImpl implements _i30.AdminClient {
+class _$AdminClientImpl implements _i19.AdminClient {
   _$AdminClientImpl(this._handler, this._metadata);
 
-  final _i2.InvocationHandler _handler;
+  final _i3.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i30.AdminClient> _metadata;
+  final _i3.InterfaceMetadata<_i19.AdminClient> _metadata;
 
-  static _$AdminClientImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i30.AdminClient>(
+  static _$AdminClientImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i19.AdminClient>(
       typeName: r'AdminClient',
       annotations: const [
-        _i28.FeignClient(r'admin', url: r'${api.base-url}', path: r'/api'),
+        _i17.FeignClient(r'admin', url: r'${api.base-url}', path: r'/api'),
       ],
       methods: [
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'addBook',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'book',
-              type: const _i2.ClassType<_i13.NewBook>(),
+              type: const _i3.ClassType<_i7.NewBook>(),
               isRequired: true,
-              annotations: const [_i29.RequestBody()],
+              annotations: const [_i18.RequestBody()],
             ),
           ],
-          returnType: const _i2.GenericType<_i29.ResponseEntity<_i13.Book>>([
-            _i2.ClassType<_i13.Book>(),
+          returnType: const _i3.GenericType<_i18.ResponseEntity<_i7.Book>>([
+            _i3.ClassType<_i7.Book>(),
           ]),
           isFuture: true,
-          annotations: const [_i29.PostMapping(r'/books')],
-          call: (target, arguments) => (target as _i30.AdminClient).addBook(
-            (arguments[0] as _i13.NewBook),
+          annotations: const [_i18.PostMapping(r'/books')],
+          call: (target, arguments) => (target as _i19.AdminClient).addBook(
+            (arguments[0] as _i7.NewBook),
           ),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'uploadCover',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i29.PathVariable()],
+              annotations: const [_i18.PathVariable()],
             ),
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'file',
-              type: const _i2.ClassType<_i29.MultipartFile>(),
+              type: const _i3.ClassType<_i18.MultipartFile>(),
               isRequired: true,
-              annotations: const [_i29.RequestPart(r'file')],
+              annotations: const [_i18.RequestPart(r'file')],
             ),
           ],
-          returnType: const _i2.DynamicType(),
+          returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i29.PutMapping(r'/books/{isbn}/cover')],
-          call: (target, arguments) => (target as _i30.AdminClient).uploadCover(
+          annotations: const [_i18.PutMapping(r'/books/{isbn}/cover')],
+          call: (target, arguments) => (target as _i19.AdminClient).uploadCover(
             (arguments[0] as String),
-            (arguments[1] as _i29.MultipartFile),
+            (arguments[1] as _i18.MultipartFile),
           ),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'deleteBook',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i29.PathVariable()],
+              annotations: const [_i18.PathVariable()],
             ),
           ],
-          returnType: const _i2.DynamicType(),
+          returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i29.DeleteMapping(r'/books/{isbn}')],
+          annotations: const [_i18.DeleteMapping(r'/books/{isbn}')],
           call: (target, arguments) =>
-              (target as _i30.AdminClient).deleteBook((arguments[0] as String)),
+              (target as _i19.AdminClient).deleteBook((arguments[0] as String)),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'serverLogs',
-          returnType: const _i2.ListType<dynamic>(_i2.DynamicType()),
+          returnType: const _i3.ListType<dynamic>(_i3.DynamicType()),
           isFuture: true,
-          annotations: const [_i29.GetMapping(r'/admin/logs')],
+          annotations: const [_i18.GetMapping(r'/admin/logs')],
           call: (target, arguments) =>
-              (target as _i30.AdminClient).serverLogs(),
+              (target as _i19.AdminClient).serverLogs(),
         ),
       ],
     );
     return _$AdminClientImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
+      _i3.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i3.Future<_i29.ResponseEntity<_i13.Book>> addBook(_i13.NewBook book) =>
-      _i2.retypeFuture<_i29.ResponseEntity<_i13.Book>>(
+  _i4.Future<_i18.ResponseEntity<_i7.Book>> addBook(_i7.NewBook book) =>
+      _i3.retypeFuture<_i18.ResponseEntity<_i7.Book>>(
         this._handler.invoke(this._metadata.methods[0], [book]),
       );
 
   @override
-  _i3.Future<void> uploadCover(String isbn, _i29.MultipartFile file) =>
-      _i2.retypeFuture<void>(
+  _i4.Future<void> uploadCover(String isbn, _i18.MultipartFile file) =>
+      _i3.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[1], [isbn, file]),
       );
 
   @override
-  _i3.Future<void> deleteBook(String isbn) => _i2.retypeFuture<void>(
+  _i4.Future<void> deleteBook(String isbn) => _i3.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[2], [isbn]),
   );
 
   @override
-  _i3.Future<List<Object?>> serverLogs() => _i2.retypeFuture<List<Object?>>(
+  _i4.Future<List<Object?>> serverLogs() => _i3.retypeFuture<List<Object?>>(
     this._handler.invoke(this._metadata.methods[3], const []),
   );
 }
 
 /// Implements `CatalogClient` through an `InvocationHandler`.
-class _$CatalogClientImpl implements _i31.CatalogClient {
+class _$CatalogClientImpl implements _i20.CatalogClient {
   _$CatalogClientImpl(this._handler, this._metadata);
 
-  final _i2.InvocationHandler _handler;
+  final _i3.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i31.CatalogClient> _metadata;
+  final _i3.InterfaceMetadata<_i20.CatalogClient> _metadata;
 
-  static _$CatalogClientImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i31.CatalogClient>(
+  static _$CatalogClientImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i20.CatalogClient>(
       typeName: r'CatalogClient',
       annotations: const [
-        _i28.FeignClient(
+        _i17.FeignClient(
           r'catalog',
           url: r'${api.base-url}',
           path: r'/api/books',
         ),
       ],
       methods: [
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'page',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'query',
-              type: const _i2.ClassType<String>(nullable: true),
+              type: const _i3.ClassType<String>(nullable: true),
               symbol: #query,
-              annotations: const [_i29.RequestParam(r'q')],
+              annotations: const [_i18.RequestParam(r'q')],
             ),
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'page',
-              type: const _i2.ClassType<int>(nullable: true),
+              type: const _i3.ClassType<int>(nullable: true),
               symbol: #page,
-              annotations: const [_i29.RequestParam(r'page')],
+              annotations: const [_i18.RequestParam(r'page')],
             ),
           ],
-          returnType: const _i2.ClassType<_i13.PageOfBooks>(),
+          returnType: const _i3.ClassType<_i7.PageOfBooks>(),
           isFuture: true,
-          annotations: const [_i29.GetMapping()],
-          call: (target, arguments) => (target as _i31.CatalogClient).page(
+          annotations: const [_i18.GetMapping()],
+          call: (target, arguments) => (target as _i20.CatalogClient).page(
             query: (arguments[0] as String?),
             page: (arguments[1] as int?),
           ),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'find',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i29.PathVariable()],
+              annotations: const [_i18.PathVariable()],
             ),
           ],
-          returnType: const _i2.ClassType<_i13.Book>(),
+          returnType: const _i3.ClassType<_i7.Book>(),
           isFuture: true,
-          annotations: const [_i29.GetMapping(r'/{isbn}')],
+          annotations: const [_i18.GetMapping(r'/{isbn}')],
           call: (target, arguments) =>
-              (target as _i31.CatalogClient).find((arguments[0] as String)),
+              (target as _i20.CatalogClient).find((arguments[0] as String)),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'cover',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i29.PathVariable()],
+              annotations: const [_i18.PathVariable()],
             ),
           ],
-          returnType: const _i2.ClassType<_i5.Uint8List>(),
+          returnType: const _i3.ClassType<_i8.Uint8List>(),
           isFuture: true,
           annotations: const [
-            _i29.GetMapping.of(path: r'/{isbn}/cover', produces: r'image/*'),
+            _i18.GetMapping.of(path: r'/{isbn}/cover', produces: r'image/*'),
           ],
           call: (target, arguments) =>
-              (target as _i31.CatalogClient).cover((arguments[0] as String)),
+              (target as _i20.CatalogClient).cover((arguments[0] as String)),
         ),
       ],
     );
     return _$CatalogClientImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
+      _i3.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i3.Future<_i13.PageOfBooks> page({String? query, int? page}) =>
-      _i2.retypeFuture<_i13.PageOfBooks>(
+  _i4.Future<_i7.PageOfBooks> page({String? query, int? page}) =>
+      _i3.retypeFuture<_i7.PageOfBooks>(
         this._handler.invoke(this._metadata.methods[0], [query, page]),
       );
 
   @override
-  _i3.Future<_i13.Book> find(String isbn) => _i2.retypeFuture<_i13.Book>(
+  _i4.Future<_i7.Book> find(String isbn) => _i3.retypeFuture<_i7.Book>(
     this._handler.invoke(this._metadata.methods[1], [isbn]),
   );
 
   @override
-  _i3.Future<_i5.Uint8List> cover(String isbn) =>
-      _i2.retypeFuture<_i5.Uint8List>(
+  _i4.Future<_i8.Uint8List> cover(String isbn) =>
+      _i3.retypeFuture<_i8.Uint8List>(
         this._handler.invoke(this._metadata.methods[2], [isbn]),
       );
 }
 
 /// Implements `ShopClient` through an `InvocationHandler`.
-class _$ShopClientImpl implements _i32.ShopClient {
+class _$ShopClientImpl implements _i21.ShopClient {
   _$ShopClientImpl(this._handler, this._metadata);
 
-  final _i2.InvocationHandler _handler;
+  final _i3.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i32.ShopClient> _metadata;
+  final _i3.InterfaceMetadata<_i21.ShopClient> _metadata;
 
-  static _$ShopClientImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i32.ShopClient>(
+  static _$ShopClientImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i21.ShopClient>(
       typeName: r'ShopClient',
       annotations: const [
-        _i28.FeignClient(r'shop', url: r'${api.base-url}', path: r'/api'),
+        _i17.FeignClient(r'shop', url: r'${api.base-url}', path: r'/api'),
       ],
       methods: [
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'basket',
-          returnType: const _i2.ClassType<_i13.ServerBasket>(),
+          returnType: const _i3.ClassType<_i7.ServerBasket>(),
           isFuture: true,
-          annotations: const [_i29.GetMapping(r'/basket')],
-          call: (target, arguments) => (target as _i32.ShopClient).basket(),
+          annotations: const [_i18.GetMapping(r'/basket')],
+          call: (target, arguments) => (target as _i21.ShopClient).basket(),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'setQuantity',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i29.PathVariable()],
+              annotations: const [_i18.PathVariable()],
             ),
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'quantity',
-              type: const _i2.ClassType<_i13.Quantity>(),
+              type: const _i3.ClassType<_i7.Quantity>(),
               isRequired: true,
-              annotations: const [_i29.RequestBody()],
+              annotations: const [_i18.RequestBody()],
             ),
           ],
-          returnType: const _i2.DynamicType(),
+          returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i29.PutMapping(r'/basket/items/{isbn}')],
-          call: (target, arguments) => (target as _i32.ShopClient).setQuantity(
+          annotations: const [_i18.PutMapping(r'/basket/items/{isbn}')],
+          call: (target, arguments) => (target as _i21.ShopClient).setQuantity(
             (arguments[0] as String),
-            (arguments[1] as _i13.Quantity),
+            (arguments[1] as _i7.Quantity),
           ),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'placeOrder',
-          returnType:
-              const _i2.GenericType<_i29.ResponseEntity<_i13.ShopOrder>>([
-                _i2.ClassType<_i13.ShopOrder>(),
-              ]),
-          isFuture: true,
-          annotations: const [_i29.PostMapping(r'/orders')],
-          call: (target, arguments) => (target as _i32.ShopClient).placeOrder(),
-        ),
-        _i2.ProxyMethod(
-          r'orders',
-          returnType: const _i2.ListType<_i13.ShopOrder>(
-            _i2.ClassType<_i13.ShopOrder>(),
+          returnType: const _i3.GenericType<_i18.ResponseEntity<_i7.ShopOrder>>(
+            [_i3.ClassType<_i7.ShopOrder>()],
           ),
           isFuture: true,
-          annotations: const [_i29.GetMapping(r'/orders')],
-          call: (target, arguments) => (target as _i32.ShopClient).orders(),
+          annotations: const [_i18.PostMapping(r'/orders')],
+          call: (target, arguments) => (target as _i21.ShopClient).placeOrder(),
+        ),
+        _i3.ProxyMethod(
+          r'orders',
+          returnType: const _i3.ListType<_i7.ShopOrder>(
+            _i3.ClassType<_i7.ShopOrder>(),
+          ),
+          isFuture: true,
+          annotations: const [_i18.GetMapping(r'/orders')],
+          call: (target, arguments) => (target as _i21.ShopClient).orders(),
         ),
       ],
     );
     return _$ShopClientImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
+      _i3.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i3.Future<_i13.ServerBasket> basket() => _i2.retypeFuture<_i13.ServerBasket>(
+  _i4.Future<_i7.ServerBasket> basket() => _i3.retypeFuture<_i7.ServerBasket>(
     this._handler.invoke(this._metadata.methods[0], const []),
   );
 
   @override
-  _i3.Future<void> setQuantity(String isbn, _i13.Quantity quantity) =>
-      _i2.retypeFuture<void>(
+  _i4.Future<void> setQuantity(String isbn, _i7.Quantity quantity) =>
+      _i3.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[1], [isbn, quantity]),
       );
 
   @override
-  _i3.Future<_i29.ResponseEntity<_i13.ShopOrder>> placeOrder() =>
-      _i2.retypeFuture<_i29.ResponseEntity<_i13.ShopOrder>>(
+  _i4.Future<_i18.ResponseEntity<_i7.ShopOrder>> placeOrder() =>
+      _i3.retypeFuture<_i18.ResponseEntity<_i7.ShopOrder>>(
         this._handler.invoke(this._metadata.methods[2], const []),
       );
 
   @override
-  _i3.Future<List<_i13.ShopOrder>> orders() =>
-      _i2.retypeFuture<List<_i13.ShopOrder>>(
+  _i4.Future<List<_i7.ShopOrder>> orders() =>
+      _i3.retypeFuture<List<_i7.ShopOrder>>(
         this._handler.invoke(this._metadata.methods[3], const []),
       );
 }
 
 /// Implements `StockClient` through an `InvocationHandler`.
-class _$StockClientImpl implements _i33.StockClient {
+class _$StockClientImpl implements _i22.StockClient {
   _$StockClientImpl(this._handler, this._metadata);
 
-  final _i2.InvocationHandler _handler;
+  final _i3.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i33.StockClient> _metadata;
+  final _i3.InterfaceMetadata<_i22.StockClient> _metadata;
 
-  static _$StockClientImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i33.StockClient>(
+  static _$StockClientImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i22.StockClient>(
       typeName: r'StockClient',
       annotations: const [
-        _i28.FeignClient(
+        _i17.FeignClient(
           r'stock',
           url: r'${api.base-url}',
           path: r'/api/stock',
         ),
       ],
       methods: [
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'events',
-          returnType:
-              const _i2.GenericType<_i29.EventStream<_i13.StockChanged>>([
-                _i2.ClassType<_i13.StockChanged>(),
-              ]),
-          annotations: const [_i29.GetMapping(r'/events')],
-          call: (target, arguments) => (target as _i33.StockClient).events(),
+          returnType: const _i3.GenericType<_i18.EventStream<_i7.StockChanged>>(
+            [_i3.ClassType<_i7.StockChanged>()],
+          ),
+          annotations: const [_i18.GetMapping(r'/events')],
+          call: (target, arguments) => (target as _i22.StockClient).events(),
         ),
       ],
     );
     return _$StockClientImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
+      _i3.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i29.EventStream<_i13.StockChanged> events() =>
+  _i18.EventStream<_i7.StockChanged> events() =>
       (this._handler.invoke(this._metadata.methods[0], const [])
-          as _i29.EventStream<_i13.StockChanged>);
+          as _i18.EventStream<_i7.StockChanged>);
 }
 
 /// Implements `SupportSocket` through an `InvocationHandler`.
-class _$SupportSocketImpl implements _i34.SupportSocket {
+class _$SupportSocketImpl implements _i23.SupportSocket {
   _$SupportSocketImpl(this._handler, this._metadata);
 
-  final _i2.InvocationHandler _handler;
+  final _i3.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i34.SupportSocket> _metadata;
+  final _i3.InterfaceMetadata<_i23.SupportSocket> _metadata;
 
-  static _$SupportSocketImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i34.SupportSocket>(
+  static _$SupportSocketImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i23.SupportSocket>(
       typeName: r'SupportSocket',
       annotations: const [
-        _i35.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
+        _i24.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
       ],
       methods: [
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'messages',
-          returnType: const _i2.GenericType<_i3.Stream<_i13.ChatMessage>>([
-            _i2.ClassType<_i13.ChatMessage>(),
+          returnType: const _i3.GenericType<_i4.Stream<_i7.ChatMessage>>([
+            _i3.ClassType<_i7.ChatMessage>(),
           ]),
-          annotations: const [_i35.OnMessage()],
+          annotations: const [_i24.OnMessage()],
           call: (target, arguments) =>
-              (target as _i34.SupportSocket).messages(),
+              (target as _i23.SupportSocket).messages(),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'send',
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'message',
-              type: const _i2.ClassType<_i13.ChatMessage>(),
+              type: const _i3.ClassType<_i7.ChatMessage>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i2.DynamicType(),
+          returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i35.SendMessage()],
-          call: (target, arguments) => (target as _i34.SupportSocket).send(
-            (arguments[0] as _i13.ChatMessage),
+          annotations: const [_i24.SendMessage()],
+          call: (target, arguments) => (target as _i23.SupportSocket).send(
+            (arguments[0] as _i7.ChatMessage),
           ),
         ),
-        _i2.ProxyMethod(
+        _i3.ProxyMethod(
           r'close',
-          returnType: const _i2.DynamicType(),
+          returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i34.SupportSocket).close(),
+          call: (target, arguments) => (target as _i23.SupportSocket).close(),
         ),
       ],
     );
     return _$SupportSocketImpl(
-      _i2.InterfaceProxies.handlerFor(r, metadata),
+      _i3.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i3.Stream<_i13.ChatMessage> messages() =>
+  _i4.Stream<_i7.ChatMessage> messages() =>
       (this._handler.invoke(this._metadata.methods[0], const [])
-          as _i3.Stream<_i13.ChatMessage>);
+          as _i4.Stream<_i7.ChatMessage>);
 
   @override
-  _i3.Future<void> send(_i13.ChatMessage message) => _i2.retypeFuture<void>(
+  _i4.Future<void> send(_i7.ChatMessage message) => _i3.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[1], [message]),
   );
 
   @override
-  _i3.Future<void> close() => _i2.retypeFuture<void>(
+  _i4.Future<void> close() => _i3.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[2], const []),
   );
 }
 
 /// `KeycloakConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$KeycloakConfigConfiguration extends _i36.KeycloakConfig {
+class _$KeycloakConfigConfiguration extends _i25.KeycloakConfig {
   _$KeycloakConfigConfiguration(this._$beanFactory);
 
-  final _i2.BeanFactory _$beanFactory;
+  final _i3.BeanFactory _$beanFactory;
 
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i37.GrantedAuthoritiesMapper keycloakRoles() =>
+  _i26.GrantedAuthoritiesMapper keycloakRoles() =>
       (this._$beanFactory.getBeanByName(r'keycloakRoles')
-          as _i37.GrantedAuthoritiesMapper);
+          as _i26.GrantedAuthoritiesMapper);
 
-  _i37.GrantedAuthoritiesMapper _$keycloakRoles(_i2.DependencyResolver r) =>
+  _i26.GrantedAuthoritiesMapper _$keycloakRoles(_i3.DependencyResolver r) =>
       super.keycloakRoles();
 
   @override
-  _i36.KeycloakTokenInterceptor keycloakTokens(
-    _i38.OAuth2AuthorizedClientManager manager,
-    _i39.OAuth2AuthorizedClientService clients,
-    _i40.SsoProperties sso,
-    _i41.DPoPKey? dPoPKey,
+  _i25.KeycloakTokenInterceptor keycloakTokens(
+    _i27.OAuth2AuthorizedClientManager manager,
+    _i28.OAuth2AuthorizedClientService clients,
+    _i29.SsoProperties sso,
+    _i30.DPoPKey? dPoPKey,
   ) {
     final _$args = <Object?>[manager, clients, sso, dPoPKey];
     if (!_$args.contains(null)) {
@@ -2075,75 +1327,75 @@ class _$KeycloakConfigConfiguration extends _i36.KeycloakConfig {
     }
     try {
       return (this._$beanFactory.getBeanByName(r'keycloakTokens')
-          as _i36.KeycloakTokenInterceptor);
+          as _i25.KeycloakTokenInterceptor);
     } finally {
       this._$arguments.remove(r'keycloakTokens');
     }
   }
 
-  _i36.KeycloakTokenInterceptor _$keycloakTokens(_i2.DependencyResolver r) {
+  _i25.KeycloakTokenInterceptor _$keycloakTokens(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'keycloakTokens');
     if (_$args != null) {
       return super.keycloakTokens(
-        (_$args[0] as _i38.OAuth2AuthorizedClientManager),
-        (_$args[1] as _i39.OAuth2AuthorizedClientService),
-        (_$args[2] as _i40.SsoProperties),
-        (_$args[3] as _i41.DPoPKey?),
+        (_$args[0] as _i27.OAuth2AuthorizedClientManager),
+        (_$args[1] as _i28.OAuth2AuthorizedClientService),
+        (_$args[2] as _i29.SsoProperties),
+        (_$args[3] as _i30.DPoPKey?),
       );
     }
     return super.keycloakTokens(
-      r.dependency<_i38.OAuth2AuthorizedClientManager>(name: r'manager'),
-      r.dependency<_i39.OAuth2AuthorizedClientService>(name: r'clients'),
-      r.dependency<_i40.SsoProperties>(name: r'sso'),
-      r.optionalDependency<_i41.DPoPKey>(name: r'dPoPKey'),
+      r.dependency<_i27.OAuth2AuthorizedClientManager>(name: r'manager'),
+      r.dependency<_i28.OAuth2AuthorizedClientService>(name: r'clients'),
+      r.dependency<_i29.SsoProperties>(name: r'sso'),
+      r.optionalDependency<_i30.DPoPKey>(name: r'dPoPKey'),
     );
   }
 
   @override
-  _i42.ErrorDecoder errorDecoder(_i36.KeycloakTokenInterceptor tokens) {
+  _i31.ErrorDecoder errorDecoder(_i25.KeycloakTokenInterceptor tokens) {
     final _$args = <Object?>[tokens];
     this._$arguments[r'errorDecoder'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'errorDecoder')
-          as _i42.ErrorDecoder);
+          as _i31.ErrorDecoder);
     } finally {
       this._$arguments.remove(r'errorDecoder');
     }
   }
 
-  _i42.ErrorDecoder _$errorDecoder(_i2.DependencyResolver r) {
+  _i31.ErrorDecoder _$errorDecoder(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'errorDecoder');
     if (_$args != null) {
-      return super.errorDecoder((_$args[0] as _i36.KeycloakTokenInterceptor));
+      return super.errorDecoder((_$args[0] as _i25.KeycloakTokenInterceptor));
     }
     return super.errorDecoder(
-      r.dependency<_i36.KeycloakTokenInterceptor>(name: r'tokens'),
+      r.dependency<_i25.KeycloakTokenInterceptor>(name: r'tokens'),
     );
   }
 }
 
 /// `ApiConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$ApiConfigConfiguration extends _i43.ApiConfig {
+class _$ApiConfigConfiguration extends _i32.ApiConfig {
   _$ApiConfigConfiguration(this._$beanFactory);
 
-  final _i2.BeanFactory _$beanFactory;
+  final _i3.BeanFactory _$beanFactory;
 
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i29.HttpTransport networkTransport(Duration connectTimeout) {
+  _i18.HttpTransport networkTransport(Duration connectTimeout) {
     final _$args = <Object?>[connectTimeout];
     this._$arguments[r'networkTransport'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'networkTransport')
-          as _i29.HttpTransport);
+          as _i18.HttpTransport);
     } finally {
       this._$arguments.remove(r'networkTransport');
     }
   }
 
-  _i29.HttpTransport _$networkTransport(_i2.DependencyResolver r) {
+  _i18.HttpTransport _$networkTransport(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'networkTransport');
     if (_$args != null) {
       return super.networkTransport((_$args[0] as Duration));
@@ -2154,358 +1406,448 @@ class _$ApiConfigConfiguration extends _i43.ApiConfig {
   }
 
   @override
-  _i29.HttpTransport sessionTransport(
-    _i29.HttpTransport network,
-    _i15.CookieJar cookies,
-    _i44.ApiProperties api,
+  _i18.HttpTransport sessionTransport(
+    _i18.HttpTransport network,
+    _i33.CookieJar cookies,
+    _i34.ApiProperties api,
   ) {
     final _$args = <Object?>[network, cookies, api];
     this._$arguments[r'sessionTransport'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'sessionTransport')
-          as _i29.HttpTransport);
+          as _i18.HttpTransport);
     } finally {
       this._$arguments.remove(r'sessionTransport');
     }
   }
 
-  _i29.HttpTransport _$sessionTransport(_i2.DependencyResolver r) {
+  _i18.HttpTransport _$sessionTransport(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'sessionTransport');
     if (_$args != null) {
       return super.sessionTransport(
-        (_$args[0] as _i29.HttpTransport),
-        (_$args[1] as _i15.CookieJar),
-        (_$args[2] as _i44.ApiProperties),
+        (_$args[0] as _i18.HttpTransport),
+        (_$args[1] as _i33.CookieJar),
+        (_$args[2] as _i34.ApiProperties),
       );
     }
     return super.sessionTransport(
-      r.dependency<_i29.HttpTransport>(
+      r.dependency<_i18.HttpTransport>(
         qualifier: r'networkTransport',
         name: r'network',
       ),
-      r.dependency<_i15.CookieJar>(name: r'cookies'),
-      r.dependency<_i44.ApiProperties>(name: r'api'),
+      r.dependency<_i33.CookieJar>(name: r'cookies'),
+      r.dependency<_i34.ApiProperties>(name: r'api'),
     );
   }
 
   @override
-  _i45.Retryer retryer() =>
-      (this._$beanFactory.getBeanByName(r'retryer') as _i45.Retryer);
+  _i35.Retryer retryer() =>
+      (this._$beanFactory.getBeanByName(r'retryer') as _i35.Retryer);
 
-  _i45.Retryer _$retryer(_i2.DependencyResolver r) => super.retryer();
+  _i35.Retryer _$retryer(_i3.DependencyResolver r) => super.retryer();
 }
+
+const _$target0 = _i3.AopTarget(
+  r'Session',
+  types: [r'Session'],
+  annotations: [
+    _i36.ChangeNotifierComponent(),
+    _i37.BuildContextAccess(name: r'session'),
+    _i3.Log(topic: r'neon.account'),
+  ],
+  annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess', r'Log'],
+);
+Object? _$invoke1(_i6.AdminService bean, List<Object?> arguments) =>
+    bean.addBook((arguments[0] as _i7.NewBook));
+Object? _$invoke2(_i6.AdminService bean, List<Object?> arguments) =>
+    bean.uploadCover((arguments[0] as String), (arguments[1] as _i8.Uint8List));
+Object? _$invoke3(_i6.AdminService bean, List<Object?> arguments) =>
+    bean.deleteBook((arguments[0] as String));
+Object? _$invoke4(_i6.AdminService bean, List<Object?> arguments) =>
+    bean.serverLogs();
+const _$target5 = _i3.AopTarget(
+  r'AdminService',
+  types: [r'AdminService'],
+  annotations: [
+    _i3.Service(),
+    _i3.Log(topic: r'neon.admin'),
+  ],
+  annotationTypes: [r'Service', r'Log'],
+);
+const _$target6 = _i3.AopTarget(
+  r'LanguageSelection',
+  types: [r'LanguageSelection'],
+  annotations: [_i36.ChangeNotifierComponent(), _i37.BuildContextAccess()],
+  annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess'],
+);
+const _$target7 = _i3.AopTarget(
+  r'Basket',
+  types: [r'Basket'],
+  annotations: [
+    _i36.ChangeNotifierComponent(),
+    _i37.BuildContextAccess(),
+    _i3.Log(topic: r'neon.basket'),
+  ],
+  annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess', r'Log'],
+);
+const _$target8 = _i3.AopTarget(
+  r'Catalog',
+  types: [r'Catalog'],
+  annotations: [_i36.ChangeNotifierComponent(), _i37.BuildContextAccess()],
+  annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess'],
+);
+Object? _$invoke9(_i38.CatalogRefresh bean, List<Object?> arguments) =>
+    bean.refresh();
+const _$target10 = _i3.AopTarget(
+  r'CatalogService',
+  types: [r'CatalogService'],
+  annotations: [
+    _i3.Service(),
+    _i3.Log(topic: r'neon.catalog'),
+  ],
+  annotationTypes: [r'Service', r'Log'],
+);
+Object? _$invoke11(_i13.OrderService bean, List<Object?> arguments) =>
+    bean.placeOrder();
+Object? _$invoke12(_i13.OrderService bean, List<Object?> arguments) =>
+    bean.orders();
+const _$target13 = _i3.AopTarget(
+  r'OrderService',
+  types: [r'OrderService'],
+  annotations: [
+    _i3.Service(),
+    _i3.Log(topic: r'neon.orders'),
+  ],
+  annotationTypes: [r'Service', r'Log'],
+);
+const _$target14 = _i3.AopTarget(
+  r'LiveStock',
+  types: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
+  annotations: [
+    _i3.Component(),
+    _i36.NotifyListeners(exclude: [r'stop']),
+    _i3.Log(topic: r'neon.stock'),
+  ],
+  annotationTypes: [r'Component', r'NotifyListeners', r'Log'],
+);
+const _$target15 = _i3.AopTarget(
+  r'SupportChat',
+  types: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
+  annotations: [
+    _i3.Component(),
+    _i36.NotifyListeners(exclude: [r'join']),
+    _i3.Log(topic: r'neon.support'),
+  ],
+  annotationTypes: [r'Component', r'NotifyListeners', r'Log'],
+);
+Object? _$get16(_i29.SsoProperties bean) => bean.enabled;
+void _$set17(_i29.SsoProperties bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get18(_i29.SsoProperties bean) => bean.registrationId;
+void _$set19(_i29.SsoProperties bean, Object? value) =>
+    bean.registrationId = (value as String);
+Object? _$get20(_i29.SsoProperties bean) => bean.postLogoutRedirectUri;
+void _$set21(_i29.SsoProperties bean, Object? value) =>
+    bean.postLogoutRedirectUri = (value as String?);
+_i29.SsoProperties _$create22(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i29.SsoProperties();
+Object? _$get23(_i7.Me bean) => bean.name;
+Object? _$get24(_i7.Me bean) => bean.roles;
+_i7.Me _$create25(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i7.Me(
+      name: (named[#name] as String),
+      roles: named.argumentOr(#roles, const []),
+    );
+Object? _$get26(_i7.Book bean) => bean.isbn;
+Object? _$get27(_i7.Book bean) => bean.title;
+Object? _$get28(_i7.Book bean) => bean.author;
+Object? _$get29(_i7.Book bean) => bean.price;
+Object? _$get30(_i7.Book bean) => bean.available;
+_i7.Book _$create31(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i7.Book(
+      isbn: (named[#isbn] as String),
+      title: (named[#title] as String),
+      author: named.argumentOr(#author, r''),
+      price: named.argumentOr(#price, 0.0),
+      available: named.argumentOr(#available, 0),
+    );
+Object? _$get32(_i7.NewBook bean) => bean.isbn;
+void _$set33(_i7.NewBook bean, Object? value) => bean.isbn = (value as String);
+Object? _$get34(_i7.NewBook bean) => bean.title;
+void _$set35(_i7.NewBook bean, Object? value) => bean.title = (value as String);
+Object? _$get36(_i7.NewBook bean) => bean.author;
+void _$set37(_i7.NewBook bean, Object? value) =>
+    bean.author = (value as String);
+Object? _$get38(_i7.NewBook bean) => bean.price;
+void _$set39(_i7.NewBook bean, Object? value) => bean.price = (value as double);
+_i7.NewBook _$create40(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i7.NewBook();
+Object? _$get41(_i34.ApiProperties bean) => bean.host;
+void _$set42(_i34.ApiProperties bean, Object? value) =>
+    bean.host = (value as String);
+Object? _$get43(_i34.ApiProperties bean) => bean.baseUrl;
+void _$set44(_i34.ApiProperties bean, Object? value) =>
+    bean.baseUrl = (value as String);
+Object? _$get45(_i34.ApiProperties bean) => bean.wsUrl;
+void _$set46(_i34.ApiProperties bean, Object? value) =>
+    bean.wsUrl = (value as String);
+_i34.ApiProperties _$create47(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i34.ApiProperties();
+Object? _$get48(_i7.PageOfBooks bean) => bean.items;
+Object? _$get49(_i7.PageOfBooks bean) => bean.page;
+Object? _$get50(_i7.PageOfBooks bean) => bean.size;
+Object? _$get51(_i7.PageOfBooks bean) => bean.total;
+Object? _$get52(_i7.PageOfBooks bean) => bean.pages;
+_i7.PageOfBooks _$create53(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i7.PageOfBooks(
+  items: named.argumentOr(#items, const []),
+  page: named.argumentOr(#page, 0),
+  size: named.argumentOr(#size, 0),
+  total: named.argumentOr(#total, 0),
+);
+Object? _$get54(_i7.StockChanged bean) => bean.isbn;
+Object? _$get55(_i7.StockChanged bean) => bean.available;
+_i7.StockChanged _$create56(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i7.StockChanged(
+  isbn: (named[#isbn] as String),
+  available: (named[#available] as int),
+);
+Object? _$get57(_i7.BasketLine bean) => bean.isbn;
+Object? _$get58(_i7.BasketLine bean) => bean.title;
+Object? _$get59(_i7.BasketLine bean) => bean.quantity;
+_i7.BasketLine _$create60(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i7.BasketLine(
+  isbn: (named[#isbn] as String),
+  title: named.argumentOr(#title, r''),
+  quantity: named.argumentOr(#quantity, 0),
+);
+Object? _$get61(_i7.ServerBasket bean) => bean.items;
+_i7.ServerBasket _$create62(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i7.ServerBasket(items: named.argumentOr(#items, const []));
+Object? _$get63(_i7.Quantity bean) => bean.quantity;
+_i7.Quantity _$create64(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i7.Quantity((positional[0] as int));
+Object? _$get65(_i7.ShopOrder bean) => bean.id;
+Object? _$get66(_i7.ShopOrder bean) => bean.user;
+Object? _$get67(_i7.ShopOrder bean) => bean.lines;
+Object? _$get68(_i7.ShopOrder bean) => bean.total;
+Object? _$get69(_i7.ShopOrder bean) => bean.placedAt;
+_i7.ShopOrder _$create70(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i7.ShopOrder(
+  id: (named[#id] as Object),
+  user: named.argumentOr(#user, r''),
+  lines: named.argumentOr(#lines, const []),
+  total: named.argumentOr(#total, 0.0),
+  placedAt: named.argumentOr(#placedAt, null),
+);
+Object? _$get71(_i7.ChatMessage bean) => bean.from;
+Object? _$get72(_i7.ChatMessage bean) => bean.text;
+Object? _$get73(_i7.ChatMessage bean) => bean.at;
+_i7.ChatMessage _$create74(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i7.ChatMessage(
+  from: (named[#from] as String),
+  text: (named[#text] as String),
+  at: named.argumentOr(#at, null),
+);
+Object? _$get75(_i39.AppProperties bean) => bean.title;
+void _$set76(_i39.AppProperties bean, Object? value) =>
+    bean.title = (value as String);
+Object? _$get77(_i39.AppProperties bean) => bean.navigation;
+void _$set78(_i39.AppProperties bean, Object? value) =>
+    bean.navigation = (value as _i39.NavigationStyle);
+_i39.AppProperties _$create79(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i39.AppProperties();
 
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i1.AppAssets>(
+    _i3.BeanDefinition<_i40.AppAssets>(
       name: r'appAssets',
       source: r'package:neon_books_app/src/about/app_assets.dart#AppAssets',
-      types: const [_i1.AppAssets],
       dependencies: const [
-        _i2.Dependency.value(r'asset:assets/images/leaf.png'),
-        _i2.Dependency.value(r'asset:assets/texts/about.txt'),
-        _i2.Dependency.value(r'asset:assets/images/sample_cover.png'),
-        _i2.Dependency.value(r'asset:assets/remote/winter.yml'),
+        _i3.Dependency.value(r'asset:assets/images/leaf.png'),
+        _i3.Dependency.value(r'asset:assets/texts/about.txt'),
+        _i3.Dependency.value(r'asset:assets/images/sample_cover.png'),
+        _i3.Dependency.value(r'asset:assets/remote/winter.yml'),
       ],
-      create: (r) => _$AppAssetsProxy(
-        r.value<_i2.Resource>(r'asset:assets/images/leaf.png'),
-        r.value<_i2.Resource>(r'asset:assets/texts/about.txt'),
-        r.value<_i2.Resource>(r'asset:assets/images/sample_cover.png'),
-        r.value<_i2.Resource>(r'asset:assets/remote/winter.yml'),
+      create: (r) => _i40.AppAssets(
+        r.value<_i3.Resource>(r'asset:assets/images/leaf.png'),
+        r.value<_i3.Resource>(r'asset:assets/texts/about.txt'),
+        r.value<_i3.Resource>(r'asset:assets/images/sample_cover.png'),
+        r.value<_i3.Resource>(r'asset:assets/remote/winter.yml'),
       ),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'aboutText',
-            declaringType: r'AppAssets',
-            targetType: r'AppAssets',
-            declaringTypes: [r'AppAssets'],
-            returnType: r'Future',
-            parameterTypes: [r'Locale'],
-            parameterNames: [r'locale'],
-            targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'sampleCoverBytes',
-            declaringType: r'AppAssets',
-            targetType: r'AppAssets',
-            declaringTypes: [r'AppAssets'],
-            returnType: r'Future',
-            targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'logo',
-            declaringType: r'AppAssets',
-            targetType: r'AppAssets',
-            declaringTypes: [r'AppAssets'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Resource',
-            targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'about',
-            declaringType: r'AppAssets',
-            targetType: r'AppAssets',
-            declaringTypes: [r'AppAssets'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Resource',
-            targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'sampleCover',
-            declaringType: r'AppAssets',
-            targetType: r'AppAssets',
-            declaringTypes: [r'AppAssets'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Resource',
-            targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'winterTheme',
-            declaringType: r'AppAssets',
-            targetType: r'AppAssets',
-            declaringTypes: [r'AppAssets'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Resource',
-            targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'logoImage',
-            declaringType: r'AppAssets',
-            targetType: r'AppAssets',
-            declaringTypes: [r'AppAssets'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'ImageProvider',
-            targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$AppAssetsProxy ? bean._$advise(invoker) : null,
-      ),
+      annotations: const [_i3.Component()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i36.KeycloakConfig>(
+    _i3.BeanDefinition<_i25.KeycloakConfig>(
       name: r'keycloakConfig',
       source:
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
-      types: const [_i36.KeycloakConfig],
       conditions: [
-        _i2.ConditionGroup(
+        _i3.ConditionGroup(
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
           [
-            const _i2.ProfileCondition([r'sso & !web']),
+            const _i3.ProfileCondition([r'sso & !web']),
           ],
         ),
       ],
       create: (r) => _$KeycloakConfigConfiguration(r),
       annotations: const [
-        _i2.Configuration(),
-        _i2.Profile([r'sso & !web']),
+        _i3.Configuration(),
+        _i3.Profile([r'sso & !web']),
       ],
     ),
-    _i2.BeanDefinition<_i36.KeycloakRolesMapper>(
+    _i3.BeanDefinition<_i25.KeycloakRolesMapper>(
       name: r'keycloakRoles',
       source: r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig.keycloakRoles',
-      types: const [_i36.KeycloakRolesMapper, _i37.GrantedAuthoritiesMapper],
+      types: const [_i25.KeycloakRolesMapper, _i26.GrantedAuthoritiesMapper],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'keycloakRoles',
       conditions: [
-        _i2.ConditionGroup(
+        _i3.ConditionGroup(
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
           [
-            const _i2.ProfileCondition([r'sso & !web']),
+            const _i3.ProfileCondition([r'sso & !web']),
           ],
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i36.KeycloakConfig, qualifier: r'keycloakConfig'),
+        _i3.Dependency(_i25.KeycloakConfig, qualifier: r'keycloakConfig'),
       ],
       create: (r) =>
-          ((r.dependency<_i36.KeycloakConfig>(
+          ((r.dependency<_i25.KeycloakConfig>(
                 qualifier: r'keycloakConfig',
               ) as _$KeycloakConfigConfiguration)._$keycloakRoles(r)
-              as _i36.KeycloakRolesMapper),
-      annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches KeycloakRolesMapper, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+              as _i25.KeycloakRolesMapper),
+      annotations: const [_i3.Bean()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i36.KeycloakTokenInterceptor>(
+    _i3.BeanDefinition<_i25.KeycloakTokenInterceptor>(
       name: r'keycloakTokens',
       source: r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig.keycloakTokens',
-      types: const [_i36.KeycloakTokenInterceptor, _i46.RequestInterceptor],
+      types: const [_i25.KeycloakTokenInterceptor, _i41.RequestInterceptor],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'keycloakTokens',
       conditions: [
-        _i2.ConditionGroup(
+        _i3.ConditionGroup(
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
           [
-            const _i2.ProfileCondition([r'sso & !web']),
+            const _i3.ProfileCondition([r'sso & !web']),
           ],
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i36.KeycloakConfig, qualifier: r'keycloakConfig'),
-        _i2.Dependency(_i38.OAuth2AuthorizedClientManager, name: r'manager'),
-        _i2.Dependency(_i39.OAuth2AuthorizedClientService, name: r'clients'),
-        _i2.Dependency(_i40.SsoProperties, name: r'sso'),
-        _i2.Dependency(_i41.DPoPKey, optional: true, name: r'dPoPKey'),
+        _i3.Dependency(_i25.KeycloakConfig, qualifier: r'keycloakConfig'),
+        _i3.Dependency(_i27.OAuth2AuthorizedClientManager, name: r'manager'),
+        _i3.Dependency(_i28.OAuth2AuthorizedClientService, name: r'clients'),
+        _i3.Dependency(_i29.SsoProperties, name: r'sso'),
+        _i3.Dependency(_i30.DPoPKey, optional: true, name: r'dPoPKey'),
       ],
-      create: (r) => (r.dependency<_i36.KeycloakConfig>(
+      create: (r) => (r.dependency<_i25.KeycloakConfig>(
         qualifier: r'keycloakConfig',
       ) as _$KeycloakConfigConfiguration)._$keycloakTokens(r),
-      annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches KeycloakTokenInterceptor, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      annotations: const [_i3.Bean()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i47.OAuth2AccessTokenErrorDecoder>(
+    _i3.BeanDefinition<_i42.OAuth2AccessTokenErrorDecoder>(
       name: r'errorDecoder',
       source: r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig.errorDecoder',
-      types: const [_i47.OAuth2AccessTokenErrorDecoder, _i42.ErrorDecoder],
+      types: const [_i42.OAuth2AccessTokenErrorDecoder, _i31.ErrorDecoder],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'errorDecoder',
       conditions: [
-        _i2.ConditionGroup(
+        _i3.ConditionGroup(
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
           [
-            const _i2.ProfileCondition([r'sso & !web']),
+            const _i3.ProfileCondition([r'sso & !web']),
           ],
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i36.KeycloakConfig, qualifier: r'keycloakConfig'),
-        _i2.Dependency(_i36.KeycloakTokenInterceptor, name: r'tokens'),
+        _i3.Dependency(_i25.KeycloakConfig, qualifier: r'keycloakConfig'),
+        _i3.Dependency(_i25.KeycloakTokenInterceptor, name: r'tokens'),
       ],
       create: (r) =>
-          ((r.dependency<_i36.KeycloakConfig>(
+          ((r.dependency<_i25.KeycloakConfig>(
                 qualifier: r'keycloakConfig',
               ) as _$KeycloakConfigConfiguration)._$errorDecoder(r)
-              as _i47.OAuth2AccessTokenErrorDecoder),
-      annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches OAuth2AccessTokenErrorDecoder, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+              as _i42.OAuth2AccessTokenErrorDecoder),
+      annotations: const [_i3.Bean()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i7.ServerAuthenticationProvider>(
+    _i3.BeanDefinition<_i43.ServerAuthenticationProvider>(
       name: r'serverAuthenticationProvider',
       source: r'package:neon_books_app/src/account/server_authentication_provider.dart#ServerAuthenticationProvider',
       types: const [
-        _i7.ServerAuthenticationProvider,
-        _i48.AuthenticationProvider,
+        _i43.ServerAuthenticationProvider,
+        _i44.AuthenticationProvider,
       ],
       dependencies: const [
-        _i2.Dependency(_i27.AccountClient, name: r'_account'),
-        _i2.Dependency(_i15.CookieJar, name: r'_cookies'),
+        _i3.Dependency(_i16.AccountClient, name: r'_account'),
+        _i3.Dependency(_i33.CookieJar, name: r'_cookies'),
       ],
-      create: (r) => _$ServerAuthenticationProviderProxy(
-        r.dependency<_i27.AccountClient>(name: r'_account'),
-        r.dependency<_i15.CookieJar>(name: r'_cookies'),
+      create: (r) => _i43.ServerAuthenticationProvider(
+        r.dependency<_i16.AccountClient>(name: r'_account'),
+        r.dependency<_i33.CookieJar>(name: r'_cookies'),
       ),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'neon.account'),
+        _i3.Component(),
+        _i3.Log(topic: r'neon.account'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'supports',
-            declaringType: r'AuthenticationProvider',
-            targetType: r'ServerAuthenticationProvider',
-            declaringTypes: [
-              r'ServerAuthenticationProvider',
-              r'AuthenticationProvider',
-            ],
-            returnType: r'bool',
-            parameterTypes: [r'Authentication'],
-            parameterNames: [r'authentication'],
-            targetTypes: [
-              r'ServerAuthenticationProvider',
-              r'AuthenticationProvider',
-            ],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'authenticate',
-            declaringType: r'AuthenticationProvider',
-            targetType: r'ServerAuthenticationProvider',
-            declaringTypes: [
-              r'ServerAuthenticationProvider',
-              r'AuthenticationProvider',
-            ],
-            returnType: r'Future',
-            parameterTypes: [r'Authentication'],
-            parameterNames: [r'authentication'],
-            targetTypes: [
-              r'ServerAuthenticationProvider',
-              r'AuthenticationProvider',
-            ],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        advise: (bean, invoker) => bean is _$ServerAuthenticationProviderProxy
-            ? bean._$advise(invoker)
-            : null,
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i9.Session>(
+    _i3.BeanDefinition<_i1.Session>(
       name: r'session',
       source: r'package:neon_books_app/src/account/session.dart#Session',
-      types: const [_i9.Session],
       dependencies: const [
-        _i2.Dependency(
-          _i48.AuthenticationManager,
+        _i3.Dependency(
+          _i44.AuthenticationManager,
           name: r'_authenticationManager',
         ),
-        _i2.Dependency(_i27.AccountClient, name: r'_account'),
-        _i2.Dependency(_i15.CookieJar, name: r'_cookies'),
-        _i2.Dependency(_i2.ApplicationEventPublisher, name: r'_events'),
-        _i2.Dependency(_i40.SsoProperties, name: r'_sso'),
-        _i2.Dependency(
-          _i49.OAuth2LoginService,
+        _i3.Dependency(_i16.AccountClient, name: r'_account'),
+        _i3.Dependency(_i33.CookieJar, name: r'_cookies'),
+        _i3.Dependency(_i3.ApplicationEventPublisher, name: r'_events'),
+        _i3.Dependency(_i29.SsoProperties, name: r'_sso'),
+        _i3.Dependency(
+          _i45.OAuth2LoginService,
           optional: true,
           name: r'_login',
         ),
       ],
       create: (r) => _$SessionProxy(
-        r.dependency<_i48.AuthenticationManager>(
+        r.dependency<_i44.AuthenticationManager>(
           name: r'_authenticationManager',
         ),
-        r.dependency<_i27.AccountClient>(name: r'_account'),
-        r.dependency<_i15.CookieJar>(name: r'_cookies'),
-        r.dependency<_i2.ApplicationEventPublisher>(name: r'_events'),
-        r.dependency<_i40.SsoProperties>(name: r'_sso'),
-        r.optionalDependency<_i49.OAuth2LoginService>(name: r'_login'),
+        r.dependency<_i16.AccountClient>(name: r'_account'),
+        r.dependency<_i33.CookieJar>(name: r'_cookies'),
+        r.dependency<_i3.ApplicationEventPublisher>(name: r'_events'),
+        r.dependency<_i29.SsoProperties>(name: r'_sso'),
+        r.optionalDependency<_i45.OAuth2LoginService>(name: r'_login'),
       ),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i9.Session, _i11.ApplicationReadyEvent>(
+        _i3.EventListenerMethod.of<_i1.Session, _i5.ApplicationReadyEvent>(
           r'Session.restore',
           (bean, event) {
             bean.restore(event);
@@ -2514,432 +1856,250 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [
-        _i50.ChangeNotifierComponent(),
-        _i51.BuildContextAccess(name: r'session'),
-        _i2.Log(topic: r'neon.account'),
+        _i36.ChangeNotifierComponent(),
+        _i37.BuildContextAccess(name: r'session'),
+        _i3.Log(topic: r'neon.account'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'login',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
+          _i3.MethodSignature.of(
+            r'login',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'String', r'String'],
             parameterNames: [r'username', r'password'],
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'signInWithKeycloak',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
+          _i3.MethodSignature.of(
+            r'signInWithKeycloak',
+            _$target0,
             returnType: r'Future',
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'restore',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
+          _i3.MethodSignature.of(
+            r'restore',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'ApplicationReadyEvent'],
             parameterNames: [r'event'],
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'logout',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
+          _i3.MethodSignature.of(
+            r'logout',
+            _$target0,
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'endSession'],
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'isLoggedIn',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'isLoggedIn',
+            _$target0,
+            kind: _i3.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'user',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'user',
+            _$target0,
+            kind: _i3.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'isAdmin',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'isAdmin',
+            _$target0,
+            kind: _i3.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'usesKeycloak',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'usesKeycloak',
+            _$target0,
+            kind: _i3.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'restored',
-            declaringType: r'Session',
-            targetType: r'Session',
-            declaringTypes: [r'Session'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'restored',
+            _$target0,
+            kind: _i3.MemberKind.getter,
             returnType: r'Future',
-            targetTypes: [r'Session'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(name: r'session'),
-              _i2.Log(topic: r'neon.account'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$SessionProxy ? bean._$advise(invoker) : null,
+            bean is _$SessionProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i40.SsoProperties>(
+    _i3.BeanDefinition<_i29.SsoProperties>(
       name: r'ssoProperties',
       source: r'package:neon_books_app/src/account/sso_properties.dart#SsoProperties',
-      types: const [_i40.SsoProperties],
-      create: (r) => _i40.SsoProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'neon.sso')],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SsoProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      create: (r) => _i29.SsoProperties(),
+      annotations: const [_i3.ConfigurationProperties(r'neon.sso')],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i12.AdminService>(
+    _i3.BeanDefinition<_i6.AdminService>(
       name: r'adminService',
       source:
           r'package:neon_books_app/src/admin/admin_service.dart#AdminService',
-      types: const [_i12.AdminService],
       dependencies: const [
-        _i2.Dependency(_i30.AdminClient, name: r'_admin'),
-        _i2.Dependency(_i23.CatalogService, name: r'_catalog'),
+        _i3.Dependency(_i19.AdminClient, name: r'_admin'),
+        _i3.Dependency(_i12.CatalogService, name: r'_catalog'),
       ],
       create: (r) => _$AdminServiceProxy(
-        r.dependency<_i30.AdminClient>(name: r'_admin'),
-        r.dependency<_i23.CatalogService>(name: r'_catalog'),
+        r.dependency<_i19.AdminClient>(name: r'_admin'),
+        r.dependency<_i12.CatalogService>(name: r'_catalog'),
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i12.AdminService>(
+        const _i3.BeanMethod<_i6.AdminService>(
           r'addBook',
-          parameterTypes: const [_i13.NewBook],
+          parameterTypes: [_i7.NewBook],
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'book',
-              type: const _i2.ClassType<_i13.NewBook>(),
+              type: _i3.ClassType<_i7.NewBook>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i13.Book>(),
+          returnTypeInfo: _i3.ClassType<_i7.Book>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.addBook, arguments),
-          annotations: const [_i52.PreAuthorize("hasRole('ADMIN')")],
+          invoke: _$invoke1,
+          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
-        _i2.BeanMethod<_i12.AdminService>(
+        const _i3.BeanMethod<_i6.AdminService>(
           r'uploadCover',
-          parameterTypes: const [String, _i5.Uint8List],
+          parameterTypes: [String, _i8.Uint8List],
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: _i3.ClassType<String>(),
               isRequired: true,
             ),
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'png',
-              type: const _i2.ClassType<_i5.Uint8List>(),
+              type: _i3.ClassType<_i8.Uint8List>(),
               isRequired: true,
             ),
           ],
           isFuture: true,
           isVoid: true,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.uploadCover, arguments),
-          annotations: const [_i52.PreAuthorize("hasRole('ADMIN')")],
+          invoke: _$invoke2,
+          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
-        _i2.BeanMethod<_i12.AdminService>(
+        const _i3.BeanMethod<_i6.AdminService>(
           r'deleteBook',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i3.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: _i3.ClassType<String>(),
               isRequired: true,
             ),
           ],
           isFuture: true,
           isVoid: true,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.deleteBook, arguments),
-          annotations: const [_i52.PreAuthorize("hasRole('ADMIN')")],
+          invoke: _$invoke3,
+          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
-        _i2.BeanMethod<_i12.AdminService>(
+        const _i3.BeanMethod<_i6.AdminService>(
           r'serverLogs',
-          returnTypeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
+          returnTypeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
           isFuture: true,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.serverLogs, arguments),
-          annotations: const [_i52.PreAuthorize("hasRole('ADMIN')")],
+          invoke: _$invoke4,
+          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
       ],
       annotations: const [
-        _i2.Service(),
-        _i2.Log(topic: r'neon.admin'),
+        _i3.Service(),
+        _i3.Log(topic: r'neon.admin'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'addBook',
-            declaringType: r'AdminService',
-            targetType: r'AdminService',
-            declaringTypes: [r'AdminService'],
+          _i3.MethodSignature.of(
+            r'addBook',
+            _$target5,
             returnType: r'Future',
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
-            annotations: [_i52.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'AdminService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.admin'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'uploadCover',
-            declaringType: r'AdminService',
-            targetType: r'AdminService',
-            declaringTypes: [r'AdminService'],
+          _i3.MethodSignature.of(
+            r'uploadCover',
+            _$target5,
             returnType: r'Future',
             parameterTypes: [r'String', r'Uint8List'],
             parameterNames: [r'isbn', r'png'],
-            annotations: [_i52.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'AdminService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.admin'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'deleteBook',
-            declaringType: r'AdminService',
-            targetType: r'AdminService',
-            declaringTypes: [r'AdminService'],
+          _i3.MethodSignature.of(
+            r'deleteBook',
+            _$target5,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            annotations: [_i52.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'AdminService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.admin'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'serverLogs',
-            declaringType: r'AdminService',
-            targetType: r'AdminService',
-            declaringTypes: [r'AdminService'],
+          _i3.MethodSignature.of(
+            r'serverLogs',
+            _$target5,
             returnType: r'Future',
-            annotations: [_i52.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'AdminService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.admin'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$AdminServiceProxy ? bean._$advise(invoker) : null,
+            bean is _$AdminServiceProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i14.BookForm>(
+    _i3.BeanDefinition<_i47.BookForm>(
       name: r'bookForm',
       source: r'package:neon_books_app/src/admin/book_form.dart#BookForm',
-      types: const [_i14.BookForm],
       dependencies: const [
-        _i2.Dependency(_i2.BeanValidator, name: r'_validator'),
-        _i2.Dependency(_i2.BeanIntrospector, name: r'_introspector'),
+        _i3.Dependency(_i3.BeanValidator, name: r'_validator'),
+        _i3.Dependency(_i3.BeanIntrospector, name: r'_introspector'),
       ],
-      create: (r) => _$BookFormProxy(
-        r.dependency<_i2.BeanValidator>(name: r'_validator'),
-        r.dependency<_i2.BeanIntrospector>(name: r'_introspector'),
+      create: (r) => _i47.BookForm(
+        r.dependency<_i3.BeanValidator>(name: r'_validator'),
+        r.dependency<_i3.BeanIntrospector>(name: r'_introspector'),
       ),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'bind',
-            declaringType: r'BookForm',
-            targetType: r'BookForm',
-            declaringTypes: [r'BookForm'],
-            returnType: r'Record',
-            parameterTypes: [r'Map'],
-            parameterNames: [r'fields'],
-            targetTypes: [r'BookForm'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$BookFormProxy ? bean._$advise(invoker) : null,
-      ),
+      annotations: const [_i3.Component()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i27.AccountClient>(
+    _i3.BeanDefinition<_i16.AccountClient>(
       name: r'accountClient',
       source:
           r'package:neon_books_app/src/api/account_client.dart#AccountClient',
-      types: const [_i27.AccountClient],
       primary: true,
       create: (r) => _$AccountClientImpl.$create(r),
       annotations: const [
-        _i28.FeignClient(r'account', url: r'${api.base-url}', path: r'/api'),
+        _i17.FeignClient(r'account', url: r'${api.base-url}', path: r'/api'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches AccountClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i30.AdminClient>(
+    _i3.BeanDefinition<_i19.AdminClient>(
       name: r'adminClient',
       source: r'package:neon_books_app/src/api/admin_client.dart#AdminClient',
-      types: const [_i30.AdminClient],
       primary: true,
       create: (r) => _$AdminClientImpl.$create(r),
       annotations: const [
-        _i28.FeignClient(r'admin', url: r'${api.base-url}', path: r'/api'),
+        _i17.FeignClient(r'admin', url: r'${api.base-url}', path: r'/api'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches AdminClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i43.ApiConfig>(
+    _i3.BeanDefinition<_i32.ApiConfig>(
       name: r'apiConfig',
       source: r'package:neon_books_app/src/api/api_config.dart#ApiConfig',
-      types: const [_i43.ApiConfig],
       create: (r) => _$ApiConfigConfiguration(r),
-      annotations: const [_i2.Configuration()],
+      annotations: const [_i3.Configuration()],
     ),
-    _i2.BeanDefinition<_i29.HttpTransport>(
+    _i3.BeanDefinition<_i18.HttpTransport>(
       name: r'networkTransport',
       source: r'package:neon_books_app/src/api/api_config.dart#ApiConfig.networkTransport',
-      types: const [_i29.HttpTransport],
       factoryBeanName: r'apiConfig',
       factoryMethodName: r'networkTransport',
       conditions: [
-        const _i2.ProfileCondition([r'!web']),
+        const _i3.ProfileCondition([r'!web']),
       ],
       dependencies: const [
-        _i2.Dependency(_i43.ApiConfig, qualifier: r'apiConfig'),
-        _i2.Dependency.value(r'${api.connect-timeout:5s}'),
+        _i3.Dependency(_i32.ApiConfig, qualifier: r'apiConfig'),
+        _i3.Dependency.value(r'${api.connect-timeout:5s}'),
       ],
-      create: (r) => (r.dependency<_i43.ApiConfig>(
+      create: (r) => (r.dependency<_i32.ApiConfig>(
         qualifier: r'apiConfig',
       ) as _$ApiConfigConfiguration)._$networkTransport(r),
       destroyMethod: (bean) {
@@ -2947,420 +2107,277 @@ _i2.BeanModule get $application => _i2.BeanModule(
       },
       destroyMethodName: r'(inferred)',
       annotations: const [
-        _i2.Bean(),
-        _i2.Profile([r'!web']),
+        _i3.Bean(),
+        _i3.Profile([r'!web']),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches HttpTransport, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i53.SessionTransport>(
+    _i3.BeanDefinition<_i48.SessionTransport>(
       name: r'sessionTransport',
       source: r'package:neon_books_app/src/api/api_config.dart#ApiConfig.sessionTransport',
-      types: const [_i53.SessionTransport, _i29.HttpTransport],
+      types: const [_i48.SessionTransport, _i18.HttpTransport],
       primary: true,
       factoryBeanName: r'apiConfig',
       factoryMethodName: r'sessionTransport',
       conditions: [
-        const _i2.ProfileCondition([r'!web']),
+        const _i3.ProfileCondition([r'!web']),
       ],
       dependencies: const [
-        _i2.Dependency(_i43.ApiConfig, qualifier: r'apiConfig'),
-        _i2.Dependency(
-          _i29.HttpTransport,
+        _i3.Dependency(_i32.ApiConfig, qualifier: r'apiConfig'),
+        _i3.Dependency(
+          _i18.HttpTransport,
           qualifier: r'networkTransport',
           name: r'network',
         ),
-        _i2.Dependency(_i15.CookieJar, name: r'cookies'),
-        _i2.Dependency(_i44.ApiProperties, name: r'api'),
+        _i3.Dependency(_i33.CookieJar, name: r'cookies'),
+        _i3.Dependency(_i34.ApiProperties, name: r'api'),
       ],
       create: (r) =>
-          ((r.dependency<_i43.ApiConfig>(
+          ((r.dependency<_i32.ApiConfig>(
                 qualifier: r'apiConfig',
               ) as _$ApiConfigConfiguration)._$sessionTransport(r)
-              as _i53.SessionTransport),
+              as _i48.SessionTransport),
       destroyMethod: (bean) {
         bean.close();
       },
       destroyMethodName: r'(inferred)',
       annotations: const [
-        _i2.Bean(),
-        _i2.Primary(),
-        _i2.Profile([r'!web']),
+        _i3.Bean(),
+        _i3.Primary(),
+        _i3.Profile([r'!web']),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SessionTransport, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i45.DefaultRetryer>(
+    _i3.BeanDefinition<_i35.DefaultRetryer>(
       name: r'retryer',
       source:
           r'package:neon_books_app/src/api/api_config.dart#ApiConfig.retryer',
-      types: const [_i45.DefaultRetryer, _i45.Retryer],
+      types: const [_i35.DefaultRetryer, _i35.Retryer],
       factoryBeanName: r'apiConfig',
       factoryMethodName: r'retryer',
       dependencies: const [
-        _i2.Dependency(_i43.ApiConfig, qualifier: r'apiConfig'),
+        _i3.Dependency(_i32.ApiConfig, qualifier: r'apiConfig'),
       ],
-      create: (r) => ((r.dependency<_i43.ApiConfig>(
+      create: (r) => ((r.dependency<_i32.ApiConfig>(
         qualifier: r'apiConfig',
-      ) as _$ApiConfigConfiguration)._$retryer(r) as _i45.DefaultRetryer),
-      annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches DefaultRetryer, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      ) as _$ApiConfigConfiguration)._$retryer(r) as _i35.DefaultRetryer),
+      annotations: const [_i3.Bean()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i44.ApiProperties>(
+    _i3.BeanDefinition<_i34.ApiProperties>(
       name: r'apiProperties',
       source:
           r'package:neon_books_app/src/api/api_properties.dart#ApiProperties',
-      types: const [_i44.ApiProperties],
-      create: (r) => _i44.ApiProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'api'), _i2.Validated()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ApiProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      create: (r) => _i34.ApiProperties(),
+      annotations: const [_i3.ConfigurationProperties(r'api'), _i3.Validated()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i31.CatalogClient>(
+    _i3.BeanDefinition<_i20.CatalogClient>(
       name: r'catalogClient',
       source:
           r'package:neon_books_app/src/api/catalog_client.dart#CatalogClient',
-      types: const [_i31.CatalogClient],
       primary: true,
       create: (r) => _$CatalogClientImpl.$create(r),
       annotations: const [
-        _i28.FeignClient(
+        _i17.FeignClient(
           r'catalog',
           url: r'${api.base-url}',
           path: r'/api/books',
         ),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches CatalogClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i15.CookieJar>(
+    _i3.BeanDefinition<_i33.CookieJar>(
       name: r'cookieJar',
       source: r'package:neon_books_app/src/api/cookie_jar.dart#CookieJar',
-      types: const [_i15.CookieJar],
-      create: (r) => _$CookieJarProxy(),
+      create: (r) => _i33.CookieJar(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'neon.api.cookies'),
+        _i3.Component(),
+        _i3.Log(topic: r'neon.api.cookies'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'store',
-            declaringType: r'CookieJar',
-            targetType: r'CookieJar',
-            declaringTypes: [r'CookieJar'],
-            returnType: r'void',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'setCookies'],
-            targetTypes: [r'CookieJar'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.api.cookies'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'clear',
-            declaringType: r'CookieJar',
-            targetType: r'CookieJar',
-            declaringTypes: [r'CookieJar'],
-            returnType: r'void',
-            targetTypes: [r'CookieJar'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.api.cookies'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'header',
-            declaringType: r'CookieJar',
-            targetType: r'CookieJar',
-            declaringTypes: [r'CookieJar'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            targetTypes: [r'CookieJar'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.api.cookies'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$CookieJarProxy ? bean._$advise(invoker) : null,
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i32.ShopClient>(
+    _i3.BeanDefinition<_i21.ShopClient>(
       name: r'shopClient',
       source: r'package:neon_books_app/src/api/shop_client.dart#ShopClient',
-      types: const [_i32.ShopClient],
       primary: true,
       create: (r) => _$ShopClientImpl.$create(r),
       annotations: const [
-        _i28.FeignClient(r'shop', url: r'${api.base-url}', path: r'/api'),
+        _i17.FeignClient(r'shop', url: r'${api.base-url}', path: r'/api'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ShopClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i33.StockClient>(
+    _i3.BeanDefinition<_i22.StockClient>(
       name: r'stockClient',
       source: r'package:neon_books_app/src/api/stock_client.dart#StockClient',
-      types: const [_i33.StockClient],
       primary: true,
       create: (r) => _$StockClientImpl.$create(r),
       annotations: const [
-        _i28.FeignClient(
+        _i17.FeignClient(
           r'stock',
           url: r'${api.base-url}',
           path: r'/api/stock',
         ),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches StockClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i16.SupportHandshake>(
+    _i3.BeanDefinition<_i49.SupportHandshake>(
       name: r'supportHandshake',
       source: r'package:neon_books_app/src/api/support_handshake.dart#SupportHandshake',
-      types: const [_i16.SupportHandshake, _i17.WebSocketHandshakeInterceptor],
+      types: const [_i49.SupportHandshake, _i50.WebSocketHandshakeInterceptor],
       conditions: [
-        _i2.ConditionGroup(
+        _i3.ConditionGroup(
           r'package:neon_books_app/src/api/support_handshake.dart#SupportHandshake',
           [
-            const _i2.ProfileCondition([r'!web']),
+            const _i3.ProfileCondition([r'!web']),
           ],
         ),
       ],
       dependencies: const [
-        _i2.Dependency(_i15.CookieJar, name: r'_cookies'),
-        _i2.Dependency(_i40.SsoProperties, name: r'_sso'),
-        _i2.Dependency(
-          _i38.OAuth2AuthorizedClientManager,
+        _i3.Dependency(_i33.CookieJar, name: r'_cookies'),
+        _i3.Dependency(_i29.SsoProperties, name: r'_sso'),
+        _i3.Dependency(
+          _i27.OAuth2AuthorizedClientManager,
           optional: true,
           name: r'_tokens',
         ),
-        _i2.Dependency(_i41.DPoPKey, optional: true, name: r'_dPoPKey'),
+        _i3.Dependency(_i30.DPoPKey, optional: true, name: r'_dPoPKey'),
       ],
-      create: (r) => _$SupportHandshakeProxy(
-        r.dependency<_i15.CookieJar>(name: r'_cookies'),
-        r.dependency<_i40.SsoProperties>(name: r'_sso'),
-        r.optionalDependency<_i38.OAuth2AuthorizedClientManager>(
+      create: (r) => _i49.SupportHandshake(
+        r.dependency<_i33.CookieJar>(name: r'_cookies'),
+        r.dependency<_i29.SsoProperties>(name: r'_sso'),
+        r.optionalDependency<_i27.OAuth2AuthorizedClientManager>(
           name: r'_tokens',
         ),
-        r.optionalDependency<_i41.DPoPKey>(name: r'_dPoPKey'),
+        r.optionalDependency<_i30.DPoPKey>(name: r'_dPoPKey'),
       ),
       annotations: const [
-        _i2.Component(),
-        _i2.Profile([r'!web']),
+        _i3.Component(),
+        _i3.Profile([r'!web']),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'apply',
-            declaringType: r'WebSocketHandshakeInterceptor',
-            targetType: r'SupportHandshake',
-            declaringTypes: [
-              r'SupportHandshake',
-              r'WebSocketHandshakeInterceptor',
-            ],
-            returnType: r'Future',
-            parameterTypes: [r'WebSocketHandshake'],
-            parameterNames: [r'handshake'],
-            targetTypes: [
-              r'SupportHandshake',
-              r'WebSocketHandshakeInterceptor',
-            ],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Profile([r'!web']),
-            ],
-            targetAnnotationTypes: [r'Component', r'Profile'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$SupportHandshakeProxy ? bean._$advise(invoker) : null,
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i34.SupportSocket>(
+    _i3.BeanDefinition<_i23.SupportSocket>(
       name: r'supportSocket',
       source:
           r'package:neon_books_app/src/api/support_socket.dart#SupportSocket',
-      types: const [_i34.SupportSocket],
       primary: true,
       create: (r) => _$SupportSocketImpl.$create(r),
       annotations: const [
-        _i35.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
+        _i24.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SupportSocket, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i54.AppProperties>(
+    _i3.BeanDefinition<_i39.AppProperties>(
       name: r'appProperties',
       source:
           r'package:neon_books_app/src/app/app_properties.dart#AppProperties',
-      types: const [_i54.AppProperties],
-      create: (r) => _i54.AppProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'app'), _i2.Validated()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches AppProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      create: (r) => _i39.AppProperties(),
+      annotations: const [_i3.ConfigurationProperties(r'app'), _i3.Validated()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i18.LanguageSelection>(
+    _i3.BeanDefinition<_i9.LanguageSelection>(
       name: r'languageSelection',
       source: r'package:neon_books_app/src/app/language.dart#LanguageSelection',
-      types: const [_i18.LanguageSelection],
       create: (r) => _$LanguageSelectionProxy(),
       annotations: const [
-        _i50.ChangeNotifierComponent(),
-        _i51.BuildContextAccess(),
+        _i36.ChangeNotifierComponent(),
+        _i37.BuildContextAccess(),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'select',
-            declaringType: r'LanguageSelection',
-            targetType: r'LanguageSelection',
-            declaringTypes: [r'LanguageSelection'],
+          _i3.MethodSignature.of(
+            r'select',
+            _$target6,
             returnType: r'void',
             parameterTypes: [r'String'],
             parameterNames: [r'languageCode'],
-            targetTypes: [r'LanguageSelection'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'languageCode',
-            declaringType: r'LanguageSelection',
-            targetType: r'LanguageSelection',
-            declaringTypes: [r'LanguageSelection'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'languageCode',
+            _$target6,
+            kind: _i3.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'LanguageSelection'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
         ],
-        advise: (bean, invoker) =>
-            bean is _$LanguageSelectionProxy ? bean._$advise(invoker) : null,
+        advise: (bean, invoker) => bean is _$LanguageSelectionProxy
+            ? (bean..aopInvoker = invoker)
+            : null,
       ),
     ),
-    _i2.BeanDefinition<_i18.LanguageCustomizer>(
+    _i3.BeanDefinition<_i9.LanguageCustomizer>(
       name: r'languageCustomizer',
       source:
           r'package:neon_books_app/src/app/language.dart#LanguageCustomizer',
-      types: const [_i18.LanguageCustomizer, _i19.FlutterAppCustomizer],
+      types: const [_i9.LanguageCustomizer, _i51.FlutterAppCustomizer],
       dependencies: const [
-        _i2.Dependency(_i18.LanguageSelection, name: r'_selection'),
+        _i3.Dependency(_i9.LanguageSelection, name: r'_selection'),
       ],
-      create: (r) => _$LanguageCustomizerProxy(
-        r.dependency<_i18.LanguageSelection>(name: r'_selection'),
+      create: (r) => _i9.LanguageCustomizer(
+        r.dependency<_i9.LanguageSelection>(name: r'_selection'),
       ),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'customize',
-            declaringType: r'FlutterAppCustomizer',
-            targetType: r'LanguageCustomizer',
-            declaringTypes: [r'LanguageCustomizer', r'FlutterAppCustomizer'],
-            returnType: r'void',
-            parameterTypes: [r'FlutterAppSettings'],
-            parameterNames: [r'app'],
-            targetTypes: [r'LanguageCustomizer', r'FlutterAppCustomizer'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$LanguageCustomizerProxy ? bean._$advise(invoker) : null,
-      ),
+      annotations: const [_i3.Component()],
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i55.LifecycleLog>(
+    _i3.BeanDefinition<_i52.LifecycleLog>(
       name: r'lifecycleLog',
       source: r'package:neon_books_app/src/app/lifecycle_log.dart#LifecycleLog',
-      types: const [_i55.LifecycleLog],
-      create: (r) => _i55.LifecycleLog(),
+      create: (r) => _i52.LifecycleLog(),
       eventListeners: [
-        _i2.EventListenerMethod.of<
-          _i55.LifecycleLog,
-          _i56.AppLifecycleStateEvent
+        _i3.EventListenerMethod.of<
+          _i52.LifecycleLog,
+          _i53.AppLifecycleStateEvent
         >(r'LifecycleLog.onState', (bean, event) {
           bean.onState(event);
           return null;
         }),
-        _i2.EventListenerMethod.of<_i55.LifecycleLog, _i2.ContextPausedEvent>(
+        _i3.EventListenerMethod.of<_i52.LifecycleLog, _i3.ContextPausedEvent>(
           r'LifecycleLog.onPaused',
           (bean, event) {
             bean.onPaused(event);
             return null;
           },
         ),
-        _i2.EventListenerMethod.of<
-          _i55.LifecycleLog,
-          _i2.ContextRestartedEvent
+        _i3.EventListenerMethod.of<
+          _i52.LifecycleLog,
+          _i3.ContextRestartedEvent
         >(r'LifecycleLog.onRestarted', (bean, event) {
           bean.onRestarted(event);
           return null;
         }),
       ],
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'neon.lifecycle'),
+        _i3.Component(),
+        _i3.Log(topic: r'neon.lifecycle'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches LifecycleLog, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i57.RouteLog>(
+    _i3.BeanDefinition<_i54.RouteLog>(
       name: r'routeLog',
       source: r'package:neon_books_app/src/app/route_log.dart#RouteLog',
-      types: const [_i57.RouteLog, _i58.NavigatorObserver],
-      create: (r) => _i57.RouteLog(),
+      types: const [_i54.RouteLog, _i55.NavigatorObserver],
+      create: (r) => _i54.RouteLog(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'neon.navigation'),
+        _i3.Component(),
+        _i3.Log(topic: r'neon.navigation'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches RouteLog, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i20.Basket>(
+    _i3.BeanDefinition<_i10.Basket>(
       name: r'basket',
       source: r'package:neon_books_app/src/basket/basket.dart#Basket',
-      types: const [_i20.Basket],
-      dependencies: const [_i2.Dependency(_i32.ShopClient, name: r'_shop')],
+      dependencies: const [_i3.Dependency(_i21.ShopClient, name: r'_shop')],
       create: (r) =>
-          _$BasketProxy(r.dependency<_i32.ShopClient>(name: r'_shop')),
+          _$BasketProxy(r.dependency<_i21.ShopClient>(name: r'_shop')),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i20.Basket, _i9.LoggedIn>(
+        _i3.EventListenerMethod.of<_i10.Basket, _i1.LoggedIn>(
           r'Basket.onLogin',
           (bean, event) {
             bean.onLogin(event);
             return null;
           },
         ),
-        _i2.EventListenerMethod.of<_i20.Basket, _i9.LoggedOut>(
+        _i3.EventListenerMethod.of<_i10.Basket, _i1.LoggedOut>(
           r'Basket.onLogout',
           (bean, event) {
             bean.onLogout(event);
@@ -3369,332 +2386,141 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [
-        _i50.ChangeNotifierComponent(),
-        _i51.BuildContextAccess(),
-        _i2.Log(topic: r'neon.basket'),
+        _i36.ChangeNotifierComponent(),
+        _i37.BuildContextAccess(),
+        _i3.Log(topic: r'neon.basket'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'add',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
+          _i3.MethodSignature.of(
+            r'add',
+            _$target7,
             returnType: r'Future',
             parameterTypes: [r'Book'],
             parameterNames: [r'book'],
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'setQuantity',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
+          _i3.MethodSignature.of(
+            r'setQuantity',
+            _$target7,
             returnType: r'Future',
             parameterTypes: [r'String', r'int', r'Book'],
             parameterNames: [r'isbn', r'quantity', r'book'],
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'clear',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
-            returnType: r'void',
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'onLogin',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
+          _i3.MethodSignature.of(r'clear', _$target7, returnType: r'void'),
+          _i3.MethodSignature.of(
+            r'onLogin',
+            _$target7,
             returnType: r'Future',
             parameterTypes: [r'LoggedIn'],
             parameterNames: [r'event'],
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'onLogout',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
+          _i3.MethodSignature.of(
+            r'onLogout',
+            _$target7,
             returnType: r'void',
             parameterTypes: [r'LoggedOut'],
             parameterNames: [r'event'],
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'items',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'items',
+            _$target7,
+            kind: _i3.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'count',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'count',
+            _$target7,
+            kind: _i3.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'total',
-            declaringType: r'Basket',
-            targetType: r'Basket',
-            declaringTypes: [r'Basket'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'total',
+            _$target7,
+            kind: _i3.MemberKind.getter,
             returnType: r'double',
-            targetTypes: [r'Basket'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-              _i2.Log(topic: r'neon.basket'),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-              r'Log',
-            ],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$BasketProxy ? bean._$advise(invoker) : null,
+            bean is _$BasketProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i21.Catalog>(
+    _i3.BeanDefinition<_i11.Catalog>(
       name: r'catalog',
       source: r'package:neon_books_app/src/catalog/catalog.dart#Catalog',
-      types: const [_i21.Catalog],
       dependencies: const [
-        _i2.Dependency(_i23.CatalogService, name: r'_service'),
+        _i3.Dependency(_i12.CatalogService, name: r'_service'),
       ],
       create: (r) =>
-          _$CatalogProxy(r.dependency<_i23.CatalogService>(name: r'_service')),
+          _$CatalogProxy(r.dependency<_i12.CatalogService>(name: r'_service')),
       annotations: const [
-        _i50.ChangeNotifierComponent(),
-        _i51.BuildContextAccess(),
+        _i36.ChangeNotifierComponent(),
+        _i37.BuildContextAccess(),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'search',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
+          _i3.MethodSignature.of(
+            r'search',
+            _$target8,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'query'],
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'showPage',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
+          _i3.MethodSignature.of(
+            r'showPage',
+            _$target8,
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'page'],
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'reload',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            returnType: r'Future',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'query',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(r'reload', _$target8, returnType: r'Future'),
+          _i3.MethodSignature.of(
+            r'query',
+            _$target8,
+            kind: _i3.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'page',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'page',
+            _$target8,
+            kind: _i3.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'books',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'books',
+            _$target8,
+            kind: _i3.MemberKind.getter,
             returnType: r'PageOfBooks',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'error',
-            declaringType: r'Catalog',
-            targetType: r'Catalog',
-            declaringTypes: [r'Catalog'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'error',
+            _$target8,
+            kind: _i3.MemberKind.getter,
             returnType: r'Object',
-            targetTypes: [r'Catalog'],
-            targetAnnotations: [
-              _i50.ChangeNotifierComponent(),
-              _i51.BuildContextAccess(),
-            ],
-            targetAnnotationTypes: [
-              r'ChangeNotifierComponent',
-              r'BuildContextAccess',
-            ],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$CatalogProxy ? bean._$advise(invoker) : null,
+            bean is _$CatalogProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i22.CatalogRefresh>(
+    _i3.BeanDefinition<_i38.CatalogRefresh>(
       name: r'catalogRefresh',
       source: r'package:neon_books_app/src/catalog/catalog_refresh.dart#CatalogRefresh',
-      types: const [_i22.CatalogRefresh],
       dependencies: const [
-        _i2.Dependency(_i23.CatalogService, name: r'_service'),
-        _i2.Dependency(_i21.Catalog, name: r'_catalog'),
+        _i3.Dependency(_i12.CatalogService, name: r'_service'),
+        _i3.Dependency(_i11.Catalog, name: r'_catalog'),
       ],
-      create: (r) => _$CatalogRefreshProxy(
-        r.dependency<_i23.CatalogService>(name: r'_service'),
-        r.dependency<_i21.Catalog>(name: r'_catalog'),
+      create: (r) => _i38.CatalogRefresh(
+        r.dependency<_i12.CatalogService>(name: r'_service'),
+        r.dependency<_i11.Catalog>(name: r'_catalog'),
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i22.CatalogRefresh>(
+        const _i3.BeanMethod<_i38.CatalogRefresh>(
           r'refresh',
           isFuture: true,
           isVoid: true,
-          invoke: (bean, arguments) => Function.apply(bean.refresh, arguments),
-          annotations: const [
-            _i59.Scheduled(
+          invoke: _$invoke9,
+          annotations: [
+            _i56.Scheduled(
               fixedDelayString: r'${catalog.refresh-interval:5m}',
               initialDelayString: r'${catalog.refresh-interval:5m}',
             ),
@@ -3702,394 +2528,219 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'neon.catalog'),
+        _i3.Component(),
+        _i3.Log(topic: r'neon.catalog'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'refresh',
-            declaringType: r'CatalogRefresh',
-            targetType: r'CatalogRefresh',
-            declaringTypes: [r'CatalogRefresh'],
-            returnType: r'Future',
-            annotations: [
-              _i59.Scheduled(
-                fixedDelayString: r'${catalog.refresh-interval:5m}',
-                initialDelayString: r'${catalog.refresh-interval:5m}',
-              ),
-            ],
-            annotationTypes: [r'Scheduled'],
-            targetTypes: [r'CatalogRefresh'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'neon.catalog'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$CatalogRefreshProxy ? bean._$advise(invoker) : null,
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
-    _i2.BeanDefinition<_i23.CatalogService>(
+    _i3.BeanDefinition<_i12.CatalogService>(
       name: r'catalogService',
       source: r'package:neon_books_app/src/catalog/catalog_service.dart#CatalogService',
-      types: const [_i23.CatalogService],
       dependencies: const [
-        _i2.Dependency(_i31.CatalogClient, name: r'_client'),
+        _i3.Dependency(_i20.CatalogClient, name: r'_client'),
       ],
       create: (r) => _$CatalogServiceProxy(
-        r.dependency<_i31.CatalogClient>(name: r'_client'),
+        r.dependency<_i20.CatalogClient>(name: r'_client'),
       ),
       annotations: const [
-        _i2.Service(),
-        _i2.Log(topic: r'neon.catalog'),
+        _i3.Service(),
+        _i3.Log(topic: r'neon.catalog'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'page',
-            declaringType: r'CatalogService',
-            targetType: r'CatalogService',
-            declaringTypes: [r'CatalogService'],
+          _i3.MethodSignature.of(
+            r'page',
+            _$target10,
             returnType: r'Future',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'query', r'page'],
-            annotations: [_i60.Cacheable(r'catalog')],
+            annotations: [_i57.Cacheable(r'catalog')],
             annotationTypes: [r'Cacheable'],
-            targetTypes: [r'CatalogService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.catalog'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'find',
-            declaringType: r'CatalogService',
-            targetType: r'CatalogService',
-            declaringTypes: [r'CatalogService'],
+          _i3.MethodSignature.of(
+            r'find',
+            _$target10,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            annotations: [_i60.Cacheable(r'books', unless: r'#result == null')],
+            annotations: [_i57.Cacheable(r'books', unless: r'#result == null')],
             annotationTypes: [r'Cacheable'],
-            targetTypes: [r'CatalogService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.catalog'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'cover',
-            declaringType: r'CatalogService',
-            targetType: r'CatalogService',
-            declaringTypes: [r'CatalogService'],
+          _i3.MethodSignature.of(
+            r'cover',
+            _$target10,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             annotations: [
-              _i60.Cacheable(r'covers', unless: r'#result == null'),
+              _i57.Cacheable(r'covers', unless: r'#result == null'),
             ],
             annotationTypes: [r'Cacheable'],
-            targetTypes: [r'CatalogService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.catalog'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'refresh',
-            declaringType: r'CatalogService',
-            targetType: r'CatalogService',
-            declaringTypes: [r'CatalogService'],
+          _i3.MethodSignature.of(
+            r'refresh',
+            _$target10,
             returnType: r'void',
             annotations: [
-              _i60.CacheEvict.of(
+              _i57.CacheEvict.of(
                 cacheNames: [r'catalog', r'books'],
                 allEntries: true,
               ),
             ],
             annotationTypes: [r'CacheEvict'],
-            targetTypes: [r'CatalogService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.catalog'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'coverChanged',
-            declaringType: r'CatalogService',
-            targetType: r'CatalogService',
-            declaringTypes: [r'CatalogService'],
+          _i3.MethodSignature.of(
+            r'coverChanged',
+            _$target10,
             returnType: r'void',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            annotations: [_i60.CacheEvict(r'covers', key: r'#isbn')],
+            annotations: [_i57.CacheEvict(r'covers', key: r'#isbn')],
             annotationTypes: [r'CacheEvict'],
-            targetTypes: [r'CatalogService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.catalog'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$CatalogServiceProxy ? bean._$advise(invoker) : null,
+            bean is _$CatalogServiceProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i24.OrderService>(
+    _i3.BeanDefinition<_i13.OrderService>(
       name: r'orderService',
       source:
           r'package:neon_books_app/src/orders/order_service.dart#OrderService',
-      types: const [_i24.OrderService],
       dependencies: const [
-        _i2.Dependency(_i32.ShopClient, name: r'_shop'),
-        _i2.Dependency(_i20.Basket, name: r'_basket'),
+        _i3.Dependency(_i21.ShopClient, name: r'_shop'),
+        _i3.Dependency(_i10.Basket, name: r'_basket'),
       ],
       create: (r) => _$OrderServiceProxy(
-        r.dependency<_i32.ShopClient>(name: r'_shop'),
-        r.dependency<_i20.Basket>(name: r'_basket'),
+        r.dependency<_i21.ShopClient>(name: r'_shop'),
+        r.dependency<_i10.Basket>(name: r'_basket'),
       ),
       annotatedMethods: [
-        _i2.BeanMethod<_i24.OrderService>(
+        const _i3.BeanMethod<_i13.OrderService>(
           r'placeOrder',
-          returnTypeInfo: const _i2.ClassType<_i13.ShopOrder>(),
+          returnTypeInfo: _i3.ClassType<_i7.ShopOrder>(),
           isFuture: true,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.placeOrder, arguments),
-          annotations: const [_i52.PreAuthorize(r'isAuthenticated()')],
+          invoke: _$invoke11,
+          annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
         ),
-        _i2.BeanMethod<_i24.OrderService>(
+        const _i3.BeanMethod<_i13.OrderService>(
           r'orders',
-          returnTypeInfo: const _i2.ListType<_i13.ShopOrder>(
-            _i2.ClassType<_i13.ShopOrder>(),
+          returnTypeInfo: _i3.ListType<_i7.ShopOrder>(
+            _i3.ClassType<_i7.ShopOrder>(),
           ),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.orders, arguments),
-          annotations: const [_i52.PreAuthorize(r'isAuthenticated()')],
+          invoke: _$invoke12,
+          annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
         ),
       ],
       annotations: const [
-        _i2.Service(),
-        _i2.Log(topic: r'neon.orders'),
+        _i3.Service(),
+        _i3.Log(topic: r'neon.orders'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'placeOrder',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i3.MethodSignature.of(
+            r'placeOrder',
+            _$target13,
             returnType: r'Future',
-            annotations: [_i52.PreAuthorize(r'isAuthenticated()')],
+            annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.orders'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'orders',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i3.MethodSignature.of(
+            r'orders',
+            _$target13,
             returnType: r'Future',
-            annotations: [_i52.PreAuthorize(r'isAuthenticated()')],
+            annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i2.Log(topic: r'neon.orders'),
-            ],
-            targetAnnotationTypes: [r'Service', r'Log'],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$OrderServiceProxy ? bean._$advise(invoker) : null,
+            bean is _$OrderServiceProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i25.LiveStock>(
+    _i3.BeanDefinition<_i14.LiveStock>(
       name: r'liveStock',
       source: r'package:neon_books_app/src/stock/live_stock.dart#LiveStock',
-      types: const [_i25.LiveStock, _i61.ChangeNotifier, _i61.Listenable],
-      dependencies: const [_i2.Dependency(_i33.StockClient, name: r'_client')],
+      types: const [_i14.LiveStock, _i58.ChangeNotifier, _i58.Listenable],
+      dependencies: const [_i3.Dependency(_i22.StockClient, name: r'_client')],
       create: (r) =>
-          _$LiveStockProxy(r.dependency<_i33.StockClient>(name: r'_client')),
+          _$LiveStockProxy(r.dependency<_i22.StockClient>(name: r'_client')),
       annotations: const [
-        _i2.Component(),
-        _i50.NotifyListeners(exclude: [r'stop']),
-        _i2.Log(topic: r'neon.stock'),
+        _i3.Component(),
+        _i36.NotifyListeners(exclude: [r'stop']),
+        _i3.Log(topic: r'neon.stock'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'start',
-            declaringType: r'LiveStock',
-            targetType: r'LiveStock',
-            declaringTypes: [r'LiveStock'],
-            returnType: r'void',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'stop',
-            declaringType: r'LiveStock',
-            targetType: r'LiveStock',
-            declaringTypes: [r'LiveStock'],
-            returnType: r'void',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'live',
-            declaringType: r'LiveStock',
-            targetType: r'LiveStock',
-            declaringTypes: [r'LiveStock'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(r'start', _$target14, returnType: r'void'),
+          _i3.MethodSignature.of(r'stop', _$target14, returnType: r'void'),
+          _i3.MethodSignature.of(
+            r'live',
+            _$target14,
+            kind: _i3.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'available',
-            declaringType: r'LiveStock',
-            targetType: r'LiveStock',
-            declaringTypes: [r'LiveStock'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'available',
+            _$target14,
+            kind: _i3.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'recent',
-            declaringType: r'LiveStock',
-            targetType: r'LiveStock',
-            declaringTypes: [r'LiveStock'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'recent',
+            _$target14,
+            kind: _i3.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'addListener',
+          _i3.MethodSignature.of(
+            r'addListener',
+            _$target14,
             declaringType: r'Listenable',
-            targetType: r'LiveStock',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
             parameterTypes: [r'Function'],
             parameterNames: [r'listener'],
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
           ),
-          _i2.MethodSignature(
-            name: r'removeListener',
+          _i3.MethodSignature.of(
+            r'removeListener',
+            _$target14,
             declaringType: r'Listenable',
-            targetType: r'LiveStock',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
             parameterTypes: [r'Function'],
             parameterNames: [r'listener'],
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
           ),
-          _i2.MethodSignature(
-            name: r'dispose',
+          _i3.MethodSignature.of(
+            r'dispose',
+            _$target14,
             declaringType: r'ChangeNotifier',
-            targetType: r'LiveStock',
-            declaringTypes: [r'ChangeNotifier'],
             returnType: r'void',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
           ),
-          _i2.MethodSignature(
-            name: r'notifyListeners',
+          _i3.MethodSignature.of(
+            r'notifyListeners',
+            _$target14,
             declaringType: r'ChangeNotifier',
-            targetType: r'LiveStock',
-            declaringTypes: [r'ChangeNotifier'],
             returnType: r'void',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
             isProtected: true,
           ),
-          _i2.MethodSignature(
-            name: r'hasListeners',
+          _i3.MethodSignature.of(
+            r'hasListeners',
+            _$target14,
             declaringType: r'ChangeNotifier',
-            targetType: r'LiveStock',
-            declaringTypes: [r'ChangeNotifier'],
-            kind: _i2.MemberKind.getter,
+            kind: _i3.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'stop']),
-              _i2.Log(topic: r'neon.stock'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
@@ -4097,29 +2748,29 @@ _i2.BeanModule get $application => _i2.BeanModule(
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$LiveStockProxy ? bean._$advise(invoker) : null,
+            bean is _$LiveStockProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i26.SupportChat>(
+    _i3.BeanDefinition<_i15.SupportChat>(
       name: r'supportChat',
       source:
           r'package:neon_books_app/src/support/support_chat.dart#SupportChat',
-      types: const [_i26.SupportChat, _i61.ChangeNotifier, _i61.Listenable],
+      types: const [_i15.SupportChat, _i58.ChangeNotifier, _i58.Listenable],
       dependencies: const [
-        _i2.Dependency(_i34.SupportSocket, name: r'_socket'),
+        _i3.Dependency(_i23.SupportSocket, name: r'_socket'),
       ],
       create: (r) => _$SupportChatProxy(
-        r.dependency<_i34.SupportSocket>(name: r'_socket'),
+        r.dependency<_i23.SupportSocket>(name: r'_socket'),
       ),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i26.SupportChat, _i9.LoggedIn>(
+        _i3.EventListenerMethod.of<_i15.SupportChat, _i1.LoggedIn>(
           r'SupportChat.onLogin',
           (bean, event) {
             bean.onLogin(event);
             return null;
           },
         ),
-        _i2.EventListenerMethod.of<_i26.SupportChat, _i9.LoggedOut>(
+        _i3.EventListenerMethod.of<_i15.SupportChat, _i1.LoggedOut>(
           r'SupportChat.onLogout',
           (bean, event) {
             bean.onLogout(event);
@@ -4128,176 +2779,89 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [
-        _i2.Component(),
-        _i50.NotifyListeners(exclude: [r'join']),
-        _i2.Log(topic: r'neon.support'),
+        _i3.Component(),
+        _i36.NotifyListeners(exclude: [r'join']),
+        _i3.Log(topic: r'neon.support'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'join',
-            declaringType: r'SupportChat',
-            targetType: r'SupportChat',
-            declaringTypes: [r'SupportChat'],
-            returnType: r'void',
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'send',
-            declaringType: r'SupportChat',
-            targetType: r'SupportChat',
-            declaringTypes: [r'SupportChat'],
+          _i3.MethodSignature.of(r'join', _$target15, returnType: r'void'),
+          _i3.MethodSignature.of(
+            r'send',
+            _$target15,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'onLogin',
-            declaringType: r'SupportChat',
-            targetType: r'SupportChat',
-            declaringTypes: [r'SupportChat'],
+          _i3.MethodSignature.of(
+            r'onLogin',
+            _$target15,
             returnType: r'void',
             parameterTypes: [r'LoggedIn'],
             parameterNames: [r'event'],
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'onLogout',
-            declaringType: r'SupportChat',
-            targetType: r'SupportChat',
-            declaringTypes: [r'SupportChat'],
+          _i3.MethodSignature.of(
+            r'onLogout',
+            _$target15,
             returnType: r'Future',
             parameterTypes: [r'LoggedOut'],
             parameterNames: [r'event'],
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'messages',
-            declaringType: r'SupportChat',
-            targetType: r'SupportChat',
-            declaringTypes: [r'SupportChat'],
-            kind: _i2.MemberKind.getter,
+          _i3.MethodSignature.of(
+            r'messages',
+            _$target15,
+            kind: _i3.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
           ),
-          _i2.MethodSignature(
-            name: r'addListener',
+          _i3.MethodSignature.of(
+            r'addListener',
+            _$target15,
             declaringType: r'Listenable',
-            targetType: r'SupportChat',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
             parameterTypes: [r'Function'],
             parameterNames: [r'listener'],
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
           ),
-          _i2.MethodSignature(
-            name: r'removeListener',
+          _i3.MethodSignature.of(
+            r'removeListener',
+            _$target15,
             declaringType: r'Listenable',
-            targetType: r'SupportChat',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
             parameterTypes: [r'Function'],
             parameterNames: [r'listener'],
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
           ),
-          _i2.MethodSignature(
-            name: r'dispose',
+          _i3.MethodSignature.of(
+            r'dispose',
+            _$target15,
             declaringType: r'ChangeNotifier',
-            targetType: r'SupportChat',
-            declaringTypes: [r'ChangeNotifier'],
             returnType: r'void',
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
           ),
-          _i2.MethodSignature(
-            name: r'notifyListeners',
+          _i3.MethodSignature.of(
+            r'notifyListeners',
+            _$target15,
             declaringType: r'ChangeNotifier',
-            targetType: r'SupportChat',
-            declaringTypes: [r'ChangeNotifier'],
             returnType: r'void',
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
             isProtected: true,
           ),
-          _i2.MethodSignature(
-            name: r'hasListeners',
+          _i3.MethodSignature.of(
+            r'hasListeners',
+            _$target15,
             declaringType: r'ChangeNotifier',
-            targetType: r'SupportChat',
-            declaringTypes: [r'ChangeNotifier'],
-            kind: _i2.MemberKind.getter,
+            kind: _i3.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i50.NotifyListeners(exclude: [r'join']),
-              _i2.Log(topic: r'neon.support'),
-            ],
-            targetAnnotationTypes: [r'Component', r'NotifyListeners', r'Log'],
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
             implementingTypeAnnotations: [],
             implementingTypeAnnotationTypes: [],
@@ -4305,190 +2869,190 @@ _i2.BeanModule get $application => _i2.BeanModule(
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$SupportChatProxy ? bean._$advise(invoker) : null,
+            bean is _$SupportChatProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i62.SpringWidgetBindings>(
+    _i3.BeanDefinition<_i59.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
-      types: const [_i62.SpringWidgetBindings],
+      types: const [_i59.SpringWidgetBindings],
       autowireCandidate: false,
-      create: (r) => _i62.SpringWidgetBindings([
-        _i62.SpringWidgetBinding(
+      create: (r) => _i59.SpringWidgetBindings([
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/about/about_page.dart#AboutPage',
-          beans: _$typeOf<(_i1.AppAssets,)>(),
-          types: const [_i1.AppAssets],
-          resolve: (f) => (_i62.SpringWidgetBinding.bean<_i1.AppAssets>(f),),
+          beans: _$typeOf<(_i40.AppAssets,)>(),
+          types: const [_i40.AppAssets],
+          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i40.AppAssets>(f),),
           values: (r) {
-            final v = (r as (_i1.AppAssets,));
+            final v = (r as (_i40.AppAssets,));
             return [v.$1];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/account/login_page.dart#_LoginPageState',
-          beans: _$typeOf<(_i9.Session,)>(),
-          types: const [_i9.Session],
-          resolve: (f) => (_i62.SpringWidgetBinding.bean<_i9.Session>(f),),
+          beans: _$typeOf<(_i1.Session,)>(),
+          types: const [_i1.Session],
+          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i1.Session>(f),),
           values: (r) {
-            final v = (r as (_i9.Session,));
+            final v = (r as (_i1.Session,));
             return [v.$1];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/admin/admin_page.dart#_AdminPageState',
-          beans: _i63.AdminPageBeans,
-          types: const [_i12.AdminService, _i14.BookForm, _i1.AppAssets],
+          beans: _i60.AdminPageBeans,
+          types: const [_i6.AdminService, _i47.BookForm, _i40.AppAssets],
           resolve: (f) => (
-            _i62.SpringWidgetBinding.bean<_i12.AdminService>(f),
-            _i62.SpringWidgetBinding.bean<_i14.BookForm>(f),
-            _i62.SpringWidgetBinding.bean<_i1.AppAssets>(f),
+            _i59.SpringWidgetBinding.bean<_i6.AdminService>(f),
+            _i59.SpringWidgetBinding.bean<_i47.BookForm>(f),
+            _i59.SpringWidgetBinding.bean<_i40.AppAssets>(f),
           ),
           values: (r) {
-            final v = (r as (_i12.AdminService, _i14.BookForm, _i1.AppAssets));
+            final v = (r as (_i6.AdminService, _i47.BookForm, _i40.AppAssets));
             return [v.$1, v.$2, v.$3];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget:
               r'package:neon_books_app/src/app/home_page.dart#_HomePageState',
-          beans: _$typeOf<(_i54.AppProperties,)>(),
-          types: const [_i54.AppProperties],
+          beans: _$typeOf<(_i39.AppProperties,)>(),
+          types: const [_i39.AppProperties],
           resolve: (f) =>
-              (_i62.SpringWidgetBinding.bean<_i54.AppProperties>(f),),
+              (_i59.SpringWidgetBinding.bean<_i39.AppProperties>(f),),
           values: (r) {
-            final v = (r as (_i54.AppProperties,));
+            final v = (r as (_i39.AppProperties,));
             return [v.$1];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/basket/basket_badge.dart#BasketBadge',
-          beans: _$typeOf<(_i20.Basket,)>(),
-          types: const [_i20.Basket],
-          resolve: (f) => (_i62.SpringWidgetBinding.bean<_i20.Basket>(f),),
+          beans: _$typeOf<(_i10.Basket,)>(),
+          types: const [_i10.Basket],
+          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i10.Basket>(f),),
           values: (r) {
-            final v = (r as (_i20.Basket,));
+            final v = (r as (_i10.Basket,));
             return [v.$1];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget:
               r'package:neon_books_app/src/basket/basket_page.dart#BasketPage',
-          beans: _i64.BasketPageBeans,
-          types: const [_i20.Basket, _i9.Session, _i24.OrderService],
+          beans: _i61.BasketPageBeans,
+          types: const [_i10.Basket, _i1.Session, _i13.OrderService],
           resolve: (f) => (
-            _i62.SpringWidgetBinding.bean<_i20.Basket>(f),
-            _i62.SpringWidgetBinding.bean<_i9.Session>(f),
-            _i62.SpringWidgetBinding.bean<_i24.OrderService>(f),
+            _i59.SpringWidgetBinding.bean<_i10.Basket>(f),
+            _i59.SpringWidgetBinding.bean<_i1.Session>(f),
+            _i59.SpringWidgetBinding.bean<_i13.OrderService>(f),
           ),
           values: (r) {
-            final v = (r as (_i20.Basket, _i9.Session, _i24.OrderService));
+            final v = (r as (_i10.Basket, _i1.Session, _i13.OrderService));
             return [v.$1, v.$2, v.$3];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/catalog/book_page.dart#_BookPageState',
-          beans: _i65.BookPageBeans,
-          types: const [_i23.CatalogService, _i20.Basket],
+          beans: _i62.BookPageBeans,
+          types: const [_i12.CatalogService, _i10.Basket],
           resolve: (f) => (
-            _i62.SpringWidgetBinding.bean<_i23.CatalogService>(f),
-            _i62.SpringWidgetBinding.bean<_i20.Basket>(f),
+            _i59.SpringWidgetBinding.bean<_i12.CatalogService>(f),
+            _i59.SpringWidgetBinding.bean<_i10.Basket>(f),
           ),
           values: (r) {
-            final v = (r as (_i23.CatalogService, _i20.Basket));
+            final v = (r as (_i12.CatalogService, _i10.Basket));
             return [v.$1, v.$2];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/catalog/book_page.dart#_Stock',
-          beans: _$typeOf<(_i25.LiveStock,)>(),
-          types: const [_i25.LiveStock],
-          resolve: (f) => (_i62.SpringWidgetBinding.bean<_i25.LiveStock>(f),),
+          beans: _$typeOf<(_i14.LiveStock,)>(),
+          types: const [_i14.LiveStock],
+          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i14.LiveStock>(f),),
           values: (r) {
-            final v = (r as (_i25.LiveStock,));
+            final v = (r as (_i14.LiveStock,));
             return [v.$1];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/catalog/catalog_page.dart#_CatalogPageState',
-          beans: _$typeOf<(_i21.Catalog,)>(),
-          types: const [_i21.Catalog],
-          resolve: (f) => (_i62.SpringWidgetBinding.bean<_i21.Catalog>(f),),
+          beans: _$typeOf<(_i11.Catalog,)>(),
+          types: const [_i11.Catalog],
+          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i11.Catalog>(f),),
           values: (r) {
-            final v = (r as (_i21.Catalog,));
+            final v = (r as (_i11.Catalog,));
             return [v.$1];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget:
               r'package:neon_books_app/src/logs/logs_page.dart#_LogsPageState',
-          beans: _$typeOf<(_i66.LogBuffer,)>(),
-          types: const [_i66.LogBuffer],
-          resolve: (f) => (_i62.SpringWidgetBinding.bean<_i66.LogBuffer>(f),),
+          beans: _$typeOf<(_i63.LogBuffer,)>(),
+          types: const [_i63.LogBuffer],
+          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i63.LogBuffer>(f),),
           values: (r) {
-            final v = (r as (_i66.LogBuffer,));
+            final v = (r as (_i63.LogBuffer,));
             return [v.$1];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/orders/orders_page.dart#_OrdersPageState',
-          beans: _i67.OrdersPageBeans,
-          types: const [_i24.OrderService, _i9.Session],
+          beans: _i64.OrdersPageBeans,
+          types: const [_i13.OrderService, _i1.Session],
           resolve: (f) => (
-            _i62.SpringWidgetBinding.bean<_i24.OrderService>(f),
-            _i62.SpringWidgetBinding.bean<_i9.Session>(f),
+            _i59.SpringWidgetBinding.bean<_i13.OrderService>(f),
+            _i59.SpringWidgetBinding.bean<_i1.Session>(f),
           ),
           values: (r) {
-            final v = (r as (_i24.OrderService, _i9.Session));
+            final v = (r as (_i13.OrderService, _i1.Session));
             return [v.$1, v.$2];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/settings/settings_page.dart#SettingsPage',
-          beans: _i68.SettingsPageBeans,
+          beans: _i65.SettingsPageBeans,
           types: const [
-            _i69.ThemeSelection,
-            _i69.SpringThemes,
-            _i18.LanguageSelection,
-            _i1.AppAssets,
+            _i66.ThemeSelection,
+            _i66.SpringThemes,
+            _i9.LanguageSelection,
+            _i40.AppAssets,
           ],
           resolve: (f) => (
-            _i62.SpringWidgetBinding.bean<_i69.ThemeSelection>(f),
-            _i62.SpringWidgetBinding.bean<_i69.SpringThemes>(f),
-            _i62.SpringWidgetBinding.bean<_i18.LanguageSelection>(f),
-            _i62.SpringWidgetBinding.bean<_i1.AppAssets>(f),
+            _i59.SpringWidgetBinding.bean<_i66.ThemeSelection>(f),
+            _i59.SpringWidgetBinding.bean<_i66.SpringThemes>(f),
+            _i59.SpringWidgetBinding.bean<_i9.LanguageSelection>(f),
+            _i59.SpringWidgetBinding.bean<_i40.AppAssets>(f),
           ),
           values: (r) {
             final v =
                 (r
                     as (
-                      _i69.ThemeSelection,
-                      _i69.SpringThemes,
-                      _i18.LanguageSelection,
-                      _i1.AppAssets,
+                      _i66.ThemeSelection,
+                      _i66.SpringThemes,
+                      _i9.LanguageSelection,
+                      _i40.AppAssets,
                     ));
             return [v.$1, v.$2, v.$3, v.$4];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/support/support_page.dart#_ChatMessagesState',
-          beans: _i70.ChatMessagesBeans,
-          types: const [_i26.SupportChat, _i9.Session],
+          beans: _i67.ChatMessagesBeans,
+          types: const [_i15.SupportChat, _i1.Session],
           resolve: (f) => (
-            _i62.SpringWidgetBinding.bean<_i26.SupportChat>(f),
-            _i62.SpringWidgetBinding.bean<_i9.Session>(f),
+            _i59.SpringWidgetBinding.bean<_i15.SupportChat>(f),
+            _i59.SpringWidgetBinding.bean<_i1.Session>(f),
           ),
           values: (r) {
-            final v = (r as (_i26.SupportChat, _i9.Session));
+            final v = (r as (_i15.SupportChat, _i1.Session));
             return [v.$1, v.$2];
           },
         ),
-        _i62.SpringWidgetBinding(
+        _i59.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/support/support_page.dart#_ChatInputState',
-          beans: _$typeOf<(_i26.SupportChat,)>(),
-          types: const [_i26.SupportChat],
-          resolve: (f) => (_i62.SpringWidgetBinding.bean<_i26.SupportChat>(f),),
+          beans: _$typeOf<(_i15.SupportChat,)>(),
+          types: const [_i15.SupportChat],
+          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i15.SupportChat>(f),),
           values: (r) {
-            final v = (r as (_i26.SupportChat,));
+            final v = (r as (_i15.SupportChat,));
             return [v.$1];
           },
         ),
@@ -4496,659 +3060,592 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   ],
   resources: const {
-    r'application-android.properties': _i2.EmbeddedResource.text(
+    r'application-android.properties': _i3.EmbeddedResource.text(
       "# The Android emulator reaches the computer's localhost at 10.0.2.2.\napi.host=10.0.2.2:8080\n",
     ),
-    r'application-desktop.properties': _i2.EmbeddedResource.text(
+    r'application-desktop.properties': _i3.EmbeddedResource.text(
       '# Desktops: the sections in a navigation rail, the window is wide.\napp.title=NEON Books for desktop\napp.navigation=rail\n\n# The window (macOS, Windows, Linux): content under a transparent title bar\n# (HomePage leaves room for the window buttons and the empty part of its app\n# bar moves the window), opens at 1280x800 and cannot be made smaller than\n# 800x600.\nspring.flutter.desktop.window.title-bar=transparent\nspring.flutter.desktop.window.initial-size=1280x800\nspring.flutter.desktop.window.min-size=800x600\n',
     ),
-    r'application-mobile.properties': _i2.EmbeddedResource.text(
+    r'application-mobile.properties': _i3.EmbeddedResource.text(
       '# Phones: the sections in a bottom navigation bar.\napp.navigation=bar\n',
     ),
-    r'application-spa.properties': _i2.EmbeddedResource.text(
+    r'application-spa.properties': _i3.EmbeddedResource.text(
       '# The spa profile, optional and for the web app only: the browser logs in\n# at Keycloak by itself (spring_boot_starter_flutter_security, spa mode)\n# instead of through the server guide (server mode, the default). Keycloak\n# (example/keycloak) with the public browser client neon-web:\n#   flutter run -d chrome --dart-define=SPRING_PROFILES_ACTIVE=sso,spa\n# The page logs in, shows the user, survives a reload (a silent prompt=none\n# trip to Keycloak) and logs out at Keycloak. The calls to the server\n# guide stay anonymous: see the README, "The web app without a server\n# login (spa mode)".\nspring.flutter.security.web.mode=spa\n\n# The registration of the browser: a public client (no secret), PKCE, the\n# app\'s own page as the redirect URI ({baseUrl} is the page\'s origin and\n# base href: http://localhost:5050). Keycloak allows the page\'s origin on\n# its token, user info and revocation endpoints (the client\'s web\n# origins).\nspring.security.oauth2.client.registration.keycloak.client-id=neon-web\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\nspring.security.oauth2.client.registration.keycloak.redirect-uri={baseUrl}/\n# DPoP when Keycloak\'s discovery offers ES256 (it does): the tokens are\n# bound to a WebCrypto key the page cannot export.\nspring.security.oauth2.client.registration.keycloak.dpop=auto\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n# Back to the app after Keycloak\'s logout (allowed by neon-web).\nneon.sso.post-logout-redirect-uri=http://localhost:5050/\n\n# The page\'s Content Security Policy, for the production host\'s headers\n# (and for `flutter run` when this profile is named in a config file: the\n# dev server reads only the files the build sees). The spa mode\'s default\n# plus the server guide, which the Feign clients and the support chat\n# call.\nspring.flutter.web.content-security-policy=default-src \'self\'; \\\n  script-src \'self\' \'wasm-unsafe-eval\' https://www.gstatic.com; \\\n  style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob:; \\\n  font-src \'self\' https://fonts.gstatic.com; \\\n  connect-src \'self\' https://www.gstatic.com https://fonts.gstatic.com \\\n  http://localhost:8180 http://localhost:8080 ws://localhost:8080; \\\n  worker-src \'self\' blob:; object-src \'none\'; base-uri \'self\'; \\\n  form-action \'self\'; frame-ancestors \'none\'\n',
     ),
-    r'application-sso.properties': _i2.EmbeddedResource.text(
+    r'application-sso.properties': _i3.EmbeddedResource.text(
       '# The sso profile: log in with Keycloak (example/keycloak) instead of a\n# name and password. The server must run with it too:\n#   (cd ../server_guide && dart run bin/main.dart --spring.profiles.active=dev,sso)\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\n#   flutter run -d chrome --web-port 5050 --dart-define=SPRING_PROFILES_ACTIVE=sso\n# The Login screen shows "Sign in with Keycloak". Native apps log in\n# themselves (the registration at the end of application.properties); the\n# web app goes to the server\'s /oauth2/authorization/keycloak and comes\n# back with a session cookie (the server\'s neon.app.web-url must be the\n# page\'s address).\nneon.sso.enabled=true\n',
     ),
-    r'application-web.properties': _i2.EmbeddedResource.text(
+    r'application-web.properties': _i3.EmbeddedResource.text(
       '# Browsers: a wide window. The page\'s origin must be allowed by the\n# server\'s CORS settings (the server guide allows localhost).\napp.navigation=rail\n\n# `flutter run -d chrome` (or -d web-server) serves the app on\n# http://localhost:5050/, the origin the server\'s CORS and SSO settings\n# expect. spring_core_dart_generator writes it into web_dev_config.yaml,\n# which the Flutter tool reads; a --web-port flag still wins.\nspring.flutter.web.port=5050\n\n# The login of the web app (spring_boot_starter_flutter_security, server\n# mode): the server guide logs the user in and keeps the session, the\n# page holds only its HttpOnly cookie. The server is another origin\n# (localhost:8080), so the starter\'s transport sends the cookies there\n# and the CSRF token of its XSRF-TOKEN cookie; "who is logged in" and the\n# logout are the server guide\'s /api/me and /api/logout, the form login\'s\n# as well as Keycloak\'s.\nspring.flutter.security.web.server-url=\${api.base-url}\nspring.flutter.security.web.user-endpoint=/api/me\nspring.flutter.security.web.logout-url=/api/logout\n',
     ),
-    r'application.properties': _i2.EmbeddedResource.text(
+    r'application.properties': _i3.EmbeddedResource.text(
       '# NEON Books, the app. The platform profiles (mobile, android, ios,\n# desktop, macos, windows, linux, web) add their own files:\n# application-<profile>.properties. The theme is in application.yml.\n\napp.title=NEON Books\n\n# The server guide (example/server_guide): `dart run bin/main.dart` there.\n# The Feign clients use api.base-url, the support chat api.ws-url.\n# `flutter run --dart-define=API_HOST=192.168.1.20:8080` for a phone on\n# the LAN.\napi.host=localhost:8080\napi.base-url=http://\${api.host}\napi.ws-url=ws://\${api.host}\napi.connect-timeout=5s\n\n# The Feign clients: a short read timeout (the default is 60s), the calls\n# logged at debug level (the Logs screen shows them).\nspring.feign.client.config.default.read-timeout=10s\nspring.feign.client.config.default.logger-level=basic\n# The stock events reconnect after 2s and give up after 10 silent tries.\nspring.feign.client.config.stock.event-stream.reconnect-delay=2s\nspring.feign.client.config.stock.event-stream.max-attempts=10\n\n# The support chat\'s socket reconnects, waiting 1s, 2s, 4s, ... up to 30s.\nspring.websocket.client.config.support.reconnect.delay=1s\nspring.websocket.client.config.support.reconnect.max-delay=30s\n\n# The catalog refresh (lib/src/catalog/catalog_refresh.dart).\ncatalog.refresh-interval=5m\n\n# The caches of lib/src/catalog/catalog_service.dart, in memory.\nspring.cache.cache-names=catalog,books,covers\n\n# Logging: the console in Boot\'s format, and the in-memory LogBuffer the\n# Logs screen shows (debug and up, the last 500 lines).\nlogging.level.root=info\nlogging.level.neon=debug\nlogging.level.feign=debug\nlogging.buffer.capacity=500\nlogging.threshold.buffer=debug\n\n# The app widget: a MaterialApp (Scaffold and AppBar need it) without the\n# debug banner. The locales come from messages.properties and\n# messages_ja.properties.\nspring.flutter.app.type=material\nspring.flutter.app.title=\${app.title}\nspring.flutter.app.debug-banner=false\nspring.cache.simple.caches.covers.max-size=50\n\n# Single sign-on with Keycloak (chapter 7): off, the app logs in with a\n# name and password (the server\'s form login). The `sso` profile turns it\n# on (application-sso.properties):\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\nneon.sso.enabled=false\n\n#---\nspring.config.activate.on-profile=sso & !web\n# With `sso`, the native apps log in themselves at Keycloak: a public\n# client (no secret in an app), PKCE, the system\'s login window. A\n# document guarded by profiles, here and not in application-sso.properties,\n# because only the native apps have it (a profile file cannot be guarded,\n# as in Spring Boot): a web page never holds tokens, its server logs it in.\nspring.security.oauth2.client.registration.keycloak.client-id=neon-app\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# iOS, Android, macOS: the app\'s own scheme; the system\'s login window\n# hands the redirect to the app (Android: RedirectReceiverActivity in the manifest).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=books.neon.app:/oauth2/callback\nneon.sso.post-logout-redirect-uri=books.neon.app:/oauth2/logout\n# Discovery: the endpoints come from the realm\'s metadata at the first\n# login, not at startup (the app starts offline too). The Android\n# emulator reaches it through `adb reverse tcp:8180 tcp:8180`: the issuer\n# must be the same address everywhere, or the server refuses the tokens.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# `ada` or `root`, the names the server knows, not Keycloak\'s ids.\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n#---\nspring.config.activate.on-profile=sso & (windows | linux)\n# Windows and Linux have no app schemes to catch: the redirect goes to a\n# server of the app on 127.0.0.1, any free port (RFC 8252 §7.3).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=http://127.0.0.1/oauth2/callback\nneon.sso.post-logout-redirect-uri=http://127.0.0.1/oauth2/logout\n',
     ),
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i3.EmbeddedResource.text(
       '# The look of the app: the shared part of every theme and the standard\n# `dark` theme\'s differences. Each custom theme has a file of its own in\n# themes/. No ThemeData in the code.\nspring:\n  config:\n    import: >-\n      resources:themes/neon.yml, resources:themes/neon-night.yml,\n      resources:themes/sepia.yml, resources:themes/high-contrast.yml\n\n  flutter:\n    theme:\n      # system | light | dark | neon | neon-night | sepia | high-contrast\n      # (and `winter` once loaded at run time, see Settings)\n      active: system\n      system-dark: dark\n\n      seed-color: deepPurple\n      typography:\n        font-family: Roboto\n        # Japanese glyphs: the system\'s fonts on devices, in tests the\n        # cut-down font of test/fonts/.\n        font-family-fallback: [Noto Sans JP]\n        display: { font-family: Roboto Condensed, weight: bold }\n        headline: { font-family: Roboto Condensed }\n        title-large: { weight: 500 }\n        # A monospaced font file would go into res/fonts/ like the others;\n        # Roboto Condensed stands in (the Logs screen).\n        code: { font-family: Roboto Condensed, size: 12 }\n      shape:\n        medium: 16\n      components:\n        app-bar:\n          scrolled-under-elevation: level2\n        card:\n          shape: large\n          color: \$colors.surface-container-low\n        input:\n          style: outline\n          shape: small\n        snack-bar:\n          behavior: floating\n      spacing:\n        s: 8\n        m: 16\n        l: 24\n      tokens:\n        brand:\n          accent: \'#FF40A0\'\n          # A reference with a color object: follows a theme that\n          # changes brand.accent.\n          accent-soft: { color: \$brand.accent, alpha: 16% }\n          banner-height: 96\n          # A nested group with a list: context.theme.tokens.brand.tag.\n          tag:\n            radius: 14\n            labels: [New, Staff pick, Sale]\n      motion:\n        durations: { fast: 120ms, medium: 300ms }\n      # A look per widget state for the app\'s own widgets (ThemeTag).\n      styles:\n        tag:\n          padding: [12, 6]\n          radius: \$brand.tag.radius\n          fill:\n            default: \$brand.accent-soft\n            hovered: { color: \$brand.accent, alpha: 28% }\n            selected: \$brand.accent\n          transition: \$motion.durations.fast ease-out\n      # Played by ThemeAnimation (the tags rise into place).\n      animations:\n        rise: { duration: \$motion.durations.medium, curve: ease-out }\n\n      # Loaders (ThemeLoader, ThemeSkeleton): a skeleton of the lists that\n      # come from the server, and a bar for the work that takes a while.\n      loaders:\n        card:\n          kind: skeleton\n          base: \$colors.surface-container-high\n          highlight: \$colors.surface-container-highest\n          radius: \$shape.medium\n          shimmer: { duration: 1.2s, angle: 20 }\n        bar: { kind: bar, color: \$colors.primary, track: { color: \$colors.primary, alpha: 20% }, height: 4, width: 220 }\n      # The splash: what shows while the app starts, and on the web before\n      # Flutter runs (the generator writes it into web/index.html).\n      splash:\n        background: { color: \$colors.surface }\n        logo: { source: assets/images/leaf.png, size: 96 }\n        title: NEON Books\n        loader: bar\n        min-duration: 1s\n        exit: { transition: 400ms ease-out }\n\n      themes:\n        dark:\n          seed-color: deepPurple.shade200\n          components:\n            card: { color: \$colors.surface-container }\n',
     ),
-    r'messages.properties': _i2.EmbeddedResource.text(
+    r'messages.properties': _i3.EmbeddedResource.text(
       "# The app's texts in English; messages_ja.properties has the Japanese ones.\n# context.message('key', args: [...]) reads them in the app's language.\n\nsection.catalog=Catalog\nsection.basket=Basket\nsection.orders=Orders\nsection.stock=Live stock\nsection.more=More\n\ncatalog.search=Search the catalog\ncatalog.empty=No books found\ncatalog.retry=Try again\ncatalog.previous=Previous page\ncatalog.next=Next page\ncatalog.page=Page {0} of {1}\n\nbook.title=Book\nbook.notFound=There is no book {0}\nbook.inStock={0} in stock\nbook.soldOut=Sold out\n\nbasket.add=Add to basket\nbasket.added={0} is in the basket\nbasket.empty=The basket is empty\nbasket.less=One less\nbasket.more=One more\nbasket.total=Total\nbasket.order=Order\nbasket.loginToOrder=Log in to order\nbasket.ordered=Order {0} placed\n\norders.login=Log in to see your orders\norders.none=No orders yet\norders.order=Order {0}\n\nstock.live=Live: changes appear as they happen\nstock.offline=Not connected\nstock.waiting=Waiting for stock changes\nstock.available={0} left\n\nsupport.title=Support\nsupport.login=Log in to chat with us\nsupport.empty=Ask us anything\nsupport.hint=Your message\nsupport.send=Send\n\nlogin.open=Log in\nlogin.title=Log in\nlogin.hint=Log in to order and chat (ada / ada-secret, or root / root-secret for the admin).\nlogin.username=User name\nlogin.password=Password\nlogin.submit=Log in\nlogin.failed=Wrong user name or password\nlogin.keycloak=Sign in with Keycloak\nlogin.keycloakHint=Log in at Keycloak, the bookstore's single sign-on (ada / ada-secret, or root / root-secret for the admin).\naccount.menu=Account\naccount.logout=Log out\n\nadmin.title=Admin\nadmin.newBook=New book\nadmin.field.isbn=ISBN\nadmin.field.title=Title\nadmin.field.author=Author\nadmin.field.price=Price\nadmin.add=Add the book\nadmin.added={0} added\nadmin.uploadCover=Upload the sample cover\nadmin.coverUploaded=Cover uploaded\nadmin.delete=Delete the book\nadmin.deleted={0} deleted\nadmin.serverLog=The server's log\nadmin.loadServerLog=Load the server's log\n\nsettings.title=Settings\nsettings.theme=Theme\nsettings.loadTheme=Load a theme from the server\nsettings.themeLoaded=Theme {0} loaded\nsettings.language=Language\nsettings.preview=Preview\nsettings.loaders=Loaders\n\ntheme.system=As on the device\ntheme.light=Light\ntheme.dark=Dark\ntheme.neon=Neon\ntheme.neon-night=Neon at night\ntheme.sepia=Sepia\ntheme.high-contrast=High contrast\ntheme.winter=Winter\n\nlanguage.system=As on the device\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=Logs\nlogs.clear=Clear\nlogs.empty=Nothing logged at this level\nlogs.debug=Debug\nlogs.info=Info\nlogs.warning=Warning\nlogs.error=Error\n\nabout.title=About\nabout.source=Loaded from {0} and {1}\n\nerror.offline=The server cannot be reached\nerror.denied=Not allowed\nerror.login=The login failed\nerror.status=The server answered {0}\n\n# Validation of the Admin form (BookForm): Spring's error codes, the most\n# specific first (NotBlank.newBook.title, NotBlank.title, NotBlank).\nNotBlank=must not be blank\nPattern.newBook.isbn=must be 10 or 13 digits\nSize=must be at most {1} characters\nPositive=must be more than 0\nMax=must be at most {1}\ntypeMismatch.newBook.price=must be a number\n",
     ),
-    r'messages_ja.properties': _i2.EmbeddedResource.text(
+    r'messages_ja.properties': _i3.EmbeddedResource.text(
       'section.catalog=カタログ\nsection.basket=かご\nsection.orders=注文\nsection.stock=在庫\nsection.more=その他\n\ncatalog.search=カタログを検索\ncatalog.empty=本が見つかりません\ncatalog.retry=再試行\ncatalog.previous=前のページ\ncatalog.next=次のページ\ncatalog.page={0} / {1} ページ\n\nbook.title=本\nbook.notFound=本 {0} はありません\nbook.inStock=在庫 {0} 冊\nbook.soldOut=売り切れ\n\nbasket.add=かごに入れる\nbasket.added={0} をかごに入れました\nbasket.empty=かごは空です\nbasket.less=一冊減らす\nbasket.more=一冊増やす\nbasket.total=合計\nbasket.order=注文する\nbasket.loginToOrder=ログインして注文\nbasket.ordered=注文 {0} を受け付けました\n\norders.login=ログインして注文を表示\norders.none=注文はまだありません\norders.order=注文 {0}\n\nstock.live=ライブ：変更がすぐに表示されます\nstock.offline=未接続\nstock.waiting=在庫の変更を待っています\nstock.available=残り {0} 冊\n\nsupport.title=サポート\nsupport.login=ログインしてチャット\nsupport.empty=何でも聞いてください\nsupport.hint=メッセージ\nsupport.send=送信\n\nlogin.open=ログイン\nlogin.title=ログイン\nlogin.hint=ログインすると注文とチャットができます（ada / ada-secret、管理者は root / root-secret）。\nlogin.username=ユーザー名\nlogin.password=パスワード\nlogin.submit=ログイン\nlogin.failed=ユーザー名またはパスワードが違います\nlogin.keycloak=Keycloakでサインイン\nlogin.keycloakHint=書店のSSO、Keycloakでログインします（ada / ada-secret、管理者は root / root-secret）。\naccount.menu=アカウント\naccount.logout=ログアウト\n\nadmin.title=管理\nadmin.newBook=新しい本\nadmin.field.isbn=ISBN\nadmin.field.title=タイトル\nadmin.field.author=著者\nadmin.field.price=価格\nadmin.add=本を追加\nadmin.added={0} を追加しました\nadmin.uploadCover=サンプルの表紙をアップロード\nadmin.coverUploaded=表紙をアップロードしました\nadmin.delete=本を削除\nadmin.deleted={0} を削除しました\nadmin.serverLog=サーバーのログ\nadmin.loadServerLog=サーバーのログを読み込む\n\nsettings.title=設定\nsettings.theme=テーマ\nsettings.loadTheme=サーバーからテーマを読み込む\nsettings.themeLoaded=テーマ {0} を読み込みました\nsettings.language=言語\nsettings.preview=プレビュー\nsettings.loaders=ローダー\n\ntheme.system=端末の設定に合わせる\ntheme.light=ライト\ntheme.dark=ダーク\ntheme.neon=ネオン\ntheme.neon-night=夜のネオン\ntheme.sepia=セピア\ntheme.high-contrast=ハイコントラスト\ntheme.winter=冬\n\nlanguage.system=端末の設定に合わせる\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=ログ\nlogs.clear=消去\nlogs.empty=このレベルのログはありません\nlogs.debug=デバッグ\nlogs.info=情報\nlogs.warning=警告\nlogs.error=エラー\n\nabout.title=このアプリについて\nabout.source={0} と {1} から読み込み\n\nerror.offline=サーバーに接続できません\nerror.denied=許可されていません\nerror.login=ログインに失敗しました\nerror.status=サーバーの応答：{0}\n\nNotBlank=入力してください\nPattern.newBook.isbn=10桁または13桁の数字にしてください\nSize={1} 文字以内にしてください\nPositive=0 より大きくしてください\nMax={1} 以下にしてください\ntypeMismatch.newBook.price=数字を入力してください\n',
     ),
-    r'themes/high-contrast.yml': _i2.EmbeddedResource.text(
+    r'themes/high-contrast.yml': _i3.EmbeddedResource.text(
       'spring:\n  flutter:\n    theme:\n      themes:\n        high-contrast:\n          extends: light\n          contrast: 1.0\n          typography:\n            defaults: { weight: 500 }\n          components:\n            divider: { thickness: 2, color: \$colors.outline }\n            outlined-button: { border-color: \$colors.on-surface }\n',
     ),
-    r'themes/neon-night.yml': _i2.EmbeddedResource.text(
+    r'themes/neon-night.yml': _i3.EmbeddedResource.text(
       '# The neon theme at night: everything of `neon`, dark.\nspring:\n  flutter:\n    theme:\n      themes:\n        neon-night:\n          extends: neon\n          brightness: dark\n          # A color under every screen with a tint of the accent at the bottom. An\n          # image would go next to them, from an asset or from the network:\n          #   image: { source: https://cdn.example.com/neon/night.jpg, refresh: 1d }\n          background:\n            color: \'#1A1024\'\n            overlay:\n              gradient:\n                type: linear\n                begin: top\n                end: bottom\n                colors: [transparent, { color: \$brand.accent, alpha: 18% }]\n',
     ),
-    r'themes/neon.yml': _i2.EmbeddedResource.text(
+    r'themes/neon.yml': _i3.EmbeddedResource.text(
       '# The bookstore\'s own look: pink and cyan on deep violet.\nspring:\n  flutter:\n    theme:\n      themes:\n        neon:\n          seed-color: \'#FF40A0\'\n          scheme-variant: vibrant\n          colors:\n            secondary: \'#00B8D4\'\n          shape: { medium: 20, large: 28 }\n          components:\n            button: { shape: full }\n            card: { elevation: level0, color: \$colors.surface-container }\n          tokens:\n            brand: { accent: \'#00E5FF\' }\n',
     ),
-    r'themes/sepia.yml': _i2.EmbeddedResource.text(
+    r'themes/sepia.yml': _i3.EmbeddedResource.text(
       "spring:\n  flutter:\n    theme:\n      themes:\n        sepia:\n          seed-color: '#8B5E3C'\n          scheme-variant: neutral\n          colors:\n            surface: '#F4ECD8'\n            on-surface: '#5B4636'\n            surface-container-low: '#EFE4CC'\n          typography:\n            body-large: { height: 1.6 }\n            body-medium: { height: 1.6 }\n          splash: none\n          shape: { medium: 4, large: 6, small: 2 }\n          components:\n            button: { shape: small }\n          tokens:\n            brand: { accent: '#8B4513' }\n",
     ),
   },
   introspections: [
-    _i2.BeanIntrospection<_i40.SsoProperties>(
+    const _i3.BeanIntrospection<_i29.SsoProperties>(
       className: r'SsoProperties',
       properties: [
-        _i2.BeanProperty<_i40.SsoProperties>(
+        _i3.BeanProperty<_i29.SsoProperties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i3.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get16,
+          set: _$set17,
         ),
-        _i2.BeanProperty<_i40.SsoProperties>(
+        _i3.BeanProperty<_i29.SsoProperties>(
           r'registrationId',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'keycloak',
-          get: (bean) => bean.registrationId,
-          set: (bean, value) => bean.registrationId = (value as String),
+          get: _$get18,
+          set: _$set19,
         ),
-        _i2.BeanProperty<_i40.SsoProperties>(
+        _i3.BeanProperty<_i29.SsoProperties>(
           r'postLogoutRedirectUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.postLogoutRedirectUri,
-          set: (bean, value) => bean.postLogoutRedirectUri = (value as String?),
+          typeInfo: _i3.ClassType<String>(nullable: true),
+          get: _$get20,
+          set: _$set21,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'neon.sso')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i40.SsoProperties(),
-      constructor: _i2.BeanConstructor<_i40.SsoProperties>(
+      annotations: [_i3.ConfigurationProperties(r'neon.sso')],
+      parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+      instantiate: _i29.SsoProperties.new,
+      constructor: _i3.BeanConstructor<_i29.SsoProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i40.SsoProperties.new, positional, named)
-                as _i40.SsoProperties),
+        create: _$create22,
       ),
     ),
-    _i2.BeanIntrospection<_i13.Me>(
+    const _i3.BeanIntrospection<_i7.Me>(
       className: r'Me',
       properties: [
-        _i2.BeanProperty<_i13.Me>(
+        _i3.BeanProperty<_i7.Me>(
           r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get23,
         ),
-        _i2.BeanProperty<_i13.Me>(
+        _i3.BeanProperty<_i7.Me>(
           r'roles',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.roles,
+          typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+          get: _$get24,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i13.Me>(
+      constructor: _i3.BeanConstructor<_i7.Me>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'name',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #name,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'roles',
-            type: const _i2.ListType<String>(_i2.ClassType<String>()),
+            type: _i3.ListType<String>(_i3.ClassType<String>()),
             symbol: #roles,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: [],
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.Me.new, positional, named) as _i13.Me),
+        create: _$create25,
       ),
     ),
-    _i2.BeanIntrospection<_i13.Book>(
+    const _i3.BeanIntrospection<_i7.Book>(
       className: r'Book',
       properties: [
-        _i2.BeanProperty<_i13.Book>(
+        _i3.BeanProperty<_i7.Book>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get26,
         ),
-        _i2.BeanProperty<_i13.Book>(
+        _i3.BeanProperty<_i7.Book>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get27,
         ),
-        _i2.BeanProperty<_i13.Book>(
+        _i3.BeanProperty<_i7.Book>(
           r'author',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.author,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get28,
         ),
-        _i2.BeanProperty<_i13.Book>(
+        _i3.BeanProperty<_i7.Book>(
           r'price',
-          type: double,
-          typeInfo: const _i2.ClassType<double>(),
-          get: (bean) => bean.price,
+          typeInfo: _i3.ClassType<double>(),
+          get: _$get29,
         ),
-        _i2.BeanProperty<_i13.Book>(
+        _i3.BeanProperty<_i7.Book>(
           r'available',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.available,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get30,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i13.Book>(
+      constructor: _i3.BeanConstructor<_i7.Book>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'author',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #author,
             hasDefaultValue: true,
             defaultValue: r'',
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'price',
-            type: const _i2.ClassType<double>(),
+            type: _i3.ClassType<double>(),
             symbol: #price,
             hasDefaultValue: true,
             defaultValue: 0.0,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'available',
-            type: const _i2.ClassType<int>(),
+            type: _i3.ClassType<int>(),
             symbol: #available,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.Book.new, positional, named) as _i13.Book),
+        create: _$create31,
       ),
     ),
-    _i2.BeanIntrospection<_i13.NewBook>(
+    const _i3.BeanIntrospection<_i7.NewBook>(
       className: r'NewBook',
       properties: [
-        _i2.BeanProperty<_i13.NewBook>(
+        _i3.BeanProperty<_i7.NewBook>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
-          set: (bean, value) => bean.isbn = (value as String),
-          annotations: const [_i2.NotBlank(), _i2.Matches(r'^97[89]\d{10}$')],
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get32,
+          set: _$set33,
+          annotations: [_i3.NotBlank(), _i3.Matches(r'^97[89]\d{10}$')],
         ),
-        _i2.BeanProperty<_i13.NewBook>(
+        _i3.BeanProperty<_i7.NewBook>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-          set: (bean, value) => bean.title = (value as String),
-          annotations: const [_i2.NotBlank(), _i2.Size(max: 120)],
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get34,
+          set: _$set35,
+          annotations: [_i3.NotBlank(), _i3.Size(max: 120)],
         ),
-        _i2.BeanProperty<_i13.NewBook>(
+        _i3.BeanProperty<_i7.NewBook>(
           r'author',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.author,
-          set: (bean, value) => bean.author = (value as String),
-          annotations: const [_i2.NotBlank(), _i2.Size(max: 80)],
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get36,
+          set: _$set37,
+          annotations: [_i3.NotBlank(), _i3.Size(max: 80)],
         ),
-        _i2.BeanProperty<_i13.NewBook>(
+        _i3.BeanProperty<_i7.NewBook>(
           r'price',
-          type: double,
-          typeInfo: const _i2.ClassType<double>(),
-          get: (bean) => bean.price,
-          set: (bean, value) => bean.price = (value as double),
-          annotations: const [_i2.Positive(), _i2.Max(1000)],
+          typeInfo: _i3.ClassType<double>(),
+          get: _$get38,
+          set: _$set39,
+          annotations: [_i3.Positive(), _i3.Max(1000)],
         ),
       ],
-      instantiate: () => _i13.NewBook(),
-      constructor: _i2.BeanConstructor<_i13.NewBook>(
+      instantiate: _i7.NewBook.new,
+      constructor: _i3.BeanConstructor<_i7.NewBook>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i13.NewBook.new, positional, named)
-                as _i13.NewBook),
+        create: _$create40,
       ),
     ),
-    _i2.BeanIntrospection<_i44.ApiProperties>(
+    const _i3.BeanIntrospection<_i34.ApiProperties>(
       className: r'ApiProperties',
       properties: [
-        _i2.BeanProperty<_i44.ApiProperties>(
+        _i3.BeanProperty<_i34.ApiProperties>(
           r'host',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'localhost:8080',
-          get: (bean) => bean.host,
-          set: (bean, value) => bean.host = (value as String),
-          annotations: const [_i2.NotBlank()],
+          get: _$get41,
+          set: _$set42,
+          annotations: [_i3.NotBlank()],
         ),
-        _i2.BeanProperty<_i44.ApiProperties>(
+        _i3.BeanProperty<_i34.ApiProperties>(
           r'baseUrl',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'http://localhost:8080',
-          get: (bean) => bean.baseUrl,
-          set: (bean, value) => bean.baseUrl = (value as String),
-          annotations: const [_i2.Matches(r'https?://.+')],
+          get: _$get43,
+          set: _$set44,
+          annotations: [_i3.Matches(r'https?://.+')],
         ),
-        _i2.BeanProperty<_i44.ApiProperties>(
+        _i3.BeanProperty<_i34.ApiProperties>(
           r'wsUrl',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'ws://localhost:8080',
-          get: (bean) => bean.wsUrl,
-          set: (bean, value) => bean.wsUrl = (value as String),
-          annotations: const [_i2.Matches(r'wss?://.+')],
+          get: _$get45,
+          set: _$set46,
+          annotations: [_i3.Matches(r'wss?://.+')],
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'api'), _i2.Validated()],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i44.ApiProperties(),
-      constructor: _i2.BeanConstructor<_i44.ApiProperties>(
+      annotations: [_i3.ConfigurationProperties(r'api'), _i3.Validated()],
+      parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+      instantiate: _i34.ApiProperties.new,
+      constructor: _i3.BeanConstructor<_i34.ApiProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i44.ApiProperties.new, positional, named)
-                as _i44.ApiProperties),
+        create: _$create47,
       ),
     ),
-    _i2.BeanIntrospection<_i13.PageOfBooks>(
+    const _i3.BeanIntrospection<_i7.PageOfBooks>(
       className: r'PageOfBooks',
       properties: [
-        _i2.BeanProperty<_i13.PageOfBooks>(
+        _i3.BeanProperty<_i7.PageOfBooks>(
           r'items',
-          type: List<_i13.Book>,
-          typeInfo: const _i2.ListType<_i13.Book>(_i2.ClassType<_i13.Book>()),
-          get: (bean) => bean.items,
+          typeInfo: _i3.ListType<_i7.Book>(_i3.ClassType<_i7.Book>()),
+          get: _$get48,
         ),
-        _i2.BeanProperty<_i13.PageOfBooks>(
+        _i3.BeanProperty<_i7.PageOfBooks>(
           r'page',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.page,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get49,
         ),
-        _i2.BeanProperty<_i13.PageOfBooks>(
+        _i3.BeanProperty<_i7.PageOfBooks>(
           r'size',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.size,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get50,
         ),
-        _i2.BeanProperty<_i13.PageOfBooks>(
+        _i3.BeanProperty<_i7.PageOfBooks>(
           r'total',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.total,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get51,
         ),
-        _i2.BeanProperty<_i13.PageOfBooks>(
+        _i3.BeanProperty<_i7.PageOfBooks>(
           r'pages',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.pages,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get52,
         ),
       ],
-      instantiate: () => _i13.PageOfBooks(),
-      constructor: _i2.BeanConstructor<_i13.PageOfBooks>(
+      instantiate: _i7.PageOfBooks.new,
+      constructor: _i3.BeanConstructor<_i7.PageOfBooks>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'items',
-            type: const _i2.ListType<_i13.Book>(_i2.ClassType<_i13.Book>()),
+            type: _i3.ListType<_i7.Book>(_i3.ClassType<_i7.Book>()),
             symbol: #items,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: [],
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'page',
-            type: const _i2.ClassType<int>(),
+            type: _i3.ClassType<int>(),
             symbol: #page,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'size',
-            type: const _i2.ClassType<int>(),
+            type: _i3.ClassType<int>(),
             symbol: #size,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'total',
-            type: const _i2.ClassType<int>(),
+            type: _i3.ClassType<int>(),
             symbol: #total,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.PageOfBooks.new, positional, named)
-                as _i13.PageOfBooks),
+        create: _$create53,
       ),
     ),
-    _i2.BeanIntrospection<_i13.StockChanged>(
+    const _i3.BeanIntrospection<_i7.StockChanged>(
       className: r'StockChanged',
       properties: [
-        _i2.BeanProperty<_i13.StockChanged>(
+        _i3.BeanProperty<_i7.StockChanged>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get54,
         ),
-        _i2.BeanProperty<_i13.StockChanged>(
+        _i3.BeanProperty<_i7.StockChanged>(
           r'available',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.available,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get55,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i13.StockChanged>(
+      constructor: _i3.BeanConstructor<_i7.StockChanged>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'available',
-            type: const _i2.ClassType<int>(),
+            type: _i3.ClassType<int>(),
             symbol: #available,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.StockChanged.new, positional, named)
-                as _i13.StockChanged),
+        create: _$create56,
       ),
     ),
-    _i2.BeanIntrospection<_i13.BasketLine>(
+    const _i3.BeanIntrospection<_i7.BasketLine>(
       className: r'BasketLine',
       properties: [
-        _i2.BeanProperty<_i13.BasketLine>(
+        _i3.BeanProperty<_i7.BasketLine>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get57,
         ),
-        _i2.BeanProperty<_i13.BasketLine>(
+        _i3.BeanProperty<_i7.BasketLine>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get58,
         ),
-        _i2.BeanProperty<_i13.BasketLine>(
+        _i3.BeanProperty<_i7.BasketLine>(
           r'quantity',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.quantity,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get59,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i13.BasketLine>(
+      constructor: _i3.BeanConstructor<_i7.BasketLine>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #title,
             hasDefaultValue: true,
             defaultValue: r'',
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'quantity',
-            type: const _i2.ClassType<int>(),
+            type: _i3.ClassType<int>(),
             symbol: #quantity,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.BasketLine.new, positional, named)
-                as _i13.BasketLine),
+        create: _$create60,
       ),
     ),
-    _i2.BeanIntrospection<_i13.ServerBasket>(
+    const _i3.BeanIntrospection<_i7.ServerBasket>(
       className: r'ServerBasket',
       properties: [
-        _i2.BeanProperty<_i13.ServerBasket>(
+        _i3.BeanProperty<_i7.ServerBasket>(
           r'items',
-          type: List<_i13.BasketLine>,
-          typeInfo: const _i2.ListType<_i13.BasketLine>(
-            _i2.ClassType<_i13.BasketLine>(),
+          typeInfo: _i3.ListType<_i7.BasketLine>(
+            _i3.ClassType<_i7.BasketLine>(),
           ),
-          get: (bean) => bean.items,
+          get: _$get61,
         ),
       ],
-      instantiate: () => _i13.ServerBasket(),
-      constructor: _i2.BeanConstructor<_i13.ServerBasket>(
+      instantiate: _i7.ServerBasket.new,
+      constructor: _i3.BeanConstructor<_i7.ServerBasket>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'items',
-            type: const _i2.ListType<_i13.BasketLine>(
-              _i2.ClassType<_i13.BasketLine>(),
-            ),
+            type: _i3.ListType<_i7.BasketLine>(_i3.ClassType<_i7.BasketLine>()),
             symbol: #items,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: [],
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.ServerBasket.new, positional, named)
-                as _i13.ServerBasket),
+        create: _$create62,
       ),
     ),
-    _i2.BeanIntrospection<_i13.Quantity>(
+    const _i3.BeanIntrospection<_i7.Quantity>(
       className: r'Quantity',
       properties: [
-        _i2.BeanProperty<_i13.Quantity>(
+        _i3.BeanProperty<_i7.Quantity>(
           r'quantity',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.quantity,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get63,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i13.Quantity>(
+      constructor: _i3.BeanConstructor<_i7.Quantity>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'quantity',
-            type: const _i2.ClassType<int>(),
+            type: _i3.ClassType<int>(),
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.Quantity.new, positional, named)
-                as _i13.Quantity),
+        create: _$create64,
       ),
     ),
-    _i2.BeanIntrospection<_i13.ShopOrder>(
+    const _i3.BeanIntrospection<_i7.ShopOrder>(
       className: r'ShopOrder',
       properties: [
-        _i2.BeanProperty<_i13.ShopOrder>(
+        _i3.BeanProperty<_i7.ShopOrder>(
           r'id',
           type: Object,
-          typeInfo: const _i2.DynamicType(),
-          get: (bean) => bean.id,
+          typeInfo: _i3.DynamicType(),
+          get: _$get65,
         ),
-        _i2.BeanProperty<_i13.ShopOrder>(
+        _i3.BeanProperty<_i7.ShopOrder>(
           r'user',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.user,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get66,
         ),
-        _i2.BeanProperty<_i13.ShopOrder>(
+        _i3.BeanProperty<_i7.ShopOrder>(
           r'lines',
-          type: List<_i13.BasketLine>,
-          typeInfo: const _i2.ListType<_i13.BasketLine>(
-            _i2.ClassType<_i13.BasketLine>(),
+          typeInfo: _i3.ListType<_i7.BasketLine>(
+            _i3.ClassType<_i7.BasketLine>(),
           ),
-          get: (bean) => bean.lines,
+          get: _$get67,
         ),
-        _i2.BeanProperty<_i13.ShopOrder>(
+        _i3.BeanProperty<_i7.ShopOrder>(
           r'total',
-          type: double,
-          typeInfo: const _i2.ClassType<double>(),
-          get: (bean) => bean.total,
+          typeInfo: _i3.ClassType<double>(),
+          get: _$get68,
         ),
-        _i2.BeanProperty<_i13.ShopOrder>(
+        _i3.BeanProperty<_i7.ShopOrder>(
           r'placedAt',
-          type: DateTime,
           nullable: true,
-          typeInfo: const _i2.ClassType<DateTime>(nullable: true),
-          get: (bean) => bean.placedAt,
+          typeInfo: _i3.ClassType<DateTime>(nullable: true),
+          get: _$get69,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i13.ShopOrder>(
+      constructor: _i3.BeanConstructor<_i7.ShopOrder>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'id',
-            type: const _i2.DynamicType(),
+            type: _i3.DynamicType(),
             symbol: #id,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'user',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #user,
             hasDefaultValue: true,
             defaultValue: r'',
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'lines',
-            type: const _i2.ListType<_i13.BasketLine>(
-              _i2.ClassType<_i13.BasketLine>(),
-            ),
+            type: _i3.ListType<_i7.BasketLine>(_i3.ClassType<_i7.BasketLine>()),
             symbol: #lines,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: [],
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'total',
-            type: const _i2.ClassType<double>(),
+            type: _i3.ClassType<double>(),
             symbol: #total,
             hasDefaultValue: true,
             defaultValue: 0.0,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'placedAt',
-            type: const _i2.ClassType<DateTime>(nullable: true),
+            type: _i3.ClassType<DateTime>(nullable: true),
             symbol: #placedAt,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.ShopOrder.new, positional, named)
-                as _i13.ShopOrder),
+        create: _$create70,
       ),
     ),
-    _i2.BeanIntrospection<_i13.ChatMessage>(
+    const _i3.BeanIntrospection<_i7.ChatMessage>(
       className: r'ChatMessage',
       properties: [
-        _i2.BeanProperty<_i13.ChatMessage>(
+        _i3.BeanProperty<_i7.ChatMessage>(
           r'from',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.from,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get71,
         ),
-        _i2.BeanProperty<_i13.ChatMessage>(
+        _i3.BeanProperty<_i7.ChatMessage>(
           r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get72,
         ),
-        _i2.BeanProperty<_i13.ChatMessage>(
+        _i3.BeanProperty<_i7.ChatMessage>(
           r'at',
-          type: DateTime,
           nullable: true,
-          typeInfo: const _i2.ClassType<DateTime>(nullable: true),
-          get: (bean) => bean.at,
+          typeInfo: _i3.ClassType<DateTime>(nullable: true),
+          get: _$get73,
         ),
       ],
-      constructor: _i2.BeanConstructor<_i13.ChatMessage>(
+      constructor: _i3.BeanConstructor<_i7.ChatMessage>(
         parameters: [
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'from',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #from,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'text',
-            type: const _i2.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             symbol: #text,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i3.BeanParameter(
             r'at',
-            type: const _i2.ClassType<DateTime>(nullable: true),
+            type: _i3.ClassType<DateTime>(nullable: true),
             symbol: #at,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.ChatMessage.new, positional, named)
-                as _i13.ChatMessage),
+        create: _$create74,
       ),
     ),
-    _i2.BeanIntrospection<_i54.AppProperties>(
+    const _i3.BeanIntrospection<_i39.AppProperties>(
       className: r'AppProperties',
       properties: [
-        _i2.BeanProperty<_i54.AppProperties>(
+        _i3.BeanProperty<_i39.AppProperties>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'NEON Books',
-          get: (bean) => bean.title,
-          set: (bean, value) => bean.title = (value as String),
-          annotations: const [_i2.Size(min: 1, max: 40)],
+          get: _$get75,
+          set: _$set76,
+          annotations: [_i3.Size(min: 1, max: 40)],
         ),
-        _i2.BeanProperty<_i54.AppProperties>(
+        _i3.BeanProperty<_i39.AppProperties>(
           r'navigation',
-          type: _i54.NavigationStyle,
-          typeInfo: const _i2.EnumType<_i54.NavigationStyle>(
-            _i54.NavigationStyle.values,
+          typeInfo: _i3.EnumType<_i39.NavigationStyle>(
+            _i39.NavigationStyle.values,
           ),
           hasInitialValue: true,
-          initialValue: _i54.NavigationStyle.bar,
-          get: (bean) => bean.navigation,
-          set: (bean, value) =>
-              bean.navigation = (value as _i54.NavigationStyle),
+          initialValue: _i39.NavigationStyle.bar,
+          get: _$get77,
+          set: _$set78,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'app'), _i2.Validated()],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i54.AppProperties(),
-      constructor: _i2.BeanConstructor<_i54.AppProperties>(
+      annotations: [_i3.ConfigurationProperties(r'app'), _i3.Validated()],
+      parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+      instantiate: _i39.AppProperties.new,
+      constructor: _i3.BeanConstructor<_i39.AppProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i54.AppProperties.new, positional, named)
-                as _i54.AppProperties),
+        create: _$create79,
       ),
     ),
   ],
@@ -5156,23 +3653,23 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i71.SpringApplication get springApplication => _i71.SpringApplication(
+_i68.SpringApplication get springApplication => _i68.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i72.springBootAutoConfiguration,
-    _i73.springBootStarterCacheAutoConfiguration,
-    _i74.springBootStarterFeignAutoConfiguration,
-    _i75.springBootStarterFlutterAutoConfiguration,
-    _i76.springBootStarterFlutterSecurityAutoConfiguration,
-    _i77.springBootStarterLoggingAutoConfiguration,
-    _i78.springBootStarterOauth2ClientAutoConfiguration,
-    _i79.springBootStarterSchedulingAutoConfiguration,
-    _i80.springBootStarterWebsocketAutoConfiguration,
-    _i81.springSecurityCoreAutoConfiguration,
+    _i69.springBootAutoConfiguration,
+    _i70.springBootStarterCacheAutoConfiguration,
+    _i71.springBootStarterFeignAutoConfiguration,
+    _i72.springBootStarterFlutterAutoConfiguration,
+    _i73.springBootStarterFlutterSecurityAutoConfiguration,
+    _i74.springBootStarterLoggingAutoConfiguration,
+    _i75.springBootStarterOauth2ClientAutoConfiguration,
+    _i76.springBootStarterSchedulingAutoConfiguration,
+    _i77.springBootStarterWebsocketAutoConfiguration,
+    _i78.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i76.springBootStarterFlutterSecurityAutoConfiguration:
-        const _i71.AutoConfigurationModule(
+    _i73.springBootStarterFlutterSecurityAutoConfiguration:
+        const _i68.AutoConfigurationModule(
           before: [
             'springBootStarterOauth2ClientAutoConfiguration',
             'springBootStarterFeignAutoConfiguration',
@@ -6322,113 +4819,114 @@ _i71.SpringApplication get springApplication => _i71.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '855d38bd',
+  fingerprint: 'b4e9c9aa',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i71.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i68.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i71.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i68.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i71.ConfigurableApplicationContext reloadApplication(
-  _i71.ConfigurableApplicationContext running, {
+_i68.ConfigurableApplicationContext reloadApplication(
+  _i68.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i71.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i71.ConfigurableApplicationContext running, {
+Future<_i68.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i68.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// Getters for the `@BuildContextAccess` beans, for widgets below `SpringApplicationWidget`.
-extension SpringBeans on _i82.BuildContext {
+extension SpringBeans on _i79.BuildContext {
   /// The bean 'session'.
-  _i9.Session get session =>
-      _i62.SpringScope.beanOf<_i9.Session>(this, qualifier: r'session');
+  _i1.Session get session =>
+      _i59.SpringScope.beanOf<_i1.Session>(this, qualifier: r'session');
 
   /// The bean 'languageSelection'.
-  _i18.LanguageSelection get languageSelection =>
-      _i62.SpringScope.beanOf<_i18.LanguageSelection>(
+  _i9.LanguageSelection get languageSelection =>
+      _i59.SpringScope.beanOf<_i9.LanguageSelection>(
         this,
         qualifier: r'languageSelection',
       );
 
   /// The bean 'basket'.
-  _i20.Basket get basket =>
-      _i62.SpringScope.beanOf<_i20.Basket>(this, qualifier: r'basket');
+  _i10.Basket get basket =>
+      _i59.SpringScope.beanOf<_i10.Basket>(this, qualifier: r'basket');
 
   /// The bean 'catalog'.
-  _i21.Catalog get catalog =>
-      _i62.SpringScope.beanOf<_i21.Catalog>(this, qualifier: r'catalog');
+  _i11.Catalog get catalog =>
+      _i59.SpringScope.beanOf<_i11.Catalog>(this, qualifier: r'catalog');
 }
 
 /// `@Log` of [ServerAuthenticationProvider]: the logger 'neon.account'.
-extension $ServerAuthenticationProviderLog on _i7.ServerAuthenticationProvider {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.account');
+extension $ServerAuthenticationProviderLog
+    on _i43.ServerAuthenticationProvider {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.account');
 }
 
 /// `@Log` of [Session]: the logger 'neon.account'.
-extension $SessionLog on _i9.Session {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.account');
+extension $SessionLog on _i1.Session {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.account');
 }
 
 /// `@Log` of [AdminService]: the logger 'neon.admin'.
-extension $AdminServiceLog on _i12.AdminService {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.admin');
+extension $AdminServiceLog on _i6.AdminService {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.admin');
 }
 
 /// `@Log` of [CookieJar]: the logger 'neon.api.cookies'.
-extension $CookieJarLog on _i15.CookieJar {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.api.cookies');
+extension $CookieJarLog on _i33.CookieJar {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.api.cookies');
 }
 
 /// `@Log` of [LifecycleLog]: the logger 'neon.lifecycle'.
-extension $LifecycleLogLog on _i55.LifecycleLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.lifecycle');
+extension $LifecycleLogLog on _i52.LifecycleLog {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.lifecycle');
 }
 
 /// `@Log` of [RouteLog]: the logger 'neon.navigation'.
-extension $RouteLogLog on _i57.RouteLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.navigation');
+extension $RouteLogLog on _i54.RouteLog {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.navigation');
 }
 
 /// `@Log` of [Basket]: the logger 'neon.basket'.
-extension $BasketLog on _i20.Basket {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.basket');
+extension $BasketLog on _i10.Basket {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.basket');
 }
 
 /// `@Log` of [CatalogRefresh]: the logger 'neon.catalog'.
-extension $CatalogRefreshLog on _i22.CatalogRefresh {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.catalog');
+extension $CatalogRefreshLog on _i38.CatalogRefresh {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.catalog');
 }
 
 /// `@Log` of [CatalogService]: the logger 'neon.catalog'.
-extension $CatalogServiceLog on _i23.CatalogService {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.catalog');
+extension $CatalogServiceLog on _i12.CatalogService {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.catalog');
 }
 
 /// `@Log` of [OrderService]: the logger 'neon.orders'.
-extension $OrderServiceLog on _i24.OrderService {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.orders');
+extension $OrderServiceLog on _i13.OrderService {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.orders');
 }
 
 /// `@Log` of [LiveStock]: the logger 'neon.stock'.
-extension $LiveStockLog on _i25.LiveStock {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.stock');
+extension $LiveStockLog on _i14.LiveStock {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.stock');
 }
 
 /// `@Log` of [SupportChat]: the logger 'neon.support'.
-extension $SupportChatLog on _i26.SupportChat {
-  _i2.SpringLog get log => const _i2.SpringLog(r'neon.support');
+extension $SupportChatLog on _i15.SupportChat {
+  _i3.SpringLog get log => const _i3.SpringLog(r'neon.support');
 }

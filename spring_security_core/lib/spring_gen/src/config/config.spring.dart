@@ -7,45 +7,28 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_security_core/src/config/security_core_properties.dart'
-    as _i1;
+    as _i2;
 
 class _$PasswordChecksPropertiesProxy
-    implements _i1.PasswordChecksProperties, _i2.Advised {
-  _$PasswordChecksPropertiesProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.PasswordChecksProperties {
+  _$PasswordChecksPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.PasswordChecksProperties _target;
+  final _i2.PasswordChecksProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  int? get maxConcurrent => (this._invoker.invoke(
+  int? get maxConcurrent => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -54,7 +37,7 @@ class _$PasswordChecksPropertiesProxy
   ) as int?);
 
   @override
-  int? get maxQueued => (this._invoker.invoke(
+  int? get maxQueued => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -64,7 +47,7 @@ class _$PasswordChecksPropertiesProxy
 
   @override
   set maxConcurrent(int? value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.maxConcurrent = (args[0] as int?);
       return null;
     });
@@ -72,118 +55,104 @@ class _$PasswordChecksPropertiesProxy
 
   @override
   set maxQueued(int? value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
       this._target.maxQueued = (args[0] as int?);
       return null;
     });
   }
 }
 
+const _$target0 = _i1.AopTarget(
+  r'PasswordChecksProperties',
+  types: [r'PasswordChecksProperties'],
+  annotations: [
+    _i1.ConfigurationProperties(r'spring.security.password-checks'),
+  ],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get1(_i2.PasswordChecksProperties bean) => bean.maxConcurrent;
+void _$set2(_i2.PasswordChecksProperties bean, Object? value) =>
+    bean.maxConcurrent = (value as int?);
+Object? _$get3(_i2.PasswordChecksProperties bean) => bean.maxQueued;
+void _$set4(_i2.PasswordChecksProperties bean, Object? value) =>
+    bean.maxQueued = (value as int?);
+_i2.PasswordChecksProperties _$create5(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.PasswordChecksProperties();
+
 /// Beans found by `@ComponentScan` in `lib/src/config`.
-_i2.BeanModule get $securityCoreConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $securityCoreConfigBeans => _i1.BeanModule(
   r'securityCoreConfigBeans',
   [
-    _i2.BeanDefinition<_i1.PasswordChecksProperties>(
+    _i1.BeanDefinition<_i2.PasswordChecksProperties>(
       name: r'passwordChecksProperties',
       source: r'package:spring_security_core/src/config/security_core_properties.dart#PasswordChecksProperties',
-      types: const [_i1.PasswordChecksProperties],
-      create: (r) => _i1.PasswordChecksProperties(),
+      create: (r) => _i2.PasswordChecksProperties(),
       annotations: const [
-        _i2.ConfigurationProperties(r'spring.security.password-checks'),
+        _i1.ConfigurationProperties(r'spring.security.password-checks'),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'maxConcurrent',
-            declaringType: r'PasswordChecksProperties',
-            targetType: r'PasswordChecksProperties',
-            declaringTypes: [r'PasswordChecksProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'maxConcurrent',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'PasswordChecksProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security.password-checks'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxQueued',
-            declaringType: r'PasswordChecksProperties',
-            targetType: r'PasswordChecksProperties',
-            declaringTypes: [r'PasswordChecksProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'maxQueued',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'PasswordChecksProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security.password-checks'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxConcurrent',
-            declaringType: r'PasswordChecksProperties',
-            targetType: r'PasswordChecksProperties',
-            declaringTypes: [r'PasswordChecksProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxConcurrent',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'int',
-            targetTypes: [r'PasswordChecksProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security.password-checks'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxQueued',
-            declaringType: r'PasswordChecksProperties',
-            targetType: r'PasswordChecksProperties',
-            declaringTypes: [r'PasswordChecksProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxQueued',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'int',
-            targetTypes: [r'PasswordChecksProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security.password-checks'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$PasswordChecksPropertiesProxy(
-          (target as _i1.PasswordChecksProperties),
+          (target as _i2.PasswordChecksProperties),
           invoker,
         ),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.PasswordChecksProperties>(
+    const _i1.BeanIntrospection<_i2.PasswordChecksProperties>(
       className: r'PasswordChecksProperties',
       properties: [
-        _i2.BeanProperty<_i1.PasswordChecksProperties>(
+        _i1.BeanProperty<_i2.PasswordChecksProperties>(
           r'maxConcurrent',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.maxConcurrent,
-          set: (bean, value) => bean.maxConcurrent = (value as int?),
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get1,
+          set: _$set2,
         ),
-        _i2.BeanProperty<_i1.PasswordChecksProperties>(
+        _i1.BeanProperty<_i2.PasswordChecksProperties>(
           r'maxQueued',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.maxQueued,
-          set: (bean, value) => bean.maxQueued = (value as int?),
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get3,
+          set: _$set4,
         ),
       ],
-      annotations: const [
-        _i2.ConfigurationProperties(r'spring.security.password-checks'),
+      annotations: [
+        _i1.ConfigurationProperties(r'spring.security.password-checks'),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.PasswordChecksProperties(),
-      constructor: _i2.BeanConstructor<_i1.PasswordChecksProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.PasswordChecksProperties.new,
+      constructor: _i1.BeanConstructor<_i2.PasswordChecksProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.PasswordChecksProperties.new, positional, named)
-                as _i1.PasswordChecksProperties),
+        create: _$create5,
       ),
     ),
   ],

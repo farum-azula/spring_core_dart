@@ -84,9 +84,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i5.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches BookRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
     _i3.BeanDefinition<_i2.LogRepository>(
       name: r'logRepository',
@@ -102,9 +100,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$LogRepositoryImpl.$create(r),
       annotations: const [_i4.UseDataSource(r'archive')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches LogRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
     _i3.BeanDefinition<_i2.NoteRepository>(
       name: r'noteRepository',
@@ -120,9 +116,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$NoteRepositoryImpl.$create(r),
       annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches NoteRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i3.AopProxyFactory.pruned(),
     ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
       name: r'entityIntrospections#application',
@@ -587,7 +581,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '3d228804',
+  fingerprint: 'd4ffec3e',
 );
 
 /// Starts the application: config files, environment, context, runners

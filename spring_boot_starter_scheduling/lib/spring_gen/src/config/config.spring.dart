@@ -7,45 +7,28 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart'
-    as _i1;
+    as _i2;
 
 class _$SchedulingPropertiesProxy
-    implements _i1.SchedulingProperties, _i2.Advised {
-  _$SchedulingPropertiesProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.SchedulingProperties {
+  _$SchedulingPropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.SchedulingProperties _target;
+  final _i2.SchedulingProperties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool get enabled => (this._invoker.invoke(
+  bool get enabled => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -54,167 +37,153 @@ class _$SchedulingPropertiesProxy
   ) as bool);
 
   @override
-  _i1.SchedulingShutdown get shutdown => (this._invoker.invoke(
+  _i2.SchedulingShutdown get shutdown => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
     const [],
     (_) => this._target.shutdown,
-  ) as _i1.SchedulingShutdown);
+  ) as _i2.SchedulingShutdown);
 
   @override
   set enabled(bool value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.enabled = (args[0] as bool);
       return null;
     });
   }
 
   @override
-  set shutdown(_i1.SchedulingShutdown value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.shutdown = (args[0] as _i1.SchedulingShutdown);
+  set shutdown(_i2.SchedulingShutdown value) {
+    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
+      this._target.shutdown = (args[0] as _i2.SchedulingShutdown);
       return null;
     });
   }
 }
 
+const _$target0 = _i1.AopTarget(
+  r'SchedulingProperties',
+  types: [r'SchedulingProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.task.scheduling')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get1(_i2.SchedulingProperties bean) => bean.enabled;
+void _$set2(_i2.SchedulingProperties bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get3(_i2.SchedulingProperties bean) => bean.shutdown;
+void _$set4(_i2.SchedulingProperties bean, Object? value) =>
+    bean.shutdown = (value as _i2.SchedulingShutdown);
+_i2.SchedulingProperties _$create5(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SchedulingProperties();
+Object? _$get6(_i2.SchedulingShutdown bean) => bean.awaitTermination;
+void _$set7(_i2.SchedulingShutdown bean, Object? value) =>
+    bean.awaitTermination = (value as bool);
+Object? _$get8(_i2.SchedulingShutdown bean) => bean.awaitTerminationPeriod;
+void _$set9(_i2.SchedulingShutdown bean, Object? value) =>
+    bean.awaitTerminationPeriod = (value as Duration?);
+_i2.SchedulingShutdown _$create10(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SchedulingShutdown();
+
 /// Beans found by `@ComponentScan` in `lib/src/config`.
-_i2.BeanModule get $schedulingProperties => _i2.BeanModule(
+_i1.BeanModule get $schedulingProperties => _i1.BeanModule(
   r'schedulingProperties',
   [
-    _i2.BeanDefinition<_i1.SchedulingProperties>(
+    _i1.BeanDefinition<_i2.SchedulingProperties>(
       name: r'schedulingProperties',
       source: r'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart#SchedulingProperties',
-      types: const [_i1.SchedulingProperties],
-      create: (r) => _i1.SchedulingProperties(),
+      create: (r) => _i2.SchedulingProperties(),
       annotations: const [
-        _i2.ConfigurationProperties(r'spring.task.scheduling'),
+        _i1.ConfigurationProperties(r'spring.task.scheduling'),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'SchedulingProperties',
-            targetType: r'SchedulingProperties',
-            declaringTypes: [r'SchedulingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'SchedulingProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.task.scheduling'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'shutdown',
-            declaringType: r'SchedulingProperties',
-            targetType: r'SchedulingProperties',
-            declaringTypes: [r'SchedulingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'shutdown',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'SchedulingShutdown',
-            targetTypes: [r'SchedulingProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.task.scheduling'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'SchedulingProperties',
-            targetType: r'SchedulingProperties',
-            declaringTypes: [r'SchedulingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'SchedulingProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.task.scheduling'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'shutdown',
-            declaringType: r'SchedulingProperties',
-            targetType: r'SchedulingProperties',
-            declaringTypes: [r'SchedulingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'shutdown',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'SchedulingShutdown',
-            targetTypes: [r'SchedulingProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.task.scheduling'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$SchedulingPropertiesProxy(
-          (target as _i1.SchedulingProperties),
+          (target as _i2.SchedulingProperties),
           invoker,
         ),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.SchedulingProperties>(
+    const _i1.BeanIntrospection<_i2.SchedulingProperties>(
       className: r'SchedulingProperties',
       properties: [
-        _i2.BeanProperty<_i1.SchedulingProperties>(
+        _i1.BeanProperty<_i2.SchedulingProperties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get1,
+          set: _$set2,
         ),
-        _i2.BeanProperty<_i1.SchedulingProperties>(
+        _i1.BeanProperty<_i2.SchedulingProperties>(
           r'shutdown',
-          type: _i1.SchedulingShutdown,
-          typeInfo: const _i2.ClassType<_i1.SchedulingShutdown>(),
-          get: (bean) => bean.shutdown,
-          set: (bean, value) =>
-              bean.shutdown = (value as _i1.SchedulingShutdown),
+          typeInfo: _i1.ClassType<_i2.SchedulingShutdown>(),
+          get: _$get3,
+          set: _$set4,
         ),
       ],
-      annotations: const [
-        _i2.ConfigurationProperties(r'spring.task.scheduling'),
-      ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.SchedulingProperties(),
-      constructor: _i2.BeanConstructor<_i1.SchedulingProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.task.scheduling')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.SchedulingProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SchedulingProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SchedulingProperties.new, positional, named)
-                as _i1.SchedulingProperties),
+        create: _$create5,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SchedulingShutdown>(
+    const _i1.BeanIntrospection<_i2.SchedulingShutdown>(
       className: r'SchedulingShutdown',
       properties: [
-        _i2.BeanProperty<_i1.SchedulingShutdown>(
+        _i1.BeanProperty<_i2.SchedulingShutdown>(
           r'awaitTermination',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.awaitTermination,
-          set: (bean, value) => bean.awaitTermination = (value as bool),
+          get: _$get6,
+          set: _$set7,
         ),
-        _i2.BeanProperty<_i1.SchedulingShutdown>(
+        _i1.BeanProperty<_i2.SchedulingShutdown>(
           r'awaitTerminationPeriod',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.awaitTerminationPeriod,
-          set: (bean, value) =>
-              bean.awaitTerminationPeriod = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get8,
+          set: _$set9,
         ),
       ],
-      instantiate: () => _i1.SchedulingShutdown(),
-      constructor: _i2.BeanConstructor<_i1.SchedulingShutdown>(
+      instantiate: _i2.SchedulingShutdown.new,
+      constructor: _i1.BeanConstructor<_i2.SchedulingShutdown>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SchedulingShutdown.new, positional, named)
-                as _i1.SchedulingShutdown),
+        create: _$create10,
       ),
     ),
   ],

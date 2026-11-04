@@ -69,6 +69,36 @@ final class DartDefineKeys {
     return result.where((key) => key.isNotEmpty).toList()..sort();
   }
 
+  /// [keys] without those under one of the property name [prefixes] (a
+  /// whole name or its leading segments), in either form: `spring.flutter`
+  /// leaves out `spring.flutter.theme.mode` and
+  /// `SPRING_FLUTTER_THEME_MODE`, not `spring.flutterish`.
+  ///
+  /// ```dart
+  /// DartDefineKeys.without(
+  ///   ['DEBUG', 'SPRING_FLUTTER_THEME', 'spring.flutter.theme'],
+  ///   ['spring.flutter.theme'],
+  /// ); // ['DEBUG']
+  /// ```
+  static List<String> without(List<String> keys, List<String> prefixes) {
+    if (prefixes.isEmpty) {
+      return keys;
+    }
+    bool under(String key, String prefix, String separator) =>
+        key == prefix ||
+        key.startsWith('$prefix$separator') ||
+        key.startsWith('$prefix[');
+    return [
+      for (final key in keys)
+        if (!prefixes.any(
+          (prefix) =>
+              under(key, prefix, '.') ||
+              under(key, environmentForm(prefix), '_'),
+        ))
+          key,
+    ];
+  }
+
   // Characters a property name may have here (a define with anything else
   // is skipped rather than escaped into the generated code).
   static final _valid = RegExp(r'^[A-Za-z0-9_.\-\[\]]+$');

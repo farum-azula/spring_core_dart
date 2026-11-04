@@ -100,6 +100,20 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
           as _i5.EventStream<_i1.StockChange>);
 }
 
+Object? _$get0(_i1.Book bean) => bean.isbn;
+Object? _$get1(_i1.Book bean) => bean.title;
+_i1.Book _$create2(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i1.Book(isbn: (named[#isbn] as String), title: (named[#title] as String));
+Object? _$get3(_i1.StockChange bean) => bean.isbn;
+Object? _$get4(_i1.StockChange bean) => bean.copies;
+_i1.StockChange _$create5(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.StockChange(
+  isbn: (named[#isbn] as String),
+  copies: (named[#copies] as int),
+);
+
 /// Beans found by `@ComponentScan` in `example/`.
 _i2.BeanModule get $application => _i2.BeanModule(
   r'application',
@@ -108,25 +122,19 @@ _i2.BeanModule get $application => _i2.BeanModule(
       name: r'catalogClient',
       source:
           r'asset:spring_boot_starter_feign/example/example.dart#CatalogClient',
-      types: const [_i1.CatalogClient],
       primary: true,
       create: (r) => _$CatalogClientImpl.$create(r),
       annotations: const [_i3.FeignClient(r'catalog', url: r'${catalog.url}')],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches CatalogClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i2.AopProxyFactory.pruned(),
     ),
     _i2.BeanDefinition<_i1.Shop>(
       name: r'shop',
       source: r'asset:spring_boot_starter_feign/example/example.dart#Shop',
-      types: const [_i1.Shop],
       dependencies: const [_i2.Dependency(_i1.CatalogClient, name: r'catalog')],
       create: (r) =>
           _i1.Shop(r.dependency<_i1.CatalogClient>(name: r'catalog')),
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches Shop, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i2.AopProxyFactory.pruned(),
     ),
     _i2.BeanDefinition<_i1.ShopTour>(
       name: r'shopTour',
@@ -144,9 +152,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ShopTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i2.AopProxyFactory.pruned(),
     ),
   ],
   resources: const {
@@ -155,75 +161,68 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   },
   introspections: [
-    _i2.BeanIntrospection<_i1.Book>(
+    const _i2.BeanIntrospection<_i1.Book>(
       className: r'Book',
       properties: [
         _i2.BeanProperty<_i1.Book>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get0,
         ),
         _i2.BeanProperty<_i1.Book>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get1,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.Book>(
         parameters: [
           _i2.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
           _i2.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Book.new, positional, named) as _i1.Book),
+        create: _$create2,
       ),
     ),
-    _i2.BeanIntrospection<_i1.StockChange>(
+    const _i2.BeanIntrospection<_i1.StockChange>(
       className: r'StockChange',
       properties: [
         _i2.BeanProperty<_i1.StockChange>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get3,
         ),
         _i2.BeanProperty<_i1.StockChange>(
           r'copies',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.copies,
+          typeInfo: _i2.ClassType<int>(),
+          get: _$get4,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.StockChange>(
         parameters: [
           _i2.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
           _i2.BeanParameter(
             r'copies',
-            type: const _i2.ClassType<int>(),
+            type: _i2.ClassType<int>(),
             symbol: #copies,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i1.StockChange.new, positional, named)
-                as _i1.StockChange),
+        create: _$create5,
       ),
     ),
   ],
@@ -288,7 +287,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'ee9b2730',
+  fingerprint: '000bf6ab',
 );
 
 /// Starts the application: config files, environment, context, runners

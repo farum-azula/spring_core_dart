@@ -25,45 +25,12 @@ import 'package:spring_security_core/src/userdetails/user_details_service.dart'
 
 import '../example.dart' as _i1;
 
-class _$OrderServiceProxy extends _i1.OrderService implements _i2.Advised {
+class _$OrderServiceProxy extends _i1.OrderService with _i2.AdvisedSubclass {
   _$OrderServiceProxy();
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$OrderServiceProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
 
   @override
   _i3.Future<String> cancel(_i1.Order order) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.cancel(order)
         : _$i.invokeAsync<String>(this, this, 0, [
@@ -73,7 +40,7 @@ class _$OrderServiceProxy extends _i1.OrderService implements _i2.Advised {
 
   @override
   _i3.Future<_i1.Order> find(String id) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.find(id)
         : _$i.invokeAsync<_i1.Order>(this, this, 1, [
@@ -83,7 +50,7 @@ class _$OrderServiceProxy extends _i1.OrderService implements _i2.Advised {
 
   @override
   _i3.Future<List<_i1.Order>> all() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.all()
         : _$i.invokeAsync<List<_i1.Order>>(
@@ -110,6 +77,22 @@ class _$UserSetupConfiguration extends _i1.UserSetup {
   _i4.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
 }
 
+Object? _$invoke0(_i1.OrderService bean, List<Object?> arguments) =>
+    bean.cancel((arguments[0] as _i1.Order));
+Object? _$invoke1(_i1.OrderService bean, List<Object?> arguments) =>
+    bean.find((arguments[0] as String));
+Object? _$invoke2(_i1.OrderService bean, List<Object?> arguments) => bean.all();
+const _$target3 = _i2.AopTarget(
+  r'OrderService',
+  types: [r'OrderService'],
+  annotations: [_i2.Service()],
+  annotationTypes: [r'Service'],
+);
+Object? _$get4(_i1.Order bean) => bean.id;
+Object? _$get5(_i1.Order bean) => bean.owner;
+Object? _$invoke6(_i1.Order bean, List<Object?> arguments) =>
+    Function.apply(bean.toString, arguments);
+
 /// Beans found by `@ComponentScan` in `example/`.
 _i2.BeanModule get $application => _i2.BeanModule(
   r'application',
@@ -117,53 +100,50 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i2.BeanDefinition<_i1.OrderService>(
       name: r'orderService',
       source: r'asset:spring_security_core/example/example.dart#OrderService',
-      types: const [_i1.OrderService],
       create: (r) => _$OrderServiceProxy(),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i2.BeanMethod<_i1.OrderService>(
           r'cancel',
-          parameterTypes: const [_i1.Order],
+          parameterTypes: [_i1.Order],
           parameters: [
             _i2.BeanParameter(
               r'order',
-              type: const _i2.ClassType<_i1.Order>(),
+              type: _i2.ClassType<_i1.Order>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
+          returnTypeInfo: _i2.ClassType<String>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.cancel, arguments),
-          annotations: const [
+          invoke: _$invoke0,
+          annotations: [
             _i5.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == authentication.name",
             ),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i2.BeanMethod<_i1.OrderService>(
           r'find',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
             _i2.BeanParameter(
               r'id',
-              type: const _i2.ClassType<String>(),
+              type: _i2.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i1.Order>(),
+          returnTypeInfo: _i2.ClassType<_i1.Order>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.find, arguments),
-          annotations: const [
+          invoke: _$invoke1,
+          annotations: [
             _i5.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i2.BeanMethod<_i1.OrderService>(
           r'all',
-          returnTypeInfo: const _i2.ListType<_i1.Order>(
-            _i2.ClassType<_i1.Order>(),
-          ),
+          returnTypeInfo: _i2.ListType<_i1.Order>(_i2.ClassType<_i1.Order>()),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.all, arguments),
-          annotations: const [
+          invoke: _$invoke2,
+          annotations: [
             _i5.PostFilter(
               "hasRole('ADMIN') or filterObject.owner == authentication.name",
             ),
@@ -173,11 +153,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'cancel',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i2.MethodSignature.of(
+            r'cancel',
+            _$target3,
             returnType: r'Future',
             parameterTypes: [r'Order'],
             parameterNames: [r'order'],
@@ -187,15 +165,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
               ),
             ],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'find',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i2.MethodSignature.of(
+            r'find',
+            _$target3,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
@@ -203,15 +176,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
               _i5.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'all',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i2.MethodSignature.of(
+            r'all',
+            _$target3,
             returnType: r'Future',
             annotations: [
               _i5.PostFilter(
@@ -219,19 +187,15 @@ _i2.BeanModule get $application => _i2.BeanModule(
               ),
             ],
             annotationTypes: [r'PostFilter'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$OrderServiceProxy ? bean._$advise(invoker) : null,
+            bean is _$OrderServiceProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
     _i2.BeanDefinition<_i1.UserSetup>(
       name: r'userSetup',
       source: r'asset:spring_security_core/example/example.dart#UserSetup',
-      types: const [_i1.UserSetup],
       create: (r) => _$UserSetupConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
@@ -256,9 +220,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
               ) as _$UserSetupConfiguration)._$users(r)
               as _i4.InMemoryUserDetailsManager),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches InMemoryUserDetailsManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i2.AopProxyFactory.pruned(),
     ),
     _i2.BeanDefinition<_i1.SecurityTour>(
       name: r'securityTour',
@@ -276,36 +238,32 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SecurityTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-      ),
+      aopProxy: const _i2.AopProxyFactory.pruned(),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.Order>(
+    const _i2.BeanIntrospection<_i1.Order>(
       className: r'Order',
       properties: [
         _i2.BeanProperty<_i1.Order>(
           r'id',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.id,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get4,
         ),
         _i2.BeanProperty<_i1.Order>(
           r'owner',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.owner,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get5,
         ),
       ],
       methods: [
         _i2.BeanMethod<_i1.Order>(
           r'toString',
           returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
+          invoke: _$invoke6,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.methods},
+      parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.methods},
     ),
   ],
 );
@@ -366,7 +324,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '9a903452',
+  fingerprint: 'a45b743a',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -247,7 +247,10 @@ abstract base class Runner extends Base<Command> {
       final output = await _generate(_beans);
       expect(
         output,
-        _has(r'class _$CommandManagerProxy implements CommandManager'),
+        _has(
+          r'class _$CommandManagerProxy with AdvisedWrapper '
+          'implements CommandManager',
+        ),
       );
       expect(output, _has(r'create: (r) => _$CommandManagerLookup(r)'));
       expect(await _compileErrors({'lib/src/service.dart': _beans}), isEmpty);
@@ -282,7 +285,7 @@ class Steps {
       expect(
         output,
         _has(r'''
-          class _$CounterProxy extends _$CounterLookup implements Advised {
+          class _$CounterProxy extends _$CounterLookup with AdvisedSubclass {
             _$CounterProxy(super.p0, super.p1);
         '''),
       );

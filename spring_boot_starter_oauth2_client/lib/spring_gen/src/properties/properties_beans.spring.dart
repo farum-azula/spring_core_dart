@@ -7,47 +7,30 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart'
-    as _i1;
+    as _i2;
 import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart'
     as _i3;
 
 class _$FeignOAuth2PropertiesProxy
-    implements _i1.FeignOAuth2Properties, _i2.Advised {
-  _$FeignOAuth2PropertiesProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.FeignOAuth2Properties {
+  _$FeignOAuth2PropertiesProxy(this._target, this.aopInvoker);
 
-  final _i1.FeignOAuth2Properties _target;
+  final _i2.FeignOAuth2Properties _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool get enabled => (this._invoker.invoke(
+  bool get enabled => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -56,7 +39,7 @@ class _$FeignOAuth2PropertiesProxy
   ) as bool);
 
   @override
-  String? get clientRegistrationId => (this._invoker.invoke(
+  String? get clientRegistrationId => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -66,7 +49,7 @@ class _$FeignOAuth2PropertiesProxy
 
   @override
   set enabled(bool value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.enabled = (args[0] as bool);
       return null;
     });
@@ -74,131 +57,201 @@ class _$FeignOAuth2PropertiesProxy
 
   @override
   set clientRegistrationId(String? value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 3, [value], (args) {
       this._target.clientRegistrationId = (args[0] as String?);
       return null;
     });
   }
 }
 
+const _$target0 = _i1.AopTarget(
+  r'FeignOAuth2Properties',
+  types: [r'FeignOAuth2Properties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.feign.oauth2')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'OAuth2ClientProperties',
+  types: [r'OAuth2ClientProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.security.oauth2.client')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get2(_i2.FeignOAuth2Properties bean) => bean.enabled;
+void _$set3(_i2.FeignOAuth2Properties bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get4(_i2.FeignOAuth2Properties bean) => bean.clientRegistrationId;
+void _$set5(_i2.FeignOAuth2Properties bean, Object? value) =>
+    bean.clientRegistrationId = (value as String?);
+_i2.FeignOAuth2Properties _$create6(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FeignOAuth2Properties();
+Object? _$get7(_i3.OAuth2ClientRegistrationProperties bean) => bean.provider;
+Object? _$get8(_i3.OAuth2ClientRegistrationProperties bean) => bean.clientId;
+Object? _$get9(_i3.OAuth2ClientRegistrationProperties bean) =>
+    bean.clientSecret;
+Object? _$get10(_i3.OAuth2ClientRegistrationProperties bean) =>
+    bean.clientAuthenticationMethod;
+Object? _$get11(_i3.OAuth2ClientRegistrationProperties bean) =>
+    bean.authorizationGrantType;
+Object? _$get12(_i3.OAuth2ClientRegistrationProperties bean) =>
+    bean.redirectUri;
+Object? _$get13(_i3.OAuth2ClientRegistrationProperties bean) => bean.scope;
+Object? _$get14(_i3.OAuth2ClientRegistrationProperties bean) => bean.clientName;
+Object? _$get15(_i3.OAuth2ClientRegistrationProperties bean) => bean.dpop;
+Object? _$get16(_i3.OAuth2ClientRegistrationProperties bean) =>
+    bean.responseMode;
+Object? _$get17(_i3.OAuth2ClientRegistrationProperties bean) =>
+    bean.nativeSignIn;
+Object? _$get18(_i3.OAuth2ClientRegistrationProperties bean) =>
+    bean.clientSecretJwt;
+_i3.OAuth2ClientRegistrationProperties _$create19(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i3.OAuth2ClientRegistrationProperties(
+  provider: named.argumentOr(#provider, null),
+  clientId: named.argumentOr(#clientId, null),
+  clientSecret: named.argumentOr(#clientSecret, null),
+  clientAuthenticationMethod: named.argumentOr(
+    #clientAuthenticationMethod,
+    null,
+  ),
+  authorizationGrantType: named.argumentOr(#authorizationGrantType, null),
+  redirectUri: named.argumentOr(#redirectUri, null),
+  scope: named.argumentOr(#scope, null),
+  clientName: named.argumentOr(#clientName, null),
+  dpop: named.argumentOr(#dpop, null),
+  responseMode: named.argumentOr(#responseMode, null),
+  nativeSignIn: named.argumentOr(#nativeSignIn, null),
+  clientSecretJwt: named.argumentOr(#clientSecretJwt, null),
+);
+Object? _$get20(_i3.OAuth2ClientSecretJwtProperties bean) => bean.issuer;
+Object? _$get21(_i3.OAuth2ClientSecretJwtProperties bean) => bean.keyId;
+Object? _$get22(_i3.OAuth2ClientSecretJwtProperties bean) => bean.privateKey;
+Object? _$get23(_i3.OAuth2ClientSecretJwtProperties bean) =>
+    bean.privateKeyLocation;
+Object? _$get24(_i3.OAuth2ClientSecretJwtProperties bean) => bean.audience;
+Object? _$get25(_i3.OAuth2ClientSecretJwtProperties bean) => bean.lifetime;
+Object? _$get26(_i3.OAuth2ClientSecretJwtProperties bean) => bean.isSet;
+_i3.OAuth2ClientSecretJwtProperties _$create27(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i3.OAuth2ClientSecretJwtProperties(
+  issuer: named.argumentOr(#issuer, null),
+  keyId: named.argumentOr(#keyId, null),
+  privateKey: named.argumentOr(#privateKey, null),
+  privateKeyLocation: named.argumentOr(#privateKeyLocation, null),
+  audience: named.argumentOr(#audience, null),
+  lifetime: named.argumentOr(#lifetime, const Duration(hours: 1)),
+);
+Object? _$get28(_i3.OAuth2ClientProviderProperties bean) =>
+    bean.authorizationUri;
+Object? _$get29(_i3.OAuth2ClientProviderProperties bean) => bean.tokenUri;
+Object? _$get30(_i3.OAuth2ClientProviderProperties bean) => bean.userInfoUri;
+Object? _$get31(_i3.OAuth2ClientProviderProperties bean) =>
+    bean.userInfoAuthenticationMethod;
+Object? _$get32(_i3.OAuth2ClientProviderProperties bean) =>
+    bean.userNameAttribute;
+Object? _$get33(_i3.OAuth2ClientProviderProperties bean) => bean.jwkSetUri;
+Object? _$get34(_i3.OAuth2ClientProviderProperties bean) => bean.issuerUri;
+_i3.OAuth2ClientProviderProperties _$create35(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i3.OAuth2ClientProviderProperties(
+  authorizationUri: named.argumentOr(#authorizationUri, null),
+  tokenUri: named.argumentOr(#tokenUri, null),
+  userInfoUri: named.argumentOr(#userInfoUri, null),
+  userInfoAuthenticationMethod: named.argumentOr(
+    #userInfoAuthenticationMethod,
+    null,
+  ),
+  userNameAttribute: named.argumentOr(#userNameAttribute, null),
+  jwkSetUri: named.argumentOr(#jwkSetUri, null),
+  issuerUri: named.argumentOr(#issuerUri, null),
+);
+Object? _$get36(_i3.OAuth2ClientProperties bean) => bean.registration;
+Object? _$get37(_i3.OAuth2ClientProperties bean) => bean.provider;
+_i3.OAuth2ClientProperties _$create38(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i3.OAuth2ClientProperties(
+  registration: named.argumentOr(#registration, const {}),
+  provider: named.argumentOr(#provider, const {}),
+);
+
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
-_i2.BeanModule get $oauth2ClientConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $oauth2ClientConfigBeans => _i1.BeanModule(
   r'oauth2ClientConfigBeans',
   [
-    _i2.BeanDefinition<_i1.FeignOAuth2Properties>(
+    _i1.BeanDefinition<_i2.FeignOAuth2Properties>(
       name: r'feignOAuth2Properties',
       source: r'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart#FeignOAuth2Properties',
-      types: const [_i1.FeignOAuth2Properties],
-      create: (r) => _i1.FeignOAuth2Properties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.feign.oauth2')],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.FeignOAuth2Properties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.feign.oauth2')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'FeignOAuth2Properties',
-            targetType: r'FeignOAuth2Properties',
-            declaringTypes: [r'FeignOAuth2Properties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FeignOAuth2Properties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.oauth2'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'clientRegistrationId',
-            declaringType: r'FeignOAuth2Properties',
-            targetType: r'FeignOAuth2Properties',
-            declaringTypes: [r'FeignOAuth2Properties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'clientRegistrationId',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FeignOAuth2Properties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.oauth2'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'FeignOAuth2Properties',
-            targetType: r'FeignOAuth2Properties',
-            declaringTypes: [r'FeignOAuth2Properties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'FeignOAuth2Properties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.oauth2'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'clientRegistrationId',
-            declaringType: r'FeignOAuth2Properties',
-            targetType: r'FeignOAuth2Properties',
-            declaringTypes: [r'FeignOAuth2Properties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'clientRegistrationId',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'FeignOAuth2Properties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.feign.oauth2'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         create: (target, invoker) => _$FeignOAuth2PropertiesProxy(
-          (target as _i1.FeignOAuth2Properties),
+          (target as _i2.FeignOAuth2Properties),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i3.OAuth2ClientProperties>(
+    _i1.BeanDefinition<_i3.OAuth2ClientProperties>(
       name: r'OAuth2ClientProperties',
       source: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart#OAuth2ClientProperties',
-      types: const [_i3.OAuth2ClientProperties],
-      create: (r) => _i2.ConstructorBound.from<_i3.OAuth2ClientProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i3.OAuth2ClientProperties>(
         r,
         r'OAuth2ClientProperties',
       ),
       annotations: const [
-        _i2.ConfigurationProperties(r'spring.security.oauth2.client'),
+        _i1.ConfigurationProperties(r'spring.security.oauth2.client'),
       ],
-      aopProxy: _i2.AopProxyFactory.unavailable(
+      aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'validate',
-            declaringType: r'OAuth2ClientProperties',
-            targetType: r'OAuth2ClientProperties',
+          _i1.MethodSignature.of(
+            r'validate',
+            _$target1,
+            declaringTypes: [],
             returnType: r'void',
-            targetTypes: [r'OAuth2ClientProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security.oauth2.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'registration',
-            declaringType: r'OAuth2ClientProperties',
-            targetType: r'OAuth2ClientProperties',
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'registration',
+            _$target1,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'OAuth2ClientProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security.oauth2.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'provider',
-            declaringType: r'OAuth2ClientProperties',
-            targetType: r'OAuth2ClientProperties',
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'provider',
+            _$target1,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'OAuth2ClientProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security.oauth2.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'OAuth2ClientProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -206,480 +259,425 @@ _i2.BeanModule get $oauth2ClientConfigBeans => _i2.BeanModule(
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.FeignOAuth2Properties>(
+    const _i1.BeanIntrospection<_i2.FeignOAuth2Properties>(
       className: r'FeignOAuth2Properties',
       properties: [
-        _i2.BeanProperty<_i1.FeignOAuth2Properties>(
+        _i1.BeanProperty<_i2.FeignOAuth2Properties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get2,
+          set: _$set3,
         ),
-        _i2.BeanProperty<_i1.FeignOAuth2Properties>(
+        _i1.BeanProperty<_i2.FeignOAuth2Properties>(
           r'clientRegistrationId',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.clientRegistrationId,
-          set: (bean, value) => bean.clientRegistrationId = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get4,
+          set: _$set5,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.feign.oauth2')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.FeignOAuth2Properties(),
-      constructor: _i2.BeanConstructor<_i1.FeignOAuth2Properties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.feign.oauth2')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FeignOAuth2Properties.new,
+      constructor: _i1.BeanConstructor<_i2.FeignOAuth2Properties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.FeignOAuth2Properties.new, positional, named)
-                as _i1.FeignOAuth2Properties),
+        create: _$create6,
       ),
     ),
-    _i2.BeanIntrospection<_i3.OAuth2ClientRegistrationProperties>(
+    const _i1.BeanIntrospection<_i3.OAuth2ClientRegistrationProperties>(
       className: r'OAuth2ClientRegistrationProperties',
       properties: [
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'provider',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.provider,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get7,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'clientId',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.clientId,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get8,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'clientSecret',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.clientSecret,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get9,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'clientAuthenticationMethod',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.clientAuthenticationMethod,
-          annotations: const [
-            _i2.PropertyValues([
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get10,
+          annotations: [
+            _i1.PropertyValues([
               r'client_secret_basic',
               r'client_secret_post',
               r'none',
             ]),
           ],
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'authorizationGrantType',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.authorizationGrantType,
-          annotations: const [
-            _i2.PropertyValues([r'authorization_code', r'client_credentials']),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get11,
+          annotations: [
+            _i1.PropertyValues([r'authorization_code', r'client_credentials']),
           ],
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'redirectUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.redirectUri,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get12,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'scope',
-          type: Set<String>,
           nullable: true,
-          typeInfo: const _i2.SetType<String>(
-            _i2.ClassType<String>(),
+          typeInfo: _i1.SetType<String>(
+            _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.scope,
+          get: _$get13,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'clientName',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.clientName,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get14,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'dpop',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.dpop,
-          annotations: const [
-            _i2.PropertyValues([r'auto', r'true', r'false']),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get15,
+          annotations: [
+            _i1.PropertyValues([r'auto', r'true', r'false']),
           ],
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'responseMode',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.responseMode,
-          annotations: const [
-            _i2.PropertyValues([r'query', r'form_post']),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get16,
+          annotations: [
+            _i1.PropertyValues([r'query', r'form_post']),
           ],
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'nativeSignIn',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.nativeSignIn,
-          annotations: const [
-            _i2.PropertyValues([r'none', r'apple']),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get17,
+          annotations: [
+            _i1.PropertyValues([r'none', r'apple']),
           ],
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientRegistrationProperties>(
           r'clientSecretJwt',
-          type: _i3.OAuth2ClientSecretJwtProperties,
           nullable: true,
-          typeInfo: const _i2.ClassType<_i3.OAuth2ClientSecretJwtProperties>(
+          typeInfo: _i1.ClassType<_i3.OAuth2ClientSecretJwtProperties>(
             nullable: true,
           ),
-          get: (bean) => bean.clientSecretJwt,
+          get: _$get18,
         ),
       ],
-      instantiate: () => _i3.OAuth2ClientRegistrationProperties(),
-      constructor: _i2.BeanConstructor<_i3.OAuth2ClientRegistrationProperties>(
+      instantiate: _i3.OAuth2ClientRegistrationProperties.new,
+      constructor: _i1.BeanConstructor<_i3.OAuth2ClientRegistrationProperties>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'provider',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #provider,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'clientId',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #clientId,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'clientSecret',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #clientSecret,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'clientAuthenticationMethod',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #clientAuthenticationMethod,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'authorizationGrantType',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #authorizationGrantType,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'redirectUri',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #redirectUri,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'scope',
-            type: const _i2.SetType<String>(
-              _i2.ClassType<String>(),
-              nullable: true,
-            ),
+            type: _i1.SetType<String>(_i1.ClassType<String>(), nullable: true),
             symbol: #scope,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'clientName',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #clientName,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'dpop',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #dpop,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'responseMode',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #responseMode,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'nativeSignIn',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #nativeSignIn,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'clientSecretJwt',
-            type: const _i2.ClassType<_i3.OAuth2ClientSecretJwtProperties>(
+            type: _i1.ClassType<_i3.OAuth2ClientSecretJwtProperties>(
               nullable: true,
             ),
             symbol: #clientSecretJwt,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i3.OAuth2ClientRegistrationProperties.new,
-          positional,
-          named,
-        ) as _i3.OAuth2ClientRegistrationProperties),
+        create: _$create19,
       ),
     ),
-    _i2.BeanIntrospection<_i3.OAuth2ClientSecretJwtProperties>(
+    const _i1.BeanIntrospection<_i3.OAuth2ClientSecretJwtProperties>(
       className: r'OAuth2ClientSecretJwtProperties',
       properties: [
-        _i2.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
           r'issuer',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.issuer,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get20,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
           r'keyId',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.keyId,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get21,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
           r'privateKey',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.privateKey,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get22,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
           r'privateKeyLocation',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.privateKeyLocation,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get23,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
           r'audience',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.audience,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get24,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
           r'lifetime',
-          type: Duration,
-          typeInfo: const _i2.ClassType<Duration>(),
-          get: (bean) => bean.lifetime,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get25,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientSecretJwtProperties>(
           r'isSet',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
-          get: (bean) => bean.isSet,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get26,
         ),
       ],
-      instantiate: () => _i3.OAuth2ClientSecretJwtProperties(),
-      constructor: _i2.BeanConstructor<_i3.OAuth2ClientSecretJwtProperties>(
+      instantiate: _i3.OAuth2ClientSecretJwtProperties.new,
+      constructor: _i1.BeanConstructor<_i3.OAuth2ClientSecretJwtProperties>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'issuer',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #issuer,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'keyId',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #keyId,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'privateKey',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #privateKey,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'privateKeyLocation',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #privateKeyLocation,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'audience',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #audience,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'lifetime',
-            type: const _i2.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #lifetime,
             hasDefaultValue: true,
-            defaultValue: const Duration(hours: 1),
+            defaultValue: Duration(hours: 1),
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i3.OAuth2ClientSecretJwtProperties.new,
-          positional,
-          named,
-        ) as _i3.OAuth2ClientSecretJwtProperties),
+        create: _$create27,
       ),
     ),
-    _i2.BeanIntrospection<_i3.OAuth2ClientProviderProperties>(
+    const _i1.BeanIntrospection<_i3.OAuth2ClientProviderProperties>(
       className: r'OAuth2ClientProviderProperties',
       properties: [
-        _i2.BeanProperty<_i3.OAuth2ClientProviderProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProviderProperties>(
           r'authorizationUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.authorizationUri,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get28,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientProviderProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProviderProperties>(
           r'tokenUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.tokenUri,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get29,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientProviderProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProviderProperties>(
           r'userInfoUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.userInfoUri,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get30,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientProviderProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProviderProperties>(
           r'userInfoAuthenticationMethod',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.userInfoAuthenticationMethod,
-          annotations: const [
-            _i2.PropertyValues([r'header', r'form', r'query']),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get31,
+          annotations: [
+            _i1.PropertyValues([r'header', r'form', r'query']),
           ],
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientProviderProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProviderProperties>(
           r'userNameAttribute',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.userNameAttribute,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get32,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientProviderProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProviderProperties>(
           r'jwkSetUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.jwkSetUri,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get33,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientProviderProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProviderProperties>(
           r'issuerUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.issuerUri,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get34,
         ),
       ],
-      instantiate: () => _i3.OAuth2ClientProviderProperties(),
-      constructor: _i2.BeanConstructor<_i3.OAuth2ClientProviderProperties>(
+      instantiate: _i3.OAuth2ClientProviderProperties.new,
+      constructor: _i1.BeanConstructor<_i3.OAuth2ClientProviderProperties>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'authorizationUri',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #authorizationUri,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'tokenUri',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #tokenUri,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'userInfoUri',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #userInfoUri,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'userInfoAuthenticationMethod',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #userInfoAuthenticationMethod,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'userNameAttribute',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #userNameAttribute,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'jwkSetUri',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #jwkSetUri,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'issuerUri',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #issuerUri,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i3.OAuth2ClientProviderProperties.new,
-          positional,
-          named,
-        ) as _i3.OAuth2ClientProviderProperties),
+        create: _$create35,
       ),
     ),
-    _i2.BeanIntrospection<_i3.OAuth2ClientProperties>(
+    const _i1.BeanIntrospection<_i3.OAuth2ClientProperties>(
       className: r'OAuth2ClientProperties',
       properties: [
-        _i2.BeanProperty<_i3.OAuth2ClientProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProperties>(
           r'registration',
-          type: Map<String, _i3.OAuth2ClientRegistrationProperties>,
-          typeInfo:
-              const _i2.MapType<String, _i3.OAuth2ClientRegistrationProperties>(
-                _i2.ClassType<String>(),
-                _i2.ClassType<_i3.OAuth2ClientRegistrationProperties>(),
-              ),
-          get: (bean) => bean.registration,
+          typeInfo: _i1.MapType<String, _i3.OAuth2ClientRegistrationProperties>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<_i3.OAuth2ClientRegistrationProperties>(),
+          ),
+          get: _$get36,
         ),
-        _i2.BeanProperty<_i3.OAuth2ClientProperties>(
+        _i1.BeanProperty<_i3.OAuth2ClientProperties>(
           r'provider',
-          type: Map<String, _i3.OAuth2ClientProviderProperties>,
-          typeInfo:
-              const _i2.MapType<String, _i3.OAuth2ClientProviderProperties>(
-                _i2.ClassType<String>(),
-                _i2.ClassType<_i3.OAuth2ClientProviderProperties>(),
-              ),
-          get: (bean) => bean.provider,
+          typeInfo: _i1.MapType<String, _i3.OAuth2ClientProviderProperties>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<_i3.OAuth2ClientProviderProperties>(),
+          ),
+          get: _$get37,
         ),
       ],
-      annotations: const [
-        _i2.ConfigurationProperties(r'spring.security.oauth2.client'),
+      annotations: [
+        _i1.ConfigurationProperties(r'spring.security.oauth2.client'),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i3.OAuth2ClientProperties(),
-      constructor: _i2.BeanConstructor<_i3.OAuth2ClientProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i3.OAuth2ClientProperties.new,
+      constructor: _i1.BeanConstructor<_i3.OAuth2ClientProperties>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'registration',
-            type:
-                const _i2.MapType<
-                  String,
-                  _i3.OAuth2ClientRegistrationProperties
-                >(
-                  _i2.ClassType<String>(),
-                  _i2.ClassType<_i3.OAuth2ClientRegistrationProperties>(),
-                ),
+            type: _i1.MapType<String, _i3.OAuth2ClientRegistrationProperties>(
+              _i1.ClassType<String>(),
+              _i1.ClassType<_i3.OAuth2ClientRegistrationProperties>(),
+            ),
             symbol: #registration,
             hasDefaultValue: true,
-            defaultValue: const {},
+            defaultValue: {},
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'provider',
-            type: const _i2.MapType<String, _i3.OAuth2ClientProviderProperties>(
-              _i2.ClassType<String>(),
-              _i2.ClassType<_i3.OAuth2ClientProviderProperties>(),
+            type: _i1.MapType<String, _i3.OAuth2ClientProviderProperties>(
+              _i1.ClassType<String>(),
+              _i1.ClassType<_i3.OAuth2ClientProviderProperties>(),
             ),
             symbol: #provider,
             hasDefaultValue: true,
-            defaultValue: const {},
+            defaultValue: {},
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i3.OAuth2ClientProperties.new, positional, named)
-                as _i3.OAuth2ClientProperties),
+        create: _$create38,
       ),
     ),
   ],
