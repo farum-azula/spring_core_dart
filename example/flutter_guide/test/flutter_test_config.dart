@@ -12,8 +12,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Share of differing pixels a golden may have and still match.
-const goldenTolerance = 0.005;
+/// Share of differing pixels a golden may have and still match. The
+/// goldens are made on one Mac and compared on GitHub's macOS runner: the
+/// letters are smoothed a little differently there, about half a percent on
+/// a page that is mostly text; a moved widget or a changed color differs by
+/// more.
+const goldenTolerance = 0.01;
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   await _loadMaterialFonts();
