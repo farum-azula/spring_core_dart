@@ -1,9 +1,13 @@
-## 0.6.3
+## Unreleased
 
 ### Changes
 
 - For smaller generated code (all additive; code generated before keeps compiling): `BeanProperty`, `BeanMethod`, `BeanConstructor` and `BeanIntrospection` have const constructors (their lists are kept as given, no longer copied; an introspection indexes its properties and methods by name on first use), and `BeanProperty.type` may be left out when `typeInfo` is given. New `AdvisedWrapper` and `AdvisedSubclass` mixins implement `Advised` for generated proxies through `aopInvoker`. New `AopTarget` and `MethodSignature.of(name, target, ...)`: the bean class part of the signatures, shared by a proxy's members; the `targetType`, `targetTypes`, `targetAnnotations`, `targetAnnotationTypes`, `declaringType` and `declaringTypes` of `MethodSignature` are getters now (same values). `AopProxyFactory.pruned()` takes an optional `reason`, `AopProxyFactory.prunedReason` by default. `NamedArguments.argumentOr` / `PositionalArguments.argumentOr`: an argument as `Function.apply` would pass it, or the parameter's default.
 - `AopProxyFactory.deferred(signatures:)`: a bean of a library package whose proxy class the application writes; `BeanModule.aopProxies` (by definition `source`) brings those factories, and the context puts each in its definition's place, whichever module loads first. `BeanDefinition.aopProxy` is no longer final for that. Without the factory, advice matching the bean fails the startup with `AopProxyFactory.deferredReason`.
+
+## 0.6.3
+
+### Changes
 
 - Test: `core_properties_drift_test.dart` keeps the properties classes of `core_properties.dart` (`spring.config.*`, `spring.profiles.*`, `spring.main.cloud-platform`) and the code that reads them by name together: same keys, same defaults. The generated metadata now names the map keys `spring.profiles.group.*`.
 - Removed: `classpath:` and `classpath*:` are gone (use `resources:` and `resources*:`); a `classpath:` location is an unsupported protocol like any other unknown prefix. `ClasspathResources.migrate`, `migrateOptional`, `legacyPrefix`, `legacyAllPrefix` and `resetLegacyWarnings` are gone with the warning.
