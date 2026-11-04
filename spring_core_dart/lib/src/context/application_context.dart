@@ -924,10 +924,12 @@ class AnnotationConfigApplicationContext
     onRefresh();
     _registerListeners();
     _factory.validateBeanGraph();
-    // A starter's bean whose proxy class no module brought fails now if
-    // advice matches it, also when it is lazy.
-    _autoProxyCreator?.checkDeferredProxies();
     _finishBeanFactoryInitialization();
+    // A starter's bean whose proxy class no module brought fails now if
+    // advice matches it, also when it is lazy. After the application's
+    // conversionService is set: the advisors it creates, and their
+    // dependencies, convert their @Value with it.
+    _autoProxyCreator?.checkDeferredProxies();
   }
 
   // A failed refresh: like Spring's cancelRefresh, but the lifecycle beans

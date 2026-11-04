@@ -712,6 +712,43 @@ void main() {
         without.close();
       });
 
+      test("the advisors the check creates convert with the application's "
+          'conversionService', () {
+        _Rate? rate;
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('application', [
+            BeanDefinition<DefaultConversionService>(
+              name: 'conversionService',
+              types: const [DefaultConversionService, ConversionService],
+              create: (_) =>
+                  DefaultConversionService()
+                    ..addConverter<String, _Rate>((s) => _Rate(int.parse(s))),
+            ),
+            // The advisor's dependency reads a value of a type only that
+            // service converts.
+            BeanDefinition<_RateHolder>(
+              name: 'rateHolder',
+              create: (r) => _RateHolder(r.value<_Rate>('7')),
+            ),
+            BeanDefinition<DefaultPointcutAdvisor>(
+              name: 'rated',
+              types: const [DefaultPointcutAdvisor, PointcutAdvisor, Advisor],
+              create: (r) {
+                rate = r.getBean<_RateHolder>().rate;
+                return DefaultPointcutAdvisor(
+                  ExpressionPointcut('bean(nothing)'),
+                  _Upper(),
+                );
+              },
+            ),
+          ]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(rate?.value, 7);
+        expect(context.getBean<Service>(), isNot(isA<Advised>()));
+        context.close();
+      });
+
       test('without it and without matching advice, the bean is plain', () {
         final context = AnnotationConfigApplicationContext([
           library(),
@@ -835,6 +872,16 @@ void main() {
       expect(seen, [10]);
     });
   });
+}
+
+class _Rate {
+  const _Rate(this.value);
+  final int value;
+}
+
+class _RateHolder {
+  const _RateHolder(this.rate);
+  final _Rate rate;
 }
 
 class _Upper implements MethodInterceptor {

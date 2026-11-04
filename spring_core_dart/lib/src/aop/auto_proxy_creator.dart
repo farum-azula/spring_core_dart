@@ -136,8 +136,9 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
   /// starter's bean whose proxy class no module of the context brought
   /// (a context built without the application's generated module).
   ///
-  /// The context calls it before it creates the singletons, so a lazy bean
-  /// fails at startup too, not on first use. Nothing is created when no
+  /// The context calls it before it creates the singletons (after it set
+  /// the `conversionService`), so a lazy bean fails at startup too, not on
+  /// first use. Nothing is created when no
   /// such placeholder is left.
   void checkDeferredProxies() {
     final deferred = [
