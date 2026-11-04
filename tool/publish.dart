@@ -50,7 +50,8 @@ Future<void> main(List<String> args) async {
   // On GitHub the tag must match the version in the pubspecs; locally the
   // checkout must be that tag (never publish unreleased code from main).
   final ref = Platform.environment['GITHUB_REF_NAME'];
-  if (ref != null && ref != 'v$version') {
+  // A dry run (CI, on every push) validates from any branch.
+  if (ref != null && !dryRun && ref != 'v$version') {
     stderr.writeln('Tag $ref does not match the version $version.');
     exit(1);
   }
