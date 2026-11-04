@@ -625,14 +625,19 @@ void main() {
 
     group('a proxy left to the application (AopProxyFactory.deferred)', () {
       const source = 'package:lib/src/prices.dart#PriceService';
-      BeanDefinition<PriceService> deferred() => BeanDefinition<PriceService>(
-        name: 'priceService',
-        source: source,
-        types: const [PriceService, Service],
-        aopProxy: AopProxyFactory.deferred(signatures: ServiceProxy.signatures),
-        create: (_) => PriceService(),
-      );
-      BeanModule library() => BeanModule('library', [deferred()]);
+      BeanDefinition<PriceService> deferred({bool lazy = false}) =>
+          BeanDefinition<PriceService>(
+            name: 'priceService',
+            source: source,
+            types: const [PriceService, Service],
+            lazy: lazy,
+            aopProxy: AopProxyFactory.deferred(
+              signatures: ServiceProxy.signatures,
+            ),
+            create: (_) => PriceService(),
+          );
+      BeanModule library({bool lazy = false}) =>
+          BeanModule('library', [deferred(lazy: lazy)]);
       BeanModule application() =>
           BeanModule('application', [aspect()], aopProxies: {source: factory});
 
@@ -666,6 +671,45 @@ void main() {
             ),
           ),
         );
+      });
+
+      test('without it, a lazy bean fails at startup, not on first use', () {
+        final context = AnnotationConfigApplicationContext([
+          library(lazy: true),
+          BeanModule('aspects', [aspect()]),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(
+          context.refresh,
+          throwsA(
+            isA<AopConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains("bean 'priceService'"),
+                contains('ApplicationContextRunner'),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('one context taking the factory leaves the definition as it is', () {
+        // The module is shared by both contexts, as a top-level module of
+        // a starter is in one process.
+        final shared = library();
+        AnnotationConfigApplicationContext([
+            shared,
+            application(),
+          ], environment: StandardEnvironment(systemEnvironment: {}))
+          ..refresh()
+          ..close();
+        expect(shared.definitions.single.aopProxy!.isDeferred, isTrue);
+        final without = AnnotationConfigApplicationContext([
+          shared,
+          BeanModule('aspects', [aspect(expression: 'bean(nothing)')]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(without.getBean<Service>(), isNot(isA<Advised>()));
+        without.close();
       });
 
       test('without it and without matching advice, the bean is plain', () {

@@ -148,6 +148,30 @@ void main() {
       );
     });
 
+    test('gives the AOT measures 1% of headroom, not the sources', () {
+      expect(
+        checkBudget(report, {
+          'sources': {'generatedLines': 100},
+          'apps': {
+            'a': {'generatedInstructions': 50, 'snapshotBytes': 990},
+          },
+        }),
+        isEmpty,
+      );
+      expect(
+        checkBudget(report, {
+          'sources': {'generatedLines': 99},
+          'apps': {
+            'a': {'generatedInstructions': 50, 'snapshotBytes': 989},
+          },
+        }),
+        [
+          'sources.generatedLines: 100 > 99 (+1)',
+          'apps.a.snapshotBytes: 1000 > 989 (+11)',
+        ],
+      );
+    });
+
     test('reports what exceeds it', () {
       expect(
         checkBudget(report, {

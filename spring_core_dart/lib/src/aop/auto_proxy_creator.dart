@@ -1,8 +1,10 @@
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 import 'package:spring_core_dart/src/aop/aspect_advisors.dart';
+import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
+import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
 import 'package:spring_core_dart/src/context/application_context.dart';
@@ -118,6 +120,50 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
         name,
   ];
 
+  // The proxy factory the context uses for [definition] (the one the
+  // application's module brings for a starter's bean, see
+  // `BeanModule.aopProxies`).
+  AopProxyFactory? _proxyFactoryOf(BeanDefinition<Object> definition) =>
+      switch (beanFactory) {
+        final DefaultListableBeanFactory factory => factory.aopProxyOf(
+          definition,
+        ),
+        _ => definition.aopProxy,
+      };
+
+  /// Throws an [AopConfigException] when advice matches a bean whose proxy
+  /// factory is still an `AopProxyFactory.deferred` placeholder: a
+  /// starter's bean whose proxy class no module of the context brought
+  /// (a context built without the application's generated module).
+  ///
+  /// The context calls it before it creates the singletons, so a lazy bean
+  /// fails at startup too, not on first use. Nothing is created when no
+  /// such placeholder is left.
+  void checkDeferredProxies() {
+    final deferred = [
+      for (final name in beanFactory.beanDefinitionNames)
+        if (beanFactory.getBeanDefinition(name) case final definition
+            when definition.aspect == null &&
+                (_proxyFactoryOf(definition)?.isDeferred ?? false))
+          (name, definition),
+    ];
+    for (final (name, definition) in deferred) {
+      final aliases = [
+        ...beanFactory.getAliases(name),
+        ...definition.qualifiers,
+      ];
+      final eligible = _proxyFactoryOf(
+        definition,
+      )!.eligibleAdvisors(advisors, name, beanAliases: aliases);
+      if (eligible.isNotEmpty) {
+        throw AopConfigException(
+          "Advice matches bean '$name' (${eligible.first}), but it cannot "
+          'be proxied: ${AopProxyFactory.deferredReason}',
+        );
+      }
+    }
+  }
+
   /// Returns the proxy of [bean] when an advisor matches one of its
   /// members, or a `@DeclareParents` introduction of a registered aspect
   /// applies to it; else [bean] itself.
@@ -132,7 +178,7 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
       return bean;
     }
     final definition = beanFactory.getBeanDefinition(beanName);
-    final proxyFactory = definition.aopProxy;
+    final proxyFactory = _proxyFactoryOf(definition);
     if (proxyFactory == null ||
         definition.aspect != null ||
         bean is Advisor ||

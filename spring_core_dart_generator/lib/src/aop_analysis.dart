@@ -189,8 +189,17 @@ void analyzeAop(
       bean.advisorPointcut?.annotations ?? const {},
     );
   }
-  if (defer && complete && !unknownAdvisor && advisors.isEmpty) {
-    _defer(module, expressions);
+  // Deferred only knowing all the advice of the package and of the
+  // auto-configurations it builds on: a context made of the starter's
+  // modules alone (an `ApplicationContextRunner`) has no proxy class for
+  // the bean, so advice of them must not match it.
+  if (defer &&
+      complete &&
+      !unknownAdvisor &&
+      advisors.isEmpty &&
+      !(foreign?.unknown ?? false) &&
+      !(foreign?.advisors ?? false)) {
+    _defer(module, expressions, foreign);
   }
   if (!prune ||
       foreign == null ||
@@ -210,7 +219,7 @@ void analyzeAop(
           (pointcut) => pointcut.matchesBean(
             _signature(proxy, member),
             foreignProxy.beanName,
-            const [],
+            foreignProxy.beanNames,
           ),
         ))
           member,
@@ -267,7 +276,11 @@ void analyzeAop(
 // annotation on the class, its members or their parameters is one an
 // advisor may match ([_isInert]), and none of the module's own
 // [expressions] matches a member.
-void _defer(ModuleModel module, List<ExpressionPointcut> expressions) {
+void _defer(
+  ModuleModel module,
+  List<ExpressionPointcut> expressions,
+  ForeignAdvice? foreign,
+) {
   for (final bean in module.beans) {
     final proxy = bean.proxy;
     if (proxy == null ||
@@ -287,7 +300,12 @@ void _defer(ModuleModel module, List<ExpressionPointcut> expressions) {
         for (final parameter in member.parameters) ...parameter.annotations,
       ],
     ];
-    if (!annotations.every(_isInert)) {
+    if (!annotations.every(_isInert) ||
+        (foreign != null &&
+            (_classMayBeAdvised(proxy, foreign) ||
+                proxy.members.any(
+                  (member) => _memberMayBeAdvised(proxy, member, foreign),
+                )))) {
       continue;
     }
     final names = [...bean.aliases, ...bean.qualifiers];

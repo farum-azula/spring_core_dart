@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:spring_core_dart/src/aop/aop_context.dart'
     show callThroughProxyReference;
+import 'package:spring_core_dart/src/aop/proxy.dart' show AopProxyFactory;
 import 'package:spring_core_dart/src/beans/aware.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
@@ -111,6 +112,20 @@ class DefaultListableBeanFactory
   @override
   ConversionService conversionService = DefaultConversionService.sharedInstance;
 
+  /// The proxy factory of [definition] in this factory: the one
+  /// [useAopProxy] gave it, else its own `aopProxy`.
+  AopProxyFactory? aopProxyOf(BeanDefinition<Object> definition) =>
+      _aopProxies[definition] ?? definition.aopProxy;
+
+  /// Makes [factory] stand in for the `AopProxyFactory.deferred`
+  /// placeholder of [definition] in this factory (a starter's bean whose
+  /// proxy class the application's module brings). The context calls it
+  /// for `BeanModule.aopProxies`.
+  void useAopProxy(
+    BeanDefinition<Object> definition,
+    AopProxyFactory factory,
+  ) => _aopProxies[definition] = factory;
+
   /// Turns `@Value` strings into [Resource]s for points of type `Resource`
   /// (like Spring's `ResourceEditor`), so the context's protocol resolvers
   /// and asset loaders apply. The application context sets itself; `null`
@@ -122,6 +137,10 @@ class DefaultListableBeanFactory
 
   BeanFactory? _parent;
   final _definitions = <String, BeanDefinition<Object>>{};
+  // The factories that stand in for `AopProxyFactory.deferred` placeholders
+  // in this factory (the definitions themselves may be shared by other
+  // contexts of the process).
+  final _aopProxies = Map<BeanDefinition<Object>, AopProxyFactory>.identity();
   // Synthetic definitions of the objects of registerSingleton: they make
   // the objects visible to lookups by type, but are not bean definitions
   // (like Spring's manual singletons).

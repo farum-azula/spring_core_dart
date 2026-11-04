@@ -411,10 +411,12 @@ final class AopProxyFactory {
   /// The [unavailableReason] of [AopProxyFactory.deferred].
   static const deferredReason =
       'its class is declared in a library package, whose build writes no '
-      'proxy class for it: the build of the application writes it when one '
-      'of its pointcuts may match the bean. Build the application with its '
-      '@SpringBootApplication (or with the option aop_prune: false), or '
-      'declare the bean yourself (a @Bean method) to have it proxied.';
+      'proxy class for it; the build of the application writes it when one '
+      'of its pointcuts may match the bean. A context built without the '
+      "application's generated module (ApplicationContextRunner, a "
+      'hand-written list of modules) has no such class: build the '
+      'application with its @SpringBootApplication (or with the option '
+      'aop_prune: false), or declare the bean yourself with a @Bean method.';
 
   /// The [unavailableReason] of [AopProxyFactory.pruned] when the build
   /// gave none (it writes none, so release builds carry one copy of it).

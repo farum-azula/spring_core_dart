@@ -146,6 +146,9 @@ BeanModule _withDefinitions(
   configurablePreDestroy: module.configurablePreDestroy,
   introspections: module.introspections,
   resources: module.resources,
+  typeTests: module.typeTests,
+  typeDepths: module.typeDepths,
+  aopProxies: module.aopProxies,
 );
 
 final class _Entry {

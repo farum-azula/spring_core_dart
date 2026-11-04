@@ -3002,6 +3002,9 @@ abstract class Crud<E> {
   @Handles()
   List<E> all({int limit = 10}) => [];
 
+  @Handles()
+  Map<String, List<E>> grouped() => {};
+
   E? current;
 }
 
@@ -3019,6 +3022,8 @@ class Ticker {
     List<int> ids = const <int>[],
     Map<String, int> named = const <String, int>{},
     Set<String> few = const <String>{'a'},
+    Map<Object, int> keyed = const <Object, int>{1: 2},
+    Map<String, Object> filters = const <String, Object>{'year': 2026},
   }) {}
 }
 
@@ -3029,6 +3034,7 @@ class Limits {
   final List<int> ids;
   double rate = double.nan;
   List<String> tags = const <String>[];
+  List<num> limits = const [1];
 }
 ''';
 
@@ -3049,6 +3055,10 @@ class Limits {
           ),
         );
         expect(output, isNot(contains('asE)')));
+        // Its free type parameters are unknown types, at any depth.
+        expect(output, _has('returnType: List<Object?>'));
+        expect(output, _has('returnType: Map<String, List<Object?>>'));
+        expect(output, isNot(contains('returnType: List<dynamic>')));
       });
 
       test('defaults that are no literals keep their meaning', () async {
@@ -3068,6 +3078,21 @@ class Limits {
         expect(output, _has("named.argumentOr(#few, const {r'a'})"));
         expect(output, _has('initialValue: double.nan'));
         expect(output, _has('initialValue: <String>[]'));
+        // The field's type, not the elements', gives that of a non-empty
+        // initial value.
+        expect(output, _has('initialValue: <num>[1]'));
+        // Both type arguments of a map, or code_builder writes
+        // `<Object, dynamic>` and `<String, Object>` none.
+        expect(
+          output,
+          _has('named.argumentOr(#keyed, const <Object, int>{1: 2})'),
+        );
+        expect(
+          output,
+          _has(
+            "named.argumentOr(#filters, const <String, Object>{r'year': 2026})",
+          ),
+        );
         expect(output, _has('defaultValue: double.infinity'));
         expect(output, isNot(contains('Infinity,')));
         expect(output, isNot(contains('NaN')));

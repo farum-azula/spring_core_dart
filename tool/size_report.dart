@@ -9,7 +9,9 @@
 //
 // With `--budget` it exits with 1 when a measure exceeds its maximum in the
 // budget file (`sources.generatedLines`, and for each app
-// `apps.<name>.generatedInstructions` and `apps.<name>.snapshotBytes`).
+// `apps.<name>.generatedInstructions` and `apps.<name>.snapshotBytes`,
+// these with a headroom of 1%: the SDK build and the machine move them by a
+// few hundred bytes).
 // The AOT sizes come from `dart compile aot-snapshot` with the VM's
 // `--print-instructions-sizes-to`, in a temporary directory deleted
 // afterwards.
@@ -285,16 +287,21 @@ final class AppReport {
   };
 }
 
+/// How much the AOT measures may exceed their budget: they vary by a few
+/// hundred bytes from one machine (or SDK build) to another, unlike the
+/// source lines, which are checked exactly.
+const aotHeadroom = 1.01;
+
 /// What exceeds [budget] in [report] (the JSON of a full report: `sources`
 /// and `apps`); empty when nothing does. Measures absent from [report]
-/// (apps not compiled) are not checked.
+/// (apps not compiled) are not checked; the AOT ones have [aotHeadroom].
 List<String> checkBudget(
   Map<String, Object?> report,
   Map<String, Object?> budget,
 ) {
   final exceeded = <String>[];
-  void check(String name, Object? actual, Object? max) {
-    if (actual is num && max is num && actual > max) {
+  void check(String name, Object? actual, Object? max, {num headroom = 1}) {
+    if (actual is num && max is num && actual > (max * headroom).round()) {
       exceeded.add('$name: $actual > $max (+${actual - max})');
     }
   }
@@ -317,7 +324,12 @@ List<String> checkBudget(
       continue;
     }
     for (final measure in ['generatedInstructions', 'snapshotBytes']) {
-      check('apps.$name.$measure', actual[measure], max[measure]);
+      check(
+        'apps.$name.$measure',
+        actual[measure],
+        max[measure],
+        headroom: aotHeadroom,
+      );
     }
   }
   return exceeded;

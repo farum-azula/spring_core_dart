@@ -1800,6 +1800,7 @@ class ForeignProxyModel {
     required this.beanName,
     required this.proxy,
     required this.element,
+    this.beanNames = const [],
   });
 
   /// The `source` of the bean's definition, the key of its factory.
@@ -1807,6 +1808,10 @@ class ForeignProxyModel {
 
   /// The bean's name, for `bean(...)` pointcuts.
   final String beanName;
+
+  /// The bean's aliases and qualifiers, which `bean(...)` pointcuts match
+  /// too.
+  final List<String> beanNames;
 
   /// The proxy to write.
   final ProxyModel proxy;

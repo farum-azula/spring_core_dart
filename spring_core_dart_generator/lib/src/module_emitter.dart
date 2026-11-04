@@ -141,12 +141,15 @@ class ModuleEmitter {
 
   /// Whether the module (a `lib/` module of a library package) leaves to
   /// the application the proxy classes only its aspects can match
-  /// (`AopProxyFactory.deferred`, see [analyzeAop]).
+  /// (`AopProxyFactory.deferred`, see [analyzeAop]): only when
+  /// [foreignAdvice], the advice of the package's other modules and of the
+  /// auto-configurations, cannot match them either.
   final bool deferProxies;
 
-  /// The aspects and advisors of the application's other modules. Only the
-  /// `@SpringBootApplication` output knows them all and passes them; when
-  /// `null`, no proxy is pruned (see [analyzeAop]).
+  /// The aspects and advisors of the application's other modules (of the
+  /// package's, for [deferProxies]). Only the `@SpringBootApplication`
+  /// output knows them all and passes them; when `null`, no proxy is
+  /// pruned (see [analyzeAop]).
   final ForeignAdvice? foreignAdvice;
 
   /// Whether to skip the proxy classes of beans that no pointcut of the
@@ -993,28 +996,24 @@ class ModuleEmitter {
     return (positionalArguments, namedArguments);
   }
 
-  // [type] as [_type] writes it, its free type parameters (see
-  // [_hasFreeTypeParameter]) written as `dynamic`: `List<E>` of a method
-  // of `Crud<E>` described for `BookCrud` is a `List<dynamic>`.
-  TypeReference _typeWithoutFreeParameters(
-    InterfaceType type,
-    Element element,
-  ) {
-    if (!_hasFreeTypeParameter(type)) {
-      return _type(type, element);
-    }
-    return _type(type, element).rebuild(
+  // [type] as [_anyType] writes it, its free type parameters (see
+  // [_hasFreeTypeParameter]) written as `Object?`, at any depth: `List<E>`
+  // of a method of `Crud<E>` described for `BookCrud` is a
+  // `List<Object?>`, `Map<String, List<E>>` a
+  // `Map<String, List<Object?>>`. A function or record type that uses one
+  // is an `Object?` as a whole.
+  Reference _withoutFree(DartType type, Element element) => switch (type) {
+    _ when !_hasFreeTypeParameter(type) => _anyType(type, element),
+    InterfaceType() => _type(type, element).rebuild(
       (t) => t
         ..types.clear()
         ..types.addAll([
           for (final argument in type.typeArguments)
-            if (_hasFreeTypeParameter(argument))
-              refer('dynamic')
-            else
-              _anyType(argument, element),
+            _withoutFree(argument, element),
         ]),
-    );
-  }
+    ),
+    _ => _objectOrNull,
+  };
 
   // Whether [type] names a type parameter the generated code has no name
   // for: one of the class that declares a method of a generic base class
@@ -1098,13 +1097,13 @@ class ModuleEmitter {
           [_str(method.name)],
           {
             if (method.returnType case final returnType?)
-              'returnType': _typeWithoutFreeParameters(returnType, element),
+              'returnType': _withoutFree(returnType, element),
             if (method.parameterTypes.isNotEmpty)
               // Not const when a type uses a captured type parameter.
               'parameterTypes':
                   (_captured.isEmpty ? literalConstList : literalList)([
                     for (final t in method.parameterTypes)
-                      _typeWithoutFreeParameters(t, element),
+                      _withoutFree(t, element),
                   ]),
             // `Function.apply` checks the arguments an expression passes
             // (their number and types) as the method declares them.
@@ -1361,7 +1360,7 @@ class ModuleEmitter {
           if (_isDynamicInfo(argument))
             refer('dynamic')
           else
-            _anyType(argument, element),
+            _withoutFree(argument, element),
       ];
       final positional = [for (final info in infos) info.$1];
       return (
@@ -3304,17 +3303,24 @@ class ModuleEmitter {
   /// Writes the initial value of a field (see `InitialValue`): a literal, a
   /// referenced constant, or a `const` collection of those.
   ///
-  /// [type] is the field's declared type: an empty collection gets its
-  /// type arguments, as Dart infers them from the field
-  /// (`const <String>[]` for a `List<String>`), so the value keeps its
-  /// runtime type outside the field; the elements of another one give
-  /// them.
+  /// [type] is the field's declared type: a collection gets its type
+  /// arguments, as Dart infers them from the field (`const <String>[]`,
+  /// `const <num>[1]` for a `List<num>`), so the value keeps its runtime
+  /// type outside the field.
   Expression _initialValue(Object? value, Element element, [DartType? type]) {
     final arguments = type is InterfaceType ? type.typeArguments : null;
     DartType? argument(int index) =>
         arguments != null && index < arguments.length ? arguments[index] : null;
-    Reference? written(int index, bool empty) =>
-        empty ? _typeArgument(argument(index), element) : null;
+    Reference? written(int index) => _typeArgument(argument(index), element);
+    // Both type arguments of a map or none (see `_constant`).
+    (Reference?, Reference?) mapArguments() {
+      final key = written(0);
+      final value = written(1);
+      return key == null && value == null
+          ? (null, null)
+          : (key ?? refer('dynamic'), value ?? refer('dynamic'));
+    }
+
     return switch (value) {
       null => literalNull,
       final bool value => literalBool(value),
@@ -3323,22 +3329,24 @@ class ModuleEmitter {
       final DartObject value => _constant(value, element),
       final List<Object?> value => literalConstList([
         for (final item in value) _initialValue(item, element, argument(0)),
-      ], written(0, value.isEmpty)),
+      ], written(0)),
       final Set<Object?> value => literalConstSet({
         for (final item in value) _initialValue(item, element, argument(0)),
-      }, written(0, value.isEmpty)),
-      final Map<Object?, Object?> value => literalConstMap(
-        {
-          for (final MapEntry(:key, value: item) in value.entries)
-            _initialValue(key, element, argument(0)): _initialValue(
-              item,
-              element,
-              argument(1),
-            ),
-        },
-        written(0, value.isEmpty),
-        written(1, value.isEmpty),
-      ),
+      }, written(0)),
+      final Map<Object?, Object?> value => switch (mapArguments()) {
+        (final keyType, final valueType) => literalConstMap(
+          {
+            for (final MapEntry(:key, value: item) in value.entries)
+              _initialValue(key, element, argument(0)): _initialValue(
+                item,
+                element,
+                argument(1),
+              ),
+          },
+          keyType,
+          valueType,
+        ),
+      },
       _ => throw StateError('Unsupported initial value $value'),
     };
   }
@@ -3447,13 +3455,21 @@ class ModuleEmitter {
     }
     if (reader.isMap) {
       final entries = reader.mapValue;
+      // Both type arguments or none: code_builder writes `<K, dynamic>` for
+      // a key type alone, and nothing for a value type alone.
+      final typed =
+          argument(0, entries.keys) != null ||
+          argument(1, entries.values) != null;
+      Reference? both(int index) => typed && index < arguments.length
+          ? _typeArgument(arguments[index], element) ?? refer('dynamic')
+          : null;
       return literalConstMap(
         {
           for (final MapEntry(:key, :value) in entries.entries)
             _constant(key!, element): _constant(value!, element),
         },
-        argument(0, entries.keys),
-        argument(1, entries.values),
+        both(0),
+        both(1),
       );
     }
     final function = value.toFunctionValue();
