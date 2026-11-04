@@ -4,7 +4,6 @@ import 'package:spring_core_dart/src/aop/aspect_advisors.dart';
 import 'package:spring_core_dart/src/aop/join_point.dart';
 import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
-import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/core/order.dart';
 
 /// Builds extra proxies of a bean in code, with advice chosen by the
@@ -150,9 +149,7 @@ class ProxyFactory {
   ) {
     final definition = factory.getBeanDefinition(beanName);
     final proxies =
-        (factory is DefaultListableBeanFactory
-            ? factory.aopProxyOf(definition)
-            : definition.aopProxy) ??
+        factory.aopProxyOf(definition) ??
         (throw AopConfigException(
           "Bean '$beanName' has no generated proxy class (aop_proxies: none, "
           'or an aspect, advisor, post-processor or @Configuration bean), so '

@@ -112,19 +112,22 @@ class DefaultListableBeanFactory
   @override
   ConversionService conversionService = DefaultConversionService.sharedInstance;
 
-  /// The proxy factory of [definition] in this factory: the one
-  /// [useAopProxy] gave it, else its own `aopProxy`.
-  AopProxyFactory? aopProxyOf(BeanDefinition<Object> definition) =>
-      _aopProxies[definition] ?? definition.aopProxy;
+  @override
+  AopProxyFactory? aopProxyOf(BeanDefinition<Object> definition) {
+    final own = definition.aopProxy;
+    if (own == null || !own.isDeferred) {
+      return own;
+    }
+    return _aopProxies[definition.source] ?? own;
+  }
 
-  /// Makes [factory] stand in for the `AopProxyFactory.deferred`
-  /// placeholder of [definition] in this factory (a starter's bean whose
-  /// proxy class the application's module brings). The context calls it
-  /// for `BeanModule.aopProxies`.
-  void useAopProxy(
-    BeanDefinition<Object> definition,
-    AopProxyFactory factory,
-  ) => _aopProxies[definition] = factory;
+  /// Registers proxy factories by definition `source`: each stands in for
+  /// the `AopProxyFactory.deferred` placeholder of the definitions with
+  /// that source in this factory (see [aopProxyOf]), registered before or
+  /// after, by a module or an `ImportBeanDefinitionRegistrar`. The context
+  /// calls it with `BeanModule.aopProxies`.
+  void registerAopProxies(Map<String, AopProxyFactory> factories) =>
+      _aopProxies.addAll(factories);
 
   /// Turns `@Value` strings into [Resource]s for points of type `Resource`
   /// (like Spring's `ResourceEditor`), so the context's protocol resolvers
@@ -138,9 +141,9 @@ class DefaultListableBeanFactory
   BeanFactory? _parent;
   final _definitions = <String, BeanDefinition<Object>>{};
   // The factories that stand in for `AopProxyFactory.deferred` placeholders
-  // in this factory (the definitions themselves may be shared by other
-  // contexts of the process).
-  final _aopProxies = Map<BeanDefinition<Object>, AopProxyFactory>.identity();
+  // in this factory, by definition source (the definitions themselves may
+  // be shared by other contexts of the process).
+  final _aopProxies = <String, AopProxyFactory>{};
   // Synthetic definitions of the objects of registerSingleton: they make
   // the objects visible to lookups by type, but are not bean definitions
   // (like Spring's manual singletons).

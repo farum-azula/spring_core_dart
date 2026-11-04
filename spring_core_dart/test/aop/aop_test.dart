@@ -749,6 +749,40 @@ void main() {
         context.close();
       });
 
+      test('a placeholder an ImportBeanDefinitionRegistrar registers takes '
+          'the factory too', () {
+        final context = AnnotationConfigApplicationContext([
+          BeanModule(
+            'library',
+            const [],
+            registrars: [ImportDeclaration(() => _Registers(deferred()))],
+          ),
+          application(),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        final proxy = context.getBean<Service>();
+        expect(proxy, isA<Advised>());
+        expect(proxy.price(3), 6);
+        context.close();
+      });
+
+      test('a bean checked at startup is not checked again when created', () {
+        final pointcut = _CountingPointcut();
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('aspects', [
+            BeanDefinition<DefaultPointcutAdvisor>(
+              name: 'counting',
+              types: const [DefaultPointcutAdvisor, PointcutAdvisor, Advisor],
+              create: (_) => DefaultPointcutAdvisor(pointcut, _Upper()),
+            ),
+          ]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(context.getBean<Service>(), isNot(isA<Advised>()));
+        // Each signature once, by the check at startup.
+        expect(pointcut.calls, ServiceProxy.signatures.length);
+        context.close();
+      });
+
       test('without it and without matching advice, the bean is plain', () {
         final context = AnnotationConfigApplicationContext([
           library(),
@@ -872,6 +906,26 @@ void main() {
       expect(seen, [10]);
     });
   });
+}
+
+final class _Registers implements ImportBeanDefinitionRegistrar {
+  _Registers(this.definition);
+  final BeanDefinition<Object> definition;
+
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) =>
+      registry.registerBeanDefinition(definition);
+}
+
+// Matches nothing, counting how often it is asked.
+final class _CountingPointcut implements AopPointcut {
+  int calls = 0;
+
+  @override
+  bool matches(MethodSignature signature, String beanName) {
+    calls++;
+    return false;
+  }
 }
 
 class _Rate {

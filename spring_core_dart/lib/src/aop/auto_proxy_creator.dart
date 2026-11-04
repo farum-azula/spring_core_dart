@@ -4,7 +4,6 @@ import 'package:spring_core_dart/src/aop/aspect_advisors.dart';
 import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
-import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
 import 'package:spring_core_dart/src/context/application_context.dart';
@@ -120,16 +119,11 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
         name,
   ];
 
-  // The proxy factory the context uses for [definition] (the one the
-  // application's module brings for a starter's bean, see
-  // `BeanModule.aopProxies`).
-  AopProxyFactory? _proxyFactoryOf(BeanDefinition<Object> definition) =>
-      switch (beanFactory) {
-        final DefaultListableBeanFactory factory => factory.aopProxyOf(
-          definition,
-        ),
-        _ => definition.aopProxy,
-      };
+  // The beans [checkDeferredProxies] found no advice for, with the advisors
+  // it checked them against: created later, they are not checked again
+  // while those advisors are the same.
+  List<PointcutAdvisor>? _checkedAdvisors;
+  final _unadvisedDeferred = <String, BeanDefinition<Object>>{};
 
   /// Throws an [AopConfigException] when advice matches a bean whose proxy
   /// factory is still an `AopProxyFactory.deferred` placeholder: a
@@ -138,30 +132,37 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
   ///
   /// The context calls it before it creates the singletons (after it set
   /// the `conversionService`), so a lazy bean fails at startup too, not on
-  /// first use. Nothing is created when no
-  /// such placeholder is left.
+  /// first use. Nothing is created (no advisor either) when no such
+  /// placeholder is left.
   void checkDeferredProxies() {
+    _checkedAdvisors = null;
+    _unadvisedDeferred.clear();
     final deferred = [
       for (final name in beanFactory.beanDefinitionNames)
         if (beanFactory.getBeanDefinition(name) case final definition
             when definition.aspect == null &&
-                (_proxyFactoryOf(definition)?.isDeferred ?? false))
+                (beanFactory.aopProxyOf(definition)?.isDeferred ?? false))
           (name, definition),
     ];
+    if (deferred.isEmpty) {
+      return;
+    }
+    final checked = _checkedAdvisors = advisors;
     for (final (name, definition) in deferred) {
       final aliases = [
         ...beanFactory.getAliases(name),
         ...definition.qualifiers,
       ];
-      final eligible = _proxyFactoryOf(
-        definition,
-      )!.eligibleAdvisors(advisors, name, beanAliases: aliases);
+      final eligible = beanFactory
+          .aopProxyOf(definition)!
+          .eligibleAdvisors(checked, name, beanAliases: aliases);
       if (eligible.isNotEmpty) {
         throw AopConfigException(
           "Advice matches bean '$name' (${eligible.first}), but it cannot "
           'be proxied: ${AopProxyFactory.deferredReason}',
         );
       }
+      _unadvisedDeferred[name] = definition;
     }
   }
 
@@ -179,11 +180,18 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
       return bean;
     }
     final definition = beanFactory.getBeanDefinition(beanName);
-    final proxyFactory = _proxyFactoryOf(definition);
+    final proxyFactory = beanFactory.aopProxyOf(definition);
     if (proxyFactory == null ||
         definition.aspect != null ||
         bean is Advisor ||
         bean is BeanPostProcessor) {
+      return bean;
+    }
+    // A placeholder [checkDeferredProxies] found no advice for, against
+    // the same advisors: nothing to check again.
+    if (proxyFactory.isDeferred &&
+        identical(_unadvisedDeferred[beanName], definition) &&
+        identical(_checkedAdvisors, advisors)) {
       return bean;
     }
     // `bean(...)` also matches aliases and qualifier values.

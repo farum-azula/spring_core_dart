@@ -1,3 +1,4 @@
+import 'package:spring_core_dart/src/aop/proxy.dart' show AopProxyFactory;
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/object_provider.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
@@ -749,6 +750,13 @@ abstract interface class ConfigurableListableBeanFactory
   /// `fallback`, `autowireCandidate`, ...) apply to beans created
   /// afterwards. Throws `NoSuchBeanDefinitionException` when unknown.
   BeanDefinition<Object> getBeanDefinition(String name);
+
+  /// The proxy factory this factory uses for [definition]: its own
+  /// `aopProxy`, except for an `AopProxyFactory.deferred` placeholder (a
+  /// starter's bean whose proxy class the application writes), which the
+  /// factory registered for its `source` (`BeanModule.aopProxies`) stands
+  /// in for when there is one.
+  AopProxyFactory? aopProxyOf(BeanDefinition<Object> definition);
 
   /// Makes [value] injectable wherever exactly [type] is asked for, without
   /// making it a bean: it has no name, is not listed, and is used only when
