@@ -107,7 +107,12 @@ class _$CacheSetupConfiguration extends _i2.CacheSetup {
   }
 }
 
-const _$target0 = _i1.AopTarget(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_logging',
+};
+const _$target1 = _i1.AopTarget(
   r'Books',
   types: [r'Books'],
   annotations: [
@@ -124,7 +129,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
     source: r'asset:spring_boot_starter_cache/example/example.dart#CatalogApi',
     create: (r) => _i2.CatalogApi(),
     annotations: const [_i1.Component()],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.Books>(
     name: r'books',
@@ -139,7 +144,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       signatures: const [
         _i1.MethodSignature.of(
           r'find',
-          _$target0,
+          _$target1,
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
@@ -148,7 +153,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
         ),
         _i1.MethodSignature.of(
           r'price',
-          _$target0,
+          _$target1,
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
@@ -157,7 +162,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
         ),
         _i1.MethodSignature.of(
           r'remove',
-          _$target0,
+          _$target1,
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
@@ -166,7 +171,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
         ),
         _i1.MethodSignature.of(
           r'reloadAll',
-          _$target0,
+          _$target1,
           returnType: r'void',
           annotations: [
             _i5.CacheEvict.of(allEntries: true, beforeInvocation: true),
@@ -174,6 +179,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
           annotationTypes: [r'CacheEvict'],
         ),
       ],
+      knownAdvisors: _$knownAdvisors0,
       create: (target, invoker) => _$BooksProxy((target as _i2.Books), invoker),
     ),
   ),
@@ -196,7 +202,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       qualifier: r'cacheSetup',
     ) as _$CacheSetupConfiguration)._$store(r) as _i2.MapStore),
     annotations: const [_i1.Bean()],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i4.SimpleCacheManager>(
     name: r'cacheManager',
@@ -214,7 +220,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
             ) as _$CacheSetupConfiguration)._$cacheManager(r)
             as _i4.SimpleCacheManager),
     annotations: const [_i1.Bean()],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.CacheTour>(
     name: r'cacheTour',
@@ -234,7 +240,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       _i1.Component(),
       _i1.Log(topic: r'example'),
     ],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
 ]);
 
@@ -293,7 +299,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'a21c8bbf',
+  fingerprint: '5495800e',
 );
 
 /// Starts the application: config files, environment, context, runners

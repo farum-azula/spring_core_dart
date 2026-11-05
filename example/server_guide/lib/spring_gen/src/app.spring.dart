@@ -1375,9 +1375,24 @@ const _$target6 = _i1.AopTarget(
   annotations: [_i1.Service()],
   annotationTypes: [r'Service'],
 );
-Object? _$invoke7(_i6.BookController bean, List<Object?> arguments) =>
+const _$knownAdvisors7 = {
+  r'package:neon_books_server/src/aop/aspects.dart#AuditAspect',
+  r'package:neon_books_server/src/aop/aspects.dart#TimingAspect',
+  r'package:neon_books_server/src/aop/handler_metrics.dart#MetricsConfig.handlerMetricsAdvisor',
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_feign',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_scheduling',
+  r'package:spring_boot_starter_security',
+  r'package:spring_boot_starter_web',
+  r'package:spring_boot_starter_websocket',
+  r'package:spring_security_core',
+};
+Object? _$invoke8(_i6.BookController bean, List<Object?> arguments) =>
     bean.search();
-Object? _$invokeNamed8(
+Object? _$invokeNamed9(
   _i6.BookController bean,
   List<Object?> positional,
   Map<Symbol, Object?> named,
@@ -1385,119 +1400,119 @@ Object? _$invokeNamed8(
   query: named.argumentOr(#query, r''),
   page: named.argumentOr(#page, 0),
 );
-Object? _$invoke9(_i6.BookController bean, List<Object?> arguments) =>
+Object? _$invoke10(_i6.BookController bean, List<Object?> arguments) =>
     bean.recent();
-Object? _$invokeNamed10(
+Object? _$invokeNamed11(
   _i6.BookController bean,
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => bean.recent(recent: named.argumentOr(#recent, r''));
-Object? _$invoke11(_i6.BookController bean, List<Object?> arguments) =>
+Object? _$invoke12(_i6.BookController bean, List<Object?> arguments) =>
     bean.find(
       (arguments[0] as String),
       (arguments[1] as _i8.ServerHttpRequest),
       (arguments[2] as _i9.ServerHttpResponse),
     );
-Object? _$invoke12(_i6.BookController bean, List<Object?> arguments) =>
-    bean.cover((arguments[0] as String));
 Object? _$invoke13(_i6.BookController bean, List<Object?> arguments) =>
-    bean.add((arguments[0] as _i7.NewBook));
+    bean.cover((arguments[0] as String));
 Object? _$invoke14(_i6.BookController bean, List<Object?> arguments) =>
+    bean.add((arguments[0] as _i7.NewBook));
+Object? _$invoke15(_i6.BookController bean, List<Object?> arguments) =>
     bean.uploadCover(
       (arguments[0] as String),
       (arguments[1] as _i12.MultipartFile),
     );
-Object? _$invoke15(_i6.BookController bean, List<Object?> arguments) {
+Object? _$invoke16(_i6.BookController bean, List<Object?> arguments) {
   bean.remove((arguments[0] as String));
   return null;
 }
 
-const _$target16 = _i1.AopTarget(
+const _$target17 = _i1.AopTarget(
   r'BookController',
   types: [r'BookController'],
   annotations: [_i53.RestController(), _i32.RequestMapping(r'/api/books')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-Object? _$invoke17(_i13.CatalogService bean, List<Object?> arguments) =>
+Object? _$invoke18(_i13.CatalogService bean, List<Object?> arguments) =>
     bean.add((arguments[0] as _i7.NewBook));
-Object? _$invoke18(_i13.CatalogService bean, List<Object?> arguments) {
+Object? _$invoke19(_i13.CatalogService bean, List<Object?> arguments) {
   bean.remove((arguments[0] as String));
   return null;
 }
 
-const _$target19 = _i1.AopTarget(
+const _$target20 = _i1.AopTarget(
   r'CatalogService',
   types: [r'CatalogService', r'Catalog'],
   annotations: [_i1.Service(), _i1.Log()],
   annotationTypes: [r'Service', r'Log'],
 );
-Object? _$invoke20(_i16.BasketController bean, List<Object?> arguments) =>
-    bean.basket((arguments[0] as _i8.ServerHttpRequest));
 Object? _$invoke21(_i16.BasketController bean, List<Object?> arguments) =>
+    bean.basket((arguments[0] as _i8.ServerHttpRequest));
+Object? _$invoke22(_i16.BasketController bean, List<Object?> arguments) =>
     bean.setQuantity(
       (arguments[0] as String),
       (arguments[1] as _i17.QuantityRequest),
       (arguments[2] as _i8.ServerHttpRequest),
     );
-const _$target22 = _i1.AopTarget(
+const _$target23 = _i1.AopTarget(
   r'BasketController',
   types: [r'BasketController'],
   annotations: [_i53.RestController(), _i32.RequestMapping(r'/api/basket')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-Object? _$invoke23(_i19.OrderController bean, List<Object?> arguments) =>
+Object? _$invoke24(_i19.OrderController bean, List<Object?> arguments) =>
     bean.place(
       (arguments[0] as _i20.Authentication),
       (arguments[1] as _i8.ServerHttpRequest),
     );
-Object? _$invoke24(_i19.OrderController bean, List<Object?> arguments) =>
-    bean.all();
 Object? _$invoke25(_i19.OrderController bean, List<Object?> arguments) =>
+    bean.all();
+Object? _$invoke26(_i19.OrderController bean, List<Object?> arguments) =>
     bean.find((arguments[0] as int));
-const _$target26 = _i1.AopTarget(
+const _$target27 = _i1.AopTarget(
   r'OrderController',
   types: [r'OrderController'],
   annotations: [_i53.RestController(), _i32.RequestMapping(r'/api/orders')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-Object? _$invoke27(_i21.OrderService bean, List<Object?> arguments) =>
-    bean.place((arguments[0] as String), (arguments[1] as Map<String, int>));
 Object? _$invoke28(_i21.OrderService bean, List<Object?> arguments) =>
-    bean.find((arguments[0] as int));
+    bean.place((arguments[0] as String), (arguments[1] as Map<String, int>));
 Object? _$invoke29(_i21.OrderService bean, List<Object?> arguments) =>
+    bean.find((arguments[0] as int));
+Object? _$invoke30(_i21.OrderService bean, List<Object?> arguments) =>
     bean.all();
-const _$target30 = _i1.AopTarget(
+const _$target31 = _i1.AopTarget(
   r'OrderService',
   types: [r'OrderService'],
   annotations: [_i1.Service(), _i1.Log()],
   annotationTypes: [r'Service', r'Log'],
 );
-Object? _$invoke31(_i24.MeController bean, List<Object?> arguments) =>
+Object? _$invoke32(_i24.MeController bean, List<Object?> arguments) =>
     bean.me((arguments[0] as _i20.Authentication));
-const _$target32 = _i1.AopTarget(
+const _$target33 = _i1.AopTarget(
   r'MeController',
   types: [r'MeController'],
   annotations: [_i53.RestController(), _i32.RequestMapping(r'/api/me')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-const _$target33 = _i1.AopTarget(r'CoverStore', types: [r'CoverStore']);
-const _$target34 = _i1.AopTarget(r'ReceiptBuilder', types: [r'ReceiptBuilder']);
-Object? _$invoke35(_i54.RestockJob bean, List<Object?> arguments) =>
+const _$target34 = _i1.AopTarget(r'CoverStore', types: [r'CoverStore']);
+const _$target35 = _i1.AopTarget(r'ReceiptBuilder', types: [r'ReceiptBuilder']);
+Object? _$invoke36(_i54.RestockJob bean, List<Object?> arguments) =>
     bean.restockLowStock();
-Object? _$invoke36(_i54.StockReport bean, List<Object?> arguments) {
+Object? _$invoke37(_i54.StockReport bean, List<Object?> arguments) {
   bean.dailyReport();
   return null;
 }
 
-Object? _$invoke37(_i25.StockController bean, List<Object?> arguments) =>
+Object? _$invoke38(_i25.StockController bean, List<Object?> arguments) =>
     bean.events((arguments[0] as String?));
-const _$target38 = _i1.AopTarget(
+const _$target39 = _i1.AopTarget(
   r'StockController',
   types: [r'StockController'],
   annotations: [_i53.RestController(), _i32.RequestMapping(r'/api/stock')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-const _$target39 = _i1.AopTarget(
+const _$target40 = _i1.AopTarget(
   r'SupplierOffers',
   types: [r'SupplierOffers'],
   annotations: [
@@ -1505,7 +1520,7 @@ const _$target39 = _i1.AopTarget(
   ],
   annotationTypes: [r'FeignClient'],
 );
-const _$target40 = _i1.AopTarget(
+const _$target41 = _i1.AopTarget(
   r'SupplierDeliveries',
   types: [r'SupplierDeliveries'],
   annotations: [
@@ -1517,11 +1532,11 @@ const _$target40 = _i1.AopTarget(
   ],
   annotationTypes: [r'FeignClient'],
 );
-Object? _$invoke41(_i29.NoDeliveries bean, List<Object?> arguments) =>
+Object? _$invoke42(_i29.NoDeliveries bean, List<Object?> arguments) =>
     bean.order((arguments[0] as _i30.DeliveryRequest));
-Object? _$invoke42(_i55.SupplierStub bean, List<Object?> arguments) =>
+Object? _$invoke43(_i55.SupplierStub bean, List<Object?> arguments) =>
     bean.offer((arguments[0] as String), (arguments[1] as String));
-Object? _$invokeNamed43(
+Object? _$invokeNamed44(
   _i55.SupplierStub bean,
   List<Object?> positional,
   Map<Symbol, Object?> named,
@@ -1530,9 +1545,9 @@ Object? _$invokeNamed43(
   (positional[1] as String),
   copies: named.argumentOr(#copies, 1),
 );
-Object? _$invoke44(_i55.SupplierStub bean, List<Object?> arguments) => bean
+Object? _$invoke45(_i55.SupplierStub bean, List<Object?> arguments) => bean
     .deliver((arguments[0] as _i30.DeliveryRequest), (arguments[1] as String));
-Object? _$invoke45(_i56.SupportEndpoint bean, List<Object?> arguments) {
+Object? _$invoke46(_i56.SupportEndpoint bean, List<Object?> arguments) {
   bean.open(
     (arguments[0] as _i57.ServerWebSocketSession),
     (arguments[1] as _i1.Principal?),
@@ -1540,13 +1555,13 @@ Object? _$invoke45(_i56.SupportEndpoint bean, List<Object?> arguments) {
   return null;
 }
 
-Object? _$invoke46(_i56.SupportEndpoint bean, List<Object?> arguments) =>
+Object? _$invoke47(_i56.SupportEndpoint bean, List<Object?> arguments) =>
     bean.message(
       (arguments[0] as _i57.ServerWebSocketSession),
       (arguments[1] as _i1.Principal?),
       (arguments[2] as _i58.ChatMessage),
     );
-Object? _$invoke47(_i56.SupportEndpoint bean, List<Object?> arguments) {
+Object? _$invoke48(_i56.SupportEndpoint bean, List<Object?> arguments) {
   bean.close(
     (arguments[0] as _i57.ServerWebSocketSession),
     (arguments[1] as _i59.CloseStatus),
@@ -1554,7 +1569,7 @@ Object? _$invoke47(_i56.SupportEndpoint bean, List<Object?> arguments) {
   return null;
 }
 
-Object? _$invoke48(_i56.SupportEndpoint bean, List<Object?> arguments) {
+Object? _$invoke49(_i56.SupportEndpoint bean, List<Object?> arguments) {
   bean.error(
     (arguments[0] as _i57.ServerWebSocketSession),
     (arguments[1] as Object),
@@ -1562,25 +1577,25 @@ Object? _$invoke48(_i56.SupportEndpoint bean, List<Object?> arguments) {
   return null;
 }
 
-Object? _$invoke49(_i60.ApiErrors bean, List<Object?> arguments) =>
-    bean.bookNotFound((arguments[0] as _i7.BookNotFoundException));
 Object? _$invoke50(_i60.ApiErrors bean, List<Object?> arguments) =>
-    bean.emptyBasket((arguments[0] as _i17.EmptyBasketException));
+    bean.bookNotFound((arguments[0] as _i7.BookNotFoundException));
 Object? _$invoke51(_i60.ApiErrors bean, List<Object?> arguments) =>
-    bean.conflict((arguments[0] as StateError));
+    bean.emptyBasket((arguments[0] as _i17.EmptyBasketException));
 Object? _$invoke52(_i60.ApiErrors bean, List<Object?> arguments) =>
-    bean.supplierFailed((arguments[0] as _i61.FeignException));
+    bean.conflict((arguments[0] as StateError));
 Object? _$invoke53(_i60.ApiErrors bean, List<Object?> arguments) =>
+    bean.supplierFailed((arguments[0] as _i61.FeignException));
+Object? _$invoke54(_i60.ApiErrors bean, List<Object?> arguments) =>
     bean.invalid(
       (arguments[0] as _i62.MethodArgumentNotValidException),
       (arguments[1] as _i8.ServerHttpRequest),
     );
-Object? _$get54(_i3.LogLine bean) => bean.time;
-Object? _$get55(_i3.LogLine bean) => bean.level;
-Object? _$get56(_i3.LogLine bean) => bean.logger;
-Object? _$get57(_i3.LogLine bean) => bean.message;
-Object? _$get58(_i3.LogLine bean) => bean.fields;
-_i3.LogLine _$create59(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get55(_i3.LogLine bean) => bean.time;
+Object? _$get56(_i3.LogLine bean) => bean.level;
+Object? _$get57(_i3.LogLine bean) => bean.logger;
+Object? _$get58(_i3.LogLine bean) => bean.message;
+Object? _$get59(_i3.LogLine bean) => bean.fields;
+_i3.LogLine _$create60(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i3.LogLine(
       time: (named[#time] as DateTime),
       level: (named[#level] as String),
@@ -1588,19 +1603,19 @@ _i3.LogLine _$create59(List<Object?> positional, Map<Symbol, Object?> named) =>
       message: (named[#message] as String),
       fields: named.argumentOr(#fields, const <String, String>{}),
     );
-Object? _$get60(_i7.Book bean) => bean.isbn;
-Object? _$get61(_i7.Book bean) => bean.title;
-Object? _$get62(_i7.Book bean) => bean.author;
-Object? _$get63(_i7.Book bean) => bean.price;
-Object? _$get64(_i7.Book bean) => bean.year;
-Object? _$get65(_i7.Book bean) => bean.tags;
-Object? _$get66(_i7.Book bean) => bean.format;
-Object? _$get67(_i7.Book bean) => bean.available;
-Object? _$invoke68(_i7.Book bean, List<Object?> arguments) =>
-    Function.apply(bean.withAvailable, arguments);
+Object? _$get61(_i7.Book bean) => bean.isbn;
+Object? _$get62(_i7.Book bean) => bean.title;
+Object? _$get63(_i7.Book bean) => bean.author;
+Object? _$get64(_i7.Book bean) => bean.price;
+Object? _$get65(_i7.Book bean) => bean.year;
+Object? _$get66(_i7.Book bean) => bean.tags;
+Object? _$get67(_i7.Book bean) => bean.format;
+Object? _$get68(_i7.Book bean) => bean.available;
 Object? _$invoke69(_i7.Book bean, List<Object?> arguments) =>
+    Function.apply(bean.withAvailable, arguments);
+Object? _$invoke70(_i7.Book bean, List<Object?> arguments) =>
     Function.apply(bean.toString, arguments);
-_i7.Book _$create70(List<Object?> positional, Map<Symbol, Object?> named) =>
+_i7.Book _$create71(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.Book(
       isbn: (named[#isbn] as String),
       title: (named[#title] as String),
@@ -1611,28 +1626,28 @@ _i7.Book _$create70(List<Object?> positional, Map<Symbol, Object?> named) =>
       format: named.argumentOr(#format, _i7.BookFormat.paperback),
       available: named.argumentOr(#available, 0),
     );
-Object? _$get71(_i7.BookPage bean) => bean.items;
-Object? _$get72(_i7.BookPage bean) => bean.page;
-Object? _$get73(_i7.BookPage bean) => bean.size;
-Object? _$get74(_i7.BookPage bean) => bean.total;
-_i7.BookPage _$create75(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get72(_i7.BookPage bean) => bean.items;
+Object? _$get73(_i7.BookPage bean) => bean.page;
+Object? _$get74(_i7.BookPage bean) => bean.size;
+Object? _$get75(_i7.BookPage bean) => bean.total;
+_i7.BookPage _$create76(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.BookPage(
       items: (named[#items] as List<_i7.Book>),
       page: (named[#page] as int),
       size: (named[#size] as int),
       total: (named[#total] as int),
     );
-Object? _$get76(_i7.NewBook bean) => bean.isbn;
-Object? _$get77(_i7.NewBook bean) => bean.title;
-Object? _$get78(_i7.NewBook bean) => bean.author;
-Object? _$get79(_i7.NewBook bean) => bean.price;
-Object? _$get80(_i7.NewBook bean) => bean.year;
-Object? _$get81(_i7.NewBook bean) => bean.tags;
-Object? _$get82(_i7.NewBook bean) => bean.format;
-Object? _$get83(_i7.NewBook bean) => bean.stock;
-Object? _$invoke84(_i7.NewBook bean, List<Object?> arguments) =>
+Object? _$get77(_i7.NewBook bean) => bean.isbn;
+Object? _$get78(_i7.NewBook bean) => bean.title;
+Object? _$get79(_i7.NewBook bean) => bean.author;
+Object? _$get80(_i7.NewBook bean) => bean.price;
+Object? _$get81(_i7.NewBook bean) => bean.year;
+Object? _$get82(_i7.NewBook bean) => bean.tags;
+Object? _$get83(_i7.NewBook bean) => bean.format;
+Object? _$get84(_i7.NewBook bean) => bean.stock;
+Object? _$invoke85(_i7.NewBook bean, List<Object?> arguments) =>
     Function.apply(bean.toBook, arguments);
-_i7.NewBook _$create85(List<Object?> positional, Map<Symbol, Object?> named) =>
+_i7.NewBook _$create86(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.NewBook(
       isbn: named.argumentOr(#isbn, r''),
       title: named.argumentOr(#title, r''),
@@ -1643,22 +1658,22 @@ _i7.NewBook _$create85(List<Object?> positional, Map<Symbol, Object?> named) =>
       format: named.argumentOr(#format, _i7.BookFormat.paperback),
       stock: named.argumentOr(#stock, 0),
     );
-Object? _$get86(_i17.Basket bean) => bean.items;
-Object? _$get87(_i17.Basket bean) => bean.count;
-Object? _$get88(_i17.Basket bean) => bean.total;
-_i17.Basket _$create89(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get87(_i17.Basket bean) => bean.items;
+Object? _$get88(_i17.Basket bean) => bean.count;
+Object? _$get89(_i17.Basket bean) => bean.total;
+_i17.Basket _$create90(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i17.Basket(
       items: (named[#items] as List<_i17.OrderLine>),
       count: (named[#count] as int),
       total: (named[#total] as double),
     );
-Object? _$get90(_i17.OrderLine bean) => bean.isbn;
-Object? _$get91(_i17.OrderLine bean) => bean.title;
-Object? _$get92(_i17.OrderLine bean) => bean.price;
-Object? _$get93(_i17.OrderLine bean) => bean.quantity;
-Object? _$get94(_i17.OrderLine bean) => bean.discount;
-Object? _$get95(_i17.OrderLine bean) => bean.total;
-_i17.OrderLine _$create96(
+Object? _$get91(_i17.OrderLine bean) => bean.isbn;
+Object? _$get92(_i17.OrderLine bean) => bean.title;
+Object? _$get93(_i17.OrderLine bean) => bean.price;
+Object? _$get94(_i17.OrderLine bean) => bean.quantity;
+Object? _$get95(_i17.OrderLine bean) => bean.discount;
+Object? _$get96(_i17.OrderLine bean) => bean.total;
+_i17.OrderLine _$create97(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i17.OrderLine(
@@ -1669,21 +1684,21 @@ _i17.OrderLine _$create96(
   total: (named[#total] as double),
   discount: named.argumentOr(#discount, 0),
 );
-Object? _$get97(_i17.QuantityRequest bean) => bean.quantity;
-_i17.QuantityRequest _$create98(
+Object? _$get98(_i17.QuantityRequest bean) => bean.quantity;
+_i17.QuantityRequest _$create99(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i17.QuantityRequest(quantity: named.argumentOr(#quantity, 1));
-Object? _$get99(_i17.CustomerOrder bean) => bean.id;
-Object? _$get100(_i17.CustomerOrder bean) => bean.customer;
-Object? _$get101(_i17.CustomerOrder bean) => bean.lines;
-Object? _$get102(_i17.CustomerOrder bean) => bean.total;
-Object? _$get103(_i17.CustomerOrder bean) => bean.status;
-Object? _$get104(_i17.CustomerOrder bean) => bean.placedAt;
-Object? _$get105(_i17.CustomerOrder bean) => bean.payment;
-Object? _$invoke106(_i17.CustomerOrder bean, List<Object?> arguments) =>
+Object? _$get100(_i17.CustomerOrder bean) => bean.id;
+Object? _$get101(_i17.CustomerOrder bean) => bean.customer;
+Object? _$get102(_i17.CustomerOrder bean) => bean.lines;
+Object? _$get103(_i17.CustomerOrder bean) => bean.total;
+Object? _$get104(_i17.CustomerOrder bean) => bean.status;
+Object? _$get105(_i17.CustomerOrder bean) => bean.placedAt;
+Object? _$get106(_i17.CustomerOrder bean) => bean.payment;
+Object? _$invoke107(_i17.CustomerOrder bean, List<Object?> arguments) =>
     Function.apply(bean.withStatus, arguments);
-_i17.CustomerOrder _$create107(
+_i17.CustomerOrder _$create108(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i17.CustomerOrder(
@@ -1695,98 +1710,98 @@ _i17.CustomerOrder _$create107(
   status: named.argumentOr(#status, _i17.OrderStatus.placed),
   payment: named.argumentOr(#payment, null),
 );
-Object? _$get108(_i24.Me bean) => bean.name;
-Object? _$get109(_i24.Me bean) => bean.roles;
-Object? _$get110(_i24.Me bean) => bean.authorities;
-Object? _$get111(_i24.Me bean) => bean.registrationId;
-_i24.Me _$create112(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get109(_i24.Me bean) => bean.name;
+Object? _$get110(_i24.Me bean) => bean.roles;
+Object? _$get111(_i24.Me bean) => bean.authorities;
+Object? _$get112(_i24.Me bean) => bean.registrationId;
+_i24.Me _$create113(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i24.Me(
       name: (named[#name] as String),
       roles: (named[#roles] as List<String>),
       authorities: (named[#authorities] as List<String>),
       registrationId: named.argumentOr(#registrationId, null),
     );
-Object? _$get113(_i37.CorsProperties bean) => bean.allowedOriginPatterns;
-void _$set114(_i37.CorsProperties bean, Object? value) =>
+Object? _$get114(_i37.CorsProperties bean) => bean.allowedOriginPatterns;
+void _$set115(_i37.CorsProperties bean, Object? value) =>
     bean.allowedOriginPatterns = (value as List<String>);
-_i37.CorsProperties _$create115(
+_i37.CorsProperties _$create116(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i37.CorsProperties();
-Object? _$get116(_i41.AppProperties bean) => bean.webUrl;
-void _$set117(_i41.AppProperties bean, Object? value) =>
+Object? _$get117(_i41.AppProperties bean) => bean.webUrl;
+void _$set118(_i41.AppProperties bean, Object? value) =>
     bean.webUrl = (value as String);
-_i41.AppProperties _$create118(
+_i41.AppProperties _$create119(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i41.AppProperties();
-Object? _$get119(_i44.UsersProperties bean) => bean.users;
-void _$set120(_i44.UsersProperties bean, Object? value) =>
+Object? _$get120(_i44.UsersProperties bean) => bean.users;
+void _$set121(_i44.UsersProperties bean, Object? value) =>
     bean.users = (value as Map<String, _i44.UserEntry>);
-_i44.UsersProperties _$create121(
+_i44.UsersProperties _$create122(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i44.UsersProperties();
-Object? _$get122(_i44.UserEntry bean) => bean.password;
-void _$set123(_i44.UserEntry bean, Object? value) =>
+Object? _$get123(_i44.UserEntry bean) => bean.password;
+void _$set124(_i44.UserEntry bean, Object? value) =>
     bean.password = (value as String);
-Object? _$get124(_i44.UserEntry bean) => bean.roles;
-void _$set125(_i44.UserEntry bean, Object? value) =>
+Object? _$get125(_i44.UserEntry bean) => bean.roles;
+void _$set126(_i44.UserEntry bean, Object? value) =>
     bean.roles = (value as List<String>);
-_i44.UserEntry _$create126(
+_i44.UserEntry _$create127(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i44.UserEntry();
-Object? _$get127(_i15.ShopProperties bean) => bean.name;
-void _$set128(_i15.ShopProperties bean, Object? value) =>
+Object? _$get128(_i15.ShopProperties bean) => bean.name;
+void _$set129(_i15.ShopProperties bean, Object? value) =>
     bean.name = (value as String);
-Object? _$get129(_i15.ShopProperties bean) => bean.opensAt;
-void _$set130(_i15.ShopProperties bean, Object? value) =>
+Object? _$get130(_i15.ShopProperties bean) => bean.opensAt;
+void _$set131(_i15.ShopProperties bean, Object? value) =>
     bean.opensAt = (value as int);
-Object? _$get131(_i15.ShopProperties bean) => bean.closesAt;
-void _$set132(_i15.ShopProperties bean, Object? value) =>
+Object? _$get132(_i15.ShopProperties bean) => bean.closesAt;
+void _$set133(_i15.ShopProperties bean, Object? value) =>
     bean.closesAt = (value as int);
-Object? _$get133(_i15.ShopProperties bean) => bean.maxBasketSize;
-void _$set134(_i15.ShopProperties bean, Object? value) =>
+Object? _$get134(_i15.ShopProperties bean) => bean.maxBasketSize;
+void _$set135(_i15.ShopProperties bean, Object? value) =>
     bean.maxBasketSize = (value as int);
-Object? _$get135(_i15.ShopProperties bean) => bean.deliveryTime;
-void _$set136(_i15.ShopProperties bean, Object? value) =>
+Object? _$get136(_i15.ShopProperties bean) => bean.deliveryTime;
+void _$set137(_i15.ShopProperties bean, Object? value) =>
     bean.deliveryTime = (value as Duration);
-Object? _$get137(_i15.ShopProperties bean) => bean.maxCoverSize;
-void _$set138(_i15.ShopProperties bean, Object? value) =>
+Object? _$get138(_i15.ShopProperties bean) => bean.maxCoverSize;
+void _$set139(_i15.ShopProperties bean, Object? value) =>
     bean.maxCoverSize = (value as _i1.DataSize);
-_i15.ShopProperties _$create139(
+_i15.ShopProperties _$create140(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i15.ShopProperties();
-Object? _$get140(_i27.LowStock bean) => bean.orderId;
-Object? _$get141(_i27.LowStock bean) => bean.isbns;
-_i27.LowStock _$create142(
+Object? _$get141(_i27.LowStock bean) => bean.orderId;
+Object? _$get142(_i27.LowStock bean) => bean.isbns;
+_i27.LowStock _$create143(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i27.LowStock((positional[0] as int), (positional[1] as List<String>));
-Object? _$get143(_i27.StockChanged bean) => bean.isbn;
-Object? _$get144(_i27.StockChanged bean) => bean.available;
-_i27.StockChanged _$create145(
+Object? _$get144(_i27.StockChanged bean) => bean.isbn;
+Object? _$get145(_i27.StockChanged bean) => bean.available;
+_i27.StockChanged _$create146(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i27.StockChanged(
   isbn: (named[#isbn] as String),
   available: (named[#available] as int),
 );
-Object? _$get146(_i30.Offer bean) => bean.isbn;
-Object? _$get147(_i30.Offer bean) => bean.price;
-Object? _$get148(_i30.Offer bean) => bean.copies;
-_i30.Offer _$create149(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get147(_i30.Offer bean) => bean.isbn;
+Object? _$get148(_i30.Offer bean) => bean.price;
+Object? _$get149(_i30.Offer bean) => bean.copies;
+_i30.Offer _$create150(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i30.Offer(
       isbn: (named[#isbn] as String),
       price: (named[#price] as double),
       copies: (named[#copies] as int),
     );
-Object? _$get150(_i30.Delivery bean) => bean.isbn;
-Object? _$get151(_i30.Delivery bean) => bean.copies;
-Object? _$get152(_i30.Delivery bean) => bean.reference;
-_i30.Delivery _$create153(
+Object? _$get151(_i30.Delivery bean) => bean.isbn;
+Object? _$get152(_i30.Delivery bean) => bean.copies;
+Object? _$get153(_i30.Delivery bean) => bean.reference;
+_i30.Delivery _$create154(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i30.Delivery(
@@ -1794,29 +1809,29 @@ _i30.Delivery _$create153(
   copies: (named[#copies] as int),
   reference: named.argumentOr(#reference, null),
 );
-Object? _$get154(_i30.DeliveryRequest bean) => bean.isbn;
-Object? _$get155(_i30.DeliveryRequest bean) => bean.copies;
-_i30.DeliveryRequest _$create156(
+Object? _$get155(_i30.DeliveryRequest bean) => bean.isbn;
+Object? _$get156(_i30.DeliveryRequest bean) => bean.copies;
+_i30.DeliveryRequest _$create157(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i30.DeliveryRequest(
   isbn: (named[#isbn] as String),
   copies: (named[#copies] as int),
 );
-Object? _$get157(_i49.SupplierProperties bean) => bean.url;
-void _$set158(_i49.SupplierProperties bean, Object? value) =>
+Object? _$get158(_i49.SupplierProperties bean) => bean.url;
+void _$set159(_i49.SupplierProperties bean, Object? value) =>
     bean.url = (value as String);
-Object? _$get159(_i49.SupplierProperties bean) => bean.apiKey;
-void _$set160(_i49.SupplierProperties bean, Object? value) =>
+Object? _$get160(_i49.SupplierProperties bean) => bean.apiKey;
+void _$set161(_i49.SupplierProperties bean, Object? value) =>
     bean.apiKey = (value as String);
-_i49.SupplierProperties _$create161(
+_i49.SupplierProperties _$create162(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i49.SupplierProperties();
-Object? _$get162(_i58.ChatMessage bean) => bean.from;
-Object? _$get163(_i58.ChatMessage bean) => bean.text;
-Object? _$get164(_i58.ChatMessage bean) => bean.at;
-_i58.ChatMessage _$create165(
+Object? _$get163(_i58.ChatMessage bean) => bean.from;
+Object? _$get164(_i58.ChatMessage bean) => bean.text;
+Object? _$get165(_i58.ChatMessage bean) => bean.at;
+_i58.ChatMessage _$create166(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i58.ChatMessage(
@@ -2021,7 +2036,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ],
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i65.AlarmRegistrar>(
       name: r'alarmRegistrar',
@@ -2090,7 +2107,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Scope(r'import-batch'),
         _i66.AdvancedTour(),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i68.CatalogImporter>(
       name: r'catalogImporter',
@@ -2116,7 +2135,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         r.dependency<_i1.BeanValidator>(name: r'_validator'),
       ),
       annotations: const [_i1.Service(), _i66.AdvancedTour()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i34.LifecycleConfig>(
       name: r'lifecycleConfig',
@@ -2182,7 +2203,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       annotations: const [
         _i1.Bean(initMethod: r'customInit', destroyMethod: r'customDestroy'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i34.ShutdownWatcher>(
       name: r'shutdownWatcher',
@@ -2292,7 +2315,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       source: r'package:neon_books_server/src/aop/handler_metrics.dart#HandlerMetrics',
       create: (r) => _i35.HandlerMetrics(),
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i35.MetricsConfig>(
       name: r'metricsConfig',
@@ -2355,8 +2380,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i7.BookPage>(),
-          invoke: _$invoke7,
-          invokeNamed: _$invokeNamed8,
+          invoke: _$invoke8,
+          invokeNamed: _$invokeNamed9,
           annotations: [_i32.GetMapping()],
         ),
         const _i1.BeanMethod<_i6.BookController>(
@@ -2370,8 +2395,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ListType<_i7.Book>(_i1.ClassType<_i7.Book>()),
-          invoke: _$invoke9,
-          invokeNamed: _$invokeNamed10,
+          invoke: _$invoke10,
+          invokeNamed: _$invokeNamed11,
           annotations: [_i32.GetMapping(r'/recent')],
         ),
         const _i1.BeanMethod<_i6.BookController>(
@@ -2400,7 +2425,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i7.Book>(),
-          invoke: _$invoke11,
+          invoke: _$invoke12,
           annotations: [_i32.GetMapping(r'/{isbn}')],
         ),
         const _i1.BeanMethod<_i6.BookController>(
@@ -2417,7 +2442,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i10.ResponseEntity<_i1.Resource>>([
             _i1.ClassType<_i1.Resource>(),
           ]),
-          invoke: _$invoke12,
+          invoke: _$invoke13,
           annotations: [_i32.GetMapping(r'/{isbn}/cover')],
         ),
         const _i1.BeanMethod<_i6.BookController>(
@@ -2434,7 +2459,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i10.ResponseEntity<_i7.Book>>([
             _i1.ClassType<_i7.Book>(),
           ]),
-          invoke: _$invoke13,
+          invoke: _$invoke14,
           annotations: [_i32.PostMapping()],
         ),
         const _i1.BeanMethod<_i6.BookController>(
@@ -2456,7 +2481,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ],
           isFuture: true,
           isVoid: true,
-          invoke: _$invoke14,
+          invoke: _$invoke15,
           annotations: [
             _i32.PutMapping(r'/{isbn}/cover'),
             _i53.ResponseStatus(204),
@@ -2474,7 +2499,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           isVoid: true,
-          invoke: _$invoke15,
+          invoke: _$invoke16,
           annotations: [
             _i32.DeleteMapping(r'/{isbn}'),
             _i53.ResponseStatus(204),
@@ -2489,7 +2514,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'search',
-            _$target16,
+            _$target17,
             returnType: r'BookPage',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'query', r'page'],
@@ -2502,7 +2527,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'recent',
-            _$target16,
+            _$target17,
             returnType: r'List',
             parameterTypes: [r'String'],
             parameterNames: [r'recent'],
@@ -2514,7 +2539,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'find',
-            _$target16,
+            _$target17,
             returnType: r'Book',
             parameterTypes: [
               r'String',
@@ -2532,7 +2557,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'cover',
-            _$target16,
+            _$target17,
             returnType: r'ResponseEntity',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -2544,7 +2569,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'add',
-            _$target16,
+            _$target17,
             returnType: r'ResponseEntity',
             parameterTypes: [r'NewBook'],
             parameterNames: [r'newBook'],
@@ -2556,7 +2581,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'uploadCover',
-            _$target16,
+            _$target17,
             returnType: r'Future',
             parameterTypes: [r'String', r'MultipartFile'],
             parameterNames: [r'isbn', r'cover'],
@@ -2572,7 +2597,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'remove',
-            _$target16,
+            _$target17,
             returnType: r'void',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -2587,25 +2612,25 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'catalog',
-            _$target16,
+            _$target17,
             kind: _i1.MemberKind.getter,
             returnType: r'Catalog',
           ),
           _i1.MethodSignature.of(
             r'covers',
-            _$target16,
+            _$target17,
             kind: _i1.MemberKind.getter,
             returnType: r'ObjectProvider',
           ),
           _i1.MethodSignature.of(
             r'shop',
-            _$target16,
+            _$target17,
             kind: _i1.MemberKind.getter,
             returnType: r'ShopProperties',
           ),
           _i1.MethodSignature.of(
             r'recentLimit',
-            _$target16,
+            _$target17,
             kind: _i1.MemberKind.getter,
             returnType: r'int',
           ),
@@ -2623,7 +2648,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         bean.ready();
       },
       annotations: const [_i1.Repository(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i13.CatalogService>(
       name: r'catalogService',
@@ -2655,7 +2682,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i7.Book>(),
-          invoke: _$invoke17,
+          invoke: _$invoke18,
           annotations: [
             _i64.PreAuthorize("hasRole('ADMIN')"),
             _i33.Caching(
@@ -2675,7 +2702,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           isVoid: true,
-          invoke: _$invoke18,
+          invoke: _$invoke19,
           annotations: [
             _i64.PreAuthorize("hasRole('ADMIN')"),
             _i33.Caching(
@@ -2692,7 +2719,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'search',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'BookPage',
@@ -2706,7 +2733,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'find',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'Book',
@@ -2723,7 +2750,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'get',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'Book',
@@ -2732,7 +2759,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'findAll',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'List',
@@ -2741,14 +2768,14 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'all',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'List',
           ),
           _i1.MethodSignature.of(
             r'add',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'Book',
@@ -2765,7 +2792,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'remove',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'void',
@@ -2785,7 +2812,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'changeStock',
-            _$target19,
+            _$target20,
             declaringType: r'Catalog',
             declaringTypes: [r'CatalogService', r'Catalog'],
             returnType: r'Book',
@@ -2803,13 +2830,13 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'pageSize',
-            _$target19,
+            _$target20,
             kind: _i1.MemberKind.getter,
             returnType: r'int',
           ),
           _i1.MethodSignature.of(
             r'pageSize',
-            _$target19,
+            _$target20,
             kind: _i1.MemberKind.setter,
             returnType: r'int',
           ),
@@ -2839,7 +2866,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i17.Basket>(),
-          invoke: _$invoke20,
+          invoke: _$invoke21,
           annotations: [_i32.GetMapping()],
         ),
         const _i1.BeanMethod<_i16.BasketController>(
@@ -2865,7 +2892,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i17.Basket>(),
-          invoke: _$invoke21,
+          invoke: _$invoke22,
           annotations: [_i32.PutMapping(r'/items/{isbn}')],
         ),
       ],
@@ -2877,7 +2904,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'basket',
-            _$target22,
+            _$target23,
             returnType: r'Basket',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
@@ -2886,7 +2913,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'setQuantity',
-            _$target22,
+            _$target23,
             returnType: r'Basket',
             parameterTypes: [
               r'String',
@@ -2904,7 +2931,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'baskets',
-            _$target22,
+            _$target23,
             kind: _i1.MemberKind.getter,
             returnType: r'BasketService',
           ),
@@ -2927,7 +2954,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         r.dependency<_i15.ShopProperties>(name: r'_shop'),
       ),
       annotations: const [_i1.Service()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i36.DevMailConfig>(
       name: r'devMailConfig',
@@ -2970,7 +2999,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Bean(),
         _i1.Log(topic: r'neon.mail'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i36.ProdMailConfig>(
       name: r'prodMailConfig',
@@ -3016,7 +3047,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Bean(),
         _i1.Log(topic: r'neon.mail'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i19.OrderController>(
       name: r'orderController',
@@ -3049,7 +3082,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               _i1.GenericType<_i10.ResponseEntity<_i17.CustomerOrder>>([
                 _i1.ClassType<_i17.CustomerOrder>(),
               ]),
-          invoke: _$invoke23,
+          invoke: _$invoke24,
           annotations: [_i32.PostMapping()],
         ),
         const _i1.BeanMethod<_i19.OrderController>(
@@ -3057,7 +3090,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           returnTypeInfo: _i1.ListType<_i17.CustomerOrder>(
             _i1.ClassType<_i17.CustomerOrder>(),
           ),
-          invoke: _$invoke24,
+          invoke: _$invoke25,
           annotations: [_i32.GetMapping()],
         ),
         const _i1.BeanMethod<_i19.OrderController>(
@@ -3072,7 +3105,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i17.CustomerOrder>(),
-          invoke: _$invoke25,
+          invoke: _$invoke26,
           annotations: [_i32.GetMapping(r'/{id}')],
         ),
       ],
@@ -3084,7 +3117,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'place',
-            _$target26,
+            _$target27,
             returnType: r'ResponseEntity',
             parameterTypes: [r'Authentication', r'ServerHttpRequest'],
             parameterNames: [r'authentication', r'request'],
@@ -3093,14 +3126,14 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'all',
-            _$target26,
+            _$target27,
             returnType: r'List',
             annotations: [_i32.GetMapping()],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'find',
-            _$target26,
+            _$target27,
             returnType: r'CustomerOrder',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
@@ -3112,13 +3145,13 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'orders',
-            _$target26,
+            _$target27,
             kind: _i1.MemberKind.getter,
             returnType: r'OrderService',
           ),
           _i1.MethodSignature.of(
             r'baskets',
-            _$target26,
+            _$target27,
             kind: _i1.MemberKind.getter,
             returnType: r'BasketService',
           ),
@@ -3147,7 +3180,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'neon.vip'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i52.OrderMailer>(
       name: r'orderMailer',
@@ -3176,7 +3211,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ],
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i52.ShippingNotifier>(
       name: r'shippingNotifier',
@@ -3202,7 +3239,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ],
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i74.OrderRepository>(
       name: r'orderRepository',
@@ -3212,7 +3251,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         bean.shutdown();
       },
       annotations: const [_i1.Repository(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i21.OrderService>(
       name: r'orderService',
@@ -3262,7 +3303,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i17.CustomerOrder>(),
-          invoke: _$invoke27,
+          invoke: _$invoke28,
           annotations: [_i64.PreAuthorize("hasRole('USER')")],
         ),
         const _i1.BeanMethod<_i21.OrderService>(
@@ -3276,7 +3317,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i17.CustomerOrder>(),
-          invoke: _$invoke28,
+          invoke: _$invoke29,
           annotations: [
             _i64.PostAuthorize("hasPermission(returnObject, 'read')"),
           ],
@@ -3286,7 +3327,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           returnTypeInfo: _i1.ListType<_i17.CustomerOrder>(
             _i1.ClassType<_i17.CustomerOrder>(),
           ),
-          invoke: _$invoke29,
+          invoke: _$invoke30,
           annotations: [
             _i64.PostFilter(
               "filterObject.customer == authentication.name or hasRole('ADMIN')",
@@ -3299,7 +3340,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'place',
-            _$target30,
+            _$target31,
             returnType: r'CustomerOrder',
             parameterTypes: [r'String', r'Map'],
             parameterNames: [r'customer', r'basket'],
@@ -3308,7 +3349,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'find',
-            _$target30,
+            _$target31,
             returnType: r'CustomerOrder',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
@@ -3319,7 +3360,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'all',
-            _$target30,
+            _$target31,
             returnType: r'List',
             annotations: [
               _i64.PostFilter(
@@ -3330,32 +3371,32 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'ship',
-            _$target30,
+            _$target31,
             returnType: r'void',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
           ),
           _i1.MethodSignature.of(
             r'shippingDelay',
-            _$target30,
+            _$target31,
             kind: _i1.MemberKind.getter,
             returnType: r'Duration',
           ),
           _i1.MethodSignature.of(
             r'checkout',
-            _$target30,
+            _$target31,
             kind: _i1.MemberKind.getter,
             returnType: r'Checkout',
           ),
           _i1.MethodSignature.of(
             r'checkout',
-            _$target30,
+            _$target31,
             kind: _i1.MemberKind.setter,
             returnType: r'Checkout',
           ),
           _i1.MethodSignature.of(
             r'clock',
-            _$target30,
+            _$target31,
             kind: _i1.MemberKind.setter,
             returnType: r'Clock',
           ),
@@ -3396,7 +3437,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'neon.security'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i24.MeController>(
       name: r'meController',
@@ -3414,7 +3457,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i24.Me>(),
-          invoke: _$invoke31,
+          invoke: _$invoke32,
           annotations: [_i32.GetMapping()],
         ),
       ],
@@ -3426,7 +3469,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'me',
-            _$target32,
+            _$target33,
             returnType: r'Me',
             parameterTypes: [r'Authentication'],
             parameterNames: [r'authentication'],
@@ -3443,7 +3486,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       source: r'package:neon_books_server/src/security/security_config.dart#CorsProperties',
       create: (r) => _i37.CorsProperties(),
       annotations: const [_i1.ConfigurationProperties(r'neon.cors')],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i37.SecurityConfig>(
       name: r'securityConfig',
@@ -3472,7 +3517,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Order(1),
         _i1.Profile([r'supplier-stub & !prod']),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i38.SecurityFilterChain>(
       name: r'apiChain',
@@ -3495,7 +3542,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Order(2),
         _i1.Profile([r'!sso']),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i38.SecurityFilterChain>(
       name: r'ssoChain',
@@ -3523,7 +3572,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Order(2),
         _i1.Profile([r'sso']),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i78.RoleHierarchyImpl>(
       name: r'roleHierarchy',
@@ -3533,7 +3584,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       create: (r) =>
           (_i37.SecurityConfig.roleHierarchy() as _i78.RoleHierarchyImpl),
       annotations: const [_i1.Bean()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i42.UrlBasedCorsConfigurationSource>(
       name: r'corsConfigurationSource',
@@ -3554,7 +3607,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               ) as _$SecurityConfigConfiguration)._$corsConfigurationSource(r)
               as _i42.UrlBasedCorsConfigurationSource),
       annotations: const [_i1.Bean()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i37.OrderPermissionEvaluator>(
       name: r'orderPermissionEvaluator',
@@ -3562,7 +3617,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       types: const [_i37.OrderPermissionEvaluator, _i79.PermissionEvaluator],
       create: (r) => _i37.OrderPermissionEvaluator(),
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i41.AppProperties>(
       name: r'appProperties',
@@ -3572,7 +3629,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.ConfigurationProperties(r'neon.app'),
         _i1.Validated(),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i41.SsoConfig>(
       name: r'ssoConfig',
@@ -3615,7 +3674,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               ) as _$SsoConfigConfiguration)._$keycloakRoles(r)
               as _i41.KeycloakRolesMapper),
       annotations: const [_i1.Bean()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i44.UsersProperties>(
       name: r'usersProperties',
@@ -3626,7 +3687,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.ConfigurationProperties(r'neon.security'),
         _i1.Validated(),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i44.UsersConfig>(
       name: r'usersConfig',
@@ -3646,7 +3709,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         qualifier: r'usersConfig',
       ) as _$UsersConfigConfiguration)._$passwordEncoder(r),
       annotations: const [_i1.Bean()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i46.InMemoryUserDetailsManager>(
       name: r'userDetailsService',
@@ -3669,7 +3734,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               ) as _$UsersConfigConfiguration)._$userDetailsService(r)
               as _i46.InMemoryUserDetailsManager),
       annotations: const [_i1.Bean()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i22.SandboxGateway>(
       name: r'sandbox',
@@ -3689,7 +3756,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Component(r'sandbox'),
         _i1.Profile([r'dev']),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i22.LiveGateway>(
       name: r'live',
@@ -3708,7 +3777,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Component(r'live'),
         _i1.Profile([r'prod']),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i22.OfflineGateway>(
       name: r'offline',
@@ -3718,7 +3789,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       fallback: true,
       create: (r) => _i22.OfflineGateway(),
       annotations: const [_i1.Component(r'offline'), _i1.Fallback()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i22.Checkout>(
       name: r'checkout',
@@ -3739,7 +3812,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ),
       annotations: const [_i1.Service(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i72.BulkDiscount>(
       name: r'bulkDiscount',
@@ -3748,7 +3823,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       order: 1,
       create: (r) => _i72.BulkDiscount(),
       annotations: const [_i1.Component(), _i1.Order(1)],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i72.PoetryDiscount>(
       name: r'poetryDiscount',
@@ -3757,7 +3834,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       order: 2,
       create: (r) => _i72.PoetryDiscount(),
       annotations: const [_i1.Component(), _i1.Order(2)],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i72.BestDiscount>(
       name: r'bestDiscount',
@@ -3776,7 +3855,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         bean.report();
       },
       annotations: const [_i1.Component(), _i1.Primary(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i47.ShopConfig>(
       name: r'shopConfig',
@@ -3801,7 +3882,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Bean(),
         _i80.ConditionalOnMissingBean(_i23.Clock),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i14.CoverStore>(
       name: r'coverStore',
@@ -3838,19 +3921,19 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'open',
-            _$target33,
+            _$target34,
             declaringTypes: [],
             returnType: r'void',
           ),
           _i1.MethodSignature.of(
             r'close',
-            _$target33,
+            _$target34,
             declaringTypes: [],
             returnType: r'void',
           ),
           _i1.MethodSignature.of(
             r'coverOf',
-            _$target33,
+            _$target34,
             declaringTypes: [],
             returnType: r'Resource',
             parameterTypes: [r'String'],
@@ -3858,7 +3941,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'store',
-            _$target33,
+            _$target34,
             declaringTypes: [],
             returnType: r'Future',
             parameterTypes: [r'String', r'MultipartFile'],
@@ -3866,14 +3949,14 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'directory',
-            _$target33,
+            _$target34,
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
           ),
           _i1.MethodSignature.of(
             r'isOpen',
-            _$target33,
+            _$target34,
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'bool',
@@ -3900,7 +3983,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'add',
-            _$target34,
+            _$target35,
             declaringTypes: [],
             returnType: r'void',
             parameterTypes: [r'String'],
@@ -3908,20 +3991,20 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'build',
-            _$target34,
+            _$target35,
             declaringTypes: [],
             returnType: r'String',
           ),
           _i1.MethodSignature.of(
             r'shopName',
-            _$target34,
+            _$target35,
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
           ),
           _i1.MethodSignature.of(
             r'createdAt',
-            _$target34,
+            _$target35,
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'DateTime',
@@ -3939,7 +4022,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Validated(),
         _i15.ValidOpeningHours(),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i81.SampleData>(
       name: r'sampleData',
@@ -3970,7 +4055,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Order(1),
         _i1.Log(),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i81.StartupAnnouncement>(
       name: r'startupAnnouncement',
@@ -3996,7 +4083,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         );
       },
       annotations: const [_i1.Component(), _i1.Order(2), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i81.CatalogStatistics>(
       name: r'catalogStatistics',
@@ -4008,7 +4097,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         r.dependency<_i15.ShopProperties>(name: r'_shop'),
       ),
       annotations: const [_i1.Component(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i81.ServerAnnouncer>(
       name: r'serverAnnouncer',
@@ -4049,7 +4140,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         }),
       ],
       annotations: const [_i1.Component(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i54.RestockJob>(
       name: r'restockJob',
@@ -4076,7 +4169,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           r'restockLowStock',
           isFuture: true,
           isVoid: true,
-          invoke: _$invoke35,
+          invoke: _$invoke36,
           annotations: [
             _i87.Scheduled(
               fixedDelayString: r'${neon.stock.restock-interval:30s}',
@@ -4090,7 +4183,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Conditional([_i85.SupplierConfigured]),
         _i1.Log(),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i54.StockReport>(
       name: r'stockReport',
@@ -4103,14 +4198,16 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         const _i1.BeanMethod<_i54.StockReport>(
           r'dailyReport',
           isVoid: true,
-          invoke: _$invoke36,
+          invoke: _$invoke37,
           annotations: [
             _i87.Scheduled(cron: r'${neon.stock.report-cron:0 0 6 * * *}'),
           ],
         ),
       ],
       annotations: const [_i1.Component(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i25.StockController>(
       name: r'stockController',
@@ -4133,7 +4230,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i26.EventStream<_i27.StockChanged>>([
             _i1.ClassType<_i27.StockChanged>(),
           ]),
-          invoke: _$invoke37,
+          invoke: _$invoke38,
           annotations: [_i32.GetMapping(r'/events')],
         ),
       ],
@@ -4145,7 +4242,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'events',
-            _$target38,
+            _$target39,
             returnType: r'EventStream',
             parameterTypes: [r'String'],
             parameterNames: [r'lastEventId'],
@@ -4157,7 +4254,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'feed',
-            _$target38,
+            _$target39,
             kind: _i1.MemberKind.getter,
             returnType: r'StockFeed',
           ),
@@ -4185,7 +4282,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ],
       annotations: const [_i1.Component(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i86.StockService>(
       name: r'stockService',
@@ -4208,7 +4307,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ],
       annotations: const [_i1.Service(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i29.SupplierOffers>(
       name: r'supplierOffers',
@@ -4222,7 +4323,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'offer',
-            _$target39,
+            _$target40,
             returnType: r'Future',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'isbn', r'copies'],
@@ -4257,7 +4358,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'order',
-            _$target40,
+            _$target41,
             returnType: r'Future',
             parameterTypes: [r'DeliveryRequest'],
             parameterNames: [r'request'],
@@ -4300,7 +4401,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             _i1.ClassType<_i30.Delivery>(),
           ]),
           isFuture: true,
-          invoke: _$invoke41,
+          invoke: _$invoke42,
           annotations: [
             _i32.PostMapping.of(
               path: r'/deliveries',
@@ -4310,14 +4411,18 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ],
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i49.SupplierProperties>(
       name: r'supplierProperties',
       source: r'package:neon_books_server/src/supplier/supplier_config.dart#SupplierProperties',
       create: (r) => _i49.SupplierProperties(),
       annotations: const [_i1.ConfigurationProperties(r'neon.supplier')],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i49.SupplierClientConfig>(
       name: r'supplierClientConfig',
@@ -4345,7 +4450,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               ) as _$SupplierClientConfigConfiguration)._$supplierHeaders(r)
               as _i49.SupplierHeaders),
       annotations: const [_i1.Bean()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i51.DefaultRetryer>(
       name: r'supplierRetryer',
@@ -4365,7 +4472,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               ) as _$SupplierClientConfigConfiguration)._$supplierRetryer(r)
               as _i51.DefaultRetryer),
       annotations: const [_i1.Bean()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i55.SupplierStub>(
       name: r'supplierStub',
@@ -4406,8 +4515,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i30.Offer>(),
-          invoke: _$invoke42,
-          invokeNamed: _$invokeNamed43,
+          invoke: _$invoke43,
+          invokeNamed: _$invokeNamed44,
           annotations: [_i32.GetMapping(r'/offers/{isbn}')],
         ),
         const _i1.BeanMethod<_i55.SupplierStub>(
@@ -4430,7 +4539,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i10.ResponseEntity<_i30.Delivery>>([
             _i1.ClassType<_i30.Delivery>(),
           ]),
-          invoke: _$invoke44,
+          invoke: _$invoke45,
           annotations: [_i32.PostMapping(r'/deliveries')],
         ),
       ],
@@ -4439,7 +4548,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i32.RequestMapping(r'/supplier'),
         _i1.Profile([r'supplier-stub & !prod']),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i88.SupportBot>(
       name: r'supportBot',
@@ -4474,7 +4585,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
         _i1.PropertySource([r'resources:support/bot.properties']),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i56.SupportEndpoint>(
       name: r'supportEndpoint',
@@ -4508,7 +4621,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           isVoid: true,
-          invoke: _$invoke45,
+          invoke: _$invoke46,
           annotations: [_i89.OnOpen()],
         ),
         const _i1.BeanMethod<_i56.SupportEndpoint>(
@@ -4536,7 +4649,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i58.ChatMessage>(nullable: true),
-          invoke: _$invoke46,
+          invoke: _$invoke47,
           annotations: [_i90.OnMessage()],
         ),
         const _i1.BeanMethod<_i56.SupportEndpoint>(
@@ -4555,7 +4668,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           isVoid: true,
-          invoke: _$invoke47,
+          invoke: _$invoke48,
           annotations: [_i89.OnClose()],
         ),
         const _i1.BeanMethod<_i56.SupportEndpoint>(
@@ -4574,7 +4687,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           isVoid: true,
-          invoke: _$invoke48,
+          invoke: _$invoke49,
           annotations: [_i89.OnError()],
         ),
       ],
@@ -4588,7 +4701,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
         _i1.Log(),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i73.SupportSessions>(
       name: r'supportSessions',
@@ -4600,7 +4715,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         r.dependency<_i57.WebSocketSessionRegistry>(name: r'_registry'),
       ),
       annotations: const [_i1.Service()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i60.ApiErrors>(
       name: r'apiErrors',
@@ -4622,7 +4739,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i91.ProblemDetail>(),
-          invoke: _$invoke49,
+          invoke: _$invoke50,
           annotations: [_i53.ExceptionHandler(), _i53.ResponseStatus(404)],
         ),
         const _i1.BeanMethod<_i60.ApiErrors>(
@@ -4636,7 +4753,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i91.ProblemDetail>(),
-          invoke: _$invoke50,
+          invoke: _$invoke51,
           annotations: [_i53.ExceptionHandler(), _i53.ResponseStatus(409)],
         ),
         const _i1.BeanMethod<_i60.ApiErrors>(
@@ -4653,7 +4770,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               _i1.GenericType<_i10.ResponseEntity<_i91.ProblemDetail>>([
                 _i1.ClassType<_i91.ProblemDetail>(),
               ]),
-          invoke: _$invoke51,
+          invoke: _$invoke52,
           annotations: [_i53.ExceptionHandler()],
         ),
         const _i1.BeanMethod<_i60.ApiErrors>(
@@ -4667,7 +4784,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i91.ProblemDetail>(),
-          invoke: _$invoke52,
+          invoke: _$invoke53,
           annotations: [_i53.ExceptionHandler(), _i53.ResponseStatus(502)],
         ),
         const _i1.BeanMethod<_i60.ApiErrors>(
@@ -4689,12 +4806,14 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i91.ProblemDetail>(),
-          invoke: _$invoke53,
+          invoke: _$invoke54,
           annotations: [_i53.ExceptionHandler()],
         ),
       ],
       annotations: const [_i53.RestControllerAdvice(), _i1.Log()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i92.RequestIdFilter>(
       name: r'requestIdFilter',
@@ -4707,7 +4826,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       order: -2147483648,
       create: (r) => _i92.RequestIdFilter(),
       annotations: const [_i1.Component(), _i1.Order(-2147483648)],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i92.AccessLogFilter>(
       name: r'accessLogFilter',
@@ -4720,7 +4841,9 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.Order(-2147483647),
         _i1.Log(topic: r'neon.access', fieldName: r'accessLog'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors7,
+      ),
     ),
     _i1.BeanDefinition<_i94.WebConfig>(
       name: r'webConfig',
@@ -4803,22 +4926,22 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i3.LogLine>(
           r'time',
           typeInfo: _i1.ClassType<DateTime>(),
-          get: _$get54,
+          get: _$get55,
         ),
         _i1.BeanProperty<_i3.LogLine>(
           r'level',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get55,
+          get: _$get56,
         ),
         _i1.BeanProperty<_i3.LogLine>(
           r'logger',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get56,
+          get: _$get57,
         ),
         _i1.BeanProperty<_i3.LogLine>(
           r'message',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get57,
+          get: _$get58,
         ),
         _i1.BeanProperty<_i3.LogLine>(
           r'fields',
@@ -4826,7 +4949,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             _i1.ClassType<String>(),
           ),
-          get: _$get58,
+          get: _$get59,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -4867,7 +4990,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             defaultValue: <String, String>{},
           ),
         ],
-        create: _$create59,
+        create: _$create60,
       ),
     ),
     _i1.BeanIntrospection<_i7.Book>(
@@ -4876,33 +4999,33 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         const _i1.BeanProperty<_i7.Book>(
           r'isbn',
           typeInfo: const _i1.ClassType<String>(),
-          get: _$get60,
+          get: _$get61,
         ),
         const _i1.BeanProperty<_i7.Book>(
           r'title',
           typeInfo: const _i1.ClassType<String>(),
-          get: _$get61,
+          get: _$get62,
         ),
         const _i1.BeanProperty<_i7.Book>(
           r'author',
           typeInfo: const _i1.ClassType<String>(),
-          get: _$get62,
+          get: _$get63,
         ),
         const _i1.BeanProperty<_i7.Book>(
           r'price',
           typeInfo: const _i1.ClassType<double>(),
-          get: _$get63,
+          get: _$get64,
         ),
         const _i1.BeanProperty<_i7.Book>(
           r'year',
           nullable: true,
           typeInfo: const _i1.ClassType<int>(nullable: true),
-          get: _$get64,
+          get: _$get65,
         ),
         const _i1.BeanProperty<_i7.Book>(
           r'tags',
           typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get65,
+          get: _$get66,
         ),
         _i1.BeanProperty<_i7.Book>(
           r'format',
@@ -4910,12 +5033,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             _i7.BookFormat.values,
             jsonValue: (value) => value.json,
           ),
-          get: _$get66,
+          get: _$get67,
         ),
         const _i1.BeanProperty<_i7.Book>(
           r'available',
           typeInfo: const _i1.ClassType<int>(),
-          get: _$get67,
+          get: _$get68,
         ),
       ],
       methods: [
@@ -4923,12 +5046,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           r'withAvailable',
           returnType: _i7.Book,
           parameterTypes: const [int],
-          invoke: _$invoke68,
+          invoke: _$invoke69,
         ),
         _i1.BeanMethod<_i7.Book>(
           r'toString',
           returnType: String,
-          invoke: _$invoke69,
+          invoke: _$invoke70,
         ),
       ],
       constructor: _i1.BeanConstructor<_i7.Book>(
@@ -4987,7 +5110,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             defaultValue: 0,
           ),
         ],
-        create: _$create70,
+        create: _$create71,
       ),
     ),
     const _i1.BeanIntrospection<_i7.BookPage>(
@@ -4996,22 +5119,22 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i7.BookPage>(
           r'items',
           typeInfo: _i1.ListType<_i7.Book>(_i1.ClassType<_i7.Book>()),
-          get: _$get71,
+          get: _$get72,
         ),
         _i1.BeanProperty<_i7.BookPage>(
           r'page',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get72,
+          get: _$get73,
         ),
         _i1.BeanProperty<_i7.BookPage>(
           r'size',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get73,
+          get: _$get74,
         ),
         _i1.BeanProperty<_i7.BookPage>(
           r'total',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get74,
+          get: _$get75,
         ),
       ],
       constructor: _i1.BeanConstructor<_i7.BookPage>(
@@ -5041,7 +5164,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create75,
+        create: _$create76,
       ),
     ),
     _i1.BeanIntrospection<_i7.NewBook>(
@@ -5050,32 +5173,32 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         const _i1.BeanProperty<_i7.NewBook>(
           r'isbn',
           typeInfo: const _i1.ClassType<String>(),
-          get: _$get76,
+          get: _$get77,
           annotations: const [_i1.Matches(r'^97[89]\d{10}$')],
         ),
         const _i1.BeanProperty<_i7.NewBook>(
           r'title',
           typeInfo: const _i1.ClassType<String>(),
-          get: _$get77,
+          get: _$get78,
           annotations: const [_i1.NotBlank(), _i1.Size(max: 120)],
         ),
         const _i1.BeanProperty<_i7.NewBook>(
           r'author',
           typeInfo: const _i1.ClassType<String>(),
-          get: _$get78,
+          get: _$get79,
           annotations: const [_i1.NotBlank()],
         ),
         const _i1.BeanProperty<_i7.NewBook>(
           r'price',
           typeInfo: const _i1.ClassType<double>(),
-          get: _$get79,
+          get: _$get80,
           annotations: const [_i1.Positive()],
         ),
         const _i1.BeanProperty<_i7.NewBook>(
           r'year',
           nullable: true,
           typeInfo: const _i1.ClassType<int>(nullable: true),
-          get: _$get80,
+          get: _$get81,
           annotations: const [
             _i1.NotNull(groups: [_i7.Catalogued]),
             _i1.Max(2100),
@@ -5084,7 +5207,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         const _i1.BeanProperty<_i7.NewBook>(
           r'tags',
           typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get81,
+          get: _$get82,
           annotations: const [
             _i1.NotEmpty(groups: [_i7.Catalogued]),
           ],
@@ -5095,12 +5218,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             _i7.BookFormat.values,
             jsonValue: (value) => value.json,
           ),
-          get: _$get82,
+          get: _$get83,
         ),
         const _i1.BeanProperty<_i7.NewBook>(
           r'stock',
           typeInfo: const _i1.ClassType<int>(),
-          get: _$get83,
+          get: _$get84,
           annotations: const [_i1.PositiveOrZero()],
         ),
       ],
@@ -5108,7 +5231,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanMethod<_i7.NewBook>(
           r'toBook',
           returnType: _i7.Book,
-          invoke: _$invoke84,
+          invoke: _$invoke85,
         ),
       ],
       instantiate: _i7.NewBook.new,
@@ -5172,7 +5295,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             defaultValue: 0,
           ),
         ],
-        create: _$create85,
+        create: _$create86,
       ),
     ),
     const _i1.BeanIntrospection<_i17.Basket>(
@@ -5183,17 +5306,17 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ListType<_i17.OrderLine>(
             _i1.ClassType<_i17.OrderLine>(),
           ),
-          get: _$get86,
+          get: _$get87,
         ),
         _i1.BeanProperty<_i17.Basket>(
           r'count',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get87,
+          get: _$get88,
         ),
         _i1.BeanProperty<_i17.Basket>(
           r'total',
           typeInfo: _i1.ClassType<double>(),
-          get: _$get88,
+          get: _$get89,
         ),
       ],
       constructor: _i1.BeanConstructor<_i17.Basket>(
@@ -5217,7 +5340,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create89,
+        create: _$create90,
       ),
     ),
     const _i1.BeanIntrospection<_i17.OrderLine>(
@@ -5226,32 +5349,32 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i17.OrderLine>(
           r'isbn',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get90,
+          get: _$get91,
         ),
         _i1.BeanProperty<_i17.OrderLine>(
           r'title',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get91,
+          get: _$get92,
         ),
         _i1.BeanProperty<_i17.OrderLine>(
           r'price',
           typeInfo: _i1.ClassType<double>(),
-          get: _$get92,
+          get: _$get93,
         ),
         _i1.BeanProperty<_i17.OrderLine>(
           r'quantity',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get93,
+          get: _$get94,
         ),
         _i1.BeanProperty<_i17.OrderLine>(
           r'discount',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get94,
+          get: _$get95,
         ),
         _i1.BeanProperty<_i17.OrderLine>(
           r'total',
           typeInfo: _i1.ClassType<double>(),
-          get: _$get95,
+          get: _$get96,
         ),
       ],
       constructor: _i1.BeanConstructor<_i17.OrderLine>(
@@ -5294,7 +5417,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             defaultValue: 0,
           ),
         ],
-        create: _$create96,
+        create: _$create97,
       ),
     ),
     const _i1.BeanIntrospection<_i17.QuantityRequest>(
@@ -5303,7 +5426,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i17.QuantityRequest>(
           r'quantity',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get97,
+          get: _$get98,
           annotations: [_i1.Min(0), _i1.Max(10)],
         ),
       ],
@@ -5318,7 +5441,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             defaultValue: 1,
           ),
         ],
-        create: _$create98,
+        create: _$create99,
       ),
     ),
     _i1.BeanIntrospection<_i17.CustomerOrder>(
@@ -5327,12 +5450,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         const _i1.BeanProperty<_i17.CustomerOrder>(
           r'id',
           typeInfo: const _i1.ClassType<int>(),
-          get: _$get99,
+          get: _$get100,
         ),
         const _i1.BeanProperty<_i17.CustomerOrder>(
           r'customer',
           typeInfo: const _i1.ClassType<String>(),
-          get: _$get100,
+          get: _$get101,
           annotations: const [_i1.JsonProperty(r'user')],
         ),
         const _i1.BeanProperty<_i17.CustomerOrder>(
@@ -5340,12 +5463,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: const _i1.ListType<_i17.OrderLine>(
             _i1.ClassType<_i17.OrderLine>(),
           ),
-          get: _$get101,
+          get: _$get102,
         ),
         const _i1.BeanProperty<_i17.CustomerOrder>(
           r'total',
           typeInfo: const _i1.ClassType<double>(),
-          get: _$get102,
+          get: _$get103,
         ),
         _i1.BeanProperty<_i17.CustomerOrder>(
           r'status',
@@ -5353,18 +5476,18 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             _i17.OrderStatus.values,
             jsonValue: (value) => value.json,
           ),
-          get: _$get103,
+          get: _$get104,
         ),
         const _i1.BeanProperty<_i17.CustomerOrder>(
           r'placedAt',
           typeInfo: const _i1.ClassType<DateTime>(),
-          get: _$get104,
+          get: _$get105,
         ),
         const _i1.BeanProperty<_i17.CustomerOrder>(
           r'payment',
           nullable: true,
           typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: _$get105,
+          get: _$get106,
         ),
       ],
       methods: [
@@ -5372,7 +5495,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           r'withStatus',
           returnType: _i17.CustomerOrder,
           parameterTypes: const [_i17.OrderStatus],
-          invoke: _$invoke106,
+          invoke: _$invoke107,
         ),
       ],
       constructor: _i1.BeanConstructor<_i17.CustomerOrder>(
@@ -5425,7 +5548,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             symbol: #payment,
           ),
         ],
-        create: _$create107,
+        create: _$create108,
       ),
     ),
     const _i1.BeanIntrospection<_i24.Me>(
@@ -5434,23 +5557,23 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i24.Me>(
           r'name',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get108,
+          get: _$get109,
         ),
         _i1.BeanProperty<_i24.Me>(
           r'roles',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get109,
+          get: _$get110,
         ),
         _i1.BeanProperty<_i24.Me>(
           r'authorities',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get110,
+          get: _$get111,
         ),
         _i1.BeanProperty<_i24.Me>(
           r'registrationId',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get111,
+          get: _$get112,
         ),
       ],
       constructor: _i1.BeanConstructor<_i24.Me>(
@@ -5479,7 +5602,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             symbol: #registrationId,
           ),
         ],
-        create: _$create112,
+        create: _$create113,
       ),
     ),
     const _i1.BeanIntrospection<_i37.CorsProperties>(
@@ -5488,8 +5611,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i37.CorsProperties>(
           r'allowedOriginPatterns',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get113,
-          set: _$set114,
+          get: _$get114,
+          set: _$set115,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'neon.cors')],
@@ -5497,7 +5620,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       instantiate: _i37.CorsProperties.new,
       constructor: _i1.BeanConstructor<_i37.CorsProperties>(
         parameters: [],
-        create: _$create115,
+        create: _$create116,
       ),
     ),
     const _i1.BeanIntrospection<_i41.AppProperties>(
@@ -5508,8 +5631,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'http://localhost:5050/',
-          get: _$get116,
-          set: _$set117,
+          get: _$get117,
+          set: _$set118,
           annotations: [
             _i1.Matches(
               r'^https?://.+/$',
@@ -5523,7 +5646,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       instantiate: _i41.AppProperties.new,
       constructor: _i1.BeanConstructor<_i41.AppProperties>(
         parameters: [],
-        create: _$create118,
+        create: _$create119,
       ),
     ),
     const _i1.BeanIntrospection<_i44.UsersProperties>(
@@ -5535,8 +5658,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             _i1.ClassType<_i44.UserEntry>(),
           ),
-          get: _$get119,
-          set: _$set120,
+          get: _$get120,
+          set: _$set121,
           annotations: [_i1.Valid()],
         ),
       ],
@@ -5548,7 +5671,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       instantiate: _i44.UsersProperties.new,
       constructor: _i1.BeanConstructor<_i44.UsersProperties>(
         parameters: [],
-        create: _$create121,
+        create: _$create122,
       ),
     ),
     const _i1.BeanIntrospection<_i44.UserEntry>(
@@ -5559,8 +5682,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'',
-          get: _$get122,
-          set: _$set123,
+          get: _$get123,
+          set: _$set124,
           annotations: [
             _i1.Matches(
               r'^\{[a-z0-9]+\}.+$',
@@ -5571,8 +5694,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i44.UserEntry>(
           r'roles',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get124,
-          set: _$set125,
+          get: _$get125,
+          set: _$set126,
           annotations: [_i1.NotEmpty()],
         ),
       ],
@@ -5580,7 +5703,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       instantiate: _i44.UserEntry.new,
       constructor: _i1.BeanConstructor<_i44.UserEntry>(
         parameters: [],
-        create: _$create126,
+        create: _$create127,
       ),
     ),
     const _i1.BeanIntrospection<_i15.ShopProperties>(
@@ -5591,8 +5714,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'NEON Books',
-          get: _$get127,
-          set: _$set128,
+          get: _$get128,
+          set: _$set129,
           annotations: [_i1.NotBlank()],
         ),
         _i1.BeanProperty<_i15.ShopProperties>(
@@ -5600,8 +5723,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 9,
-          get: _$get129,
-          set: _$set130,
+          get: _$get130,
+          set: _$set131,
           annotations: [_i1.Min(0), _i1.Max(24)],
         ),
         _i1.BeanProperty<_i15.ShopProperties>(
@@ -5609,8 +5732,8 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 21,
-          get: _$get131,
-          set: _$set132,
+          get: _$get132,
+          set: _$set133,
           annotations: [_i1.Min(0), _i1.Max(24)],
         ),
         _i1.BeanProperty<_i15.ShopProperties>(
@@ -5618,21 +5741,21 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 10,
-          get: _$get133,
-          set: _$set134,
+          get: _$get134,
+          set: _$set135,
           annotations: [_i1.Min(1)],
         ),
         _i1.BeanProperty<_i15.ShopProperties>(
           r'deliveryTime',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get135,
-          set: _$set136,
+          get: _$get136,
+          set: _$set137,
         ),
         _i1.BeanProperty<_i15.ShopProperties>(
           r'maxCoverSize',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get137,
-          set: _$set138,
+          get: _$get138,
+          set: _$set139,
         ),
       ],
       annotations: [
@@ -5644,7 +5767,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       instantiate: _i15.ShopProperties.new,
       constructor: _i1.BeanConstructor<_i15.ShopProperties>(
         parameters: [],
-        create: _$create139,
+        create: _$create140,
       ),
     ),
     const _i1.BeanIntrospection<_i27.LowStock>(
@@ -5653,12 +5776,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i27.LowStock>(
           r'orderId',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get140,
+          get: _$get141,
         ),
         _i1.BeanProperty<_i27.LowStock>(
           r'isbns',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get141,
+          get: _$get142,
         ),
       ],
       constructor: _i1.BeanConstructor<_i27.LowStock>(
@@ -5674,7 +5797,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create142,
+        create: _$create143,
       ),
     ),
     const _i1.BeanIntrospection<_i27.StockChanged>(
@@ -5683,12 +5806,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i27.StockChanged>(
           r'isbn',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get143,
+          get: _$get144,
         ),
         _i1.BeanProperty<_i27.StockChanged>(
           r'available',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get144,
+          get: _$get145,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -5707,7 +5830,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create145,
+        create: _$create146,
       ),
     ),
     const _i1.BeanIntrospection<_i30.Offer>(
@@ -5716,17 +5839,17 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i30.Offer>(
           r'isbn',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get146,
+          get: _$get147,
         ),
         _i1.BeanProperty<_i30.Offer>(
           r'price',
           typeInfo: _i1.ClassType<double>(),
-          get: _$get147,
+          get: _$get148,
         ),
         _i1.BeanProperty<_i30.Offer>(
           r'copies',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get148,
+          get: _$get149,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -5751,7 +5874,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create149,
+        create: _$create150,
       ),
     ),
     const _i1.BeanIntrospection<_i30.Delivery>(
@@ -5760,18 +5883,18 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i30.Delivery>(
           r'isbn',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get150,
+          get: _$get151,
         ),
         _i1.BeanProperty<_i30.Delivery>(
           r'copies',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get151,
+          get: _$get152,
         ),
         _i1.BeanProperty<_i30.Delivery>(
           r'reference',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get152,
+          get: _$get153,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -5795,7 +5918,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             symbol: #reference,
           ),
         ],
-        create: _$create153,
+        create: _$create154,
       ),
     ),
     const _i1.BeanIntrospection<_i30.DeliveryRequest>(
@@ -5804,12 +5927,12 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i30.DeliveryRequest>(
           r'isbn',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get154,
+          get: _$get155,
         ),
         _i1.BeanProperty<_i30.DeliveryRequest>(
           r'copies',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get155,
+          get: _$get156,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -5828,7 +5951,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create156,
+        create: _$create157,
       ),
     ),
     const _i1.BeanIntrospection<_i49.SupplierProperties>(
@@ -5839,16 +5962,16 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'',
-          get: _$get157,
-          set: _$set158,
+          get: _$get158,
+          set: _$set159,
         ),
         _i1.BeanProperty<_i49.SupplierProperties>(
           r'apiKey',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'',
-          get: _$get159,
-          set: _$set160,
+          get: _$get160,
+          set: _$set161,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'neon.supplier')],
@@ -5856,7 +5979,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       instantiate: _i49.SupplierProperties.new,
       constructor: _i1.BeanConstructor<_i49.SupplierProperties>(
         parameters: [],
-        create: _$create161,
+        create: _$create162,
       ),
     ),
     const _i1.BeanIntrospection<_i58.ChatMessage>(
@@ -5865,18 +5988,18 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         _i1.BeanProperty<_i58.ChatMessage>(
           r'from',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get162,
+          get: _$get163,
         ),
         _i1.BeanProperty<_i58.ChatMessage>(
           r'text',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get163,
+          get: _$get164,
         ),
         _i1.BeanProperty<_i58.ChatMessage>(
           r'at',
           nullable: true,
           typeInfo: _i1.ClassType<DateTime>(nullable: true),
-          get: _$get164,
+          get: _$get165,
         ),
       ],
       constructor: _i1.BeanConstructor<_i58.ChatMessage>(
@@ -5900,7 +6023,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             symbol: #at,
           ),
         ],
-        create: _$create165,
+        create: _$create166,
       ),
     ),
   ],

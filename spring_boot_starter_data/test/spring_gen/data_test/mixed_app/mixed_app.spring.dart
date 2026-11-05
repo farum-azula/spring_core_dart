@@ -67,6 +67,13 @@ class _$NoteRepositoryImpl extends _i1.SimpleRepository<_i2.Note, int>
       );
 }
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+
 /// Beans found by `@ComponentScan` in `lib/ and test/data_test/mixed_app/`.
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
@@ -84,7 +91,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i5.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i2.LogRepository>(
       name: r'logRepository',
@@ -100,7 +109,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$LogRepositoryImpl.$create(r),
       annotations: const [_i4.UseDataSource(r'archive')],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i2.NoteRepository>(
       name: r'noteRepository',
@@ -116,7 +127,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$NoteRepositoryImpl.$create(r),
       annotations: const [_i4.UseStore(r'memory')],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
       name: r'entityIntrospections#application',
@@ -581,7 +594,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'd4ffec3e',
+  fingerprint: 'eb6114e9',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -250,13 +250,19 @@ class _$ManagersConfiguration extends _i2.Managers {
   ) => super.archiveTransactionManager();
 }
 
-const _$target0 = _i1.AopTarget(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+const _$target1 = _i1.AopTarget(
   r'Shop',
   types: [r'Shop'],
   annotations: [_i1.Service()],
   annotationTypes: [r'Service'],
 );
-const _$target1 = _i1.AopTarget(
+const _$target2 = _i1.AopTarget(
   r'Ledger',
   types: [r'Ledger'],
   annotations: [_i1.Service(), _i5.Transactional()],
@@ -292,7 +298,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         qualifier: r'managers',
       ) as _$ManagersConfiguration)._$transactionManager(r),
       annotations: const [_i1.Bean(), _i1.Primary()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i4.RecordingTransactionManager>(
       name: r'archiveTransactionManager',
@@ -313,7 +321,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         qualifier: r'managers',
       ) as _$ManagersConfiguration)._$archiveTransactionManager(r),
       annotations: const [_i1.Bean(), _i1.Qualifier(r'archive')],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.Shop>(
       name: r'shop',
@@ -338,14 +348,14 @@ _i1.BeanModule get $application => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'transactionId',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [_i5.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'fail',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
@@ -354,7 +364,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'failLater',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
@@ -363,7 +373,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'failOutOfStock',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
@@ -374,7 +384,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'failWithRules',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
@@ -388,7 +398,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'failClosest',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
@@ -402,14 +412,14 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'archived',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [_i5.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'archivedByName',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [
               _i5.Transactional(
@@ -420,7 +430,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'fresh',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [
               _i5.Transactional(propagation: _i5.Propagation.requiresNew),
@@ -429,7 +439,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'mandatory',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [
               _i5.Transactional(propagation: _i5.Propagation.mandatory),
@@ -438,7 +448,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'settings',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [
               _i5.Transactional(
@@ -451,7 +461,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'callsLedger',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'Ledger'],
             parameterNames: [r'ledger'],
@@ -460,12 +470,13 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'forgets',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [_i5.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
         ],
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) => _$ShopProxy((target as _i2.Shop), invoker),
       ),
     ),
@@ -481,11 +492,11 @@ _i1.BeanModule get $application => _i1.BeanModule(
       annotations: const [_i1.Service(), _i5.Transactional()],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i1.MethodSignature.of(r'a', _$target1, returnType: r'Future'),
-          _i1.MethodSignature.of(r'b', _$target1, returnType: r'Future'),
+          _i1.MethodSignature.of(r'a', _$target2, returnType: r'Future'),
+          _i1.MethodSignature.of(r'b', _$target2, returnType: r'Future'),
           _i1.MethodSignature.of(
             r'fresh',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [
               _i5.Transactional(propagation: _i5.Propagation.requiresNew),
@@ -494,7 +505,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'supports',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [
               _i5.Transactional(propagation: _i5.Propagation.supports),
@@ -503,7 +514,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'manager',
-            _$target1,
+            _$target2,
             kind: _i1.MemberKind.getter,
             returnType: r'RecordingTransactionManager',
           ),
@@ -865,7 +876,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '9f36e0a1',
+  fingerprint: 'a5412af4',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -14,6 +14,8 @@ import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
 import '../main.dart' as _i2;
 
+const _$knownAdvisors0 = {r'package:spring_boot_dart'};
+
 /// Beans found by `@ComponentScan` in `example/`.
 _i1.BeanModule get $application => _i1.BeanModule(r'application', [
   _i1.BeanDefinition<_i2.EnglishGreeter>(
@@ -24,7 +26,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
     create: (r) =>
         _i2.EnglishGreeter(r.value<String>(r'${greeting.punctuation:!}')),
     annotations: const [_i1.Component()],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.Registration>(
     name: r'registration',
@@ -38,7 +40,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       r.dependency<_i1.ApplicationEventPublisher>(name: r'events'),
     ),
     annotations: const [_i1.Service()],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.WelcomeMail>(
     name: r'welcomeMail',
@@ -57,7 +59,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       _i1.Component(),
       _i1.Log(topic: r'tour'),
     ],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.Tour>(
     name: r'tour',
@@ -75,7 +77,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       _i1.Component(),
       _i1.Log(topic: r'tour'),
     ],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
 ]);
 
@@ -138,7 +140,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '64deddc3',
+  fingerprint: '3ada566f',
 );
 
 /// Starts the application: config files, environment, context, runners

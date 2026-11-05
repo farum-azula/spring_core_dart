@@ -16,6 +16,11 @@ import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i4;
 
 import '../example.dart' as _i2;
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_logging',
+};
+
 /// Beans found by `@ComponentScan` in `example/`.
 _i1.BeanModule get $application => _i1.BeanModule(r'application', [
   _i1.BeanDefinition<_i2.Checkout>(
@@ -26,7 +31,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       _i1.Service(),
       _i1.Log(topic: r'shop.checkout'),
     ],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.PayOnStartup>(
     name: r'payOnStartup',
@@ -45,7 +50,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
       _i1.Component(),
       _i1.Log(topic: r'shop.startup'),
     ],
-    aopProxy: const _i1.AopProxyFactory.pruned(),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
 ]);
 
@@ -103,7 +108,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '76c2c1af',
+  fingerprint: '962d9d29',
 );
 
 /// Starts the application: config files, environment, context, runners

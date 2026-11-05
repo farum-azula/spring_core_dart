@@ -100,13 +100,18 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
           as _i5.EventStream<_i1.StockChange>);
 }
 
-Object? _$get0(_i1.Book bean) => bean.isbn;
-Object? _$get1(_i1.Book bean) => bean.title;
-_i1.Book _$create2(List<Object?> positional, Map<Symbol, Object?> named) =>
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_feign',
+  r'package:spring_boot_starter_logging',
+};
+Object? _$get1(_i1.Book bean) => bean.isbn;
+Object? _$get2(_i1.Book bean) => bean.title;
+_i1.Book _$create3(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i1.Book(isbn: (named[#isbn] as String), title: (named[#title] as String));
-Object? _$get3(_i1.StockChange bean) => bean.isbn;
-Object? _$get4(_i1.StockChange bean) => bean.copies;
-_i1.StockChange _$create5(
+Object? _$get4(_i1.StockChange bean) => bean.isbn;
+Object? _$get5(_i1.StockChange bean) => bean.copies;
+_i1.StockChange _$create6(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.StockChange(
@@ -125,7 +130,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       primary: true,
       create: (r) => _$CatalogClientImpl.$create(r),
       annotations: const [_i3.FeignClient(r'catalog', url: r'${catalog.url}')],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i1.Shop>(
       name: r'shop',
@@ -134,7 +141,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       create: (r) =>
           _i1.Shop(r.dependency<_i1.CatalogClient>(name: r'catalog')),
       annotations: const [_i2.Service()],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i1.ShopTour>(
       name: r'shopTour',
@@ -152,7 +161,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
   ],
   resources: const {
@@ -167,12 +178,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.BeanProperty<_i1.Book>(
           r'isbn',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get0,
+          get: _$get1,
         ),
         _i2.BeanProperty<_i1.Book>(
           r'title',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get1,
+          get: _$get2,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.Book>(
@@ -190,7 +201,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create2,
+        create: _$create3,
       ),
     ),
     const _i2.BeanIntrospection<_i1.StockChange>(
@@ -199,12 +210,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.BeanProperty<_i1.StockChange>(
           r'isbn',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get3,
+          get: _$get4,
         ),
         _i2.BeanProperty<_i1.StockChange>(
           r'copies',
           typeInfo: _i2.ClassType<int>(),
-          get: _$get4,
+          get: _$get5,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.StockChange>(
@@ -222,7 +233,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create5,
+        create: _$create6,
       ),
     ),
   ],
@@ -287,7 +298,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '000bf6ab',
+  fingerprint: 'd4fb888a',
 );
 
 /// Starts the application: config files, environment, context, runners

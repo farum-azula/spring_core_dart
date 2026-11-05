@@ -29,9 +29,18 @@ import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
 
 import '../example.dart' as _i1;
 
-Object? _$get0(_i1.PinSettings bean) => bean.hash;
-Object? _$get1(_i1.PinSettings bean) => bean.attempts;
-_i1.PinSettings _$create2(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_feign',
+  r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_flutter_security',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_security_core',
+};
+Object? _$get1(_i1.PinSettings bean) => bean.hash;
+Object? _$get2(_i1.PinSettings bean) => bean.attempts;
+_i1.PinSettings _$create3(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.PinSettings(
@@ -58,7 +67,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         r.dependency<_i4.SecretTemplate>(name: r'_secrets'),
       ),
       annotations: const [_i2.Service()],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i5.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
@@ -86,12 +97,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.BeanProperty<_i1.PinSettings>(
           r'hash',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get0,
+          get: _$get1,
         ),
         _i2.BeanProperty<_i1.PinSettings>(
           r'attempts',
           typeInfo: _i2.ClassType<int>(),
-          get: _$get1,
+          get: _$get2,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.PinSettings>(
@@ -109,7 +120,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create2,
+        create: _$create3,
       ),
     ),
   ],
@@ -183,7 +194,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '9e786dbb',
+  fingerprint: '5925c9d5',
 );
 
 /// Starts the application: config files, environment, context, runners

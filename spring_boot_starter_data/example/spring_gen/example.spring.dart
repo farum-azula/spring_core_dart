@@ -676,7 +676,13 @@ class _$BookReportRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
       this.operations.query<List<_i2.BookCard>>(_cardsSince, [year]);
 }
 
-const _$target0 = _i1.AopTarget(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+const _$target1 = _i1.AopTarget(
   r'Library',
   types: [r'Library'],
   annotations: [_i1.Service()],
@@ -705,7 +711,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i9.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.AuthorRepository>(
       name: r'authorRepository',
@@ -720,7 +728,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuthorRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.ReviewRepository>(
       name: r'reviewRepository',
@@ -739,7 +749,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i5.UseStore(r'memory'),
         _i5.UseDataSource(r'catalog'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.BookmarkRepository>(
       name: r'bookmarkRepository',
@@ -754,7 +766,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookmarkRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.AccountRepository>(
       name: r'accountRepository',
@@ -767,7 +781,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AccountRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.TicketRepository>(
       name: r'ticketRepository',
@@ -782,7 +798,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$TicketRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.PurchaseOrderRepository>(
       name: r'purchaseOrderRepository',
@@ -797,7 +815,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$PurchaseOrderRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.BookReportRepository>(
       name: r'bookReportRepository',
@@ -815,7 +835,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
       ],
       create: (r) => _$BookReportRepositoryImpl.$create(r),
       annotations: const [_i8.ConditionalOnProperty(r'spring.datasource.url')],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.AuditingSetup>(
       name: r'auditingSetup',
@@ -835,7 +857,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
       ],
       create: (r) => _i2.CurrentUser(),
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.Library>(
       name: r'library',
@@ -857,7 +881,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'add',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'int', r'String'],
             parameterNames: [r'title', r'year', r'author'],
@@ -866,7 +890,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'discard',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'bookId'],
@@ -875,7 +899,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'rename',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'int', r'String', r'String'],
             parameterNames: [r'year', r'title', r'newTitle'],
@@ -884,7 +908,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'decade',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'start'],
@@ -893,7 +917,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'order',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'Map'],
             parameterNames: [r'customer', r'quantities'],
@@ -901,6 +925,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             annotationTypes: [r'Transactional'],
           ),
         ],
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) =>
             _$LibraryProxy((target as _i2.Library), invoker),
       ),
@@ -919,7 +944,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Log(topic: r'example'),
         _i1.Order(1),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.ReportTour>(
       name: r'reportTour',
@@ -946,7 +973,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Order(2),
         _i8.ConditionalOnProperty(r'spring.datasource.url'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i4.EntityIntrospections>(
       name: r'entityIntrospections#application',
@@ -1795,7 +1824,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'dd98f1b5',
+  fingerprint: 'e23ba5e1',
 );
 
 /// Starts the application: config files, environment, context, runners

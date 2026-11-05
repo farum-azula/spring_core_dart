@@ -703,43 +703,67 @@ class BeanScanner {
   /// scanner.collectAdvice(nestedLibrary, foreign);
   /// ```
   void collectAdvice(LibraryElement library, ForeignAdvice into) {
+    final seen = <ClassElement>{};
     for (final element in library.classes) {
       try {
-        if (_aspectModel(element) case final aspect?) {
-          into.aspects.add((element.name!, aspect));
-        }
-        // `@Bean AuditAspect audit() => AuditAspect();`
-        if (_component.hasAnnotationOf(element)) {
-          for (final (method, _) in _beanMethods(element.thisType)) {
-            if (method.returnType
-                case InterfaceType(element: final ClassElement returned)
-                when returned != element) {
-              if (_aspectModel(returned) case final aspect?) {
-                into.aspects.add((returned.name!, aspect));
-              }
-            }
-          }
-        }
-        if (_component.hasAnnotationOf(element)) {
-          if (_advisor.isAssignableFrom(element)) {
-            into.advisors = true;
-          }
-          for (final (method, _) in _beanMethods(element.thisType)) {
-            if (!_advisor.isAssignableFromType(method.returnType)) {
-              continue;
-            }
-            switch (_advisorPointcutOf(method)) {
-              case AdvisorPointcut(:final expression?):
-                into.expressions.add(expression);
-              case AdvisorPointcut(:final annotations):
-                into.advisedAnnotations.addAll(annotations);
-              case null:
-                into.advisors = true;
-            }
-          }
-        }
+        _collectClassAdvice(element, into, seen);
       } on InvalidGenerationSource {
         into.unknown = true;
+      }
+    }
+  }
+
+  // The advice of [element] and of the classes it `@Import`s, for
+  // [collectAdvice].
+  void _collectClassAdvice(
+    ClassElement element,
+    ForeignAdvice into,
+    Set<ClassElement> seen,
+  ) {
+    if (!seen.add(element)) {
+      return;
+    }
+    final source = '${element.library.uri}#${element.name}';
+    if (_aspectModel(element) case final aspect?) {
+      into.aspects.add((element.name!, aspect));
+      into.knownSources.add(source);
+    }
+    if (!_component.hasAnnotationOf(element)) {
+      return;
+    }
+    if (_advisor.isAssignableFrom(element)) {
+      into.advisors = true;
+    }
+    for (final (method, _) in _beanMethods(element.thisType)) {
+      final returnType = method.returnType;
+      // `@Bean AuditAspect audit() => AuditAspect();`
+      if (returnType case InterfaceType(element: final ClassElement returned)
+          when returned != element) {
+        if (_aspectModel(returned) case final aspect?) {
+          into.aspects.add((returned.name!, aspect));
+          into.knownSources.add('$source.${method.name}');
+        }
+      }
+      if (!_advisor.isAssignableFromType(returnType)) {
+        continue;
+      }
+      into.knownSources.add('$source.${method.name}');
+      switch (_advisorPointcutOf(method)) {
+        case AdvisorPointcut(:final expression?):
+          into.expressions.add(expression);
+        case AdvisorPointcut(:final annotations):
+          into.advisedAnnotations.addAll(annotations);
+        case null:
+          into.advisors = true;
+      }
+    }
+    // An imported configuration class is part of the module. Advice a
+    // registrar or selector registers in code is not read: the pruned
+    // proxies carry the advisors the build knew, and the startup fails when
+    // another one turns up.
+    for (final imported in _importedClasses(element)) {
+      if (!_importRegistrars.any((c) => c.isAssignableFrom(imported))) {
+        _collectClassAdvice(imported, into, seen);
       }
     }
   }

@@ -116,12 +116,23 @@ class ProxyFactory {
   /// it to the bean's type.
   ///
   /// Throws an [AopConfigException] when [proxies] cannot proxy (its
-  /// `unavailableReason`), or for a subclass proxy: the bean is its own
-  /// proxy there, so change its advice with `Advised.addAdvisor`.
+  /// `unavailableReason`), when the build generated its class for only some
+  /// of the bean's members (`AopProxyFactory.isPartial`), or for a subclass
+  /// proxy: the bean is its own proxy there, so change its advice with
+  /// `Advised.addAdvisor`.
   Object getProxy() {
     if (proxies.unavailableReason case final reason?) {
       throw AopConfigException(
         'Cannot create a proxy of ${_describe()}: $reason',
+      );
+    }
+    if (proxies.isPartial) {
+      throw AopConfigException(
+        'Cannot create a proxy of ${_describe()}: the build generated its '
+        'proxy class for only the members it found advice for (proxy '
+        'pruning), so the advisors of this factory would not reach the '
+        'others. Build the application with the option aop_prune: false to '
+        'proxy every member.',
       );
     }
     if (proxies.isSubclass) {

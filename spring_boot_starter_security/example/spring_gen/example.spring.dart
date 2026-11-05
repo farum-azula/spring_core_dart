@@ -115,13 +115,23 @@ const _$target1 = _i2.AopTarget(
   annotations: [_i2.Service()],
   annotationTypes: [r'Service'],
 );
-Object? _$invoke2(_i1.BookController bean, List<Object?> arguments) =>
-    bean.all();
+const _$knownAdvisors2 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_feign',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_security',
+  r'package:spring_boot_starter_web',
+  r'package:spring_boot_starter_websocket',
+  r'package:spring_security_core',
+};
 Object? _$invoke3(_i1.BookController bean, List<Object?> arguments) =>
-    bean.remove((arguments[0] as String));
+    bean.all();
 Object? _$invoke4(_i1.BookController bean, List<Object?> arguments) =>
+    bean.remove((arguments[0] as String));
+Object? _$invoke5(_i1.BookController bean, List<Object?> arguments) =>
     bean.me((arguments[0] as _i7.Authentication));
-Object? _$invoke5(_i1.AccountController bean, List<Object?> arguments) =>
+Object? _$invoke6(_i1.AccountController bean, List<Object?> arguments) =>
     bean.account((arguments[0] as _i8.UserDetails));
 
 /// Beans found by `@ComponentScan` in `example/`.
@@ -161,6 +171,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           annotationTypes: [r'PreAuthorize'],
         ),
       ],
+      knownAdvisors: _$knownAdvisors2,
       advise: (bean, invoker) =>
           bean is _$BookServiceProxy ? (bean..aopInvoker = invoker) : null,
     ),
@@ -175,7 +186,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       const _i2.BeanMethod<_i1.BookController>(
         r'all',
         returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-        invoke: _$invoke2,
+        invoke: _$invoke3,
         annotations: [_i10.GetMapping(r'/books')],
       ),
       const _i2.BeanMethod<_i1.BookController>(
@@ -191,7 +202,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         ],
         isFuture: true,
         isVoid: true,
-        invoke: _$invoke3,
+        invoke: _$invoke4,
         annotations: [
           _i10.DeleteMapping(r'/books/{id}'),
           _i11.ResponseStatus(204),
@@ -208,12 +219,12 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           ),
         ],
         returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke4,
+        invoke: _$invoke5,
         annotations: [_i10.GetMapping(r'/me')],
       ),
     ],
     annotations: const [_i11.RestController(), _i10.RequestMapping(r'/api')],
-    aopProxy: const _i2.AopProxyFactory.pruned(),
+    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors2),
   ),
   _i2.BeanDefinition<_i1.AccountController>(
     name: r'accountController',
@@ -232,12 +243,12 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           ),
         ],
         returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke5,
+        invoke: _$invoke6,
         annotations: [_i10.GetMapping(r'/account')],
       ),
     ],
     annotations: const [_i11.RestController()],
-    aopProxy: const _i2.AopProxyFactory.pruned(),
+    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors2),
   ),
   _i2.BeanDefinition<_i1.SecurityConfig>(
     name: r'securityConfig',
@@ -259,7 +270,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       qualifier: r'securityConfig',
     ) as _$SecurityConfigConfiguration)._$api(r),
     annotations: const [_i2.Bean(), _i2.Order(1)],
-    aopProxy: const _i2.AopProxyFactory.pruned(),
+    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors2),
   ),
   _i2.BeanDefinition<_i4.SecurityFilterChain>(
     name: r'pages',
@@ -275,7 +286,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       qualifier: r'securityConfig',
     ) as _$SecurityConfigConfiguration)._$pages(r),
     annotations: const [_i2.Bean(), _i2.Order(2)],
-    aopProxy: const _i2.AopProxyFactory.pruned(),
+    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors2),
   ),
   _i2.BeanDefinition<_i6.InMemoryUserDetailsManager>(
     name: r'users',
@@ -297,7 +308,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
             ) as _$SecurityConfigConfiguration)._$users(r)
             as _i6.InMemoryUserDetailsManager),
     annotations: const [_i2.Bean()],
-    aopProxy: const _i2.AopProxyFactory.pruned(),
+    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors2),
   ),
 ]);
 
@@ -372,7 +383,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '8090e0e9',
+  fingerprint: '552545a7',
 );
 
 /// Starts the application: config files, environment, context, runners

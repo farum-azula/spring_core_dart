@@ -141,10 +141,99 @@ void main() {
           'sources': {'generatedLines': 100},
           'apps': {
             'a': {'generatedInstructions': 50, 'snapshotBytes': 1000},
-            'not_compiled': {'generatedInstructions': 0},
           },
         }),
         isEmpty,
+      );
+    });
+
+    test('fails an app budgeted but not measured', () {
+      expect(
+        checkBudget(report, {
+          'sources': {'generatedLines': 100},
+          'apps': {
+            'a': {'generatedInstructions': 50, 'snapshotBytes': 1000},
+            'not_compiled': {'generatedInstructions': 0, 'snapshotBytes': 0},
+          },
+        }),
+        [
+          'apps.not_compiled.generatedInstructions: budgeted but not measured',
+          'apps.not_compiled.snapshotBytes: budgeted but not measured',
+        ],
+      );
+    });
+
+    test('fails an app measured but not budgeted', () {
+      expect(
+        checkBudget(report, {
+          'sources': {'generatedLines': 100},
+        }),
+        ['apps.a: measured but not in the budget'],
+      );
+      expect(
+        checkBudget(report, {
+          'sources': {'generatedLines': 100},
+          'apps': <String, Object?>{},
+        }),
+        ['apps.a: measured but not in the budget'],
+      );
+    });
+
+    test('fails invalid, missing and unknown budget entries', () {
+      const number = '(expected a non-negative number)';
+      const sourceKeys = '(expected generatedLines)';
+      const appKeys = '(expected generatedInstructions or snapshotBytes)';
+      expect(
+        checkBudget(report, {
+          'sources': {'generatedLine': 100},
+          'app': <String, Object?>{},
+          'apps': {
+            'a': {
+              'generatedInstructions': '50',
+              'snapshotBytes': null,
+              'snapshotByte': 1000,
+            },
+          },
+        }),
+        [
+          'app: unknown budget key (expected sources or apps)',
+          'sources.generatedLine: unknown budget key $sourceKeys',
+          'sources.generatedLines: missing from the budget',
+          'apps.a.snapshotByte: unknown budget key $appKeys',
+          'apps.a.generatedInstructions: invalid budget "50" $number',
+          'apps.a.snapshotBytes: missing from the budget',
+        ],
+      );
+      expect(
+        checkBudget(report, {
+          'apps': {
+            'a': {'generatedInstructions': -1, 'snapshotBytes': double.nan},
+          },
+        }),
+        [
+          'sources: missing from the budget',
+          'apps.a.generatedInstructions: invalid budget -1 $number',
+          'apps.a.snapshotBytes: invalid budget NaN $number',
+        ],
+      );
+      expect(checkBudget(report, {'sources': 100, 'apps': 'a'}), [
+        'sources: expected an object in the budget, got 100',
+        'apps: expected an object in the budget, got "a"',
+      ]);
+    });
+
+    test('fails a source measure missing from the report', () {
+      expect(
+        checkBudget(
+          {'apps': report['apps']},
+          {
+            'sources': {'generatedLines': 100},
+            'apps': {
+              'a': {'generatedInstructions': 50, 'snapshotBytes': 1000},
+            },
+          },
+        ),
+        ['sources.generatedLines: budgeted but not measured'],
       );
     });
 
@@ -185,6 +274,36 @@ void main() {
           'apps.a.generatedInstructions: 50 > 40 (+10)',
         ],
       );
+    });
+  });
+
+  group('readBudget', () {
+    const sources = '{"sources": {"generatedLines": 1}}';
+    const withApps = '{"sources": {"generatedLines": 1}, "apps": {}}';
+
+    test('reads a JSON object', () {
+      expect(readBudget(sources, compile: false), {
+        'sources': {'generatedLines': 1},
+      });
+      expect(readBudget(withApps, compile: true), contains('apps'));
+    });
+
+    test('rejects apps without the compilation', () {
+      expect(
+        () => readBudget(withApps, compile: false),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('--no-compile'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects anything but an object', () {
+      expect(() => readBudget('[]', compile: true), throwsFormatException);
+      expect(() => readBudget('{', compile: true), throwsFormatException);
     });
   });
 }

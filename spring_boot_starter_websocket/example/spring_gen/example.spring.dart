@@ -78,9 +78,14 @@ class _$ChatSocketImpl implements _i1.ChatSocket {
   );
 }
 
-Object? _$get0(_i1.ChatMessage bean) => bean.from;
-Object? _$get1(_i1.ChatMessage bean) => bean.text;
-_i1.ChatMessage _$create2(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_websocket',
+};
+Object? _$get1(_i1.ChatMessage bean) => bean.from;
+Object? _$get2(_i1.ChatMessage bean) => bean.text;
+_i1.ChatMessage _$create3(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.ChatMessage(
@@ -98,7 +103,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       primary: true,
       create: (r) => _$ChatSocketImpl.$create(r),
       annotations: const [_i3.WebSocketClient(r'chat', url: r'${chat.url}')],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i1.Chat>(
       name: r'chat',
@@ -106,7 +113,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       dependencies: const [_i2.Dependency(_i1.ChatSocket, name: r'socket')],
       create: (r) => _i1.Chat(r.dependency<_i1.ChatSocket>(name: r'socket')),
       annotations: const [_i2.Service()],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i1.ChatTour>(
       name: r'chatTour',
@@ -119,7 +128,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
   ],
   resources: const {
@@ -134,12 +145,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.BeanProperty<_i1.ChatMessage>(
           r'from',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get0,
+          get: _$get1,
         ),
         _i2.BeanProperty<_i1.ChatMessage>(
           r'text',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get1,
+          get: _$get2,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.ChatMessage>(
@@ -157,7 +168,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create2,
+        create: _$create3,
       ),
     ),
   ],
@@ -222,7 +233,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '438e723f',
+  fingerprint: 'b2deafee',
 );
 
 /// Starts the application: config files, environment, context, runners

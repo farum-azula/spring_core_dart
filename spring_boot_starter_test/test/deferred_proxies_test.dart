@@ -72,4 +72,54 @@ void main() {
       );
     });
   });
+
+  const source =
+      'package:spring_boot_dart/src/properties/boot_properties.dart'
+      '#BannerProperties';
+
+  test('a factory that leaves out the advised members: a startup failure', () {
+    // Proxies no member of the bean: the advice would be skipped.
+    final module = BeanModule(
+      'application',
+      const [],
+      aopProxies: {
+        source: AopProxyFactory(
+          signatures: const [],
+          create: (target, invoker) => target,
+        ),
+      },
+    );
+    runner
+        .withUserConfiguration(module)
+        .withUserConfiguration(_aspect('bean(bannerProperties)'))
+        .run((context) {
+          expect(
+            context,
+            hasFailed(
+              isA<AopConfigException>().having(
+                (e) => e.message,
+                'message',
+                allOf(
+                  contains("of bean 'bannerProperties'"),
+                  contains('aop_prune: false'),
+                ),
+              ),
+            ),
+          );
+        });
+  });
+
+  test('a pruned factory for the bean: a startup failure', () {
+    runner
+        .withUserConfiguration(
+          BeanModule(
+            'application',
+            const [],
+            aopProxies: {source: const AopProxyFactory.pruned()},
+          ),
+        )
+        .run((context) {
+          expect(context, hasFailed(isA<AopConfigException>()));
+        });
+  });
 }

@@ -14,13 +14,14 @@ import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 import '../example.dart' as _i1;
 
-Object? _$get0(_i1.GreetingProperties bean) => bean.name;
-void _$set1(_i1.GreetingProperties bean, Object? value) =>
+const _$knownAdvisors0 = {r'package:spring_boot_dart'};
+Object? _$get1(_i1.GreetingProperties bean) => bean.name;
+void _$set2(_i1.GreetingProperties bean, Object? value) =>
     bean.name = (value as String);
-Object? _$get2(_i1.GreetingProperties bean) => bean.times;
-void _$set3(_i1.GreetingProperties bean, Object? value) =>
+Object? _$get3(_i1.GreetingProperties bean) => bean.times;
+void _$set4(_i1.GreetingProperties bean, Object? value) =>
     bean.times = (value as int);
-_i1.GreetingProperties _$create4(
+_i1.GreetingProperties _$create5(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.GreetingProperties();
@@ -34,7 +35,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_dart/example/example.dart#GreetingProperties',
       create: (r) => _i1.GreetingProperties(),
       annotations: const [_i2.ConfigurationProperties(r'greeting')],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i1.Greeter>(
       name: r'greeter',
@@ -46,7 +49,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         r.dependency<_i1.GreetingProperties>(name: r'properties'),
       ),
       annotations: const [_i2.Service()],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i1.GreetOnStartup>(
       name: r'greetOnStartup',
@@ -64,7 +69,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'greeting'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
   ],
   introspections: [
@@ -76,16 +83,16 @@ _i2.BeanModule get $application => _i2.BeanModule(
           typeInfo: _i2.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'World',
-          get: _$get0,
-          set: _$set1,
+          get: _$get1,
+          set: _$set2,
         ),
         _i2.BeanProperty<_i1.GreetingProperties>(
           r'times',
           typeInfo: _i2.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 1,
-          get: _$get2,
-          set: _$set3,
+          get: _$get3,
+          set: _$set4,
         ),
       ],
       annotations: [_i2.ConfigurationProperties(r'greeting')],
@@ -93,7 +100,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       instantiate: _i1.GreetingProperties.new,
       constructor: _i2.BeanConstructor<_i1.GreetingProperties>(
         parameters: [],
-        create: _$create4,
+        create: _$create5,
       ),
     ),
   ],
@@ -158,7 +165,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '5e16f425',
+  fingerprint: '738c1964',
 );
 
 /// Starts the application: config files, environment, context, runners

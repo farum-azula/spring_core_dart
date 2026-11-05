@@ -11,10 +11,12 @@
 // budget file (`sources.generatedLines`, and for each app
 // `apps.<name>.generatedInstructions` and `apps.<name>.snapshotBytes`,
 // these with a headroom of 1%: the SDK build and the machine move them by a
-// few hundred bytes).
+// few hundred bytes), and when the budget and the measures do not match
+// (see [checkBudget]). A budget with `apps` needs the compilation, so
+// `--no-compile` only goes with a budget of the sources.
 // The AOT sizes come from `dart compile aot-snapshot` with the VM's
-// `--print-instructions-sizes-to`, in a temporary directory deleted
-// afterwards.
+// `--print-instructions-sizes-to`, in a temporary directory under
+// `.dart_tool/size_report/` deleted afterwards (also on Ctrl-C).
 import 'dart:convert';
 import 'dart:io';
 
@@ -292,23 +294,66 @@ final class AppReport {
 /// source lines, which are checked exactly.
 const aotHeadroom = 1.01;
 
-/// What exceeds [budget] in [report] (the JSON of a full report: `sources`
-/// and `apps`); empty when nothing does. Measures absent from [report]
-/// (apps not compiled) are not checked; the AOT ones have [aotHeadroom].
+/// The measures budgeted for each app.
+const appMeasures = ['generatedInstructions', 'snapshotBytes'];
+
+/// What fails [budget] in [report] (the JSON of a full report: `sources`
+/// and `apps`); empty when nothing does. The AOT measures have
+/// [aotHeadroom].
+///
+/// The check is strict, so that a mistake in the budget or a run that
+/// measured less cannot pass it: `sources.generatedLines` and, for each
+/// budgeted app, every one of [appMeasures] must be a finite non-negative
+/// number; unknown keys, a budgeted measure that was not measured, and a
+/// measured app absent from the budget all fail.
 List<String> checkBudget(
   Map<String, Object?> report,
   Map<String, Object?> budget,
 ) {
-  final exceeded = <String>[];
-  void check(String name, Object? actual, Object? max, {num headroom = 1}) {
-    if (actual is num && max is num && actual > (max * headroom).round()) {
-      exceeded.add('$name: $actual > $max (+${actual - max})');
+  final problems = <String>[];
+  Map<String, Object?>? section(String name, Object? value) {
+    if (value is Map<String, Object?>) {
+      return value;
+    }
+    problems.add(
+      value == null
+          ? '$name: missing from the budget'
+          : '$name: expected an object in the budget, got ${_describe(value)}',
+    );
+    return null;
+  }
+
+  void known(String name, Map<String, Object?> value, List<String> keys) {
+    for (final key in value.keys) {
+      if (!keys.contains(key)) {
+        problems.add(
+          '${name.isEmpty ? '' : '$name.'}$key: unknown budget key '
+          '(expected ${keys.join(' or ')})',
+        );
+      }
     }
   }
 
-  final sources = report['sources'] as Map<String, Object?>?;
-  final sourceBudget = budget['sources'] as Map<String, Object?>?;
-  if (sources != null && sourceBudget != null) {
+  void check(String name, Object? actual, Object? max, {num headroom = 1}) {
+    if (max is! num || !max.isFinite || max < 0) {
+      problems.add(
+        max == null
+            ? '$name: missing from the budget'
+            : '$name: invalid budget ${_describe(max)} '
+                  '(expected a non-negative number)',
+      );
+    } else if (actual is! num) {
+      problems.add('$name: budgeted but not measured');
+    } else if (actual > (max * headroom).round()) {
+      problems.add('$name: $actual > $max (+${actual - max})');
+    }
+  }
+
+  known('', budget, const ['sources', 'apps']);
+  final sources = report['sources'] as Map<String, Object?>? ?? const {};
+  final sourceBudget = section('sources', budget['sources']);
+  if (sourceBudget != null) {
+    known('sources', sourceBudget, const ['generatedLines']);
     check(
       'sources.generatedLines',
       sources['generatedLines'],
@@ -316,14 +361,20 @@ List<String> checkBudget(
     );
   }
   final reportApps = report['apps'] as Map<String, Object?>? ?? const {};
-  final budgetApps = budget['apps'] as Map<String, Object?>? ?? const {};
+  final budgetApps = budget.containsKey('apps')
+      ? section('apps', budget['apps'])
+      : const <String, Object?>{};
+  if (budgetApps == null) {
+    return problems;
+  }
   for (final MapEntry(key: name, :value) in budgetApps.entries) {
-    final actual = reportApps[name] as Map<String, Object?>?;
-    final max = value as Map<String, Object?>?;
-    if (actual == null || max == null) {
+    final max = section('apps.$name', value);
+    if (max == null) {
       continue;
     }
-    for (final measure in ['generatedInstructions', 'snapshotBytes']) {
+    known('apps.$name', max, appMeasures);
+    final actual = reportApps[name] as Map<String, Object?>? ?? const {};
+    for (final measure in appMeasures) {
       check(
         'apps.$name.$measure',
         actual[measure],
@@ -332,7 +383,48 @@ List<String> checkBudget(
       );
     }
   }
-  return exceeded;
+  for (final name in reportApps.keys) {
+    if (!budgetApps.containsKey(name)) {
+      problems.add('apps.$name: measured but not in the budget');
+    }
+  }
+  return problems;
+}
+
+// A budget value as written in JSON (or as Dart writes it, for a value
+// JSON cannot hold).
+String _describe(Object? value) {
+  try {
+    return jsonEncode(value);
+  } on JsonUnsupportedObjectError {
+    return '$value';
+  }
+}
+
+/// The budget in [text] (the content of a `--budget` file), checked
+/// against the run's options: a run that does not [compile] measures no
+/// app, so its budget may not have `apps`. Throws a [FormatException]
+/// otherwise.
+Map<String, Object?> readBudget(String text, {required bool compile}) {
+  final budget = jsonDecode(text);
+  if (budget is! Map<String, Object?>) {
+    throw const FormatException('the budget must be a JSON object');
+  }
+  if (!compile && budget.containsKey('apps')) {
+    throw const FormatException(
+      '--no-compile measures no app, but the budget has apps: '
+      'run with the compilation, or with a budget of the sources only',
+    );
+  }
+  return budget;
+}
+
+/// A failure that ends the report (exit code 2) once the temporary files
+/// are deleted.
+final class _Failure implements Exception {
+  const _Failure(this.message);
+
+  final String message;
 }
 
 Future<void> main(List<String> args) async {
@@ -357,9 +449,21 @@ Future<void> main(List<String> args) async {
       exit(64);
     }
   }
-  final budget = budgetPath == null
-      ? null
-      : jsonDecode(File(budgetPath).readAsStringSync()) as Map<String, Object?>;
+  Map<String, Object?>? budget;
+  if (budgetPath != null) {
+    try {
+      budget = readBudget(
+        File(budgetPath).readAsStringSync(),
+        compile: compile,
+      );
+    } on FormatException catch (error) {
+      stderr.writeln('Invalid budget $budgetPath: ${error.message}');
+      exit(64);
+    } on FileSystemException catch (error) {
+      stderr.writeln('Cannot read the budget $budgetPath: ${error.message}');
+      exit(64);
+    }
+  }
 
   final root = p.normalize(
     p.absolute(File.fromUri(Platform.script).parent.parent.path),
@@ -367,13 +471,11 @@ Future<void> main(List<String> args) async {
   final sources = _scanSources(root);
   final appReports = <AppReport>[];
   if (compile) {
-    final temp = await Directory.systemTemp.createTemp('size_report_');
     try {
-      for (final app in apps) {
-        appReports.add(await _measure(app, root: root, temp: temp.path));
-      }
-    } finally {
-      await temp.delete(recursive: true);
+      appReports.addAll(await _measureApps(root));
+    } on _Failure catch (failure) {
+      stderr.write(failure.message);
+      exit(2);
     }
   }
 
@@ -389,11 +491,11 @@ Future<void> main(List<String> args) async {
   }
 
   if (budget != null) {
-    final exceeded = checkBudget(report, budget);
-    if (exceeded.isNotEmpty) {
+    final problems = checkBudget(report, budget);
+    if (problems.isNotEmpty) {
       stderr
-        ..writeln('Size budget exceeded ($budgetPath):')
-        ..writeln(exceeded.map((line) => '  - $line').join('\n'));
+        ..writeln('Size budget failed ($budgetPath):')
+        ..writeln(problems.map((line) => '  - $line').join('\n'));
       exit(1);
     }
     (json ? stderr : stdout).writeln('Size budget ok ($budgetPath).');
@@ -428,6 +530,40 @@ SourceReport _scanSources(String root) {
   return countSources(files, packageDirs: packageDirs);
 }
 
+/// Compiles every app of [apps] in a temporary directory under
+/// `<root>/.dart_tool/size_report/`, deleted afterwards, also when a
+/// compilation fails or on Ctrl-C.
+///
+/// Not the system temporary directory: the sizes path goes through
+/// `--extra-gen-snapshot-options`, which splits on commas.
+Future<List<AppReport>> _measureApps(String root) async {
+  final parent = Directory(p.join(root, '.dart_tool', 'size_report'));
+  if (parent.path.contains(',')) {
+    throw _Failure(
+      'The repository path has a comma, which '
+      '--extra-gen-snapshot-options cannot pass: ${parent.path}\n',
+    );
+  }
+  await parent.create(recursive: true);
+  final temp = await parent.createTemp('run_');
+  final interrupt = ProcessSignal.sigint.watch().listen((_) {
+    try {
+      temp.deleteSync(recursive: true);
+    } on FileSystemException {
+      // Exiting anyway.
+    }
+    exit(130);
+  });
+  try {
+    return [
+      for (final app in apps) await _measure(app, root: root, temp: temp.path),
+    ];
+  } finally {
+    await interrupt.cancel();
+    await temp.delete(recursive: true);
+  }
+}
+
 /// Compiles [app] into [temp] and reads its sizes.
 Future<AppReport> _measure(
   App app, {
@@ -447,11 +583,10 @@ Future<AppReport> _measure(
     '--extra-gen-snapshot-options=--print-instructions-sizes-to=$sizes',
   ], workingDirectory: p.join(root, app.packageDir));
   if (result.exitCode != 0) {
-    stderr
-      ..writeln('dart compile aot-snapshot failed for ${app.name}:')
-      ..write(result.stdout)
-      ..write(result.stderr);
-    exit(2);
+    throw _Failure(
+      'dart compile aot-snapshot failed for ${app.name}:\n'
+      '${result.stdout}${result.stderr}',
+    );
   }
   final entries = (jsonDecode(File(sizes).readAsStringSync()) as List)
       .cast<Map<String, Object?>>();

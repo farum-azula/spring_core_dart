@@ -466,19 +466,25 @@ class _$ArchiveRepositoryImpl extends _i5.SimpleRepository<_i2.Archived, int>
       );
 }
 
-const _$target0 = _i1.AopTarget(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+const _$target1 = _i1.AopTarget(
   r'Auditor',
   types: [r'Auditor'],
   annotations: [_i1.Service()],
   annotationTypes: [r'Service'],
 );
-const _$target1 = _i1.AopTarget(
+const _$target2 = _i1.AopTarget(
   r'Warehouse',
   types: [r'Warehouse'],
   annotations: [_i1.Service()],
   annotationTypes: [r'Service'],
 );
-const _$target2 = _i1.AopTarget(
+const _$target3 = _i1.AopTarget(
   r'Catalog',
   types: [r'Catalog'],
   annotations: [_i1.Service()],
@@ -502,7 +508,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ItemRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.StockRepository>(
       name: r'stockRepository',
@@ -517,7 +525,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$StockRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.JobRepository>(
       name: r'jobRepository',
@@ -532,7 +542,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$JobRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.AuditRepository>(
       name: r'auditRepository',
@@ -547,7 +559,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuditRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.LabelRepository>(
       name: r'labelRepository',
@@ -560,7 +574,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$LabelRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.ShipmentRepository>(
       name: r'shipmentRepository',
@@ -575,7 +591,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ShipmentRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.ArchiveRepository>(
       name: r'archiveRepository',
@@ -594,14 +612,18 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i6.UseStore(r'memory'),
         _i6.UseDataSource(r'archive'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.Gate>(
       name: r'gate',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Gate',
       create: (r) => _i2.Gate(),
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.Auditor>(
       name: r'auditor',
@@ -614,7 +636,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'record',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
@@ -625,7 +647,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'nested',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'text', r'fail'],
@@ -636,7 +658,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'mandatory',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
@@ -647,7 +669,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'never',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             annotations: [
               _i8.Transactional(propagation: _i8.Propagation.never),
@@ -655,6 +677,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             annotationTypes: [r'Transactional'],
           ),
         ],
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) =>
             _$AuditorProxy((target as _i2.Auditor), invoker),
       ),
@@ -689,7 +712,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'addItem',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'String', r'Object'],
             parameterNames: [r'name', r'error'],
@@ -698,7 +721,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'addItemTolerant',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'String', r'Object'],
             parameterNames: [r'name', r'error'],
@@ -709,7 +732,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'addWithAudit',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'name', r'fail'],
@@ -718,7 +741,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'addWithNested',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'failNested'],
@@ -727,35 +750,35 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'callMandatory',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'callNever',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'writeReadOnly',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [_i8.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'countReadOnly',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [_i8.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'ship',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'fail'],
@@ -764,7 +787,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'sell',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'sku', r'amount'],
@@ -773,7 +796,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'peekWithTimeout',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'sku'],
@@ -782,14 +805,14 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'takeJob',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'rename',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'int', r'String'],
             parameterNames: [r'id', r'name'],
@@ -798,7 +821,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'lockFromOtherStore',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'sku'],
@@ -807,7 +830,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'forgetsASave',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'Future'],
             parameterNames: [r'release'],
@@ -816,7 +839,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'archiveTitles',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'List', r'bool'],
             parameterNames: [r'titles', r'fail'],
@@ -825,7 +848,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'addItemAndArchive',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'name', r'fail'],
@@ -833,6 +856,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             annotationTypes: [r'Transactional'],
           ),
         ],
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) =>
             _$WarehouseProxy((target as _i2.Warehouse), invoker),
       ),
@@ -848,7 +872,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'page',
-            _$target2,
+            _$target3,
             returnType: r'Future',
             parameterTypes: [r'int', r'Pageable'],
             parameterNames: [r'count', r'pageable'],
@@ -856,6 +880,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             annotationTypes: [r'Cacheable'],
           ),
         ],
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) =>
             _$CatalogProxy((target as _i2.Catalog), invoker),
       ),
@@ -1499,7 +1524,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '67fe0cf4',
+  fingerprint: 'ff1d5490',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -218,6 +218,7 @@ class ModuleEmitter {
   }) {
     _module = module;
     _usesTypeOf = false;
+    _knownAdvisors = null;
     _annotationTypes.clear();
     _functions.clear();
     analyzeAop(
@@ -1721,12 +1722,34 @@ class ModuleEmitter {
     return [for (final (type, value, _) in found) (type, value)];
   }
 
+  // `_$knownAdvisors<n>`, the advisors the build pruned the module's
+  // proxies for, declared once per module on first use.
+  Expression? _knownAdvisors;
+
+  // The `knownAdvisors:` argument of a pruned or partial factory.
+  Map<String, Expression> _knownAdvisorsArgument(ProxyModel proxy) {
+    final known = _module.knownAdvisors;
+    if (known == null || !(proxy.pruned || proxy.advisedMembers != null)) {
+      return const {};
+    }
+    return {
+      'knownAdvisors': _knownAdvisors ??= _constantDeclaration(
+        'knownAdvisors',
+        literalConstSet({
+          for (final source in known.toList()..sort()) _str(source),
+        }),
+      ),
+    };
+  }
+
   // The runtime decides whether to proxy (any advisor matching one of the
   // signatures) and then calls `create` with the target and an invoker.
   Expression _proxyFactory(ProxyModel proxy, Element element) {
     // The runtime's `AopProxyFactory.prunedReason` says why.
     if (proxy.pruned) {
-      return _spring('AopProxyFactory').constInstanceNamed('pruned', []);
+      return _spring(
+        'AopProxyFactory',
+      ).constInstanceNamed('pruned', [], _knownAdvisorsArgument(proxy));
     }
     // The bean class, once for the signatures of all its members.
     final advisable = proxy.advisableMembers;
@@ -1787,6 +1810,7 @@ class ModuleEmitter {
       return _spring('AopProxyFactory').newInstanceNamed('subclass', [], {
         'signatures': signatures,
         if (proxy.introductions.isNotEmpty) 'introductions': introductions,
+        ..._knownAdvisorsArgument(proxy),
         'advise': _closure(
           ['bean', 'invoker'],
           bean
@@ -1806,6 +1830,7 @@ class ModuleEmitter {
     return _spring('AopProxyFactory').newInstance([], {
       'signatures': signatures,
       if (proxy.introductions.isNotEmpty) 'introductions': introductions,
+      ..._knownAdvisorsArgument(proxy),
       'create': _closure(
         ['target', 'invoker'],
         refer(proxy.className).newInstance([

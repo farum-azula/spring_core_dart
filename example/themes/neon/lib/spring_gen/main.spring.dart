@@ -30,6 +30,13 @@ import 'package:theme_showcase_neon/src/pages/themes_page.dart' as _i7;
 part 'messages.spring.dart';
 part 'theme.spring.dart';
 
+const _$knownAdvisors0 = {
+  r'package:neon_ui',
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_logging',
+};
+
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
 
@@ -45,7 +52,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'theme_showcase_neon.pages'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.ThemeLog>(
       name: r'themeLog',
@@ -59,7 +68,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'theme_showcase_neon.themes'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.DemoLog>(
       name: r'demoLog',
@@ -69,7 +80,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'theme_showcase_neon.demo'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i4.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
@@ -973,7 +986,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '12678acc',
+  fingerprint: '1d12d3b7',
 );
 
 /// Starts the application: config files, environment, context, runners

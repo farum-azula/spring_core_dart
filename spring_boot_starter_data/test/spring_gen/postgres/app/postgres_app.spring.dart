@@ -24,6 +24,13 @@ import 'package:sqlite3/sqlite3.dart' as _i5;
 
 import '../../../postgres/app/postgres_app.dart' as _i2;
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+
 /// Beans found by `@ComponentScan` in `lib/ and test/postgres/app/`.
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
@@ -33,7 +40,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/postgres/app/postgres_app.dart#Marker',
       create: (r) => _i2.Marker(),
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i3.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
@@ -383,7 +392,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'b212cf24',
+  fingerprint: 'c4aa881f',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -488,7 +488,7 @@ class Slow {
         matches(
           RegExp(
             r'BeanDefinition<Mail>\((?:(?!BeanDefinition<).)*'
-            r'AopProxyFactory\.pruned\(\)',
+            r'AopProxyFactory\.pruned\(knownAdvisors:_\$knownAdvisors\d+,?\)',
           ),
         ),
       );

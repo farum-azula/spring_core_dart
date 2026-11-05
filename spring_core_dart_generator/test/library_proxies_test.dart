@@ -197,6 +197,84 @@ class TaskAudit {
     expect(output, isNot(contains(r'_$TaskProxy')));
   });
 
+  test('an annotation an advisor of the application names keeps the members '
+      'of a library bean', () async {
+    // The starter's module left the proxy of Task to the application; the
+    // application's advisor matches its @Tag member by annotation.
+    const starter = {
+      'lib/spring_auto_configuration.dart': r'''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:starter/spring_gen/beans.spring.dart';
+
+@AutoConfigurationModule()
+final BeanModule starterAutoConfiguration = BeanModule(
+  'starterAutoConfiguration',
+  const [],
+  imports: [$starterBeans],
+);
+''',
+      'lib/task.dart': '''
+class Tag {
+  const Tag();
+}
+
+class Task {
+  @Tag()
+  void run() {}
+  void other() {}
+}
+''',
+      'lib/spring_gen/beans.spring.dart': r"""
+import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:starter/task.dart';
+
+BeanModule get $starterBeans => BeanModule(r'starterBeans', [
+  BeanDefinition<Task>(
+    name: r'task',
+    source: r'package:starter/task.dart#Task',
+    create: (r) => Task(),
+    aopProxy: const AopProxyFactory.deferred(signatures: []),
+  ),
+]);
+""",
+    };
+    const main = '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:pkg/app.dart';
+
+import 'spring_gen/main.spring.dart';
+
+@SpringBootApplication()
+void main() => runApplication();
+''';
+    const app = '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:starter/task.dart';
+
+class Guard implements MethodInterceptor {
+  const Guard();
+  @override
+  Object? invoke(MethodInvocation invocation) => invocation.proceed();
+}
+
+@Configuration()
+class Guards {
+  @Bean()
+  PointcutAdvisor guard() => DefaultPointcutAdvisor(
+    const AnnotationMatchingPointcut<Tag>(),
+    const Guard(),
+  );
+}
+''';
+    final (_, output) = await _build(app: app, main: main, starter: starter);
+    final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+    expect(output, contains(r'class _$TaskProxy'));
+    expect(normalized, contains("MethodSignature.of(r'run',"));
+    // A partial proxy: the context knows which advisors it was made for.
+    expect(normalized, contains('voidother()=>this._target.other();'));
+    expect(normalized, contains(r'knownAdvisors:_$knownAdvisors'));
+  });
+
   group("a starter's module", () {
     // A starter (a library package with an auto-configuration library)
     // with a bean in one module and, maybe, an aspect in another.

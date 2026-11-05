@@ -25,6 +25,11 @@ Object? _$invoke0(_i1.Heartbeat bean, List<Object?> arguments) {
 }
 
 Object? _$invoke1(_i1.Heartbeat bean, List<Object?> arguments) => bean.report();
+const _$knownAdvisors2 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_scheduling',
+};
 
 /// Beans found by `@ComponentScan` in `example/`.
 _i2.BeanModule get $application => _i2.BeanModule(r'application', [
@@ -52,7 +57,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       _i2.Component(),
       _i2.Log(topic: r'example'),
     ],
-    aopProxy: const _i2.AopProxyFactory.pruned(),
+    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors2),
   ),
   _i2.BeanDefinition<_i1.Reminder>(
     name: r'reminder',
@@ -66,7 +71,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       _i2.Component(),
       _i2.Log(topic: r'example'),
     ],
-    aopProxy: const _i2.AopProxyFactory.pruned(),
+    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors2),
   ),
 ]);
 
@@ -129,7 +134,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '57024084',
+  fingerprint: '6f1133e3',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -1447,7 +1447,19 @@ class _$ApiConfigConfiguration extends _i32.ApiConfig {
   _i35.Retryer _$retryer(_i3.DependencyResolver r) => super.retryer();
 }
 
-const _$target0 = _i3.AopTarget(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_feign',
+  r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_flutter_security',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_scheduling',
+  r'package:spring_boot_starter_websocket',
+  r'package:spring_security_core',
+};
+const _$target1 = _i3.AopTarget(
   r'Session',
   types: [r'Session'],
   annotations: [
@@ -1457,15 +1469,15 @@ const _$target0 = _i3.AopTarget(
   ],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess', r'Log'],
 );
-Object? _$invoke1(_i6.AdminService bean, List<Object?> arguments) =>
-    bean.addBook((arguments[0] as _i7.NewBook));
 Object? _$invoke2(_i6.AdminService bean, List<Object?> arguments) =>
-    bean.uploadCover((arguments[0] as String), (arguments[1] as _i8.Uint8List));
+    bean.addBook((arguments[0] as _i7.NewBook));
 Object? _$invoke3(_i6.AdminService bean, List<Object?> arguments) =>
-    bean.deleteBook((arguments[0] as String));
+    bean.uploadCover((arguments[0] as String), (arguments[1] as _i8.Uint8List));
 Object? _$invoke4(_i6.AdminService bean, List<Object?> arguments) =>
+    bean.deleteBook((arguments[0] as String));
+Object? _$invoke5(_i6.AdminService bean, List<Object?> arguments) =>
     bean.serverLogs();
-const _$target5 = _i3.AopTarget(
+const _$target6 = _i3.AopTarget(
   r'AdminService',
   types: [r'AdminService'],
   annotations: [
@@ -1474,13 +1486,13 @@ const _$target5 = _i3.AopTarget(
   ],
   annotationTypes: [r'Service', r'Log'],
 );
-const _$target6 = _i3.AopTarget(
+const _$target7 = _i3.AopTarget(
   r'LanguageSelection',
   types: [r'LanguageSelection'],
   annotations: [_i36.ChangeNotifierComponent(), _i37.BuildContextAccess()],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess'],
 );
-const _$target7 = _i3.AopTarget(
+const _$target8 = _i3.AopTarget(
   r'Basket',
   types: [r'Basket'],
   annotations: [
@@ -1490,15 +1502,15 @@ const _$target7 = _i3.AopTarget(
   ],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess', r'Log'],
 );
-const _$target8 = _i3.AopTarget(
+const _$target9 = _i3.AopTarget(
   r'Catalog',
   types: [r'Catalog'],
   annotations: [_i36.ChangeNotifierComponent(), _i37.BuildContextAccess()],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess'],
 );
-Object? _$invoke9(_i38.CatalogRefresh bean, List<Object?> arguments) =>
+Object? _$invoke10(_i38.CatalogRefresh bean, List<Object?> arguments) =>
     bean.refresh();
-const _$target10 = _i3.AopTarget(
+const _$target11 = _i3.AopTarget(
   r'CatalogService',
   types: [r'CatalogService'],
   annotations: [
@@ -1507,11 +1519,11 @@ const _$target10 = _i3.AopTarget(
   ],
   annotationTypes: [r'Service', r'Log'],
 );
-Object? _$invoke11(_i13.OrderService bean, List<Object?> arguments) =>
-    bean.placeOrder();
 Object? _$invoke12(_i13.OrderService bean, List<Object?> arguments) =>
+    bean.placeOrder();
+Object? _$invoke13(_i13.OrderService bean, List<Object?> arguments) =>
     bean.orders();
-const _$target13 = _i3.AopTarget(
+const _$target14 = _i3.AopTarget(
   r'OrderService',
   types: [r'OrderService'],
   annotations: [
@@ -1520,7 +1532,7 @@ const _$target13 = _i3.AopTarget(
   ],
   annotationTypes: [r'Service', r'Log'],
 );
-const _$target14 = _i3.AopTarget(
+const _$target15 = _i3.AopTarget(
   r'LiveStock',
   types: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
   annotations: [
@@ -1530,7 +1542,7 @@ const _$target14 = _i3.AopTarget(
   ],
   annotationTypes: [r'Component', r'NotifyListeners', r'Log'],
 );
-const _$target15 = _i3.AopTarget(
+const _$target16 = _i3.AopTarget(
   r'SupportChat',
   types: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
   annotations: [
@@ -1540,32 +1552,32 @@ const _$target15 = _i3.AopTarget(
   ],
   annotationTypes: [r'Component', r'NotifyListeners', r'Log'],
 );
-Object? _$get16(_i29.SsoProperties bean) => bean.enabled;
-void _$set17(_i29.SsoProperties bean, Object? value) =>
+Object? _$get17(_i29.SsoProperties bean) => bean.enabled;
+void _$set18(_i29.SsoProperties bean, Object? value) =>
     bean.enabled = (value as bool);
-Object? _$get18(_i29.SsoProperties bean) => bean.registrationId;
-void _$set19(_i29.SsoProperties bean, Object? value) =>
+Object? _$get19(_i29.SsoProperties bean) => bean.registrationId;
+void _$set20(_i29.SsoProperties bean, Object? value) =>
     bean.registrationId = (value as String);
-Object? _$get20(_i29.SsoProperties bean) => bean.postLogoutRedirectUri;
-void _$set21(_i29.SsoProperties bean, Object? value) =>
+Object? _$get21(_i29.SsoProperties bean) => bean.postLogoutRedirectUri;
+void _$set22(_i29.SsoProperties bean, Object? value) =>
     bean.postLogoutRedirectUri = (value as String?);
-_i29.SsoProperties _$create22(
+_i29.SsoProperties _$create23(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i29.SsoProperties();
-Object? _$get23(_i7.Me bean) => bean.name;
-Object? _$get24(_i7.Me bean) => bean.roles;
-_i7.Me _$create25(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get24(_i7.Me bean) => bean.name;
+Object? _$get25(_i7.Me bean) => bean.roles;
+_i7.Me _$create26(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.Me(
       name: (named[#name] as String),
       roles: named.argumentOr(#roles, const <String>[]),
     );
-Object? _$get26(_i7.Book bean) => bean.isbn;
-Object? _$get27(_i7.Book bean) => bean.title;
-Object? _$get28(_i7.Book bean) => bean.author;
-Object? _$get29(_i7.Book bean) => bean.price;
-Object? _$get30(_i7.Book bean) => bean.available;
-_i7.Book _$create31(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get27(_i7.Book bean) => bean.isbn;
+Object? _$get28(_i7.Book bean) => bean.title;
+Object? _$get29(_i7.Book bean) => bean.author;
+Object? _$get30(_i7.Book bean) => bean.price;
+Object? _$get31(_i7.Book bean) => bean.available;
+_i7.Book _$create32(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.Book(
       isbn: (named[#isbn] as String),
       title: (named[#title] as String),
@@ -1573,36 +1585,36 @@ _i7.Book _$create31(List<Object?> positional, Map<Symbol, Object?> named) =>
       price: named.argumentOr(#price, 0.0),
       available: named.argumentOr(#available, 0),
     );
-Object? _$get32(_i7.NewBook bean) => bean.isbn;
-void _$set33(_i7.NewBook bean, Object? value) => bean.isbn = (value as String);
-Object? _$get34(_i7.NewBook bean) => bean.title;
-void _$set35(_i7.NewBook bean, Object? value) => bean.title = (value as String);
-Object? _$get36(_i7.NewBook bean) => bean.author;
-void _$set37(_i7.NewBook bean, Object? value) =>
+Object? _$get33(_i7.NewBook bean) => bean.isbn;
+void _$set34(_i7.NewBook bean, Object? value) => bean.isbn = (value as String);
+Object? _$get35(_i7.NewBook bean) => bean.title;
+void _$set36(_i7.NewBook bean, Object? value) => bean.title = (value as String);
+Object? _$get37(_i7.NewBook bean) => bean.author;
+void _$set38(_i7.NewBook bean, Object? value) =>
     bean.author = (value as String);
-Object? _$get38(_i7.NewBook bean) => bean.price;
-void _$set39(_i7.NewBook bean, Object? value) => bean.price = (value as double);
-_i7.NewBook _$create40(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get39(_i7.NewBook bean) => bean.price;
+void _$set40(_i7.NewBook bean, Object? value) => bean.price = (value as double);
+_i7.NewBook _$create41(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.NewBook();
-Object? _$get41(_i34.ApiProperties bean) => bean.host;
-void _$set42(_i34.ApiProperties bean, Object? value) =>
+Object? _$get42(_i34.ApiProperties bean) => bean.host;
+void _$set43(_i34.ApiProperties bean, Object? value) =>
     bean.host = (value as String);
-Object? _$get43(_i34.ApiProperties bean) => bean.baseUrl;
-void _$set44(_i34.ApiProperties bean, Object? value) =>
+Object? _$get44(_i34.ApiProperties bean) => bean.baseUrl;
+void _$set45(_i34.ApiProperties bean, Object? value) =>
     bean.baseUrl = (value as String);
-Object? _$get45(_i34.ApiProperties bean) => bean.wsUrl;
-void _$set46(_i34.ApiProperties bean, Object? value) =>
+Object? _$get46(_i34.ApiProperties bean) => bean.wsUrl;
+void _$set47(_i34.ApiProperties bean, Object? value) =>
     bean.wsUrl = (value as String);
-_i34.ApiProperties _$create47(
+_i34.ApiProperties _$create48(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i34.ApiProperties();
-Object? _$get48(_i7.PageOfBooks bean) => bean.items;
-Object? _$get49(_i7.PageOfBooks bean) => bean.page;
-Object? _$get50(_i7.PageOfBooks bean) => bean.size;
-Object? _$get51(_i7.PageOfBooks bean) => bean.total;
-Object? _$get52(_i7.PageOfBooks bean) => bean.pages;
-_i7.PageOfBooks _$create53(
+Object? _$get49(_i7.PageOfBooks bean) => bean.items;
+Object? _$get50(_i7.PageOfBooks bean) => bean.page;
+Object? _$get51(_i7.PageOfBooks bean) => bean.size;
+Object? _$get52(_i7.PageOfBooks bean) => bean.total;
+Object? _$get53(_i7.PageOfBooks bean) => bean.pages;
+_i7.PageOfBooks _$create54(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i7.PageOfBooks(
@@ -1611,19 +1623,19 @@ _i7.PageOfBooks _$create53(
   size: named.argumentOr(#size, 0),
   total: named.argumentOr(#total, 0),
 );
-Object? _$get54(_i7.StockChanged bean) => bean.isbn;
-Object? _$get55(_i7.StockChanged bean) => bean.available;
-_i7.StockChanged _$create56(
+Object? _$get55(_i7.StockChanged bean) => bean.isbn;
+Object? _$get56(_i7.StockChanged bean) => bean.available;
+_i7.StockChanged _$create57(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i7.StockChanged(
   isbn: (named[#isbn] as String),
   available: (named[#available] as int),
 );
-Object? _$get57(_i7.BasketLine bean) => bean.isbn;
-Object? _$get58(_i7.BasketLine bean) => bean.title;
-Object? _$get59(_i7.BasketLine bean) => bean.quantity;
-_i7.BasketLine _$create60(
+Object? _$get58(_i7.BasketLine bean) => bean.isbn;
+Object? _$get59(_i7.BasketLine bean) => bean.title;
+Object? _$get60(_i7.BasketLine bean) => bean.quantity;
+_i7.BasketLine _$create61(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i7.BasketLine(
@@ -1631,21 +1643,21 @@ _i7.BasketLine _$create60(
   title: named.argumentOr(#title, r''),
   quantity: named.argumentOr(#quantity, 0),
 );
-Object? _$get61(_i7.ServerBasket bean) => bean.items;
-_i7.ServerBasket _$create62(
+Object? _$get62(_i7.ServerBasket bean) => bean.items;
+_i7.ServerBasket _$create63(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) =>
     _i7.ServerBasket(items: named.argumentOr(#items, const <_i7.BasketLine>[]));
-Object? _$get63(_i7.Quantity bean) => bean.quantity;
-_i7.Quantity _$create64(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get64(_i7.Quantity bean) => bean.quantity;
+_i7.Quantity _$create65(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.Quantity((positional[0] as int));
-Object? _$get65(_i7.ShopOrder bean) => bean.id;
-Object? _$get66(_i7.ShopOrder bean) => bean.user;
-Object? _$get67(_i7.ShopOrder bean) => bean.lines;
-Object? _$get68(_i7.ShopOrder bean) => bean.total;
-Object? _$get69(_i7.ShopOrder bean) => bean.placedAt;
-_i7.ShopOrder _$create70(
+Object? _$get66(_i7.ShopOrder bean) => bean.id;
+Object? _$get67(_i7.ShopOrder bean) => bean.user;
+Object? _$get68(_i7.ShopOrder bean) => bean.lines;
+Object? _$get69(_i7.ShopOrder bean) => bean.total;
+Object? _$get70(_i7.ShopOrder bean) => bean.placedAt;
+_i7.ShopOrder _$create71(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i7.ShopOrder(
@@ -1655,10 +1667,10 @@ _i7.ShopOrder _$create70(
   total: named.argumentOr(#total, 0.0),
   placedAt: named.argumentOr(#placedAt, null),
 );
-Object? _$get71(_i7.ChatMessage bean) => bean.from;
-Object? _$get72(_i7.ChatMessage bean) => bean.text;
-Object? _$get73(_i7.ChatMessage bean) => bean.at;
-_i7.ChatMessage _$create74(
+Object? _$get72(_i7.ChatMessage bean) => bean.from;
+Object? _$get73(_i7.ChatMessage bean) => bean.text;
+Object? _$get74(_i7.ChatMessage bean) => bean.at;
+_i7.ChatMessage _$create75(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i7.ChatMessage(
@@ -1666,13 +1678,13 @@ _i7.ChatMessage _$create74(
   text: (named[#text] as String),
   at: named.argumentOr(#at, null),
 );
-Object? _$get75(_i39.AppProperties bean) => bean.title;
-void _$set76(_i39.AppProperties bean, Object? value) =>
+Object? _$get76(_i39.AppProperties bean) => bean.title;
+void _$set77(_i39.AppProperties bean, Object? value) =>
     bean.title = (value as String);
-Object? _$get77(_i39.AppProperties bean) => bean.navigation;
-void _$set78(_i39.AppProperties bean, Object? value) =>
+Object? _$get78(_i39.AppProperties bean) => bean.navigation;
+void _$set79(_i39.AppProperties bean, Object? value) =>
     bean.navigation = (value as _i39.NavigationStyle);
-_i39.AppProperties _$create79(
+_i39.AppProperties _$create80(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i39.AppProperties();
@@ -1700,7 +1712,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         r.value<_i3.Resource>(r'asset:assets/remote/winter.yml'),
       ),
       annotations: const [_i3.Component()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i25.KeycloakConfig>(
       name: r'keycloakConfig',
@@ -1743,7 +1757,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
               ) as _$KeycloakConfigConfiguration)._$keycloakRoles(r)
               as _i25.KeycloakRolesMapper),
       annotations: const [_i3.Bean()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i25.KeycloakTokenInterceptor>(
       name: r'keycloakTokens',
@@ -1770,7 +1786,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         qualifier: r'keycloakConfig',
       ) as _$KeycloakConfigConfiguration)._$keycloakTokens(r),
       annotations: const [_i3.Bean()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i42.OAuth2AccessTokenErrorDecoder>(
       name: r'errorDecoder',
@@ -1796,7 +1814,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
               ) as _$KeycloakConfigConfiguration)._$errorDecoder(r)
               as _i42.OAuth2AccessTokenErrorDecoder),
       annotations: const [_i3.Bean()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i43.ServerAuthenticationProvider>(
       name: r'serverAuthenticationProvider',
@@ -1817,7 +1837,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Component(),
         _i3.Log(topic: r'neon.account'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i1.Session>(
       name: r'session',
@@ -1865,57 +1887,57 @@ _i3.BeanModule get $application => _i3.BeanModule(
         signatures: const [
           _i3.MethodSignature.of(
             r'login',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'String'],
             parameterNames: [r'username', r'password'],
           ),
           _i3.MethodSignature.of(
             r'signInWithKeycloak',
-            _$target0,
+            _$target1,
             returnType: r'Future',
           ),
           _i3.MethodSignature.of(
             r'restore',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'ApplicationReadyEvent'],
             parameterNames: [r'event'],
           ),
           _i3.MethodSignature.of(
             r'logout',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'bool'],
             parameterNames: [r'endSession'],
           ),
           _i3.MethodSignature.of(
             r'isLoggedIn',
-            _$target0,
+            _$target1,
             kind: _i3.MemberKind.getter,
             returnType: r'bool',
           ),
           _i3.MethodSignature.of(
             r'user',
-            _$target0,
+            _$target1,
             kind: _i3.MemberKind.getter,
             returnType: r'String',
           ),
           _i3.MethodSignature.of(
             r'isAdmin',
-            _$target0,
+            _$target1,
             kind: _i3.MemberKind.getter,
             returnType: r'bool',
           ),
           _i3.MethodSignature.of(
             r'usesKeycloak',
-            _$target0,
+            _$target1,
             kind: _i3.MemberKind.getter,
             returnType: r'bool',
           ),
           _i3.MethodSignature.of(
             r'restored',
-            _$target0,
+            _$target1,
             kind: _i3.MemberKind.getter,
             returnType: r'Future',
           ),
@@ -1929,7 +1951,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       source: r'package:neon_books_app/src/account/sso_properties.dart#SsoProperties',
       create: (r) => _i29.SsoProperties(),
       annotations: const [_i3.ConfigurationProperties(r'neon.sso')],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i6.AdminService>(
       name: r'adminService',
@@ -1956,7 +1980,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ],
           returnTypeInfo: _i3.ClassType<_i7.Book>(),
           isFuture: true,
-          invoke: _$invoke1,
+          invoke: _$invoke2,
           annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
         const _i3.BeanMethod<_i6.AdminService>(
@@ -1976,7 +2000,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ],
           isFuture: true,
           isVoid: true,
-          invoke: _$invoke2,
+          invoke: _$invoke3,
           annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
         const _i3.BeanMethod<_i6.AdminService>(
@@ -1991,14 +2015,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ],
           isFuture: true,
           isVoid: true,
-          invoke: _$invoke3,
+          invoke: _$invoke4,
           annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
         const _i3.BeanMethod<_i6.AdminService>(
           r'serverLogs',
           returnTypeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
           isFuture: true,
-          invoke: _$invoke4,
+          invoke: _$invoke5,
           annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
         ),
       ],
@@ -2010,7 +2034,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         signatures: const [
           _i3.MethodSignature.of(
             r'addBook',
-            _$target5,
+            _$target6,
             returnType: r'Future',
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
@@ -2019,7 +2043,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'uploadCover',
-            _$target5,
+            _$target6,
             returnType: r'Future',
             parameterTypes: [r'String', r'Uint8List'],
             parameterNames: [r'isbn', r'png'],
@@ -2028,7 +2052,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'deleteBook',
-            _$target5,
+            _$target6,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -2037,7 +2061,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'serverLogs',
-            _$target5,
+            _$target6,
             returnType: r'Future',
             annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
@@ -2059,7 +2083,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         r.dependency<_i3.BeanIntrospector>(name: r'_introspector'),
       ),
       annotations: const [_i3.Component()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i16.AccountClient>(
       name: r'accountClient',
@@ -2070,7 +2096,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       annotations: const [
         _i17.FeignClient(r'account', url: r'${api.base-url}', path: r'/api'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i19.AdminClient>(
       name: r'adminClient',
@@ -2080,7 +2108,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       annotations: const [
         _i17.FeignClient(r'admin', url: r'${api.base-url}', path: r'/api'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i32.ApiConfig>(
       name: r'apiConfig',
@@ -2111,7 +2141,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Bean(),
         _i3.Profile([r'!web']),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i48.SessionTransport>(
       name: r'sessionTransport',
@@ -2147,7 +2179,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Primary(),
         _i3.Profile([r'!web']),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i35.DefaultRetryer>(
       name: r'retryer',
@@ -2163,7 +2197,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         qualifier: r'apiConfig',
       ) as _$ApiConfigConfiguration)._$retryer(r) as _i35.DefaultRetryer),
       annotations: const [_i3.Bean()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i34.ApiProperties>(
       name: r'apiProperties',
@@ -2171,7 +2207,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
           r'package:neon_books_app/src/api/api_properties.dart#ApiProperties',
       create: (r) => _i34.ApiProperties(),
       annotations: const [_i3.ConfigurationProperties(r'api'), _i3.Validated()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i20.CatalogClient>(
       name: r'catalogClient',
@@ -2186,7 +2224,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
           path: r'/api/books',
         ),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i33.CookieJar>(
       name: r'cookieJar',
@@ -2196,7 +2236,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Component(),
         _i3.Log(topic: r'neon.api.cookies'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i21.ShopClient>(
       name: r'shopClient',
@@ -2206,7 +2248,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       annotations: const [
         _i17.FeignClient(r'shop', url: r'${api.base-url}', path: r'/api'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i22.StockClient>(
       name: r'stockClient',
@@ -2220,7 +2264,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
           path: r'/api/stock',
         ),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i49.SupportHandshake>(
       name: r'supportHandshake',
@@ -2256,7 +2302,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Component(),
         _i3.Profile([r'!web']),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i23.SupportSocket>(
       name: r'supportSocket',
@@ -2267,7 +2315,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       annotations: const [
         _i24.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i39.AppProperties>(
       name: r'appProperties',
@@ -2275,7 +2325,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
           r'package:neon_books_app/src/app/app_properties.dart#AppProperties',
       create: (r) => _i39.AppProperties(),
       annotations: const [_i3.ConfigurationProperties(r'app'), _i3.Validated()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i9.LanguageSelection>(
       name: r'languageSelection',
@@ -2289,14 +2341,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
         signatures: const [
           _i3.MethodSignature.of(
             r'select',
-            _$target6,
+            _$target7,
             returnType: r'void',
             parameterTypes: [r'String'],
             parameterNames: [r'languageCode'],
           ),
           _i3.MethodSignature.of(
             r'languageCode',
-            _$target6,
+            _$target7,
             kind: _i3.MemberKind.getter,
             returnType: r'String',
           ),
@@ -2318,7 +2370,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         r.dependency<_i9.LanguageSelection>(name: r'_selection'),
       ),
       annotations: const [_i3.Component()],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i52.LifecycleLog>(
       name: r'lifecycleLog',
@@ -2351,7 +2405,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Component(),
         _i3.Log(topic: r'neon.lifecycle'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i54.RouteLog>(
       name: r'routeLog',
@@ -2362,7 +2418,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Component(),
         _i3.Log(topic: r'neon.navigation'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i10.Basket>(
       name: r'basket',
@@ -2395,48 +2453,48 @@ _i3.BeanModule get $application => _i3.BeanModule(
         signatures: const [
           _i3.MethodSignature.of(
             r'add',
-            _$target7,
+            _$target8,
             returnType: r'Future',
             parameterTypes: [r'Book'],
             parameterNames: [r'book'],
           ),
           _i3.MethodSignature.of(
             r'setQuantity',
-            _$target7,
+            _$target8,
             returnType: r'Future',
             parameterTypes: [r'String', r'int', r'Book'],
             parameterNames: [r'isbn', r'quantity', r'book'],
           ),
-          _i3.MethodSignature.of(r'clear', _$target7, returnType: r'void'),
+          _i3.MethodSignature.of(r'clear', _$target8, returnType: r'void'),
           _i3.MethodSignature.of(
             r'onLogin',
-            _$target7,
+            _$target8,
             returnType: r'Future',
             parameterTypes: [r'LoggedIn'],
             parameterNames: [r'event'],
           ),
           _i3.MethodSignature.of(
             r'onLogout',
-            _$target7,
+            _$target8,
             returnType: r'void',
             parameterTypes: [r'LoggedOut'],
             parameterNames: [r'event'],
           ),
           _i3.MethodSignature.of(
             r'items',
-            _$target7,
+            _$target8,
             kind: _i3.MemberKind.getter,
             returnType: r'List',
           ),
           _i3.MethodSignature.of(
             r'count',
-            _$target7,
+            _$target8,
             kind: _i3.MemberKind.getter,
             returnType: r'int',
           ),
           _i3.MethodSignature.of(
             r'total',
-            _$target7,
+            _$target8,
             kind: _i3.MemberKind.getter,
             returnType: r'double',
           ),
@@ -2461,40 +2519,40 @@ _i3.BeanModule get $application => _i3.BeanModule(
         signatures: const [
           _i3.MethodSignature.of(
             r'search',
-            _$target8,
+            _$target9,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'query'],
           ),
           _i3.MethodSignature.of(
             r'showPage',
-            _$target8,
+            _$target9,
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'page'],
           ),
-          _i3.MethodSignature.of(r'reload', _$target8, returnType: r'Future'),
+          _i3.MethodSignature.of(r'reload', _$target9, returnType: r'Future'),
           _i3.MethodSignature.of(
             r'query',
-            _$target8,
+            _$target9,
             kind: _i3.MemberKind.getter,
             returnType: r'String',
           ),
           _i3.MethodSignature.of(
             r'page',
-            _$target8,
+            _$target9,
             kind: _i3.MemberKind.getter,
             returnType: r'int',
           ),
           _i3.MethodSignature.of(
             r'books',
-            _$target8,
+            _$target9,
             kind: _i3.MemberKind.getter,
             returnType: r'PageOfBooks',
           ),
           _i3.MethodSignature.of(
             r'error',
-            _$target8,
+            _$target9,
             kind: _i3.MemberKind.getter,
             returnType: r'Object',
           ),
@@ -2519,7 +2577,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           r'refresh',
           isFuture: true,
           isVoid: true,
-          invoke: _$invoke9,
+          invoke: _$invoke10,
           annotations: [
             _i56.Scheduled(
               fixedDelayString: r'${catalog.refresh-interval:5m}',
@@ -2532,7 +2590,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Component(),
         _i3.Log(topic: r'neon.catalog'),
       ],
-      aopProxy: const _i3.AopProxyFactory.pruned(),
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i3.BeanDefinition<_i12.CatalogService>(
       name: r'catalogService',
@@ -2551,7 +2611,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         signatures: const [
           _i3.MethodSignature.of(
             r'page',
-            _$target10,
+            _$target11,
             returnType: r'Future',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'query', r'page'],
@@ -2560,7 +2620,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'find',
-            _$target10,
+            _$target11,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -2569,7 +2629,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'cover',
-            _$target10,
+            _$target11,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -2580,7 +2640,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'refresh',
-            _$target10,
+            _$target11,
             returnType: r'void',
             annotations: [
               _i57.CacheEvict.of(
@@ -2592,7 +2652,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'coverChanged',
-            _$target10,
+            _$target11,
             returnType: r'void',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -2621,7 +2681,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           r'placeOrder',
           returnTypeInfo: _i3.ClassType<_i7.ShopOrder>(),
           isFuture: true,
-          invoke: _$invoke11,
+          invoke: _$invoke12,
           annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
         ),
         const _i3.BeanMethod<_i13.OrderService>(
@@ -2630,7 +2690,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             _i3.ClassType<_i7.ShopOrder>(),
           ),
           isFuture: true,
-          invoke: _$invoke12,
+          invoke: _$invoke13,
           annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
         ),
       ],
@@ -2642,14 +2702,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
         signatures: const [
           _i3.MethodSignature.of(
             r'placeOrder',
-            _$target13,
+            _$target14,
             returnType: r'Future',
             annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i3.MethodSignature.of(
             r'orders',
-            _$target13,
+            _$target14,
             returnType: r'Future',
             annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
             annotationTypes: [r'PreAuthorize'],
@@ -2673,29 +2733,29 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i3.MethodSignature.of(r'start', _$target14, returnType: r'void'),
-          _i3.MethodSignature.of(r'stop', _$target14, returnType: r'void'),
+          _i3.MethodSignature.of(r'start', _$target15, returnType: r'void'),
+          _i3.MethodSignature.of(r'stop', _$target15, returnType: r'void'),
           _i3.MethodSignature.of(
             r'live',
-            _$target14,
+            _$target15,
             kind: _i3.MemberKind.getter,
             returnType: r'bool',
           ),
           _i3.MethodSignature.of(
             r'available',
-            _$target14,
+            _$target15,
             kind: _i3.MemberKind.getter,
             returnType: r'Map',
           ),
           _i3.MethodSignature.of(
             r'recent',
-            _$target14,
+            _$target15,
             kind: _i3.MemberKind.getter,
             returnType: r'List',
           ),
           _i3.MethodSignature.of(
             r'addListener',
-            _$target14,
+            _$target15,
             declaringType: r'Listenable',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
@@ -2707,7 +2767,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'removeListener',
-            _$target14,
+            _$target15,
             declaringType: r'Listenable',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
@@ -2719,7 +2779,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'dispose',
-            _$target14,
+            _$target15,
             declaringType: r'ChangeNotifier',
             returnType: r'void',
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
@@ -2728,7 +2788,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'notifyListeners',
-            _$target14,
+            _$target15,
             declaringType: r'ChangeNotifier',
             returnType: r'void',
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
@@ -2738,7 +2798,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'hasListeners',
-            _$target14,
+            _$target15,
             declaringType: r'ChangeNotifier',
             kind: _i3.MemberKind.getter,
             returnType: r'bool',
@@ -2786,37 +2846,37 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
-          _i3.MethodSignature.of(r'join', _$target15, returnType: r'void'),
+          _i3.MethodSignature.of(r'join', _$target16, returnType: r'void'),
           _i3.MethodSignature.of(
             r'send',
-            _$target15,
+            _$target16,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'text'],
           ),
           _i3.MethodSignature.of(
             r'onLogin',
-            _$target15,
+            _$target16,
             returnType: r'void',
             parameterTypes: [r'LoggedIn'],
             parameterNames: [r'event'],
           ),
           _i3.MethodSignature.of(
             r'onLogout',
-            _$target15,
+            _$target16,
             returnType: r'Future',
             parameterTypes: [r'LoggedOut'],
             parameterNames: [r'event'],
           ),
           _i3.MethodSignature.of(
             r'messages',
-            _$target15,
+            _$target16,
             kind: _i3.MemberKind.getter,
             returnType: r'List',
           ),
           _i3.MethodSignature.of(
             r'addListener',
-            _$target15,
+            _$target16,
             declaringType: r'Listenable',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
@@ -2828,7 +2888,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'removeListener',
-            _$target15,
+            _$target16,
             declaringType: r'Listenable',
             declaringTypes: [r'ChangeNotifier', r'Listenable'],
             returnType: r'void',
@@ -2840,7 +2900,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'dispose',
-            _$target15,
+            _$target16,
             declaringType: r'ChangeNotifier',
             returnType: r'void',
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
@@ -2849,7 +2909,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'notifyListeners',
-            _$target15,
+            _$target16,
             declaringType: r'ChangeNotifier',
             returnType: r'void',
             implementingTypes: [r'ChangeNotifier', r'Listenable'],
@@ -2859,7 +2919,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.MethodSignature.of(
             r'hasListeners',
-            _$target15,
+            _$target16,
             declaringType: r'ChangeNotifier',
             kind: _i3.MemberKind.getter,
             returnType: r'bool',
@@ -3113,23 +3173,23 @@ _i3.BeanModule get $application => _i3.BeanModule(
           typeInfo: _i3.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get16,
-          set: _$set17,
+          get: _$get17,
+          set: _$set18,
         ),
         _i3.BeanProperty<_i29.SsoProperties>(
           r'registrationId',
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'keycloak',
-          get: _$get18,
-          set: _$set19,
+          get: _$get19,
+          set: _$set20,
         ),
         _i3.BeanProperty<_i29.SsoProperties>(
           r'postLogoutRedirectUri',
           nullable: true,
           typeInfo: _i3.ClassType<String>(nullable: true),
-          get: _$get20,
-          set: _$set21,
+          get: _$get21,
+          set: _$set22,
         ),
       ],
       annotations: [_i3.ConfigurationProperties(r'neon.sso')],
@@ -3137,7 +3197,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       instantiate: _i29.SsoProperties.new,
       constructor: _i3.BeanConstructor<_i29.SsoProperties>(
         parameters: [],
-        create: _$create22,
+        create: _$create23,
       ),
     ),
     const _i3.BeanIntrospection<_i7.Me>(
@@ -3146,12 +3206,12 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.Me>(
           r'name',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get23,
+          get: _$get24,
         ),
         _i3.BeanProperty<_i7.Me>(
           r'roles',
           typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
-          get: _$get24,
+          get: _$get25,
         ),
       ],
       constructor: _i3.BeanConstructor<_i7.Me>(
@@ -3170,7 +3230,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             defaultValue: <String>[],
           ),
         ],
-        create: _$create25,
+        create: _$create26,
       ),
     ),
     const _i3.BeanIntrospection<_i7.Book>(
@@ -3179,27 +3239,27 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.Book>(
           r'isbn',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get26,
+          get: _$get27,
         ),
         _i3.BeanProperty<_i7.Book>(
           r'title',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get27,
+          get: _$get28,
         ),
         _i3.BeanProperty<_i7.Book>(
           r'author',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get28,
+          get: _$get29,
         ),
         _i3.BeanProperty<_i7.Book>(
           r'price',
           typeInfo: _i3.ClassType<double>(),
-          get: _$get29,
+          get: _$get30,
         ),
         _i3.BeanProperty<_i7.Book>(
           r'available',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get30,
+          get: _$get31,
         ),
       ],
       constructor: _i3.BeanConstructor<_i7.Book>(
@@ -3238,7 +3298,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             defaultValue: 0,
           ),
         ],
-        create: _$create31,
+        create: _$create32,
       ),
     ),
     const _i3.BeanIntrospection<_i7.NewBook>(
@@ -3247,36 +3307,36 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.NewBook>(
           r'isbn',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get32,
-          set: _$set33,
+          get: _$get33,
+          set: _$set34,
           annotations: [_i3.NotBlank(), _i3.Matches(r'^97[89]\d{10}$')],
         ),
         _i3.BeanProperty<_i7.NewBook>(
           r'title',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get34,
-          set: _$set35,
+          get: _$get35,
+          set: _$set36,
           annotations: [_i3.NotBlank(), _i3.Size(max: 120)],
         ),
         _i3.BeanProperty<_i7.NewBook>(
           r'author',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get36,
-          set: _$set37,
+          get: _$get37,
+          set: _$set38,
           annotations: [_i3.NotBlank(), _i3.Size(max: 80)],
         ),
         _i3.BeanProperty<_i7.NewBook>(
           r'price',
           typeInfo: _i3.ClassType<double>(),
-          get: _$get38,
-          set: _$set39,
+          get: _$get39,
+          set: _$set40,
           annotations: [_i3.Positive(), _i3.Max(1000)],
         ),
       ],
       instantiate: _i7.NewBook.new,
       constructor: _i3.BeanConstructor<_i7.NewBook>(
         parameters: [],
-        create: _$create40,
+        create: _$create41,
       ),
     ),
     const _i3.BeanIntrospection<_i34.ApiProperties>(
@@ -3287,8 +3347,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'localhost:8080',
-          get: _$get41,
-          set: _$set42,
+          get: _$get42,
+          set: _$set43,
           annotations: [_i3.NotBlank()],
         ),
         _i3.BeanProperty<_i34.ApiProperties>(
@@ -3296,8 +3356,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'http://localhost:8080',
-          get: _$get43,
-          set: _$set44,
+          get: _$get44,
+          set: _$set45,
           annotations: [_i3.Matches(r'https?://.+')],
         ),
         _i3.BeanProperty<_i34.ApiProperties>(
@@ -3305,8 +3365,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'ws://localhost:8080',
-          get: _$get45,
-          set: _$set46,
+          get: _$get46,
+          set: _$set47,
           annotations: [_i3.Matches(r'wss?://.+')],
         ),
       ],
@@ -3315,7 +3375,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       instantiate: _i34.ApiProperties.new,
       constructor: _i3.BeanConstructor<_i34.ApiProperties>(
         parameters: [],
-        create: _$create47,
+        create: _$create48,
       ),
     ),
     const _i3.BeanIntrospection<_i7.PageOfBooks>(
@@ -3324,27 +3384,27 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.PageOfBooks>(
           r'items',
           typeInfo: _i3.ListType<_i7.Book>(_i3.ClassType<_i7.Book>()),
-          get: _$get48,
+          get: _$get49,
         ),
         _i3.BeanProperty<_i7.PageOfBooks>(
           r'page',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get49,
+          get: _$get50,
         ),
         _i3.BeanProperty<_i7.PageOfBooks>(
           r'size',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get50,
+          get: _$get51,
         ),
         _i3.BeanProperty<_i7.PageOfBooks>(
           r'total',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get51,
+          get: _$get52,
         ),
         _i3.BeanProperty<_i7.PageOfBooks>(
           r'pages',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get52,
+          get: _$get53,
         ),
       ],
       instantiate: _i7.PageOfBooks.new,
@@ -3379,7 +3439,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             defaultValue: 0,
           ),
         ],
-        create: _$create53,
+        create: _$create54,
       ),
     ),
     const _i3.BeanIntrospection<_i7.StockChanged>(
@@ -3388,12 +3448,12 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.StockChanged>(
           r'isbn',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get54,
+          get: _$get55,
         ),
         _i3.BeanProperty<_i7.StockChanged>(
           r'available',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get55,
+          get: _$get56,
         ),
       ],
       constructor: _i3.BeanConstructor<_i7.StockChanged>(
@@ -3411,7 +3471,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create56,
+        create: _$create57,
       ),
     ),
     const _i3.BeanIntrospection<_i7.BasketLine>(
@@ -3420,17 +3480,17 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.BasketLine>(
           r'isbn',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get57,
+          get: _$get58,
         ),
         _i3.BeanProperty<_i7.BasketLine>(
           r'title',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get58,
+          get: _$get59,
         ),
         _i3.BeanProperty<_i7.BasketLine>(
           r'quantity',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get59,
+          get: _$get60,
         ),
       ],
       constructor: _i3.BeanConstructor<_i7.BasketLine>(
@@ -3456,7 +3516,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             defaultValue: 0,
           ),
         ],
-        create: _$create60,
+        create: _$create61,
       ),
     ),
     const _i3.BeanIntrospection<_i7.ServerBasket>(
@@ -3467,7 +3527,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           typeInfo: _i3.ListType<_i7.BasketLine>(
             _i3.ClassType<_i7.BasketLine>(),
           ),
-          get: _$get61,
+          get: _$get62,
         ),
       ],
       instantiate: _i7.ServerBasket.new,
@@ -3481,7 +3541,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             defaultValue: <_i7.BasketLine>[],
           ),
         ],
-        create: _$create62,
+        create: _$create63,
       ),
     ),
     const _i3.BeanIntrospection<_i7.Quantity>(
@@ -3490,7 +3550,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.Quantity>(
           r'quantity',
           typeInfo: _i3.ClassType<int>(),
-          get: _$get63,
+          get: _$get64,
         ),
       ],
       constructor: _i3.BeanConstructor<_i7.Quantity>(
@@ -3501,7 +3561,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create64,
+        create: _$create65,
       ),
     ),
     const _i3.BeanIntrospection<_i7.ShopOrder>(
@@ -3511,30 +3571,30 @@ _i3.BeanModule get $application => _i3.BeanModule(
           r'id',
           type: Object,
           typeInfo: _i3.DynamicType(),
-          get: _$get65,
+          get: _$get66,
         ),
         _i3.BeanProperty<_i7.ShopOrder>(
           r'user',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get66,
+          get: _$get67,
         ),
         _i3.BeanProperty<_i7.ShopOrder>(
           r'lines',
           typeInfo: _i3.ListType<_i7.BasketLine>(
             _i3.ClassType<_i7.BasketLine>(),
           ),
-          get: _$get67,
+          get: _$get68,
         ),
         _i3.BeanProperty<_i7.ShopOrder>(
           r'total',
           typeInfo: _i3.ClassType<double>(),
-          get: _$get68,
+          get: _$get69,
         ),
         _i3.BeanProperty<_i7.ShopOrder>(
           r'placedAt',
           nullable: true,
           typeInfo: _i3.ClassType<DateTime>(nullable: true),
-          get: _$get69,
+          get: _$get70,
         ),
       ],
       constructor: _i3.BeanConstructor<_i7.ShopOrder>(
@@ -3572,7 +3632,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             symbol: #placedAt,
           ),
         ],
-        create: _$create70,
+        create: _$create71,
       ),
     ),
     const _i3.BeanIntrospection<_i7.ChatMessage>(
@@ -3581,18 +3641,18 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.BeanProperty<_i7.ChatMessage>(
           r'from',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get71,
+          get: _$get72,
         ),
         _i3.BeanProperty<_i7.ChatMessage>(
           r'text',
           typeInfo: _i3.ClassType<String>(),
-          get: _$get72,
+          get: _$get73,
         ),
         _i3.BeanProperty<_i7.ChatMessage>(
           r'at',
           nullable: true,
           typeInfo: _i3.ClassType<DateTime>(nullable: true),
-          get: _$get73,
+          get: _$get74,
         ),
       ],
       constructor: _i3.BeanConstructor<_i7.ChatMessage>(
@@ -3615,7 +3675,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             symbol: #at,
           ),
         ],
-        create: _$create74,
+        create: _$create75,
       ),
     ),
     const _i3.BeanIntrospection<_i39.AppProperties>(
@@ -3626,8 +3686,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'NEON Books',
-          get: _$get75,
-          set: _$set76,
+          get: _$get76,
+          set: _$set77,
           annotations: [_i3.Size(min: 1, max: 40)],
         ),
         _i3.BeanProperty<_i39.AppProperties>(
@@ -3637,8 +3697,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           hasInitialValue: true,
           initialValue: _i39.NavigationStyle.bar,
-          get: _$get77,
-          set: _$set78,
+          get: _$get78,
+          set: _$set79,
         ),
       ],
       annotations: [_i3.ConfigurationProperties(r'app'), _i3.Validated()],
@@ -3646,7 +3706,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       instantiate: _i39.AppProperties.new,
       constructor: _i3.BeanConstructor<_i39.AppProperties>(
         parameters: [],
-        create: _$create79,
+        create: _$create80,
       ),
     ),
   ],
@@ -4820,7 +4880,7 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '22eb4a2a',
+  fingerprint: '79bff6ad',
 );
 
 /// Starts the application: config files, environment, context, runners

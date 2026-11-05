@@ -152,7 +152,13 @@ class _$NoteRepositoryImpl extends _i4.SimpleRepository<_i2.Note, int>
       );
 }
 
-const _$target0 = _i1.AopTarget(
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+const _$target1 = _i1.AopTarget(
   r'Library',
   types: [r'Library'],
   annotations: [_i1.Service()],
@@ -176,7 +182,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuthorRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.BookRepository>(
       name: r'bookRepository',
@@ -191,7 +199,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.OrderRepository>(
       name: r'orderRepository',
@@ -206,7 +216,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$OrderRepositoryImpl.$create(r),
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.VisitRepository>(
       name: r'visitRepository',
@@ -222,7 +234,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
       ],
       create: (r) => _$VisitRepositoryImpl.$create(r),
       annotations: const [_i5.UseDataSource(r'stats')],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.NoteRepository>(
       name: r'noteRepository',
@@ -241,7 +255,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i5.UseStore(r'memory'),
         _i5.UseDataSource(r'scratch'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.Library>(
       name: r'library',
@@ -261,7 +277,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'addBook',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'title'],
@@ -270,7 +286,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'visit',
-            _$target0,
+            _$target1,
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'page', r'fail'],
@@ -278,6 +294,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             annotationTypes: [r'Transactional'],
           ),
         ],
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) =>
             _$LibraryProxy((target as _i2.Library), invoker),
       ),
@@ -306,7 +323,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.AsyncQuery>(
       name: r'asyncQuery',
@@ -337,7 +356,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.SeedRunner>(
       name: r'seedRunner',
@@ -349,7 +370,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
       create: (r) =>
           _i2.SeedRunner(r.dependency<_i2.AuthorRepository>(name: r'authors')),
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.SeedApplicationRunner>(
       name: r'seedApplicationRunner',
@@ -360,7 +383,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         r.dependency<_i2.BookRepository>(name: r'books'),
       ),
       annotations: const [_i1.Component()],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i4.EntityIntrospections>(
       name: r'entityIntrospections#application',
@@ -961,7 +986,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '9be00057',
+  fingerprint: '4b26e448',
 );
 
 /// Starts the application: config files, environment, context, runners

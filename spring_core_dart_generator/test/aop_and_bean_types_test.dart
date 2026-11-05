@@ -56,7 +56,7 @@ Matcher _has(String code) => contains(_normalize(code));
 Matcher _pruned(String name) => matches(
   RegExp(
     'BeanDefinition<$name>\\((?:(?!BeanDefinition<).)*'
-    r'AopProxyFactory\.pruned\(\)',
+    r'AopProxyFactory\.pruned\(knownAdvisors:_\$knownAdvisors\d+,?\)',
   ),
 );
 

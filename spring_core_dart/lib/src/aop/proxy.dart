@@ -63,6 +63,10 @@ abstract interface class Advised {
 
   /// Appends [advisor] as the innermost one; the next calls of the members
   /// its pointcut matches run it.
+  ///
+  /// Throws an [AopConfigException] when the build generated the proxy
+  /// class for only some of the bean's members (proxy pruning; the build
+  /// option `aop_prune: false` keeps them all).
   void addAdvisor(PointcutAdvisor advisor);
 
   /// Removes [advisor]; returns `false` when it was not there.
@@ -70,7 +74,7 @@ abstract interface class Advised {
 
   /// Appends [advice] as the innermost advice of every member, wrapped in
   /// a `DefaultPointcutAdvisor` with a `TruePointcut` (as Spring's
-  /// `addAdvice` does).
+  /// `addAdvice` does). Throws like [addAdvisor].
   void addAdvice(MethodInterceptor advice);
 
   /// Removes the first advisor whose advice is [advice] (the same object);
@@ -314,10 +318,16 @@ final class AopProxyFactory {
   ///
   /// [introductions] are the interfaces `@DeclareParents` adds to the
   /// proxy class.
+  ///
+  /// [knownAdvisors] marks a partial proxy class: the build pruned it to
+  /// the members it found advice for, knowing the advisors listed (see
+  /// [knownAdvisors]); [signatures] are those members only, the others
+  /// call the bean directly.
   AopProxyFactory({
     required List<MethodSignature> signatures,
     required Object Function(Object target, ProxyInvoker invoker) this._create,
     List<Introduction> introductions = const [],
+    this.knownAdvisors,
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _advise = null,
@@ -336,6 +346,7 @@ final class AopProxyFactory {
     required String reason,
   }) : signatures = List.unmodifiable(signatures),
        introductions = const [],
+       knownAdvisors = null,
        _create = null,
        _advise = null,
        unavailableReason = reason,
@@ -359,6 +370,7 @@ final class AopProxyFactory {
   /// ```
   const AopProxyFactory.deferred({required this.signatures})
     : introductions = const [],
+      knownAdvisors = null,
       _create = null,
       _advise = null,
       unavailableReason = deferredReason,
@@ -366,17 +378,20 @@ final class AopProxyFactory {
 
   /// A bean the build gave no proxy class: no pointcut it knows of matches
   /// the bean ([reason] says so, [prunedReason] when not given). Nothing
-  /// is generated for its members, so advice registered at run time
-  /// without the build seeing it (an advisor bean added by hand to a
-  /// context) is not applied to it; build with the option
+  /// is generated for its members, so the context fails at startup with an
+  /// [AopConfigException] when an aspect or advisor bean the build did not
+  /// know of ([knownAdvisors], none when not given) is registered, and the
+  /// bean cannot get advice at run time; build with the option
   /// `aop_prune: false` to keep every proxy.
-  const AopProxyFactory.pruned({String? reason})
-    : signatures = const [],
-      introductions = const [],
-      _create = null,
-      _advise = null,
-      unavailableReason = reason ?? prunedReason,
-      isDeferred = false;
+  const AopProxyFactory.pruned({
+    String? reason,
+    this.knownAdvisors = const <String>{},
+  }) : signatures = const [],
+       introductions = const [],
+       _create = null,
+       _advise = null,
+       unavailableReason = reason ?? prunedReason,
+       isDeferred = false;
 
   /// A factory for a bean whose class cannot be implemented but can be
   /// extended, which the container creates as a generated subclass.
@@ -398,10 +413,13 @@ final class AopProxyFactory {
   /// [introductions] are the interfaces `@DeclareParents` adds to the
   /// subclass; their members work once the aspect declaring them is
   /// registered, which attaches the invoker.
+  ///
+  /// [knownAdvisors] marks a partial subclass, as for the main constructor.
   AopProxyFactory.subclass({
     required List<MethodSignature> signatures,
     required Object? Function(Object bean, ProxyInvoker invoker) this._advise,
     List<Introduction> introductions = const [],
+    this.knownAdvisors,
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _create = null,
@@ -442,6 +460,24 @@ final class AopProxyFactory {
   /// Whether this is an [AopProxyFactory.deferred] placeholder, which the
   /// application's factory for the bean replaces.
   final bool isDeferred;
+
+  /// For a factory the build pruned ([AopProxyFactory.pruned], or a
+  /// partial proxy class, [isPartial]): the `source`s of the aspect and
+  /// advisor bean definitions it knew of. An entry without `#` stands for
+  /// a whole package (`package:spring_boot_starter_data`): the
+  /// definitions whose source starts with it and `/` or `#`. `null` for
+  /// a factory the build did not prune.
+  ///
+  /// The context fails at startup when such a factory is in use and an
+  /// aspect or advisor bean it does not list is registered (one registered
+  /// in code, by a registrar or with `registerSingleton`): its advice might
+  /// match a member the build left out.
+  final Set<String>? knownAdvisors;
+
+  /// Whether the proxy class intercepts only the members the build found
+  /// advice for ([signatures]); the others call the bean directly, so
+  /// advisors cannot be added to such a proxy at run time.
+  bool get isPartial => knownAdvisors != null && unavailableReason == null;
 
   /// Whether the bean is created as a generated subclass that advice is
   /// attached to, instead of being wrapped.
@@ -490,6 +526,7 @@ final class AopProxyFactory {
       beanName,
       beanAliases: beanAliases,
       introductions: introductions,
+      partial: isPartial,
     );
     if (_advise case final advise?) {
       return advise(target, invoker) ??
@@ -601,12 +638,15 @@ final class ProxyInvoker {
   /// qualifier values) also count for `bean(...)` pointcuts.
   ///
   /// [introductions] are the `@DeclareParents` interfaces of the proxy.
+  /// [partial]: the proxy class intercepts only [signatures], the members
+  /// the build found advice for (see [AopProxyFactory.isPartial]).
   ProxyInvoker(
     this.signatures,
     List<PointcutAdvisor> advisors,
     this.beanName, {
     List<String> beanAliases = const [],
     List<Introduction> introductions = const [],
+    this.partial = false,
   }) : _advisors = [...advisors],
        beanAliases = List.unmodifiable(beanAliases),
        introductions = List.unmodifiable(introductions),
@@ -659,8 +699,28 @@ final class ProxyInvoker {
   Object introduction(int index) =>
       _delegates[index] ??= introductions[index].create();
 
+  /// Whether the proxy class intercepts only the members the build found
+  /// advice for; [addAdvisor] and [addAdvice] then throw.
+  final bool partial;
+
+  /// Throws the [AopConfigException] for advice added at run time to a
+  /// proxy whose class the build pruned to some of the bean's members
+  /// ([AopProxyFactory.isPartial]): the advice could not reach the others.
+  static Never partialProxy(String beanName) => throw AopConfigException(
+    "The proxy of ${beanName.isEmpty ? 'this bean' : "bean '$beanName'"} "
+    'intercepts only the members the build found advice for (proxy '
+    'pruning), so advice added at run time would not reach the others. '
+    'Build the application with the option aop_prune: false to proxy '
+    'every member.',
+  );
+
   /// Appends [advisor] as the innermost one; the next calls use it.
+  ///
+  /// Throws an [AopConfigException] on a [partial] proxy.
   void addAdvisor(PointcutAdvisor advisor) {
+    if (partial) {
+      partialProxy(beanName);
+    }
     _advisors.add(advisor);
     _chains.clear();
   }

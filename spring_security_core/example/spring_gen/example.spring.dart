@@ -88,9 +88,15 @@ const _$target3 = _i2.AopTarget(
   annotations: [_i2.Service()],
   annotationTypes: [r'Service'],
 );
-Object? _$get4(_i1.Order bean) => bean.id;
-Object? _$get5(_i1.Order bean) => bean.owner;
-Object? _$invoke6(_i1.Order bean, List<Object?> arguments) =>
+const _$knownAdvisors4 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_security_core',
+};
+Object? _$get5(_i1.Order bean) => bean.id;
+Object? _$get6(_i1.Order bean) => bean.owner;
+Object? _$invoke7(_i1.Order bean, List<Object?> arguments) =>
     Function.apply(bean.toString, arguments);
 
 /// Beans found by `@ComponentScan` in `example/`.
@@ -220,7 +226,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
               ) as _$UserSetupConfiguration)._$users(r)
               as _i4.InMemoryUserDetailsManager),
       annotations: const [_i2.Bean()],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors4,
+      ),
     ),
     _i2.BeanDefinition<_i1.SecurityTour>(
       name: r'securityTour',
@@ -238,7 +246,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors4,
+      ),
     ),
   ],
   introspections: [
@@ -248,19 +258,19 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.BeanProperty<_i1.Order>(
           r'id',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get4,
+          get: _$get5,
         ),
         _i2.BeanProperty<_i1.Order>(
           r'owner',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get5,
+          get: _$get6,
         ),
       ],
       methods: [
         _i2.BeanMethod<_i1.Order>(
           r'toString',
           returnType: String,
-          invoke: _$invoke6,
+          invoke: _$invoke7,
         ),
       ],
       parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.methods},
@@ -324,7 +334,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'a45b743a',
+  fingerprint: '2f21fec7',
 );
 
 /// Starts the application: config files, environment, context, runners

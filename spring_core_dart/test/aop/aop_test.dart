@@ -553,9 +553,11 @@ void main() {
       int? order,
       String expression = 'execution(* price(..))',
       String name = 'recorder',
+      String? source,
     }) => BeanDefinition<Recorder>(
       name: name,
       order: order,
+      source: source,
       create: (_) => Recorder(),
       aspect: AspectMetadata<Recorder>(
         pointcuts: {'prices': expression},
@@ -783,6 +785,107 @@ void main() {
         context.close();
       });
 
+      test('a registered factory leaving out a member advice matches fails '
+          'the startup', () {
+        // The application's factory proxies `name` only; the aspect
+        // advises `price`.
+        final partial = AopProxyFactory(
+          signatures: [ServiceProxy.signatures[3]],
+          create: (target, invoker) =>
+              ServiceProxy(target as PriceService, invoker),
+        );
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('application', [aspect()], aopProxies: {source: partial}),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(
+          context.refresh,
+          throwsA(
+            isA<AopConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains("member 'price' of bean 'priceService'"),
+                contains('aop_prune: false'),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('a registered factory leaving out only unadvised members is '
+          'used', () {
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule(
+            'application',
+            [aspect()],
+            aopProxies: {
+              source: AopProxyFactory(
+                signatures: ServiceProxy.signatures,
+                create: (target, invoker) =>
+                    ServiceProxy(target as PriceService, invoker),
+              ),
+            },
+          ),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(context.getBean<Service>().price(3), 6);
+        expect(log, ['recorder:before', 'recorder:returned 6']);
+        context.close();
+      });
+
+      test('registerAopProxies rejects a factory that cannot proxy', () {
+        for (final unusable in [
+          const AopProxyFactory.pruned(),
+          AopProxyFactory.deferred(signatures: ServiceProxy.signatures),
+          AopProxyFactory.unavailable(
+            signatures: ServiceProxy.signatures,
+            reason: 'no class',
+          ),
+        ]) {
+          expect(
+            () => DefaultListableBeanFactory().registerAopProxies({
+              source: unusable,
+            }),
+            throwsA(isA<AopConfigException>()),
+          );
+        }
+      });
+
+      test('registerAopProxies rejects a second, different factory for a '
+          'source', () {
+        final beanFactory = DefaultListableBeanFactory()
+          ..registerAopProxies({source: factory})
+          // The same one again (the module loaded twice) is fine.
+          ..registerAopProxies({source: factory});
+        expect(
+          () => beanFactory.registerAopProxies({
+            source: AopProxyFactory(
+              signatures: [ServiceProxy.signatures[3]],
+              create: (target, invoker) =>
+                  ServiceProxy(target as PriceService, invoker),
+            ),
+          }),
+          throwsA(isA<AopConfigException>()),
+        );
+        expect(
+          beanFactory.aopProxyOf(deferred()),
+          same(factory),
+          reason: 'the first one stays',
+        );
+        // Two modules bringing different factories fail the startup.
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          application(),
+          BeanModule(
+            'other',
+            const [],
+            aopProxies: {source: const AopProxyFactory.pruned()},
+          ),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(context.refresh, throwsA(isA<AopConfigException>()));
+      });
+
       test('without it and without matching advice, the bean is plain', () {
         final context = AnnotationConfigApplicationContext([
           library(),
@@ -790,6 +893,186 @@ void main() {
         ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
         expect(context.getBean<Service>(), isNot(isA<Advised>()));
         context.close();
+      });
+    });
+
+    group('proxies the build pruned', () {
+      const known = {'package:app/src/recorder.dart#Recorder'};
+      BeanDefinition<PriceService> pruned() => BeanDefinition<PriceService>(
+        name: 'plain',
+        types: const [PriceService],
+        aopProxy: const AopProxyFactory.pruned(knownAdvisors: known),
+        create: (_) => PriceService(),
+      );
+      BeanDefinition<PriceService> partial() => BeanDefinition<PriceService>(
+        name: 'priceService',
+        types: const [PriceService, Service],
+        aopProxy: AopProxyFactory(
+          signatures: ServiceProxy.signatures,
+          create: (target, invoker) =>
+              ServiceProxy(target as PriceService, invoker),
+          knownAdvisors: known,
+        ),
+        create: (_) => PriceService(),
+      );
+      BeanDefinition<DefaultPointcutAdvisor> guard({String? source}) =>
+          BeanDefinition<DefaultPointcutAdvisor>(
+            name: 'guard',
+            source: source,
+            types: const [DefaultPointcutAdvisor, PointcutAdvisor, Advisor],
+            create: (_) => DefaultPointcutAdvisor(
+              const NameMatchMethodPointcut(['name']),
+              _Upper(),
+            ),
+          );
+      AnnotationConfigApplicationContext context(
+        List<BeanModule> modules, {
+        ApplicationContext? parent,
+      }) => AnnotationConfigApplicationContext(
+        modules,
+        parent: parent,
+        environment: StandardEnvironment(systemEnvironment: {}),
+      );
+      Matcher unknownAdvisor(String name) => throwsA(
+        isA<AopConfigException>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains("bean '$name'"), contains('aop_prune: false')),
+        ),
+      );
+
+      test('start with the advisors the build knew of', () {
+        final started = context([
+          BeanModule('app', [
+            pruned(),
+            partial(),
+            aspect(source: known.single),
+          ]),
+        ])..refresh();
+        expect(started.getBean<Service>().price(3), 6);
+        expect(log, ['recorder:before', 'recorder:returned 6']);
+        started.close();
+      });
+
+      test('an advisor an ImportBeanDefinitionRegistrar registers fails the '
+          'startup', () {
+        final failing = context([
+          BeanModule(
+            'app',
+            [pruned(), aspect(source: known.single)],
+            registrars: [ImportDeclaration(() => _Registers(guard()))],
+          ),
+        ]);
+        expect(failing.refresh, unknownAdvisor('guard'));
+      });
+
+      test(
+        'an advisor registered with registerSingleton fails the startup',
+        () {
+          final failing = context([
+            BeanModule('app', [
+              pruned(),
+              BeanDefinition<_RegistersAdvisor>(
+                name: 'registersAdvisor',
+                types: const [_RegistersAdvisor, BeanFactoryPostProcessor],
+                create: (_) => _RegistersAdvisor(),
+              ),
+            ]),
+          ]);
+          expect(failing.refresh, unknownAdvisor('manualGuard'));
+        },
+      );
+
+      test('an advisor of a known package is known', () {
+        context([
+            BeanModule('app', [
+              BeanDefinition<PriceService>(
+                name: 'plain',
+                types: const [PriceService],
+                aopProxy: const AopProxyFactory.pruned(
+                  knownAdvisors: {'package:starter'},
+                ),
+                create: (_) => PriceService(),
+              ),
+              guard(source: 'package:starter#StarterAutoConfiguration'),
+            ]),
+          ])
+          ..refresh()
+          ..close();
+        expect(
+          context([
+            BeanModule('app', [
+              BeanDefinition<PriceService>(
+                name: 'plain',
+                types: const [PriceService],
+                aopProxy: const AopProxyFactory.pruned(
+                  knownAdvisors: {'package:starter'},
+                ),
+                create: (_) => PriceService(),
+              ),
+              guard(source: 'package:starter_two#StarterAutoConfiguration'),
+            ]),
+          ]).refresh,
+          unknownAdvisor('guard'),
+        );
+      });
+
+      test(
+        "an unknown advisor of a parent context fails the child's startup",
+        () {
+          final parent = context([
+            BeanModule('parent', [guard()]),
+          ])..refresh();
+          addTearDown(parent.close);
+          expect(
+            context([
+              BeanModule('child', [pruned()]),
+            ], parent: parent).refresh,
+            unknownAdvisor('guard'),
+          );
+        },
+      );
+
+      test('without pruned proxies, any advisor is fine', () {
+        final started = context([
+          BeanModule('app', [service(), guard()]),
+        ])..refresh();
+        expect(started.getBean<Service>().name, 'PRICES');
+        started.close();
+      });
+
+      test('a partial proxy rejects advice added at run time', () {
+        final started = context([
+          BeanModule('app', [partial(), aspect(source: known.single)]),
+        ])..refresh();
+        final proxy = started.getBean<Service>() as Advised;
+        expect(
+          () => proxy.addAdvice(_Upper()),
+          throwsA(
+            isA<AopConfigException>().having(
+              (e) => e.message,
+              'message',
+              contains('aop_prune: false'),
+            ),
+          ),
+        );
+        expect(
+          () => proxy.addAdvisor(
+            DefaultPointcutAdvisor(const TruePointcut(), _Upper()),
+          ),
+          throwsA(isA<AopConfigException>()),
+        );
+        expect(
+          () => ProxyFactory.forBean(started.beanFactory, 'priceService')
+            ..addAdvice(_Upper())
+            ..getProxy(),
+          throwsA(isA<AopConfigException>()),
+        );
+        // A full proxy takes it.
+        final full = factory.createProxy(PriceService(), const []) as Advised
+          ..addAdvice(_Upper());
+        expect((full as Service).name, 'PRICES');
+        started.close();
       });
     });
 
@@ -915,6 +1198,19 @@ final class _Registers implements ImportBeanDefinitionRegistrar {
   @override
   void registerBeanDefinitions(BeanDefinitionRegistry registry) =>
       registry.registerBeanDefinition(definition);
+}
+
+// Registers an advisor as a plain singleton, as a post-processor may.
+final class _RegistersAdvisor implements BeanFactoryPostProcessor {
+  @override
+  void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) =>
+      beanFactory.registerSingleton(
+        'manualGuard',
+        DefaultPointcutAdvisor(
+          const NameMatchMethodPointcut(['name']),
+          _Upper(),
+        ),
+      );
 }
 
 // Matches nothing, counting how often it is asked.

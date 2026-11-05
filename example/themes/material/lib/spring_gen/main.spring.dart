@@ -28,6 +28,12 @@ import 'package:theme_showcase_material/src/app/theme_menu.dart' as _i6;
 part 'messages.spring.dart';
 part 'theme.spring.dart';
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_logging',
+};
+
 /// Beans found by `@ComponentScan` in `lib/`.
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
@@ -40,7 +46,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'theme_showcase_material.pages'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.ThemeLog>(
       name: r'themeLog',
@@ -54,7 +62,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'theme_showcase_material.themes'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i2.RouteLog>(
       name: r'routeLog',
@@ -65,7 +75,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.Component(),
         _i1.Log(topic: r'theme_showcase_material.navigation'),
       ],
-      aopProxy: const _i1.AopProxyFactory.pruned(),
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i1.BeanDefinition<_i5.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
@@ -4458,7 +4470,7 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'b7bcfbd8',
+  fingerprint: '6690b2fc',
 );
 
 /// Starts the application: config files, environment, context, runners

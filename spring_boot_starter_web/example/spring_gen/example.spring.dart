@@ -24,21 +24,28 @@ import 'package:spring_web_dart/src/sse/event_stream.dart' as _i5;
 
 import '../example.dart' as _i1;
 
-Object? _$invoke0(_i1.BookController bean, List<Object?> arguments) =>
-    bean.find((arguments[0] as String));
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_feign',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_web',
+  r'package:spring_boot_starter_websocket',
+};
 Object? _$invoke1(_i1.BookController bean, List<Object?> arguments) =>
-    bean.create((arguments[0] as _i1.NewBook));
+    bean.find((arguments[0] as String));
 Object? _$invoke2(_i1.BookController bean, List<Object?> arguments) =>
-    bean.added();
+    bean.create((arguments[0] as _i1.NewBook));
 Object? _$invoke3(_i1.BookController bean, List<Object?> arguments) =>
+    bean.added();
+Object? _$invoke4(_i1.BookController bean, List<Object?> arguments) =>
     bean.notFound((arguments[0] as _i1.BookNotFound));
-Object? _$get4(_i1.Book bean) => bean.isbn;
-Object? _$get5(_i1.Book bean) => bean.title;
-_i1.Book _$create6(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get5(_i1.Book bean) => bean.isbn;
+Object? _$get6(_i1.Book bean) => bean.title;
+_i1.Book _$create7(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i1.Book(isbn: (named[#isbn] as String), title: (named[#title] as String));
-Object? _$get7(_i1.NewBook bean) => bean.isbn;
-Object? _$get8(_i1.NewBook bean) => bean.title;
-_i1.NewBook _$create9(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get8(_i1.NewBook bean) => bean.isbn;
+Object? _$get9(_i1.NewBook bean) => bean.title;
+_i1.NewBook _$create10(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i1.NewBook(
       isbn: (named[#isbn] as String),
       title: (named[#title] as String),
@@ -56,7 +63,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         bean.init();
       },
       annotations: const [_i2.Service()],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
     _i2.BeanDefinition<_i1.BookController>(
       name: r'bookController',
@@ -78,7 +87,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             ),
           ],
           returnTypeInfo: _i2.ClassType<_i1.Book>(),
-          invoke: _$invoke0,
+          invoke: _$invoke1,
           annotations: [_i3.GetMapping(r'/{isbn}')],
         ),
         const _i2.BeanMethod<_i1.BookController>(
@@ -95,7 +104,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           returnTypeInfo: _i2.GenericType<_i4.ResponseEntity<_i1.Book>>([
             _i2.ClassType<_i1.Book>(),
           ]),
-          invoke: _$invoke1,
+          invoke: _$invoke2,
           annotations: [_i3.PostMapping()],
         ),
         const _i2.BeanMethod<_i1.BookController>(
@@ -103,7 +112,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           returnTypeInfo: _i2.GenericType<_i5.EventStream<_i1.Book>>([
             _i2.ClassType<_i1.Book>(),
           ]),
-          invoke: _$invoke2,
+          invoke: _$invoke3,
           annotations: [_i3.GetMapping(r'/added')],
         ),
         const _i2.BeanMethod<_i1.BookController>(
@@ -117,7 +126,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             ),
           ],
           returnTypeInfo: _i2.ClassType<_i6.ProblemDetail>(),
-          invoke: _$invoke3,
+          invoke: _$invoke4,
           annotations: [_i7.ExceptionHandler(), _i7.ResponseStatus(404)],
         ),
       ],
@@ -125,7 +134,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i7.RestController(),
         _i3.RequestMapping(r'/api/books'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(),
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
     ),
   ],
   resources: const {
@@ -138,12 +149,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.BeanProperty<_i1.Book>(
           r'isbn',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get4,
+          get: _$get5,
         ),
         _i2.BeanProperty<_i1.Book>(
           r'title',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get5,
+          get: _$get6,
         ),
       ],
       parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
@@ -162,7 +173,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create6,
+        create: _$create7,
       ),
     ),
     const _i2.BeanIntrospection<_i1.NewBook>(
@@ -171,13 +182,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.BeanProperty<_i1.NewBook>(
           r'isbn',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get7,
+          get: _$get8,
           annotations: [_i2.NotBlank(), _i2.Size(min: 4, max: 13)],
         ),
         _i2.BeanProperty<_i1.NewBook>(
           r'title',
           typeInfo: _i2.ClassType<String>(),
-          get: _$get8,
+          get: _$get9,
           annotations: [_i2.NotBlank()],
         ),
       ],
@@ -197,7 +208,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create9,
+        create: _$create10,
       ),
     ),
   ],
@@ -264,7 +275,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '295f8011',
+  fingerprint: '6d28b352',
 );
 
 /// Starts the application: config files, environment, context, runners

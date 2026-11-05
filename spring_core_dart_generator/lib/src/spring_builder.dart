@@ -969,6 +969,9 @@ class SpringBuilder implements Builder {
       if (advisors.undeclared) {
         foreign.undeclaredAnnotations = true;
       }
+      // Its advisors are read: the hand-written definitions of an
+      // auto-configuration name their source after the package.
+      foreign.knownSources.add('package:${package.name}');
     }
     return foreign;
   }

@@ -1381,8 +1381,17 @@ class ForeignAdvice {
   final aspects = <(String, AspectModel)>[];
 
   /// Whether another module declares an advisor bean whose pointcut the
-  /// build cannot read, which may match anything; nothing is pruned then.
+  /// build cannot read, which may match anything, or may register advice
+  /// in code (an `@Import`ed registrar, a `BeanFactoryPostProcessor`
+  /// bean); nothing is pruned then.
   bool advisors = false;
+
+  /// The `source`s of the aspect and advisor beans of the other modules,
+  /// and `package:<name>` for each auto-configuration package whose advice
+  /// the build read: the pruned proxies list them
+  /// (`AopProxyFactory.knownAdvisors`), and the context fails at startup
+  /// when another aspect or advisor is registered.
+  final knownSources = <String>{};
 
   /// Whether another module may declare advice the build cannot read (an
   /// auto-configuration with aspects); nothing is pruned then.
@@ -2877,6 +2886,11 @@ class ModuleModel {
   /// module may write (see [ForeignProxyModel]); only the
   /// `@SpringBootApplication` output has some.
   final foreignProxies = <ForeignProxyModel>[];
+
+  /// The `source`s of the aspect and advisor beans the build knew of when
+  /// it pruned proxies of the module (see [ForeignAdvice.knownSources]);
+  /// `null` when it pruned none. `analyzeAop` sets it.
+  Set<String>? knownAdvisors;
 
   /// Every public class of the scanned libraries. The emitter needs it for
   /// `@args(...)` pointcuts: which classes carry an annotation.
