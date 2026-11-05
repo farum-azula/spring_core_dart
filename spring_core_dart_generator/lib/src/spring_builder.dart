@@ -2,7 +2,14 @@ import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:analyzer/dart/ast/ast.dart'
-    show Comment, InstanceCreationExpression, SimpleIdentifier;
+    show
+        Comment,
+        InstanceCreationExpression,
+        ListLiteral,
+        NamedArgument,
+        SetOrMapLiteral,
+        SimpleIdentifier,
+        StringLiteral;
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -148,6 +155,7 @@ class SpringBuilder implements Builder {
   SpringBuilder({
     this.proxyMode = ProxyMode.all,
     this.pruneProxies = true,
+    this.dartDefinesExclude = const [],
     Future<String?> Function(AssetId output)? readExistingOutput,
     PackageDirectories? packageDirectories,
   }) : _packageDirectories = packageDirectories ?? PackageDirectories.current,
@@ -166,6 +174,12 @@ class SpringBuilder implements Builder {
   /// Only that output prunes: it knows every module of the application.
   /// `@ComponentScan` outputs keep every proxy.
   final bool pruneProxies;
+
+  /// The property name prefixes not offered to `--dart-define` (build
+  /// option `dart_defines_exclude`, empty by default): neither the names
+  /// under them nor their environment-variable forms are written into
+  /// `springApplication.dartDefines`.
+  final List<String> dartDefinesExclude;
 
   final Future<String?> Function(AssetId output) _readExistingOutput;
 
@@ -353,18 +367,33 @@ class SpringBuilder implements Builder {
     scanner.throwErrors();
 
     // In a library package any module may import this one, so its beans
-    // may be advised by aspects the build cannot see: no proxy is pruned.
-    // In an application (`publish_to: none`) nothing outside imports it:
-    // it is pruned knowing the advice of the package's other libraries and
-    // of the auto-configurations, as the @SpringBootApplication output.
+    // may be advised by aspects the build cannot see: no proxy is pruned,
+    // and the `lib/` modules leave to the application's build the proxies
+    // only its aspects can match. In an application (`publish_to: none`)
+    // nothing outside imports it: it is pruned knowing the advice of the
+    // package's other libraries and of the auto-configurations, as the
+    // @SpringBootApplication output.
     final dependencies = await _dependencies(buildStep);
     final glue = await driverGlueFor(buildStep, dependencies);
-    final prune = pruneProxies && await _isApplication(buildStep);
+    final application = await _isApplication(buildStep);
+    final prune = pruneProxies && application;
+    // Only a starter's (a package with an auto-configuration library): the
+    // application's build finds its modules.
+    final defer =
+        pruneProxies &&
+        !application &&
+        output.path.startsWith('lib/') &&
+        await buildStep.canRead(
+          AssetId(output.package, autoConfigurationLibrary),
+        );
     return ModuleEmitter(
       output,
       dependencies: dependencies,
+      deferProxies: defer,
       pruneProxies: prune,
-      foreignAdvice: prune
+      // Pruning, and deferring, know the advice of the package's other
+      // modules and of the auto-configurations.
+      foreignAdvice: prune || defer
           ? await _foreignAdvice(
               buildStep,
               scanner,
@@ -594,6 +623,24 @@ class SpringBuilder implements Builder {
       buildStep,
       includeOwn: example,
     );
+    // The beans of the auto-configurations' modules whose proxy class is
+    // left to the application.
+    if (proxyMode != ProxyMode.none) {
+      for (final (:source, :beanName, :beanNames, :type)
+          in await _deferredProxies(buildStep, assets, includeOwn: example)) {
+        if (scanner.foreignProxyModel(type) case final proxy?) {
+          module.foreignProxies.add(
+            ForeignProxyModel(
+              source: source,
+              beanName: beanName,
+              beanNames: beanNames,
+              proxy: proxy,
+              element: type.element,
+            ),
+          );
+        }
+      }
+    }
     final springApplication = refer('springApplication');
     final dependencies = await _dependencies(buildStep);
     final glue = await driverGlueFor(buildStep, dependencies);
@@ -614,7 +661,10 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
-    final defines = await _dartDefineKeys(buildStep, assets, resources);
+    final defines = DartDefineKeys.without(
+      await _dartDefineKeys(buildStep, assets, resources),
+      dartDefinesExclude,
+    );
     final keyParts = await _keyParts(buildStep);
     final source = emitter.emit(
       moduleName: 'application',
@@ -885,9 +935,16 @@ class SpringBuilder implements Builder {
         if (!seen.add(library.uri)) {
           continue;
         }
-        final source = await buildStep.readAsString(
-          AssetId.resolve(library.uri),
-        );
+        final asset = AssetId.resolve(library.uri);
+        // The package's generated modules, when its own are built in this
+        // phase (a starter's, whose auto-configuration imports them): the
+        // advisors of the libraries they come from are in [nested].
+        if (package.name == root &&
+            asset.path.endsWith('.spring.dart') &&
+            !await buildStep.canRead(asset)) {
+          continue;
+        }
+        final source = await buildStep.readAsString(asset);
         if (source.contains('AspectMetadata')) {
           foreign.unknown = true;
         }
@@ -912,6 +969,9 @@ class SpringBuilder implements Builder {
       if (advisors.undeclared) {
         foreign.undeclaredAnnotations = true;
       }
+      // Its advisors are read: the hand-written definitions of an
+      // auto-configuration name their source after the package.
+      foreign.knownSources.add('package:${package.name}');
     }
     return foreign;
   }
@@ -1008,6 +1068,90 @@ class SpringBuilder implements Builder {
       for (final (ordering, _, name, url) in found)
         (refer(name, url), ordering),
     ];
+  }
+
+  // The beans whose module left their proxy class to the application
+  // (`AopProxyFactory.deferred`), in the generated modules of the packages
+  // with an auto-configuration library (the only ones that defer): those
+  // the auto-configuration library reaches and those the application's
+  // [assets] import, through the libraries of the same package they
+  // import.
+  static Future<List<_DeferredProxy>> _deferredProxies(
+    BuildStep buildStep,
+    List<AssetId> assets, {
+    bool includeOwn = false,
+  }) async {
+    final root = buildStep.inputId.package;
+    final resolver = buildStep.resolver;
+    final config = await buildStep.packageConfig;
+    final reachable = await _reachablePackages(buildStep);
+    final found = <_DeferredProxy>[];
+    final sources = <String>{};
+    // The libraries of other packages the application imports.
+    final imported = <String, List<LibraryElement>>{};
+    for (final asset in assets) {
+      if (!await resolver.isLibrary(asset)) {
+        continue;
+      }
+      final library = await resolver.libraryFor(asset);
+      for (final fragment in library.fragments) {
+        for (final other in fragment.importedLibraries) {
+          if (other.uri.scheme == 'package') {
+            (imported[other.uri.pathSegments.first] ??= []).add(other);
+          }
+        }
+      }
+    }
+    for (final package in config.packages) {
+      if ((package.name == root && !includeOwn) ||
+          (reachable != null && !reachable.contains(package.name))) {
+        continue;
+      }
+      final id = AssetId(package.name, autoConfigurationLibrary);
+      if (!await buildStep.canRead(id) || !await resolver.isLibrary(id)) {
+        continue;
+      }
+      final pending = [
+        await resolver.libraryFor(id),
+        ...?imported[package.name],
+      ];
+      final seen = <Uri>{};
+      while (pending.isNotEmpty) {
+        final library = pending.removeLast();
+        if (!seen.add(library.uri)) {
+          continue;
+        }
+        for (final fragment in library.fragments) {
+          for (final imported in fragment.importedLibraries) {
+            final uri = imported.uri;
+            if (uri.scheme == 'package' &&
+                uri.pathSegments.first == package.name) {
+              pending.add(imported);
+            }
+          }
+        }
+        if (!library.uri.path.endsWith('.spring.dart')) {
+          continue;
+        }
+        final text = await buildStep.readAsString(AssetId.resolve(library.uri));
+        if (!text.contains('AopProxyFactory.deferred')) {
+          continue;
+        }
+        final visitor = _DeferredProxies();
+        for (final getter in library.getters) {
+          (await resolver.astNodeFor(
+            getter.firstFragment,
+            resolve: true,
+          ))?.accept(visitor);
+        }
+        for (final entry in visitor.found) {
+          if (sources.add(entry.source)) {
+            found.add(entry);
+          }
+        }
+      }
+    }
+    return found;
   }
 
   // `const AutoConfigurationModule(order:, before:, after:)` with the
@@ -1446,6 +1590,73 @@ const _annotationMatchingPointcutChecker = TypeChecker.fromUrl(
   '#AnnotationMatchingPointcut',
 );
 
+// A bean whose module left its proxy class to the application: the
+// `source` of its definition, its name, its aliases and qualifiers (for
+// `bean(...)` pointcuts) and its class.
+typedef _DeferredProxy = ({
+  String source,
+  String beanName,
+  List<String> beanNames,
+  InterfaceType type,
+});
+
+// The `BeanDefinition<T>(name:, source:, aliases:, qualifiers:, aopProxy:
+// AopProxyFactory.deferred(...))` of a generated module.
+class _DeferredProxies extends RecursiveAstVisitor<void> {
+  final found = <_DeferredProxy>[];
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    super.visitInstanceCreationExpression(node);
+    final type = node.staticType;
+    if (type is! InterfaceType ||
+        type.element.name != 'BeanDefinition' ||
+        type.typeArguments.length != 1) {
+      return;
+    }
+    final arguments = {
+      for (final argument in node.argumentList.arguments)
+        if (argument is NamedArgument)
+          argument.name.lexeme: argument.argumentExpression,
+    };
+    final proxy = arguments['aopProxy'];
+    final bean = type.typeArguments.single;
+    if (proxy is! InstanceCreationExpression ||
+        proxy.constructorName.name?.name != 'deferred' ||
+        bean is! InterfaceType) {
+      return;
+    }
+    final source = arguments['source'];
+    final name = arguments['name'];
+    if (source is StringLiteral && name is StringLiteral) {
+      if ((source.stringValue, name.stringValue) case (
+        final source?,
+        final name?,
+      )) {
+        found.add((
+          source: source,
+          beanName: name,
+          beanNames: [
+            ..._strings(arguments['aliases']),
+            ..._strings(arguments['qualifiers']),
+          ],
+          type: bean,
+        ));
+      }
+    }
+  }
+
+  // The strings of a `const [...]` or `const {...}` literal of strings.
+  static Iterable<String> _strings(Object? literal) => [
+    for (final element in switch (literal) {
+      ListLiteral(:final elements) => elements,
+      SetOrMapLiteral(:final elements) => elements,
+      _ => const [],
+    })
+      if (element case StringLiteral(:final stringValue?)) stringValue,
+  ];
+}
+
 // The advisors the libraries of a starter create (`DefaultPointcutAdvisor
 // (p, ...)` or an `Advisor` class) or register (`Advisor` in the types of
 // a bean definition), and whether all created ones have a pointcut whose
@@ -1453,6 +1664,7 @@ const _annotationMatchingPointcutChecker = TypeChecker.fromUrl(
 // outside `package:spring_core_dart` (the annotations pruning keeps the
 // beans of). Registered without a creation the build sees counts as not
 // annotation-driven.
+
 class _AdvisorCreations extends RecursiveAstVisitor<void> {
   bool mentioned = false;
   var _found = false;
@@ -1569,7 +1781,11 @@ class _AdvisorCreations extends RecursiveAstVisitor<void> {
 /// runs in an earlier phase, so the example sees the files.
 class SpringPropertiesBuilder extends SpringBuilder {
   /// A builder with the options of [SpringBuilder].
-  SpringPropertiesBuilder({super.proxyMode, super.pruneProxies});
+  SpringPropertiesBuilder({
+    super.proxyMode,
+    super.pruneProxies,
+    super.dartDefinesExclude,
+  });
 
   @override
   Map<String, List<String>> get buildExtensions => const {

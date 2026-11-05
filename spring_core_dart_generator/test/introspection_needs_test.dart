@@ -592,10 +592,26 @@ String _shape(String output, String name) {
   List<String> names(String pattern) => [
     for (final match in RegExp(pattern).allMatches(block)) match[1]!,
   ];
-  final getters = names(r'get:\(bean\)=>bean\.(\w+)');
-  final setters = names(r'set:\(bean,value\)=>bean\.(\w+)=');
+  // A constant description refers to top-level functions
+  // (`get:_$get3`, `Object? _$get3(Book bean) => bean.title;`).
+  final functions = {
+    for (final match in RegExp(
+      r'_\$((?:get|set)\d+)\([\w<>,.?]+bean(?:,Object\?value)?\)=>bean\.(\w+)',
+    ).allMatches(output))
+      match[1]!: match[2]!,
+  };
+  List<String> accessors(String kind, String closure) => [
+    for (final match in RegExp(
+      '$kind:(?:$closure|_\\\$($kind\\d+))',
+    ).allMatches(block))
+      match[1] ?? functions[match[2]]!,
+  ];
+  final getters = accessors('get', r'\(bean\)=>bean\.(\w+)');
+  final setters = accessors('set', r'\(bean,value\)=>bean\.(\w+)=');
   final methods = names(r"BeanMethod<[\w<>,.?]+>\(r'(\w+)'");
-  final parts = RegExp(r'parts:const\{([^}]*)\}').firstMatch(block)?[1];
+  final parts = RegExp(
+    r'parts:(?:const)?\{([^}]*)\}',
+  ).firstMatch(block)?[1];
   return [
     if (getters.isNotEmpty) 'get ${getters.join(',')}',
     if (setters.isNotEmpty) 'set ${setters.join(',')}',

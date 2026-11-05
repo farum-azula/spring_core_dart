@@ -24,6 +24,13 @@ import 'package:sqlite3/sqlite3.dart' as _i5;
 
 import '../../../postgres/app/postgres_app.dart' as _i2;
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+
 /// Beans found by `@ComponentScan` in `lib/ and test/postgres/app/`.
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
@@ -31,11 +38,10 @@ _i1.BeanModule get $application => _i1.BeanModule(
     _i1.BeanDefinition<_i2.Marker>(
       name: r'marker',
       source: r'asset:spring_boot_starter_data/test/postgres/app/postgres_app.dart#Marker',
-      types: const [_i2.Marker],
       create: (r) => _i2.Marker(),
       annotations: const [_i1.Component()],
-      aopProxy: _i1.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches Marker, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i1.BeanDefinition<_i3.JdbcDriver>(
@@ -386,7 +392,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '6eb73521',
+  fingerprint: 'c4aa881f',
 );
 
 /// Starts the application: config files, environment, context, runners

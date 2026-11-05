@@ -7,103 +7,49 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i3;
-
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i10;
+    as _i9;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i11;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i12;
+    as _i10;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i13;
-import 'package:spring_web_dart/src/annotations.dart' as _i4;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i8;
-import 'package:spring_web_dart/src/problem_detail.dart' as _i7;
-import 'package:spring_web_dart/src/response_entity.dart' as _i5;
-import 'package:spring_web_dart/src/sse/event_stream.dart' as _i6;
+    as _i12;
+import 'package:spring_web_dart/src/annotations.dart' as _i3;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i7;
+import 'package:spring_web_dart/src/problem_detail.dart' as _i6;
+import 'package:spring_web_dart/src/response_entity.dart' as _i4;
+import 'package:spring_web_dart/src/sse/event_stream.dart' as _i5;
 
 import '../example.dart' as _i1;
 
-class _$BookServiceProxy extends _i1.BookService implements _i2.Advised {
-  _$BookServiceProxy();
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$BookServiceProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  void init() {
-    final _$i = this._$invoker;
-    if (_$i == null) {
-      super.init();
-    } else {
-      _$i.invoke(this, this, 0, const [], (args) {
-        super.init();
-        return null;
-      });
-    }
-  }
-
-  @override
-  _i1.Book find(String isbn) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.find(isbn)
-        : (_$i.invoke(this, this, 1, [
-            isbn,
-          ], (args) => super.find((args[0] as String))) as _i1.Book);
-  }
-
-  @override
-  _i1.Book add(_i1.NewBook book) {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.add(book)
-        : (_$i.invoke(this, this, 2, [
-            book,
-          ], (args) => super.add((args[0] as _i1.NewBook))) as _i1.Book);
-  }
-
-  @override
-  _i3.Stream<_i1.Book> get added {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.added
-        : (_$i.invoke(this, this, 3, const [], (_) => super.added)
-              as _i3.Stream<_i1.Book>);
-  }
-}
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_feign',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_web',
+  r'package:spring_boot_starter_websocket',
+};
+Object? _$invoke1(_i1.BookController bean, List<Object?> arguments) =>
+    bean.find((arguments[0] as String));
+Object? _$invoke2(_i1.BookController bean, List<Object?> arguments) =>
+    bean.create((arguments[0] as _i1.NewBook));
+Object? _$invoke3(_i1.BookController bean, List<Object?> arguments) =>
+    bean.added();
+Object? _$invoke4(_i1.BookController bean, List<Object?> arguments) =>
+    bean.notFound((arguments[0] as _i1.BookNotFound));
+Object? _$get5(_i1.Book bean) => bean.isbn;
+Object? _$get6(_i1.Book bean) => bean.title;
+_i1.Book _$create7(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i1.Book(isbn: (named[#isbn] as String), title: (named[#title] as String));
+Object? _$get8(_i1.NewBook bean) => bean.isbn;
+Object? _$get9(_i1.NewBook bean) => bean.title;
+_i1.NewBook _$create10(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i1.NewBook(
+      isbn: (named[#isbn] as String),
+      title: (named[#title] as String),
+    );
 
 /// Beans found by `@ComponentScan` in `example/`.
 _i2.BeanModule get $application => _i2.BeanModule(
@@ -112,134 +58,84 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i2.BeanDefinition<_i1.BookService>(
       name: r'bookService',
       source: r'asset:spring_boot_starter_web/example/example.dart#BookService',
-      types: const [_i1.BookService],
-      create: (r) => _$BookServiceProxy(),
+      create: (r) => _i1.BookService(),
       postConstruct: (bean) {
         bean.init();
       },
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'init',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
-            returnType: r'void',
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'find',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
-            returnType: r'Book',
-            parameterTypes: [r'String'],
-            parameterNames: [r'isbn'],
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'add',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
-            returnType: r'Book',
-            parameterTypes: [r'NewBook'],
-            parameterNames: [r'book'],
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'added',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Stream',
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-        ],
-        advise: (bean, invoker) =>
-            bean is _$BookServiceProxy ? bean._$advise(invoker) : null,
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i2.BeanDefinition<_i1.BookController>(
       name: r'bookController',
       source:
           r'asset:spring_boot_starter_web/example/example.dart#BookController',
-      types: const [_i1.BookController],
       dependencies: const [_i2.Dependency(_i1.BookService, name: r'books')],
       create: (r) =>
           _i1.BookController(r.dependency<_i1.BookService>(name: r'books')),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.BookController>(
+        const _i2.BeanMethod<_i1.BookController>(
           r'find',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
             _i2.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i4.PathVariable()],
+              annotations: [_i3.PathVariable()],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i1.Book>(),
-          invoke: (bean, arguments) => Function.apply(bean.find, arguments),
-          annotations: const [_i4.GetMapping(r'/{isbn}')],
+          returnTypeInfo: _i2.ClassType<_i1.Book>(),
+          invoke: _$invoke1,
+          annotations: [_i3.GetMapping(r'/{isbn}')],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i2.BeanMethod<_i1.BookController>(
           r'create',
-          parameterTypes: const [_i1.NewBook],
+          parameterTypes: [_i1.NewBook],
           parameters: [
             _i2.BeanParameter(
               r'book',
-              type: const _i2.ClassType<_i1.NewBook>(),
+              type: _i2.ClassType<_i1.NewBook>(),
               isRequired: true,
-              annotations: const [_i4.RequestBody(), _i2.Valid()],
+              annotations: [_i3.RequestBody(), _i2.Valid()],
             ),
           ],
-          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<_i1.Book>>([
+          returnTypeInfo: _i2.GenericType<_i4.ResponseEntity<_i1.Book>>([
             _i2.ClassType<_i1.Book>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.create, arguments),
-          annotations: const [_i4.PostMapping()],
+          invoke: _$invoke2,
+          annotations: [_i3.PostMapping()],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i2.BeanMethod<_i1.BookController>(
           r'added',
-          returnTypeInfo: const _i2.GenericType<_i6.EventStream<_i1.Book>>([
+          returnTypeInfo: _i2.GenericType<_i5.EventStream<_i1.Book>>([
             _i2.ClassType<_i1.Book>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.added, arguments),
-          annotations: const [_i4.GetMapping(r'/added')],
+          invoke: _$invoke3,
+          annotations: [_i3.GetMapping(r'/added')],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i2.BeanMethod<_i1.BookController>(
           r'notFound',
-          parameterTypes: const [_i1.BookNotFound],
+          parameterTypes: [_i1.BookNotFound],
           parameters: [
             _i2.BeanParameter(
               r'e',
-              type: const _i2.ClassType<_i1.BookNotFound>(),
+              type: _i2.ClassType<_i1.BookNotFound>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i7.ProblemDetail>(),
-          invoke: (bean, arguments) => Function.apply(bean.notFound, arguments),
-          annotations: const [_i8.ExceptionHandler(), _i8.ResponseStatus(404)],
+          returnTypeInfo: _i2.ClassType<_i6.ProblemDetail>(),
+          invoke: _$invoke4,
+          annotations: [_i7.ExceptionHandler(), _i7.ResponseStatus(404)],
         ),
       ],
       annotations: const [
-        _i8.RestController(),
-        _i4.RequestMapping(r'/api/books'),
+        _i7.RestController(),
+        _i3.RequestMapping(r'/api/books'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches BookController, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
   ],
@@ -247,78 +143,72 @@ _i2.BeanModule get $application => _i2.BeanModule(
     r'application.properties': _i2.EmbeddedResource.text('server.port=8085\n'),
   },
   introspections: [
-    _i2.BeanIntrospection<_i1.Book>(
+    const _i2.BeanIntrospection<_i1.Book>(
       className: r'Book',
       properties: [
         _i2.BeanProperty<_i1.Book>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get5,
         ),
         _i2.BeanProperty<_i1.Book>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get6,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i1.Book>(
         parameters: [
           _i2.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
           _i2.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i1.Book.new, positional, named) as _i1.Book),
+        create: _$create7,
       ),
     ),
-    _i2.BeanIntrospection<_i1.NewBook>(
+    const _i2.BeanIntrospection<_i1.NewBook>(
       className: r'NewBook',
       properties: [
         _i2.BeanProperty<_i1.NewBook>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
-          annotations: const [_i2.NotBlank(), _i2.Size(min: 4, max: 13)],
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get8,
+          annotations: [_i2.NotBlank(), _i2.Size(min: 4, max: 13)],
         ),
         _i2.BeanProperty<_i1.NewBook>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-          annotations: const [_i2.NotBlank()],
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get9,
+          annotations: [_i2.NotBlank()],
         ),
       ],
-      parts: const {_i2.IntrospectionPart.write},
+      parts: {_i2.IntrospectionPart.write},
       constructor: _i2.BeanConstructor<_i1.NewBook>(
         parameters: [
           _i2.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
           _i2.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i1.NewBook.new, positional, named) as _i1.NewBook),
+        create: _$create10,
       ),
     ),
   ],
@@ -329,11 +219,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i9.springBootAutoConfiguration,
-    _i10.springBootStarterFeignAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
-    _i12.springBootStarterWebAutoConfiguration,
-    _i13.springBootStarterWebsocketAutoConfiguration,
+    _i8.springBootAutoConfiguration,
+    _i9.springBootStarterFeignAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
+    _i11.springBootStarterWebAutoConfiguration,
+    _i12.springBootStarterWebsocketAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -385,7 +275,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '9dea70a1',
+  fingerprint: '6d28b352',
 );
 
 /// Starts the application: config files, environment, context, runners

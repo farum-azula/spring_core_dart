@@ -81,6 +81,29 @@ class Checked {
 class ShopSettings {
   String name = '';
 }
+
+// Private members: a subclass proxy (the bean is created as it).
+@Service()
+class Counted {
+  int _n = 0;
+  int next() => ++_n;
+}
+
+@Service()
+class CountedOrders {
+  int _n = 0;
+  @Transactional()
+  Future<int> place() async => ++_n;
+  int count() => _n;
+}
+
+@Service()
+class MixedOrders {
+  @Transactional()
+  Future<void> place() async {}
+  int count() => 0;
+  String get label => '';
+}
 ''';
 
 Future<String> _build(String beans) async {
@@ -174,6 +197,44 @@ void main() {
     expect(output, isNot(proxyOf('Tagged')));
   });
 
+  test('a subclass proxy nothing advises is pruned too', () {
+    expect(output, isNot(proxyOf('Counted')));
+    final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+    // Created as its own class.
+    expect(normalized, contains('create:(r)=>Counted()'));
+    expect(
+      normalized,
+      matches(
+        RegExp(
+          r'BeanDefinition<Counted>\((?:(?!BeanDefinition<).)*'
+          r'AopProxyFactory\.pruned\(knownAdvisors:_\$knownAdvisors\d+,?\)',
+        ),
+      ),
+    );
+    // An advised one keeps it, and is created as the generated subclass.
+    expect(output, proxyOf('CountedOrders'));
+    expect(normalized, contains(r'create:(r)=>_$CountedOrdersProxy()'));
+  });
+
+  test('only the members advice may match run through it', () {
+    final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+    String proxy(String name) => normalized
+        .split(RegExp(r'class_\$|///Beansfound'))
+        .singleWhere((part) => part.startsWith('${name}Proxy'));
+    // A wrapper forwards the others to the target, without signatures.
+    final mixed = proxy('MixedOrders');
+    expect(mixed, contains('this.aopInvoker.invokeAsync<void>('));
+    expect(mixed, contains('intcount()=>this._target.count();'));
+    expect(mixed, contains('Stringgetlabel=>this._target.label;'));
+    expect(normalized, contains("MethodSignature.of(r'place',"));
+    expect(normalized, isNot(contains("MethodSignature.of(r'count',")));
+    expect(normalized, isNot(contains("MethodSignature.of(r'label',")));
+    // A subclass inherits them.
+    final counted = proxy('CountedOrders');
+    expect(counted, contains('place()'));
+    expect(counted, isNot(contains('count()')));
+  });
+
   test('the annotations of the starters keep the proxy', () {
     expect(output, proxyOf('Orders'));
     expect(output, proxyOf('ClassLevel'));
@@ -191,12 +252,15 @@ void main() {
     expect(output, proxyOf('Admin'));
   });
 
-  test('a pruned bean says why, for an advisor added at run time', () {
+  test('a pruned bean is marked, for an advisor added at run time', () {
+    // `AopProxyFactory.prunedReason` says why at run time.
     expect(
-      output,
-      contains(
-        'the build found no pointcut of the application that matches '
-        'Plain',
+      output.replaceAll(RegExp(r'\b_i\d+\.|\s'), ''),
+      matches(
+        RegExp(
+          r'BeanDefinition<Plain>\((?:(?!BeanDefinition<).)*'
+          r'AopProxyFactory\.pruned\(knownAdvisors:_\$knownAdvisors\d+,?\)',
+        ),
       ),
     );
   });
@@ -237,6 +301,170 @@ class Tags {
       expect(output, isNot(proxyOf('Mail')));
       expect(output, isNot(proxyOf('BookController')));
     });
+
+    const guarded = '''
+import 'package:meta/meta.dart';
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+
+class Guard implements MethodInterceptor {
+  const Guard();
+  @override
+  Object? invoke(MethodInvocation invocation) => invocation.proceed();
+}
+
+@Service()
+class Payments {
+  @Transactional()
+  Future<void> pay() async {}
+  int refund() => 0;
+}
+
+@Service()
+class Plain {
+  int next() => 0;
+}
+
+class Legacy {
+  @useResult
+  int old() => 0;
+  int next() => 0;
+}
+
+@Configuration()
+class Beans {
+  @Bean()
+  Legacy legacy() => Legacy();
+}
+''';
+
+    test('an annotation pointcut on a core annotation keeps every member of '
+        'the beans carrying it', () async {
+      final output = await _build('''
+$guarded
+@Configuration()
+class Guards {
+  @Bean()
+  PointcutAdvisor guard() => DefaultPointcutAdvisor(
+    const AnnotationMatchingPointcut<Service>(onClass: true),
+    const Guard(),
+  );
+}
+''');
+      final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+      expect(output, proxyOf('Payments'));
+      expect(output, proxyOf('Plain'));
+      // No member of the class goes around the advice.
+      expect(normalized, contains("MethodSignature.of(r'refund',"));
+      expect(
+        normalized,
+        isNot(contains('intrefund()=>this._target.refund();')),
+      );
+    });
+
+    test('an annotation pointcut on a package:meta annotation keeps the '
+        'members carrying it', () async {
+      final output = await _build('''
+$guarded
+@Configuration()
+class Guards {
+  @Bean()
+  PointcutAdvisor guard() => DefaultPointcutAdvisor(
+    const AnnotationMatchingPointcut<UseResult>(),
+    const Guard(),
+  );
+}
+''');
+      final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+      expect(output, contains(r'_$Beans$LegacyProxy'));
+      expect(normalized, contains("MethodSignature.of(r'old',"));
+      expect(output, isNot(proxyOf('Plain')));
+    });
+
+    test(
+      'a registrar of the application: pruned proxies carry the known '
+      'advisors (advice it registers fails the startup)',
+      () async {
+        final output = await _build('''
+$guarded
+class GuardRegistrar implements ImportBeanDefinitionRegistrar {
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) {}
+}
+
+@Configuration()
+@Import([GuardRegistrar])
+class Guards {}
+''');
+        expect(output, isNot(proxyOf('Plain')));
+        expect(output, contains('AopProxyFactory.pruned('));
+        expect(output, contains('knownAdvisors'));
+      },
+    );
+
+    test('a bean factory post-processor of the application: pruned proxies '
+        'carry the known advisors', () async {
+      final output = await _build('''
+$guarded
+@Component()
+class Guards implements BeanFactoryPostProcessor {
+  @override
+  void postProcessBeanFactory(ConfigurableListableBeanFactory factory) {}
+}
+''');
+      expect(output, isNot(proxyOf('Plain')));
+      expect(output, contains('knownAdvisors'));
+    });
+
+    test(
+      'pruned and partial proxies list the advisors the build knew of',
+      () async {
+        final output = await _build('''
+$guarded
+@Configuration()
+class Guards {
+  @Bean()
+  PointcutAdvisor guard() => DefaultPointcutAdvisor(
+    ExpressionPointcut('execution(* pay(..))'),
+    const Guard(),
+  );
+}
+''');
+        final normalized = output.replaceAll(RegExp(r'\b_i\d+\.|\s'), '');
+        final known = RegExp(
+          r'const_\$knownAdvisors\d+=\{([^}]*)\}',
+        ).firstMatch(normalized);
+        expect(known, isNotNull);
+        expect(
+          known!.group(1),
+          allOf(
+            contains("r'package:pkg/src/beans.dart#Guards.guard'"),
+            contains("r'package:spring_boot_starter_data'"),
+          ),
+        );
+        // Plain is pruned, Payments is partial (refund is not advised).
+        expect(
+          normalized,
+          matches(
+            RegExp(
+              r'BeanDefinition<Plain>\((?:(?!BeanDefinition<).)*'
+              r'AopProxyFactory\.pruned\(knownAdvisors:_\$knownAdvisors\d+,?\)',
+            ),
+          ),
+        );
+        expect(normalized, contains('intrefund()=>this._target.refund();'));
+        expect(
+          normalized,
+          matches(
+            RegExp(
+              r'BeanDefinition<Payments>\((?:(?!BeanDefinition<).)*'
+              r'AopProxyFactory\((?:(?!BeanDefinition<).)*'
+              r'knownAdvisors:_\$knownAdvisors\d+',
+            ),
+          ),
+        );
+      },
+    );
 
     test(
       'an expression the build cannot read: every bean keeps its proxy',
@@ -320,6 +548,49 @@ class Orders {
       final output = await module(application: true);
       expect(output, contains(r'class _$OrdersProxy'));
       expect(output, isNot(contains(r'class _$PlainProxy')));
+    });
+
+    test('a registrar a nested module imports: pruned proxies carry the '
+        'known advisors', () async {
+      final readerWriter = TestReaderWriter(
+        rootPackage: 'pkg',
+        flattenOutput: true,
+      );
+      await readerWriter.testing.loadIsolateSources();
+      final result = await testBuilder(
+        SpringBuilder(),
+        {
+          'pkg|bin/main.dart': _main,
+          'pkg|lib/src/beans.dart': beans,
+          'pkg|lib/src/guard/guard.dart': r'''
+import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:pkg/spring_gen/src/guard/guard.spring.dart';
+
+@ComponentScan()
+final BeanModule guardBeans = $guardBeans;
+
+class GuardRegistrar implements ImportBeanDefinitionRegistrar {
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) {}
+}
+
+@Configuration()
+@Import([GuardRegistrar])
+class Guards {}
+''',
+        },
+        rootPackage: 'pkg',
+        readerWriter: readerWriter,
+        flattenOutput: true,
+      );
+      expect(result.errors, isEmpty);
+      final output = readerWriter.testing.readString(
+        result.outputs.singleWhere(
+          (o) => o.path == 'bin/spring_gen/main.spring.dart',
+        ),
+      );
+      expect(output, isNot(contains(r'class _$PlainProxy')));
+      expect(output, contains('knownAdvisors'));
     });
 
     test('of a library keep every proxy: any module may import them', () async {

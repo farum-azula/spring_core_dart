@@ -3542,6 +3542,27 @@ class _$SqlGaugesImpl extends _i1.SimpleRepository<_i2.Gauge, int>
   );
 }
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+Object? _$get1(_i2.AuthorWithBooks bean) => bean.name;
+Object? _$get2(_i2.AuthorWithBooks bean) => bean.titles;
+_i2.AuthorWithBooks _$create3(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.AuthorWithBooks(
+  (positional[0] as String),
+  (positional[1] as List<String>),
+);
+Object? _$get4(_i2.Years bean) => bean.cutoff;
+Object? _$invoke5(_i2.Years bean, List<Object?> arguments) =>
+    Function.apply(bean.before, arguments);
+_i2.Years _$create6(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i2.Years();
+
 /// Beans found by `@ComponentScan` in `lib/ and test/repository/jdbc/app/`.
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
@@ -3549,11 +3570,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
     _i3.BeanDefinition<_i2.Years>(
       name: r'years',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#Years',
-      types: const [_i2.Years],
       create: (r) => _i2.Years(),
       annotations: const [_i3.Component(), _i3.Introspected()],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches Years, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.BookQueries>(
@@ -3573,8 +3593,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i8.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookQueriesImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches BookQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryBooks>(
@@ -3596,8 +3616,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryBooksImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryBooks, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlBooks>(
@@ -3619,8 +3639,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlBooksImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlBooks, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.OrderQueries>(
@@ -3636,8 +3656,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$OrderQueriesImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches OrderQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryOrders>(
@@ -3655,8 +3675,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryOrdersImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryOrders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlOrders>(
@@ -3674,8 +3694,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlOrdersImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlOrders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryShelves>(
@@ -3692,8 +3712,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryShelvesImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryShelves, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlShelves>(
@@ -3710,8 +3730,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlShelvesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlShelves, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryAccounts>(
@@ -3726,8 +3746,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryAccountsImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryAccounts, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlAccounts>(
@@ -3742,8 +3762,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlAccountsImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlAccounts, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryTickets>(
@@ -3760,8 +3780,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryTicketsImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryTickets, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlTickets>(
@@ -3778,8 +3798,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlTicketsImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlTickets, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryNotes>(
@@ -3796,8 +3816,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryNotesImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryNotes, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlNotes>(
@@ -3814,8 +3834,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlNotesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlNotes, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlCrates>(
@@ -3832,8 +3852,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlCratesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlCrates, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlAuthors>(
@@ -3850,8 +3870,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlAuthorsImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlAuthors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryAuthors>(
@@ -3868,8 +3888,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryAuthorsImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryAuthors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlStocks>(
@@ -3886,8 +3906,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlStocksImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlStocks, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.FanQueries>(
@@ -3903,8 +3923,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$FanQueriesImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches FanQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryFans>(
@@ -3922,8 +3942,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryFansImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryFans, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlFans>(
@@ -3941,8 +3961,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlFansImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlFans, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.CitizenQueries>(
@@ -3958,8 +3978,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$CitizenQueriesImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches CitizenQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryCitizens>(
@@ -3977,8 +3997,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryCitizensImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryCitizens, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlCitizens>(
@@ -3996,8 +4016,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlCitizensImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlCitizens, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.CategoryQueries>(
@@ -4013,8 +4033,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$CategoryQueriesImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches CategoryQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryCategories>(
@@ -4032,8 +4052,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryCategoriesImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryCategories, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlCategories>(
@@ -4051,8 +4071,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlCategoriesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlCategories, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.EmployeeQueries>(
@@ -4068,8 +4088,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$EmployeeQueriesImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches EmployeeQueries, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryEmployees>(
@@ -4087,8 +4107,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryEmployeesImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryEmployees, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlEmployees>(
@@ -4106,8 +4126,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlEmployeesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlEmployees, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryClubs>(
@@ -4124,8 +4144,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryClubsImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryClubs, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlClubs>(
@@ -4142,8 +4162,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlClubsImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlClubs, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemorySponsors>(
@@ -4160,8 +4180,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemorySponsorsImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemorySponsors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlSponsors>(
@@ -4178,8 +4198,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlSponsorsImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlSponsors, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryPlayers>(
@@ -4196,8 +4216,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryPlayersImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryPlayers, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlPlayers>(
@@ -4214,8 +4234,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlPlayersImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlPlayers, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryGoals>(
@@ -4232,8 +4252,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryGoalsImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryGoals, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlGoals>(
@@ -4250,8 +4270,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlGoalsImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlGoals, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryCoaches>(
@@ -4268,8 +4288,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryCoachesImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryCoaches, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlCoaches>(
@@ -4286,8 +4306,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlCoachesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlCoaches, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemorySquads>(
@@ -4304,8 +4324,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemorySquadsImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemorySquads, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlSquads>(
@@ -4322,8 +4342,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlSquadsImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlSquads, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryFolders>(
@@ -4340,8 +4360,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryFoldersImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryFolders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlFolders>(
@@ -4358,8 +4378,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlFoldersImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlFolders, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlMembers>(
@@ -4376,8 +4396,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlMembersImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlMembers, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.MemoryGauges>(
@@ -4394,8 +4414,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$MemoryGaugesImpl.$create(r),
       annotations: const [_i6.UseStore(r'memory')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches MemoryGauges, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.SqlGauges>(
@@ -4412,8 +4432,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _$SqlGaugesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches SqlGauges, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
@@ -4583,7 +4603,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: [],
+              defaultValue: <_i2.OrderLine>[],
             ),
             _i1.EntityProperty(
               r'notes',
@@ -4595,7 +4615,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: {},
+              defaultValue: <String, _i2.OrderNote>{},
             ),
             _i1.EntityProperty(
               r'tags',
@@ -4604,7 +4624,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: {},
+              defaultValue: <_i2.OrderTag>{},
             ),
           ],
           annotations: const [_i6.Table(r'orders')],
@@ -4724,7 +4744,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: [],
+              defaultValue: <_i2.Slot>[],
             ),
           ],
           annotations: const [_i6.Table(r'shelves')],
@@ -4797,7 +4817,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: [],
+              defaultValue: <_i2.Jar>[],
             ),
           ],
           annotations: const [_i6.Table(r'crates')],
@@ -4834,7 +4854,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: [],
+              defaultValue: <_i2.Lid>[],
             ),
           ],
           annotations: const [_i6.Table(r'jars')],
@@ -5257,7 +5277,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: [],
+              defaultValue: <_i2.Medal>[],
             ),
           ],
           annotations: const [_i6.Table(r'players')],
@@ -5412,7 +5432,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: [],
+              defaultValue: <_i2.Place>[],
             ),
           ],
           annotations: const [_i6.Table(r'squads')],
@@ -5699,64 +5719,58 @@ _i3.BeanModule get $application => _i3.BeanModule(
   ],
   imports: [_i9.dataConfigBeans],
   introspections: [
-    _i3.BeanIntrospection<_i2.AuthorWithBooks>(
+    const _i3.BeanIntrospection<_i2.AuthorWithBooks>(
       className: r'AuthorWithBooks',
       properties: [
         _i3.BeanProperty<_i2.AuthorWithBooks>(
           r'name',
-          type: String,
-          typeInfo: const _i3.ClassType<String>(),
-          get: (bean) => bean.name,
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get1,
         ),
         _i3.BeanProperty<_i2.AuthorWithBooks>(
           r'titles',
-          type: List<String>,
-          typeInfo: const _i3.ListType<String>(_i3.ClassType<String>()),
-          get: (bean) => bean.titles,
+          typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+          get: _$get2,
         ),
       ],
       constructor: _i3.BeanConstructor<_i2.AuthorWithBooks>(
         parameters: [
           _i3.BeanParameter(
             r'name',
-            type: const _i3.ClassType<String>(),
+            type: _i3.ClassType<String>(),
             isRequired: true,
           ),
           _i3.BeanParameter(
             r'titles',
-            type: const _i3.ListType<String>(_i3.ClassType<String>()),
+            type: _i3.ListType<String>(_i3.ClassType<String>()),
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.AuthorWithBooks.new, positional, named)
-                as _i2.AuthorWithBooks),
+        create: _$create3,
       ),
     ),
-    _i3.BeanIntrospection<_i2.Years>(
+    const _i3.BeanIntrospection<_i2.Years>(
       className: r'Years',
       properties: [
         _i3.BeanProperty<_i2.Years>(
           r'cutoff',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.cutoff,
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get4,
         ),
       ],
       methods: [
         _i3.BeanMethod<_i2.Years>(
           r'before',
           returnType: int,
-          parameterTypes: const [int],
-          invoke: (bean, arguments) => Function.apply(bean.before, arguments),
+          parameterTypes: [int],
+          invoke: _$invoke5,
         ),
       ],
-      annotations: const [_i3.Component()],
-      instantiate: () => _i2.Years(),
+      annotations: [_i3.Component()],
+      instantiate: _i2.Years.new,
       constructor: _i3.BeanConstructor<_i2.Years>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i2.Years.new, positional, named) as _i2.Years),
+        create: _$create6,
       ),
     ),
   ],
@@ -6110,7 +6124,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'c8aa1817',
+  fingerprint: 'bb001189',
 );
 
 /// Starts the application: config files, environment, context, runners

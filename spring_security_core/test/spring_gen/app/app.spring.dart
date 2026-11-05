@@ -9,7 +9,7 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/src/annotations.dart' as _i9;
 import 'package:spring_security_core/src/authorization/authorization_manager.dart'
     as _i6;
@@ -18,104 +18,90 @@ import 'package:spring_security_core/src/core/authority.dart' as _i7;
 import 'package:spring_security_core/src/method/annotations.dart' as _i8;
 import 'package:spring_security_core/src/method/expression_handler.dart' as _i4;
 
-import '../../app/orders.dart' as _i1;
+import '../../app/orders.dart' as _i2;
 
-class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
-  _$OrderServiceProxy(this._target, this._invoker);
+class _$OrderServiceProxy with _i1.AdvisedWrapper implements _i2.OrderService {
+  _$OrderServiceProxy(this._target, this.aopInvoker);
 
-  final _i1.OrderService _target;
+  final _i2.OrderService _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  void cancel(_i1.Purchase order) {
-    this._invoker.invoke(this, this._target, 0, [order], (args) {
-      this._target.cancel((args[0] as _i1.Purchase));
+  void cancel(_i2.Purchase order) {
+    this.aopInvoker.invoke(this, this._target, 0, [order], (args) {
+      this._target.cancel((args[0] as _i2.Purchase));
       return null;
     });
   }
 
   @override
-  _i3.Future<String> cancelLater(_i1.Purchase order) =>
-      this._invoker.invokeAsync<String>(this, this._target, 1, [
+  _i3.Future<String> cancelLater(_i2.Purchase order) =>
+      this.aopInvoker.invokeAsync<String>(this, this._target, 1, [
         order,
-      ], (args) => this._target.cancelLater((args[0] as _i1.Purchase)));
+      ], (args) => this._target.cancelLater((args[0] as _i2.Purchase)));
 
   @override
-  _i1.Purchase find(String id) => (this._invoker.invoke(this, this._target, 2, [
-    id,
-  ], (args) => this._target.find((args[0] as String))) as _i1.Purchase);
+  _i2.Purchase find(String id) => (this.aopInvoker.invoke(
+    this,
+    this._target,
+    2,
+    [id],
+    (args) => this._target.find((args[0] as String)),
+  ) as _i2.Purchase);
 
   @override
-  _i3.Future<_i1.Purchase> findLater(String id) =>
-      this._invoker.invokeAsync<_i1.Purchase>(this, this._target, 3, [
+  _i3.Future<_i2.Purchase> findLater(String id) =>
+      this.aopInvoker.invokeAsync<_i2.Purchase>(this, this._target, 3, [
         id,
       ], (args) => this._target.findLater((args[0] as String)));
 
   @override
-  String refund(String id) => (this._invoker.invoke(this, this._target, 4, [
+  String refund(String id) => (this.aopInvoker.invoke(this, this._target, 4, [
     id,
   ], (args) => this._target.refund((args[0] as String))) as String);
 
   @override
-  List<_i1.Purchase> keep(List<_i1.Purchase> orders) => (this._invoker.invoke(
+  List<_i2.Purchase> keep(List<_i2.Purchase> orders) => (this.aopInvoker.invoke(
     this,
     this._target,
     5,
     [orders],
-    (args) => this._target.keep((args[0] as List<_i1.Purchase>)),
-  ) as List<_i1.Purchase>);
+    (args) => this._target.keep((args[0] as List<_i2.Purchase>)),
+  ) as List<_i2.Purchase>);
 
   @override
-  int count(List<_i1.Purchase> mine, List<_i1.Purchase> other) =>
-      (this._invoker.invoke(
+  int count(List<_i2.Purchase> mine, List<_i2.Purchase> other) =>
+      (this.aopInvoker.invoke(
         this,
         this._target,
         6,
         [mine, other],
         (args) => this._target.count(
-          (args[0] as List<_i1.Purchase>),
-          (args[1] as List<_i1.Purchase>),
+          (args[0] as List<_i2.Purchase>),
+          (args[1] as List<_i2.Purchase>),
         ),
       ) as int);
 
   @override
-  List<_i1.Purchase> all() => (this._invoker.invoke(
+  List<_i2.Purchase> all() => (this.aopInvoker.invoke(
     this,
     this._target,
     7,
     const [],
     (args) => this._target.all(),
-  ) as List<_i1.Purchase>);
+  ) as List<_i2.Purchase>);
 
   @override
-  _i3.Future<List<_i1.Purchase>> allLater() =>
-      this._invoker.invokeAsync<List<_i1.Purchase>>(
+  _i3.Future<List<_i2.Purchase>> allLater() =>
+      this.aopInvoker.invokeAsync<List<_i2.Purchase>>(
         this,
         this._target,
         8,
@@ -124,7 +110,7 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
       );
 
   @override
-  Map<String, String> owners() => (this._invoker.invoke(
+  Map<String, String> owners() => (this.aopInvoker.invoke(
     this,
     this._target,
     9,
@@ -133,7 +119,7 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as Map<String, String>);
 
   @override
-  String open() => (this._invoker.invoke(
+  String open() => (this.aopInvoker.invoke(
     this,
     this._target,
     10,
@@ -142,7 +128,7 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as String);
 
   @override
-  String closed() => (this._invoker.invoke(
+  String closed() => (this.aopInvoker.invoke(
     this,
     this._target,
     11,
@@ -151,16 +137,16 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as String);
 
   @override
-  bool mayCancel(_i1.Purchase order) => (this._invoker.invoke(
+  bool mayCancel(_i2.Purchase order) => (this.aopInvoker.invoke(
     this,
     this._target,
     12,
     [order],
-    (args) => this._target.mayCancel((args[0] as _i1.Purchase)),
+    (args) => this._target.mayCancel((args[0] as _i2.Purchase)),
   ) as bool);
 
   @override
-  String anonymousOnly() => (this._invoker.invoke(
+  String anonymousOnly() => (this.aopInvoker.invoke(
     this,
     this._target,
     13,
@@ -169,7 +155,7 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as String);
 
   @override
-  String staff() => (this._invoker.invoke(
+  String staff() => (this.aopInvoker.invoke(
     this,
     this._target,
     14,
@@ -178,7 +164,7 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as String);
 
   @override
-  String shopping() => (this._invoker.invoke(
+  String shopping() => (this.aopInvoker.invoke(
     this,
     this._target,
     15,
@@ -187,7 +173,7 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as String);
 
   @override
-  String broken() => (this._invoker.invoke(
+  String broken() => (this.aopInvoker.invoke(
     this,
     this._target,
     16,
@@ -196,15 +182,15 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as String);
 
   @override
-  void cancelInside(_i1.Purchase order) {
-    this._invoker.invoke(this, this._target, 17, [order], (args) {
-      this._target.cancelInside((args[0] as _i1.Purchase));
+  void cancelInside(_i2.Purchase order) {
+    this.aopInvoker.invoke(this, this._target, 17, [order], (args) {
+      this._target.cancelInside((args[0] as _i2.Purchase));
       return null;
     });
   }
 
   @override
-  String unsecured() => (this._invoker.invoke(
+  String unsecured() => (this.aopInvoker.invoke(
     this,
     this._target,
     18,
@@ -213,7 +199,7 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as String);
 
   @override
-  List<String> get calls => (this._invoker.invoke(
+  List<String> get calls => (this.aopInvoker.invoke(
     this,
     this._target,
     19,
@@ -222,40 +208,22 @@ class _$OrderServiceProxy implements _i1.OrderService, _i2.Advised {
   ) as List<String>);
 }
 
-class _$AdminServiceProxy implements _i1.AdminService, _i2.Advised {
-  _$AdminServiceProxy(this._target, this._invoker);
+class _$AdminServiceProxy with _i1.AdvisedWrapper implements _i2.AdminService {
+  _$AdminServiceProxy(this._target, this.aopInvoker);
 
-  final _i1.AdminService _target;
+  final _i2.AdminService _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String report() => (this._invoker.invoke(
+  String report() => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -264,7 +232,7 @@ class _$AdminServiceProxy implements _i1.AdminService, _i2.Advised {
   ) as String);
 
   @override
-  String status() => (this._invoker.invoke(
+  String status() => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -273,45 +241,27 @@ class _$AdminServiceProxy implements _i1.AdminService, _i2.Advised {
   ) as String);
 }
 
-class _$ReportsProxy implements _i1.Reports, _i2.Advised {
-  _$ReportsProxy(this._target, this._invoker);
+class _$ReportsProxy with _i1.AdvisedWrapper implements _i2.Reports {
+  _$ReportsProxy(this._target, this.aopInvoker);
 
-  final _i1.Reports _target;
+  final _i2.Reports _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String report(String id) => (this._invoker.invoke(this, this._target, 0, [
+  String report(String id) => (this.aopInvoker.invoke(this, this._target, 0, [
     id,
   ], (args) => this._target.report((args[0] as String))) as String);
 
   @override
-  int get runs => (this._invoker.invoke(
+  int get runs => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -321,47 +271,29 @@ class _$ReportsProxy implements _i1.Reports, _i2.Advised {
 
   @override
   set runs(int value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.runs = (args[0] as int);
       return null;
     });
   }
 }
 
-class _$ShopProxy implements _i1.Shop, _i2.Advised {
-  _$ShopProxy(this._target, this._invoker);
+class _$ShopProxy with _i1.AdvisedWrapper implements _i2.Shop {
+  _$ShopProxy(this._target, this.aopInvoker);
 
-  final _i1.Shop _target;
+  final _i2.Shop _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool isOpen() => (this._invoker.invoke(
+  bool isOpen() => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -370,7 +302,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   ) as bool);
 
   @override
-  bool get open => (this._invoker.invoke(
+  bool get open => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -380,7 +312,7 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
 
   @override
   set open(bool value) {
-    this._invoker.invoke(this, this._target, 2, [value], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [value], (args) {
       this._target.open = (args[0] as bool);
       return null;
     });
@@ -388,34 +320,17 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
 }
 
 class _$OrderPermissionsProxy
-    implements _i1.OrderPermissions, _i4.PermissionEvaluator, _i2.Advised {
-  _$OrderPermissionsProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.OrderPermissions, _i4.PermissionEvaluator {
+  _$OrderPermissionsProxy(this._target, this.aopInvoker);
 
-  final _i1.OrderPermissions _target;
+  final _i2.OrderPermissions _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
@@ -425,7 +340,7 @@ class _$OrderPermissionsProxy
     _i5.Authentication authentication,
     Object? targetDomainObject,
     Object permission,
-  ) => (this._invoker.invoke(
+  ) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -443,7 +358,7 @@ class _$OrderPermissionsProxy
     Object? targetId,
     String targetType,
     Object permission,
-  ) => (this._invoker.invoke(
+  ) => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -458,34 +373,17 @@ class _$OrderPermissionsProxy
 }
 
 class _$HierarchyConfig$RoleHierarchyProxy
-    implements _i6.RoleHierarchy, _i2.Advised {
-  _$HierarchyConfig$RoleHierarchyProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i6.RoleHierarchy {
+  _$HierarchyConfig$RoleHierarchyProxy(this._target, this.aopInvoker);
 
   final _i6.RoleHierarchyImpl _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
@@ -493,7 +391,7 @@ class _$HierarchyConfig$RoleHierarchyProxy
   @override
   List<_i7.GrantedAuthority> getReachableGrantedAuthorities(
     Iterable<_i7.GrantedAuthority> authorities,
-  ) => (this._invoker.invoke(
+  ) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -506,264 +404,336 @@ class _$HierarchyConfig$RoleHierarchyProxy
 
 /// `HierarchyConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$HierarchyConfigConfiguration extends _i1.HierarchyConfig {
+class _$HierarchyConfigConfiguration extends _i2.HierarchyConfig {
   _$HierarchyConfigConfiguration(this._$beanFactory);
 
-  final _i2.BeanFactory _$beanFactory;
+  final _i1.BeanFactory _$beanFactory;
 
   @override
   _i6.RoleHierarchy roleHierarchy() =>
       (this._$beanFactory.getBeanByName(r'roleHierarchy') as _i6.RoleHierarchy);
 
-  _i6.RoleHierarchy _$roleHierarchy(_i2.DependencyResolver r) =>
+  _i6.RoleHierarchy _$roleHierarchy(_i1.DependencyResolver r) =>
       super.roleHierarchy();
 }
 
+Object? _$invoke0(_i2.OrderService bean, List<Object?> arguments) {
+  bean.cancel((arguments[0] as _i2.Purchase));
+  return null;
+}
+
+Object? _$invoke1(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.cancelLater((arguments[0] as _i2.Purchase));
+Object? _$invoke2(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.find((arguments[0] as String));
+Object? _$invoke3(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.findLater((arguments[0] as String));
+Object? _$invoke4(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.refund((arguments[0] as String));
+Object? _$invoke5(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.keep((arguments[0] as List<_i2.Purchase>));
+Object? _$invoke6(_i2.OrderService bean, List<Object?> arguments) => bean.count(
+  (arguments[0] as List<_i2.Purchase>),
+  (arguments[1] as List<_i2.Purchase>),
+);
+Object? _$invoke7(_i2.OrderService bean, List<Object?> arguments) => bean.all();
+Object? _$invoke8(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.allLater();
+Object? _$invoke9(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.owners();
+Object? _$invoke10(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.open();
+Object? _$invoke11(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.closed();
+Object? _$invoke12(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.mayCancel((arguments[0] as _i2.Purchase));
+Object? _$invoke13(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.anonymousOnly();
+Object? _$invoke14(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.staff();
+Object? _$invoke15(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.shopping();
+Object? _$invoke16(_i2.OrderService bean, List<Object?> arguments) =>
+    bean.broken();
+const _$target17 = _i1.AopTarget(
+  r'OrderService',
+  types: [r'OrderService'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+Object? _$invoke18(_i2.AdminService bean, List<Object?> arguments) =>
+    bean.status();
+const _$target19 = _i1.AopTarget(
+  r'AdminService',
+  types: [r'AdminService'],
+  annotations: [_i1.Service(), _i8.PreAuthorize("hasRole('ADMIN')")],
+  annotationTypes: [r'Service', r'PreAuthorize'],
+);
+Object? _$invoke20(_i2.Reports bean, List<Object?> arguments) =>
+    bean.report((arguments[0] as String));
+const _$target21 = _i1.AopTarget(
+  r'Reports',
+  types: [r'Reports'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+const _$target22 = _i1.AopTarget(
+  r'Shop',
+  types: [r'Shop'],
+  annotations: [_i1.Component(r'shop')],
+  annotationTypes: [r'Component'],
+);
+const _$target23 = _i1.AopTarget(
+  r'OrderPermissions',
+  types: [r'OrderPermissions', r'PermissionEvaluator'],
+  annotations: [_i1.Component()],
+  annotationTypes: [r'Component'],
+);
+const _$target24 = _i1.AopTarget(
+  r'RoleHierarchyImpl',
+  types: [r'RoleHierarchyImpl', r'RoleHierarchy'],
+);
+Object? _$get25(_i2.Purchase bean) => bean.id;
+Object? _$get26(_i2.Purchase bean) => bean.owner;
+Object? _$invoke27(_i2.Purchase bean, List<Object?> arguments) =>
+    Function.apply(bean.toString, arguments);
+Object? _$get28(_i2.Shop bean) => bean.open;
+void _$set29(_i2.Shop bean, Object? value) => bean.open = (value as bool);
+Object? _$invoke30(_i2.Shop bean, List<Object?> arguments) =>
+    Function.apply(bean.isOpen, arguments);
+_i2.Shop _$create31(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i2.Shop();
+
 /// Beans found by `@ComponentScan` in `test/app`.
-_i2.BeanModule get $securityTestBeans => _i2.BeanModule(
+_i1.BeanModule get $securityTestBeans => _i1.BeanModule(
   r'securityTestBeans',
   [
-    _i2.BeanDefinition<_i1.OrderService>(
+    _i1.BeanDefinition<_i2.OrderService>(
       name: r'orderService',
       source: r'asset:spring_security_core/test/app/orders.dart#OrderService',
-      types: const [_i1.OrderService],
-      create: (r) => _i1.OrderService(),
+      create: (r) => _i2.OrderService(),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'cancel',
-          parameterTypes: const [_i1.Purchase],
+          parameterTypes: [_i2.Purchase],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'order',
-              type: const _i2.ClassType<_i1.Purchase>(),
+              type: _i1.ClassType<_i2.Purchase>(),
               isRequired: true,
             ),
           ],
           isVoid: true,
-          invoke: (bean, arguments) => Function.apply(bean.cancel, arguments),
-          annotations: const [
+          invoke: _$invoke0,
+          annotations: [
             _i8.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == principal.username",
             ),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'cancelLater',
-          parameterTypes: const [_i1.Purchase],
+          parameterTypes: [_i2.Purchase],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'order',
-              type: const _i2.ClassType<_i1.Purchase>(),
+              type: _i1.ClassType<_i2.Purchase>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
+          returnTypeInfo: _i1.ClassType<String>(),
           isFuture: true,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.cancelLater, arguments),
-          annotations: const [
+          invoke: _$invoke1,
+          annotations: [
             _i8.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == authentication.name",
             ),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'find',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'id',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i1.Purchase>(),
-          invoke: (bean, arguments) => Function.apply(bean.find, arguments),
-          annotations: const [
+          returnTypeInfo: _i1.ClassType<_i2.Purchase>(),
+          invoke: _$invoke2,
+          annotations: [
             _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'findLater',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'id',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i1.Purchase>(),
+          returnTypeInfo: _i1.ClassType<_i2.Purchase>(),
           isFuture: true,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.findLater, arguments),
-          annotations: const [
+          invoke: _$invoke3,
+          annotations: [
             _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'refund',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'id',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.refund, arguments),
-          annotations: const [
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke4,
+          annotations: [
             _i8.Secured([r'ROLE_SUPPORT']),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'keep',
-          parameterTypes: const [List<_i1.Purchase>],
+          parameterTypes: [List<_i2.Purchase>],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'orders',
-              type: const _i2.ListType<_i1.Purchase>(
-                _i2.ClassType<_i1.Purchase>(),
-              ),
+              type: _i1.ListType<_i2.Purchase>(_i1.ClassType<_i2.Purchase>()),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ListType<_i1.Purchase>(
-            _i2.ClassType<_i1.Purchase>(),
+          returnTypeInfo: _i1.ListType<_i2.Purchase>(
+            _i1.ClassType<_i2.Purchase>(),
           ),
-          invoke: (bean, arguments) => Function.apply(bean.keep, arguments),
-          annotations: const [
+          invoke: _$invoke5,
+          annotations: [
             _i8.PreFilter(r'filterObject.owner == authentication.name'),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'count',
-          parameterTypes: const [List<_i1.Purchase>, List<_i1.Purchase>],
+          parameterTypes: [List<_i2.Purchase>, List<_i2.Purchase>],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'mine',
-              type: const _i2.ListType<_i1.Purchase>(
-                _i2.ClassType<_i1.Purchase>(),
-              ),
+              type: _i1.ListType<_i2.Purchase>(_i1.ClassType<_i2.Purchase>()),
               isRequired: true,
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'other',
-              type: const _i2.ListType<_i1.Purchase>(
-                _i2.ClassType<_i1.Purchase>(),
-              ),
+              type: _i1.ListType<_i2.Purchase>(_i1.ClassType<_i2.Purchase>()),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<int>(),
-          invoke: (bean, arguments) => Function.apply(bean.count, arguments),
-          annotations: const [
+          returnTypeInfo: _i1.ClassType<int>(),
+          invoke: _$invoke6,
+          annotations: [
             _i8.PreFilter(
               r'filterObject.owner == authentication.name',
               filterTarget: r'mine',
             ),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'all',
-          returnTypeInfo: const _i2.ListType<_i1.Purchase>(
-            _i2.ClassType<_i1.Purchase>(),
+          returnTypeInfo: _i1.ListType<_i2.Purchase>(
+            _i1.ClassType<_i2.Purchase>(),
           ),
-          invoke: (bean, arguments) => Function.apply(bean.all, arguments),
-          annotations: const [
+          invoke: _$invoke7,
+          annotations: [
             _i8.PostFilter(r'filterObject.owner == authentication.name'),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'allLater',
-          returnTypeInfo: const _i2.ListType<_i1.Purchase>(
-            _i2.ClassType<_i1.Purchase>(),
+          returnTypeInfo: _i1.ListType<_i2.Purchase>(
+            _i1.ClassType<_i2.Purchase>(),
           ),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.allLater, arguments),
-          annotations: const [
+          invoke: _$invoke8,
+          annotations: [
             _i8.PostFilter(r'filterObject.owner == authentication.name'),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'owners',
-          returnTypeInfo: const _i2.MapType<String, String>(
-            _i2.ClassType<String>(),
-            _i2.ClassType<String>(),
+          returnTypeInfo: _i1.MapType<String, String>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<String>(),
           ),
-          invoke: (bean, arguments) => Function.apply(bean.owners, arguments),
-          annotations: const [
+          invoke: _$invoke9,
+          annotations: [
             _i8.PostFilter(r'filterObject.value == authentication.name'),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'open',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.open, arguments),
-          annotations: const [_i8.PreAuthorize(r'permitAll')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke10,
+          annotations: [_i8.PreAuthorize(r'permitAll')],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'closed',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.closed, arguments),
-          annotations: const [_i8.PreAuthorize(r'denyAll')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke11,
+          annotations: [_i8.PreAuthorize(r'denyAll')],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'mayCancel',
-          parameterTypes: const [_i1.Purchase],
+          parameterTypes: [_i2.Purchase],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'order',
-              type: const _i2.ClassType<_i1.Purchase>(),
+              type: _i1.ClassType<_i2.Purchase>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<bool>(),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.mayCancel, arguments),
-          annotations: const [
-            _i8.PreAuthorize("hasPermission(#order, 'cancel')"),
-          ],
+          returnTypeInfo: _i1.ClassType<bool>(),
+          invoke: _$invoke12,
+          annotations: [_i8.PreAuthorize("hasPermission(#order, 'cancel')")],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'anonymousOnly',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.anonymousOnly, arguments),
-          annotations: const [_i8.PreAuthorize(r'isAnonymous()')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke13,
+          annotations: [_i8.PreAuthorize(r'isAnonymous()')],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'staff',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.staff, arguments),
-          annotations: const [
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke14,
+          annotations: [
             _i8.PreAuthorize(
               "hasAnyRole('ADMIN', 'SUPPORT') and isAuthenticated()",
             ),
           ],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'shopping',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.shopping, arguments),
-          annotations: const [_i8.PreAuthorize(r'@shop.isOpen()')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke15,
+          annotations: [_i8.PreAuthorize(r'@shop.isOpen()')],
         ),
-        _i2.BeanMethod<_i1.OrderService>(
+        const _i1.BeanMethod<_i2.OrderService>(
           r'broken',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.broken, arguments),
-          annotations: const [_i8.PreAuthorize("'not a boolean'")],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke16,
+          annotations: [_i8.PreAuthorize("'not a boolean'")],
         ),
       ],
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'cancel',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'cancel',
+            _$target17,
             returnType: r'void',
             parameterTypes: [r'Purchase'],
             parameterNames: [r'order'],
@@ -773,15 +743,10 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               ),
             ],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'cancelLater',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'cancelLater',
+            _$target17,
             returnType: r'Future',
             parameterTypes: [r'Purchase'],
             parameterNames: [r'order'],
@@ -791,15 +756,10 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               ),
             ],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'find',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'find',
+            _$target17,
             returnType: r'Purchase',
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
@@ -807,15 +767,10 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'findLater',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'findLater',
+            _$target17,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
@@ -823,15 +778,10 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'refund',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'refund',
+            _$target17,
             returnType: r'String',
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
@@ -839,15 +789,10 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               _i8.Secured([r'ROLE_SUPPORT']),
             ],
             annotationTypes: [r'Secured'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'keep',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'keep',
+            _$target17,
             returnType: r'List',
             parameterTypes: [r'List'],
             parameterNames: [r'orders'],
@@ -855,15 +800,10 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               _i8.PreFilter(r'filterObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PreFilter'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'count',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'count',
+            _$target17,
             returnType: r'int',
             parameterTypes: [r'List', r'List'],
             parameterNames: [r'mine', r'other'],
@@ -874,107 +814,67 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               ),
             ],
             annotationTypes: [r'PreFilter'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'all',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'all',
+            _$target17,
             returnType: r'List',
             annotations: [
               _i8.PostFilter(r'filterObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostFilter'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'allLater',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'allLater',
+            _$target17,
             returnType: r'Future',
             annotations: [
               _i8.PostFilter(r'filterObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostFilter'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'owners',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'owners',
+            _$target17,
             returnType: r'Map',
             annotations: [
               _i8.PostFilter(r'filterObject.value == authentication.name'),
             ],
             annotationTypes: [r'PostFilter'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'open',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'open',
+            _$target17,
             returnType: r'String',
             annotations: [_i8.PreAuthorize(r'permitAll')],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'closed',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'closed',
+            _$target17,
             returnType: r'String',
             annotations: [_i8.PreAuthorize(r'denyAll')],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'mayCancel',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'mayCancel',
+            _$target17,
             returnType: r'bool',
             parameterTypes: [r'Purchase'],
             parameterNames: [r'order'],
             annotations: [_i8.PreAuthorize("hasPermission(#order, 'cancel')")],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'anonymousOnly',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'anonymousOnly',
+            _$target17,
             returnType: r'String',
             annotations: [_i8.PreAuthorize(r'isAnonymous()')],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'staff',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'staff',
+            _$target17,
             returnType: r'String',
             annotations: [
               _i8.PreAuthorize(
@@ -982,153 +882,101 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               ),
             ],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'shopping',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'shopping',
+            _$target17,
             returnType: r'String',
             annotations: [_i8.PreAuthorize(r'@shop.isOpen()')],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'broken',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'broken',
+            _$target17,
             returnType: r'String',
             annotations: [_i8.PreAuthorize("'not a boolean'")],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'cancelInside',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'cancelInside',
+            _$target17,
             returnType: r'void',
             parameterTypes: [r'Purchase'],
             parameterNames: [r'order'],
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'unsecured',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
+          _i1.MethodSignature.of(
+            r'unsecured',
+            _$target17,
             returnType: r'String',
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'calls',
-            declaringType: r'OrderService',
-            targetType: r'OrderService',
-            declaringTypes: [r'OrderService'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'calls',
+            _$target17,
+            kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'OrderService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         create: (target, invoker) =>
-            _$OrderServiceProxy((target as _i1.OrderService), invoker),
+            _$OrderServiceProxy((target as _i2.OrderService), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.AdminService>(
+    _i1.BeanDefinition<_i2.AdminService>(
       name: r'adminService',
       source: r'asset:spring_security_core/test/app/orders.dart#AdminService',
-      types: const [_i1.AdminService],
-      create: (r) => _i1.AdminService(),
+      create: (r) => _i2.AdminService(),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.AdminService>(
+        const _i1.BeanMethod<_i2.AdminService>(
           r'status',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.status, arguments),
-          annotations: const [_i8.PreAuthorize(r'permitAll')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke18,
+          annotations: [_i8.PreAuthorize(r'permitAll')],
         ),
       ],
-      annotations: const [_i2.Service(), _i8.PreAuthorize("hasRole('ADMIN')")],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i1.Service(), _i8.PreAuthorize("hasRole('ADMIN')")],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'report',
-            declaringType: r'AdminService',
-            targetType: r'AdminService',
-            declaringTypes: [r'AdminService'],
-            returnType: r'String',
-            targetTypes: [r'AdminService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i8.PreAuthorize("hasRole('ADMIN')"),
-            ],
-            targetAnnotationTypes: [r'Service', r'PreAuthorize'],
-          ),
-          _i2.MethodSignature(
-            name: r'status',
-            declaringType: r'AdminService',
-            targetType: r'AdminService',
-            declaringTypes: [r'AdminService'],
+          _i1.MethodSignature.of(r'report', _$target19, returnType: r'String'),
+          _i1.MethodSignature.of(
+            r'status',
+            _$target19,
             returnType: r'String',
             annotations: [_i8.PreAuthorize(r'permitAll')],
             annotationTypes: [r'PreAuthorize'],
-            targetTypes: [r'AdminService'],
-            targetAnnotations: [
-              _i2.Service(),
-              _i8.PreAuthorize("hasRole('ADMIN')"),
-            ],
-            targetAnnotationTypes: [r'Service', r'PreAuthorize'],
           ),
         ],
         create: (target, invoker) =>
-            _$AdminServiceProxy((target as _i1.AdminService), invoker),
+            _$AdminServiceProxy((target as _i2.AdminService), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.Reports>(
+    _i1.BeanDefinition<_i2.Reports>(
       name: r'reports',
       source: r'asset:spring_security_core/test/app/orders.dart#Reports',
-      types: const [_i1.Reports],
-      create: (r) => _i1.Reports(),
+      create: (r) => _i2.Reports(),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.Reports>(
+        const _i1.BeanMethod<_i2.Reports>(
           r'report',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'id',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.report, arguments),
-          annotations: const [
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke20,
+          annotations: [
             _i8.PreAuthorize("hasRole('ADMIN')"),
             _i9.Cacheable(r'reports'),
           ],
         ),
       ],
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'report',
-            declaringType: r'Reports',
-            targetType: r'Reports',
-            declaringTypes: [r'Reports'],
+          _i1.MethodSignature.of(
+            r'report',
+            _$target21,
             returnType: r'String',
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
@@ -1137,94 +985,61 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               _i9.Cacheable(r'reports'),
             ],
             annotationTypes: [r'PreAuthorize', r'Cacheable'],
-            targetTypes: [r'Reports'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'runs',
-            declaringType: r'Reports',
-            targetType: r'Reports',
-            declaringTypes: [r'Reports'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'runs',
+            _$target21,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'Reports'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'runs',
-            declaringType: r'Reports',
-            targetType: r'Reports',
-            declaringTypes: [r'Reports'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'runs',
+            _$target21,
+            kind: _i1.MemberKind.setter,
             returnType: r'int',
-            targetTypes: [r'Reports'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         create: (target, invoker) =>
-            _$ReportsProxy((target as _i1.Reports), invoker),
+            _$ReportsProxy((target as _i2.Reports), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.Shop>(
+    _i1.BeanDefinition<_i2.Shop>(
       name: r'shop',
       source: r'asset:spring_security_core/test/app/orders.dart#Shop',
-      types: const [_i1.Shop],
-      create: (r) => _i1.Shop(),
-      annotations: const [_i2.Component(r'shop'), _i2.Introspected()],
-      aopProxy: _i2.AopProxyFactory(
+      create: (r) => _i2.Shop(),
+      annotations: const [_i1.Component(r'shop'), _i1.Introspected()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'isOpen',
-            declaringType: r'Shop',
-            targetType: r'Shop',
-            declaringTypes: [r'Shop'],
+          _i1.MethodSignature.of(r'isOpen', _$target22, returnType: r'bool'),
+          _i1.MethodSignature.of(
+            r'open',
+            _$target22,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'Shop'],
-            targetAnnotations: [_i2.Component(r'shop')],
-            targetAnnotationTypes: [r'Component'],
           ),
-          _i2.MethodSignature(
-            name: r'open',
-            declaringType: r'Shop',
-            targetType: r'Shop',
-            declaringTypes: [r'Shop'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'open',
+            _$target22,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'Shop'],
-            targetAnnotations: [_i2.Component(r'shop')],
-            targetAnnotationTypes: [r'Component'],
-          ),
-          _i2.MethodSignature(
-            name: r'open',
-            declaringType: r'Shop',
-            targetType: r'Shop',
-            declaringTypes: [r'Shop'],
-            kind: _i2.MemberKind.setter,
-            returnType: r'bool',
-            targetTypes: [r'Shop'],
-            targetAnnotations: [_i2.Component(r'shop')],
-            targetAnnotationTypes: [r'Component'],
           ),
         ],
-        create: (target, invoker) => _$ShopProxy((target as _i1.Shop), invoker),
+        create: (target, invoker) => _$ShopProxy((target as _i2.Shop), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.OrderPermissions>(
+    _i1.BeanDefinition<_i2.OrderPermissions>(
       name: r'orderPermissions',
       source:
           r'asset:spring_security_core/test/app/orders.dart#OrderPermissions',
-      types: const [_i1.OrderPermissions, _i4.PermissionEvaluator],
-      create: (r) => _i1.OrderPermissions(),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory(
+      types: const [_i2.OrderPermissions, _i4.PermissionEvaluator],
+      create: (r) => _i2.OrderPermissions(),
+      annotations: const [_i1.Component()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'hasPermission',
+          _i1.MethodSignature.of(
+            r'hasPermission',
+            _$target23,
             declaringType: r'PermissionEvaluator',
-            targetType: r'OrderPermissions',
             declaringTypes: [r'OrderPermissions', r'PermissionEvaluator'],
             returnType: r'bool',
             parameterTypes: [r'Authentication', r'Object', r'Object'],
@@ -1233,14 +1048,11 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               r'targetDomainObject',
               r'permission',
             ],
-            targetTypes: [r'OrderPermissions', r'PermissionEvaluator'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
           ),
-          _i2.MethodSignature(
-            name: r'hasPermissionById',
+          _i1.MethodSignature.of(
+            r'hasPermissionById',
+            _$target23,
             declaringType: r'PermissionEvaluator',
-            targetType: r'OrderPermissions',
             declaringTypes: [r'OrderPermissions', r'PermissionEvaluator'],
             returnType: r'bool',
             parameterTypes: [
@@ -1255,49 +1067,43 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
               r'targetType',
               r'permission',
             ],
-            targetTypes: [r'OrderPermissions', r'PermissionEvaluator'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
           ),
         ],
         create: (target, invoker) =>
-            _$OrderPermissionsProxy((target as _i1.OrderPermissions), invoker),
+            _$OrderPermissionsProxy((target as _i2.OrderPermissions), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.HierarchyConfig>(
+    _i1.BeanDefinition<_i2.HierarchyConfig>(
       name: r'hierarchyConfig',
       source:
           r'asset:spring_security_core/test/app/orders.dart#HierarchyConfig',
-      types: const [_i1.HierarchyConfig],
       create: (r) => _$HierarchyConfigConfiguration(r),
-      annotations: const [_i2.Configuration()],
+      annotations: const [_i1.Configuration()],
     ),
-    _i2.BeanDefinition<_i6.RoleHierarchyImpl>(
+    _i1.BeanDefinition<_i6.RoleHierarchyImpl>(
       name: r'roleHierarchy',
       source: r'asset:spring_security_core/test/app/orders.dart#HierarchyConfig.roleHierarchy',
       types: const [_i6.RoleHierarchyImpl, _i6.RoleHierarchy],
       factoryBeanName: r'hierarchyConfig',
       factoryMethodName: r'roleHierarchy',
       dependencies: const [
-        _i2.Dependency(_i1.HierarchyConfig, qualifier: r'hierarchyConfig'),
+        _i1.Dependency(_i2.HierarchyConfig, qualifier: r'hierarchyConfig'),
       ],
       create: (r) =>
-          ((r.dependency<_i1.HierarchyConfig>(
+          ((r.dependency<_i2.HierarchyConfig>(
                 qualifier: r'hierarchyConfig',
               ) as _$HierarchyConfigConfiguration)._$roleHierarchy(r)
               as _i6.RoleHierarchyImpl),
-      annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i1.Bean()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'getReachableGrantedAuthorities',
+          _i1.MethodSignature.of(
+            r'getReachableGrantedAuthorities',
+            _$target24,
             declaringType: r'RoleHierarchy',
-            targetType: r'RoleHierarchyImpl',
-            declaringTypes: [r'RoleHierarchy'],
             returnType: r'List',
             parameterTypes: [r'Iterable'],
             parameterNames: [r'authorities'],
-            targetTypes: [r'RoleHierarchyImpl', r'RoleHierarchy'],
           ),
         ],
         create: (target, invoker) => _$HierarchyConfig$RoleHierarchyProxy(
@@ -1308,57 +1114,53 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.Purchase>(
+    const _i1.BeanIntrospection<_i2.Purchase>(
       className: r'Purchase',
       properties: [
-        _i2.BeanProperty<_i1.Purchase>(
+        _i1.BeanProperty<_i2.Purchase>(
           r'id',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.id,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get25,
         ),
-        _i2.BeanProperty<_i1.Purchase>(
+        _i1.BeanProperty<_i2.Purchase>(
           r'owner',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.owner,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get26,
         ),
       ],
       methods: [
-        _i2.BeanMethod<_i1.Purchase>(
+        _i1.BeanMethod<_i2.Purchase>(
           r'toString',
           returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
+          invoke: _$invoke27,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.methods},
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.methods},
     ),
-    _i2.BeanIntrospection<_i1.Shop>(
+    const _i1.BeanIntrospection<_i2.Shop>(
       className: r'Shop',
       properties: [
-        _i2.BeanProperty<_i1.Shop>(
+        _i1.BeanProperty<_i2.Shop>(
           r'open',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.open,
-          set: (bean, value) => bean.open = (value as bool),
+          get: _$get28,
+          set: _$set29,
         ),
       ],
       methods: [
-        _i2.BeanMethod<_i1.Shop>(
+        _i1.BeanMethod<_i2.Shop>(
           r'isOpen',
           returnType: bool,
-          invoke: (bean, arguments) => Function.apply(bean.isOpen, arguments),
+          invoke: _$invoke30,
         ),
       ],
-      annotations: const [_i2.Component(r'shop')],
-      instantiate: () => _i1.Shop(),
-      constructor: _i2.BeanConstructor<_i1.Shop>(
+      annotations: [_i1.Component(r'shop')],
+      instantiate: _i2.Shop.new,
+      constructor: _i1.BeanConstructor<_i2.Shop>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.Shop.new, positional, named) as _i1.Shop),
+        create: _$create31,
       ),
     ),
   ],

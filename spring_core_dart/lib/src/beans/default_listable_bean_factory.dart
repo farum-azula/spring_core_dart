@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:spring_core_dart/src/aop/aop_context.dart'
     show callThroughProxyReference;
+import 'package:spring_core_dart/src/aop/proxy.dart'
+    show AopConfigException, AopProxyFactory;
 import 'package:spring_core_dart/src/beans/aware.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
@@ -111,6 +113,76 @@ class DefaultListableBeanFactory
   @override
   ConversionService conversionService = DefaultConversionService.sharedInstance;
 
+  @override
+  AopProxyFactory? aopProxyOf(BeanDefinition<Object> definition) {
+    final own = definition.aopProxy;
+    if (own == null || !own.isDeferred) {
+      return own;
+    }
+    return _aopProxies[definition.source] ?? own;
+  }
+
+  /// Registers proxy factories by definition `source`: each stands in for
+  /// the `AopProxyFactory.deferred` placeholder of the definitions with
+  /// that source in this factory (see [aopProxyOf]), registered before or
+  /// after, by a module or an `ImportBeanDefinitionRegistrar`. The context
+  /// calls it with `BeanModule.aopProxies`.
+  ///
+  /// Throws an [AopConfigException] for a factory that cannot proxy (a
+  /// placeholder, `AopProxyFactory.pruned` or `.unavailable`), and for a
+  /// source that already has a factory proxying other members; the same
+  /// proxy registered again (the module loaded twice) is ignored.
+  void registerAopProxies(Map<String, AopProxyFactory> factories) {
+    for (final MapEntry(key: source, value: factory) in factories.entries) {
+      if (factory.isDeferred || factory.unavailableReason != null) {
+        throw AopConfigException(
+          "The proxy factory registered for '$source' cannot create a "
+          'proxy (${factory.unavailableReason}); only a factory of a '
+          'generated proxy class can stand in for a placeholder.',
+        );
+      }
+      final existing = _aopProxies[source];
+      if (existing != null && !_sameProxy(existing, factory)) {
+        throw AopConfigException(
+          "Two different proxy factories are registered for '$source' (two "
+          'modules bring a proxy class for the bean). Load one generated '
+          'application module per context.',
+        );
+      }
+    }
+    factories.forEach(
+      (source, factory) => _aopProxies.putIfAbsent(source, () => factory),
+    );
+  }
+
+  // Whether [a] and [b] proxy the same members in the same way: the same
+  // factory, or one of the same generated class from another instance of
+  // the module.
+  static bool _sameProxy(AopProxyFactory a, AopProxyFactory b) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.isSubclass != b.isSubclass ||
+        a.isPartial != b.isPartial ||
+        a.signatures.length != b.signatures.length ||
+        a.introductions.length != b.introductions.length) {
+      return false;
+    }
+    for (var i = 0; i < a.signatures.length; i++) {
+      if (a.signatures[i].name != b.signatures[i].name ||
+          a.signatures[i].kind != b.signatures[i].kind) {
+        return false;
+      }
+    }
+    for (var i = 0; i < a.introductions.length; i++) {
+      if (a.introductions[i].interfaceName !=
+          b.introductions[i].interfaceName) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Turns `@Value` strings into [Resource]s for points of type `Resource`
   /// (like Spring's `ResourceEditor`), so the context's protocol resolvers
   /// and asset loaders apply. The application context sets itself; `null`
@@ -122,6 +194,10 @@ class DefaultListableBeanFactory
 
   BeanFactory? _parent;
   final _definitions = <String, BeanDefinition<Object>>{};
+  // The factories that stand in for `AopProxyFactory.deferred` placeholders
+  // in this factory, by definition source (the definitions themselves may
+  // be shared by other contexts of the process).
+  final _aopProxies = <String, AopProxyFactory>{};
   // Synthetic definitions of the objects of registerSingleton: they make
   // the objects visible to lookups by type, but are not bean definitions
   // (like Spring's manual singletons).

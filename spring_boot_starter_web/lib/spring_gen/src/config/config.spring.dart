@@ -7,1251 +7,597 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_dart/src/annotations.dart' as _i5;
-import 'package:spring_boot_starter_web/src/config/web_properties.dart' as _i1;
+import 'package:spring_boot_starter_web/src/config/web_properties.dart' as _i2;
 import 'package:spring_boot_starter_web/src/forwarded_headers.dart' as _i4;
 import 'package:spring_boot_starter_web/src/web_server.dart' as _i3;
 
-class _$ServerSettingsProxy implements _i1.ServerSettings, _i2.Advised {
-  _$ServerSettingsProxy(this._target, this._invoker);
-
-  final _i1.ServerSettings _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  int get port => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.port,
-  ) as int);
-
-  @override
-  String? get address => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.address,
-  ) as String?);
-
-  @override
-  _i3.Shutdown get shutdown => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.shutdown,
-  ) as _i3.Shutdown);
-
-  @override
-  String? get contextPath => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.contextPath,
-  ) as String?);
-
-  @override
-  _i2.DataSize get maxHttpRequestBodySize => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.maxHttpRequestBodySize,
-  ) as _i2.DataSize);
-
-  @override
-  Duration get connectionTimeout => (this._invoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.connectionTimeout,
-  ) as Duration);
-
-  @override
-  Duration? get requestTimeout => (this._invoker.invoke(
-    this,
-    this._target,
-    6,
-    const [],
-    (_) => this._target.requestTimeout,
-  ) as Duration?);
-
-  @override
-  _i4.ForwardHeadersStrategy get forwardHeadersStrategy =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        7,
-        const [],
-        (_) => this._target.forwardHeadersStrategy,
-      ) as _i4.ForwardHeadersStrategy);
-
-  @override
-  _i1.ForwardHeadersSettings get forwardHeaders => (this._invoker.invoke(
-    this,
-    this._target,
-    8,
-    const [],
-    (_) => this._target.forwardHeaders,
-  ) as _i1.ForwardHeadersSettings);
-
-  @override
-  _i1.ServerSslSettings get ssl => (this._invoker.invoke(
-    this,
-    this._target,
-    9,
-    const [],
-    (_) => this._target.ssl,
-  ) as _i1.ServerSslSettings);
-
-  @override
-  _i1.ServerCompressionSettings get compression => (this._invoker.invoke(
-    this,
-    this._target,
-    10,
-    const [],
-    (_) => this._target.compression,
-  ) as _i1.ServerCompressionSettings);
-
-  @override
-  _i1.ServerWebSocketSettings get websocket => (this._invoker.invoke(
-    this,
-    this._target,
-    11,
-    const [],
-    (_) => this._target.websocket,
-  ) as _i1.ServerWebSocketSettings);
-
-  @override
-  _i1.ServerSessionSettings get session => (this._invoker.invoke(
-    this,
-    this._target,
-    12,
-    const [],
-    (_) => this._target.session,
-  ) as _i1.ServerSessionSettings);
-
-  @override
-  set port(int value) {
-    this._invoker.invoke(this, this._target, 13, [value], (args) {
-      this._target.port = (args[0] as int);
-      return null;
-    });
-  }
-
-  @override
-  set address(String? value) {
-    this._invoker.invoke(this, this._target, 14, [value], (args) {
-      this._target.address = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set shutdown(_i3.Shutdown value) {
-    this._invoker.invoke(this, this._target, 15, [value], (args) {
-      this._target.shutdown = (args[0] as _i3.Shutdown);
-      return null;
-    });
-  }
-
-  @override
-  set contextPath(String? value) {
-    this._invoker.invoke(this, this._target, 16, [value], (args) {
-      this._target.contextPath = (args[0] as String?);
-      return null;
-    });
-  }
-
-  @override
-  set maxHttpRequestBodySize(_i2.DataSize value) {
-    this._invoker.invoke(this, this._target, 17, [value], (args) {
-      this._target.maxHttpRequestBodySize = (args[0] as _i2.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set connectionTimeout(Duration value) {
-    this._invoker.invoke(this, this._target, 18, [value], (args) {
-      this._target.connectionTimeout = (args[0] as Duration);
-      return null;
-    });
-  }
-
-  @override
-  set requestTimeout(Duration? value) {
-    this._invoker.invoke(this, this._target, 19, [value], (args) {
-      this._target.requestTimeout = (args[0] as Duration?);
-      return null;
-    });
-  }
-
-  @override
-  set forwardHeadersStrategy(_i4.ForwardHeadersStrategy value) {
-    this._invoker.invoke(this, this._target, 20, [value], (args) {
-      this._target.forwardHeadersStrategy =
-          (args[0] as _i4.ForwardHeadersStrategy);
-      return null;
-    });
-  }
-
-  @override
-  set forwardHeaders(_i1.ForwardHeadersSettings value) {
-    this._invoker.invoke(this, this._target, 21, [value], (args) {
-      this._target.forwardHeaders = (args[0] as _i1.ForwardHeadersSettings);
-      return null;
-    });
-  }
-
-  @override
-  set ssl(_i1.ServerSslSettings value) {
-    this._invoker.invoke(this, this._target, 22, [value], (args) {
-      this._target.ssl = (args[0] as _i1.ServerSslSettings);
-      return null;
-    });
-  }
-
-  @override
-  set compression(_i1.ServerCompressionSettings value) {
-    this._invoker.invoke(this, this._target, 23, [value], (args) {
-      this._target.compression = (args[0] as _i1.ServerCompressionSettings);
-      return null;
-    });
-  }
-
-  @override
-  set websocket(_i1.ServerWebSocketSettings value) {
-    this._invoker.invoke(this, this._target, 24, [value], (args) {
-      this._target.websocket = (args[0] as _i1.ServerWebSocketSettings);
-      return null;
-    });
-  }
-
-  @override
-  set session(_i1.ServerSessionSettings value) {
-    this._invoker.invoke(this, this._target, 25, [value], (args) {
-      this._target.session = (args[0] as _i1.ServerSessionSettings);
-      return null;
-    });
-  }
-}
-
-class _$MultipartSettingsProxy implements _i1.MultipartSettings, _i2.Advised {
-  _$MultipartSettingsProxy(this._target, this._invoker);
-
-  final _i1.MultipartSettings _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get enabled => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as bool);
-
-  @override
-  _i2.DataSize get maxFileSize => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.maxFileSize,
-  ) as _i2.DataSize);
-
-  @override
-  _i2.DataSize get maxRequestSize => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.maxRequestSize,
-  ) as _i2.DataSize);
-
-  @override
-  int get maxPartCount => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.maxPartCount,
-  ) as int);
-
-  @override
-  _i2.DataSize get fileSizeThreshold => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.fileSizeThreshold,
-  ) as _i2.DataSize);
-
-  @override
-  String? get location => (this._invoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.location,
-  ) as String?);
-
-  @override
-  set enabled(bool value) {
-    this._invoker.invoke(this, this._target, 6, [value], (args) {
-      this._target.enabled = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set maxFileSize(_i2.DataSize value) {
-    this._invoker.invoke(this, this._target, 7, [value], (args) {
-      this._target.maxFileSize = (args[0] as _i2.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set maxRequestSize(_i2.DataSize value) {
-    this._invoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.maxRequestSize = (args[0] as _i2.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set maxPartCount(int value) {
-    this._invoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.maxPartCount = (args[0] as int);
-      return null;
-    });
-  }
-
-  @override
-  set fileSizeThreshold(_i2.DataSize value) {
-    this._invoker.invoke(this, this._target, 10, [value], (args) {
-      this._target.fileSizeThreshold = (args[0] as _i2.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set location(String? value) {
-    this._invoker.invoke(this, this._target, 11, [value], (args) {
-      this._target.location = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$MvcSettingsProxy implements _i1.MvcSettings, _i2.Advised {
-  _$MvcSettingsProxy(this._target, this._invoker);
-
-  final _i1.MvcSettings _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get logRequestDetails => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.logRequestDetails,
-  ) as bool);
-
-  @override
-  _i1.MvcAsyncSettings get async => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.async,
-  ) as _i1.MvcAsyncSettings);
-
-  @override
-  _i1.MvcSseSettings get sse => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.sse,
-  ) as _i1.MvcSseSettings);
-
-  @override
-  set logRequestDetails(bool value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.logRequestDetails = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set async(_i1.MvcAsyncSettings value) {
-    this._invoker.invoke(this, this._target, 4, [value], (args) {
-      this._target.async = (args[0] as _i1.MvcAsyncSettings);
-      return null;
-    });
-  }
-
-  @override
-  set sse(_i1.MvcSseSettings value) {
-    this._invoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.sse = (args[0] as _i1.MvcSseSettings);
-      return null;
-    });
-  }
-}
-
-class _$WebMainSettingsProxy implements _i1.WebMainSettings, _i2.Advised {
-  _$WebMainSettingsProxy(this._target, this._invoker);
-
-  final _i1.WebMainSettings _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get webApplicationType => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.webApplicationType,
-  ) as String?);
-
-  @override
-  set webApplicationType(String? value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.webApplicationType = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$WebTestSettingsProxy implements _i1.WebTestSettings, _i2.Advised {
-  _$WebTestSettingsProxy(this._target, this._invoker);
-
-  final _i1.WebTestSettings _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get webEnvironment => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.webEnvironment,
-  ) as String?);
-
-  @override
-  set webEnvironment(String? value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.webEnvironment = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$LocalServerSettingsProxy
-    implements _i1.LocalServerSettings, _i2.Advised {
-  _$LocalServerSettingsProxy(this._target, this._invoker);
-
-  final _i1.LocalServerSettings _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  int? get port => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.port,
-  ) as int?);
-
-  @override
-  set port(int? value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.port = (args[0] as int?);
-      return null;
-    });
-  }
-}
+const _$target0 = _i1.AopTarget(
+  r'ServerSettings',
+  types: [r'ServerSettings'],
+  annotations: [_i1.ConfigurationProperties(r'server')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'MultipartSettings',
+  types: [r'MultipartSettings'],
+  annotations: [_i1.ConfigurationProperties(r'spring.web.multipart')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target2 = _i1.AopTarget(
+  r'MvcSettings',
+  types: [r'MvcSettings'],
+  annotations: [_i1.ConfigurationProperties(r'spring.mvc')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target3 = _i1.AopTarget(
+  r'WebMainSettings',
+  types: [r'WebMainSettings'],
+  annotations: [_i1.ConfigurationProperties(r'spring.main')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target4 = _i1.AopTarget(
+  r'WebTestSettings',
+  types: [r'WebTestSettings'],
+  annotations: [_i1.ConfigurationProperties(r'spring.test')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target5 = _i1.AopTarget(
+  r'LocalServerSettings',
+  types: [r'LocalServerSettings'],
+  annotations: [_i1.ConfigurationProperties(r'local.server')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get6(_i2.ServerSettings bean) => bean.port;
+void _$set7(_i2.ServerSettings bean, Object? value) =>
+    bean.port = (value as int);
+Object? _$get8(_i2.ServerSettings bean) => bean.address;
+void _$set9(_i2.ServerSettings bean, Object? value) =>
+    bean.address = (value as String?);
+Object? _$get10(_i2.ServerSettings bean) => bean.shutdown;
+void _$set11(_i2.ServerSettings bean, Object? value) =>
+    bean.shutdown = (value as _i3.Shutdown);
+Object? _$get12(_i2.ServerSettings bean) => bean.contextPath;
+void _$set13(_i2.ServerSettings bean, Object? value) =>
+    bean.contextPath = (value as String?);
+Object? _$get14(_i2.ServerSettings bean) => bean.maxHttpRequestBodySize;
+void _$set15(_i2.ServerSettings bean, Object? value) =>
+    bean.maxHttpRequestBodySize = (value as _i1.DataSize);
+Object? _$get16(_i2.ServerSettings bean) => bean.connectionTimeout;
+void _$set17(_i2.ServerSettings bean, Object? value) =>
+    bean.connectionTimeout = (value as Duration);
+Object? _$get18(_i2.ServerSettings bean) => bean.requestTimeout;
+void _$set19(_i2.ServerSettings bean, Object? value) =>
+    bean.requestTimeout = (value as Duration?);
+Object? _$get20(_i2.ServerSettings bean) => bean.forwardHeadersStrategy;
+void _$set21(_i2.ServerSettings bean, Object? value) =>
+    bean.forwardHeadersStrategy = (value as _i4.ForwardHeadersStrategy);
+Object? _$get22(_i2.ServerSettings bean) => bean.forwardHeaders;
+void _$set23(_i2.ServerSettings bean, Object? value) =>
+    bean.forwardHeaders = (value as _i2.ForwardHeadersSettings);
+Object? _$get24(_i2.ServerSettings bean) => bean.ssl;
+void _$set25(_i2.ServerSettings bean, Object? value) =>
+    bean.ssl = (value as _i2.ServerSslSettings);
+Object? _$get26(_i2.ServerSettings bean) => bean.compression;
+void _$set27(_i2.ServerSettings bean, Object? value) =>
+    bean.compression = (value as _i2.ServerCompressionSettings);
+Object? _$get28(_i2.ServerSettings bean) => bean.websocket;
+void _$set29(_i2.ServerSettings bean, Object? value) =>
+    bean.websocket = (value as _i2.ServerWebSocketSettings);
+Object? _$get30(_i2.ServerSettings bean) => bean.session;
+void _$set31(_i2.ServerSettings bean, Object? value) =>
+    bean.session = (value as _i2.ServerSessionSettings);
+_i2.ServerSettings _$create32(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ServerSettings();
+Object? _$get33(_i2.ForwardHeadersSettings bean) => bean.trustedProxies;
+void _$set34(_i2.ForwardHeadersSettings bean, Object? value) =>
+    bean.trustedProxies = (value as List<String>?);
+_i2.ForwardHeadersSettings _$create35(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ForwardHeadersSettings();
+Object? _$get36(_i2.ServerSslSettings bean) => bean.enabled;
+void _$set37(_i2.ServerSslSettings bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get38(_i2.ServerSslSettings bean) => bean.certificate;
+void _$set39(_i2.ServerSslSettings bean, Object? value) =>
+    bean.certificate = (value as String?);
+Object? _$get40(_i2.ServerSslSettings bean) => bean.certificatePrivateKey;
+void _$set41(_i2.ServerSslSettings bean, Object? value) =>
+    bean.certificatePrivateKey = (value as String?);
+Object? _$get42(_i2.ServerSslSettings bean) => bean.keyPassword;
+void _$set43(_i2.ServerSslSettings bean, Object? value) =>
+    bean.keyPassword = (value as String?);
+Object? _$get44(_i2.ServerSslSettings bean) => bean.trustCertificate;
+void _$set45(_i2.ServerSslSettings bean, Object? value) =>
+    bean.trustCertificate = (value as String?);
+Object? _$get46(_i2.ServerSslSettings bean) => bean.clientAuth;
+void _$set47(_i2.ServerSslSettings bean, Object? value) =>
+    bean.clientAuth = (value as _i3.ClientAuth);
+_i2.ServerSslSettings _$create48(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ServerSslSettings();
+Object? _$get49(_i2.ServerCompressionSettings bean) => bean.enabled;
+void _$set50(_i2.ServerCompressionSettings bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get51(_i2.ServerCompressionSettings bean) => bean.mimeTypes;
+void _$set52(_i2.ServerCompressionSettings bean, Object? value) =>
+    bean.mimeTypes = (value as List<String>);
+Object? _$get53(_i2.ServerCompressionSettings bean) => bean.minResponseSize;
+void _$set54(_i2.ServerCompressionSettings bean, Object? value) =>
+    bean.minResponseSize = (value as _i1.DataSize);
+_i2.ServerCompressionSettings _$create55(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ServerCompressionSettings();
+Object? _$get56(_i2.ServerWebSocketSettings bean) => bean.maxTextMessageSize;
+void _$set57(_i2.ServerWebSocketSettings bean, Object? value) =>
+    bean.maxTextMessageSize = (value as _i1.DataSize);
+Object? _$get58(_i2.ServerWebSocketSettings bean) => bean.maxBinaryMessageSize;
+void _$set59(_i2.ServerWebSocketSettings bean, Object? value) =>
+    bean.maxBinaryMessageSize = (value as _i1.DataSize);
+Object? _$get60(_i2.ServerWebSocketSettings bean) => bean.sendBufferSizeLimit;
+void _$set61(_i2.ServerWebSocketSettings bean, Object? value) =>
+    bean.sendBufferSizeLimit = (value as _i1.DataSize);
+Object? _$get62(_i2.ServerWebSocketSettings bean) => bean.sendTimeLimit;
+void _$set63(_i2.ServerWebSocketSettings bean, Object? value) =>
+    bean.sendTimeLimit = (value as Duration);
+_i2.ServerWebSocketSettings _$create64(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ServerWebSocketSettings();
+Object? _$get65(_i2.ServerSessionSettings bean) => bean.timeout;
+void _$set66(_i2.ServerSessionSettings bean, Object? value) =>
+    bean.timeout = (value as Duration);
+Object? _$get67(_i2.ServerSessionSettings bean) => bean.maxSessions;
+void _$set68(_i2.ServerSessionSettings bean, Object? value) =>
+    bean.maxSessions = (value as int);
+Object? _$get69(_i2.ServerSessionSettings bean) => bean.cookie;
+void _$set70(_i2.ServerSessionSettings bean, Object? value) =>
+    bean.cookie = (value as _i2.ServerSessionCookieSettings);
+_i2.ServerSessionSettings _$create71(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ServerSessionSettings();
+Object? _$get72(_i2.ServerSessionCookieSettings bean) => bean.name;
+void _$set73(_i2.ServerSessionCookieSettings bean, Object? value) =>
+    bean.name = (value as String);
+Object? _$get74(_i2.ServerSessionCookieSettings bean) => bean.domain;
+void _$set75(_i2.ServerSessionCookieSettings bean, Object? value) =>
+    bean.domain = (value as String?);
+Object? _$get76(_i2.ServerSessionCookieSettings bean) => bean.path;
+void _$set77(_i2.ServerSessionCookieSettings bean, Object? value) =>
+    bean.path = (value as String?);
+Object? _$get78(_i2.ServerSessionCookieSettings bean) => bean.httpOnly;
+void _$set79(_i2.ServerSessionCookieSettings bean, Object? value) =>
+    bean.httpOnly = (value as bool);
+Object? _$get80(_i2.ServerSessionCookieSettings bean) => bean.secure;
+void _$set81(_i2.ServerSessionCookieSettings bean, Object? value) =>
+    bean.secure = (value as bool?);
+Object? _$get82(_i2.ServerSessionCookieSettings bean) => bean.sameSite;
+void _$set83(_i2.ServerSessionCookieSettings bean, Object? value) =>
+    bean.sameSite = (value as _i2.SessionSameSite);
+_i2.ServerSessionCookieSettings _$create84(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ServerSessionCookieSettings();
+Object? _$get85(_i2.MultipartSettings bean) => bean.enabled;
+void _$set86(_i2.MultipartSettings bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get87(_i2.MultipartSettings bean) => bean.maxFileSize;
+void _$set88(_i2.MultipartSettings bean, Object? value) =>
+    bean.maxFileSize = (value as _i1.DataSize);
+Object? _$get89(_i2.MultipartSettings bean) => bean.maxRequestSize;
+void _$set90(_i2.MultipartSettings bean, Object? value) =>
+    bean.maxRequestSize = (value as _i1.DataSize);
+Object? _$get91(_i2.MultipartSettings bean) => bean.maxPartCount;
+void _$set92(_i2.MultipartSettings bean, Object? value) =>
+    bean.maxPartCount = (value as int);
+Object? _$get93(_i2.MultipartSettings bean) => bean.fileSizeThreshold;
+void _$set94(_i2.MultipartSettings bean, Object? value) =>
+    bean.fileSizeThreshold = (value as _i1.DataSize);
+Object? _$get95(_i2.MultipartSettings bean) => bean.location;
+void _$set96(_i2.MultipartSettings bean, Object? value) =>
+    bean.location = (value as String?);
+_i2.MultipartSettings _$create97(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.MultipartSettings();
+Object? _$get98(_i2.MvcSettings bean) => bean.logRequestDetails;
+void _$set99(_i2.MvcSettings bean, Object? value) =>
+    bean.logRequestDetails = (value as bool);
+Object? _$get100(_i2.MvcSettings bean) => bean.async;
+void _$set101(_i2.MvcSettings bean, Object? value) =>
+    bean.async = (value as _i2.MvcAsyncSettings);
+Object? _$get102(_i2.MvcSettings bean) => bean.sse;
+void _$set103(_i2.MvcSettings bean, Object? value) =>
+    bean.sse = (value as _i2.MvcSseSettings);
+_i2.MvcSettings _$create104(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.MvcSettings();
+Object? _$get105(_i2.MvcAsyncSettings bean) => bean.requestTimeout;
+void _$set106(_i2.MvcAsyncSettings bean, Object? value) =>
+    bean.requestTimeout = (value as Duration?);
+_i2.MvcAsyncSettings _$create107(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.MvcAsyncSettings();
+Object? _$get108(_i2.MvcSseSettings bean) => bean.heartbeatInterval;
+void _$set109(_i2.MvcSseSettings bean, Object? value) =>
+    bean.heartbeatInterval = (value as Duration?);
+_i2.MvcSseSettings _$create110(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.MvcSseSettings();
+Object? _$get111(_i2.WebMainSettings bean) => bean.webApplicationType;
+void _$set112(_i2.WebMainSettings bean, Object? value) =>
+    bean.webApplicationType = (value as String?);
+_i2.WebMainSettings _$create113(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebMainSettings();
+Object? _$get114(_i2.WebTestSettings bean) => bean.webEnvironment;
+void _$set115(_i2.WebTestSettings bean, Object? value) =>
+    bean.webEnvironment = (value as String?);
+_i2.WebTestSettings _$create116(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebTestSettings();
+Object? _$get117(_i2.LocalServerSettings bean) => bean.port;
+void _$set118(_i2.LocalServerSettings bean, Object? value) =>
+    bean.port = (value as int?);
+_i2.LocalServerSettings _$create119(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LocalServerSettings();
 
 /// Beans found by `@ComponentScan` in `lib/src/config`.
-_i2.BeanModule get $webConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $webConfigBeans => _i1.BeanModule(
   r'webConfigBeans',
   [
-    _i2.BeanDefinition<_i1.ServerSettings>(
+    _i1.BeanDefinition<_i2.ServerSettings>(
       name: r'serverSettings',
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#ServerSettings',
-      types: const [_i1.ServerSettings],
-      create: (r) => _i1.ServerSettings(),
-      annotations: const [_i2.ConfigurationProperties(r'server')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'port',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.ServerSettings(),
+      annotations: const [_i1.ConfigurationProperties(r'server')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'port',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'address',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'address',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'shutdown',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'shutdown',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'Shutdown',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'contextPath',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'contextPath',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxHttpRequestBodySize',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'maxHttpRequestBodySize',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'DataSize',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'connectionTimeout',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'connectionTimeout',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'Duration',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'requestTimeout',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'requestTimeout',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'Duration',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'forwardHeadersStrategy',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'forwardHeadersStrategy',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'ForwardHeadersStrategy',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'forwardHeaders',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'forwardHeaders',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'ForwardHeadersSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'ssl',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'ssl',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'ServerSslSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'compression',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'compression',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'ServerCompressionSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'websocket',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'websocket',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'ServerWebSocketSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'session',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'session',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'ServerSessionSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'port',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'port',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'int',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'address',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'address',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'shutdown',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'shutdown',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'Shutdown',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'contextPath',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'contextPath',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxHttpRequestBodySize',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxHttpRequestBodySize',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'DataSize',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'connectionTimeout',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'connectionTimeout',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'Duration',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'requestTimeout',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'requestTimeout',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'Duration',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'forwardHeadersStrategy',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'forwardHeadersStrategy',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'ForwardHeadersStrategy',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'forwardHeaders',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'forwardHeaders',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'ForwardHeadersSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'ssl',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'ssl',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'ServerSslSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'compression',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'compression',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'ServerCompressionSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'websocket',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'websocket',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'ServerWebSocketSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'session',
-            declaringType: r'ServerSettings',
-            targetType: r'ServerSettings',
-            declaringTypes: [r'ServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'session',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'ServerSessionSettings',
-            targetTypes: [r'ServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) =>
-            _$ServerSettingsProxy((target as _i1.ServerSettings), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.MultipartSettings>(
+    _i1.BeanDefinition<_i2.MultipartSettings>(
       name: r'multipartSettings',
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#MultipartSettings',
-      types: const [_i1.MultipartSettings],
-      create: (r) => _i1.MultipartSettings(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.web.multipart')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.MultipartSettings(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.web.multipart')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxFileSize',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'maxFileSize',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'DataSize',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxRequestSize',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'maxRequestSize',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'DataSize',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxPartCount',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'maxPartCount',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'fileSizeThreshold',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'fileSizeThreshold',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'DataSize',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'location',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'location',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxFileSize',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxFileSize',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'DataSize',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxRequestSize',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxRequestSize',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'DataSize',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxPartCount',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxPartCount',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'int',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'fileSizeThreshold',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'fileSizeThreshold',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'DataSize',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'location',
-            declaringType: r'MultipartSettings',
-            targetType: r'MultipartSettings',
-            declaringTypes: [r'MultipartSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'location',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'MultipartSettings'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.web.multipart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) => _$MultipartSettingsProxy(
-          (target as _i1.MultipartSettings),
-          invoker,
-        ),
       ),
     ),
-    _i2.BeanDefinition<_i1.MvcSettings>(
+    _i1.BeanDefinition<_i2.MvcSettings>(
       name: r'mvcSettings',
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#MvcSettings',
-      types: const [_i1.MvcSettings],
-      create: (r) => _i1.MvcSettings(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.mvc')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'logRequestDetails',
-            declaringType: r'MvcSettings',
-            targetType: r'MvcSettings',
-            declaringTypes: [r'MvcSettings'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.MvcSettings(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.mvc')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'logRequestDetails',
+            _$target2,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'MvcSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.mvc')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'async',
-            declaringType: r'MvcSettings',
-            targetType: r'MvcSettings',
-            declaringTypes: [r'MvcSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'async',
+            _$target2,
+            kind: _i1.MemberKind.getter,
             returnType: r'MvcAsyncSettings',
-            targetTypes: [r'MvcSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.mvc')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'sse',
-            declaringType: r'MvcSettings',
-            targetType: r'MvcSettings',
-            declaringTypes: [r'MvcSettings'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'sse',
+            _$target2,
+            kind: _i1.MemberKind.getter,
             returnType: r'MvcSseSettings',
-            targetTypes: [r'MvcSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.mvc')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'logRequestDetails',
-            declaringType: r'MvcSettings',
-            targetType: r'MvcSettings',
-            declaringTypes: [r'MvcSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'logRequestDetails',
+            _$target2,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'MvcSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.mvc')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'async',
-            declaringType: r'MvcSettings',
-            targetType: r'MvcSettings',
-            declaringTypes: [r'MvcSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'async',
+            _$target2,
+            kind: _i1.MemberKind.setter,
             returnType: r'MvcAsyncSettings',
-            targetTypes: [r'MvcSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.mvc')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'sse',
-            declaringType: r'MvcSettings',
-            targetType: r'MvcSettings',
-            declaringTypes: [r'MvcSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'sse',
+            _$target2,
+            kind: _i1.MemberKind.setter,
             returnType: r'MvcSseSettings',
-            targetTypes: [r'MvcSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.mvc')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) =>
-            _$MvcSettingsProxy((target as _i1.MvcSettings), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.WebMainSettings>(
+    _i1.BeanDefinition<_i2.WebMainSettings>(
       name: r'webMainSettings',
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#WebMainSettings',
-      types: const [_i1.WebMainSettings],
-      create: (r) => _i1.WebMainSettings(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.main')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'webApplicationType',
-            declaringType: r'WebMainSettings',
-            targetType: r'WebMainSettings',
-            declaringTypes: [r'WebMainSettings'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.WebMainSettings(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.main')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'webApplicationType',
+            _$target3,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
             annotations: [
-              _i2.PropertyValues([r'none']),
+              _i1.PropertyValues([r'none']),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'WebMainSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'webApplicationType',
-            declaringType: r'WebMainSettings',
-            targetType: r'WebMainSettings',
-            declaringTypes: [r'WebMainSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'webApplicationType',
+            _$target3,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
             annotations: [
-              _i2.PropertyValues([r'none']),
+              _i1.PropertyValues([r'none']),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'WebMainSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.main')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) =>
-            _$WebMainSettingsProxy((target as _i1.WebMainSettings), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.WebTestSettings>(
+    _i1.BeanDefinition<_i2.WebTestSettings>(
       name: r'webTestSettings',
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#WebTestSettings',
-      types: const [_i1.WebTestSettings],
-      create: (r) => _i1.WebTestSettings(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.test')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'webEnvironment',
-            declaringType: r'WebTestSettings',
-            targetType: r'WebTestSettings',
-            declaringTypes: [r'WebTestSettings'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.WebTestSettings(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.test')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'webEnvironment',
+            _$target4,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
             annotations: [
-              _i2.PropertyValues([
+              _i1.PropertyValues([
                 r'mock',
                 r'random-port',
                 r'defined-port',
@@ -1259,19 +605,14 @@ _i2.BeanModule get $webConfigBeans => _i2.BeanModule(
               ]),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'WebTestSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.test')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'webEnvironment',
-            declaringType: r'WebTestSettings',
-            targetType: r'WebTestSettings',
-            declaringTypes: [r'WebTestSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'webEnvironment',
+            _$target4,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
             annotations: [
-              _i2.PropertyValues([
+              _i1.PropertyValues([
                 r'mock',
                 r'random-port',
                 r'defined-port',
@@ -1279,621 +620,513 @@ _i2.BeanModule get $webConfigBeans => _i2.BeanModule(
               ]),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'WebTestSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'spring.test')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) =>
-            _$WebTestSettingsProxy((target as _i1.WebTestSettings), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.LocalServerSettings>(
+    _i1.BeanDefinition<_i2.LocalServerSettings>(
       name: r'localServerSettings',
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#LocalServerSettings',
-      types: const [_i1.LocalServerSettings],
-      create: (r) => _i1.LocalServerSettings(),
-      annotations: const [_i2.ConfigurationProperties(r'local.server')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'port',
-            declaringType: r'LocalServerSettings',
-            targetType: r'LocalServerSettings',
-            declaringTypes: [r'LocalServerSettings'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.LocalServerSettings(),
+      annotations: const [_i1.ConfigurationProperties(r'local.server')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'port',
+            _$target5,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            targetTypes: [r'LocalServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'local.server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'port',
-            declaringType: r'LocalServerSettings',
-            targetType: r'LocalServerSettings',
-            declaringTypes: [r'LocalServerSettings'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'port',
+            _$target5,
+            kind: _i1.MemberKind.setter,
             returnType: r'int',
-            targetTypes: [r'LocalServerSettings'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'local.server')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) => _$LocalServerSettingsProxy(
-          (target as _i1.LocalServerSettings),
-          invoker,
-        ),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.ServerSettings>(
+    const _i1.BeanIntrospection<_i2.ServerSettings>(
       className: r'ServerSettings',
       properties: [
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'port',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 8080,
-          get: (bean) => bean.port,
-          set: (bean, value) => bean.port = (value as int),
+          get: _$get6,
+          set: _$set7,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'address',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.address,
-          set: (bean, value) => bean.address = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get8,
+          set: _$set9,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'shutdown',
-          type: _i3.Shutdown,
-          typeInfo: const _i2.EnumType<_i3.Shutdown>(_i3.Shutdown.values),
+          typeInfo: _i1.EnumType<_i3.Shutdown>(_i3.Shutdown.values),
           hasInitialValue: true,
           initialValue: _i3.Shutdown.graceful,
-          get: (bean) => bean.shutdown,
-          set: (bean, value) => bean.shutdown = (value as _i3.Shutdown),
+          get: _$get10,
+          set: _$set11,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'contextPath',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.contextPath,
-          set: (bean, value) => bean.contextPath = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get12,
+          set: _$set13,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'maxHttpRequestBodySize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxHttpRequestBodySize,
-          set: (bean, value) =>
-              bean.maxHttpRequestBodySize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get14,
+          set: _$set15,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'connectionTimeout',
-          type: Duration,
-          typeInfo: const _i2.ClassType<Duration>(),
-          get: (bean) => bean.connectionTimeout,
-          set: (bean, value) => bean.connectionTimeout = (value as Duration),
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get16,
+          set: _$set17,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'requestTimeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.requestTimeout,
-          set: (bean, value) => bean.requestTimeout = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get18,
+          set: _$set19,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'forwardHeadersStrategy',
-          type: _i4.ForwardHeadersStrategy,
-          typeInfo: const _i2.EnumType<_i4.ForwardHeadersStrategy>(
+          typeInfo: _i1.EnumType<_i4.ForwardHeadersStrategy>(
             _i4.ForwardHeadersStrategy.values,
           ),
           hasInitialValue: true,
           initialValue: _i4.ForwardHeadersStrategy.none,
-          get: (bean) => bean.forwardHeadersStrategy,
-          set: (bean, value) => bean.forwardHeadersStrategy =
-              (value as _i4.ForwardHeadersStrategy),
+          get: _$get20,
+          set: _$set21,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'forwardHeaders',
-          type: _i1.ForwardHeadersSettings,
-          typeInfo: const _i2.ClassType<_i1.ForwardHeadersSettings>(),
-          get: (bean) => bean.forwardHeaders,
-          set: (bean, value) =>
-              bean.forwardHeaders = (value as _i1.ForwardHeadersSettings),
+          typeInfo: _i1.ClassType<_i2.ForwardHeadersSettings>(),
+          get: _$get22,
+          set: _$set23,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'ssl',
-          type: _i1.ServerSslSettings,
-          typeInfo: const _i2.ClassType<_i1.ServerSslSettings>(),
-          get: (bean) => bean.ssl,
-          set: (bean, value) => bean.ssl = (value as _i1.ServerSslSettings),
+          typeInfo: _i1.ClassType<_i2.ServerSslSettings>(),
+          get: _$get24,
+          set: _$set25,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'compression',
-          type: _i1.ServerCompressionSettings,
-          typeInfo: const _i2.ClassType<_i1.ServerCompressionSettings>(),
-          get: (bean) => bean.compression,
-          set: (bean, value) =>
-              bean.compression = (value as _i1.ServerCompressionSettings),
+          typeInfo: _i1.ClassType<_i2.ServerCompressionSettings>(),
+          get: _$get26,
+          set: _$set27,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'websocket',
-          type: _i1.ServerWebSocketSettings,
-          typeInfo: const _i2.ClassType<_i1.ServerWebSocketSettings>(),
-          get: (bean) => bean.websocket,
-          set: (bean, value) =>
-              bean.websocket = (value as _i1.ServerWebSocketSettings),
+          typeInfo: _i1.ClassType<_i2.ServerWebSocketSettings>(),
+          get: _$get28,
+          set: _$set29,
         ),
-        _i2.BeanProperty<_i1.ServerSettings>(
+        _i1.BeanProperty<_i2.ServerSettings>(
           r'session',
-          type: _i1.ServerSessionSettings,
-          typeInfo: const _i2.ClassType<_i1.ServerSessionSettings>(),
-          get: (bean) => bean.session,
-          set: (bean, value) =>
-              bean.session = (value as _i1.ServerSessionSettings),
+          typeInfo: _i1.ClassType<_i2.ServerSessionSettings>(),
+          get: _$get30,
+          set: _$set31,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'server')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.ServerSettings(),
-      constructor: _i2.BeanConstructor<_i1.ServerSettings>(
+      annotations: [_i1.ConfigurationProperties(r'server')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.ServerSettings.new,
+      constructor: _i1.BeanConstructor<_i2.ServerSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.ServerSettings.new, positional, named)
-                as _i1.ServerSettings),
+        create: _$create32,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ForwardHeadersSettings>(
+    const _i1.BeanIntrospection<_i2.ForwardHeadersSettings>(
       className: r'ForwardHeadersSettings',
       properties: [
-        _i2.BeanProperty<_i1.ForwardHeadersSettings>(
+        _i1.BeanProperty<_i2.ForwardHeadersSettings>(
           r'trustedProxies',
-          type: List<String>,
           nullable: true,
-          typeInfo: const _i2.ListType<String>(
-            _i2.ClassType<String>(),
+          typeInfo: _i1.ListType<String>(
+            _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.trustedProxies,
-          set: (bean, value) => bean.trustedProxies = (value as List<String>?),
+          get: _$get33,
+          set: _$set34,
         ),
       ],
-      instantiate: () => _i1.ForwardHeadersSettings(),
-      constructor: _i2.BeanConstructor<_i1.ForwardHeadersSettings>(
+      instantiate: _i2.ForwardHeadersSettings.new,
+      constructor: _i1.BeanConstructor<_i2.ForwardHeadersSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.ForwardHeadersSettings.new, positional, named)
-                as _i1.ForwardHeadersSettings),
+        create: _$create35,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ServerSslSettings>(
+    const _i1.BeanIntrospection<_i2.ServerSslSettings>(
       className: r'ServerSslSettings',
       properties: [
-        _i2.BeanProperty<_i1.ServerSslSettings>(
+        _i1.BeanProperty<_i2.ServerSslSettings>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get36,
+          set: _$set37,
         ),
-        _i2.BeanProperty<_i1.ServerSslSettings>(
+        _i1.BeanProperty<_i2.ServerSslSettings>(
           r'certificate',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.certificate,
-          set: (bean, value) => bean.certificate = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get38,
+          set: _$set39,
         ),
-        _i2.BeanProperty<_i1.ServerSslSettings>(
+        _i1.BeanProperty<_i2.ServerSslSettings>(
           r'certificatePrivateKey',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.certificatePrivateKey,
-          set: (bean, value) => bean.certificatePrivateKey = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get40,
+          set: _$set41,
         ),
-        _i2.BeanProperty<_i1.ServerSslSettings>(
+        _i1.BeanProperty<_i2.ServerSslSettings>(
           r'keyPassword',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.keyPassword,
-          set: (bean, value) => bean.keyPassword = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get42,
+          set: _$set43,
         ),
-        _i2.BeanProperty<_i1.ServerSslSettings>(
+        _i1.BeanProperty<_i2.ServerSslSettings>(
           r'trustCertificate',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.trustCertificate,
-          set: (bean, value) => bean.trustCertificate = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get44,
+          set: _$set45,
         ),
-        _i2.BeanProperty<_i1.ServerSslSettings>(
+        _i1.BeanProperty<_i2.ServerSslSettings>(
           r'clientAuth',
-          type: _i3.ClientAuth,
-          typeInfo: const _i2.EnumType<_i3.ClientAuth>(_i3.ClientAuth.values),
+          typeInfo: _i1.EnumType<_i3.ClientAuth>(_i3.ClientAuth.values),
           hasInitialValue: true,
           initialValue: _i3.ClientAuth.none,
-          get: (bean) => bean.clientAuth,
-          set: (bean, value) => bean.clientAuth = (value as _i3.ClientAuth),
+          get: _$get46,
+          set: _$set47,
         ),
       ],
-      instantiate: () => _i1.ServerSslSettings(),
-      constructor: _i2.BeanConstructor<_i1.ServerSslSettings>(
+      instantiate: _i2.ServerSslSettings.new,
+      constructor: _i1.BeanConstructor<_i2.ServerSslSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.ServerSslSettings.new, positional, named)
-                as _i1.ServerSslSettings),
+        create: _$create48,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ServerCompressionSettings>(
+    const _i1.BeanIntrospection<_i2.ServerCompressionSettings>(
       className: r'ServerCompressionSettings',
       properties: [
-        _i2.BeanProperty<_i1.ServerCompressionSettings>(
+        _i1.BeanProperty<_i2.ServerCompressionSettings>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get49,
+          set: _$set50,
         ),
-        _i2.BeanProperty<_i1.ServerCompressionSettings>(
+        _i1.BeanProperty<_i2.ServerCompressionSettings>(
           r'mimeTypes',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.mimeTypes,
-          set: (bean, value) => bean.mimeTypes = (value as List<String>),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get51,
+          set: _$set52,
         ),
-        _i2.BeanProperty<_i1.ServerCompressionSettings>(
+        _i1.BeanProperty<_i2.ServerCompressionSettings>(
           r'minResponseSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.minResponseSize,
-          set: (bean, value) => bean.minResponseSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get53,
+          set: _$set54,
         ),
       ],
-      instantiate: () => _i1.ServerCompressionSettings(),
-      constructor: _i2.BeanConstructor<_i1.ServerCompressionSettings>(
+      instantiate: _i2.ServerCompressionSettings.new,
+      constructor: _i1.BeanConstructor<_i2.ServerCompressionSettings>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.ServerCompressionSettings.new,
-          positional,
-          named,
-        ) as _i1.ServerCompressionSettings),
+        create: _$create55,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ServerWebSocketSettings>(
+    const _i1.BeanIntrospection<_i2.ServerWebSocketSettings>(
       className: r'ServerWebSocketSettings',
       properties: [
-        _i2.BeanProperty<_i1.ServerWebSocketSettings>(
+        _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'maxTextMessageSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxTextMessageSize,
-          set: (bean, value) =>
-              bean.maxTextMessageSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get56,
+          set: _$set57,
         ),
-        _i2.BeanProperty<_i1.ServerWebSocketSettings>(
+        _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'maxBinaryMessageSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxBinaryMessageSize,
-          set: (bean, value) =>
-              bean.maxBinaryMessageSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get58,
+          set: _$set59,
         ),
-        _i2.BeanProperty<_i1.ServerWebSocketSettings>(
+        _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'sendBufferSizeLimit',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.sendBufferSizeLimit,
-          set: (bean, value) =>
-              bean.sendBufferSizeLimit = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get60,
+          set: _$set61,
         ),
-        _i2.BeanProperty<_i1.ServerWebSocketSettings>(
+        _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'sendTimeLimit',
-          type: Duration,
-          typeInfo: const _i2.ClassType<Duration>(),
-          get: (bean) => bean.sendTimeLimit,
-          set: (bean, value) => bean.sendTimeLimit = (value as Duration),
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get62,
+          set: _$set63,
         ),
       ],
-      instantiate: () => _i1.ServerWebSocketSettings(),
-      constructor: _i2.BeanConstructor<_i1.ServerWebSocketSettings>(
+      instantiate: _i2.ServerWebSocketSettings.new,
+      constructor: _i1.BeanConstructor<_i2.ServerWebSocketSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.ServerWebSocketSettings.new, positional, named)
-                as _i1.ServerWebSocketSettings),
+        create: _$create64,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ServerSessionSettings>(
+    const _i1.BeanIntrospection<_i2.ServerSessionSettings>(
       className: r'ServerSessionSettings',
       properties: [
-        _i2.BeanProperty<_i1.ServerSessionSettings>(
+        _i1.BeanProperty<_i2.ServerSessionSettings>(
           r'timeout',
-          type: Duration,
-          typeInfo: const _i2.ClassType<Duration>(),
-          get: (bean) => bean.timeout,
-          set: (bean, value) => bean.timeout = (value as Duration),
-          annotations: const [_i5.DurationUnit(_i2.ChronoUnit.seconds)],
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get65,
+          set: _$set66,
+          annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
         ),
-        _i2.BeanProperty<_i1.ServerSessionSettings>(
+        _i1.BeanProperty<_i2.ServerSessionSettings>(
           r'maxSessions',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 10000,
-          get: (bean) => bean.maxSessions,
-          set: (bean, value) => bean.maxSessions = (value as int),
+          get: _$get67,
+          set: _$set68,
         ),
-        _i2.BeanProperty<_i1.ServerSessionSettings>(
+        _i1.BeanProperty<_i2.ServerSessionSettings>(
           r'cookie',
-          type: _i1.ServerSessionCookieSettings,
-          typeInfo: const _i2.ClassType<_i1.ServerSessionCookieSettings>(),
-          get: (bean) => bean.cookie,
-          set: (bean, value) =>
-              bean.cookie = (value as _i1.ServerSessionCookieSettings),
+          typeInfo: _i1.ClassType<_i2.ServerSessionCookieSettings>(),
+          get: _$get69,
+          set: _$set70,
         ),
       ],
-      instantiate: () => _i1.ServerSessionSettings(),
-      constructor: _i2.BeanConstructor<_i1.ServerSessionSettings>(
+      instantiate: _i2.ServerSessionSettings.new,
+      constructor: _i1.BeanConstructor<_i2.ServerSessionSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.ServerSessionSettings.new, positional, named)
-                as _i1.ServerSessionSettings),
+        create: _$create71,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ServerSessionCookieSettings>(
+    const _i1.BeanIntrospection<_i2.ServerSessionCookieSettings>(
       className: r'ServerSessionCookieSettings',
       properties: [
-        _i2.BeanProperty<_i1.ServerSessionCookieSettings>(
+        _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'JSESSIONID',
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
+          get: _$get72,
+          set: _$set73,
         ),
-        _i2.BeanProperty<_i1.ServerSessionCookieSettings>(
+        _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'domain',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.domain,
-          set: (bean, value) => bean.domain = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get74,
+          set: _$set75,
         ),
-        _i2.BeanProperty<_i1.ServerSessionCookieSettings>(
+        _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'path',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.path,
-          set: (bean, value) => bean.path = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get76,
+          set: _$set77,
         ),
-        _i2.BeanProperty<_i1.ServerSessionCookieSettings>(
+        _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'httpOnly',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.httpOnly,
-          set: (bean, value) => bean.httpOnly = (value as bool),
+          get: _$get78,
+          set: _$set79,
         ),
-        _i2.BeanProperty<_i1.ServerSessionCookieSettings>(
+        _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'secure',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.secure,
-          set: (bean, value) => bean.secure = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get80,
+          set: _$set81,
         ),
-        _i2.BeanProperty<_i1.ServerSessionCookieSettings>(
+        _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'sameSite',
-          type: _i1.SessionSameSite,
-          typeInfo: const _i2.EnumType<_i1.SessionSameSite>(
-            _i1.SessionSameSite.values,
+          typeInfo: _i1.EnumType<_i2.SessionSameSite>(
+            _i2.SessionSameSite.values,
           ),
           hasInitialValue: true,
-          initialValue: _i1.SessionSameSite.lax,
-          get: (bean) => bean.sameSite,
-          set: (bean, value) => bean.sameSite = (value as _i1.SessionSameSite),
+          initialValue: _i2.SessionSameSite.lax,
+          get: _$get82,
+          set: _$set83,
         ),
       ],
-      instantiate: () => _i1.ServerSessionCookieSettings(),
-      constructor: _i2.BeanConstructor<_i1.ServerSessionCookieSettings>(
+      instantiate: _i2.ServerSessionCookieSettings.new,
+      constructor: _i1.BeanConstructor<_i2.ServerSessionCookieSettings>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.ServerSessionCookieSettings.new,
-          positional,
-          named,
-        ) as _i1.ServerSessionCookieSettings),
+        create: _$create84,
       ),
     ),
-    _i2.BeanIntrospection<_i1.MultipartSettings>(
+    const _i1.BeanIntrospection<_i2.MultipartSettings>(
       className: r'MultipartSettings',
       properties: [
-        _i2.BeanProperty<_i1.MultipartSettings>(
+        _i1.BeanProperty<_i2.MultipartSettings>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get85,
+          set: _$set86,
         ),
-        _i2.BeanProperty<_i1.MultipartSettings>(
+        _i1.BeanProperty<_i2.MultipartSettings>(
           r'maxFileSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxFileSize,
-          set: (bean, value) => bean.maxFileSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get87,
+          set: _$set88,
         ),
-        _i2.BeanProperty<_i1.MultipartSettings>(
+        _i1.BeanProperty<_i2.MultipartSettings>(
           r'maxRequestSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxRequestSize,
-          set: (bean, value) => bean.maxRequestSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get89,
+          set: _$set90,
         ),
-        _i2.BeanProperty<_i1.MultipartSettings>(
+        _i1.BeanProperty<_i2.MultipartSettings>(
           r'maxPartCount',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 50,
-          get: (bean) => bean.maxPartCount,
-          set: (bean, value) => bean.maxPartCount = (value as int),
+          get: _$get91,
+          set: _$set92,
         ),
-        _i2.BeanProperty<_i1.MultipartSettings>(
+        _i1.BeanProperty<_i2.MultipartSettings>(
           r'fileSizeThreshold',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.fileSizeThreshold,
-          set: (bean, value) =>
-              bean.fileSizeThreshold = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get93,
+          set: _$set94,
         ),
-        _i2.BeanProperty<_i1.MultipartSettings>(
+        _i1.BeanProperty<_i2.MultipartSettings>(
           r'location',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.location,
-          set: (bean, value) => bean.location = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get95,
+          set: _$set96,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.web.multipart')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.MultipartSettings(),
-      constructor: _i2.BeanConstructor<_i1.MultipartSettings>(
+      annotations: [_i1.ConfigurationProperties(r'spring.web.multipart')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.MultipartSettings.new,
+      constructor: _i1.BeanConstructor<_i2.MultipartSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.MultipartSettings.new, positional, named)
-                as _i1.MultipartSettings),
+        create: _$create97,
       ),
     ),
-    _i2.BeanIntrospection<_i1.MvcSettings>(
+    const _i1.BeanIntrospection<_i2.MvcSettings>(
       className: r'MvcSettings',
       properties: [
-        _i2.BeanProperty<_i1.MvcSettings>(
+        _i1.BeanProperty<_i2.MvcSettings>(
           r'logRequestDetails',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.logRequestDetails,
-          set: (bean, value) => bean.logRequestDetails = (value as bool),
+          get: _$get98,
+          set: _$set99,
         ),
-        _i2.BeanProperty<_i1.MvcSettings>(
+        _i1.BeanProperty<_i2.MvcSettings>(
           r'async',
-          type: _i1.MvcAsyncSettings,
-          typeInfo: const _i2.ClassType<_i1.MvcAsyncSettings>(),
-          get: (bean) => bean.async,
-          set: (bean, value) => bean.async = (value as _i1.MvcAsyncSettings),
+          typeInfo: _i1.ClassType<_i2.MvcAsyncSettings>(),
+          get: _$get100,
+          set: _$set101,
         ),
-        _i2.BeanProperty<_i1.MvcSettings>(
+        _i1.BeanProperty<_i2.MvcSettings>(
           r'sse',
-          type: _i1.MvcSseSettings,
-          typeInfo: const _i2.ClassType<_i1.MvcSseSettings>(),
-          get: (bean) => bean.sse,
-          set: (bean, value) => bean.sse = (value as _i1.MvcSseSettings),
+          typeInfo: _i1.ClassType<_i2.MvcSseSettings>(),
+          get: _$get102,
+          set: _$set103,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.mvc')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.MvcSettings(),
-      constructor: _i2.BeanConstructor<_i1.MvcSettings>(
+      annotations: [_i1.ConfigurationProperties(r'spring.mvc')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.MvcSettings.new,
+      constructor: _i1.BeanConstructor<_i2.MvcSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.MvcSettings.new, positional, named)
-                as _i1.MvcSettings),
+        create: _$create104,
       ),
     ),
-    _i2.BeanIntrospection<_i1.MvcAsyncSettings>(
+    const _i1.BeanIntrospection<_i2.MvcAsyncSettings>(
       className: r'MvcAsyncSettings',
       properties: [
-        _i2.BeanProperty<_i1.MvcAsyncSettings>(
+        _i1.BeanProperty<_i2.MvcAsyncSettings>(
           r'requestTimeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.requestTimeout,
-          set: (bean, value) => bean.requestTimeout = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get105,
+          set: _$set106,
         ),
       ],
-      instantiate: () => _i1.MvcAsyncSettings(),
-      constructor: _i2.BeanConstructor<_i1.MvcAsyncSettings>(
+      instantiate: _i2.MvcAsyncSettings.new,
+      constructor: _i1.BeanConstructor<_i2.MvcAsyncSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.MvcAsyncSettings.new, positional, named)
-                as _i1.MvcAsyncSettings),
+        create: _$create107,
       ),
     ),
-    _i2.BeanIntrospection<_i1.MvcSseSettings>(
+    const _i1.BeanIntrospection<_i2.MvcSseSettings>(
       className: r'MvcSseSettings',
       properties: [
-        _i2.BeanProperty<_i1.MvcSseSettings>(
+        _i1.BeanProperty<_i2.MvcSseSettings>(
           r'heartbeatInterval',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.heartbeatInterval,
-          set: (bean, value) => bean.heartbeatInterval = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get108,
+          set: _$set109,
         ),
       ],
-      instantiate: () => _i1.MvcSseSettings(),
-      constructor: _i2.BeanConstructor<_i1.MvcSseSettings>(
+      instantiate: _i2.MvcSseSettings.new,
+      constructor: _i1.BeanConstructor<_i2.MvcSseSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.MvcSseSettings.new, positional, named)
-                as _i1.MvcSseSettings),
+        create: _$create110,
       ),
     ),
-    _i2.BeanIntrospection<_i1.WebMainSettings>(
+    const _i1.BeanIntrospection<_i2.WebMainSettings>(
       className: r'WebMainSettings',
       properties: [
-        _i2.BeanProperty<_i1.WebMainSettings>(
+        _i1.BeanProperty<_i2.WebMainSettings>(
           r'webApplicationType',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.webApplicationType,
-          set: (bean, value) => bean.webApplicationType = (value as String?),
-          annotations: const [
-            _i2.PropertyValues([r'none']),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get111,
+          set: _$set112,
+          annotations: [
+            _i1.PropertyValues([r'none']),
           ],
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.main')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.WebMainSettings(),
-      constructor: _i2.BeanConstructor<_i1.WebMainSettings>(
+      annotations: [_i1.ConfigurationProperties(r'spring.main')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.WebMainSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebMainSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.WebMainSettings.new, positional, named)
-                as _i1.WebMainSettings),
+        create: _$create113,
       ),
     ),
-    _i2.BeanIntrospection<_i1.WebTestSettings>(
+    const _i1.BeanIntrospection<_i2.WebTestSettings>(
       className: r'WebTestSettings',
       properties: [
-        _i2.BeanProperty<_i1.WebTestSettings>(
+        _i1.BeanProperty<_i2.WebTestSettings>(
           r'webEnvironment',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.webEnvironment,
-          set: (bean, value) => bean.webEnvironment = (value as String?),
-          annotations: const [
-            _i2.PropertyValues([
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get114,
+          set: _$set115,
+          annotations: [
+            _i1.PropertyValues([
               r'mock',
               r'random-port',
               r'defined-port',
@@ -1902,36 +1135,31 @@ _i2.BeanModule get $webConfigBeans => _i2.BeanModule(
           ],
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.test')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.WebTestSettings(),
-      constructor: _i2.BeanConstructor<_i1.WebTestSettings>(
+      annotations: [_i1.ConfigurationProperties(r'spring.test')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.WebTestSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebTestSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.WebTestSettings.new, positional, named)
-                as _i1.WebTestSettings),
+        create: _$create116,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LocalServerSettings>(
+    const _i1.BeanIntrospection<_i2.LocalServerSettings>(
       className: r'LocalServerSettings',
       properties: [
-        _i2.BeanProperty<_i1.LocalServerSettings>(
+        _i1.BeanProperty<_i2.LocalServerSettings>(
           r'port',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.port,
-          set: (bean, value) => bean.port = (value as int?),
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get117,
+          set: _$set118,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'local.server')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LocalServerSettings(),
-      constructor: _i2.BeanConstructor<_i1.LocalServerSettings>(
+      annotations: [_i1.ConfigurationProperties(r'local.server')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LocalServerSettings.new,
+      constructor: _i1.BeanConstructor<_i2.LocalServerSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LocalServerSettings.new, positional, named)
-                as _i1.LocalServerSettings),
+        create: _$create119,
       ),
     ),
   ],

@@ -7,100 +7,67 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i8;
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i3;
 import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i5;
 import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dart'
-    as _i10;
-import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
     as _i9;
+import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
+    as _i10;
 import 'package:spring_security_core/src/userdetails/user_details.dart' as _i7;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
     as _i6;
 import 'package:spring_web_dart/src/server/server_http_request.dart' as _i4;
 
-import '../../../app/socket/socket.dart' as _i1;
+import '../../../app/socket/socket.dart' as _i2;
 
-class _$WhoAmIEndpointProxy implements _i1.WhoAmIEndpoint, _i2.Advised {
-  _$WhoAmIEndpointProxy(this._target, this._invoker);
+class _$WhoAmIEndpointProxy
+    with _i1.AdvisedWrapper
+    implements _i2.WhoAmIEndpoint {
+  _$WhoAmIEndpointProxy(this._target, this.aopInvoker);
 
-  final _i1.WhoAmIEndpoint _target;
+  final _i2.WhoAmIEndpoint _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String whoAmI(String text, _i2.Principal? user) => (this._invoker.invoke(
+  String whoAmI(String text, _i1.Principal? user) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
     [text, user],
     (args) =>
-        this._target.whoAmI((args[0] as String), (args[1] as _i2.Principal?)),
+        this._target.whoAmI((args[0] as String), (args[1] as _i1.Principal?)),
   ) as String);
 }
 
 class _$SocketSecurityConfig$FilterChainProxy
-    implements _i3.SecurityFilterChain, _i2.Advised {
-  _$SocketSecurityConfig$FilterChainProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i3.SecurityFilterChain {
+  _$SocketSecurityConfig$FilterChainProxy(this._target, this.aopInvoker);
 
   final _i3.SecurityFilterChain _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool matches(_i4.ServerHttpRequest request) => (this._invoker.invoke(
+  bool matches(_i4.ServerHttpRequest request) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -109,7 +76,7 @@ class _$SocketSecurityConfig$FilterChainProxy
   ) as bool);
 
   @override
-  List<_i5.WebFilter> get filters => (this._invoker.invoke(
+  List<_i5.WebFilter> get filters => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -119,45 +86,27 @@ class _$SocketSecurityConfig$FilterChainProxy
 }
 
 class _$SocketSecurityConfig$UsersProxy
+    with _i1.AdvisedWrapper
     implements
         _i6.UserDetailsManager,
         _i6.UserDetailsService,
-        _i6.UserDetailsPasswordService,
-        _i2.Advised {
-  _$SocketSecurityConfig$UsersProxy(this._target, this._invoker);
+        _i6.UserDetailsPasswordService {
+  _$SocketSecurityConfig$UsersProxy(this._target, this.aopInvoker);
 
   final _i6.InMemoryUserDetailsManager _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   void createUser(_i7.UserDetails user) {
-    this._invoker.invoke(this, this._target, 0, [user], (args) {
+    this.aopInvoker.invoke(this, this._target, 0, [user], (args) {
       this._target.createUser((args[0] as _i7.UserDetails));
       return null;
     });
@@ -165,7 +114,7 @@ class _$SocketSecurityConfig$UsersProxy
 
   @override
   void updateUser(_i7.UserDetails user) {
-    this._invoker.invoke(this, this._target, 1, [user], (args) {
+    this.aopInvoker.invoke(this, this._target, 1, [user], (args) {
       this._target.updateUser((args[0] as _i7.UserDetails));
       return null;
     });
@@ -173,14 +122,14 @@ class _$SocketSecurityConfig$UsersProxy
 
   @override
   void deleteUser(String username) {
-    this._invoker.invoke(this, this._target, 2, [username], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [username], (args) {
       this._target.deleteUser((args[0] as String));
       return null;
     });
   }
 
   @override
-  bool userExists(String username) => (this._invoker.invoke(
+  bool userExists(String username) => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -189,17 +138,18 @@ class _$SocketSecurityConfig$UsersProxy
   ) as bool);
 
   @override
-  _i7.UserDetails loadUserByUsername(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [username],
-    (args) => this._target.loadUserByUsername((args[0] as String)),
-  ) as _i7.UserDetails);
+  _i7.UserDetails loadUserByUsername(String username) =>
+      (this.aopInvoker.invoke(
+        this,
+        this._target,
+        4,
+        [username],
+        (args) => this._target.loadUserByUsername((args[0] as String)),
+      ) as _i7.UserDetails);
 
   @override
   _i7.UserDetails updatePassword(_i7.UserDetails user, String newPassword) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         5,
@@ -213,10 +163,10 @@ class _$SocketSecurityConfig$UsersProxy
 
 /// `SocketSecurityConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$SocketSecurityConfigConfiguration extends _i1.SocketSecurityConfig {
+class _$SocketSecurityConfigConfiguration extends _i2.SocketSecurityConfig {
   _$SocketSecurityConfigConfiguration(this._$beanFactory);
 
-  final _i2.BeanFactory _$beanFactory;
+  final _i1.BeanFactory _$beanFactory;
 
   final _$arguments = <String, List<Object?>>{};
 
@@ -232,7 +182,7 @@ class _$SocketSecurityConfigConfiguration extends _i1.SocketSecurityConfig {
     }
   }
 
-  _i3.SecurityFilterChain _$filterChain(_i2.DependencyResolver r) {
+  _i3.SecurityFilterChain _$filterChain(_i1.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'filterChain');
     if (_$args != null) {
       return super.filterChain((_$args[0] as _i8.HttpSecurity));
@@ -244,104 +194,112 @@ class _$SocketSecurityConfigConfiguration extends _i1.SocketSecurityConfig {
   _i6.UserDetailsService users() =>
       (this._$beanFactory.getBeanByName(r'users') as _i6.UserDetailsService);
 
-  _i6.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
+  _i6.UserDetailsService _$users(_i1.DependencyResolver r) => super.users();
 }
 
+Object? _$invoke0(_i2.WhoAmIEndpoint bean, List<Object?> arguments) =>
+    bean.whoAmI((arguments[0] as String), (arguments[1] as _i1.Principal?));
+const _$target1 = _i1.AopTarget(
+  r'WhoAmIEndpoint',
+  types: [r'WhoAmIEndpoint'],
+  annotations: [_i9.WebSocketEndpoint(r'/ws/whoami')],
+  annotationTypes: [r'WebSocketEndpoint'],
+);
+const _$target2 = _i1.AopTarget(
+  r'SecurityFilterChain',
+  types: [r'SecurityFilterChain'],
+);
+const _$target3 = _i1.AopTarget(
+  r'InMemoryUserDetailsManager',
+  types: [
+    r'InMemoryUserDetailsManager',
+    r'UserDetailsManager',
+    r'UserDetailsService',
+    r'UserDetailsPasswordService',
+  ],
+);
+
 /// Beans found by `@ComponentScan` in `test/app/socket`.
-_i2.BeanModule get $socketSecurityBeans =>
-    _i2.BeanModule(r'socketSecurityBeans', [
-      _i2.BeanDefinition<_i1.WhoAmIEndpoint>(
+_i1.BeanModule get $socketSecurityBeans =>
+    _i1.BeanModule(r'socketSecurityBeans', [
+      _i1.BeanDefinition<_i2.WhoAmIEndpoint>(
         name: r'whoAmIEndpoint',
         source: r'asset:spring_boot_starter_security/test/app/socket/socket.dart#WhoAmIEndpoint',
-        types: const [_i1.WhoAmIEndpoint],
-        create: (r) => _i1.WhoAmIEndpoint(),
+        create: (r) => _i2.WhoAmIEndpoint(),
         annotatedMethods: [
-          _i2.BeanMethod<_i1.WhoAmIEndpoint>(
+          const _i1.BeanMethod<_i2.WhoAmIEndpoint>(
             r'whoAmI',
-            parameterTypes: const [String, _i2.Principal],
+            parameterTypes: [String, _i1.Principal],
             parameters: [
-              _i2.BeanParameter(
+              _i1.BeanParameter(
                 r'text',
-                type: const _i2.ClassType<String>(),
+                type: _i1.ClassType<String>(),
                 isRequired: true,
               ),
-              _i2.BeanParameter(
+              _i1.BeanParameter(
                 r'user',
-                type: const _i2.ClassType<_i2.Principal>(nullable: true),
+                type: _i1.ClassType<_i1.Principal>(nullable: true),
                 isRequired: true,
               ),
             ],
-            returnTypeInfo: const _i2.ClassType<String>(),
-            invoke: (bean, arguments) => Function.apply(bean.whoAmI, arguments),
-            annotations: const [_i9.OnMessage()],
+            returnTypeInfo: _i1.ClassType<String>(),
+            invoke: _$invoke0,
+            annotations: [_i10.OnMessage()],
           ),
         ],
-        annotations: const [_i10.WebSocketEndpoint(r'/ws/whoami')],
-        aopProxy: _i2.AopProxyFactory(
+        annotations: const [_i9.WebSocketEndpoint(r'/ws/whoami')],
+        aopProxy: _i1.AopProxyFactory(
           signatures: const [
-            _i2.MethodSignature(
-              name: r'whoAmI',
-              declaringType: r'WhoAmIEndpoint',
-              targetType: r'WhoAmIEndpoint',
-              declaringTypes: [r'WhoAmIEndpoint'],
+            _i1.MethodSignature.of(
+              r'whoAmI',
+              _$target1,
               returnType: r'String',
               parameterTypes: [r'String', r'Principal'],
               parameterNames: [r'text', r'user'],
-              annotations: [_i9.OnMessage()],
+              annotations: [_i10.OnMessage()],
               annotationTypes: [r'OnMessage'],
-              targetTypes: [r'WhoAmIEndpoint'],
-              targetAnnotations: [_i10.WebSocketEndpoint(r'/ws/whoami')],
-              targetAnnotationTypes: [r'WebSocketEndpoint'],
             ),
           ],
           create: (target, invoker) =>
-              _$WhoAmIEndpointProxy((target as _i1.WhoAmIEndpoint), invoker),
+              _$WhoAmIEndpointProxy((target as _i2.WhoAmIEndpoint), invoker),
         ),
       ),
-      _i2.BeanDefinition<_i1.SocketSecurityConfig>(
+      _i1.BeanDefinition<_i2.SocketSecurityConfig>(
         name: r'socketSecurityConfig',
         source: r'asset:spring_boot_starter_security/test/app/socket/socket.dart#SocketSecurityConfig',
-        types: const [_i1.SocketSecurityConfig],
         create: (r) => _$SocketSecurityConfigConfiguration(r),
-        annotations: const [_i2.Configuration()],
+        annotations: const [_i1.Configuration()],
       ),
-      _i2.BeanDefinition<_i3.SecurityFilterChain>(
+      _i1.BeanDefinition<_i3.SecurityFilterChain>(
         name: r'filterChain',
         source: r'asset:spring_boot_starter_security/test/app/socket/socket.dart#SocketSecurityConfig.filterChain',
-        types: const [_i3.SecurityFilterChain],
         factoryBeanName: r'socketSecurityConfig',
         factoryMethodName: r'filterChain',
         dependencies: const [
-          _i2.Dependency(
-            _i1.SocketSecurityConfig,
+          _i1.Dependency(
+            _i2.SocketSecurityConfig,
             qualifier: r'socketSecurityConfig',
           ),
-          _i2.Dependency(_i8.HttpSecurity, name: r'http'),
+          _i1.Dependency(_i8.HttpSecurity, name: r'http'),
         ],
-        create: (r) => (r.dependency<_i1.SocketSecurityConfig>(
+        create: (r) => (r.dependency<_i2.SocketSecurityConfig>(
           qualifier: r'socketSecurityConfig',
         ) as _$SocketSecurityConfigConfiguration)._$filterChain(r),
-        annotations: const [_i2.Bean()],
-        aopProxy: _i2.AopProxyFactory(
+        annotations: const [_i1.Bean()],
+        aopProxy: _i1.AopProxyFactory(
           signatures: const [
-            _i2.MethodSignature(
-              name: r'matches',
-              declaringType: r'SecurityFilterChain',
-              targetType: r'SecurityFilterChain',
-              declaringTypes: [r'SecurityFilterChain'],
+            _i1.MethodSignature.of(
+              r'matches',
+              _$target2,
               returnType: r'bool',
               parameterTypes: [r'ServerHttpRequest'],
               parameterNames: [r'request'],
-              targetTypes: [r'SecurityFilterChain'],
             ),
-            _i2.MethodSignature(
-              name: r'filters',
-              declaringType: r'SecurityFilterChain',
-              targetType: r'SecurityFilterChain',
-              declaringTypes: [r'SecurityFilterChain'],
-              kind: _i2.MemberKind.getter,
+            _i1.MethodSignature.of(
+              r'filters',
+              _$target2,
+              kind: _i1.MemberKind.getter,
               returnType: r'List',
-              targetTypes: [r'SecurityFilterChain'],
             ),
           ],
           create: (target, invoker) => _$SocketSecurityConfig$FilterChainProxy(
@@ -350,7 +308,7 @@ _i2.BeanModule get $socketSecurityBeans =>
           ),
         ),
       ),
-      _i2.BeanDefinition<_i6.InMemoryUserDetailsManager>(
+      _i1.BeanDefinition<_i6.InMemoryUserDetailsManager>(
         name: r'users',
         source: r'asset:spring_boot_starter_security/test/app/socket/socket.dart#SocketSecurityConfig.users',
         types: const [
@@ -362,108 +320,66 @@ _i2.BeanModule get $socketSecurityBeans =>
         factoryBeanName: r'socketSecurityConfig',
         factoryMethodName: r'users',
         dependencies: const [
-          _i2.Dependency(
-            _i1.SocketSecurityConfig,
+          _i1.Dependency(
+            _i2.SocketSecurityConfig,
             qualifier: r'socketSecurityConfig',
           ),
         ],
         create: (r) =>
-            ((r.dependency<_i1.SocketSecurityConfig>(
+            ((r.dependency<_i2.SocketSecurityConfig>(
                   qualifier: r'socketSecurityConfig',
                 ) as _$SocketSecurityConfigConfiguration)._$users(r)
                 as _i6.InMemoryUserDetailsManager),
-        annotations: const [_i2.Bean()],
-        aopProxy: _i2.AopProxyFactory(
+        annotations: const [_i1.Bean()],
+        aopProxy: _i1.AopProxyFactory(
           signatures: const [
-            _i2.MethodSignature(
-              name: r'createUser',
+            _i1.MethodSignature.of(
+              r'createUser',
+              _$target3,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'void',
               parameterTypes: [r'UserDetails'],
               parameterNames: [r'user'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'updateUser',
+            _i1.MethodSignature.of(
+              r'updateUser',
+              _$target3,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'void',
               parameterTypes: [r'UserDetails'],
               parameterNames: [r'user'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'deleteUser',
+            _i1.MethodSignature.of(
+              r'deleteUser',
+              _$target3,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'void',
               parameterTypes: [r'String'],
               parameterNames: [r'username'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'userExists',
+            _i1.MethodSignature.of(
+              r'userExists',
+              _$target3,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'bool',
               parameterTypes: [r'String'],
               parameterNames: [r'username'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'loadUserByUsername',
+            _i1.MethodSignature.of(
+              r'loadUserByUsername',
+              _$target3,
               declaringType: r'UserDetailsService',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsService'],
               returnType: r'UserDetails',
               parameterTypes: [r'String'],
               parameterNames: [r'username'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'updatePassword',
+            _i1.MethodSignature.of(
+              r'updatePassword',
+              _$target3,
               declaringType: r'UserDetailsPasswordService',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsPasswordService'],
               returnType: r'UserDetails',
               parameterTypes: [r'UserDetails', r'String'],
               parameterNames: [r'user', r'newPassword'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
           ],
           create: (target, invoker) => _$SocketSecurityConfig$UsersProxy(

@@ -184,10 +184,9 @@ void main() {
       output,
       _has(
         'create: (positional, named) => Page<T>((positional[0] as List<T>), '
-        'first: named.containsKey(#first) ? (named[#first] as T?) : null, '
-        'total: named.containsKey(#total) ? (named[#total] as int) : 0, '
-        'extra: named.containsKey(#extra) ? (named[#extra] as List<T>) : const '
-        '[])',
+        'first: named.argumentOr(#first, null), '
+        'total: named.argumentOr(#total, 0), '
+        'extra: named.argumentOr(#extra, const []))',
       ),
     );
     expect(output, isNot(contains('Function.apply(Page')));
@@ -222,8 +221,8 @@ void main() {
     expect(
       output,
       _has(
-        "BeanProperty<Shelf>(r'page', type: Page<Book>, "
-        'typeInfo: const GenericType<Page<Book>>([ClassType<Book>()]),',
+        "BeanProperty<Shelf>(r'page', "
+        'typeInfo: GenericType<Page<Book>>([ClassType<Book>()]),',
       ),
     );
   });
@@ -234,7 +233,7 @@ void main() {
     expect(
       output,
       _has(
-        "annotations: const [JsonTypeInfo(property: r'kind', defaultImpl: "
+        "annotations: [JsonTypeInfo(property: r'kind', defaultImpl: "
         'Dog), '
         "JsonSubTypes([JsonSubType(Dog, name: r'dog')])]",
       ),

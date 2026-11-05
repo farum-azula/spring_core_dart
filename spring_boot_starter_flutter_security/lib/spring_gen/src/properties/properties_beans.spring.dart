@@ -11,52 +11,51 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart'
     as _i2;
 
-class _$FlutterWebSecurityPropertiesProxy
-    implements _i1.Validator, _i1.Advised {
-  _$FlutterWebSecurityPropertiesProxy(this._target, this._invoker);
-
-  final _i2.FlutterWebSecurityProperties _target;
-
-  final _i1.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i1.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i1.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i1.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i1.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i1.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool supports(Object target) => (this._invoker.invoke(this, this._target, 0, [
-    target,
-  ], (args) => this._target.supports((args[0] as Object))) as bool);
-
-  @override
-  void validate(Object target, _i1.Errors errors) {
-    this._invoker.invoke(this, this._target, 1, [target, errors], (args) {
-      this._target.validate((args[0] as Object), (args[1] as _i1.Errors));
-      return null;
-    });
-  }
-}
+const _$target0 = _i1.AopTarget(
+  r'FlutterWebSecurityProperties',
+  types: [r'FlutterWebSecurityProperties', r'Validator'],
+  annotations: [
+    _i1.Profile([r'web']),
+    _i1.ConfigurationProperties(r'spring.flutter.security.web'),
+  ],
+  annotationTypes: [r'Profile', r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'FlutterSecurityProperties',
+  types: [r'FlutterSecurityProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.flutter.security')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get2(_i2.FlutterWebSecurityProperties bean) => bean.mode;
+Object? _$get3(_i2.FlutterWebSecurityProperties bean) => bean.serverUrl;
+Object? _$get4(_i2.FlutterWebSecurityProperties bean) => bean.userEndpoint;
+Object? _$get5(_i2.FlutterWebSecurityProperties bean) => bean.logoutUrl;
+Object? _$get6(_i2.FlutterWebSecurityProperties bean) =>
+    bean.authorizationBaseUri;
+Object? _$get7(_i2.FlutterWebSecurityProperties bean) => bean.silentRestore;
+_i2.FlutterWebSecurityProperties _$create8(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterWebSecurityProperties(
+  mode: named.argumentOr(#mode, _i2.WebLoginMode.server),
+  serverUrl: named.argumentOr(#serverUrl, null),
+  userEndpoint: named.argumentOr(#userEndpoint, r'/user'),
+  logoutUrl: named.argumentOr(#logoutUrl, r'/logout'),
+  authorizationBaseUri: named.argumentOr(
+    #authorizationBaseUri,
+    r'/oauth2/authorization',
+  ),
+  silentRestore: named.argumentOr(#silentRestore, true),
+);
+Object? _$get9(_i2.FlutterSecurityProperties bean) => bean.applicationId;
+Object? _$get10(_i2.FlutterSecurityProperties bean) => bean.ephemeralSession;
+_i2.FlutterSecurityProperties _$create11(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterSecurityProperties(
+  applicationId: named.argumentOr(#applicationId, null),
+  ephemeralSession: named.argumentOr(#ephemeralSession, false),
+);
 
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
 _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
@@ -83,49 +82,30 @@ _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
         _i1.Profile([r'web']),
         _i1.ConfigurationProperties(r'spring.flutter.security.web'),
       ],
-      aopProxy: _i1.AopProxyFactory(
-        signatures: const [
-          _i1.MethodSignature(
-            name: r'supports',
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'supports',
+            _$target0,
             declaringType: r'Validator',
-            targetType: r'FlutterWebSecurityProperties',
-            declaringTypes: [r'Validator'],
             returnType: r'bool',
             parameterTypes: [r'Object'],
             parameterNames: [r'target'],
-            targetTypes: [r'FlutterWebSecurityProperties', r'Validator'],
-            targetAnnotations: [
-              _i1.Profile([r'web']),
-              _i1.ConfigurationProperties(r'spring.flutter.security.web'),
-            ],
-            targetAnnotationTypes: [r'Profile', r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'validate',
+          _i1.MethodSignature.of(
+            r'validate',
+            _$target0,
             declaringType: r'Validator',
-            targetType: r'FlutterWebSecurityProperties',
-            declaringTypes: [r'Validator'],
             returnType: r'void',
             parameterTypes: [r'Object', r'Errors'],
             parameterNames: [r'target', r'errors'],
-            targetTypes: [r'FlutterWebSecurityProperties', r'Validator'],
-            targetAnnotations: [
-              _i1.Profile([r'web']),
-              _i1.ConfigurationProperties(r'spring.flutter.security.web'),
-            ],
-            targetAnnotationTypes: [r'Profile', r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) => _$FlutterWebSecurityPropertiesProxy(
-          (target as _i2.FlutterWebSecurityProperties),
-          invoker,
-        ),
       ),
     ),
     _i1.BeanDefinition<_i2.FlutterSecurityProperties>(
       name: r'flutterSecurityProperties',
       source: r'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart#FlutterSecurityProperties',
-      types: const [_i2.FlutterSecurityProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterSecurityProperties>(
         r,
         r'flutterSecurityProperties',
@@ -135,29 +115,19 @@ _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'applicationId',
-            declaringType: r'FlutterSecurityProperties',
-            targetType: r'FlutterSecurityProperties',
+          _i1.MethodSignature.of(
+            r'applicationId',
+            _$target1,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FlutterSecurityProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'ephemeralSession',
-            declaringType: r'FlutterSecurityProperties',
-            targetType: r'FlutterSecurityProperties',
+          _i1.MethodSignature.of(
+            r'ephemeralSession',
+            _$target1,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FlutterSecurityProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterSecurityProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -165,147 +135,127 @@ _i1.BeanModule get $flutterSecurityConfigBeans => _i1.BeanModule(
     ),
   ],
   introspections: [
-    _i1.BeanIntrospection<_i2.FlutterWebSecurityProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterWebSecurityProperties>(
       className: r'FlutterWebSecurityProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterWebSecurityProperties>(
           r'mode',
-          type: _i2.WebLoginMode,
-          typeInfo: const _i1.EnumType<_i2.WebLoginMode>(
-            _i2.WebLoginMode.values,
-          ),
-          get: (bean) => bean.mode,
+          typeInfo: _i1.EnumType<_i2.WebLoginMode>(_i2.WebLoginMode.values),
+          get: _$get2,
         ),
         _i1.BeanProperty<_i2.FlutterWebSecurityProperties>(
           r'serverUrl',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.serverUrl,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get3,
         ),
         _i1.BeanProperty<_i2.FlutterWebSecurityProperties>(
           r'userEndpoint',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.userEndpoint,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get4,
         ),
         _i1.BeanProperty<_i2.FlutterWebSecurityProperties>(
           r'logoutUrl',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.logoutUrl,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get5,
         ),
         _i1.BeanProperty<_i2.FlutterWebSecurityProperties>(
           r'authorizationBaseUri',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.authorizationBaseUri,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get6,
         ),
         _i1.BeanProperty<_i2.FlutterWebSecurityProperties>(
           r'silentRestore',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.silentRestore,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get7,
         ),
       ],
-      annotations: const [
+      annotations: [
         _i1.Profile([r'web']),
         _i1.ConfigurationProperties(r'spring.flutter.security.web'),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterWebSecurityProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterWebSecurityProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterWebSecurityProperties>(
         parameters: [
           _i1.BeanParameter(
             r'mode',
-            type: const _i1.EnumType<_i2.WebLoginMode>(_i2.WebLoginMode.values),
+            type: _i1.EnumType<_i2.WebLoginMode>(_i2.WebLoginMode.values),
             symbol: #mode,
             hasDefaultValue: true,
             defaultValue: _i2.WebLoginMode.server,
           ),
           _i1.BeanParameter(
             r'serverUrl',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #serverUrl,
           ),
           _i1.BeanParameter(
             r'userEndpoint',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #userEndpoint,
             hasDefaultValue: true,
             defaultValue: r'/user',
           ),
           _i1.BeanParameter(
             r'logoutUrl',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #logoutUrl,
             hasDefaultValue: true,
             defaultValue: r'/logout',
           ),
           _i1.BeanParameter(
             r'authorizationBaseUri',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #authorizationBaseUri,
             hasDefaultValue: true,
             defaultValue: r'/oauth2/authorization',
           ),
           _i1.BeanParameter(
             r'silentRestore',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #silentRestore,
             hasDefaultValue: true,
             defaultValue: true,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.FlutterWebSecurityProperties.new,
-          positional,
-          named,
-        ) as _i2.FlutterWebSecurityProperties),
+        create: _$create8,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterSecurityProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterSecurityProperties>(
       className: r'FlutterSecurityProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterSecurityProperties>(
           r'applicationId',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.applicationId,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get9,
         ),
         _i1.BeanProperty<_i2.FlutterSecurityProperties>(
           r'ephemeralSession',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.ephemeralSession,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get10,
         ),
       ],
-      annotations: const [
-        _i1.ConfigurationProperties(r'spring.flutter.security'),
-      ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterSecurityProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.flutter.security')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterSecurityProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterSecurityProperties>(
         parameters: [
           _i1.BeanParameter(
             r'applicationId',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #applicationId,
           ),
           _i1.BeanParameter(
             r'ephemeralSession',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #ephemeralSession,
             hasDefaultValue: true,
             defaultValue: false,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.FlutterSecurityProperties.new,
-          positional,
-          named,
-        ) as _i2.FlutterSecurityProperties),
+        create: _$create11,
       ),
     ),
   ],

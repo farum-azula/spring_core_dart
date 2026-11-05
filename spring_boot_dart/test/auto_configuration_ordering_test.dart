@@ -238,6 +238,39 @@ void main() {
       context.close();
     });
 
+    test('a module with a class excluded keeps the rest of its data', () {
+      bool isBean(Object? value) => value is _Bean;
+      const proxy = AopProxyFactory.deferred(signatures: []);
+      final module = BeanModule(
+        'both',
+        [
+          for (final owner in [
+            'CacheAutoConfiguration',
+            'OtherAutoConfiguration',
+          ])
+            BeanDefinition<_Bean>(
+              name: owner,
+              source: 'package:t/t.dart#$owner',
+              create: (_) => _Bean(owner),
+            ),
+        ],
+        typeTests: {_Bean: isBean},
+        typeDepths: {_Bean: 1},
+        aopProxies: {'package:t/t.dart#OtherAutoConfiguration': proxy},
+      );
+      final [kept] = selectAutoConfigurations(
+        [module],
+        excludeTypes: [CacheAutoConfiguration],
+      );
+      expect(kept, isNot(same(module)));
+      expect(kept.definitions.map((d) => d.name), ['OtherAutoConfiguration']);
+      expect(kept.typeTests, {_Bean: isBean});
+      expect(kept.typeDepths, {_Bean: 1});
+      expect(kept.aopProxies, {
+        'package:t/t.dart#OtherAutoConfiguration': same(proxy),
+      });
+    });
+
     test('excludeName removes a module by name and a class by name', () {
       final context = _run(
         [

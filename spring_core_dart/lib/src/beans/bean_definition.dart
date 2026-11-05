@@ -460,6 +460,11 @@ final class BeanDefinition<T extends Object> {
 
   /// Creates the generated AOP proxy of the bean, when the generator could
   /// write one; used when an aspect applies to the bean.
+  ///
+  /// An `AopProxyFactory.deferred` placeholder (a bean of a starter) is
+  /// stood in for, in one context, by the factory the application's
+  /// generated module brings (`BeanModule.aopProxies`); read the factory a
+  /// context uses through `DefaultListableBeanFactory.aopProxyOf`.
   final AopProxyFactory? aopProxy;
 
   /// The advice and pointcuts of the bean, when its class is an `@Aspect`.

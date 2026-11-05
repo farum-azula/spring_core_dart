@@ -57,6 +57,13 @@ class _$BookRepositoryImpl extends _i1.SimpleRepository<_i2.Book, int>
       this.operations.list(_findByYearGreaterThan, [year]);
 }
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+
 /// Beans found by `@ComponentScan` in `lib/ and test/data_test/app/`.
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
@@ -74,14 +81,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i5.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches BookRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.AuditingSetup>(
       name: r'auditingSetup',
       source: r'asset:spring_boot_starter_data/test/data_test/app/data_test_app.dart#AuditingSetup',
-      types: const [_i2.AuditingSetup],
       create: (r) => _i2.AuditingSetup(),
       annotations: const [_i3.Configuration(), _i6.EnableDataAuditing()],
     ),
@@ -95,20 +101,19 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) => _i2.Reader(),
       annotations: const [_i3.Component()],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches Reader, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.BookService>(
       name: r'bookService',
       source: r'asset:spring_boot_starter_data/test/data_test/app/data_test_app.dart#BookService',
-      types: const [_i2.BookService],
       dependencies: const [_i3.Dependency(_i2.BookRepository, name: r'books')],
       create: (r) =>
           _i2.BookService(r.dependency<_i2.BookRepository>(name: r'books')),
       annotations: const [_i3.Service()],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches BookService, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i2.Seeder>(
@@ -119,8 +124,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       create: (r) =>
           _i2.Seeder(r.dependency<_i2.BookRepository>(name: r'books')),
       annotations: const [_i3.Component()],
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches Seeder, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
@@ -558,7 +563,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '0545857c',
+  fingerprint: 'f7a68664',
 );
 
 /// Starts the application: config files, environment, context, runners

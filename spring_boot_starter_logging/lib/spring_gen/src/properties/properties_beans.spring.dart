@@ -7,381 +7,200 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_dart/src/annotations.dart' as _i3;
 import 'package:spring_boot_starter_logging/src/properties/logging_properties.dart'
-    as _i1;
+    as _i2;
 
-class _$LoggingPropertiesProxy implements _i1.LoggingProperties, _i2.Advised {
-  _$LoggingPropertiesProxy(this._target, this._invoker);
-
-  final _i1.LoggingProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  bool get enabled => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as bool);
-
-  @override
-  Map<String, String> get level => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.level,
-  ) as Map<String, String>);
-
-  @override
-  Map<String, List<String>> get group => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.group,
-  ) as Map<String, List<String>>);
-
-  @override
-  String get exceptionConversionWord => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.exceptionConversionWord,
-  ) as String);
-
-  @override
-  bool get includeApplicationGroup => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.includeApplicationGroup,
-  ) as bool);
-
-  @override
-  bool get includeApplicationName => (this._invoker.invoke(
-    this,
-    this._target,
-    5,
-    const [],
-    (_) => this._target.includeApplicationName,
-  ) as bool);
-
-  @override
-  _i1.LoggingPatternProperties get pattern => (this._invoker.invoke(
-    this,
-    this._target,
-    6,
-    const [],
-    (_) => this._target.pattern,
-  ) as _i1.LoggingPatternProperties);
-
-  @override
-  _i1.LoggingThresholdProperties get threshold => (this._invoker.invoke(
-    this,
-    this._target,
-    7,
-    const [],
-    (_) => this._target.threshold,
-  ) as _i1.LoggingThresholdProperties);
-
-  @override
-  _i1.LoggingConsoleProperties get console => (this._invoker.invoke(
-    this,
-    this._target,
-    8,
-    const [],
-    (_) => this._target.console,
-  ) as _i1.LoggingConsoleProperties);
-
-  @override
-  _i1.LoggingBufferProperties get buffer => (this._invoker.invoke(
-    this,
-    this._target,
-    9,
-    const [],
-    (_) => this._target.buffer,
-  ) as _i1.LoggingBufferProperties);
-
-  @override
-  _i1.LoggingFileProperties get file => (this._invoker.invoke(
-    this,
-    this._target,
-    10,
-    const [],
-    (_) => this._target.file,
-  ) as _i1.LoggingFileProperties);
-
-  @override
-  _i1.LoggingCharsetProperties get charset => (this._invoker.invoke(
-    this,
-    this._target,
-    11,
-    const [],
-    (_) => this._target.charset,
-  ) as _i1.LoggingCharsetProperties);
-
-  @override
-  set enabled(bool value) {
-    this._invoker.invoke(this, this._target, 12, [value], (args) {
-      this._target.enabled = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set level(Map<String, String> value) {
-    this._invoker.invoke(this, this._target, 13, [value], (args) {
-      this._target.level = (args[0] as Map<String, String>);
-      return null;
-    });
-  }
-
-  @override
-  set group(Map<String, List<String>> value) {
-    this._invoker.invoke(this, this._target, 14, [value], (args) {
-      this._target.group = (args[0] as Map<String, List<String>>);
-      return null;
-    });
-  }
-
-  @override
-  set exceptionConversionWord(String value) {
-    this._invoker.invoke(this, this._target, 15, [value], (args) {
-      this._target.exceptionConversionWord = (args[0] as String);
-      return null;
-    });
-  }
-
-  @override
-  set includeApplicationGroup(bool value) {
-    this._invoker.invoke(this, this._target, 16, [value], (args) {
-      this._target.includeApplicationGroup = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set includeApplicationName(bool value) {
-    this._invoker.invoke(this, this._target, 17, [value], (args) {
-      this._target.includeApplicationName = (args[0] as bool);
-      return null;
-    });
-  }
-
-  @override
-  set pattern(_i1.LoggingPatternProperties value) {
-    this._invoker.invoke(this, this._target, 18, [value], (args) {
-      this._target.pattern = (args[0] as _i1.LoggingPatternProperties);
-      return null;
-    });
-  }
-
-  @override
-  set threshold(_i1.LoggingThresholdProperties value) {
-    this._invoker.invoke(this, this._target, 19, [value], (args) {
-      this._target.threshold = (args[0] as _i1.LoggingThresholdProperties);
-      return null;
-    });
-  }
-
-  @override
-  set console(_i1.LoggingConsoleProperties value) {
-    this._invoker.invoke(this, this._target, 20, [value], (args) {
-      this._target.console = (args[0] as _i1.LoggingConsoleProperties);
-      return null;
-    });
-  }
-
-  @override
-  set buffer(_i1.LoggingBufferProperties value) {
-    this._invoker.invoke(this, this._target, 21, [value], (args) {
-      this._target.buffer = (args[0] as _i1.LoggingBufferProperties);
-      return null;
-    });
-  }
-
-  @override
-  set file(_i1.LoggingFileProperties value) {
-    this._invoker.invoke(this, this._target, 22, [value], (args) {
-      this._target.file = (args[0] as _i1.LoggingFileProperties);
-      return null;
-    });
-  }
-
-  @override
-  set charset(_i1.LoggingCharsetProperties value) {
-    this._invoker.invoke(this, this._target, 23, [value], (args) {
-      this._target.charset = (args[0] as _i1.LoggingCharsetProperties);
-      return null;
-    });
-  }
-}
-
-class _$ApplicationGroupPropertiesProxy
-    implements _i1.ApplicationGroupProperties, _i2.Advised {
-  _$ApplicationGroupPropertiesProxy(this._target, this._invoker);
-
-  final _i1.ApplicationGroupProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String? get group => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.group,
-  ) as String?);
-
-  @override
-  set group(String? value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.group = (args[0] as String?);
-      return null;
-    });
-  }
-}
-
-class _$AnsiPropertiesProxy implements _i1.AnsiProperties, _i2.Advised {
-  _$AnsiPropertiesProxy(this._target, this._invoker);
-
-  final _i1.AnsiProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i1.AnsiOutput? get enabled => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.enabled,
-  ) as _i1.AnsiOutput?);
-
-  @override
-  set enabled(_i1.AnsiOutput? value) {
-    this._invoker.invoke(this, this._target, 1, [value], (args) {
-      this._target.enabled = (args[0] as _i1.AnsiOutput?);
-      return null;
-    });
-  }
-}
+const _$target0 = _i1.AopTarget(
+  r'LoggingProperties',
+  types: [r'LoggingProperties'],
+  annotations: [_i1.ConfigurationProperties(r'logging')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'ApplicationGroupProperties',
+  types: [r'ApplicationGroupProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.application')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target2 = _i1.AopTarget(
+  r'AnsiProperties',
+  types: [r'AnsiProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.output.ansi')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get3(_i2.LoggingProperties bean) => bean.enabled;
+void _$set4(_i2.LoggingProperties bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get5(_i2.LoggingProperties bean) => bean.level;
+void _$set6(_i2.LoggingProperties bean, Object? value) =>
+    bean.level = (value as Map<String, String>);
+Object? _$get7(_i2.LoggingProperties bean) => bean.group;
+void _$set8(_i2.LoggingProperties bean, Object? value) =>
+    bean.group = (value as Map<String, List<String>>);
+Object? _$get9(_i2.LoggingProperties bean) => bean.exceptionConversionWord;
+void _$set10(_i2.LoggingProperties bean, Object? value) =>
+    bean.exceptionConversionWord = (value as String);
+Object? _$get11(_i2.LoggingProperties bean) => bean.includeApplicationGroup;
+void _$set12(_i2.LoggingProperties bean, Object? value) =>
+    bean.includeApplicationGroup = (value as bool);
+Object? _$get13(_i2.LoggingProperties bean) => bean.includeApplicationName;
+void _$set14(_i2.LoggingProperties bean, Object? value) =>
+    bean.includeApplicationName = (value as bool);
+Object? _$get15(_i2.LoggingProperties bean) => bean.pattern;
+void _$set16(_i2.LoggingProperties bean, Object? value) =>
+    bean.pattern = (value as _i2.LoggingPatternProperties);
+Object? _$get17(_i2.LoggingProperties bean) => bean.threshold;
+void _$set18(_i2.LoggingProperties bean, Object? value) =>
+    bean.threshold = (value as _i2.LoggingThresholdProperties);
+Object? _$get19(_i2.LoggingProperties bean) => bean.console;
+void _$set20(_i2.LoggingProperties bean, Object? value) =>
+    bean.console = (value as _i2.LoggingConsoleProperties);
+Object? _$get21(_i2.LoggingProperties bean) => bean.buffer;
+void _$set22(_i2.LoggingProperties bean, Object? value) =>
+    bean.buffer = (value as _i2.LoggingBufferProperties);
+Object? _$get23(_i2.LoggingProperties bean) => bean.file;
+void _$set24(_i2.LoggingProperties bean, Object? value) =>
+    bean.file = (value as _i2.LoggingFileProperties);
+Object? _$get25(_i2.LoggingProperties bean) => bean.charset;
+void _$set26(_i2.LoggingProperties bean, Object? value) =>
+    bean.charset = (value as _i2.LoggingCharsetProperties);
+_i2.LoggingProperties _$create27(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingProperties();
+Object? _$get28(_i2.LoggingPatternProperties bean) => bean.console;
+void _$set29(_i2.LoggingPatternProperties bean, Object? value) =>
+    bean.console = (value as String?);
+Object? _$get30(_i2.LoggingPatternProperties bean) => bean.file;
+void _$set31(_i2.LoggingPatternProperties bean, Object? value) =>
+    bean.file = (value as String?);
+Object? _$get32(_i2.LoggingPatternProperties bean) => bean.level;
+void _$set33(_i2.LoggingPatternProperties bean, Object? value) =>
+    bean.level = (value as String);
+Object? _$get34(_i2.LoggingPatternProperties bean) => bean.correlation;
+void _$set35(_i2.LoggingPatternProperties bean, Object? value) =>
+    bean.correlation = (value as String?);
+Object? _$get36(_i2.LoggingPatternProperties bean) => bean.dateformat;
+void _$set37(_i2.LoggingPatternProperties bean, Object? value) =>
+    bean.dateformat = (value as String);
+_i2.LoggingPatternProperties _$create38(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingPatternProperties();
+Object? _$get39(_i2.LoggingThresholdProperties bean) => bean.console;
+void _$set40(_i2.LoggingThresholdProperties bean, Object? value) =>
+    bean.console = (value as String);
+Object? _$get41(_i2.LoggingThresholdProperties bean) => bean.buffer;
+void _$set42(_i2.LoggingThresholdProperties bean, Object? value) =>
+    bean.buffer = (value as String);
+Object? _$get43(_i2.LoggingThresholdProperties bean) => bean.file;
+void _$set44(_i2.LoggingThresholdProperties bean, Object? value) =>
+    bean.file = (value as String);
+_i2.LoggingThresholdProperties _$create45(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingThresholdProperties();
+Object? _$get46(_i2.LoggingConsoleProperties bean) => bean.enabled;
+void _$set47(_i2.LoggingConsoleProperties bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get48(_i2.LoggingConsoleProperties bean) => bean.target;
+void _$set49(_i2.LoggingConsoleProperties bean, Object? value) =>
+    bean.target = (value as _i2.ConsoleTarget?);
+_i2.LoggingConsoleProperties _$create50(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingConsoleProperties();
+Object? _$get51(_i2.LoggingBufferProperties bean) => bean.enabled;
+void _$set52(_i2.LoggingBufferProperties bean, Object? value) =>
+    bean.enabled = (value as bool);
+Object? _$get53(_i2.LoggingBufferProperties bean) => bean.capacity;
+void _$set54(_i2.LoggingBufferProperties bean, Object? value) =>
+    bean.capacity = (value as int);
+_i2.LoggingBufferProperties _$create55(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingBufferProperties();
+Object? _$get56(_i2.LoggingFileProperties bean) => bean.name;
+void _$set57(_i2.LoggingFileProperties bean, Object? value) =>
+    bean.name = (value as String?);
+Object? _$get58(_i2.LoggingFileProperties bean) => bean.path;
+void _$set59(_i2.LoggingFileProperties bean, Object? value) =>
+    bean.path = (value as String?);
+Object? _$get60(_i2.LoggingFileProperties bean) => bean.rollingPolicy;
+void _$set61(_i2.LoggingFileProperties bean, Object? value) =>
+    bean.rollingPolicy = (value as _i2.LoggingRollingPolicyProperties);
+_i2.LoggingFileProperties _$create62(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingFileProperties();
+Object? _$get63(_i2.LoggingRollingPolicyProperties bean) =>
+    bean.cleanHistoryOnStart;
+void _$set64(_i2.LoggingRollingPolicyProperties bean, Object? value) =>
+    bean.cleanHistoryOnStart = (value as bool);
+Object? _$get65(_i2.LoggingRollingPolicyProperties bean) => bean.maxFileSize;
+void _$set66(_i2.LoggingRollingPolicyProperties bean, Object? value) =>
+    bean.maxFileSize = (value as _i1.DataSize);
+Object? _$get67(_i2.LoggingRollingPolicyProperties bean) => bean.maxHistory;
+void _$set68(_i2.LoggingRollingPolicyProperties bean, Object? value) =>
+    bean.maxHistory = (value as int);
+Object? _$get69(_i2.LoggingRollingPolicyProperties bean) => bean.totalSizeCap;
+void _$set70(_i2.LoggingRollingPolicyProperties bean, Object? value) =>
+    bean.totalSizeCap = (value as _i1.DataSize?);
+_i2.LoggingRollingPolicyProperties _$create71(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingRollingPolicyProperties();
+Object? _$get72(_i2.LoggingCharsetProperties bean) => bean.console;
+void _$set73(_i2.LoggingCharsetProperties bean, Object? value) =>
+    bean.console = (value as String?);
+Object? _$get74(_i2.LoggingCharsetProperties bean) => bean.file;
+void _$set75(_i2.LoggingCharsetProperties bean, Object? value) =>
+    bean.file = (value as String?);
+_i2.LoggingCharsetProperties _$create76(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.LoggingCharsetProperties();
+Object? _$get77(_i2.ApplicationGroupProperties bean) => bean.group;
+void _$set78(_i2.ApplicationGroupProperties bean, Object? value) =>
+    bean.group = (value as String?);
+_i2.ApplicationGroupProperties _$create79(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.ApplicationGroupProperties();
+Object? _$get80(_i2.AnsiProperties bean) => bean.enabled;
+void _$set81(_i2.AnsiProperties bean, Object? value) =>
+    bean.enabled = (value as _i2.AnsiOutput?);
+_i2.AnsiProperties _$create82(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.AnsiProperties();
 
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
-_i2.BeanModule get $loggingConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $loggingConfigBeans => _i1.BeanModule(
   r'loggingConfigBeans',
   [
-    _i2.BeanDefinition<_i1.LoggingProperties>(
+    _i1.BeanDefinition<_i2.LoggingProperties>(
       name: r'loggingProperties',
       source: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#LoggingProperties',
-      types: const [_i1.LoggingProperties],
-      create: (r) => _i1.LoggingProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'logging')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.LoggingProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'logging')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'level',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'level',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'Map',
             annotations: [
-              _i2.PropertyValues([
+              _i1.PropertyValues([
                 r'trace',
                 r'debug',
                 r'info',
@@ -393,142 +212,82 @@ _i2.BeanModule get $loggingConfigBeans => _i2.BeanModule(
               ]),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'group',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'group',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'exceptionConversionWord',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'exceptionConversionWord',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
             annotations: [_i3.RawValue()],
             annotationTypes: [r'RawValue'],
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'includeApplicationGroup',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'includeApplicationGroup',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'includeApplicationName',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'includeApplicationName',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'pattern',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'pattern',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'LoggingPatternProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'threshold',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'threshold',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'LoggingThresholdProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'console',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'console',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'LoggingConsoleProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'buffer',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'buffer',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'LoggingBufferProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'file',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'file',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'LoggingFileProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'charset',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'charset',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'LoggingCharsetProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'level',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'level',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'Map',
             annotations: [
-              _i2.PropertyValues([
+              _i1.PropertyValues([
                 r'trace',
                 r'debug',
                 r'info',
@@ -540,234 +299,139 @@ _i2.BeanModule get $loggingConfigBeans => _i2.BeanModule(
               ]),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'group',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'group',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'Map',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'exceptionConversionWord',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'exceptionConversionWord',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
             annotations: [_i3.RawValue()],
             annotationTypes: [r'RawValue'],
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'includeApplicationGroup',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'includeApplicationGroup',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'includeApplicationName',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'includeApplicationName',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'bool',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'pattern',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'pattern',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'LoggingPatternProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'threshold',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'threshold',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'LoggingThresholdProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'console',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'console',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'LoggingConsoleProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'buffer',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'buffer',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'LoggingBufferProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'file',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'file',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'LoggingFileProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'charset',
-            declaringType: r'LoggingProperties',
-            targetType: r'LoggingProperties',
-            declaringTypes: [r'LoggingProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'charset',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'LoggingCharsetProperties',
-            targetTypes: [r'LoggingProperties'],
-            targetAnnotations: [_i2.ConfigurationProperties(r'logging')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) => _$LoggingPropertiesProxy(
-          (target as _i1.LoggingProperties),
-          invoker,
-        ),
       ),
     ),
-    _i2.BeanDefinition<_i1.ApplicationGroupProperties>(
+    _i1.BeanDefinition<_i2.ApplicationGroupProperties>(
       name: r'applicationGroupProperties',
       source: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#ApplicationGroupProperties',
-      types: const [_i1.ApplicationGroupProperties],
-      create: (r) => _i1.ApplicationGroupProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.application')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'group',
-            declaringType: r'ApplicationGroupProperties',
-            targetType: r'ApplicationGroupProperties',
-            declaringTypes: [r'ApplicationGroupProperties'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.ApplicationGroupProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.application')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'group',
+            _$target1,
+            kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'ApplicationGroupProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.application'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'group',
-            declaringType: r'ApplicationGroupProperties',
-            targetType: r'ApplicationGroupProperties',
-            declaringTypes: [r'ApplicationGroupProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'group',
+            _$target1,
+            kind: _i1.MemberKind.setter,
             returnType: r'String',
-            targetTypes: [r'ApplicationGroupProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.application'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) => _$ApplicationGroupPropertiesProxy(
-          (target as _i1.ApplicationGroupProperties),
-          invoker,
-        ),
       ),
     ),
-    _i2.BeanDefinition<_i1.AnsiProperties>(
+    _i1.BeanDefinition<_i2.AnsiProperties>(
       name: r'ansiProperties',
       source: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#AnsiProperties',
-      types: const [_i1.AnsiProperties],
-      create: (r) => _i1.AnsiProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.output.ansi')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'AnsiProperties',
-            targetType: r'AnsiProperties',
-            declaringTypes: [r'AnsiProperties'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.AnsiProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.output.ansi')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target2,
+            kind: _i1.MemberKind.getter,
             returnType: r'AnsiOutput',
-            targetTypes: [r'AnsiProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.output.ansi'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'enabled',
-            declaringType: r'AnsiProperties',
-            targetType: r'AnsiProperties',
-            declaringTypes: [r'AnsiProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target2,
+            kind: _i1.MemberKind.setter,
             returnType: r'AnsiOutput',
-            targetTypes: [r'AnsiProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.output.ansi'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) =>
-            _$AnsiPropertiesProxy((target as _i1.AnsiProperties), invoker),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.LoggingProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingProperties>(
       className: r'LoggingProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get3,
+          set: _$set4,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'level',
-          type: Map<String, String>,
-          typeInfo: const _i2.MapType<String, String>(
-            _i2.ClassType<String>(),
-            _i2.ClassType<String>(),
+          typeInfo: _i1.MapType<String, String>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<String>(),
           ),
-          get: (bean) => bean.level,
-          set: (bean, value) => bean.level = (value as Map<String, String>),
-          annotations: const [
-            _i2.PropertyValues([
+          get: _$get5,
+          set: _$set6,
+          annotations: [
+            _i1.PropertyValues([
               r'trace',
               r'debug',
               r'info',
@@ -779,178 +443,150 @@ _i2.BeanModule get $loggingConfigBeans => _i2.BeanModule(
             ]),
           ],
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'group',
-          type: Map<String, List<String>>,
-          typeInfo: const _i2.MapType<String, List<String>>(
-            _i2.ClassType<String>(),
-            _i2.ListType<String>(_i2.ClassType<String>()),
+          typeInfo: _i1.MapType<String, List<String>>(
+            _i1.ClassType<String>(),
+            _i1.ListType<String>(_i1.ClassType<String>()),
           ),
-          get: (bean) => bean.group,
-          set: (bean, value) =>
-              bean.group = (value as Map<String, List<String>>),
+          get: _$get7,
+          set: _$set8,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'exceptionConversionWord',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'%wEx',
-          get: (bean) => bean.exceptionConversionWord,
-          set: (bean, value) =>
-              bean.exceptionConversionWord = (value as String),
-          annotations: const [_i3.RawValue()],
+          get: _$get9,
+          set: _$set10,
+          annotations: [_i3.RawValue()],
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'includeApplicationGroup',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.includeApplicationGroup,
-          set: (bean, value) => bean.includeApplicationGroup = (value as bool),
+          get: _$get11,
+          set: _$set12,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'includeApplicationName',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.includeApplicationName,
-          set: (bean, value) => bean.includeApplicationName = (value as bool),
+          get: _$get13,
+          set: _$set14,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'pattern',
-          type: _i1.LoggingPatternProperties,
-          typeInfo: const _i2.ClassType<_i1.LoggingPatternProperties>(),
-          get: (bean) => bean.pattern,
-          set: (bean, value) =>
-              bean.pattern = (value as _i1.LoggingPatternProperties),
+          typeInfo: _i1.ClassType<_i2.LoggingPatternProperties>(),
+          get: _$get15,
+          set: _$set16,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'threshold',
-          type: _i1.LoggingThresholdProperties,
-          typeInfo: const _i2.ClassType<_i1.LoggingThresholdProperties>(),
-          get: (bean) => bean.threshold,
-          set: (bean, value) =>
-              bean.threshold = (value as _i1.LoggingThresholdProperties),
+          typeInfo: _i1.ClassType<_i2.LoggingThresholdProperties>(),
+          get: _$get17,
+          set: _$set18,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'console',
-          type: _i1.LoggingConsoleProperties,
-          typeInfo: const _i2.ClassType<_i1.LoggingConsoleProperties>(),
-          get: (bean) => bean.console,
-          set: (bean, value) =>
-              bean.console = (value as _i1.LoggingConsoleProperties),
+          typeInfo: _i1.ClassType<_i2.LoggingConsoleProperties>(),
+          get: _$get19,
+          set: _$set20,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'buffer',
-          type: _i1.LoggingBufferProperties,
-          typeInfo: const _i2.ClassType<_i1.LoggingBufferProperties>(),
-          get: (bean) => bean.buffer,
-          set: (bean, value) =>
-              bean.buffer = (value as _i1.LoggingBufferProperties),
+          typeInfo: _i1.ClassType<_i2.LoggingBufferProperties>(),
+          get: _$get21,
+          set: _$set22,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'file',
-          type: _i1.LoggingFileProperties,
-          typeInfo: const _i2.ClassType<_i1.LoggingFileProperties>(),
-          get: (bean) => bean.file,
-          set: (bean, value) =>
-              bean.file = (value as _i1.LoggingFileProperties),
+          typeInfo: _i1.ClassType<_i2.LoggingFileProperties>(),
+          get: _$get23,
+          set: _$set24,
         ),
-        _i2.BeanProperty<_i1.LoggingProperties>(
+        _i1.BeanProperty<_i2.LoggingProperties>(
           r'charset',
-          type: _i1.LoggingCharsetProperties,
-          typeInfo: const _i2.ClassType<_i1.LoggingCharsetProperties>(),
-          get: (bean) => bean.charset,
-          set: (bean, value) =>
-              bean.charset = (value as _i1.LoggingCharsetProperties),
+          typeInfo: _i1.ClassType<_i2.LoggingCharsetProperties>(),
+          get: _$get25,
+          set: _$set26,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'logging')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingProperties>(
+      annotations: [_i1.ConfigurationProperties(r'logging')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LoggingProperties.new, positional, named)
-                as _i1.LoggingProperties),
+        create: _$create27,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LoggingPatternProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingPatternProperties>(
       className: r'LoggingPatternProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingPatternProperties>(
+        _i1.BeanProperty<_i2.LoggingPatternProperties>(
           r'console',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.console,
-          set: (bean, value) => bean.console = (value as String?),
-          annotations: const [_i3.RawValue()],
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get28,
+          set: _$set29,
+          annotations: [_i3.RawValue()],
         ),
-        _i2.BeanProperty<_i1.LoggingPatternProperties>(
+        _i1.BeanProperty<_i2.LoggingPatternProperties>(
           r'file',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.file,
-          set: (bean, value) => bean.file = (value as String?),
-          annotations: const [_i3.RawValue()],
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get30,
+          set: _$set31,
+          annotations: [_i3.RawValue()],
         ),
-        _i2.BeanProperty<_i1.LoggingPatternProperties>(
+        _i1.BeanProperty<_i2.LoggingPatternProperties>(
           r'level',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'%5p',
-          get: (bean) => bean.level,
-          set: (bean, value) => bean.level = (value as String),
-          annotations: const [_i3.RawValue()],
+          get: _$get32,
+          set: _$set33,
+          annotations: [_i3.RawValue()],
         ),
-        _i2.BeanProperty<_i1.LoggingPatternProperties>(
+        _i1.BeanProperty<_i2.LoggingPatternProperties>(
           r'correlation',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.correlation,
-          set: (bean, value) => bean.correlation = (value as String?),
-          annotations: const [_i3.RawValue()],
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get34,
+          set: _$set35,
+          annotations: [_i3.RawValue()],
         ),
-        _i2.BeanProperty<_i1.LoggingPatternProperties>(
+        _i1.BeanProperty<_i2.LoggingPatternProperties>(
           r'dateformat',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
-          get: (bean) => bean.dateformat,
-          set: (bean, value) => bean.dateformat = (value as String),
-          annotations: const [_i3.RawValue()],
+          get: _$get36,
+          set: _$set37,
+          annotations: [_i3.RawValue()],
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingPatternProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingPatternProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingPatternProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingPatternProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LoggingPatternProperties.new, positional, named)
-                as _i1.LoggingPatternProperties),
+        create: _$create38,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LoggingThresholdProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingThresholdProperties>(
       className: r'LoggingThresholdProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingThresholdProperties>(
+        _i1.BeanProperty<_i2.LoggingThresholdProperties>(
           r'console',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'trace',
-          get: (bean) => bean.console,
-          set: (bean, value) => bean.console = (value as String),
-          annotations: const [
-            _i2.PropertyValues([
+          get: _$get39,
+          set: _$set40,
+          annotations: [
+            _i1.PropertyValues([
               r'trace',
               r'debug',
               r'info',
@@ -962,16 +598,15 @@ _i2.BeanModule get $loggingConfigBeans => _i2.BeanModule(
             ]),
           ],
         ),
-        _i2.BeanProperty<_i1.LoggingThresholdProperties>(
+        _i1.BeanProperty<_i2.LoggingThresholdProperties>(
           r'buffer',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'trace',
-          get: (bean) => bean.buffer,
-          set: (bean, value) => bean.buffer = (value as String),
-          annotations: const [
-            _i2.PropertyValues([
+          get: _$get41,
+          set: _$set42,
+          annotations: [
+            _i1.PropertyValues([
               r'trace',
               r'debug',
               r'info',
@@ -983,16 +618,15 @@ _i2.BeanModule get $loggingConfigBeans => _i2.BeanModule(
             ]),
           ],
         ),
-        _i2.BeanProperty<_i1.LoggingThresholdProperties>(
+        _i1.BeanProperty<_i2.LoggingThresholdProperties>(
           r'file',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'trace',
-          get: (bean) => bean.file,
-          set: (bean, value) => bean.file = (value as String),
-          annotations: const [
-            _i2.PropertyValues([
+          get: _$get43,
+          set: _$set44,
+          annotations: [
+            _i1.PropertyValues([
               r'trace',
               r'debug',
               r'info',
@@ -1005,243 +639,205 @@ _i2.BeanModule get $loggingConfigBeans => _i2.BeanModule(
           ],
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingThresholdProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingThresholdProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingThresholdProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingThresholdProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.LoggingThresholdProperties.new,
-          positional,
-          named,
-        ) as _i1.LoggingThresholdProperties),
+        create: _$create45,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LoggingConsoleProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingConsoleProperties>(
       className: r'LoggingConsoleProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingConsoleProperties>(
+        _i1.BeanProperty<_i2.LoggingConsoleProperties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get46,
+          set: _$set47,
         ),
-        _i2.BeanProperty<_i1.LoggingConsoleProperties>(
+        _i1.BeanProperty<_i2.LoggingConsoleProperties>(
           r'target',
-          type: _i1.ConsoleTarget,
           nullable: true,
-          typeInfo: const _i2.EnumType<_i1.ConsoleTarget>(
-            _i1.ConsoleTarget.values,
+          typeInfo: _i1.EnumType<_i2.ConsoleTarget>(
+            _i2.ConsoleTarget.values,
             nullable: true,
           ),
-          get: (bean) => bean.target,
-          set: (bean, value) => bean.target = (value as _i1.ConsoleTarget?),
+          get: _$get48,
+          set: _$set49,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingConsoleProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingConsoleProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingConsoleProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingConsoleProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LoggingConsoleProperties.new, positional, named)
-                as _i1.LoggingConsoleProperties),
+        create: _$create50,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LoggingBufferProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingBufferProperties>(
       className: r'LoggingBufferProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingBufferProperties>(
+        _i1.BeanProperty<_i2.LoggingBufferProperties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool),
+          get: _$get51,
+          set: _$set52,
         ),
-        _i2.BeanProperty<_i1.LoggingBufferProperties>(
+        _i1.BeanProperty<_i2.LoggingBufferProperties>(
           r'capacity',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 1000,
-          get: (bean) => bean.capacity,
-          set: (bean, value) => bean.capacity = (value as int),
-          annotations: const [_i2.Range(1, 1000000)],
+          get: _$get53,
+          set: _$set54,
+          annotations: [_i1.Range(1, 1000000)],
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingBufferProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingBufferProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingBufferProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingBufferProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LoggingBufferProperties.new, positional, named)
-                as _i1.LoggingBufferProperties),
+        create: _$create55,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LoggingFileProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingFileProperties>(
       className: r'LoggingFileProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingFileProperties>(
+        _i1.BeanProperty<_i2.LoggingFileProperties>(
           r'name',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get56,
+          set: _$set57,
         ),
-        _i2.BeanProperty<_i1.LoggingFileProperties>(
+        _i1.BeanProperty<_i2.LoggingFileProperties>(
           r'path',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.path,
-          set: (bean, value) => bean.path = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get58,
+          set: _$set59,
         ),
-        _i2.BeanProperty<_i1.LoggingFileProperties>(
+        _i1.BeanProperty<_i2.LoggingFileProperties>(
           r'rollingPolicy',
-          type: _i1.LoggingRollingPolicyProperties,
-          typeInfo: const _i2.ClassType<_i1.LoggingRollingPolicyProperties>(),
-          get: (bean) => bean.rollingPolicy,
-          set: (bean, value) => bean.rollingPolicy =
-              (value as _i1.LoggingRollingPolicyProperties),
+          typeInfo: _i1.ClassType<_i2.LoggingRollingPolicyProperties>(),
+          get: _$get60,
+          set: _$set61,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingFileProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingFileProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingFileProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingFileProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LoggingFileProperties.new, positional, named)
-                as _i1.LoggingFileProperties),
+        create: _$create62,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LoggingRollingPolicyProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingRollingPolicyProperties>(
       className: r'LoggingRollingPolicyProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingRollingPolicyProperties>(
+        _i1.BeanProperty<_i2.LoggingRollingPolicyProperties>(
           r'cleanHistoryOnStart',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.cleanHistoryOnStart,
-          set: (bean, value) => bean.cleanHistoryOnStart = (value as bool),
+          get: _$get63,
+          set: _$set64,
         ),
-        _i2.BeanProperty<_i1.LoggingRollingPolicyProperties>(
+        _i1.BeanProperty<_i2.LoggingRollingPolicyProperties>(
           r'maxFileSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxFileSize,
-          set: (bean, value) => bean.maxFileSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get65,
+          set: _$set66,
         ),
-        _i2.BeanProperty<_i1.LoggingRollingPolicyProperties>(
+        _i1.BeanProperty<_i2.LoggingRollingPolicyProperties>(
           r'maxHistory',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 7,
-          get: (bean) => bean.maxHistory,
-          set: (bean, value) => bean.maxHistory = (value as int),
+          get: _$get67,
+          set: _$set68,
         ),
-        _i2.BeanProperty<_i1.LoggingRollingPolicyProperties>(
+        _i1.BeanProperty<_i2.LoggingRollingPolicyProperties>(
           r'totalSizeCap',
-          type: _i2.DataSize,
           nullable: true,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(nullable: true),
-          get: (bean) => bean.totalSizeCap,
-          set: (bean, value) => bean.totalSizeCap = (value as _i2.DataSize?),
+          typeInfo: _i1.ClassType<_i1.DataSize>(nullable: true),
+          get: _$get69,
+          set: _$set70,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingRollingPolicyProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingRollingPolicyProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingRollingPolicyProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingRollingPolicyProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.LoggingRollingPolicyProperties.new,
-          positional,
-          named,
-        ) as _i1.LoggingRollingPolicyProperties),
+        create: _$create71,
       ),
     ),
-    _i2.BeanIntrospection<_i1.LoggingCharsetProperties>(
+    const _i1.BeanIntrospection<_i2.LoggingCharsetProperties>(
       className: r'LoggingCharsetProperties',
       properties: [
-        _i2.BeanProperty<_i1.LoggingCharsetProperties>(
+        _i1.BeanProperty<_i2.LoggingCharsetProperties>(
           r'console',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.console,
-          set: (bean, value) => bean.console = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get72,
+          set: _$set73,
         ),
-        _i2.BeanProperty<_i1.LoggingCharsetProperties>(
+        _i1.BeanProperty<_i2.LoggingCharsetProperties>(
           r'file',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.file,
-          set: (bean, value) => bean.file = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get74,
+          set: _$set75,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.LoggingCharsetProperties(),
-      constructor: _i2.BeanConstructor<_i1.LoggingCharsetProperties>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.LoggingCharsetProperties.new,
+      constructor: _i1.BeanConstructor<_i2.LoggingCharsetProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.LoggingCharsetProperties.new, positional, named)
-                as _i1.LoggingCharsetProperties),
+        create: _$create76,
       ),
     ),
-    _i2.BeanIntrospection<_i1.ApplicationGroupProperties>(
+    const _i1.BeanIntrospection<_i2.ApplicationGroupProperties>(
       className: r'ApplicationGroupProperties',
       properties: [
-        _i2.BeanProperty<_i1.ApplicationGroupProperties>(
+        _i1.BeanProperty<_i2.ApplicationGroupProperties>(
           r'group',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.group,
-          set: (bean, value) => bean.group = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get77,
+          set: _$set78,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.application')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.ApplicationGroupProperties(),
-      constructor: _i2.BeanConstructor<_i1.ApplicationGroupProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.application')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.ApplicationGroupProperties.new,
+      constructor: _i1.BeanConstructor<_i2.ApplicationGroupProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.ApplicationGroupProperties.new,
-          positional,
-          named,
-        ) as _i1.ApplicationGroupProperties),
+        create: _$create79,
       ),
     ),
-    _i2.BeanIntrospection<_i1.AnsiProperties>(
+    const _i1.BeanIntrospection<_i2.AnsiProperties>(
       className: r'AnsiProperties',
       properties: [
-        _i2.BeanProperty<_i1.AnsiProperties>(
+        _i1.BeanProperty<_i2.AnsiProperties>(
           r'enabled',
-          type: _i1.AnsiOutput,
           nullable: true,
-          typeInfo: const _i2.EnumType<_i1.AnsiOutput>(
-            _i1.AnsiOutput.values,
+          typeInfo: _i1.EnumType<_i2.AnsiOutput>(
+            _i2.AnsiOutput.values,
             nullable: true,
           ),
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as _i1.AnsiOutput?),
+          get: _$get80,
+          set: _$set81,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.output.ansi')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.AnsiProperties(),
-      constructor: _i2.BeanConstructor<_i1.AnsiProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.output.ansi')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.AnsiProperties.new,
+      constructor: _i1.BeanConstructor<_i2.AnsiProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.AnsiProperties.new, positional, named)
-                as _i1.AnsiProperties),
+        create: _$create82,
       ),
     ),
   ],

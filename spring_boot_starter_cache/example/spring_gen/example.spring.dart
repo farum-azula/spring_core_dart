@@ -10,7 +10,7 @@
 import 'dart:async' as _i3;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_dart/src/runners.dart' as _i6;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i8;
@@ -19,51 +19,30 @@ import 'package:spring_boot_starter_cache/src/cache.dart' as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i9;
 
-import '../example.dart' as _i1;
+import '../example.dart' as _i2;
 
-class _$BooksProxy implements _i1.Books, _i2.Advised {
-  _$BooksProxy(this._target, this._invoker);
+class _$BooksProxy with _i1.AdvisedWrapper implements _i2.Books {
+  _$BooksProxy(this._target, this.aopInvoker);
 
-  final _i1.Books _target;
+  final _i2.Books _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i3.Future<_i1.Book> find(String isbn) => this._invoker.invokeAsync<_i1.Book>(
-    this,
-    this._target,
-    0,
-    [isbn],
-    (args) => this._target.find((args[0] as String)),
-  );
+  _i3.Future<_i2.Book> find(String isbn) =>
+      this.aopInvoker.invokeAsync<_i2.Book>(this, this._target, 0, [
+        isbn,
+      ], (args) => this._target.find((args[0] as String)));
 
   @override
-  _i3.Future<double> price(String isbn) => this._invoker.invokeAsync<double>(
+  _i3.Future<double> price(String isbn) => this.aopInvoker.invokeAsync<double>(
     this,
     this._target,
     1,
@@ -72,7 +51,7 @@ class _$BooksProxy implements _i1.Books, _i2.Advised {
   );
 
   @override
-  _i3.Future<void> remove(String isbn) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> remove(String isbn) => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
     2,
@@ -82,39 +61,33 @@ class _$BooksProxy implements _i1.Books, _i2.Advised {
 
   @override
   void reloadAll() {
-    this._invoker.invoke(this, this._target, 3, const [], (args) {
+    this.aopInvoker.invoke(this, this._target, 3, const [], (args) {
       this._target.reloadAll();
       return null;
     });
   }
 
   @override
-  _i1.CatalogApi get api => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.api,
-  ) as _i1.CatalogApi);
+  _i2.CatalogApi get api => this._target.api;
 }
 
 /// `CacheSetup` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$CacheSetupConfiguration extends _i1.CacheSetup {
+class _$CacheSetupConfiguration extends _i2.CacheSetup {
   _$CacheSetupConfiguration(this._$beanFactory);
 
-  final _i2.BeanFactory _$beanFactory;
+  final _i1.BeanFactory _$beanFactory;
 
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i1.KeyValueStore store() =>
-      (this._$beanFactory.getBeanByName(r'store') as _i1.KeyValueStore);
+  _i2.KeyValueStore store() =>
+      (this._$beanFactory.getBeanByName(r'store') as _i2.KeyValueStore);
 
-  _i1.KeyValueStore _$store(_i2.DependencyResolver r) => super.store();
+  _i2.KeyValueStore _$store(_i1.DependencyResolver r) => super.store();
 
   @override
-  _i4.CacheManager cacheManager(_i1.KeyValueStore store) {
+  _i4.CacheManager cacheManager(_i2.KeyValueStore store) {
     final _$args = <Object?>[store];
     this._$arguments[r'cacheManager'] = _$args;
     try {
@@ -125,196 +98,155 @@ class _$CacheSetupConfiguration extends _i1.CacheSetup {
     }
   }
 
-  _i4.CacheManager _$cacheManager(_i2.DependencyResolver r) {
+  _i4.CacheManager _$cacheManager(_i1.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'cacheManager');
     if (_$args != null) {
-      return super.cacheManager((_$args[0] as _i1.KeyValueStore));
+      return super.cacheManager((_$args[0] as _i2.KeyValueStore));
     }
-    return super.cacheManager(r.dependency<_i1.KeyValueStore>(name: r'store'));
+    return super.cacheManager(r.dependency<_i2.KeyValueStore>(name: r'store'));
   }
 }
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_logging',
+};
+const _$target1 = _i1.AopTarget(
+  r'Books',
+  types: [r'Books'],
+  annotations: [
+    _i1.Service(),
+    _i5.CacheConfig(cacheNames: [r'books']),
+  ],
+  annotationTypes: [r'Service', r'CacheConfig'],
+);
+
 /// Beans found by `@ComponentScan` in `example/`.
-_i2.BeanModule get $application => _i2.BeanModule(r'application', [
-  _i2.BeanDefinition<_i1.CatalogApi>(
+_i1.BeanModule get $application => _i1.BeanModule(r'application', [
+  _i1.BeanDefinition<_i2.CatalogApi>(
     name: r'catalogApi',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CatalogApi',
-    types: const [_i1.CatalogApi],
-    create: (r) => _i1.CatalogApi(),
-    annotations: const [_i2.Component()],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches CatalogApi, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    create: (r) => _i2.CatalogApi(),
+    annotations: const [_i1.Component()],
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
-  _i2.BeanDefinition<_i1.Books>(
+  _i1.BeanDefinition<_i2.Books>(
     name: r'books',
     source: r'asset:spring_boot_starter_cache/example/example.dart#Books',
-    types: const [_i1.Books],
-    dependencies: const [_i2.Dependency(_i1.CatalogApi, name: r'api')],
-    create: (r) => _i1.Books(r.dependency<_i1.CatalogApi>(name: r'api')),
+    dependencies: const [_i1.Dependency(_i2.CatalogApi, name: r'api')],
+    create: (r) => _i2.Books(r.dependency<_i2.CatalogApi>(name: r'api')),
     annotations: const [
-      _i2.Service(),
+      _i1.Service(),
       _i5.CacheConfig(cacheNames: [r'books']),
     ],
-    aopProxy: _i2.AopProxyFactory(
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'find',
-          declaringType: r'Books',
-          targetType: r'Books',
-          declaringTypes: [r'Books'],
+        _i1.MethodSignature.of(
+          r'find',
+          _$target1,
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
           annotations: [_i5.Cacheable.of()],
           annotationTypes: [r'Cacheable'],
-          targetTypes: [r'Books'],
-          targetAnnotations: [
-            _i2.Service(),
-            _i5.CacheConfig(cacheNames: [r'books']),
-          ],
-          targetAnnotationTypes: [r'Service', r'CacheConfig'],
         ),
-        _i2.MethodSignature(
-          name: r'price',
-          declaringType: r'Books',
-          targetType: r'Books',
-          declaringTypes: [r'Books'],
+        _i1.MethodSignature.of(
+          r'price',
+          _$target1,
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
           annotations: [_i5.Cacheable(r'prices', sync: true)],
           annotationTypes: [r'Cacheable'],
-          targetTypes: [r'Books'],
-          targetAnnotations: [
-            _i2.Service(),
-            _i5.CacheConfig(cacheNames: [r'books']),
-          ],
-          targetAnnotationTypes: [r'Service', r'CacheConfig'],
         ),
-        _i2.MethodSignature(
-          name: r'remove',
-          declaringType: r'Books',
-          targetType: r'Books',
-          declaringTypes: [r'Books'],
+        _i1.MethodSignature.of(
+          r'remove',
+          _$target1,
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
           annotations: [_i5.CacheEvict.of(key: r'#isbn')],
           annotationTypes: [r'CacheEvict'],
-          targetTypes: [r'Books'],
-          targetAnnotations: [
-            _i2.Service(),
-            _i5.CacheConfig(cacheNames: [r'books']),
-          ],
-          targetAnnotationTypes: [r'Service', r'CacheConfig'],
         ),
-        _i2.MethodSignature(
-          name: r'reloadAll',
-          declaringType: r'Books',
-          targetType: r'Books',
-          declaringTypes: [r'Books'],
+        _i1.MethodSignature.of(
+          r'reloadAll',
+          _$target1,
           returnType: r'void',
           annotations: [
             _i5.CacheEvict.of(allEntries: true, beforeInvocation: true),
           ],
           annotationTypes: [r'CacheEvict'],
-          targetTypes: [r'Books'],
-          targetAnnotations: [
-            _i2.Service(),
-            _i5.CacheConfig(cacheNames: [r'books']),
-          ],
-          targetAnnotationTypes: [r'Service', r'CacheConfig'],
-        ),
-        _i2.MethodSignature(
-          name: r'api',
-          declaringType: r'Books',
-          targetType: r'Books',
-          declaringTypes: [r'Books'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'CatalogApi',
-          targetTypes: [r'Books'],
-          targetAnnotations: [
-            _i2.Service(),
-            _i5.CacheConfig(cacheNames: [r'books']),
-          ],
-          targetAnnotationTypes: [r'Service', r'CacheConfig'],
         ),
       ],
-      create: (target, invoker) => _$BooksProxy((target as _i1.Books), invoker),
+      knownAdvisors: _$knownAdvisors0,
+      create: (target, invoker) => _$BooksProxy((target as _i2.Books), invoker),
     ),
   ),
-  _i2.BeanDefinition<_i1.CacheSetup>(
+  _i1.BeanDefinition<_i2.CacheSetup>(
     name: r'cacheSetup',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CacheSetup',
-    types: const [_i1.CacheSetup],
     create: (r) => _$CacheSetupConfiguration(r),
-    annotations: const [_i2.Configuration()],
+    annotations: const [_i1.Configuration()],
   ),
-  _i2.BeanDefinition<_i1.MapStore>(
+  _i1.BeanDefinition<_i2.MapStore>(
     name: r'store',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CacheSetup.store',
-    types: const [_i1.MapStore, _i1.KeyValueStore],
+    types: const [_i2.MapStore, _i2.KeyValueStore],
     factoryBeanName: r'cacheSetup',
     factoryMethodName: r'store',
     dependencies: const [
-      _i2.Dependency(_i1.CacheSetup, qualifier: r'cacheSetup'),
+      _i1.Dependency(_i2.CacheSetup, qualifier: r'cacheSetup'),
     ],
-    create: (r) => ((r.dependency<_i1.CacheSetup>(
+    create: (r) => ((r.dependency<_i2.CacheSetup>(
       qualifier: r'cacheSetup',
-    ) as _$CacheSetupConfiguration)._$store(r) as _i1.MapStore),
-    annotations: const [_i2.Bean()],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches MapStore, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    ) as _$CacheSetupConfiguration)._$store(r) as _i2.MapStore),
+    annotations: const [_i1.Bean()],
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
-  _i2.BeanDefinition<_i4.SimpleCacheManager>(
+  _i1.BeanDefinition<_i4.SimpleCacheManager>(
     name: r'cacheManager',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CacheSetup.cacheManager',
     types: const [_i4.SimpleCacheManager, _i4.CacheManager],
     factoryBeanName: r'cacheSetup',
     factoryMethodName: r'cacheManager',
     dependencies: const [
-      _i2.Dependency(_i1.CacheSetup, qualifier: r'cacheSetup'),
-      _i2.Dependency(_i1.KeyValueStore, name: r'store'),
+      _i1.Dependency(_i2.CacheSetup, qualifier: r'cacheSetup'),
+      _i1.Dependency(_i2.KeyValueStore, name: r'store'),
     ],
     create: (r) =>
-        ((r.dependency<_i1.CacheSetup>(
+        ((r.dependency<_i2.CacheSetup>(
               qualifier: r'cacheSetup',
             ) as _$CacheSetupConfiguration)._$cacheManager(r)
             as _i4.SimpleCacheManager),
-    annotations: const [_i2.Bean()],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches SimpleCacheManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    annotations: const [_i1.Bean()],
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
-  _i2.BeanDefinition<_i1.CacheTour>(
+  _i1.BeanDefinition<_i2.CacheTour>(
     name: r'cacheTour',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CacheTour',
-    types: const [_i1.CacheTour, _i6.CommandLineRunner],
+    types: const [_i2.CacheTour, _i6.CommandLineRunner],
     dependencies: const [
-      _i2.Dependency(_i1.Books, name: r'books'),
-      _i2.Dependency(_i1.CatalogApi, name: r'api'),
-      _i2.Dependency(_i1.KeyValueStore, name: r'store'),
+      _i1.Dependency(_i2.Books, name: r'books'),
+      _i1.Dependency(_i2.CatalogApi, name: r'api'),
+      _i1.Dependency(_i2.KeyValueStore, name: r'store'),
     ],
-    create: (r) => _i1.CacheTour(
-      r.dependency<_i1.Books>(name: r'books'),
-      r.dependency<_i1.CatalogApi>(name: r'api'),
-      r.dependency<_i1.KeyValueStore>(name: r'store'),
+    create: (r) => _i2.CacheTour(
+      r.dependency<_i2.Books>(name: r'books'),
+      r.dependency<_i2.CatalogApi>(name: r'api'),
+      r.dependency<_i2.KeyValueStore>(name: r'store'),
     ),
     annotations: const [
-      _i2.Component(),
-      _i2.Log(topic: r'example'),
+      _i1.Component(),
+      _i1.Log(topic: r'example'),
     ],
-    aopProxy: _i2.AopProxyFactory.pruned(
-      reason: r'the build found no pointcut of the application that matches CacheTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
-    ),
+    aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
 ]);
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i2.SpringApplication get springApplication => _i2.SpringApplication(
+_i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
     _i7.springBootAutoConfiguration,
@@ -367,36 +299,36 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '80b5318a',
+  fingerprint: '5495800e',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i2.ConfigurableApplicationContext reloadApplication(
-  _i2.ConfigurableApplicationContext running, {
+_i1.ConfigurableApplicationContext reloadApplication(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i2.ConfigurableApplicationContext running, {
+Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// `@Log` of [CacheTour]: the logger 'example'.
-extension $CacheTourLog on _i1.CacheTour {
-  _i2.SpringLog get log => const _i2.SpringLog(r'example');
+extension $CacheTourLog on _i2.CacheTour {
+  _i1.SpringLog get log => const _i1.SpringLog(r'example');
 }

@@ -7,10 +7,10 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i9;
-import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i1;
+import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i2;
 import 'package:spring_boot_starter_web/src/cors.dart' as _i7;
 import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i4;
 import 'package:spring_security_core/src/userdetails/user_details.dart' as _i6;
@@ -21,40 +21,23 @@ import 'package:spring_web_dart/src/server/server_http_request.dart' as _i3;
 import '../../../app/rules/rules.dart' as _i8;
 
 class _$RulesSecurityConfig$FilterChainProxy
-    implements _i1.SecurityFilterChain, _i2.Advised {
-  _$RulesSecurityConfig$FilterChainProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.SecurityFilterChain {
+  _$RulesSecurityConfig$FilterChainProxy(this._target, this.aopInvoker);
 
-  final _i1.SecurityFilterChain _target;
+  final _i2.SecurityFilterChain _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool matches(_i3.ServerHttpRequest request) => (this._invoker.invoke(
+  bool matches(_i3.ServerHttpRequest request) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -63,7 +46,7 @@ class _$RulesSecurityConfig$FilterChainProxy
   ) as bool);
 
   @override
-  List<_i4.WebFilter> get filters => (this._invoker.invoke(
+  List<_i4.WebFilter> get filters => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -73,45 +56,27 @@ class _$RulesSecurityConfig$FilterChainProxy
 }
 
 class _$RulesSecurityConfig$UsersProxy
+    with _i1.AdvisedWrapper
     implements
         _i5.UserDetailsManager,
         _i5.UserDetailsService,
-        _i5.UserDetailsPasswordService,
-        _i2.Advised {
-  _$RulesSecurityConfig$UsersProxy(this._target, this._invoker);
+        _i5.UserDetailsPasswordService {
+  _$RulesSecurityConfig$UsersProxy(this._target, this.aopInvoker);
 
   final _i5.InMemoryUserDetailsManager _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   void createUser(_i6.UserDetails user) {
-    this._invoker.invoke(this, this._target, 0, [user], (args) {
+    this.aopInvoker.invoke(this, this._target, 0, [user], (args) {
       this._target.createUser((args[0] as _i6.UserDetails));
       return null;
     });
@@ -119,7 +84,7 @@ class _$RulesSecurityConfig$UsersProxy
 
   @override
   void updateUser(_i6.UserDetails user) {
-    this._invoker.invoke(this, this._target, 1, [user], (args) {
+    this.aopInvoker.invoke(this, this._target, 1, [user], (args) {
       this._target.updateUser((args[0] as _i6.UserDetails));
       return null;
     });
@@ -127,14 +92,14 @@ class _$RulesSecurityConfig$UsersProxy
 
   @override
   void deleteUser(String username) {
-    this._invoker.invoke(this, this._target, 2, [username], (args) {
+    this.aopInvoker.invoke(this, this._target, 2, [username], (args) {
       this._target.deleteUser((args[0] as String));
       return null;
     });
   }
 
   @override
-  bool userExists(String username) => (this._invoker.invoke(
+  bool userExists(String username) => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -143,17 +108,18 @@ class _$RulesSecurityConfig$UsersProxy
   ) as bool);
 
   @override
-  _i6.UserDetails loadUserByUsername(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [username],
-    (args) => this._target.loadUserByUsername((args[0] as String)),
-  ) as _i6.UserDetails);
+  _i6.UserDetails loadUserByUsername(String username) =>
+      (this.aopInvoker.invoke(
+        this,
+        this._target,
+        4,
+        [username],
+        (args) => this._target.loadUserByUsername((args[0] as String)),
+      ) as _i6.UserDetails);
 
   @override
   _i6.UserDetails updatePassword(_i6.UserDetails user, String newPassword) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         5,
@@ -166,44 +132,27 @@ class _$RulesSecurityConfig$UsersProxy
 }
 
 class _$RulesSecurityConfig$CorsConfigurationSourceProxy
-    implements _i7.CorsConfigurationSource, _i2.Advised {
+    with _i1.AdvisedWrapper
+    implements _i7.CorsConfigurationSource {
   _$RulesSecurityConfig$CorsConfigurationSourceProxy(
     this._target,
-    this._invoker,
+    this.aopInvoker,
   );
 
   final _i7.UrlBasedCorsConfigurationSource _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   _i7.CorsConfiguration? getCorsConfiguration(_i3.ServerHttpRequest request) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         0,
@@ -219,23 +168,23 @@ class _$RulesSecurityConfig$CorsConfigurationSourceProxy
 class _$RulesSecurityConfigConfiguration extends _i8.RulesSecurityConfig {
   _$RulesSecurityConfigConfiguration(this._$beanFactory);
 
-  final _i2.BeanFactory _$beanFactory;
+  final _i1.BeanFactory _$beanFactory;
 
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i1.SecurityFilterChain filterChain(_i9.HttpSecurity http) {
+  _i2.SecurityFilterChain filterChain(_i9.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'filterChain'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'filterChain')
-          as _i1.SecurityFilterChain);
+          as _i2.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'filterChain');
     }
   }
 
-  _i1.SecurityFilterChain _$filterChain(_i2.DependencyResolver r) {
+  _i2.SecurityFilterChain _$filterChain(_i1.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'filterChain');
     if (_$args != null) {
       return super.filterChain((_$args[0] as _i9.HttpSecurity));
@@ -247,7 +196,7 @@ class _$RulesSecurityConfigConfiguration extends _i8.RulesSecurityConfig {
   _i5.UserDetailsService users() =>
       (this._$beanFactory.getBeanByName(r'users') as _i5.UserDetailsService);
 
-  _i5.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
+  _i5.UserDetailsService _$users(_i1.DependencyResolver r) => super.users();
 
   @override
   _i7.CorsConfigurationSource corsConfigurationSource() =>
@@ -255,66 +204,76 @@ class _$RulesSecurityConfigConfiguration extends _i8.RulesSecurityConfig {
           as _i7.CorsConfigurationSource);
 
   _i7.CorsConfigurationSource _$corsConfigurationSource(
-    _i2.DependencyResolver r,
+    _i1.DependencyResolver r,
   ) => super.corsConfigurationSource();
 }
 
+const _$target0 = _i1.AopTarget(
+  r'SecurityFilterChain',
+  types: [r'SecurityFilterChain'],
+);
+const _$target1 = _i1.AopTarget(
+  r'InMemoryUserDetailsManager',
+  types: [
+    r'InMemoryUserDetailsManager',
+    r'UserDetailsManager',
+    r'UserDetailsService',
+    r'UserDetailsPasswordService',
+  ],
+);
+const _$target2 = _i1.AopTarget(
+  r'UrlBasedCorsConfigurationSource',
+  types: [r'UrlBasedCorsConfigurationSource', r'CorsConfigurationSource'],
+);
+
 /// Beans found by `@ComponentScan` in `test/app/rules`.
-_i2.BeanModule get $rulesSecurityBeans =>
-    _i2.BeanModule(r'rulesSecurityBeans', [
-      _i2.BeanDefinition<_i8.RulesSecurityConfig>(
+_i1.BeanModule get $rulesSecurityBeans =>
+    _i1.BeanModule(r'rulesSecurityBeans', [
+      _i1.BeanDefinition<_i8.RulesSecurityConfig>(
         name: r'rulesSecurityConfig',
         source: r'asset:spring_boot_starter_security/test/app/rules/rules.dart#RulesSecurityConfig',
-        types: const [_i8.RulesSecurityConfig],
         create: (r) => _$RulesSecurityConfigConfiguration(r),
-        annotations: const [_i2.Configuration()],
+        annotations: const [_i1.Configuration()],
       ),
-      _i2.BeanDefinition<_i1.SecurityFilterChain>(
+      _i1.BeanDefinition<_i2.SecurityFilterChain>(
         name: r'filterChain',
         source: r'asset:spring_boot_starter_security/test/app/rules/rules.dart#RulesSecurityConfig.filterChain',
-        types: const [_i1.SecurityFilterChain],
         factoryBeanName: r'rulesSecurityConfig',
         factoryMethodName: r'filterChain',
         dependencies: const [
-          _i2.Dependency(
+          _i1.Dependency(
             _i8.RulesSecurityConfig,
             qualifier: r'rulesSecurityConfig',
           ),
-          _i2.Dependency(_i9.HttpSecurity, name: r'http'),
+          _i1.Dependency(_i9.HttpSecurity, name: r'http'),
         ],
         create: (r) => (r.dependency<_i8.RulesSecurityConfig>(
           qualifier: r'rulesSecurityConfig',
         ) as _$RulesSecurityConfigConfiguration)._$filterChain(r),
-        annotations: const [_i2.Bean()],
-        aopProxy: _i2.AopProxyFactory(
+        annotations: const [_i1.Bean()],
+        aopProxy: _i1.AopProxyFactory(
           signatures: const [
-            _i2.MethodSignature(
-              name: r'matches',
-              declaringType: r'SecurityFilterChain',
-              targetType: r'SecurityFilterChain',
-              declaringTypes: [r'SecurityFilterChain'],
+            _i1.MethodSignature.of(
+              r'matches',
+              _$target0,
               returnType: r'bool',
               parameterTypes: [r'ServerHttpRequest'],
               parameterNames: [r'request'],
-              targetTypes: [r'SecurityFilterChain'],
             ),
-            _i2.MethodSignature(
-              name: r'filters',
-              declaringType: r'SecurityFilterChain',
-              targetType: r'SecurityFilterChain',
-              declaringTypes: [r'SecurityFilterChain'],
-              kind: _i2.MemberKind.getter,
+            _i1.MethodSignature.of(
+              r'filters',
+              _$target0,
+              kind: _i1.MemberKind.getter,
               returnType: r'List',
-              targetTypes: [r'SecurityFilterChain'],
             ),
           ],
           create: (target, invoker) => _$RulesSecurityConfig$FilterChainProxy(
-            (target as _i1.SecurityFilterChain),
+            (target as _i2.SecurityFilterChain),
             invoker,
           ),
         ),
       ),
-      _i2.BeanDefinition<_i5.InMemoryUserDetailsManager>(
+      _i1.BeanDefinition<_i5.InMemoryUserDetailsManager>(
         name: r'users',
         source: r'asset:spring_boot_starter_security/test/app/rules/rules.dart#RulesSecurityConfig.users',
         types: const [
@@ -326,7 +285,7 @@ _i2.BeanModule get $rulesSecurityBeans =>
         factoryBeanName: r'rulesSecurityConfig',
         factoryMethodName: r'users',
         dependencies: const [
-          _i2.Dependency(
+          _i1.Dependency(
             _i8.RulesSecurityConfig,
             qualifier: r'rulesSecurityConfig',
           ),
@@ -336,98 +295,56 @@ _i2.BeanModule get $rulesSecurityBeans =>
                   qualifier: r'rulesSecurityConfig',
                 ) as _$RulesSecurityConfigConfiguration)._$users(r)
                 as _i5.InMemoryUserDetailsManager),
-        annotations: const [_i2.Bean()],
-        aopProxy: _i2.AopProxyFactory(
+        annotations: const [_i1.Bean()],
+        aopProxy: _i1.AopProxyFactory(
           signatures: const [
-            _i2.MethodSignature(
-              name: r'createUser',
+            _i1.MethodSignature.of(
+              r'createUser',
+              _$target1,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'void',
               parameterTypes: [r'UserDetails'],
               parameterNames: [r'user'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'updateUser',
+            _i1.MethodSignature.of(
+              r'updateUser',
+              _$target1,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'void',
               parameterTypes: [r'UserDetails'],
               parameterNames: [r'user'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'deleteUser',
+            _i1.MethodSignature.of(
+              r'deleteUser',
+              _$target1,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'void',
               parameterTypes: [r'String'],
               parameterNames: [r'username'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'userExists',
+            _i1.MethodSignature.of(
+              r'userExists',
+              _$target1,
               declaringType: r'UserDetailsManager',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsManager'],
               returnType: r'bool',
               parameterTypes: [r'String'],
               parameterNames: [r'username'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'loadUserByUsername',
+            _i1.MethodSignature.of(
+              r'loadUserByUsername',
+              _$target1,
               declaringType: r'UserDetailsService',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsService'],
               returnType: r'UserDetails',
               parameterTypes: [r'String'],
               parameterNames: [r'username'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
-            _i2.MethodSignature(
-              name: r'updatePassword',
+            _i1.MethodSignature.of(
+              r'updatePassword',
+              _$target1,
               declaringType: r'UserDetailsPasswordService',
-              targetType: r'InMemoryUserDetailsManager',
-              declaringTypes: [r'UserDetailsPasswordService'],
               returnType: r'UserDetails',
               parameterTypes: [r'UserDetails', r'String'],
               parameterNames: [r'user', r'newPassword'],
-              targetTypes: [
-                r'InMemoryUserDetailsManager',
-                r'UserDetailsManager',
-                r'UserDetailsService',
-                r'UserDetailsPasswordService',
-              ],
             ),
           ],
           create: (target, invoker) => _$RulesSecurityConfig$UsersProxy(
@@ -436,7 +353,7 @@ _i2.BeanModule get $rulesSecurityBeans =>
           ),
         ),
       ),
-      _i2.BeanDefinition<_i7.UrlBasedCorsConfigurationSource>(
+      _i1.BeanDefinition<_i7.UrlBasedCorsConfigurationSource>(
         name: r'corsConfigurationSource',
         source: r'asset:spring_boot_starter_security/test/app/rules/rules.dart#RulesSecurityConfig.corsConfigurationSource',
         types: const [
@@ -446,7 +363,7 @@ _i2.BeanModule get $rulesSecurityBeans =>
         factoryBeanName: r'rulesSecurityConfig',
         factoryMethodName: r'corsConfigurationSource',
         dependencies: const [
-          _i2.Dependency(
+          _i1.Dependency(
             _i8.RulesSecurityConfig,
             qualifier: r'rulesSecurityConfig',
           ),
@@ -457,21 +374,16 @@ _i2.BeanModule get $rulesSecurityBeans =>
                     ) as _$RulesSecurityConfigConfiguration)
                     ._$corsConfigurationSource(r)
                 as _i7.UrlBasedCorsConfigurationSource),
-        annotations: const [_i2.Bean()],
-        aopProxy: _i2.AopProxyFactory(
+        annotations: const [_i1.Bean()],
+        aopProxy: _i1.AopProxyFactory(
           signatures: const [
-            _i2.MethodSignature(
-              name: r'getCorsConfiguration',
+            _i1.MethodSignature.of(
+              r'getCorsConfiguration',
+              _$target2,
               declaringType: r'CorsConfigurationSource',
-              targetType: r'UrlBasedCorsConfigurationSource',
-              declaringTypes: [r'CorsConfigurationSource'],
               returnType: r'CorsConfiguration',
               parameterTypes: [r'ServerHttpRequest'],
               parameterNames: [r'request'],
-              targetTypes: [
-                r'UrlBasedCorsConfigurationSource',
-                r'CorsConfigurationSource',
-              ],
             ),
           ],
           create: (target, invoker) =>

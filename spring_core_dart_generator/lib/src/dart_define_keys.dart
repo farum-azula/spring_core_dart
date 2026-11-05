@@ -69,6 +69,81 @@ final class DartDefineKeys {
     return result.where((key) => key.isNotEmpty).toList()..sort();
   }
 
+  /// [keys] without the properties under one of the property name
+  /// [prefixes] (a whole name or its leading segments), in every form.
+  ///
+  /// Names are compared the way Spring Boot's relaxed binding does: by
+  /// `.`-separated segments, case-insensitively, with `-` and `_` inside a
+  /// segment ignored, and an index (`[0]`) as a segment of its own. A key
+  /// or prefix without `.`, `-` and `[` is read as an environment variable
+  /// too, its `_` separating segments (`SPRING_DATASOURCE` is
+  /// `spring.datasource`). So `spring.dataSource`, `spring.data-source` and
+  /// `SPRING_DATASOURCE` all leave out `spring.datasource.url`,
+  /// `spring.data-source.url` and `SPRING_DATASOURCE_URL`, but not
+  /// `spring.datasourceish`. A property is left out in its dotted and its
+  /// environment form ([environmentForm]) together, when either matches.
+  ///
+  /// ```dart
+  /// DartDefineKeys.without(
+  ///   ['DEBUG', 'SPRING_FLUTTER_THEME', 'spring.flutter.theme'],
+  ///   ['spring.flutter.theme'],
+  /// ); // ['DEBUG']
+  /// ```
+  static List<String> without(List<String> keys, List<String> prefixes) {
+    if (prefixes.isEmpty) {
+      return keys;
+    }
+    final excluded = [for (final prefix in prefixes) ..._readings(prefix)];
+    bool under(String key) => _readings(key).any(
+      (segments) => excluded.any((prefix) => _startsWith(segments, prefix)),
+    );
+    final matched = {for (final key in keys) key: under(key)};
+    final matchedForms = {
+      for (final MapEntry(:key, :value) in matched.entries)
+        if (value) ...[key, environmentForm(key)],
+    };
+    return [
+      for (final key in keys)
+        if (!matchedForms.contains(key) &&
+            !matchedForms.contains(environmentForm(key)))
+          key,
+    ];
+  }
+
+  // The canonical segments of a property name: as a dotted name, and as an
+  // environment variable when it can be one (no `.`, `-` or `[`).
+  static List<List<String>> _readings(String name) {
+    final dotted = [
+      for (final segment in name.split(RegExp(r'[.\[\]]')))
+        if (_canonical(segment) case final canonical when canonical.isNotEmpty)
+          canonical,
+    ];
+    if (name.contains(RegExp(r'[.\-\[]'))) {
+      return [dotted];
+    }
+    final environment = [
+      for (final segment in name.split('_'))
+        if (_canonical(segment) case final canonical when canonical.isNotEmpty)
+          canonical,
+    ];
+    return [dotted, environment];
+  }
+
+  static String _canonical(String segment) =>
+      segment.replaceAll(RegExp('[-_]'), '').toLowerCase().trim();
+
+  static bool _startsWith(List<String> segments, List<String> prefix) {
+    if (prefix.length > segments.length) {
+      return false;
+    }
+    for (var i = 0; i < prefix.length; i++) {
+      if (segments[i] != prefix[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // Characters a property name may have here (a define with anything else
   // is skipped rather than escaped into the generated code).
   static final _valid = RegExp(r'^[A-Za-z0-9_.\-\[\]]+$');

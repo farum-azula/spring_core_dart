@@ -7,510 +7,383 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_security/src/properties/security_properties.dart'
-    as _i1;
+    as _i2;
 
-class _$SecurityPropertiesProxy implements _i1.SecurityProperties, _i2.Advised {
-  _$SecurityPropertiesProxy(this._target, this._invoker);
-
-  final _i1.SecurityProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i1.SecurityUserProperties get user => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.user,
-  ) as _i1.SecurityUserProperties);
-
-  @override
-  _i1.SecurityFilterProperties get filter => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.filter,
-  ) as _i1.SecurityFilterProperties);
-
-  @override
-  _i1.SecuritySessionProperties get session => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.session,
-  ) as _i1.SecuritySessionProperties);
-
-  @override
-  _i1.SecurityCookieProperties get cookie => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (_) => this._target.cookie,
-  ) as _i1.SecurityCookieProperties);
-
-  @override
-  _i1.SecurityOAuth2Properties get oauth2 => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    const [],
-    (_) => this._target.oauth2,
-  ) as _i1.SecurityOAuth2Properties);
-
-  @override
-  set user(_i1.SecurityUserProperties value) {
-    this._invoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.user = (args[0] as _i1.SecurityUserProperties);
-      return null;
-    });
-  }
-
-  @override
-  set filter(_i1.SecurityFilterProperties value) {
-    this._invoker.invoke(this, this._target, 6, [value], (args) {
-      this._target.filter = (args[0] as _i1.SecurityFilterProperties);
-      return null;
-    });
-  }
-
-  @override
-  set session(_i1.SecuritySessionProperties value) {
-    this._invoker.invoke(this, this._target, 7, [value], (args) {
-      this._target.session = (args[0] as _i1.SecuritySessionProperties);
-      return null;
-    });
-  }
-
-  @override
-  set cookie(_i1.SecurityCookieProperties value) {
-    this._invoker.invoke(this, this._target, 8, [value], (args) {
-      this._target.cookie = (args[0] as _i1.SecurityCookieProperties);
-      return null;
-    });
-  }
-
-  @override
-  set oauth2(_i1.SecurityOAuth2Properties value) {
-    this._invoker.invoke(this, this._target, 9, [value], (args) {
-      this._target.oauth2 = (args[0] as _i1.SecurityOAuth2Properties);
-      return null;
-    });
-  }
-}
+const _$target0 = _i1.AopTarget(
+  r'SecurityProperties',
+  types: [r'SecurityProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.security')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get1(_i2.SecurityProperties bean) => bean.user;
+void _$set2(_i2.SecurityProperties bean, Object? value) =>
+    bean.user = (value as _i2.SecurityUserProperties);
+Object? _$get3(_i2.SecurityProperties bean) => bean.filter;
+void _$set4(_i2.SecurityProperties bean, Object? value) =>
+    bean.filter = (value as _i2.SecurityFilterProperties);
+Object? _$get5(_i2.SecurityProperties bean) => bean.session;
+void _$set6(_i2.SecurityProperties bean, Object? value) =>
+    bean.session = (value as _i2.SecuritySessionProperties);
+Object? _$get7(_i2.SecurityProperties bean) => bean.cookie;
+void _$set8(_i2.SecurityProperties bean, Object? value) =>
+    bean.cookie = (value as _i2.SecurityCookieProperties);
+Object? _$get9(_i2.SecurityProperties bean) => bean.oauth2;
+void _$set10(_i2.SecurityProperties bean, Object? value) =>
+    bean.oauth2 = (value as _i2.SecurityOAuth2Properties);
+_i2.SecurityProperties _$create11(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecurityProperties();
+Object? _$get12(_i2.SecurityUserProperties bean) => bean.name;
+void _$set13(_i2.SecurityUserProperties bean, Object? value) =>
+    bean.name = (value as String);
+Object? _$get14(_i2.SecurityUserProperties bean) => bean.password;
+void _$set15(_i2.SecurityUserProperties bean, Object? value) =>
+    bean.password = (value as String?);
+Object? _$get16(_i2.SecurityUserProperties bean) => bean.roles;
+void _$set17(_i2.SecurityUserProperties bean, Object? value) =>
+    bean.roles = (value as List<String>);
+_i2.SecurityUserProperties _$create18(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecurityUserProperties();
+Object? _$get19(_i2.SecurityFilterProperties bean) => bean.order;
+void _$set20(_i2.SecurityFilterProperties bean, Object? value) =>
+    bean.order = (value as int);
+_i2.SecurityFilterProperties _$create21(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecurityFilterProperties();
+Object? _$get22(_i2.SecuritySessionProperties bean) => bean.maximumSessions;
+void _$set23(_i2.SecuritySessionProperties bean, Object? value) =>
+    bean.maximumSessions = (value as int);
+Object? _$get24(_i2.SecuritySessionProperties bean) =>
+    bean.maxSessionsPreventsLogin;
+void _$set25(_i2.SecuritySessionProperties bean, Object? value) =>
+    bean.maxSessionsPreventsLogin = (value as bool);
+_i2.SecuritySessionProperties _$create26(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecuritySessionProperties();
+Object? _$get27(_i2.SecurityCookieProperties bean) => bean.secret;
+void _$set28(_i2.SecurityCookieProperties bean, Object? value) =>
+    bean.secret = (value as String?);
+_i2.SecurityCookieProperties _$create29(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecurityCookieProperties();
+Object? _$get30(_i2.SecurityOAuth2Properties bean) => bean.resourceserver;
+void _$set31(_i2.SecurityOAuth2Properties bean, Object? value) =>
+    bean.resourceserver = (value as _i2.SecurityResourceServerProperties);
+_i2.SecurityOAuth2Properties _$create32(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecurityOAuth2Properties();
+Object? _$get33(_i2.SecurityResourceServerProperties bean) => bean.jwt;
+void _$set34(_i2.SecurityResourceServerProperties bean, Object? value) =>
+    bean.jwt = (value as _i2.SecurityJwtProperties);
+_i2.SecurityResourceServerProperties _$create35(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecurityResourceServerProperties();
+Object? _$get36(_i2.SecurityJwtProperties bean) => bean.issuerUri;
+void _$set37(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.issuerUri = (value as String?);
+Object? _$get38(_i2.SecurityJwtProperties bean) => bean.jwkSetUri;
+void _$set39(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.jwkSetUri = (value as String?);
+Object? _$get40(_i2.SecurityJwtProperties bean) => bean.jwsAlgorithms;
+void _$set41(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.jwsAlgorithms = (value as List<String>);
+Object? _$get42(_i2.SecurityJwtProperties bean) => bean.audiences;
+void _$set43(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.audiences = (value as List<String>);
+Object? _$get44(_i2.SecurityJwtProperties bean) => bean.authorityPrefix;
+void _$set45(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.authorityPrefix = (value as String);
+Object? _$get46(_i2.SecurityJwtProperties bean) => bean.authoritiesClaimName;
+void _$set47(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.authoritiesClaimName = (value as String?);
+Object? _$get48(_i2.SecurityJwtProperties bean) =>
+    bean.authoritiesClaimDelimiter;
+void _$set49(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.authoritiesClaimDelimiter = (value as String);
+Object? _$get50(_i2.SecurityJwtProperties bean) => bean.principalClaimName;
+void _$set51(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.principalClaimName = (value as String);
+_i2.SecurityJwtProperties _$create52(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SecurityJwtProperties();
 
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
-_i2.BeanModule get $securityConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $securityConfigBeans => _i1.BeanModule(
   r'securityConfigBeans',
   [
-    _i2.BeanDefinition<_i1.SecurityProperties>(
+    _i1.BeanDefinition<_i2.SecurityProperties>(
       name: r'securityProperties',
       source: r'package:spring_boot_starter_security/src/properties/security_properties.dart#SecurityProperties',
-      types: const [_i1.SecurityProperties],
-      create: (r) => _i1.SecurityProperties(),
-      annotations: const [_i2.ConfigurationProperties(r'spring.security')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'user',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.getter,
+      create: (r) => _i2.SecurityProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.security')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'user',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'SecurityUserProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'filter',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'filter',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'SecurityFilterProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'session',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'session',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'SecuritySessionProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'cookie',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'cookie',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'SecurityCookieProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'oauth2',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'oauth2',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'SecurityOAuth2Properties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'user',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'user',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'SecurityUserProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'filter',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'filter',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'SecurityFilterProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'session',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'session',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'SecuritySessionProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'cookie',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'cookie',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'SecurityCookieProperties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'oauth2',
-            declaringType: r'SecurityProperties',
-            targetType: r'SecurityProperties',
-            declaringTypes: [r'SecurityProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'oauth2',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'SecurityOAuth2Properties',
-            targetTypes: [r'SecurityProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.security'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) => _$SecurityPropertiesProxy(
-          (target as _i1.SecurityProperties),
-          invoker,
-        ),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.SecurityProperties>(
+    const _i1.BeanIntrospection<_i2.SecurityProperties>(
       className: r'SecurityProperties',
       properties: [
-        _i2.BeanProperty<_i1.SecurityProperties>(
+        _i1.BeanProperty<_i2.SecurityProperties>(
           r'user',
-          type: _i1.SecurityUserProperties,
-          typeInfo: const _i2.ClassType<_i1.SecurityUserProperties>(),
-          get: (bean) => bean.user,
-          set: (bean, value) =>
-              bean.user = (value as _i1.SecurityUserProperties),
+          typeInfo: _i1.ClassType<_i2.SecurityUserProperties>(),
+          get: _$get1,
+          set: _$set2,
         ),
-        _i2.BeanProperty<_i1.SecurityProperties>(
+        _i1.BeanProperty<_i2.SecurityProperties>(
           r'filter',
-          type: _i1.SecurityFilterProperties,
-          typeInfo: const _i2.ClassType<_i1.SecurityFilterProperties>(),
-          get: (bean) => bean.filter,
-          set: (bean, value) =>
-              bean.filter = (value as _i1.SecurityFilterProperties),
+          typeInfo: _i1.ClassType<_i2.SecurityFilterProperties>(),
+          get: _$get3,
+          set: _$set4,
         ),
-        _i2.BeanProperty<_i1.SecurityProperties>(
+        _i1.BeanProperty<_i2.SecurityProperties>(
           r'session',
-          type: _i1.SecuritySessionProperties,
-          typeInfo: const _i2.ClassType<_i1.SecuritySessionProperties>(),
-          get: (bean) => bean.session,
-          set: (bean, value) =>
-              bean.session = (value as _i1.SecuritySessionProperties),
+          typeInfo: _i1.ClassType<_i2.SecuritySessionProperties>(),
+          get: _$get5,
+          set: _$set6,
         ),
-        _i2.BeanProperty<_i1.SecurityProperties>(
+        _i1.BeanProperty<_i2.SecurityProperties>(
           r'cookie',
-          type: _i1.SecurityCookieProperties,
-          typeInfo: const _i2.ClassType<_i1.SecurityCookieProperties>(),
-          get: (bean) => bean.cookie,
-          set: (bean, value) =>
-              bean.cookie = (value as _i1.SecurityCookieProperties),
+          typeInfo: _i1.ClassType<_i2.SecurityCookieProperties>(),
+          get: _$get7,
+          set: _$set8,
         ),
-        _i2.BeanProperty<_i1.SecurityProperties>(
+        _i1.BeanProperty<_i2.SecurityProperties>(
           r'oauth2',
-          type: _i1.SecurityOAuth2Properties,
-          typeInfo: const _i2.ClassType<_i1.SecurityOAuth2Properties>(),
-          get: (bean) => bean.oauth2,
-          set: (bean, value) =>
-              bean.oauth2 = (value as _i1.SecurityOAuth2Properties),
+          typeInfo: _i1.ClassType<_i2.SecurityOAuth2Properties>(),
+          get: _$get9,
+          set: _$set10,
         ),
       ],
-      annotations: const [_i2.ConfigurationProperties(r'spring.security')],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.SecurityProperties(),
-      constructor: _i2.BeanConstructor<_i1.SecurityProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.security')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.SecurityProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SecurityProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SecurityProperties.new, positional, named)
-                as _i1.SecurityProperties),
+        create: _$create11,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SecurityUserProperties>(
+    const _i1.BeanIntrospection<_i2.SecurityUserProperties>(
       className: r'SecurityUserProperties',
       properties: [
-        _i2.BeanProperty<_i1.SecurityUserProperties>(
+        _i1.BeanProperty<_i2.SecurityUserProperties>(
           r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'user',
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
+          get: _$get12,
+          set: _$set13,
         ),
-        _i2.BeanProperty<_i1.SecurityUserProperties>(
+        _i1.BeanProperty<_i2.SecurityUserProperties>(
           r'password',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.password,
-          set: (bean, value) => bean.password = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get14,
+          set: _$set15,
         ),
-        _i2.BeanProperty<_i1.SecurityUserProperties>(
+        _i1.BeanProperty<_i2.SecurityUserProperties>(
           r'roles',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.roles,
-          set: (bean, value) => bean.roles = (value as List<String>),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get16,
+          set: _$set17,
         ),
       ],
-      instantiate: () => _i1.SecurityUserProperties(),
-      constructor: _i2.BeanConstructor<_i1.SecurityUserProperties>(
+      instantiate: _i2.SecurityUserProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SecurityUserProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SecurityUserProperties.new, positional, named)
-                as _i1.SecurityUserProperties),
+        create: _$create18,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SecurityFilterProperties>(
+    const _i1.BeanIntrospection<_i2.SecurityFilterProperties>(
       className: r'SecurityFilterProperties',
       properties: [
-        _i2.BeanProperty<_i1.SecurityFilterProperties>(
+        _i1.BeanProperty<_i2.SecurityFilterProperties>(
           r'order',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: -100,
-          get: (bean) => bean.order,
-          set: (bean, value) => bean.order = (value as int),
+          get: _$get19,
+          set: _$set20,
         ),
       ],
-      instantiate: () => _i1.SecurityFilterProperties(),
-      constructor: _i2.BeanConstructor<_i1.SecurityFilterProperties>(
+      instantiate: _i2.SecurityFilterProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SecurityFilterProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SecurityFilterProperties.new, positional, named)
-                as _i1.SecurityFilterProperties),
+        create: _$create21,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SecuritySessionProperties>(
+    const _i1.BeanIntrospection<_i2.SecuritySessionProperties>(
       className: r'SecuritySessionProperties',
       properties: [
-        _i2.BeanProperty<_i1.SecuritySessionProperties>(
+        _i1.BeanProperty<_i2.SecuritySessionProperties>(
           r'maximumSessions',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 10,
-          get: (bean) => bean.maximumSessions,
-          set: (bean, value) => bean.maximumSessions = (value as int),
+          get: _$get22,
+          set: _$set23,
         ),
-        _i2.BeanProperty<_i1.SecuritySessionProperties>(
+        _i1.BeanProperty<_i2.SecuritySessionProperties>(
           r'maxSessionsPreventsLogin',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: (bean) => bean.maxSessionsPreventsLogin,
-          set: (bean, value) => bean.maxSessionsPreventsLogin = (value as bool),
+          get: _$get24,
+          set: _$set25,
         ),
       ],
-      instantiate: () => _i1.SecuritySessionProperties(),
-      constructor: _i2.BeanConstructor<_i1.SecuritySessionProperties>(
+      instantiate: _i2.SecuritySessionProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SecuritySessionProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.SecuritySessionProperties.new,
-          positional,
-          named,
-        ) as _i1.SecuritySessionProperties),
+        create: _$create26,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SecurityCookieProperties>(
+    const _i1.BeanIntrospection<_i2.SecurityCookieProperties>(
       className: r'SecurityCookieProperties',
       properties: [
-        _i2.BeanProperty<_i1.SecurityCookieProperties>(
+        _i1.BeanProperty<_i2.SecurityCookieProperties>(
           r'secret',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.secret,
-          set: (bean, value) => bean.secret = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get27,
+          set: _$set28,
         ),
       ],
-      instantiate: () => _i1.SecurityCookieProperties(),
-      constructor: _i2.BeanConstructor<_i1.SecurityCookieProperties>(
+      instantiate: _i2.SecurityCookieProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SecurityCookieProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SecurityCookieProperties.new, positional, named)
-                as _i1.SecurityCookieProperties),
+        create: _$create29,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SecurityOAuth2Properties>(
+    const _i1.BeanIntrospection<_i2.SecurityOAuth2Properties>(
       className: r'SecurityOAuth2Properties',
       properties: [
-        _i2.BeanProperty<_i1.SecurityOAuth2Properties>(
+        _i1.BeanProperty<_i2.SecurityOAuth2Properties>(
           r'resourceserver',
-          type: _i1.SecurityResourceServerProperties,
-          typeInfo: const _i2.ClassType<_i1.SecurityResourceServerProperties>(),
-          get: (bean) => bean.resourceserver,
-          set: (bean, value) => bean.resourceserver =
-              (value as _i1.SecurityResourceServerProperties),
+          typeInfo: _i1.ClassType<_i2.SecurityResourceServerProperties>(),
+          get: _$get30,
+          set: _$set31,
         ),
       ],
-      instantiate: () => _i1.SecurityOAuth2Properties(),
-      constructor: _i2.BeanConstructor<_i1.SecurityOAuth2Properties>(
+      instantiate: _i2.SecurityOAuth2Properties.new,
+      constructor: _i1.BeanConstructor<_i2.SecurityOAuth2Properties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SecurityOAuth2Properties.new, positional, named)
-                as _i1.SecurityOAuth2Properties),
+        create: _$create32,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SecurityResourceServerProperties>(
+    const _i1.BeanIntrospection<_i2.SecurityResourceServerProperties>(
       className: r'SecurityResourceServerProperties',
       properties: [
-        _i2.BeanProperty<_i1.SecurityResourceServerProperties>(
+        _i1.BeanProperty<_i2.SecurityResourceServerProperties>(
           r'jwt',
-          type: _i1.SecurityJwtProperties,
-          typeInfo: const _i2.ClassType<_i1.SecurityJwtProperties>(),
-          get: (bean) => bean.jwt,
-          set: (bean, value) => bean.jwt = (value as _i1.SecurityJwtProperties),
+          typeInfo: _i1.ClassType<_i2.SecurityJwtProperties>(),
+          get: _$get33,
+          set: _$set34,
         ),
       ],
-      instantiate: () => _i1.SecurityResourceServerProperties(),
-      constructor: _i2.BeanConstructor<_i1.SecurityResourceServerProperties>(
+      instantiate: _i2.SecurityResourceServerProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SecurityResourceServerProperties>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.SecurityResourceServerProperties.new,
-          positional,
-          named,
-        ) as _i1.SecurityResourceServerProperties),
+        create: _$create35,
       ),
     ),
-    _i2.BeanIntrospection<_i1.SecurityJwtProperties>(
+    const _i1.BeanIntrospection<_i2.SecurityJwtProperties>(
       className: r'SecurityJwtProperties',
       properties: [
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'issuerUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.issuerUri,
-          set: (bean, value) => bean.issuerUri = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get36,
+          set: _$set37,
         ),
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'jwkSetUri',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.jwkSetUri,
-          set: (bean, value) => bean.jwkSetUri = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get38,
+          set: _$set39,
         ),
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'jwsAlgorithms',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.jwsAlgorithms,
-          set: (bean, value) => bean.jwsAlgorithms = (value as List<String>),
-          annotations: const [
-            _i2.PropertyValues([
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get40,
+          set: _$set41,
+          annotations: [
+            _i1.PropertyValues([
               r'RS256',
               r'RS384',
               r'RS512',
@@ -526,56 +399,48 @@ _i2.BeanModule get $securityConfigBeans => _i2.BeanModule(
             ]),
           ],
         ),
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'audiences',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.audiences,
-          set: (bean, value) => bean.audiences = (value as List<String>),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get42,
+          set: _$set43,
         ),
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'authorityPrefix',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'SCOPE_',
-          get: (bean) => bean.authorityPrefix,
-          set: (bean, value) => bean.authorityPrefix = (value as String),
+          get: _$get44,
+          set: _$set45,
         ),
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'authoritiesClaimName',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.authoritiesClaimName,
-          set: (bean, value) => bean.authoritiesClaimName = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get46,
+          set: _$set47,
         ),
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'authoritiesClaimDelimiter',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r' ',
-          get: (bean) => bean.authoritiesClaimDelimiter,
-          set: (bean, value) =>
-              bean.authoritiesClaimDelimiter = (value as String),
+          get: _$get48,
+          set: _$set49,
         ),
-        _i2.BeanProperty<_i1.SecurityJwtProperties>(
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'principalClaimName',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'sub',
-          get: (bean) => bean.principalClaimName,
-          set: (bean, value) => bean.principalClaimName = (value as String),
+          get: _$get50,
+          set: _$set51,
         ),
       ],
-      instantiate: () => _i1.SecurityJwtProperties(),
-      constructor: _i2.BeanConstructor<_i1.SecurityJwtProperties>(
+      instantiate: _i2.SecurityJwtProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SecurityJwtProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.SecurityJwtProperties.new, positional, named)
-                as _i1.SecurityJwtProperties),
+        create: _$create52,
       ),
     ),
   ],

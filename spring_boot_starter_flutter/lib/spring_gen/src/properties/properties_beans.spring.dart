@@ -13,6 +13,193 @@ import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.da
 import 'package:spring_boot_starter_flutter/src/spring_app.dart' as _i3;
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart' as _i4;
 
+const _$target0 = _i1.AopTarget(
+  r'FlutterAppProperties',
+  types: [r'FlutterAppProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.flutter.app')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'FlutterProperties',
+  types: [r'FlutterProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.flutter')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target2 = _i1.AopTarget(
+  r'FlutterLifecycleProperties',
+  types: [r'FlutterLifecycleProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.flutter.lifecycle')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target3 = _i1.AopTarget(
+  r'FlutterFontsProperties',
+  types: [r'FlutterFontsProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.flutter.fonts')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target4 = _i1.AopTarget(
+  r'DesktopWindowProperties',
+  types: [r'DesktopWindowProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.flutter.desktop.window')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target5 = _i1.AopTarget(
+  r'FlutterWebProperties',
+  types: [r'FlutterWebProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.flutter.web')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target6 = _i1.AopTarget(
+  r'FlutterRestartProperties',
+  types: [r'FlutterRestartProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.devtools.restart')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target7 = _i1.AopTarget(
+  r'FlutterDataSourceProperties',
+  types: [r'FlutterDataSourceProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.datasource')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target8 = _i1.AopTarget(
+  r'FlutterDataSourcesProperties',
+  types: [r'FlutterDataSourcesProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get9(_i2.FlutterAppProperties bean) => bean.type;
+Object? _$get10(_i2.FlutterAppProperties bean) => bean.title;
+Object? _$get11(_i2.FlutterAppProperties bean) => bean.debugBanner;
+Object? _$get12(_i2.FlutterAppProperties bean) => bean.locales;
+_i2.FlutterAppProperties _$create13(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterAppProperties(
+  type: named.argumentOr(#type, _i3.AppType.widgets),
+  title: named.argumentOr(#title, null),
+  debugBanner: named.argumentOr(#debugBanner, true),
+  locales: named.argumentOr(#locales, null),
+);
+Object? _$get14(_i2.FlutterProperties bean) => bean.scanOsEnvironment;
+_i2.FlutterProperties _$create15(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterProperties(
+  scanOsEnvironment: named.argumentOr(#scanOsEnvironment, false),
+);
+Object? _$get16(_i2.FlutterLifecycleProperties bean) => bean.pauseInBackground;
+_i2.FlutterLifecycleProperties _$create17(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterLifecycleProperties(
+  pauseInBackground: named.argumentOr(#pauseInBackground, true),
+);
+Object? _$get18(_i2.FlutterFontsProperties bean) => bean.autoLoad;
+Object? _$get19(_i2.FlutterFontsProperties bean) => bean.exclude;
+_i2.FlutterFontsProperties _$create20(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterFontsProperties(
+  autoLoad: named.argumentOr(#autoLoad, true),
+  exclude: named.argumentOr(#exclude, null),
+);
+Object? _$get21(_i2.DesktopWindowProperties bean) => bean.title;
+Object? _$get22(_i2.DesktopWindowProperties bean) => bean.titleBar;
+Object? _$get23(_i2.DesktopWindowProperties bean) => bean.initialSize;
+Object? _$get24(_i2.DesktopWindowProperties bean) => bean.minSize;
+Object? _$get25(_i2.DesktopWindowProperties bean) => bean.maxSize;
+_i2.DesktopWindowProperties _$create26(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DesktopWindowProperties(
+  title: named.argumentOr(#title, null),
+  titleBar: named.argumentOr(#titleBar, r'default'),
+  initialSize: named.argumentOr(#initialSize, null),
+  minSize: named.argumentOr(#minSize, null),
+  maxSize: named.argumentOr(#maxSize, null),
+);
+Object? _$get27(_i2.FlutterWebProperties bean) => bean.host;
+Object? _$get28(_i2.FlutterWebProperties bean) => bean.port;
+Object? _$get29(_i2.FlutterWebProperties bean) => bean.baseHref;
+Object? _$get30(_i2.FlutterWebProperties bean) => bean.https;
+Object? _$get31(_i2.FlutterWebProperties bean) => bean.headers;
+Object? _$get32(_i2.FlutterWebProperties bean) => bean.contentSecurityPolicy;
+Object? _$get33(_i2.FlutterWebProperties bean) =>
+    bean.contentSecurityPolicyReportOnly;
+Object? _$get34(_i2.FlutterWebProperties bean) =>
+    bean.contentSecurityPolicyConnectSrc;
+Object? _$get35(_i2.FlutterWebProperties bean) => bean.proxy;
+_i2.FlutterWebProperties _$create36(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterWebProperties(
+  host: named.argumentOr(#host, null),
+  port: named.argumentOr(#port, null),
+  baseHref: named.argumentOr(#baseHref, null),
+  https: named.argumentOr(#https, null),
+  headers: named.argumentOr(#headers, null),
+  contentSecurityPolicy: named.argumentOr(#contentSecurityPolicy, null),
+  contentSecurityPolicyReportOnly: named.argumentOr(
+    #contentSecurityPolicyReportOnly,
+    null,
+  ),
+  contentSecurityPolicyConnectSrc: named.argumentOr(
+    #contentSecurityPolicyConnectSrc,
+    null,
+  ),
+  proxy: named.argumentOr(#proxy, null),
+);
+Object? _$get37(_i2.FlutterWebHttps bean) => bean.certPath;
+Object? _$get38(_i2.FlutterWebHttps bean) => bean.certKeyPath;
+_i2.FlutterWebHttps _$create39(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterWebHttps(
+  certPath: named.argumentOr(#certPath, null),
+  certKeyPath: named.argumentOr(#certKeyPath, null),
+);
+Object? _$get40(_i2.FlutterWebProxyRule bean) => bean.prefix;
+Object? _$get41(_i2.FlutterWebProxyRule bean) => bean.regex;
+Object? _$get42(_i2.FlutterWebProxyRule bean) => bean.replace;
+Object? _$get43(_i2.FlutterWebProxyRule bean) => bean.target;
+_i2.FlutterWebProxyRule _$create44(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterWebProxyRule(
+  prefix: named.argumentOr(#prefix, null),
+  regex: named.argumentOr(#regex, null),
+  replace: named.argumentOr(#replace, null),
+  target: named.argumentOr(#target, null),
+);
+Object? _$get45(_i2.FlutterRestartProperties bean) => bean.enabled;
+_i2.FlutterRestartProperties _$create46(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterRestartProperties(enabled: named.argumentOr(#enabled, true));
+Object? _$get47(_i2.FlutterDataSourceProperties bean) => bean.url;
+Object? _$get48(_i2.FlutterDataSourceProperties bean) => bean.sqlite;
+_i2.FlutterDataSourceProperties _$create49(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterDataSourceProperties(
+  url: named.argumentOr(#url, null),
+  sqlite: named.argumentOr(#sqlite, const _i2.FlutterSqliteProperties()),
+);
+Object? _$get50(_i2.FlutterSqliteProperties bean) => bean.location;
+_i2.FlutterSqliteProperties _$create51(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterSqliteProperties(
+  location: named.argumentOr(#location, _i4.SqliteLocation.support),
+);
+Object? _$get52(_i2.FlutterDataSourcesProperties bean) => bean.datasources;
+_i2.FlutterDataSourcesProperties _$create53(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FlutterDataSourcesProperties(
+  datasources: named.argumentOr(#datasources, null),
+);
+
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
 _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
   r'flutterConfigBeans',
@@ -20,7 +207,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterAppProperties>(
       name: r'flutterAppProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterAppProperties',
-      types: const [_i2.FlutterAppProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterAppProperties>(
         r,
         r'flutterAppProperties',
@@ -28,53 +214,33 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       annotations: const [_i1.ConfigurationProperties(r'spring.flutter.app')],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'type',
-            declaringType: r'FlutterAppProperties',
-            targetType: r'FlutterAppProperties',
+          _i1.MethodSignature.of(
+            r'type',
+            _$target0,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'AppType',
-            targetTypes: [r'FlutterAppProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.app'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'title',
-            declaringType: r'FlutterAppProperties',
-            targetType: r'FlutterAppProperties',
+          _i1.MethodSignature.of(
+            r'title',
+            _$target0,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FlutterAppProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.app'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'debugBanner',
-            declaringType: r'FlutterAppProperties',
-            targetType: r'FlutterAppProperties',
+          _i1.MethodSignature.of(
+            r'debugBanner',
+            _$target0,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FlutterAppProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.app'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'locales',
-            declaringType: r'FlutterAppProperties',
-            targetType: r'FlutterAppProperties',
+          _i1.MethodSignature.of(
+            r'locales',
+            _$target0,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'FlutterAppProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.app'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterAppProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -83,7 +249,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterProperties>(
       name: r'flutterProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterProperties',
-      types: const [_i2.FlutterProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterProperties>(
         r,
         r'flutterProperties',
@@ -91,15 +256,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       annotations: const [_i1.ConfigurationProperties(r'spring.flutter')],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'scanOsEnvironment',
-            declaringType: r'FlutterProperties',
-            targetType: r'FlutterProperties',
+          _i1.MethodSignature.of(
+            r'scanOsEnvironment',
+            _$target1,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FlutterProperties'],
-            targetAnnotations: [_i1.ConfigurationProperties(r'spring.flutter')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -108,7 +270,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterLifecycleProperties>(
       name: r'flutterLifecycleProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterLifecycleProperties',
-      types: const [_i2.FlutterLifecycleProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterLifecycleProperties>(
         r,
         r'flutterLifecycleProperties',
@@ -118,17 +279,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'pauseInBackground',
-            declaringType: r'FlutterLifecycleProperties',
-            targetType: r'FlutterLifecycleProperties',
+          _i1.MethodSignature.of(
+            r'pauseInBackground',
+            _$target2,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FlutterLifecycleProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.lifecycle'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterLifecycleProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -137,7 +293,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterFontsProperties>(
       name: r'flutterFontsProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterFontsProperties',
-      types: const [_i2.FlutterFontsProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterFontsProperties>(
         r,
         r'flutterFontsProperties',
@@ -145,29 +300,19 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       annotations: const [_i1.ConfigurationProperties(r'spring.flutter.fonts')],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'autoLoad',
-            declaringType: r'FlutterFontsProperties',
-            targetType: r'FlutterFontsProperties',
+          _i1.MethodSignature.of(
+            r'autoLoad',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FlutterFontsProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.fonts'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'exclude',
-            declaringType: r'FlutterFontsProperties',
-            targetType: r'FlutterFontsProperties',
+          _i1.MethodSignature.of(
+            r'exclude',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'FlutterFontsProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.fonts'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterFontsProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -176,7 +321,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.DesktopWindowProperties>(
       name: r'desktopWindowProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#DesktopWindowProperties',
-      types: const [_i2.DesktopWindowProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.DesktopWindowProperties>(
         r,
         r'desktopWindowProperties',
@@ -186,69 +330,44 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'title',
-            declaringType: r'DesktopWindowProperties',
-            targetType: r'DesktopWindowProperties',
+          _i1.MethodSignature.of(
+            r'title',
+            _$target4,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DesktopWindowProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.desktop.window'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'titleBar',
-            declaringType: r'DesktopWindowProperties',
-            targetType: r'DesktopWindowProperties',
+          _i1.MethodSignature.of(
+            r'titleBar',
+            _$target4,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
             annotations: [
               _i1.PropertyValues([r'default', r'transparent', r'hidden']),
             ],
             annotationTypes: [r'PropertyValues'],
-            targetTypes: [r'DesktopWindowProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.desktop.window'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'initialSize',
-            declaringType: r'DesktopWindowProperties',
-            targetType: r'DesktopWindowProperties',
+          _i1.MethodSignature.of(
+            r'initialSize',
+            _$target4,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DesktopWindowProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.desktop.window'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'minSize',
-            declaringType: r'DesktopWindowProperties',
-            targetType: r'DesktopWindowProperties',
+          _i1.MethodSignature.of(
+            r'minSize',
+            _$target4,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DesktopWindowProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.desktop.window'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'maxSize',
-            declaringType: r'DesktopWindowProperties',
-            targetType: r'DesktopWindowProperties',
+          _i1.MethodSignature.of(
+            r'maxSize',
+            _$target4,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DesktopWindowProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.desktop.window'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'DesktopWindowProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -257,7 +376,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterWebProperties>(
       name: r'flutterWebProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterWebProperties',
-      types: const [_i2.FlutterWebProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterWebProperties>(
         r,
         r'flutterWebProperties',
@@ -265,28 +383,23 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       annotations: const [_i1.ConfigurationProperties(r'spring.flutter.web')],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'host',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'host',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'port',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'port',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'int',
             annotations: [
               _i1.Range(0, 65535),
               _i1.WarnValues(
-                [
+                <Object>[
                   1,
                   7,
                   9,
@@ -374,95 +487,55 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
               ),
             ],
             annotationTypes: [r'Range', r'WarnValues'],
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'baseHref',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'baseHref',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'https',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'https',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'FlutterWebHttps',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'headers',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'headers',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'contentSecurityPolicy',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'contentSecurityPolicy',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'contentSecurityPolicyReportOnly',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'contentSecurityPolicyReportOnly',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'contentSecurityPolicyConnectSrc',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'contentSecurityPolicyConnectSrc',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'proxy',
-            declaringType: r'FlutterWebProperties',
-            targetType: r'FlutterWebProperties',
+          _i1.MethodSignature.of(
+            r'proxy',
+            _$target5,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'FlutterWebProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.flutter.web'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterWebProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -471,7 +544,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterRestartProperties>(
       name: r'flutterRestartProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterRestartProperties',
-      types: const [_i2.FlutterRestartProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterRestartProperties>(
         r,
         r'flutterRestartProperties',
@@ -481,17 +553,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'enabled',
-            declaringType: r'FlutterRestartProperties',
-            targetType: r'FlutterRestartProperties',
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target6,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'bool',
-            targetTypes: [r'FlutterRestartProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.devtools.restart'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterRestartProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -500,7 +567,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterDataSourceProperties>(
       name: r'flutterDataSourceProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterDataSourceProperties',
-      types: const [_i2.FlutterDataSourceProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.FlutterDataSourceProperties>(
         r,
         r'flutterDataSourceProperties',
@@ -508,29 +574,19 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       annotations: const [_i1.ConfigurationProperties(r'spring.datasource')],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'url',
-            declaringType: r'FlutterDataSourceProperties',
-            targetType: r'FlutterDataSourceProperties',
+          _i1.MethodSignature.of(
+            r'url',
+            _$target7,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'FlutterDataSourceProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.datasource'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'sqlite',
-            declaringType: r'FlutterDataSourceProperties',
-            targetType: r'FlutterDataSourceProperties',
+          _i1.MethodSignature.of(
+            r'sqlite',
+            _$target7,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'FlutterSqliteProperties',
-            targetTypes: [r'FlutterDataSourceProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring.datasource'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterDataSourceProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -539,7 +595,6 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.FlutterDataSourcesProperties>(
       name: r'flutterDataSourcesProperties',
       source: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart#FlutterDataSourcesProperties',
-      types: const [_i2.FlutterDataSourcesProperties],
       create: (r) =>
           _i1.ConstructorBound.from<_i2.FlutterDataSourcesProperties>(
             r,
@@ -548,15 +603,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
       annotations: const [_i1.ConfigurationProperties(r'spring')],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'datasources',
-            declaringType: r'FlutterDataSourcesProperties',
-            targetType: r'FlutterDataSourcesProperties',
+          _i1.MethodSignature.of(
+            r'datasources',
+            _$target8,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'FlutterDataSourcesProperties'],
-            targetAnnotations: [_i1.ConfigurationProperties(r'spring')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'FlutterDataSourcesProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -564,284 +616,249 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
     ),
   ],
   introspections: [
-    _i1.BeanIntrospection<_i2.FlutterAppProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterAppProperties>(
       className: r'FlutterAppProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterAppProperties>(
           r'type',
-          type: _i3.AppType,
-          typeInfo: const _i1.EnumType<_i3.AppType>(_i3.AppType.values),
-          get: (bean) => bean.type,
+          typeInfo: _i1.EnumType<_i3.AppType>(_i3.AppType.values),
+          get: _$get9,
         ),
         _i1.BeanProperty<_i2.FlutterAppProperties>(
           r'title',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.title,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get10,
         ),
         _i1.BeanProperty<_i2.FlutterAppProperties>(
           r'debugBanner',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.debugBanner,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get11,
         ),
         _i1.BeanProperty<_i2.FlutterAppProperties>(
           r'locales',
-          type: List<String>,
           nullable: true,
-          typeInfo: const _i1.ListType<String>(
+          typeInfo: _i1.ListType<String>(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.locales,
+          get: _$get12,
         ),
       ],
-      annotations: const [_i1.ConfigurationProperties(r'spring.flutter.app')],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterAppProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.flutter.app')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterAppProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterAppProperties>(
         parameters: [
           _i1.BeanParameter(
             r'type',
-            type: const _i1.EnumType<_i3.AppType>(_i3.AppType.values),
+            type: _i1.EnumType<_i3.AppType>(_i3.AppType.values),
             symbol: #type,
             hasDefaultValue: true,
             defaultValue: _i3.AppType.widgets,
           ),
           _i1.BeanParameter(
             r'title',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #title,
           ),
           _i1.BeanParameter(
             r'debugBanner',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #debugBanner,
             hasDefaultValue: true,
             defaultValue: true,
           ),
           _i1.BeanParameter(
             r'locales',
-            type: const _i1.ListType<String>(
-              _i1.ClassType<String>(),
-              nullable: true,
-            ),
+            type: _i1.ListType<String>(_i1.ClassType<String>(), nullable: true),
             symbol: #locales,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterAppProperties.new, positional, named)
-                as _i2.FlutterAppProperties),
+        create: _$create13,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterProperties>(
       className: r'FlutterProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterProperties>(
           r'scanOsEnvironment',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.scanOsEnvironment,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get14,
         ),
       ],
-      annotations: const [_i1.ConfigurationProperties(r'spring.flutter')],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.flutter')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterProperties>(
         parameters: [
           _i1.BeanParameter(
             r'scanOsEnvironment',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #scanOsEnvironment,
             hasDefaultValue: true,
             defaultValue: false,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterProperties.new, positional, named)
-                as _i2.FlutterProperties),
+        create: _$create15,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterLifecycleProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterLifecycleProperties>(
       className: r'FlutterLifecycleProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterLifecycleProperties>(
           r'pauseInBackground',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.pauseInBackground,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get16,
         ),
       ],
-      annotations: const [
-        _i1.ConfigurationProperties(r'spring.flutter.lifecycle'),
-      ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterLifecycleProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.flutter.lifecycle')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterLifecycleProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterLifecycleProperties>(
         parameters: [
           _i1.BeanParameter(
             r'pauseInBackground',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #pauseInBackground,
             hasDefaultValue: true,
             defaultValue: true,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.FlutterLifecycleProperties.new,
-          positional,
-          named,
-        ) as _i2.FlutterLifecycleProperties),
+        create: _$create17,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterFontsProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterFontsProperties>(
       className: r'FlutterFontsProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterFontsProperties>(
           r'autoLoad',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.autoLoad,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get18,
         ),
         _i1.BeanProperty<_i2.FlutterFontsProperties>(
           r'exclude',
-          type: List<String>,
           nullable: true,
-          typeInfo: const _i1.ListType<String>(
+          typeInfo: _i1.ListType<String>(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.exclude,
+          get: _$get19,
         ),
       ],
-      annotations: const [_i1.ConfigurationProperties(r'spring.flutter.fonts')],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterFontsProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.flutter.fonts')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterFontsProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterFontsProperties>(
         parameters: [
           _i1.BeanParameter(
             r'autoLoad',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #autoLoad,
             hasDefaultValue: true,
             defaultValue: true,
           ),
           _i1.BeanParameter(
             r'exclude',
-            type: const _i1.ListType<String>(
-              _i1.ClassType<String>(),
-              nullable: true,
-            ),
+            type: _i1.ListType<String>(_i1.ClassType<String>(), nullable: true),
             symbol: #exclude,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterFontsProperties.new, positional, named)
-                as _i2.FlutterFontsProperties),
+        create: _$create20,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DesktopWindowProperties>(
+    const _i1.BeanIntrospection<_i2.DesktopWindowProperties>(
       className: r'DesktopWindowProperties',
       properties: [
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'title',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.title,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get21,
         ),
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'titleBar',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.titleBar,
-          annotations: const [
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get22,
+          annotations: [
             _i1.PropertyValues([r'default', r'transparent', r'hidden']),
           ],
         ),
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'initialSize',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.initialSize,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get23,
         ),
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'minSize',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.minSize,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get24,
         ),
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'maxSize',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.maxSize,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get25,
         ),
       ],
-      annotations: const [
+      annotations: [
         _i1.ConfigurationProperties(r'spring.flutter.desktop.window'),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DesktopWindowProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DesktopWindowProperties.new,
       constructor: _i1.BeanConstructor<_i2.DesktopWindowProperties>(
         parameters: [
           _i1.BeanParameter(
             r'title',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #title,
           ),
           _i1.BeanParameter(
             r'titleBar',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #titleBar,
             hasDefaultValue: true,
             defaultValue: r'default',
           ),
           _i1.BeanParameter(
             r'initialSize',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #initialSize,
           ),
           _i1.BeanParameter(
             r'minSize',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #minSize,
           ),
           _i1.BeanParameter(
             r'maxSize',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #maxSize,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DesktopWindowProperties.new, positional, named)
-                as _i2.DesktopWindowProperties),
+        create: _$create26,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterWebProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterWebProperties>(
       className: r'FlutterWebProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'host',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.host,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get27,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'port',
-          type: int,
           nullable: true,
-          typeInfo: const _i1.ClassType<int>(nullable: true),
-          get: (bean) => bean.port,
-          annotations: const [
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get28,
+          annotations: [
             _i1.Range(0, 65535),
             _i1.WarnValues(
-              [
+              <Object>[
                 1,
                 7,
                 9,
@@ -931,92 +948,85 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'baseHref',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.baseHref,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get29,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'https',
-          type: _i2.FlutterWebHttps,
           nullable: true,
-          typeInfo: const _i1.ClassType<_i2.FlutterWebHttps>(nullable: true),
-          get: (bean) => bean.https,
+          typeInfo: _i1.ClassType<_i2.FlutterWebHttps>(nullable: true),
+          get: _$get30,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'headers',
-          type: Map<String, String>,
           nullable: true,
-          typeInfo: const _i1.MapType<String, String>(
+          typeInfo: _i1.MapType<String, String>(
             _i1.ClassType<String>(),
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.headers,
+          get: _$get31,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'contentSecurityPolicy',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.contentSecurityPolicy,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get32,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'contentSecurityPolicyReportOnly',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.contentSecurityPolicyReportOnly,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get33,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'contentSecurityPolicyConnectSrc',
-          type: List<String>,
           nullable: true,
-          typeInfo: const _i1.ListType<String>(
+          typeInfo: _i1.ListType<String>(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: (bean) => bean.contentSecurityPolicyConnectSrc,
+          get: _$get34,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'proxy',
-          type: List<_i2.FlutterWebProxyRule>,
           nullable: true,
-          typeInfo: const _i1.ListType<_i2.FlutterWebProxyRule>(
+          typeInfo: _i1.ListType<_i2.FlutterWebProxyRule>(
             _i1.ClassType<_i2.FlutterWebProxyRule>(),
             nullable: true,
           ),
-          get: (bean) => bean.proxy,
+          get: _$get35,
         ),
       ],
-      annotations: const [_i1.ConfigurationProperties(r'spring.flutter.web')],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterWebProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.flutter.web')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterWebProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterWebProperties>(
         parameters: [
           _i1.BeanParameter(
             r'host',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #host,
           ),
           _i1.BeanParameter(
             r'port',
-            type: const _i1.ClassType<int>(nullable: true),
+            type: _i1.ClassType<int>(nullable: true),
             symbol: #port,
           ),
           _i1.BeanParameter(
             r'baseHref',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #baseHref,
           ),
           _i1.BeanParameter(
             r'https',
-            type: const _i1.ClassType<_i2.FlutterWebHttps>(nullable: true),
+            type: _i1.ClassType<_i2.FlutterWebHttps>(nullable: true),
             symbol: #https,
           ),
           _i1.BeanParameter(
             r'headers',
-            type: const _i1.MapType<String, String>(
+            type: _i1.MapType<String, String>(
               _i1.ClassType<String>(),
               _i1.ClassType<String>(),
               nullable: true,
@@ -1025,262 +1035,228 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           ),
           _i1.BeanParameter(
             r'contentSecurityPolicy',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #contentSecurityPolicy,
           ),
           _i1.BeanParameter(
             r'contentSecurityPolicyReportOnly',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #contentSecurityPolicyReportOnly,
           ),
           _i1.BeanParameter(
             r'contentSecurityPolicyConnectSrc',
-            type: const _i1.ListType<String>(
-              _i1.ClassType<String>(),
-              nullable: true,
-            ),
+            type: _i1.ListType<String>(_i1.ClassType<String>(), nullable: true),
             symbol: #contentSecurityPolicyConnectSrc,
           ),
           _i1.BeanParameter(
             r'proxy',
-            type: const _i1.ListType<_i2.FlutterWebProxyRule>(
+            type: _i1.ListType<_i2.FlutterWebProxyRule>(
               _i1.ClassType<_i2.FlutterWebProxyRule>(),
               nullable: true,
             ),
             symbol: #proxy,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterWebProperties.new, positional, named)
-                as _i2.FlutterWebProperties),
+        create: _$create36,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterWebHttps>(
+    const _i1.BeanIntrospection<_i2.FlutterWebHttps>(
       className: r'FlutterWebHttps',
       properties: [
         _i1.BeanProperty<_i2.FlutterWebHttps>(
           r'certPath',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.certPath,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get37,
         ),
         _i1.BeanProperty<_i2.FlutterWebHttps>(
           r'certKeyPath',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.certKeyPath,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get38,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterWebHttps(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterWebHttps.new,
       constructor: _i1.BeanConstructor<_i2.FlutterWebHttps>(
         parameters: [
           _i1.BeanParameter(
             r'certPath',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #certPath,
           ),
           _i1.BeanParameter(
             r'certKeyPath',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #certKeyPath,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterWebHttps.new, positional, named)
-                as _i2.FlutterWebHttps),
+        create: _$create39,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterWebProxyRule>(
+    const _i1.BeanIntrospection<_i2.FlutterWebProxyRule>(
       className: r'FlutterWebProxyRule',
       properties: [
         _i1.BeanProperty<_i2.FlutterWebProxyRule>(
           r'prefix',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.prefix,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get40,
         ),
         _i1.BeanProperty<_i2.FlutterWebProxyRule>(
           r'regex',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.regex,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get41,
         ),
         _i1.BeanProperty<_i2.FlutterWebProxyRule>(
           r'replace',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.replace,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get42,
         ),
         _i1.BeanProperty<_i2.FlutterWebProxyRule>(
           r'target',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.target,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get43,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterWebProxyRule(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterWebProxyRule.new,
       constructor: _i1.BeanConstructor<_i2.FlutterWebProxyRule>(
         parameters: [
           _i1.BeanParameter(
             r'prefix',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #prefix,
           ),
           _i1.BeanParameter(
             r'regex',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #regex,
           ),
           _i1.BeanParameter(
             r'replace',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #replace,
           ),
           _i1.BeanParameter(
             r'target',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #target,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterWebProxyRule.new, positional, named)
-                as _i2.FlutterWebProxyRule),
+        create: _$create44,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterRestartProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterRestartProperties>(
       className: r'FlutterRestartProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterRestartProperties>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.enabled,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get45,
         ),
       ],
-      annotations: const [
-        _i1.ConfigurationProperties(r'spring.devtools.restart'),
-      ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterRestartProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.devtools.restart')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterRestartProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterRestartProperties>(
         parameters: [
           _i1.BeanParameter(
             r'enabled',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #enabled,
             hasDefaultValue: true,
             defaultValue: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterRestartProperties.new, positional, named)
-                as _i2.FlutterRestartProperties),
+        create: _$create46,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterDataSourceProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterDataSourceProperties>(
       className: r'FlutterDataSourceProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterDataSourceProperties>(
           r'url',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.url,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get47,
         ),
         _i1.BeanProperty<_i2.FlutterDataSourceProperties>(
           r'sqlite',
-          type: _i2.FlutterSqliteProperties,
-          typeInfo: const _i1.ClassType<_i2.FlutterSqliteProperties>(),
-          get: (bean) => bean.sqlite,
+          typeInfo: _i1.ClassType<_i2.FlutterSqliteProperties>(),
+          get: _$get48,
         ),
       ],
-      annotations: const [_i1.ConfigurationProperties(r'spring.datasource')],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterDataSourceProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring.datasource')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterDataSourceProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterDataSourceProperties>(
         parameters: [
           _i1.BeanParameter(
             r'url',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #url,
           ),
           _i1.BeanParameter(
             r'sqlite',
-            type: const _i1.ClassType<_i2.FlutterSqliteProperties>(),
+            type: _i1.ClassType<_i2.FlutterSqliteProperties>(),
             symbol: #sqlite,
             hasDefaultValue: true,
-            defaultValue: const _i2.FlutterSqliteProperties(),
+            defaultValue: _i2.FlutterSqliteProperties(),
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.FlutterDataSourceProperties.new,
-          positional,
-          named,
-        ) as _i2.FlutterDataSourceProperties),
+        create: _$create49,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterSqliteProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterSqliteProperties>(
       className: r'FlutterSqliteProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterSqliteProperties>(
           r'location',
-          type: _i4.SqliteLocation,
-          typeInfo: const _i1.EnumType<_i4.SqliteLocation>(
-            _i4.SqliteLocation.values,
-          ),
-          get: (bean) => bean.location,
+          typeInfo: _i1.EnumType<_i4.SqliteLocation>(_i4.SqliteLocation.values),
+          get: _$get50,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterSqliteProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterSqliteProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterSqliteProperties>(
         parameters: [
           _i1.BeanParameter(
             r'location',
-            type: const _i1.EnumType<_i4.SqliteLocation>(
-              _i4.SqliteLocation.values,
-            ),
+            type: _i1.EnumType<_i4.SqliteLocation>(_i4.SqliteLocation.values),
             symbol: #location,
             hasDefaultValue: true,
             defaultValue: _i4.SqliteLocation.support,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.FlutterSqliteProperties.new, positional, named)
-                as _i2.FlutterSqliteProperties),
+        create: _$create51,
       ),
     ),
-    _i1.BeanIntrospection<_i2.FlutterDataSourcesProperties>(
+    const _i1.BeanIntrospection<_i2.FlutterDataSourcesProperties>(
       className: r'FlutterDataSourcesProperties',
       properties: [
         _i1.BeanProperty<_i2.FlutterDataSourcesProperties>(
           r'datasources',
-          type: Map<String, _i2.FlutterDataSourceProperties>,
           nullable: true,
-          typeInfo: const _i1.MapType<String, _i2.FlutterDataSourceProperties>(
+          typeInfo: _i1.MapType<String, _i2.FlutterDataSourceProperties>(
             _i1.ClassType<String>(),
             _i1.ClassType<_i2.FlutterDataSourceProperties>(),
             nullable: true,
           ),
-          get: (bean) => bean.datasources,
+          get: _$get52,
         ),
       ],
-      annotations: const [_i1.ConfigurationProperties(r'spring')],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.FlutterDataSourcesProperties(),
+      annotations: [_i1.ConfigurationProperties(r'spring')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FlutterDataSourcesProperties.new,
       constructor: _i1.BeanConstructor<_i2.FlutterDataSourcesProperties>(
         parameters: [
           _i1.BeanParameter(
             r'datasources',
-            type: const _i1.MapType<String, _i2.FlutterDataSourceProperties>(
+            type: _i1.MapType<String, _i2.FlutterDataSourceProperties>(
               _i1.ClassType<String>(),
               _i1.ClassType<_i2.FlutterDataSourceProperties>(),
               nullable: true,
@@ -1288,11 +1264,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #datasources,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.FlutterDataSourcesProperties.new,
-          positional,
-          named,
-        ) as _i2.FlutterDataSourcesProperties),
+        create: _$create53,
       ),
     ),
   ],

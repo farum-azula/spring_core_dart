@@ -71,13 +71,12 @@ enum MemberKind {
 /// }
 /// ```
 final class MethodSignature {
-  /// Describes the member [name]; written by the generator, one per
-  /// proxied member.
+  /// Describes the member [name]; one per proxied member.
   const MethodSignature({
     required this.name,
-    required this.declaringType,
-    required this.targetType,
-    this.declaringTypes = const [],
+    required String this._declaringType,
+    required String this._targetType,
+    List<String> this._declaringTypes = const [],
     this.kind = MemberKind.method,
     this.returnType = 'dynamic',
     this.parameterTypes = const [],
@@ -85,30 +84,73 @@ final class MethodSignature {
     this.parameterAnnotations = const [],
     this.annotations = const [],
     this._mergedAnnotations,
-    this.targetTypes = const [],
-    this.targetAnnotations = const [],
+    this._targetTypes = const [],
+    this._targetAnnotations = const [],
     this.annotationTypes = const [],
-    this.targetAnnotationTypes = const [],
+    this._targetAnnotationTypes = const [],
     this.implementingTypes = const [],
     this.implementingTypeAnnotations,
     this.implementingTypeAnnotationTypes,
     this.superclassAnnotations = const [],
     this.isProtected = false,
-  });
+  }) : _target = null;
+
+  /// Describes the member [name] of the bean class `target` (an
+  /// [AopTarget] the signatures of its members share); written by the
+  /// generator.
+  ///
+  /// [declaringType] defaults to the bean class, and [declaringTypes] to
+  /// `[declaringType]`.
+  ///
+  /// ```dart
+  /// const target = AopTarget('Calculator', types: ['Calculator']);
+  /// const add = MethodSignature.of('add', target, returnType: 'int',
+  ///     parameterTypes: ['int', 'int'], parameterNames: ['a', 'b']);
+  /// ```
+  const MethodSignature.of(
+    this.name,
+    AopTarget this._target, {
+    this._declaringType,
+    this._declaringTypes,
+    this.kind = MemberKind.method,
+    this.returnType = 'dynamic',
+    this.parameterTypes = const [],
+    this.parameterNames = const [],
+    this.parameterAnnotations = const [],
+    this.annotations = const [],
+    this._mergedAnnotations,
+    this.annotationTypes = const [],
+    this.implementingTypes = const [],
+    this.implementingTypeAnnotations,
+    this.implementingTypeAnnotationTypes,
+    this.superclassAnnotations = const [],
+    this.isProtected = false,
+  }) : _targetType = null,
+       _targetTypes = const [],
+       _targetAnnotations = const [],
+       _targetAnnotationTypes = const [];
 
   /// The member's name, such as `add`; a setter's name has no `=`.
   final String name;
 
+  final AopTarget? _target;
+  final String? _declaringType;
+  final List<String>? _declaringTypes;
+  final String? _targetType;
+  final List<String> _targetTypes;
+  final List<Object> _targetAnnotations;
+  final List<String> _targetAnnotationTypes;
+
   /// The most abstract type that declares the member, such as the
   /// interface `Calculator` rather than the class `SimpleCalculator`.
-  final String declaringType;
+  String get declaringType => _declaringType ?? targetType;
 
   /// Every type of the bean that declares the member; the type part of an
   /// `execution` pattern matches any of them.
-  final List<String> declaringTypes;
+  List<String> get declaringTypes => _declaringTypes ?? [declaringType];
 
   /// The bean's class, such as `SimpleCalculator`.
-  final String targetType;
+  String get targetType => _target?.name ?? _targetType!;
 
   /// Whether the member is a method, a getter or a setter.
   final MemberKind kind;
@@ -151,10 +193,11 @@ final class MethodSignature {
 
   /// The names of the bean class and all its supertypes, for
   /// `target(Type)` and `this(Type)`.
-  final List<String> targetTypes;
+  List<String> get targetTypes => _target?.types ?? _targetTypes;
 
   /// The annotations on the bean class, for `@target(...)`.
-  final List<Object> targetAnnotations;
+  List<Object> get targetAnnotations =>
+      _target?.annotations ?? _targetAnnotations;
 
   /// The class names of [annotations], written by the generator.
   /// `@annotation(Timed)` matches these names rather than
@@ -164,7 +207,8 @@ final class MethodSignature {
 
   /// The class names of [targetAnnotations], for the same reason as
   /// [annotationTypes].
-  final List<String> targetAnnotationTypes;
+  List<String> get targetAnnotationTypes =>
+      _target?.annotationTypes ?? _targetAnnotationTypes;
 
   /// The class whose body runs for the member (the bean class, or the
   /// superclass or mixin it inherits the member from), then its
@@ -224,6 +268,45 @@ final class MethodSignature {
   @override
   String toString() =>
       '$returnType $declaringType.$name(${parameterTypes.join(', ')})';
+}
+
+/// The bean class of a proxy as its members' [MethodSignature]s see it:
+/// its name, supertypes and annotations, written once per proxy by the
+/// generator and shared by the signatures ([MethodSignature.of]).
+///
+/// ```dart
+/// const target = AopTarget(
+///   'OrderController',
+///   types: ['OrderController'],
+///   annotations: [RestController()],
+///   annotationTypes: ['RestController'],
+/// );
+/// ```
+///
+/// Spring (Java): the `targetClass` of a `MethodInvocation`, found by
+/// reflection.
+final class AopTarget {
+  /// Describes the bean class [name].
+  const AopTarget(
+    this.name, {
+    this.types = const [],
+    this.annotations = const [],
+    this.annotationTypes = const [],
+  });
+
+  /// The bean's class, [MethodSignature.targetType].
+  final String name;
+
+  /// The names of the class and all its supertypes,
+  /// [MethodSignature.targetTypes].
+  final List<String> types;
+
+  /// The annotations on the class, [MethodSignature.targetAnnotations].
+  final List<Object> annotations;
+
+  /// The class names of [annotations],
+  /// [MethodSignature.targetAnnotationTypes].
+  final List<String> annotationTypes;
 }
 
 /// One intercepted call, as advice sees it: which member is called, on

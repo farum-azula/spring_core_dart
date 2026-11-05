@@ -90,6 +90,15 @@ import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
 ///   proxy classes of beans that no pointcut of the application can match.
 ///   `@ComponentScan` modules are never pruned, because any other module
 ///   may import them and bring aspects the build cannot see.
+/// - `dart_defines_exclude` (a list of property name prefixes, empty by
+///   default; anything but a list of strings, a blank entry or a `*`
+///   wildcard throws an [ArgumentError]): the properties under them, in
+///   both their forms (`spring.flutter.theme` and `SPRING_FLUTTER_THEME`),
+///   are not offered to `--dart-define`. A prefix matches whole segments
+///   with relaxed binding (`spring.dataSource`, `spring.data-source` and
+///   `SPRING_DATASOURCE` are the same prefix).
+///   `springApplication.dartDefines` is shorter; such properties are still
+///   read from config files, the environment and the arguments.
 ///
 /// ```yaml
 /// targets:
@@ -119,6 +128,9 @@ Builder springCoreDartBuilder(BuilderOptions options) {
   }
   return SpringBuilder(
     pruneProxies: prune,
+    dartDefinesExclude: _dartDefinesExclude(
+      options.config['dart_defines_exclude'],
+    ),
     proxyMode: ProxyMode.values.firstWhere(
       (m) => m.name == mode,
       orElse: () => throw ArgumentError.value(
@@ -130,6 +142,67 @@ Builder springCoreDartBuilder(BuilderOptions options) {
   );
 }
 
+// The `dart_defines_exclude` prefixes: a list of property names, each
+// trimmed and without a trailing `.` or `[` (`spring.datasource.` is
+// `spring.datasource`). A blank entry or a `*` wildcard throws, rather than
+// silently leaving out nothing (or everything): a prefix already covers
+// every name under it.
+List<String> _dartDefinesExclude(Object? option) {
+  const name = 'dart_defines_exclude';
+  if (option == null) {
+    return const [];
+  }
+  if (option is! List) {
+    throw ArgumentError.value(
+      option,
+      name,
+      'Expected a list of property name prefixes',
+    );
+  }
+  return [
+    for (final entry in option)
+      if (entry is! String)
+        throw ArgumentError.value(
+          entry,
+          name,
+          'Expected a property name prefix (a string)',
+        )
+      else
+        _dartDefinesPrefix(entry),
+  ];
+}
+
+String _dartDefinesPrefix(String entry) {
+  const name = 'dart_defines_exclude';
+  if (entry.contains('*')) {
+    throw ArgumentError.value(
+      entry,
+      name,
+      'Wildcards are not supported: a prefix already covers every property '
+      'under it (write spring.datasource, not spring.datasource.*)',
+    );
+  }
+  var prefix = entry.trim();
+  while (prefix.endsWith('.') || prefix.endsWith('[')) {
+    prefix = prefix.substring(0, prefix.length - 1).trimRight();
+  }
+  if (prefix.isEmpty) {
+    throw ArgumentError.value(
+      entry,
+      name,
+      'Expected a property name prefix, not a blank entry',
+    );
+  }
+  if (!RegExp(r'^[A-Za-z0-9_.\-\[\]]+$').hasMatch(prefix)) {
+    throw ArgumentError.value(
+      entry,
+      name,
+      'Expected a property name prefix: letters, digits, _ . - [ and ]',
+    );
+  }
+  return prefix;
+}
+
 /// Creates the main builder for the `lib/` of a package whose example
 /// imports what it writes ([SpringPropertiesBuilder]); `build.yaml` names
 /// it `spring_properties`. It takes the options of [springCoreDartBuilder].
@@ -138,6 +211,7 @@ Builder springPropertiesBuilder(BuilderOptions options) {
   return SpringPropertiesBuilder(
     proxyMode: builder.proxyMode,
     pruneProxies: builder.pruneProxies,
+    dartDefinesExclude: builder.dartDefinesExclude,
   );
 }
 

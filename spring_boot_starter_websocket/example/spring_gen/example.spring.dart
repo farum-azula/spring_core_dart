@@ -78,6 +78,21 @@ class _$ChatSocketImpl implements _i1.ChatSocket {
   );
 }
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_logging',
+  r'package:spring_boot_starter_websocket',
+};
+Object? _$get1(_i1.ChatMessage bean) => bean.from;
+Object? _$get2(_i1.ChatMessage bean) => bean.text;
+_i1.ChatMessage _$create3(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.ChatMessage(
+  from: (named[#from] as String),
+  text: (named[#text] as String),
+);
+
 /// Beans found by `@ComponentScan` in `example/`.
 _i2.BeanModule get $application => _i2.BeanModule(
   r'application',
@@ -85,23 +100,21 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i2.BeanDefinition<_i1.ChatSocket>(
       name: r'chatSocket',
       source: r'asset:spring_boot_starter_websocket/example/example.dart#ChatSocket',
-      types: const [_i1.ChatSocket],
       primary: true,
       create: (r) => _$ChatSocketImpl.$create(r),
       annotations: const [_i3.WebSocketClient(r'chat', url: r'${chat.url}')],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ChatSocket, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i2.BeanDefinition<_i1.Chat>(
       name: r'chat',
       source: r'asset:spring_boot_starter_websocket/example/example.dart#Chat',
-      types: const [_i1.Chat],
       dependencies: const [_i2.Dependency(_i1.ChatSocket, name: r'socket')],
       create: (r) => _i1.Chat(r.dependency<_i1.ChatSocket>(name: r'socket')),
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches Chat, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i2.BeanDefinition<_i1.ChatTour>(
@@ -115,8 +128,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches ChatTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
   ],
@@ -126,40 +139,36 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   },
   introspections: [
-    _i2.BeanIntrospection<_i1.ChatMessage>(
+    const _i2.BeanIntrospection<_i1.ChatMessage>(
       className: r'ChatMessage',
       properties: [
         _i2.BeanProperty<_i1.ChatMessage>(
           r'from',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.from,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get1,
         ),
         _i2.BeanProperty<_i1.ChatMessage>(
           r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
+          typeInfo: _i2.ClassType<String>(),
+          get: _$get2,
         ),
       ],
       constructor: _i2.BeanConstructor<_i1.ChatMessage>(
         parameters: [
           _i2.BeanParameter(
             r'from',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #from,
             isRequired: true,
           ),
           _i2.BeanParameter(
             r'text',
-            type: const _i2.ClassType<String>(),
+            type: _i2.ClassType<String>(),
             symbol: #text,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i1.ChatMessage.new, positional, named)
-                as _i1.ChatMessage),
+        create: _$create3,
       ),
     ),
   ],
@@ -224,7 +233,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '3c761464',
+  fingerprint: 'b2deafee',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -139,7 +139,7 @@ void main() {
 
   group('BeanIntrospection', () {
     test('describes every part unless told otherwise', () {
-      final all = BeanIntrospection<Book>();
+      const all = BeanIntrospection<Book>();
       for (final part in IntrospectionPart.values) {
         expect(all.describesPart(part), isTrue);
       }
@@ -179,7 +179,7 @@ void main() {
     });
 
     test('a class with the write part and no constructor keeps its error', () {
-      final introspection = BeanIntrospection<Book>();
+      const introspection = BeanIntrospection<Book>();
       expect(
         introspection.instantiate,
         throwsA(
@@ -836,7 +836,7 @@ void main() {
       final withConstructor = BeanIntrospection<Tag>(
         parts: const {IntrospectionPart.write},
         properties: [
-          BeanProperty<Tag>('label', type: String),
+          const BeanProperty<Tag>('label', type: String),
         ],
         annotations: const [JsonInclude(JsonInclusion.nonNull)],
         constructor: BeanConstructor<Tag>(

@@ -136,11 +136,20 @@ class ModuleEmitter {
     this.dependencies,
     this.pruneProxies = true,
     this.foreignAdvice,
+    this.deferProxies = false,
   });
 
-  /// The aspects and advisors of the application's other modules. Only the
-  /// `@SpringBootApplication` output knows them all and passes them; when
-  /// `null`, no proxy is pruned (see [analyzeAop]).
+  /// Whether the module (a `lib/` module of a library package) leaves to
+  /// the application the proxy classes only its aspects can match
+  /// (`AopProxyFactory.deferred`, see [analyzeAop]): only when
+  /// [foreignAdvice], the advice of the package's other modules and of the
+  /// auto-configurations, cannot match them either.
+  final bool deferProxies;
+
+  /// The aspects and advisors of the application's other modules (of the
+  /// package's, for [deferProxies]). Only the `@SpringBootApplication`
+  /// output knows them all and passes them; when `null`, no proxy is
+  /// pruned (see [analyzeAop]).
   final ForeignAdvice? foreignAdvice;
 
   /// Whether to skip the proxy classes of beans that no pointcut of the
@@ -209,14 +218,26 @@ class ModuleEmitter {
   }) {
     _module = module;
     _usesTypeOf = false;
+    _knownAdvisors = null;
     _annotationTypes.clear();
-    analyzeAop(module, prune: pruneProxies, foreign: foreignAdvice);
+    _functions.clear();
+    analyzeAop(
+      module,
+      prune: pruneProxies,
+      foreign: foreignAdvice,
+      defer: deferProxies,
+    );
     // Classes and definitions first: the types in their annotations go
     // into the module's typeTests.
     final classes = <Spec>[
       for (final bean in module.beans)
-        if (bean.proxy case final proxy? when proxy.unavailableReason == null)
+        if (bean.proxy case final proxy?
+            when proxy.unavailableReason == null && !proxy.deferred)
           _proxyClass(proxy, bean.element, lookup: _lookupOf(bean)),
+      // Those of beans of library packages an aspect may match.
+      for (final foreign in module.foreignProxies)
+        if (foreign.proxy.unavailableReason == null)
+          _proxyClass(foreign.proxy, foreign.element),
       for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
       for (final bean in module.beans)
         if (bean.creation case InterfaceProxyCreation(:final model))
@@ -284,6 +305,15 @@ class ModuleEmitter {
               },
             ),
         ]),
+      if (module.foreignProxies.any((f) => f.proxy.unavailableReason == null))
+        'aopProxies': literalMap({
+          for (final foreign in module.foreignProxies)
+            if (foreign.proxy.unavailableReason == null)
+              _str(foreign.source): _proxyFactory(
+                foreign.proxy,
+                foreign.element,
+              ),
+        }),
       if (module.introspections.isNotEmpty)
         'introspections': literalList([
           for (final introspection in module.introspections)
@@ -344,6 +374,7 @@ class ModuleEmitter {
           for (final url in parts) Directive.part(url),
         ])
         ..body.addAll(classes)
+        ..body.addAll(_functions)
         ..body.addAll([
           if (_usesTypeOf)
             Method(
@@ -424,11 +455,13 @@ class ModuleEmitter {
       {
         'name': _str(bean.name),
         'source': _str(bean.source),
-        'types': bean.valueType != null
-            ? _typeValues([bean.valueType!, ...bean.exposedTypes], element)
-            : literalConstList([
-                for (final type in bean.exposedTypes) _type(type, element),
-              ]),
+        // `[T]` is the runtime default.
+        if (bean.valueType != null)
+          'types': _typeValues([bean.valueType!, ...bean.exposedTypes], element)
+        else if (!_onlyOwnType(bean))
+          'types': literalConstList([
+            for (final type in bean.exposedTypes) _type(type, element),
+          ]),
         if (bean.factoryObjectTypes case final products?)
           'factoryObjectTypes': literalConstList([
             for (final type in products) _type(type, element),
@@ -523,6 +556,11 @@ class ModuleEmitter {
     );
   }
 
+  // Whether the bean is looked up by its own type only, the `types` the
+  // runtime defaults to (`[T]` of `BeanDefinition<T>`).
+  static bool _onlyOwnType(BeanModel bean) =>
+      bean.exposedTypes.length == 1 && bean.exposedTypes.single == bean.type;
+
   // A function or record type as a `Type` value: its public alias (a
   // constant), else `_$typeOf<T>()` (no literal exists for such types).
   Expression _typeValue(DartType type, Element element) {
@@ -560,6 +598,102 @@ class ModuleEmitter {
 
   // Whether `_$typeOf` is used by the module being emitted.
   bool _usesTypeOf = false;
+
+  // The top-level functions written for the closures of descriptions that
+  // are constants (a closure cannot be part of a constant; a tear-off of a
+  // top-level function can), and the top-level constants several
+  // descriptions share, in the order they are written.
+  final _functions = <Spec>[];
+
+  // A top-level constant `_$<kind><n>` with the value [value] (written in
+  // a const context); returns a reference to it.
+  Expression _constantDeclaration(String kind, Expression value) {
+    final name = '_\$$kind${_functions.length}';
+    _functions.add(
+      Field(
+        (f) => f
+          ..name = name
+          ..modifier = FieldModifier.constant
+          ..assignment = value.code,
+      ),
+    );
+    return refer(name);
+  }
+
+  // A top-level function `_$<kind><n>` with [parameters] and the body
+  // [body] (an expression, or a block when not [lambda]); returns a
+  // reference to it.
+  Expression _function(
+    String kind,
+    Reference returns,
+    List<(String, Reference)> parameters,
+    Code body, {
+    bool lambda = true,
+  }) {
+    final name = '_\$$kind${_functions.length}';
+    _functions.add(
+      Method(
+        (m) => m
+          ..returns = returns
+          ..name = name
+          ..requiredParameters.addAll([
+            for (final (parameter, type) in parameters)
+              Parameter(
+                (p) => p
+                  ..name = parameter
+                  ..type = type,
+              ),
+          ])
+          ..lambda = lambda
+          ..body = body,
+      ),
+    );
+    return refer(name);
+  }
+
+  // The body of a function returning `Object?` that calls [call]: its
+  // value, or `null` after a `void` call (as `Function.apply` returns).
+  static (Code, bool) _returning(Expression call, {required bool isVoid}) =>
+      isVoid
+      ? (Block.of([call.statement, literalNull.returned.statement]), false)
+      : (call.code, true);
+
+  static final _objectOrNull = TypeReference(
+    (t) => t
+      ..symbol = 'Object'
+      ..isNullable = true,
+  );
+  static final _argumentList = TypeReference(
+    (t) => t
+      ..symbol = 'List'
+      ..types.add(_objectOrNull),
+  );
+  static final _namedArgumentMap = TypeReference(
+    (t) => t
+      ..symbol = 'Map'
+      ..types.addAll([refer('Symbol'), _objectOrNull]),
+  );
+
+  // Whether the `TypeInfo` of the declared type [type] describes exactly
+  // the type a `BeanProperty` has (its `type` without nullability), so
+  // the property's `type:` can be left out: a class, an enum, a generic
+  // class, or a `List` / `Set` / `Map` whose type arguments it writes as
+  // they are (not `Object` written as `dynamic`).
+  bool _typeInfoIsExact(DartType type) {
+    if (type is! InterfaceType || _isDynamicInfo(type)) {
+      return false;
+    }
+    final arguments = type.typeArguments;
+    if (type.isDartCoreIterable) {
+      return false;
+    }
+    if (type.isDartCoreList || type.isDartCoreSet || type.isDartCoreMap) {
+      return arguments.every(
+        (argument) => !_isDynamicInfo(argument) || argument is DynamicType,
+      );
+    }
+    return true;
+  }
 
   // The class types written in the annotations of the module being
   // emitted, by name, each with the element it was found on: the module
@@ -773,51 +907,134 @@ class ModuleEmitter {
   // create: (positional, named) => Page<T>((positional[0] as List<T>),
   //     total: named.containsKey(#total) ? (named[#total] as int) : 0),
   // ```
+  //
+  // Classes without type parameters are created the same way, which the
+  // compilers can inline and type (`Function.apply` is a dynamic call);
+  // `null` when an argument cannot be written that way.
   Expression? _directCall(
     IntrospectionModel model,
     ConstructorModel constructor,
     TypeReference beanType,
   ) {
-    if (model.type.element.typeParameters.isEmpty ||
-        constructor.parameters.any(
-          (p) => p.hasDefault && p.defaultValue == null,
-        )) {
+    final arguments = _directArguments(
+      constructor.parameters,
+      model.element,
+      positional: refer('positional'),
+      named: refer('named'),
+    );
+    if (arguments == null) {
       return null;
     }
-    final element = model.element;
-    final positional = <Expression>[];
-    final named = <String, Expression>{};
-    for (final parameter in constructor.parameters) {
-      final type = _anyType(parameter.type, element);
-      final fallback = parameter.defaultValue == null
-          ? literalNull
-          : _constant(parameter.defaultValue!, element);
-      if (parameter.isNamed) {
-        final key = CodeExpression(Code('#${parameter.name}'));
-        final value = refer('named').index(key).asA(type);
-        named[parameter.name] = parameter.isRequired
-            ? value
-            : refer('named')
-                  .property('containsKey')
-                  .call([key])
-                  .conditional(value, fallback);
-      } else {
-        final index = literalNum(positional.length);
-        final value = refer('positional').index(index).asA(type);
-        positional.add(
-          parameter.isRequired
-              ? value
-              : refer('positional')
-                    .property('length')
-                    .greaterThan(index)
-                    .conditional(value, fallback),
-        );
-      }
-    }
+    final (positional, named) = arguments;
     return constructor.name.isEmpty
         ? beanType.newInstance(positional, named)
         : beanType.newInstanceNamed(constructor.name, positional, named);
   }
+
+  // The arguments of a direct call to a function with [parameters], read
+  // from the lists [positional] and [named] (by symbol) the way
+  // `Function.apply` would pass them: an absent optional argument gets the
+  // parameter's default value. `null` when a default value or a type
+  // cannot be written (a private constant or type); the caller then keeps
+  // `Function.apply`. Without [named] (no named arguments are passed) an
+  // optional named parameter gets its default value, and a required one
+  // makes the call impossible (`null`).
+  //
+  // ```dart
+  // (positional[0] as List<T>), total: named.argumentOr(#total, 0)
+  // ```
+  //
+  // `argumentOr` (the runtime's `NamedArguments` / `PositionalArguments`)
+  // takes its type from the parameter.
+  (List<Expression>, Map<String, Expression>)? _directArguments(
+    List<ConstructorParameterModel> parameters,
+    Element element, {
+    required Expression positional,
+    required Expression? named,
+  }) {
+    if (parameters.any(
+      (p) =>
+          (p.hasDefault && p.defaultValue == null) ||
+          (named == null && p.isNamed && p.isRequired) ||
+          _hasFreeTypeParameter(p.type),
+    )) {
+      return null;
+    }
+    final positionalArguments = <Expression>[];
+    final namedArguments = <String, Expression>{};
+    final types = Map.of(_annotationTypes);
+    try {
+      for (final parameter in parameters) {
+        final type = _anyType(parameter.type, element);
+        final fallback = parameter.defaultValue == null
+            ? literalNull
+            : _constant(parameter.defaultValue!, element);
+        if (parameter.isNamed) {
+          if (named == null) {
+            // Left out, so it gets its default.
+            continue;
+          }
+          final key = CodeExpression(Code('#${parameter.name}'));
+          namedArguments[parameter.name] = parameter.isRequired
+              ? named.index(key).asA(type)
+              : named.property('argumentOr').call([key, fallback]);
+        } else {
+          final index = literalNum(positionalArguments.length);
+          positionalArguments.add(
+            parameter.isRequired
+                ? positional.index(index).asA(type)
+                : positional.property('argumentOr').call([index, fallback]),
+          );
+        }
+      }
+    } on InvalidGenerationSource {
+      // What `_constant` recorded for the abandoned arguments.
+      _annotationTypes
+        ..clear()
+        ..addAll(types);
+      return null;
+    }
+    return (positionalArguments, namedArguments);
+  }
+
+  // [type] as [_anyType] writes it, its free type parameters (see
+  // [_hasFreeTypeParameter]) written as `Object?`, at any depth: `List<E>`
+  // of a method of `Crud<E>` described for `BookCrud` is a
+  // `List<Object?>`, `Map<String, List<E>>` a
+  // `Map<String, List<Object?>>`. A function or record type that uses one
+  // is an `Object?` as a whole.
+  Reference _withoutFree(DartType type, Element element) => switch (type) {
+    _ when !_hasFreeTypeParameter(type) => _anyType(type, element),
+    InterfaceType() => _type(type, element).rebuild(
+      (t) => t
+        ..types.clear()
+        ..types.addAll([
+          for (final argument in type.typeArguments)
+            _withoutFree(argument, element),
+        ]),
+    ),
+    _ => _objectOrNull,
+  };
+
+  // Whether [type] names a type parameter the generated code has no name
+  // for: one of the class that declares a method of a generic base class
+  // (`save(E entity)` of `Crud<E>`, called on a `BookCrud extends
+  // Crud<Book>`). Those of the generic class being described are erased or
+  // captured.
+  bool _hasFreeTypeParameter(DartType type) => switch (type) {
+    TypeParameterType(:final element) =>
+      !_erased.containsKey(element) && !_captured.containsKey(element),
+    InterfaceType(:final typeArguments) => typeArguments.any(
+      _hasFreeTypeParameter,
+    ),
+    FunctionType() =>
+      _hasFreeTypeParameter(type.returnType) ||
+          type.formalParameters.any((p) => _hasFreeTypeParameter(p.type)),
+    RecordType() =>
+      type.positionalFields.any((f) => _hasFreeTypeParameter(f.type)) ||
+          type.namedFields.any((f) => _hasFreeTypeParameter(f.type)),
+    _ => false,
+  };
 
   // The methods to describe: all of them when expressions may call them,
   // else those a JSON annotation makes part of writing (`@JsonValue`,
@@ -845,174 +1062,262 @@ class ModuleEmitter {
     final writes = need.includes(IntrospectionNeed.write);
     final validates = need.includes(IntrospectionNeed.validate);
     final calls = need.includes(IntrospectionNeed.methods);
-    return _spring('BeanIntrospection').newInstance(
-      [],
-      {
-        'className': _str(model.element.name!),
-        'specialize': ?specialize,
-        // The properties of a class that is only known are of no use.
-        'properties': literalList([
-          for (final property
-              in need.isNone
-                  ? const <IntrospectedProperty>[]
-                  : model.properties)
-            _spring('BeanProperty').newInstance(
-              [_str(property.name)],
-              {
-                'type': _anyType(property.type, element),
-                if (property.nullable) 'nullable': literalTrue,
-                'typeInfo': _typeInfo(property.declaredType, element).$1,
-                if (writes)
-                  if (property.initialValue case final initial?) ...{
-                    'hasInitialValue': literalTrue,
-                    'initialValue': _initialValue(initial.value, element),
-                  },
-                // Validation reads the properties that have rules only.
-                if (reads || (validates && property.validated))
-                  'get': _closure(
-                    ['bean'],
-                    refer('bean').property(property.name).code,
-                    lambda: true,
-                  ),
-                if (writes && property.writable)
-                  'set': _closure(
-                    ['bean', 'value'],
-                    refer('bean')
-                        .property(property.name)
-                        .assign(
-                          refer('value').asA(
-                            property.declaredType is TypeParameterType
-                                ? _anyType(property.declaredType, element)
-                                : _type(property.type, element).rebuild(
-                                    (t) => t..isNullable = property.nullable,
-                                  ),
-                          ),
-                        )
-                        .code,
-                    lambda: true,
-                  ),
-                if (property.annotations.isNotEmpty)
-                  'annotations': literalConstList([
-                    for (final annotation in property.annotations)
-                      _constant(annotation, element),
+    // A class without type parameters is described by a constant: its
+    // closures become top-level functions.
+    final constant = _erased.isEmpty && _captured.isEmpty;
+    final properties = [
+      for (final property
+          in need.isNone ? const <IntrospectedProperty>[] : model.properties)
+        _property(
+          model,
+          property,
+          beanType,
+          constant: constant,
+          reads: reads,
+          writes: writes,
+          validates: validates,
+        ),
+    ];
+    // A closure, or in a constant a top-level function `_$<kind><n>`.
+    Expression function(
+      String kind,
+      Reference returns,
+      List<(String, Reference)> parameters,
+      Code body,
+    ) => constant
+        ? _function(kind, returns, parameters, body)
+        : _closure(
+            [for (final (name, _) in parameters) name],
+            body,
+            lambda: true,
+          );
+    var isConst = constant && properties.every((property) => property.$2);
+    final methods = [
+      for (final method in _methodsOf(model))
+        _spring('BeanMethod').newInstance(
+          [_str(method.name)],
+          {
+            if (method.returnType case final returnType?)
+              'returnType': _withoutFree(returnType, element),
+            if (method.parameterTypes.isNotEmpty)
+              // Not const when a type uses a captured type parameter.
+              'parameterTypes':
+                  (_captured.isEmpty ? literalConstList : literalList)([
+                    for (final t in method.parameterTypes)
+                      _withoutFree(t, element),
                   ]),
-              },
-              [beanType],
-            ),
-        ]),
-        if (_methodsOf(model) case final described when described.isNotEmpty)
-          'methods': literalList([
-            for (final method in described)
-              _spring('BeanMethod').newInstance(
-                [_str(method.name)],
-                {
-                  if (method.returnType case final returnType?)
-                    'returnType': _type(returnType, element),
-                  if (method.parameterTypes.isNotEmpty)
-                    // Not const when a type uses a captured type parameter.
-                    'parameterTypes':
-                        (_captured.isEmpty ? literalConstList : literalList)([
-                          for (final t in method.parameterTypes)
-                            _type(t, element),
-                        ]),
-                  'invoke': _closure(
-                    ['bean', 'arguments'],
-                    refer('Function').property('apply').call([
-                      refer('bean').property(method.name),
-                      refer('arguments'),
-                    ]).code,
-                    lambda: true,
-                  ),
-                  if (method.annotations.isNotEmpty)
-                    'annotations': literalConstList([
-                      for (final annotation in method.annotations)
-                        _constant(annotation, element),
-                    ]),
-                },
-                [beanType],
-              ),
-          ]),
-        if (model.annotations.isNotEmpty)
-          'annotations': literalConstList([
-            for (final annotation in model.annotations)
-              _constant(annotation, element),
-          ]),
-        if (!(reads && writes && calls))
-          'parts': literalConstSet({
-            if (reads) _spring('IntrospectionPart').property('read'),
-            if (writes) _spring('IntrospectionPart').property('write'),
-            if (calls) _spring('IntrospectionPart').property('methods'),
-          }),
-        if (writes && model.instantiable)
-          'instantiate': _closure(
-            [],
-            beanType.newInstance([]).code,
-            lambda: true,
-          ),
-        if (writes)
-          if (model.constructor case final constructor?)
-            'constructor': _spring('BeanConstructor').newInstance(
-              [],
-              {
-                'parameters': literalList([
-                  for (final parameter in constructor.parameters)
-                    _spring('BeanParameter').newInstance(
-                      [_str(parameter.name)],
-                      {
-                        'type': _typeInfo(parameter.type, element).$1,
-                        if (parameter.isNamed)
-                          'symbol': CodeExpression(Code('#${parameter.name}')),
-                        if (parameter.isRequired) 'isRequired': literalTrue,
-                        if (parameter.defaultValue case final value?) ...{
-                          'hasDefaultValue': literalTrue,
-                          'defaultValue': _constant(value, element),
-                        },
-                        if (parameter.annotations.isNotEmpty)
-                          'annotations': literalConstList([
-                            for (final annotation in parameter.annotations)
-                              _constant(annotation, element),
-                          ]),
-                      },
-                    ),
-                ]),
-                'create': _closure(
-                  ['positional', 'named'],
-                  (_directCall(model, constructor, beanType) ??
-                          refer('Function')
-                              .property('apply')
-                              .call([
-                                beanType.property(
-                                  constructor.name.isEmpty
-                                      ? 'new'
-                                      : constructor.name,
-                                ),
-                                refer('positional'),
-                                refer('named'),
-                              ])
-                              .asA(beanType))
-                      .code,
-                  lambda: true,
-                ),
-              },
-              [beanType],
-            ),
-        if (writes)
-          if (model.fromJson case final fromJson?)
-            'fromJson': _closure(
-              ['json'],
-              beanType.property('fromJson').call([
-                refer('json').asA(_anyType(fromJson.parameterType, element)),
+            // `Function.apply` checks the arguments an expression passes
+            // (their number and types) as the method declares them.
+            'invoke': function(
+              'invoke',
+              _objectOrNull,
+              [('bean', beanType), ('arguments', _argumentList)],
+              refer('Function').property('apply').call([
+                refer('bean').property(method.name),
+                refer('arguments'),
               ]).code,
-              lambda: true,
             ),
-        if (reads && model.hasToJson)
-          'toJson': _closure(
-            ['bean'],
-            refer('bean').property('toJson').call([]).code,
-            lambda: true,
+            if (method.annotations.isNotEmpty)
+              'annotations': literalConstList([
+                for (final annotation in method.annotations)
+                  _constant(annotation, element),
+              ]),
+          },
+          [beanType],
+        ),
+    ];
+    final constructor = writes ? model.constructor : null;
+    Expression? beanConstructor;
+    if (constructor != null) {
+      final parameters = <Expression>[];
+      for (final parameter in constructor.parameters) {
+        final (type, typeIsConst) = _typeInfo(parameter.type, element);
+        isConst = isConst && typeIsConst;
+        parameters.add(
+          _spring('BeanParameter').newInstance(
+            [_str(parameter.name)],
+            {
+              'type': type,
+              if (parameter.isNamed)
+                'symbol': CodeExpression(Code('#${parameter.name}')),
+              if (parameter.isRequired) 'isRequired': literalTrue,
+              if (parameter.defaultValue case final value?) ...{
+                'hasDefaultValue': literalTrue,
+                'defaultValue': _constant(value, element),
+              },
+              if (parameter.annotations.isNotEmpty)
+                'annotations': literalConstList([
+                  for (final annotation in parameter.annotations)
+                    _constant(annotation, element),
+                ]),
+            },
           ),
+        );
+      }
+      beanConstructor = _spring('BeanConstructor').newInstance(
+        [],
+        {
+          'parameters': literalList(parameters),
+          'create': function(
+            'create',
+            beanType,
+            [('positional', _argumentList), ('named', _namedArgumentMap)],
+            (_directCall(model, constructor, beanType) ??
+                    refer('Function')
+                        .property('apply')
+                        .call([
+                          beanType.property(
+                            constructor.name.isEmpty ? 'new' : constructor.name,
+                          ),
+                          refer('positional'),
+                          refer('named'),
+                        ])
+                        .asA(beanType))
+                .code,
+          ),
+        },
+        [beanType],
+      );
+    }
+    final fromJson = writes ? model.fromJson : null;
+    final arguments = {
+      'className': _str(model.element.name!),
+      'specialize': ?specialize,
+      // The properties of a class that is only known are of no use.
+      'properties': isConst
+          ? literalList([for (final (property, _) in properties) property])
+          : _list(properties),
+      if (methods.isNotEmpty) 'methods': literalList(methods),
+      if (model.annotations.isNotEmpty)
+        'annotations': literalConstList([
+          for (final annotation in model.annotations)
+            _constant(annotation, element),
+        ]),
+      if (!(reads && writes && calls))
+        'parts': literalConstSet({
+          if (reads) _spring('IntrospectionPart').property('read'),
+          if (writes) _spring('IntrospectionPart').property('write'),
+          if (calls) _spring('IntrospectionPart').property('methods'),
+        }),
+      if (writes && model.instantiable)
+        'instantiate': constant
+            ? beanType.property('new')
+            : _closure([], beanType.newInstance([]).code, lambda: true),
+      'constructor': ?beanConstructor,
+      if (fromJson != null)
+        'fromJson': function(
+          'fromJson',
+          beanType,
+          [('json', _objectOrNull)],
+          beanType.property('fromJson').call([
+            refer('json').asA(_anyType(fromJson.parameterType, element)),
+          ]).code,
+        ),
+      if (reads && model.hasToJson)
+        'toJson': function(
+          'toJson',
+          _objectOrNull,
+          [('bean', beanType)],
+          refer('bean').property('toJson').call([]).code,
+        ),
+    };
+    // In a constant everything is: `const BeanIntrospection<T>(...)`.
+    return isConst
+        ? _spring('BeanIntrospection').constInstance([], arguments, [beanType])
+        : _spring('BeanIntrospection').newInstance([], arguments, [beanType]);
+  }
+
+  // A list of [items], each `(expression, isConst)` with the expression
+  // written without `const`: `const [...]` when every item is a constant,
+  // else `[...]` with `const` on the items that are.
+  static Expression _list(List<(Expression, bool)> items) =>
+      items.every((item) => item.$2)
+      ? literalConstList([for (final (item, _) in items) item])
+      : literalList([
+          for (final (item, isConst) in items)
+            if (isConst) _asConst(item) else item,
+        ]);
+
+  // [instance] (`new` written as `Type(...)`) as `const Type(...)`.
+  static Expression _asConst(Expression instance) =>
+      CodeExpression(Block.of([const Code('const '), instance.code]));
+
+  // The `BeanProperty<T>(...)` of [property], and whether it is a constant
+  // ([constant]: its closures are written as top-level functions).
+  (Expression, bool) _property(
+    IntrospectionModel model,
+    IntrospectedProperty property,
+    TypeReference beanType, {
+    required bool constant,
+    required bool reads,
+    required bool writes,
+    required bool validates,
+  }) {
+    final element = model.element;
+    final (typeInfo, typeInfoIsConst) = _typeInfo(
+      property.declaredType,
+      element,
+    );
+    final getBody = refer('bean').property(property.name).code;
+    final setBody = refer('bean')
+        .property(property.name)
+        .assign(
+          refer('value').asA(
+            property.declaredType is TypeParameterType
+                ? _anyType(property.declaredType, element)
+                : _type(
+                    property.type,
+                    element,
+                  ).rebuild((t) => t..isNullable = property.nullable),
+          ),
+        )
+        .code;
+    final initial = writes ? property.initialValue : null;
+    final arguments = {
+      if (!constant || !_typeInfoIsExact(property.declaredType))
+        'type': _anyType(property.type, element),
+      if (property.nullable) 'nullable': literalTrue,
+      'typeInfo': typeInfo,
+      if (initial != null) ...{
+        'hasInitialValue': literalTrue,
+        'initialValue': _initialValue(
+          initial.value,
+          element,
+          property.declaredType,
+        ),
       },
-      [beanType],
+      // Validation reads the properties that have rules only.
+      if (reads || (validates && property.validated))
+        'get': constant
+            ? _function(
+                'get',
+                _objectOrNull,
+                [('bean', beanType)],
+                getBody,
+              )
+            : _closure(['bean'], getBody, lambda: true),
+      if (writes && property.writable)
+        'set': constant
+            ? _function(
+                'set',
+                refer('void'),
+                [('bean', beanType), ('value', _objectOrNull)],
+                setBody,
+              )
+            : _closure(['bean', 'value'], setBody, lambda: true),
+      if (property.annotations.isNotEmpty)
+        'annotations': literalConstList([
+          for (final annotation in property.annotations)
+            _constant(annotation, element),
+        ]),
+    };
+    return (
+      _spring('BeanProperty').newInstance(
+        [_str(property.name)],
+        arguments,
+        [beanType],
+      ),
+      constant && typeInfoIsConst,
     );
   }
 
@@ -1056,7 +1361,7 @@ class ModuleEmitter {
           if (_isDynamicInfo(argument))
             refer('dynamic')
           else
-            _anyType(argument, element),
+            _withoutFree(argument, element),
       ];
       final positional = [for (final info in infos) info.$1];
       return (
@@ -1141,66 +1446,130 @@ class ModuleEmitter {
 
   // `BeanMethod<T>('name', invoke: ..., annotations: [...])` for a method
   // with a `@BeanMethodAnnotation()` annotation.
+  //
+  // The method is called directly, the arguments read from the lists the
+  // way `Function.apply` passes them (see [_directArguments]); its closures
+  // are top-level functions, so the `BeanMethod` is a constant when its
+  // type descriptions are.
   Expression _annotatedMethod(
     InterfaceType beanType,
     AnnotatedMethodModel method,
     Element element,
-  ) => _spring('BeanMethod').newInstance(
-    [_str(method.name)],
-    {
+  ) {
+    final bean = _type(beanType, element);
+    final hasNamed = method.parameters.any((p) => p.isNamed);
+    // `invoke` passes no named arguments: optional ones keep their default.
+    final positionalCall = _directArguments(
+      method.parameters,
+      element,
+      positional: refer('arguments'),
+      named: null,
+    );
+    final namedCall = hasNamed
+        ? _directArguments(
+            method.parameters,
+            element,
+            positional: refer('positional'),
+            named: refer('named'),
+          )
+        : null;
+    // The call, or `Function.apply` when an argument cannot be written
+    // (or, for `invoke`, a required named one is not passed).
+    (Code, bool) body(
+      (List<Expression>, Map<String, Expression>)? arguments,
+      List<Expression> apply,
+    ) => arguments != null
+        ? _returning(
+            refer('bean')
+                .property(method.name)
+                .call(arguments.$1, arguments.$2),
+            isVoid: method.isVoid && !method.isFuture,
+          )
+        : (
+            refer('Function').property('apply').call([
+              refer('bean').property(method.name),
+              ...apply,
+            ]).code,
+            true,
+          );
+    final (invokeBody, invokeLambda) = body(positionalCall, [
+      refer('arguments'),
+    ]);
+    final invoke = _function(
+      'invoke',
+      _objectOrNull,
+      [('bean', bean), ('arguments', _argumentList)],
+      invokeBody,
+      lambda: invokeLambda,
+    );
+    Expression? invokeNamed;
+    if (hasNamed) {
+      final (namedBody, namedLambda) = body(namedCall, [
+        refer('positional'),
+        refer('named'),
+      ]);
+      invokeNamed = _function(
+        'invokeNamed',
+        _objectOrNull,
+        [
+          ('bean', bean),
+          ('positional', _argumentList),
+          ('named', _namedArgumentMap),
+        ],
+        namedBody,
+        lambda: namedLambda,
+      );
+    }
+    var isConst = true;
+    final parameters = <Expression>[];
+    for (final parameter in method.parameters) {
+      final (type, typeIsConst) = _typeInfo(parameter.type, element);
+      isConst = isConst && typeIsConst;
+      parameters.add(
+        _spring('BeanParameter').newInstance(
+          [_str(parameter.name)],
+          {
+            'type': type,
+            if (parameter.isNamed)
+              'symbol': CodeExpression(Code('#${parameter.name}')),
+            if (parameter.isRequired) 'isRequired': literalTrue,
+            if (parameter.annotations.isNotEmpty)
+              'annotations': literalConstList([
+                for (final annotation in parameter.annotations)
+                  _constant(annotation, element),
+              ]),
+          },
+        ),
+      );
+    }
+    final returnTypeInfo = method.isVoid
+        ? null
+        : _typeInfo(method.valueType, element);
+    isConst = isConst && (returnTypeInfo?.$2 ?? true);
+    final arguments = {
       if (method.parameterTypes.isNotEmpty)
         'parameterTypes': literalConstList([
           for (final type in method.parameterTypes)
             if (type == null) refer('Object') else _type(type, element),
         ]),
-      if (method.parameters.isNotEmpty)
-        'parameters': literalList([
-          for (final parameter in method.parameters)
-            _spring('BeanParameter').newInstance(
-              [_str(parameter.name)],
-              {
-                'type': _typeInfo(parameter.type, element).$1,
-                if (parameter.isNamed)
-                  'symbol': CodeExpression(Code('#${parameter.name}')),
-                if (parameter.isRequired) 'isRequired': literalTrue,
-                if (parameter.annotations.isNotEmpty)
-                  'annotations': literalConstList([
-                    for (final annotation in parameter.annotations)
-                      _constant(annotation, element),
-                  ]),
-              },
-            ),
-        ]),
-      if (!method.isVoid)
-        'returnTypeInfo': _typeInfo(method.valueType, element).$1,
+      if (parameters.isNotEmpty) 'parameters': literalList(parameters),
+      'returnTypeInfo': ?returnTypeInfo?.$1,
       if (method.isFuture) 'isFuture': literalTrue,
       if (method.isVoid) 'isVoid': literalTrue,
-      'invoke': _closure(
-        ['bean', 'arguments'],
-        refer('Function')
-            .property('apply')
-            .call([refer('bean').property(method.name), refer('arguments')])
-            .code,
-        lambda: true,
-      ),
-      if (method.parameters.any((p) => p.isNamed))
-        'invokeNamed': _closure(
-          ['bean', 'positional', 'named'],
-          refer('Function').property('apply').call([
-            refer('bean').property(method.name),
-            refer('positional'),
-            refer('named'),
-          ]).code,
-          lambda: true,
-        ),
+      'invoke': invoke,
+      'invokeNamed': ?invokeNamed,
       if (method.annotations.isNotEmpty)
         'annotations': literalConstList([
           for (final annotation in method.annotations)
             _constant(annotation, element),
         ]),
-    },
-    [_type(beanType, element)],
-  );
+    };
+    return isConst
+        ? _spring('BeanMethod')
+              .constInstance([_str(method.name)], arguments, [bean])
+        : _spring('BeanMethod')
+              .newInstance([_str(method.name)], arguments, [bean]);
+  }
 
   // -----------------------------------------------------------------------
   // AOP
@@ -1353,19 +1722,70 @@ class ModuleEmitter {
     return [for (final (type, value, _) in found) (type, value)];
   }
 
+  // `_$knownAdvisors<n>`, the advisors the build pruned the module's
+  // proxies for, declared once per module on first use.
+  Expression? _knownAdvisors;
+
+  // The `knownAdvisors:` argument of a pruned or partial factory.
+  Map<String, Expression> _knownAdvisorsArgument(ProxyModel proxy) {
+    final known = _module.knownAdvisors;
+    if (known == null || !(proxy.pruned || proxy.advisedMembers != null)) {
+      return const {};
+    }
+    return {
+      'knownAdvisors': _knownAdvisors ??= _constantDeclaration(
+        'knownAdvisors',
+        literalConstSet({
+          for (final source in known.toList()..sort()) _str(source),
+        }),
+      ),
+    };
+  }
+
   // The runtime decides whether to proxy (any advisor matching one of the
   // signatures) and then calls `create` with the target and an invoker.
   Expression _proxyFactory(ProxyModel proxy, Element element) {
+    // The runtime's `AopProxyFactory.prunedReason` says why.
     if (proxy.pruned) {
       return _spring(
         'AopProxyFactory',
-      ).newInstanceNamed('pruned', [], {
-        'reason': _str(proxy.unavailableReason!),
-      });
+      ).constInstanceNamed('pruned', [], _knownAdvisorsArgument(proxy));
     }
+    // The bean class, once for the signatures of all its members.
+    final advisable = proxy.advisableMembers;
+    final target = advisable.isEmpty
+        ? null
+        : _constantDeclaration(
+            'target',
+            _spring('AopTarget').newInstance(
+              [_str(proxy.targetType.element.name!)],
+              {
+                'types': literalConstList([
+                  for (final name in proxy.targetTypeNames) _str(name),
+                ]),
+                if (proxy.classAnnotations.isNotEmpty) ...{
+                  'annotations': literalConstList([
+                    for (final annotation in proxy.classAnnotations)
+                      _constant(annotation, element),
+                  ]),
+                  'annotationTypes': literalConstList([
+                    for (final annotation in proxy.classAnnotations)
+                      _str(annotation.type!.element!.name!),
+                  ]),
+                },
+              },
+            ),
+          );
     final signatures = literalConstList([
-      for (final member in proxy.members) _signature(proxy, member, element),
+      for (final member in advisable)
+        _signature(proxy, member, target!, element),
     ]);
+    // The application's module brings the class (BeanModule.aopProxies).
+    if (proxy.deferred) {
+      return _spring(
+        'AopProxyFactory',
+      ).constInstanceNamed('deferred', [], {'signatures': signatures});
+    }
     if (proxy.unavailableReason case final reason?) {
       return _spring('AopProxyFactory').newInstanceNamed('unavailable', [], {
         'signatures': signatures,
@@ -1390,12 +1810,16 @@ class ModuleEmitter {
       return _spring('AopProxyFactory').newInstanceNamed('subclass', [], {
         'signatures': signatures,
         if (proxy.introductions.isNotEmpty) 'introductions': introductions,
+        ..._knownAdvisorsArgument(proxy),
         'advise': _closure(
           ['bean', 'invoker'],
           bean
               .isA(refer(proxy.className))
               .conditional(
-                bean.property(r'_$advise').call([refer('invoker')]),
+                bean
+                    .cascade('aopInvoker')
+                    .assign(refer('invoker'))
+                    .parenthesized,
                 literalNull,
               )
               .code,
@@ -1406,6 +1830,7 @@ class ModuleEmitter {
     return _spring('AopProxyFactory').newInstance([], {
       'signatures': signatures,
       if (proxy.introductions.isNotEmpty) 'introductions': introductions,
+      ..._knownAdvisorsArgument(proxy),
       'create': _closure(
         ['target', 'invoker'],
         refer(proxy.className).newInstance([
@@ -1419,92 +1844,92 @@ class ModuleEmitter {
 
   // Const metadata that pointcuts are matched against (names, types and
   // annotations as plain values, since there is no reflection).
+  //
+  // `MethodSignature.of(name, target, ...)`: the class part is [target];
+  // the declaring type(s) only when not the bean class.
   Expression _signature(
     ProxyModel proxy,
     ProxyMember member,
+    Expression target,
     Element element,
-  ) => _spring('MethodSignature').newInstance([], {
-    'name': _str(member.name),
-    'declaringType': _str(member.declaringType),
-    'targetType': _str(proxy.targetType.element.name!),
-    if (member.declaringTypes.isNotEmpty)
-      'declaringTypes': literalConstList([
-        for (final name in member.declaringTypes) _str(name),
-      ]),
-    if (member.kind != ProxyMemberKind.method)
-      'kind': _spring('MemberKind').property(member.kind.name),
-    'returnType': _str(_simpleName(member.returnType)),
-    if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
-      'parameterTypes': literalConstList([
-        for (final parameter in member.parameters)
-          _str(_simpleName(parameter.type)),
-      ]),
-    if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
-      'parameterNames': literalConstList([
-        for (final parameter in member.parameters) _str(parameter.name),
-      ]),
-    if (member.kind == ProxyMemberKind.method &&
-        member.parameters.any((p) => p.annotations.isNotEmpty))
-      'parameterAnnotations': literalConstList([
-        for (final parameter in member.parameters)
-          literalConstList([
-            for (final annotation in parameter.annotations)
-              _constant(annotation, element),
-          ]),
-      ]),
-    if (member.annotations.isNotEmpty)
-      'annotations': literalConstList([
-        for (final annotation in member.annotations)
-          _constant(annotation, element),
-      ]),
-    // Only when the overridden declarations add some (else the runtime
-    // falls back to `annotations`).
-    if (!_sameAnnotations(member.mergedAnnotations, member.annotations))
-      'mergedAnnotations': literalConstList([
-        for (final annotation in member.mergedAnnotations)
-          _constant(annotation, element),
-      ]),
-    if (member.annotations.isNotEmpty)
-      'annotationTypes': literalConstList([
-        for (final annotation in member.annotations)
-          _str(annotation.type!.element!.name!),
-      ]),
-    'targetTypes': literalConstList([
-      for (final name in proxy.targetTypeNames) _str(name),
-    ]),
-    if (proxy.classAnnotations.isNotEmpty)
-      'targetAnnotations': literalConstList([
-        for (final annotation in proxy.classAnnotations)
-          _constant(annotation, element),
-      ]),
-    if (proxy.classAnnotations.isNotEmpty)
-      'targetAnnotationTypes': literalConstList([
-        for (final annotation in proxy.classAnnotations)
-          _str(annotation.type!.element!.name!),
-      ]),
-    // An inherited member: `within` / `@within` see the class of its body.
-    if (member.implementingTypes.isNotEmpty) ...{
-      'implementingTypes': literalConstList([
-        for (final name in member.implementingTypes) _str(name),
-      ]),
-      'implementingTypeAnnotations': literalConstList([
-        for (final annotation in member.implementingTypeAnnotations)
-          _constant(annotation, element),
-      ]),
-      'implementingTypeAnnotationTypes': literalConstList([
-        for (final annotation in member.implementingTypeAnnotations)
-          _str(annotation.type!.element!.name!),
-      ]),
+  ) => _spring('MethodSignature').newInstanceNamed(
+    'of',
+    [
+      _str(member.name),
+      target,
+    ],
+    {
+      if (member.declaringType != proxy.targetType.element.name)
+        'declaringType': _str(member.declaringType),
+      // `[declaringType]` is the default.
+      if (member.declaringTypes.length != 1 ||
+          member.declaringTypes.single != member.declaringType)
+        'declaringTypes': literalConstList([
+          for (final name in member.declaringTypes) _str(name),
+        ]),
+      if (member.kind != ProxyMemberKind.method)
+        'kind': _spring('MemberKind').property(member.kind.name),
+      if (_simpleName(member.returnType) != 'dynamic')
+        'returnType': _str(_simpleName(member.returnType)),
+      if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
+        'parameterTypes': literalConstList([
+          for (final parameter in member.parameters)
+            _str(_simpleName(parameter.type)),
+        ]),
+      if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
+        'parameterNames': literalConstList([
+          for (final parameter in member.parameters) _str(parameter.name),
+        ]),
+      if (member.kind == ProxyMemberKind.method &&
+          member.parameters.any((p) => p.annotations.isNotEmpty))
+        'parameterAnnotations': literalConstList([
+          for (final parameter in member.parameters)
+            literalConstList([
+              for (final annotation in parameter.annotations)
+                _constant(annotation, element),
+            ]),
+        ]),
+      if (member.annotations.isNotEmpty)
+        'annotations': literalConstList([
+          for (final annotation in member.annotations)
+            _constant(annotation, element),
+        ]),
+      // Only when the overridden declarations add some (else the runtime
+      // falls back to `annotations`).
+      if (!_sameAnnotations(member.mergedAnnotations, member.annotations))
+        'mergedAnnotations': literalConstList([
+          for (final annotation in member.mergedAnnotations)
+            _constant(annotation, element),
+        ]),
+      if (member.annotations.isNotEmpty)
+        'annotationTypes': literalConstList([
+          for (final annotation in member.annotations)
+            _str(annotation.type!.element!.name!),
+        ]),
+      // An inherited member: `within` / `@within` see the class of its body.
+      if (member.implementingTypes.isNotEmpty) ...{
+        'implementingTypes': literalConstList([
+          for (final name in member.implementingTypes) _str(name),
+        ]),
+        'implementingTypeAnnotations': literalConstList([
+          for (final annotation in member.implementingTypeAnnotations)
+            _constant(annotation, element),
+        ]),
+        'implementingTypeAnnotationTypes': literalConstList([
+          for (final annotation in member.implementingTypeAnnotations)
+            _str(annotation.type!.element!.name!),
+        ]),
+      },
+      if (member.superclassAnnotations.isNotEmpty)
+        'superclassAnnotations': literalConstList([
+          for (final level in member.superclassAnnotations)
+            literalConstList([
+              for (final annotation in level) _constant(annotation, element),
+            ]),
+        ]),
+      if (member.isProtected) 'isProtected': literalTrue,
     },
-    if (member.superclassAnnotations.isNotEmpty)
-      'superclassAnnotations': literalConstList([
-        for (final level in member.superclassAnnotations)
-          literalConstList([
-            for (final annotation in level) _constant(annotation, element),
-          ]),
-      ]),
-    if (member.isProtected) 'isProtected': literalTrue,
-  });
+  );
 
   // Type name used in signatures (`execution(int add(int, int))`).
   static bool _sameAnnotations(List<DartObject> a, List<DartObject> b) =>
@@ -1546,15 +1971,15 @@ class ModuleEmitter {
       return _subclassProxyClass(proxy, subclass, element, lookup: lookup);
     }
     final targetType = _type(proxy.targetType, element);
+    // `AdvisedWrapper` implements `Advised` through `aopInvoker`.
     return Class(
       (c) => c
         ..name = proxy.className
-        ..mixins.addAll(_proxyMixins(proxy))
+        ..mixins.addAll([..._proxyMixins(proxy), _spring('AdvisedWrapper')])
         ..implements.addAll([
           for (final interface in proxy.interfaces) _type(interface, element),
           for (final introduction in proxy.introductions)
             _type(introduction.interfaceType, element),
-          _spring('Advised'),
         ])
         ..fields.addAll([
           Field(
@@ -1565,7 +1990,8 @@ class ModuleEmitter {
           ),
           Field(
             (f) => f
-              ..name = '_invoker'
+              ..annotations.add(refer('override'))
+              ..name = 'aopInvoker'
               ..modifier = FieldModifier.final$
               ..type = _spring('ProxyInvoker'),
           ),
@@ -1580,7 +2006,7 @@ class ModuleEmitter {
               ),
               Parameter(
                 (p) => p
-                  ..name = '_invoker'
+                  ..name = 'aopInvoker'
                   ..toThis = true,
               ),
             ]),
@@ -1596,20 +2022,6 @@ class ModuleEmitter {
               ..lambda = true
               ..body = refer('_target').code,
           ),
-          Method(
-            (m) => m
-              ..annotations.add(refer('override'))
-              ..type = MethodType.getter
-              ..name = 'aopAdvisors'
-              ..returns = TypeReference(
-                (t) => t
-                  ..symbol = 'List'
-                  ..types.add(_spring('PointcutAdvisor')),
-              )
-              ..lambda = true
-              ..body = refer('_invoker').property('advisors').code,
-          ),
-          ..._advisedMethods(refer('this').property('_invoker')),
           if (!proxy.customToString)
             Method(
               (m) => m
@@ -1619,12 +2031,20 @@ class ModuleEmitter {
                 ..lambda = true
                 ..body = refer('_target').property('toString').call([]).code,
             ),
-          for (final (index, member) in proxy.members.indexed)
+          for (final (index, member) in proxy.advisableMembers.indexed)
             _proxyMember(member, index, element),
+          // Members no pointcut can match: forwarded without advice.
+          for (final member in proxy.members)
+            if (!(proxy.advisedMembers?.contains(member) ?? true))
+              _forwardingMember(
+                member,
+                refer('this').property('_target'),
+                element,
+              ),
           ..._introducedMembers(
             proxy,
             element,
-            (_) => refer('this').property('_invoker'),
+            (_) => refer('this').property('aopInvoker'),
           ),
         ]),
     );
@@ -1657,36 +2077,10 @@ class ModuleEmitter {
     ];
   }
 
-  // `Advised.addAdvisor` / `removeAdvisor` / `addAdvice` / `removeAdvice`,
-  // forwarded to [invoker].
-  List<Method> _advisedMethods(Expression invoker) => [
-    for (final (name, parameter, type, returns) in const [
-      ('addAdvisor', 'advisor', 'PointcutAdvisor', 'void'),
-      ('removeAdvisor', 'advisor', 'PointcutAdvisor', 'bool'),
-      ('addAdvice', 'advice', 'MethodInterceptor', 'void'),
-      ('removeAdvice', 'advice', 'MethodInterceptor', 'bool'),
-    ])
-      Method(
-        (m) => m
-          ..annotations.add(refer('override'))
-          ..name = name
-          ..returns = refer(returns)
-          ..requiredParameters.add(
-            Parameter(
-              (p) => p
-                ..name = parameter
-                ..type = _spring(type),
-            ),
-          )
-          ..lambda = true
-          ..body = invoker.property(name).call([refer(parameter)]).code,
-      ),
-  ];
-
   // A subclass proxy: forwards the bean constructor, holds the invoker the
-  // auto proxy creator attaches through `_$advise` and overrides every
-  // forwardable member to run `super` through the advice (see
-  // `SubclassProxy`).
+  // auto proxy creator attaches (`AdvisedSubclass.aopInvoker`) and
+  // overrides every forwardable member to run `super` through the advice
+  // (see `SubclassProxy`).
   //
   // A bean with `@Lookup` methods: the proxy extends the generated lookup
   // subclass (its `super` calls reach the lookup overrides) and takes the
@@ -1697,11 +2091,7 @@ class ModuleEmitter {
     Element element, {
     LookupClassModel? lookup,
   }) {
-    final invokerType = TypeReference(
-      (t) => t
-        ..symbol = 'ProxyInvoker'
-        ..url = _springUrl,
-    );
+    // `AdvisedSubclass` holds the invoker and implements `Advised`.
     return Class(
       (c) => c
         ..modifier = subclass.isFinal ? ClassModifier.final$ : null
@@ -1709,19 +2099,11 @@ class ModuleEmitter {
         ..extend = lookup == null
             ? _type(proxy.targetType, element)
             : refer(lookup.className)
-        ..mixins.addAll(_proxyMixins(proxy))
+        ..mixins.addAll([..._proxyMixins(proxy), _spring('AdvisedSubclass')])
         ..implements.addAll([
           for (final introduction in proxy.introductions)
             _type(introduction.interfaceType, element),
-          _spring('Advised'),
         ])
-        ..fields.add(
-          Field(
-            (f) => f
-              ..name = r'_$invoker'
-              ..type = invokerType.rebuild((t) => t.isNullable = true),
-          ),
-        )
         ..constructors.add(
           lookup == null
               ? _forwardingConstructor(
@@ -1741,67 +2123,15 @@ class ModuleEmitter {
                 ]),
         )
         ..methods.addAll([
-          Method(
-            (m) => m
-              ..name = r'_$advise'
-              ..returns = refer(proxy.className)
-              ..requiredParameters.add(
-                Parameter(
-                  (p) => p
-                    ..name = 'invoker'
-                    ..type = invokerType,
-                ),
-              )
-              ..body = Block.of([
-                refer(r'_$invoker').assign(refer('invoker')).statement,
-                refer('this').returned.statement,
-              ]),
-          ),
-          Method(
-            (m) => m
-              ..annotations.add(refer('override'))
-              ..type = MethodType.getter
-              ..name = 'aopTarget'
-              ..returns = refer('Object')
-              ..lambda = true
-              ..body = refer('this').code,
-          ),
-          Method(
-            (m) => m
-              ..annotations.add(refer('override'))
-              ..type = MethodType.getter
-              ..name = 'aopAdvisors'
-              ..returns = TypeReference(
-                (t) => t
-                  ..symbol = 'List'
-                  ..types.add(_spring('PointcutAdvisor')),
-              )
-              ..lambda = true
-              ..body = refer(r'_$invoker')
-                  .nullSafeProperty('advisors')
-                  .ifNullThen(literalConstList([]))
-                  .code,
-          ),
-          // Not advised yet (no advice matched): there is no invoker to
-          // change.
-          ..._advisedMethods(
-            refer('this')
-                .property(r'_$invoker')
-                .ifNullThen(
-                  _spring('ProxyInvoker')
-                      .property('notAdvised')
-                      .call([refer('this')]),
-                )
-                .parenthesized,
-          ),
-          for (final (index, member) in proxy.members.indexed)
+          // The members no pointcut can match are inherited.
+          for (final (index, member) in proxy.advisableMembers.indexed)
             _proxyMember(member, index, element, subclass: true),
           // No invoker: the aspect of the introduction is not registered.
           ..._introducedMembers(
             proxy,
             element,
             (introduction) => refer('this')
-                .property(r'_$invoker')
+                .property('aopInvoker')
                 .ifNullThen(
                   _spring('ProxyInvoker').property('notIntroduced').call([
                     refer('this'),
@@ -2194,7 +2524,7 @@ class ModuleEmitter {
       dollars++;
     }
     final local = localName();
-    final invokerRef = subclass ? refer(local) : self.property('_invoker');
+    final invokerRef = subclass ? refer(local) : self.property('aopInvoker');
     Expression invoke(List<Expression> arguments, Expression call) =>
         invokerRef.property('invoke').call([
           refer('this'),
@@ -2251,7 +2581,7 @@ class ModuleEmitter {
         return (isVoid ? advised.statement : advised.code, !isVoid);
       }
       final invoker = declareFinal(local)
-          .assign(refer('this').property(r'_$invoker'));
+          .assign(refer('this').property('aopInvoker'));
       final isNull = refer(local).equalTo(literalNull);
       if (isVoid) {
         return (
@@ -2653,8 +2983,10 @@ class ModuleEmitter {
         return refer(model.className)
             .newInstance([refer('r'), ...positional], named);
       // A subclass proxy: the generated subclass forwards to the
-      // constructor (after the bean factory for `@Lookup` methods).
-      case ConstructorCreation(:final lookup) when bean.proxy?.subclass != null:
+      // constructor (after the bean factory for `@Lookup` methods); a
+      // pruned one is not generated.
+      case ConstructorCreation(:final lookup)
+          when bean.proxy?.subclass != null && !bean.proxy!.pruned:
         return refer(
           bean.proxy!.className,
         ).newInstance([if (lookup != null) refer('r'), ...positional], named);
@@ -2995,24 +3327,86 @@ class ModuleEmitter {
 
   /// Writes the initial value of a field (see `InitialValue`): a literal, a
   /// referenced constant, or a `const` collection of those.
-  Expression _initialValue(Object? value, Element element) => switch (value) {
-    null => literalNull,
-    final bool value => literalBool(value),
-    final num value => literalNum(value),
-    final String value => _str(value),
-    final DartObject value => _constant(value, element),
-    final List<Object?> value => literalConstList([
-      for (final item in value) _initialValue(item, element),
-    ]),
-    final Set<Object?> value => literalConstSet({
-      for (final item in value) _initialValue(item, element),
-    }),
-    final Map<Object?, Object?> value => literalConstMap({
-      for (final MapEntry(:key, value: item) in value.entries)
-        _initialValue(key, element): _initialValue(item, element),
-    }),
-    _ => throw StateError('Unsupported initial value $value'),
+  ///
+  /// [type] is the field's declared type: a collection gets its type
+  /// arguments, as Dart infers them from the field (`const <String>[]`,
+  /// `const <num>[1]` for a `List<num>`), so the value keeps its runtime
+  /// type outside the field.
+  Expression _initialValue(Object? value, Element element, [DartType? type]) {
+    final arguments = type is InterfaceType ? type.typeArguments : null;
+    DartType? argument(int index) =>
+        arguments != null && index < arguments.length ? arguments[index] : null;
+    Reference? written(int index) => _typeArgument(argument(index), element);
+    // Both type arguments of a map or none (see `_constant`).
+    (Reference?, Reference?) mapArguments() {
+      final key = written(0);
+      final value = written(1);
+      return key == null && value == null
+          ? (null, null)
+          : (key ?? refer('dynamic'), value ?? refer('dynamic'));
+    }
+
+    return switch (value) {
+      null => literalNull,
+      final bool value => literalBool(value),
+      final num value => _number(value),
+      final String value => _str(value),
+      final DartObject value => _constant(value, element),
+      final List<Object?> value => literalConstList([
+        for (final item in value) _initialValue(item, element, argument(0)),
+      ], written(0)),
+      final Set<Object?> value => literalConstSet({
+        for (final item in value) _initialValue(item, element, argument(0)),
+      }, written(0)),
+      final Map<Object?, Object?> value => switch (mapArguments()) {
+        (final keyType, final valueType) => literalConstMap(
+          {
+            for (final MapEntry(:key, value: item) in value.entries)
+              _initialValue(key, element, argument(0)): _initialValue(
+                item,
+                element,
+                argument(1),
+              ),
+          },
+          keyType,
+          valueType,
+        ),
+      },
+      _ => throw StateError('Unsupported initial value $value'),
+    };
+  }
+
+  // A number as code: a literal, or `double.infinity`,
+  // `double.negativeInfinity` and `double.nan`, which have none (their
+  // `toString` is `Infinity` and `NaN`).
+  static Expression _number(num value) => switch (value) {
+    double(isNaN: true) => refer('double').property('nan'),
+    double(isInfinite: true) => refer(
+      'double',
+    ).property(value > 0 ? 'infinity' : 'negativeInfinity'),
+    _ => literalNum(value),
   };
+
+  // The type argument [type] of a constant collection, when it can be
+  // written there: `null` (none, inferred) for `dynamic` and for a type
+  // that names a type parameter or cannot be imported.
+  Reference? _typeArgument(DartType? type, Element element) {
+    if (type == null ||
+        type is DynamicType ||
+        type is NeverType ||
+        _hasFreeTypeParameter(type)) {
+      return null;
+    }
+    final types = Map.of(_annotationTypes);
+    try {
+      return _anyType(type, element);
+    } on InvalidGenerationSource {
+      _annotationTypes
+        ..clear()
+        ..addAll(types);
+      return null;
+    }
+  }
 
   /// Writes a constant value (a default value, an annotation instance) as
   /// code that re-creates it: literals, lists, maps, sets, records, types,
@@ -3029,7 +3423,7 @@ class ModuleEmitter {
       return literalNum(reader.intValue);
     }
     if (reader.isDouble) {
-      return literalNum(reader.doubleValue);
+      return _number(reader.doubleValue);
     }
     if (reader.isString) {
       return _str(reader.stringValue);
@@ -3059,21 +3453,49 @@ class ModuleEmitter {
         },
       );
     }
+    // Collections with their type arguments when the elements do not give
+    // them (`const <int>[]`, `const <Object>[1]`), so the value keeps its
+    // runtime type; `const [Tag()]` stays as it is.
+    final arguments = switch (value.type) {
+      final InterfaceType type => type.typeArguments,
+      _ => const <DartType>[],
+    };
+    Reference? argument(int index, Iterable<DartObject?> elements) =>
+        index < arguments.length &&
+            (elements.isEmpty ||
+                elements.any((e) => e?.type != arguments[index]))
+        ? _typeArgument(arguments[index], element)
+        : null;
     if (reader.isList) {
+      final items = reader.listValue;
       return literalConstList([
-        for (final item in reader.listValue) _constant(item, element),
-      ]);
+        for (final item in items) _constant(item, element),
+      ], argument(0, items));
     }
     if (reader.isSet) {
+      final items = reader.setValue;
       return literalConstSet({
-        for (final item in reader.setValue) _constant(item, element),
-      });
+        for (final item in items) _constant(item, element),
+      }, argument(0, items));
     }
     if (reader.isMap) {
-      return literalConstMap({
-        for (final MapEntry(:key, :value) in reader.mapValue.entries)
-          _constant(key!, element): _constant(value!, element),
-      });
+      final entries = reader.mapValue;
+      // Both type arguments or none: code_builder writes `<K, dynamic>` for
+      // a key type alone, and nothing for a value type alone.
+      final typed =
+          argument(0, entries.keys) != null ||
+          argument(1, entries.values) != null;
+      Reference? both(int index) => typed && index < arguments.length
+          ? _typeArgument(arguments[index], element) ?? refer('dynamic')
+          : null;
+      return literalConstMap(
+        {
+          for (final MapEntry(:key, :value) in entries.entries)
+            _constant(key!, element): _constant(value!, element),
+        },
+        both(0),
+        both(1),
+      );
     }
     final function = value.toFunctionValue();
     if (function != null) {

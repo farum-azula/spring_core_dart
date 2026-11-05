@@ -8,9 +8,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_dart/src/annotations.dart' as _i6;
+import 'package:spring_boot_dart/src/annotations.dart' as _i7;
 import 'package:spring_boot_starter_data/src/jdbc/postgres/postgres_jdbc_driver.dart'
-    as _i7;
+    as _i6;
 import 'package:spring_boot_starter_data/src/properties/data_properties.dart'
     as _i2;
 import 'package:spring_boot_starter_data/src/schema/database_initializer.dart'
@@ -20,6 +20,327 @@ import 'package:spring_boot_starter_data/src/schema/migrations/migration_setting
 import 'package:spring_boot_starter_data/src/schema/script_database_initializer.dart'
     as _i4;
 
+const _$target0 = _i1.AopTarget(
+  r'DataProperties',
+  types: [r'DataProperties'],
+  annotations: [
+    _i1.ConfigurationProperties(r'spring.data', ignoreInvalidFields: true),
+  ],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'JdbcProperties',
+  types: [r'JdbcProperties'],
+  annotations: [
+    _i1.ConfigurationProperties(r'spring.jdbc', ignoreInvalidFields: true),
+  ],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target2 = _i1.AopTarget(
+  r'SqlProperties',
+  types: [r'SqlProperties'],
+  annotations: [
+    _i1.ConfigurationProperties(r'spring.sql', ignoreInvalidFields: true),
+  ],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target3 = _i1.AopTarget(
+  r'DataSourceConfigProperties',
+  types: [r'DataSourceConfigProperties'],
+  annotations: [
+    _i1.ConfigurationProperties(
+      r'spring.datasource',
+      ignoreInvalidFields: true,
+    ),
+  ],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target4 = _i1.AopTarget(
+  r'NamedDataSourcesProperties',
+  types: [r'NamedDataSourcesProperties'],
+  annotations: [
+    _i1.ConfigurationProperties(r'spring', ignoreInvalidFields: true),
+  ],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get5(_i2.DataProperties bean) => bean.jdbc;
+Object? _$get6(_i2.DataProperties bean) => bean.memory;
+Object? _$get7(_i2.DataProperties bean) => bean.web;
+_i2.DataProperties _$create8(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataProperties(
+  jdbc: named.argumentOr(#jdbc, const _i2.DataJdbcProperties()),
+  memory: named.argumentOr(#memory, const _i2.DataMemoryProperties()),
+  web: named.argumentOr(#web, const _i2.DataWebProperties()),
+);
+Object? _$get9(_i2.DataJdbcProperties bean) => bean.schema;
+Object? _$get10(_i2.DataJdbcProperties bean) => bean.showSql;
+Object? _$get11(_i2.DataJdbcProperties bean) => bean.formatSql;
+Object? _$get12(_i2.DataJdbcProperties bean) => bean.showParameters;
+Object? _$get13(_i2.DataJdbcProperties bean) => bean.slowQueryThreshold;
+_i2.DataJdbcProperties _$create14(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataJdbcProperties(
+  schema: named.argumentOr(#schema, _i3.SchemaMode.validate),
+  showSql: named.argumentOr(#showSql, false),
+  formatSql: named.argumentOr(#formatSql, false),
+  showParameters: named.argumentOr(#showParameters, false),
+  slowQueryThreshold: named.argumentOr(#slowQueryThreshold, null),
+);
+Object? _$get15(_i2.DataMemoryProperties bean) => bean.lockTimeout;
+_i2.DataMemoryProperties _$create16(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataMemoryProperties(
+  lockTimeout: named.argumentOr(#lockTimeout, const Duration(seconds: 10)),
+);
+Object? _$get17(_i2.DataWebProperties bean) => bean.pageable;
+Object? _$get18(_i2.DataWebProperties bean) => bean.sort;
+_i2.DataWebProperties _$create19(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataWebProperties(
+  pageable: named.argumentOr(#pageable, const _i2.DataPageableProperties()),
+  sort: named.argumentOr(#sort, const _i2.DataSortProperties()),
+);
+Object? _$get20(_i2.DataPageableProperties bean) => bean.defaultPageSize;
+Object? _$get21(_i2.DataPageableProperties bean) => bean.maxPageSize;
+Object? _$get22(_i2.DataPageableProperties bean) => bean.oneIndexedParameters;
+Object? _$get23(_i2.DataPageableProperties bean) => bean.pageParameter;
+Object? _$get24(_i2.DataPageableProperties bean) => bean.sizeParameter;
+Object? _$get25(_i2.DataPageableProperties bean) => bean.prefix;
+Object? _$get26(_i2.DataPageableProperties bean) => bean.qualifierDelimiter;
+_i2.DataPageableProperties _$create27(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataPageableProperties(
+  defaultPageSize: named.argumentOr(#defaultPageSize, 20),
+  maxPageSize: named.argumentOr(#maxPageSize, 2000),
+  oneIndexedParameters: named.argumentOr(#oneIndexedParameters, false),
+  pageParameter: named.argumentOr(#pageParameter, r'page'),
+  sizeParameter: named.argumentOr(#sizeParameter, r'size'),
+  prefix: named.argumentOr(#prefix, r''),
+  qualifierDelimiter: named.argumentOr(#qualifierDelimiter, r'_'),
+);
+Object? _$get28(_i2.DataSortProperties bean) => bean.sortParameter;
+_i2.DataSortProperties _$create29(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataSortProperties(
+  sortParameter: named.argumentOr(#sortParameter, r'sort'),
+);
+Object? _$get30(_i2.JdbcProperties bean) => bean.template;
+_i2.JdbcProperties _$create31(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JdbcProperties(
+  template: named.argumentOr(#template, const _i2.JdbcTemplateProperties()),
+);
+Object? _$get32(_i2.JdbcTemplateProperties bean) => bean.queryTimeout;
+_i2.JdbcTemplateProperties _$create33(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.JdbcTemplateProperties(
+  queryTimeout: named.argumentOr(#queryTimeout, null),
+);
+Object? _$get34(_i2.SqlProperties bean) => bean.init;
+Object? _$get35(_i2.SqlProperties bean) => bean.migration;
+_i2.SqlProperties _$create36(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SqlProperties(
+  init: named.argumentOr(#init, const _i4.SqlInitSettings()),
+  migration: named.argumentOr(#migration, const _i5.MigrationSettings()),
+);
+Object? _$get37(_i4.SqlInitSettings bean) => bean.mode;
+Object? _$get38(_i4.SqlInitSettings bean) => bean.schemaLocations;
+Object? _$get39(_i4.SqlInitSettings bean) => bean.dataLocations;
+Object? _$get40(_i4.SqlInitSettings bean) => bean.platform;
+Object? _$get41(_i4.SqlInitSettings bean) => bean.continueOnError;
+Object? _$get42(_i4.SqlInitSettings bean) => bean.separator;
+Object? _$get43(_i4.SqlInitSettings bean) => bean.encoding;
+_i4.SqlInitSettings _$create44(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i4.SqlInitSettings(
+  mode: named.argumentOr(#mode, _i4.SqlInitMode.embedded),
+  schemaLocations: named.argumentOr(#schemaLocations, const <String>[]),
+  dataLocations: named.argumentOr(#dataLocations, const <String>[]),
+  platform: named.argumentOr(#platform, r'all'),
+  continueOnError: named.argumentOr(#continueOnError, false),
+  separator: named.argumentOr(#separator, r';'),
+  encoding: named.argumentOr(#encoding, r'utf-8'),
+);
+Object? _$get45(_i5.MigrationSettings bean) => bean.enabled;
+Object? _$get46(_i5.MigrationSettings bean) => bean.locations;
+Object? _$get47(_i5.MigrationSettings bean) => bean.table;
+Object? _$get48(_i5.MigrationSettings bean) => bean.validateOnMigrate;
+Object? _$get49(_i5.MigrationSettings bean) => bean.outOfOrder;
+Object? _$get50(_i5.MigrationSettings bean) => bean.ignoreMigrationPatterns;
+Object? _$get51(_i5.MigrationSettings bean) => bean.baselineOnMigrate;
+Object? _$get52(_i5.MigrationSettings bean) => bean.baselineVersion;
+Object? _$get53(_i5.MigrationSettings bean) => bean.baselineDescription;
+Object? _$get54(_i5.MigrationSettings bean) => bean.target;
+Object? _$get55(_i5.MigrationSettings bean) => bean.placeholders;
+Object? _$get56(_i5.MigrationSettings bean) => bean.placeholderReplacement;
+Object? _$get57(_i5.MigrationSettings bean) => bean.placeholderPrefix;
+Object? _$get58(_i5.MigrationSettings bean) => bean.placeholderSuffix;
+Object? _$get59(_i5.MigrationSettings bean) => bean.group;
+Object? _$get60(_i5.MigrationSettings bean) => bean.connectRetries;
+Object? _$get61(_i5.MigrationSettings bean) => bean.connectRetriesInterval;
+Object? _$get62(_i5.MigrationSettings bean) => bean.lockTimeout;
+_i5.MigrationSettings _$create63(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i5.MigrationSettings(
+  enabled: named.argumentOr(#enabled, true),
+  locations: named.argumentOr(#locations, const [r'resources:db/migration']),
+  table: named.argumentOr(#table, r'schema_history'),
+  validateOnMigrate: named.argumentOr(#validateOnMigrate, true),
+  outOfOrder: named.argumentOr(#outOfOrder, false),
+  ignoreMigrationPatterns: named.argumentOr(#ignoreMigrationPatterns, const [
+    r'*:future',
+  ]),
+  baselineOnMigrate: named.argumentOr(#baselineOnMigrate, false),
+  baselineVersion: named.argumentOr(#baselineVersion, r'1'),
+  baselineDescription: named.argumentOr(
+    #baselineDescription,
+    r'<< Baseline >>',
+  ),
+  target: named.argumentOr(#target, r'latest'),
+  placeholders: named.argumentOr(#placeholders, const <String, String>{}),
+  placeholderReplacement: named.argumentOr(#placeholderReplacement, true),
+  placeholderPrefix: named.argumentOr(#placeholderPrefix, r'${'),
+  placeholderSuffix: named.argumentOr(#placeholderSuffix, r'}'),
+  group: named.argumentOr(#group, false),
+  connectRetries: named.argumentOr(#connectRetries, 0),
+  connectRetriesInterval: named.argumentOr(
+    #connectRetriesInterval,
+    const Duration(seconds: 10),
+  ),
+  lockTimeout: named.argumentOr(#lockTimeout, const Duration(minutes: 1)),
+);
+Object? _$get64(_i2.DataSourceConfigProperties bean) => bean.url;
+Object? _$get65(_i2.DataSourceConfigProperties bean) => bean.username;
+Object? _$get66(_i2.DataSourceConfigProperties bean) => bean.password;
+Object? _$get67(_i2.DataSourceConfigProperties bean) => bean.driver;
+Object? _$get68(_i2.DataSourceConfigProperties bean) => bean.pool;
+Object? _$get69(_i2.DataSourceConfigProperties bean) => bean.sqlite;
+Object? _$get70(_i2.DataSourceConfigProperties bean) => bean.postgresql;
+_i2.DataSourceConfigProperties _$create71(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataSourceConfigProperties(
+  url: named.argumentOr(#url, null),
+  username: named.argumentOr(#username, null),
+  password: named.argumentOr(#password, null),
+  driver: named.argumentOr(#driver, null),
+  pool: named.argumentOr(#pool, const _i2.DataSourcePoolProperties()),
+  sqlite: named.argumentOr(#sqlite, const _i2.SqliteConfigProperties()),
+  postgresql: named.argumentOr(
+    #postgresql,
+    const _i2.PostgresqlConfigProperties(),
+  ),
+);
+Object? _$get72(_i2.DataSourcePoolProperties bean) => bean.maxSize;
+Object? _$get73(_i2.DataSourcePoolProperties bean) => bean.minIdle;
+Object? _$get74(_i2.DataSourcePoolProperties bean) => bean.connectionTimeout;
+Object? _$get75(_i2.DataSourcePoolProperties bean) => bean.idleTimeout;
+Object? _$get76(_i2.DataSourcePoolProperties bean) => bean.maxLifetime;
+Object? _$get77(_i2.DataSourcePoolProperties bean) => bean.validation;
+_i2.DataSourcePoolProperties _$create78(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DataSourcePoolProperties(
+  maxSize: named.argumentOr(#maxSize, 10),
+  minIdle: named.argumentOr(#minIdle, 0),
+  connectionTimeout: named.argumentOr(
+    #connectionTimeout,
+    const Duration(seconds: 30),
+  ),
+  idleTimeout: named.argumentOr(#idleTimeout, const Duration(minutes: 10)),
+  maxLifetime: named.argumentOr(#maxLifetime, const Duration(minutes: 30)),
+  validation: named.argumentOr(#validation, true),
+);
+Object? _$get79(_i2.SqliteConfigProperties bean) => bean.baseDirectory;
+Object? _$get80(_i2.SqliteConfigProperties bean) => bean.busyTimeout;
+Object? _$get81(_i2.SqliteConfigProperties bean) => bean.isolate;
+_i2.SqliteConfigProperties _$create82(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SqliteConfigProperties(
+  baseDirectory: named.argumentOr(#baseDirectory, null),
+  busyTimeout: named.argumentOr(#busyTimeout, 5000),
+  isolate: named.argumentOr(#isolate, false),
+);
+Object? _$get83(_i2.PostgresqlConfigProperties bean) => bean.sslmode;
+Object? _$get84(_i2.PostgresqlConfigProperties bean) => bean.sslRootCert;
+Object? _$get85(_i2.PostgresqlConfigProperties bean) => bean.connectTimeout;
+Object? _$get86(_i2.PostgresqlConfigProperties bean) => bean.applicationName;
+Object? _$get87(_i2.PostgresqlConfigProperties bean) => bean.searchPath;
+_i2.PostgresqlConfigProperties _$create88(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.PostgresqlConfigProperties(
+  sslmode: named.argumentOr(#sslmode, _i6.PostgresSslSetting.prefer),
+  sslRootCert: named.argumentOr(#sslRootCert, null),
+  connectTimeout: named.argumentOr(
+    #connectTimeout,
+    const Duration(seconds: 15),
+  ),
+  applicationName: named.argumentOr(#applicationName, null),
+  searchPath: named.argumentOr(#searchPath, null),
+);
+Object? _$get89(_i2.NamedDataSourcesProperties bean) => bean.datasources;
+_i2.NamedDataSourcesProperties _$create90(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.NamedDataSourcesProperties(
+  datasources: named.argumentOr(#datasources, null),
+);
+Object? _$get91(_i2.NamedDataSourceProperties bean) => bean.url;
+Object? _$get92(_i2.NamedDataSourceProperties bean) => bean.username;
+Object? _$get93(_i2.NamedDataSourceProperties bean) => bean.password;
+Object? _$get94(_i2.NamedDataSourceProperties bean) => bean.driver;
+Object? _$get95(_i2.NamedDataSourceProperties bean) => bean.pool;
+Object? _$get96(_i2.NamedDataSourceProperties bean) => bean.sqlite;
+Object? _$get97(_i2.NamedDataSourceProperties bean) => bean.postgresql;
+Object? _$get98(_i2.NamedDataSourceProperties bean) => bean.sql;
+Object? _$get99(_i2.NamedDataSourceProperties bean) => bean.data;
+_i2.NamedDataSourceProperties _$create100(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.NamedDataSourceProperties(
+  url: named.argumentOr(#url, null),
+  username: named.argumentOr(#username, null),
+  password: named.argumentOr(#password, null),
+  driver: named.argumentOr(#driver, null),
+  pool: named.argumentOr(#pool, const _i2.DataSourcePoolProperties()),
+  sqlite: named.argumentOr(#sqlite, const _i2.SqliteConfigProperties()),
+  postgresql: named.argumentOr(
+    #postgresql,
+    const _i2.PostgresqlConfigProperties(),
+  ),
+  sql: named.argumentOr(#sql, const _i2.SqlProperties()),
+  data: named.argumentOr(#data, const _i2.NamedDataProperties()),
+);
+Object? _$get101(_i2.NamedDataProperties bean) => bean.jdbc;
+_i2.NamedDataProperties _$create102(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.NamedDataProperties(
+  jdbc: named.argumentOr(#jdbc, const _i2.NamedDataJdbcProperties()),
+);
+Object? _$get103(_i2.NamedDataJdbcProperties bean) => bean.schema;
+_i2.NamedDataJdbcProperties _$create104(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.NamedDataJdbcProperties(
+  schema: named.argumentOr(#schema, _i3.SchemaMode.validate),
+);
+
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
 _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
   r'dataConfigBeans',
@@ -27,7 +348,6 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.DataProperties>(
       name: r'dataProperties',
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#DataProperties',
-      types: const [_i2.DataProperties],
       create: (r) =>
           _i1.ConstructorBound.from<_i2.DataProperties>(r, r'dataProperties'),
       annotations: const [
@@ -35,50 +355,26 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'jdbc',
-            declaringType: r'DataProperties',
-            targetType: r'DataProperties',
+          _i1.MethodSignature.of(
+            r'jdbc',
+            _$target0,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'DataJdbcProperties',
-            targetTypes: [r'DataProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.data',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'memory',
-            declaringType: r'DataProperties',
-            targetType: r'DataProperties',
+          _i1.MethodSignature.of(
+            r'memory',
+            _$target0,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'DataMemoryProperties',
-            targetTypes: [r'DataProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.data',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'web',
-            declaringType: r'DataProperties',
-            targetType: r'DataProperties',
+          _i1.MethodSignature.of(
+            r'web',
+            _$target0,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'DataWebProperties',
-            targetTypes: [r'DataProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.data',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'DataProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -87,7 +383,6 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.JdbcProperties>(
       name: r'jdbcProperties',
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#JdbcProperties',
-      types: const [_i2.JdbcProperties],
       create: (r) =>
           _i1.ConstructorBound.from<_i2.JdbcProperties>(r, r'jdbcProperties'),
       annotations: const [
@@ -95,20 +390,12 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'template',
-            declaringType: r'JdbcProperties',
-            targetType: r'JdbcProperties',
+          _i1.MethodSignature.of(
+            r'template',
+            _$target1,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'JdbcTemplateProperties',
-            targetTypes: [r'JdbcProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.jdbc',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'JdbcProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -117,7 +404,6 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.SqlProperties>(
       name: r'sqlProperties',
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#SqlProperties',
-      types: const [_i2.SqlProperties],
       create: (r) =>
           _i1.ConstructorBound.from<_i2.SqlProperties>(r, r'sqlProperties'),
       annotations: const [
@@ -125,35 +411,19 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'init',
-            declaringType: r'SqlProperties',
-            targetType: r'SqlProperties',
+          _i1.MethodSignature.of(
+            r'init',
+            _$target2,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'SqlInitSettings',
-            targetTypes: [r'SqlProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.sql',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'migration',
-            declaringType: r'SqlProperties',
-            targetType: r'SqlProperties',
+          _i1.MethodSignature.of(
+            r'migration',
+            _$target2,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'MigrationSettings',
-            targetTypes: [r'SqlProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.sql',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'SqlProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -162,7 +432,6 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.DataSourceConfigProperties>(
       name: r'dataSourceConfigProperties',
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#DataSourceConfigProperties',
-      types: const [_i2.DataSourceConfigProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.DataSourceConfigProperties>(
         r,
         r'dataSourceConfigProperties',
@@ -175,110 +444,54 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'url',
-            declaringType: r'DataSourceConfigProperties',
-            targetType: r'DataSourceConfigProperties',
+          _i1.MethodSignature.of(
+            r'url',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DataSourceConfigProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.datasource',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'username',
-            declaringType: r'DataSourceConfigProperties',
-            targetType: r'DataSourceConfigProperties',
+          _i1.MethodSignature.of(
+            r'username',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DataSourceConfigProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.datasource',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'password',
-            declaringType: r'DataSourceConfigProperties',
-            targetType: r'DataSourceConfigProperties',
+          _i1.MethodSignature.of(
+            r'password',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DataSourceConfigProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.datasource',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'driver',
-            declaringType: r'DataSourceConfigProperties',
-            targetType: r'DataSourceConfigProperties',
+          _i1.MethodSignature.of(
+            r'driver',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'String',
-            targetTypes: [r'DataSourceConfigProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.datasource',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'pool',
-            declaringType: r'DataSourceConfigProperties',
-            targetType: r'DataSourceConfigProperties',
+          _i1.MethodSignature.of(
+            r'pool',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'DataSourcePoolProperties',
-            targetTypes: [r'DataSourceConfigProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.datasource',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'sqlite',
-            declaringType: r'DataSourceConfigProperties',
-            targetType: r'DataSourceConfigProperties',
+          _i1.MethodSignature.of(
+            r'sqlite',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'SqliteConfigProperties',
-            targetTypes: [r'DataSourceConfigProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.datasource',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i1.MethodSignature(
-            name: r'postgresql',
-            declaringType: r'DataSourceConfigProperties',
-            targetType: r'DataSourceConfigProperties',
+          _i1.MethodSignature.of(
+            r'postgresql',
+            _$target3,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'PostgresqlConfigProperties',
-            targetTypes: [r'DataSourceConfigProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(
-                r'spring.datasource',
-                ignoreInvalidFields: true,
-              ),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'DataSourceConfigProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -287,7 +500,6 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
     _i1.BeanDefinition<_i2.NamedDataSourcesProperties>(
       name: r'namedDataSourcesProperties',
       source: r'package:spring_boot_starter_data/src/properties/data_properties.dart#NamedDataSourcesProperties',
-      types: const [_i2.NamedDataSourcesProperties],
       create: (r) => _i1.ConstructorBound.from<_i2.NamedDataSourcesProperties>(
         r,
         r'namedDataSourcesProperties',
@@ -297,17 +509,12 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
       ],
       aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i1.MethodSignature(
-            name: r'datasources',
-            declaringType: r'NamedDataSourcesProperties',
-            targetType: r'NamedDataSourcesProperties',
+          _i1.MethodSignature.of(
+            r'datasources',
+            _$target4,
+            declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'NamedDataSourcesProperties'],
-            targetAnnotations: [
-              _i1.ConfigurationProperties(r'spring', ignoreInvalidFields: true),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
         reason: r'NamedDataSourcesProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -315,1159 +522,1055 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
     ),
   ],
   introspections: [
-    _i1.BeanIntrospection<_i2.DataProperties>(
+    const _i1.BeanIntrospection<_i2.DataProperties>(
       className: r'DataProperties',
       properties: [
         _i1.BeanProperty<_i2.DataProperties>(
           r'jdbc',
-          type: _i2.DataJdbcProperties,
-          typeInfo: const _i1.ClassType<_i2.DataJdbcProperties>(),
-          get: (bean) => bean.jdbc,
+          typeInfo: _i1.ClassType<_i2.DataJdbcProperties>(),
+          get: _$get5,
         ),
         _i1.BeanProperty<_i2.DataProperties>(
           r'memory',
-          type: _i2.DataMemoryProperties,
-          typeInfo: const _i1.ClassType<_i2.DataMemoryProperties>(),
-          get: (bean) => bean.memory,
+          typeInfo: _i1.ClassType<_i2.DataMemoryProperties>(),
+          get: _$get6,
         ),
         _i1.BeanProperty<_i2.DataProperties>(
           r'web',
-          type: _i2.DataWebProperties,
-          typeInfo: const _i1.ClassType<_i2.DataWebProperties>(),
-          get: (bean) => bean.web,
+          typeInfo: _i1.ClassType<_i2.DataWebProperties>(),
+          get: _$get7,
         ),
       ],
-      annotations: const [
+      annotations: [
         _i1.ConfigurationProperties(r'spring.data', ignoreInvalidFields: true),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataProperties>(
         parameters: [
           _i1.BeanParameter(
             r'jdbc',
-            type: const _i1.ClassType<_i2.DataJdbcProperties>(),
+            type: _i1.ClassType<_i2.DataJdbcProperties>(),
             symbol: #jdbc,
             hasDefaultValue: true,
-            defaultValue: const _i2.DataJdbcProperties(),
+            defaultValue: _i2.DataJdbcProperties(),
           ),
           _i1.BeanParameter(
             r'memory',
-            type: const _i1.ClassType<_i2.DataMemoryProperties>(),
+            type: _i1.ClassType<_i2.DataMemoryProperties>(),
             symbol: #memory,
             hasDefaultValue: true,
-            defaultValue: const _i2.DataMemoryProperties(),
+            defaultValue: _i2.DataMemoryProperties(),
           ),
           _i1.BeanParameter(
             r'web',
-            type: const _i1.ClassType<_i2.DataWebProperties>(),
+            type: _i1.ClassType<_i2.DataWebProperties>(),
             symbol: #web,
             hasDefaultValue: true,
-            defaultValue: const _i2.DataWebProperties(),
+            defaultValue: _i2.DataWebProperties(),
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DataProperties.new, positional, named)
-                as _i2.DataProperties),
+        create: _$create8,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DataJdbcProperties>(
+    const _i1.BeanIntrospection<_i2.DataJdbcProperties>(
       className: r'DataJdbcProperties',
       properties: [
         _i1.BeanProperty<_i2.DataJdbcProperties>(
           r'schema',
-          type: _i3.SchemaMode,
-          typeInfo: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
-          get: (bean) => bean.schema,
+          typeInfo: _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
+          get: _$get9,
         ),
         _i1.BeanProperty<_i2.DataJdbcProperties>(
           r'showSql',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.showSql,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get10,
         ),
         _i1.BeanProperty<_i2.DataJdbcProperties>(
           r'formatSql',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.formatSql,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get11,
         ),
         _i1.BeanProperty<_i2.DataJdbcProperties>(
           r'showParameters',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.showParameters,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get12,
         ),
         _i1.BeanProperty<_i2.DataJdbcProperties>(
           r'slowQueryThreshold',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i1.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.slowQueryThreshold,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get13,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataJdbcProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataJdbcProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataJdbcProperties>(
         parameters: [
           _i1.BeanParameter(
             r'schema',
-            type: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
+            type: _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
             symbol: #schema,
             hasDefaultValue: true,
             defaultValue: _i3.SchemaMode.validate,
           ),
           _i1.BeanParameter(
             r'showSql',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #showSql,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'formatSql',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #formatSql,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'showParameters',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #showParameters,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'slowQueryThreshold',
-            type: const _i1.ClassType<Duration>(nullable: true),
+            type: _i1.ClassType<Duration>(nullable: true),
             symbol: #slowQueryThreshold,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DataJdbcProperties.new, positional, named)
-                as _i2.DataJdbcProperties),
+        create: _$create14,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DataMemoryProperties>(
+    const _i1.BeanIntrospection<_i2.DataMemoryProperties>(
       className: r'DataMemoryProperties',
       properties: [
         _i1.BeanProperty<_i2.DataMemoryProperties>(
           r'lockTimeout',
-          type: Duration,
-          typeInfo: const _i1.ClassType<Duration>(),
-          get: (bean) => bean.lockTimeout,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get15,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataMemoryProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataMemoryProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataMemoryProperties>(
         parameters: [
           _i1.BeanParameter(
             r'lockTimeout',
-            type: const _i1.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #lockTimeout,
             hasDefaultValue: true,
-            defaultValue: const Duration(seconds: 10),
+            defaultValue: Duration(seconds: 10),
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DataMemoryProperties.new, positional, named)
-                as _i2.DataMemoryProperties),
+        create: _$create16,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DataWebProperties>(
+    const _i1.BeanIntrospection<_i2.DataWebProperties>(
       className: r'DataWebProperties',
       properties: [
         _i1.BeanProperty<_i2.DataWebProperties>(
           r'pageable',
-          type: _i2.DataPageableProperties,
-          typeInfo: const _i1.ClassType<_i2.DataPageableProperties>(),
-          get: (bean) => bean.pageable,
+          typeInfo: _i1.ClassType<_i2.DataPageableProperties>(),
+          get: _$get17,
         ),
         _i1.BeanProperty<_i2.DataWebProperties>(
           r'sort',
-          type: _i2.DataSortProperties,
-          typeInfo: const _i1.ClassType<_i2.DataSortProperties>(),
-          get: (bean) => bean.sort,
+          typeInfo: _i1.ClassType<_i2.DataSortProperties>(),
+          get: _$get18,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataWebProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataWebProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataWebProperties>(
         parameters: [
           _i1.BeanParameter(
             r'pageable',
-            type: const _i1.ClassType<_i2.DataPageableProperties>(),
+            type: _i1.ClassType<_i2.DataPageableProperties>(),
             symbol: #pageable,
             hasDefaultValue: true,
-            defaultValue: const _i2.DataPageableProperties(),
+            defaultValue: _i2.DataPageableProperties(),
           ),
           _i1.BeanParameter(
             r'sort',
-            type: const _i1.ClassType<_i2.DataSortProperties>(),
+            type: _i1.ClassType<_i2.DataSortProperties>(),
             symbol: #sort,
             hasDefaultValue: true,
-            defaultValue: const _i2.DataSortProperties(),
+            defaultValue: _i2.DataSortProperties(),
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DataWebProperties.new, positional, named)
-                as _i2.DataWebProperties),
+        create: _$create19,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DataPageableProperties>(
+    const _i1.BeanIntrospection<_i2.DataPageableProperties>(
       className: r'DataPageableProperties',
       properties: [
         _i1.BeanProperty<_i2.DataPageableProperties>(
           r'defaultPageSize',
-          type: int,
-          typeInfo: const _i1.ClassType<int>(),
-          get: (bean) => bean.defaultPageSize,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get20,
         ),
         _i1.BeanProperty<_i2.DataPageableProperties>(
           r'maxPageSize',
-          type: int,
-          typeInfo: const _i1.ClassType<int>(),
-          get: (bean) => bean.maxPageSize,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get21,
         ),
         _i1.BeanProperty<_i2.DataPageableProperties>(
           r'oneIndexedParameters',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.oneIndexedParameters,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get22,
         ),
         _i1.BeanProperty<_i2.DataPageableProperties>(
           r'pageParameter',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.pageParameter,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get23,
         ),
         _i1.BeanProperty<_i2.DataPageableProperties>(
           r'sizeParameter',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.sizeParameter,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get24,
         ),
         _i1.BeanProperty<_i2.DataPageableProperties>(
           r'prefix',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.prefix,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get25,
         ),
         _i1.BeanProperty<_i2.DataPageableProperties>(
           r'qualifierDelimiter',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.qualifierDelimiter,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get26,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataPageableProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataPageableProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataPageableProperties>(
         parameters: [
           _i1.BeanParameter(
             r'defaultPageSize',
-            type: const _i1.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #defaultPageSize,
             hasDefaultValue: true,
             defaultValue: 20,
           ),
           _i1.BeanParameter(
             r'maxPageSize',
-            type: const _i1.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #maxPageSize,
             hasDefaultValue: true,
             defaultValue: 2000,
           ),
           _i1.BeanParameter(
             r'oneIndexedParameters',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #oneIndexedParameters,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'pageParameter',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #pageParameter,
             hasDefaultValue: true,
             defaultValue: r'page',
           ),
           _i1.BeanParameter(
             r'sizeParameter',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #sizeParameter,
             hasDefaultValue: true,
             defaultValue: r'size',
           ),
           _i1.BeanParameter(
             r'prefix',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #prefix,
             hasDefaultValue: true,
             defaultValue: r'',
           ),
           _i1.BeanParameter(
             r'qualifierDelimiter',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #qualifierDelimiter,
             hasDefaultValue: true,
             defaultValue: r'_',
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DataPageableProperties.new, positional, named)
-                as _i2.DataPageableProperties),
+        create: _$create27,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DataSortProperties>(
+    const _i1.BeanIntrospection<_i2.DataSortProperties>(
       className: r'DataSortProperties',
       properties: [
         _i1.BeanProperty<_i2.DataSortProperties>(
           r'sortParameter',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.sortParameter,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get28,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataSortProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataSortProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataSortProperties>(
         parameters: [
           _i1.BeanParameter(
             r'sortParameter',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #sortParameter,
             hasDefaultValue: true,
             defaultValue: r'sort',
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DataSortProperties.new, positional, named)
-                as _i2.DataSortProperties),
+        create: _$create29,
       ),
     ),
-    _i1.BeanIntrospection<_i2.JdbcProperties>(
+    const _i1.BeanIntrospection<_i2.JdbcProperties>(
       className: r'JdbcProperties',
       properties: [
         _i1.BeanProperty<_i2.JdbcProperties>(
           r'template',
-          type: _i2.JdbcTemplateProperties,
-          typeInfo: const _i1.ClassType<_i2.JdbcTemplateProperties>(),
-          get: (bean) => bean.template,
+          typeInfo: _i1.ClassType<_i2.JdbcTemplateProperties>(),
+          get: _$get30,
         ),
       ],
-      annotations: const [
+      annotations: [
         _i1.ConfigurationProperties(r'spring.jdbc', ignoreInvalidFields: true),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.JdbcProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JdbcProperties.new,
       constructor: _i1.BeanConstructor<_i2.JdbcProperties>(
         parameters: [
           _i1.BeanParameter(
             r'template',
-            type: const _i1.ClassType<_i2.JdbcTemplateProperties>(),
+            type: _i1.ClassType<_i2.JdbcTemplateProperties>(),
             symbol: #template,
             hasDefaultValue: true,
-            defaultValue: const _i2.JdbcTemplateProperties(),
+            defaultValue: _i2.JdbcTemplateProperties(),
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.JdbcProperties.new, positional, named)
-                as _i2.JdbcProperties),
+        create: _$create31,
       ),
     ),
-    _i1.BeanIntrospection<_i2.JdbcTemplateProperties>(
+    const _i1.BeanIntrospection<_i2.JdbcTemplateProperties>(
       className: r'JdbcTemplateProperties',
       properties: [
         _i1.BeanProperty<_i2.JdbcTemplateProperties>(
           r'queryTimeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i1.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.queryTimeout,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get32,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.JdbcTemplateProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.JdbcTemplateProperties.new,
       constructor: _i1.BeanConstructor<_i2.JdbcTemplateProperties>(
         parameters: [
           _i1.BeanParameter(
             r'queryTimeout',
-            type: const _i1.ClassType<Duration>(nullable: true),
+            type: _i1.ClassType<Duration>(nullable: true),
             symbol: #queryTimeout,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.JdbcTemplateProperties.new, positional, named)
-                as _i2.JdbcTemplateProperties),
+        create: _$create33,
       ),
     ),
-    _i1.BeanIntrospection<_i2.SqlProperties>(
+    const _i1.BeanIntrospection<_i2.SqlProperties>(
       className: r'SqlProperties',
       properties: [
         _i1.BeanProperty<_i2.SqlProperties>(
           r'init',
-          type: _i4.SqlInitSettings,
-          typeInfo: const _i1.ClassType<_i4.SqlInitSettings>(),
-          get: (bean) => bean.init,
+          typeInfo: _i1.ClassType<_i4.SqlInitSettings>(),
+          get: _$get34,
         ),
         _i1.BeanProperty<_i2.SqlProperties>(
           r'migration',
-          type: _i5.MigrationSettings,
-          typeInfo: const _i1.ClassType<_i5.MigrationSettings>(),
-          get: (bean) => bean.migration,
+          typeInfo: _i1.ClassType<_i5.MigrationSettings>(),
+          get: _$get35,
         ),
       ],
-      annotations: const [
+      annotations: [
         _i1.ConfigurationProperties(r'spring.sql', ignoreInvalidFields: true),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.SqlProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.SqlProperties.new,
       constructor: _i1.BeanConstructor<_i2.SqlProperties>(
         parameters: [
           _i1.BeanParameter(
             r'init',
-            type: const _i1.ClassType<_i4.SqlInitSettings>(),
+            type: _i1.ClassType<_i4.SqlInitSettings>(),
             symbol: #init,
             hasDefaultValue: true,
-            defaultValue: const _i4.SqlInitSettings(),
+            defaultValue: _i4.SqlInitSettings(),
           ),
           _i1.BeanParameter(
             r'migration',
-            type: const _i1.ClassType<_i5.MigrationSettings>(),
+            type: _i1.ClassType<_i5.MigrationSettings>(),
             symbol: #migration,
             hasDefaultValue: true,
-            defaultValue: const _i5.MigrationSettings(),
+            defaultValue: _i5.MigrationSettings(),
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.SqlProperties.new, positional, named)
-                as _i2.SqlProperties),
+        create: _$create36,
       ),
     ),
-    _i1.BeanIntrospection<_i4.SqlInitSettings>(
+    const _i1.BeanIntrospection<_i4.SqlInitSettings>(
       className: r'SqlInitSettings',
       properties: [
         _i1.BeanProperty<_i4.SqlInitSettings>(
           r'mode',
-          type: _i4.SqlInitMode,
-          typeInfo: const _i1.EnumType<_i4.SqlInitMode>(_i4.SqlInitMode.values),
-          get: (bean) => bean.mode,
+          typeInfo: _i1.EnumType<_i4.SqlInitMode>(_i4.SqlInitMode.values),
+          get: _$get37,
         ),
         _i1.BeanProperty<_i4.SqlInitSettings>(
           r'schemaLocations',
-          type: List<String>,
-          typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
-          get: (bean) => bean.schemaLocations,
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get38,
         ),
         _i1.BeanProperty<_i4.SqlInitSettings>(
           r'dataLocations',
-          type: List<String>,
-          typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
-          get: (bean) => bean.dataLocations,
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get39,
         ),
         _i1.BeanProperty<_i4.SqlInitSettings>(
           r'platform',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.platform,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get40,
         ),
         _i1.BeanProperty<_i4.SqlInitSettings>(
           r'continueOnError',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.continueOnError,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get41,
         ),
         _i1.BeanProperty<_i4.SqlInitSettings>(
           r'separator',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.separator,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get42,
         ),
         _i1.BeanProperty<_i4.SqlInitSettings>(
           r'encoding',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.encoding,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get43,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i4.SqlInitSettings(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i4.SqlInitSettings.new,
       constructor: _i1.BeanConstructor<_i4.SqlInitSettings>(
         parameters: [
           _i1.BeanParameter(
             r'mode',
-            type: const _i1.EnumType<_i4.SqlInitMode>(_i4.SqlInitMode.values),
+            type: _i1.EnumType<_i4.SqlInitMode>(_i4.SqlInitMode.values),
             symbol: #mode,
             hasDefaultValue: true,
             defaultValue: _i4.SqlInitMode.embedded,
           ),
           _i1.BeanParameter(
             r'schemaLocations',
-            type: const _i1.ListType<String>(_i1.ClassType<String>()),
+            type: _i1.ListType<String>(_i1.ClassType<String>()),
             symbol: #schemaLocations,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: <String>[],
           ),
           _i1.BeanParameter(
             r'dataLocations',
-            type: const _i1.ListType<String>(_i1.ClassType<String>()),
+            type: _i1.ListType<String>(_i1.ClassType<String>()),
             symbol: #dataLocations,
             hasDefaultValue: true,
-            defaultValue: const [],
+            defaultValue: <String>[],
           ),
           _i1.BeanParameter(
             r'platform',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #platform,
             hasDefaultValue: true,
             defaultValue: r'all',
           ),
           _i1.BeanParameter(
             r'continueOnError',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #continueOnError,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'separator',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #separator,
             hasDefaultValue: true,
             defaultValue: r';',
           ),
           _i1.BeanParameter(
             r'encoding',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #encoding,
             hasDefaultValue: true,
             defaultValue: r'utf-8',
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i4.SqlInitSettings.new, positional, named)
-                as _i4.SqlInitSettings),
+        create: _$create44,
       ),
     ),
-    _i1.BeanIntrospection<_i5.MigrationSettings>(
+    const _i1.BeanIntrospection<_i5.MigrationSettings>(
       className: r'MigrationSettings',
       properties: [
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'enabled',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.enabled,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get45,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'locations',
-          type: List<String>,
-          typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
-          get: (bean) => bean.locations,
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get46,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'table',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.table,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get47,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'validateOnMigrate',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.validateOnMigrate,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get48,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'outOfOrder',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.outOfOrder,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get49,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'ignoreMigrationPatterns',
-          type: List<String>,
-          typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),
-          get: (bean) => bean.ignoreMigrationPatterns,
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get50,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'baselineOnMigrate',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.baselineOnMigrate,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get51,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'baselineVersion',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.baselineVersion,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get52,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'baselineDescription',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.baselineDescription,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get53,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'target',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.target,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get54,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholders',
-          type: Map<String, String>,
-          typeInfo: const _i1.MapType<String, String>(
+          typeInfo: _i1.MapType<String, String>(
             _i1.ClassType<String>(),
             _i1.ClassType<String>(),
           ),
-          get: (bean) => bean.placeholders,
+          get: _$get55,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholderReplacement',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.placeholderReplacement,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get56,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholderPrefix',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.placeholderPrefix,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get57,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'placeholderSuffix',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
-          get: (bean) => bean.placeholderSuffix,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get58,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'group',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.group,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get59,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'connectRetries',
-          type: int,
-          typeInfo: const _i1.ClassType<int>(),
-          get: (bean) => bean.connectRetries,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get60,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'connectRetriesInterval',
-          type: Duration,
-          typeInfo: const _i1.ClassType<Duration>(),
-          get: (bean) => bean.connectRetriesInterval,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get61,
         ),
         _i1.BeanProperty<_i5.MigrationSettings>(
           r'lockTimeout',
-          type: Duration,
-          typeInfo: const _i1.ClassType<Duration>(),
-          get: (bean) => bean.lockTimeout,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get62,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i5.MigrationSettings(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i5.MigrationSettings.new,
       constructor: _i1.BeanConstructor<_i5.MigrationSettings>(
         parameters: [
           _i1.BeanParameter(
             r'enabled',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #enabled,
             hasDefaultValue: true,
             defaultValue: true,
           ),
           _i1.BeanParameter(
             r'locations',
-            type: const _i1.ListType<String>(_i1.ClassType<String>()),
+            type: _i1.ListType<String>(_i1.ClassType<String>()),
             symbol: #locations,
             hasDefaultValue: true,
-            defaultValue: const [r'resources:db/migration'],
+            defaultValue: [r'resources:db/migration'],
           ),
           _i1.BeanParameter(
             r'table',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #table,
             hasDefaultValue: true,
             defaultValue: r'schema_history',
           ),
           _i1.BeanParameter(
             r'validateOnMigrate',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #validateOnMigrate,
             hasDefaultValue: true,
             defaultValue: true,
           ),
           _i1.BeanParameter(
             r'outOfOrder',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #outOfOrder,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'ignoreMigrationPatterns',
-            type: const _i1.ListType<String>(_i1.ClassType<String>()),
+            type: _i1.ListType<String>(_i1.ClassType<String>()),
             symbol: #ignoreMigrationPatterns,
             hasDefaultValue: true,
-            defaultValue: const [r'*:future'],
+            defaultValue: [r'*:future'],
           ),
           _i1.BeanParameter(
             r'baselineOnMigrate',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #baselineOnMigrate,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'baselineVersion',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #baselineVersion,
             hasDefaultValue: true,
             defaultValue: r'1',
           ),
           _i1.BeanParameter(
             r'baselineDescription',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #baselineDescription,
             hasDefaultValue: true,
             defaultValue: r'<< Baseline >>',
           ),
           _i1.BeanParameter(
             r'target',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #target,
             hasDefaultValue: true,
             defaultValue: r'latest',
           ),
           _i1.BeanParameter(
             r'placeholders',
-            type: const _i1.MapType<String, String>(
+            type: _i1.MapType<String, String>(
               _i1.ClassType<String>(),
               _i1.ClassType<String>(),
             ),
             symbol: #placeholders,
             hasDefaultValue: true,
-            defaultValue: const {},
+            defaultValue: <String, String>{},
           ),
           _i1.BeanParameter(
             r'placeholderReplacement',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #placeholderReplacement,
             hasDefaultValue: true,
             defaultValue: true,
           ),
           _i1.BeanParameter(
             r'placeholderPrefix',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #placeholderPrefix,
             hasDefaultValue: true,
             defaultValue: r'${',
           ),
           _i1.BeanParameter(
             r'placeholderSuffix',
-            type: const _i1.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #placeholderSuffix,
             hasDefaultValue: true,
             defaultValue: r'}',
           ),
           _i1.BeanParameter(
             r'group',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #group,
             hasDefaultValue: true,
             defaultValue: false,
           ),
           _i1.BeanParameter(
             r'connectRetries',
-            type: const _i1.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #connectRetries,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
           _i1.BeanParameter(
             r'connectRetriesInterval',
-            type: const _i1.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #connectRetriesInterval,
             hasDefaultValue: true,
-            defaultValue: const Duration(seconds: 10),
-            annotations: const [_i6.DurationUnit(_i1.ChronoUnit.seconds)],
+            defaultValue: Duration(seconds: 10),
+            annotations: [_i7.DurationUnit(_i1.ChronoUnit.seconds)],
           ),
           _i1.BeanParameter(
             r'lockTimeout',
-            type: const _i1.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #lockTimeout,
             hasDefaultValue: true,
-            defaultValue: const Duration(minutes: 1),
-            annotations: const [_i6.DurationUnit(_i1.ChronoUnit.seconds)],
+            defaultValue: Duration(minutes: 1),
+            annotations: [_i7.DurationUnit(_i1.ChronoUnit.seconds)],
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i5.MigrationSettings.new, positional, named)
-                as _i5.MigrationSettings),
+        create: _$create63,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DataSourceConfigProperties>(
+    const _i1.BeanIntrospection<_i2.DataSourceConfigProperties>(
       className: r'DataSourceConfigProperties',
       properties: [
         _i1.BeanProperty<_i2.DataSourceConfigProperties>(
           r'url',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.url,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get64,
         ),
         _i1.BeanProperty<_i2.DataSourceConfigProperties>(
           r'username',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.username,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get65,
         ),
         _i1.BeanProperty<_i2.DataSourceConfigProperties>(
           r'password',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.password,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get66,
         ),
         _i1.BeanProperty<_i2.DataSourceConfigProperties>(
           r'driver',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.driver,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get67,
         ),
         _i1.BeanProperty<_i2.DataSourceConfigProperties>(
           r'pool',
-          type: _i2.DataSourcePoolProperties,
-          typeInfo: const _i1.ClassType<_i2.DataSourcePoolProperties>(),
-          get: (bean) => bean.pool,
+          typeInfo: _i1.ClassType<_i2.DataSourcePoolProperties>(),
+          get: _$get68,
         ),
         _i1.BeanProperty<_i2.DataSourceConfigProperties>(
           r'sqlite',
-          type: _i2.SqliteConfigProperties,
-          typeInfo: const _i1.ClassType<_i2.SqliteConfigProperties>(),
-          get: (bean) => bean.sqlite,
+          typeInfo: _i1.ClassType<_i2.SqliteConfigProperties>(),
+          get: _$get69,
         ),
         _i1.BeanProperty<_i2.DataSourceConfigProperties>(
           r'postgresql',
-          type: _i2.PostgresqlConfigProperties,
-          typeInfo: const _i1.ClassType<_i2.PostgresqlConfigProperties>(),
-          get: (bean) => bean.postgresql,
+          typeInfo: _i1.ClassType<_i2.PostgresqlConfigProperties>(),
+          get: _$get70,
         ),
       ],
-      annotations: const [
+      annotations: [
         _i1.ConfigurationProperties(
           r'spring.datasource',
           ignoreInvalidFields: true,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataSourceConfigProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataSourceConfigProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataSourceConfigProperties>(
         parameters: [
           _i1.BeanParameter(
             r'url',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #url,
           ),
           _i1.BeanParameter(
             r'username',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #username,
           ),
           _i1.BeanParameter(
             r'password',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #password,
           ),
           _i1.BeanParameter(
             r'driver',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #driver,
           ),
           _i1.BeanParameter(
             r'pool',
-            type: const _i1.ClassType<_i2.DataSourcePoolProperties>(),
+            type: _i1.ClassType<_i2.DataSourcePoolProperties>(),
             symbol: #pool,
             hasDefaultValue: true,
-            defaultValue: const _i2.DataSourcePoolProperties(),
+            defaultValue: _i2.DataSourcePoolProperties(),
           ),
           _i1.BeanParameter(
             r'sqlite',
-            type: const _i1.ClassType<_i2.SqliteConfigProperties>(),
+            type: _i1.ClassType<_i2.SqliteConfigProperties>(),
             symbol: #sqlite,
             hasDefaultValue: true,
-            defaultValue: const _i2.SqliteConfigProperties(),
+            defaultValue: _i2.SqliteConfigProperties(),
           ),
           _i1.BeanParameter(
             r'postgresql',
-            type: const _i1.ClassType<_i2.PostgresqlConfigProperties>(),
+            type: _i1.ClassType<_i2.PostgresqlConfigProperties>(),
             symbol: #postgresql,
             hasDefaultValue: true,
-            defaultValue: const _i2.PostgresqlConfigProperties(),
+            defaultValue: _i2.PostgresqlConfigProperties(),
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.DataSourceConfigProperties.new,
-          positional,
-          named,
-        ) as _i2.DataSourceConfigProperties),
+        create: _$create71,
       ),
     ),
-    _i1.BeanIntrospection<_i2.DataSourcePoolProperties>(
+    const _i1.BeanIntrospection<_i2.DataSourcePoolProperties>(
       className: r'DataSourcePoolProperties',
       properties: [
         _i1.BeanProperty<_i2.DataSourcePoolProperties>(
           r'maxSize',
-          type: int,
-          typeInfo: const _i1.ClassType<int>(),
-          get: (bean) => bean.maxSize,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get72,
         ),
         _i1.BeanProperty<_i2.DataSourcePoolProperties>(
           r'minIdle',
-          type: int,
-          typeInfo: const _i1.ClassType<int>(),
-          get: (bean) => bean.minIdle,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get73,
         ),
         _i1.BeanProperty<_i2.DataSourcePoolProperties>(
           r'connectionTimeout',
-          type: Duration,
-          typeInfo: const _i1.ClassType<Duration>(),
-          get: (bean) => bean.connectionTimeout,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get74,
         ),
         _i1.BeanProperty<_i2.DataSourcePoolProperties>(
           r'idleTimeout',
-          type: Duration,
-          typeInfo: const _i1.ClassType<Duration>(),
-          get: (bean) => bean.idleTimeout,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get75,
         ),
         _i1.BeanProperty<_i2.DataSourcePoolProperties>(
           r'maxLifetime',
-          type: Duration,
-          typeInfo: const _i1.ClassType<Duration>(),
-          get: (bean) => bean.maxLifetime,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get76,
         ),
         _i1.BeanProperty<_i2.DataSourcePoolProperties>(
           r'validation',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.validation,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get77,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.DataSourcePoolProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.DataSourcePoolProperties.new,
       constructor: _i1.BeanConstructor<_i2.DataSourcePoolProperties>(
         parameters: [
           _i1.BeanParameter(
             r'maxSize',
-            type: const _i1.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #maxSize,
             hasDefaultValue: true,
             defaultValue: 10,
           ),
           _i1.BeanParameter(
             r'minIdle',
-            type: const _i1.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #minIdle,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
           _i1.BeanParameter(
             r'connectionTimeout',
-            type: const _i1.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #connectionTimeout,
             hasDefaultValue: true,
-            defaultValue: const Duration(seconds: 30),
+            defaultValue: Duration(seconds: 30),
           ),
           _i1.BeanParameter(
             r'idleTimeout',
-            type: const _i1.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #idleTimeout,
             hasDefaultValue: true,
-            defaultValue: const Duration(minutes: 10),
+            defaultValue: Duration(minutes: 10),
           ),
           _i1.BeanParameter(
             r'maxLifetime',
-            type: const _i1.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #maxLifetime,
             hasDefaultValue: true,
-            defaultValue: const Duration(minutes: 30),
+            defaultValue: Duration(minutes: 30),
           ),
           _i1.BeanParameter(
             r'validation',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #validation,
             hasDefaultValue: true,
             defaultValue: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.DataSourcePoolProperties.new, positional, named)
-                as _i2.DataSourcePoolProperties),
+        create: _$create78,
       ),
     ),
-    _i1.BeanIntrospection<_i2.SqliteConfigProperties>(
+    const _i1.BeanIntrospection<_i2.SqliteConfigProperties>(
       className: r'SqliteConfigProperties',
       properties: [
         _i1.BeanProperty<_i2.SqliteConfigProperties>(
           r'baseDirectory',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.baseDirectory,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get79,
         ),
         _i1.BeanProperty<_i2.SqliteConfigProperties>(
           r'busyTimeout',
-          type: int,
-          typeInfo: const _i1.ClassType<int>(),
-          get: (bean) => bean.busyTimeout,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get80,
         ),
         _i1.BeanProperty<_i2.SqliteConfigProperties>(
           r'isolate',
-          type: bool,
-          typeInfo: const _i1.ClassType<bool>(),
-          get: (bean) => bean.isolate,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get81,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.SqliteConfigProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.SqliteConfigProperties.new,
       constructor: _i1.BeanConstructor<_i2.SqliteConfigProperties>(
         parameters: [
           _i1.BeanParameter(
             r'baseDirectory',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #baseDirectory,
           ),
           _i1.BeanParameter(
             r'busyTimeout',
-            type: const _i1.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #busyTimeout,
             hasDefaultValue: true,
             defaultValue: 5000,
           ),
           _i1.BeanParameter(
             r'isolate',
-            type: const _i1.ClassType<bool>(),
+            type: _i1.ClassType<bool>(),
             symbol: #isolate,
             hasDefaultValue: true,
             defaultValue: false,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.SqliteConfigProperties.new, positional, named)
-                as _i2.SqliteConfigProperties),
+        create: _$create82,
       ),
     ),
-    _i1.BeanIntrospection<_i2.PostgresqlConfigProperties>(
+    const _i1.BeanIntrospection<_i2.PostgresqlConfigProperties>(
       className: r'PostgresqlConfigProperties',
       properties: [
         _i1.BeanProperty<_i2.PostgresqlConfigProperties>(
           r'sslmode',
-          type: _i7.PostgresSslSetting,
-          typeInfo: const _i1.EnumType<_i7.PostgresSslSetting>(
-            _i7.PostgresSslSetting.values,
+          typeInfo: _i1.EnumType<_i6.PostgresSslSetting>(
+            _i6.PostgresSslSetting.values,
           ),
-          get: (bean) => bean.sslmode,
+          get: _$get83,
         ),
         _i1.BeanProperty<_i2.PostgresqlConfigProperties>(
           r'sslRootCert',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.sslRootCert,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get84,
         ),
         _i1.BeanProperty<_i2.PostgresqlConfigProperties>(
           r'connectTimeout',
-          type: Duration,
-          typeInfo: const _i1.ClassType<Duration>(),
-          get: (bean) => bean.connectTimeout,
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get85,
         ),
         _i1.BeanProperty<_i2.PostgresqlConfigProperties>(
           r'applicationName',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.applicationName,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get86,
         ),
         _i1.BeanProperty<_i2.PostgresqlConfigProperties>(
           r'searchPath',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.searchPath,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get87,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.PostgresqlConfigProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.PostgresqlConfigProperties.new,
       constructor: _i1.BeanConstructor<_i2.PostgresqlConfigProperties>(
         parameters: [
           _i1.BeanParameter(
             r'sslmode',
-            type: const _i1.EnumType<_i7.PostgresSslSetting>(
-              _i7.PostgresSslSetting.values,
+            type: _i1.EnumType<_i6.PostgresSslSetting>(
+              _i6.PostgresSslSetting.values,
             ),
             symbol: #sslmode,
             hasDefaultValue: true,
-            defaultValue: _i7.PostgresSslSetting.prefer,
+            defaultValue: _i6.PostgresSslSetting.prefer,
           ),
           _i1.BeanParameter(
             r'sslRootCert',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #sslRootCert,
           ),
           _i1.BeanParameter(
             r'connectTimeout',
-            type: const _i1.ClassType<Duration>(),
+            type: _i1.ClassType<Duration>(),
             symbol: #connectTimeout,
             hasDefaultValue: true,
-            defaultValue: const Duration(seconds: 15),
+            defaultValue: Duration(seconds: 15),
           ),
           _i1.BeanParameter(
             r'applicationName',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #applicationName,
           ),
           _i1.BeanParameter(
             r'searchPath',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #searchPath,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.PostgresqlConfigProperties.new,
-          positional,
-          named,
-        ) as _i2.PostgresqlConfigProperties),
+        create: _$create88,
       ),
     ),
-    _i1.BeanIntrospection<_i2.NamedDataSourcesProperties>(
+    const _i1.BeanIntrospection<_i2.NamedDataSourcesProperties>(
       className: r'NamedDataSourcesProperties',
       properties: [
         _i1.BeanProperty<_i2.NamedDataSourcesProperties>(
           r'datasources',
-          type: Map<String, _i2.NamedDataSourceProperties>,
           nullable: true,
-          typeInfo: const _i1.MapType<String, _i2.NamedDataSourceProperties>(
+          typeInfo: _i1.MapType<String, _i2.NamedDataSourceProperties>(
             _i1.ClassType<String>(),
             _i1.ClassType<_i2.NamedDataSourceProperties>(),
             nullable: true,
           ),
-          get: (bean) => bean.datasources,
+          get: _$get89,
         ),
       ],
-      annotations: const [
+      annotations: [
         _i1.ConfigurationProperties(r'spring', ignoreInvalidFields: true),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.NamedDataSourcesProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.NamedDataSourcesProperties.new,
       constructor: _i1.BeanConstructor<_i2.NamedDataSourcesProperties>(
         parameters: [
           _i1.BeanParameter(
             r'datasources',
-            type: const _i1.MapType<String, _i2.NamedDataSourceProperties>(
+            type: _i1.MapType<String, _i2.NamedDataSourceProperties>(
               _i1.ClassType<String>(),
               _i1.ClassType<_i2.NamedDataSourceProperties>(),
               nullable: true,
@@ -1475,194 +1578,171 @@ _i1.BeanModule get $dataConfigBeans => _i1.BeanModule(
             symbol: #datasources,
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.NamedDataSourcesProperties.new,
-          positional,
-          named,
-        ) as _i2.NamedDataSourcesProperties),
+        create: _$create90,
       ),
     ),
-    _i1.BeanIntrospection<_i2.NamedDataSourceProperties>(
+    const _i1.BeanIntrospection<_i2.NamedDataSourceProperties>(
       className: r'NamedDataSourceProperties',
       properties: [
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'url',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.url,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get91,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'username',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.username,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get92,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'password',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.password,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get93,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'driver',
-          type: String,
           nullable: true,
-          typeInfo: const _i1.ClassType<String>(nullable: true),
-          get: (bean) => bean.driver,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get94,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'pool',
-          type: _i2.DataSourcePoolProperties,
-          typeInfo: const _i1.ClassType<_i2.DataSourcePoolProperties>(),
-          get: (bean) => bean.pool,
+          typeInfo: _i1.ClassType<_i2.DataSourcePoolProperties>(),
+          get: _$get95,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'sqlite',
-          type: _i2.SqliteConfigProperties,
-          typeInfo: const _i1.ClassType<_i2.SqliteConfigProperties>(),
-          get: (bean) => bean.sqlite,
+          typeInfo: _i1.ClassType<_i2.SqliteConfigProperties>(),
+          get: _$get96,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'postgresql',
-          type: _i2.PostgresqlConfigProperties,
-          typeInfo: const _i1.ClassType<_i2.PostgresqlConfigProperties>(),
-          get: (bean) => bean.postgresql,
+          typeInfo: _i1.ClassType<_i2.PostgresqlConfigProperties>(),
+          get: _$get97,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'sql',
-          type: _i2.SqlProperties,
-          typeInfo: const _i1.ClassType<_i2.SqlProperties>(),
-          get: (bean) => bean.sql,
+          typeInfo: _i1.ClassType<_i2.SqlProperties>(),
+          get: _$get98,
         ),
         _i1.BeanProperty<_i2.NamedDataSourceProperties>(
           r'data',
-          type: _i2.NamedDataProperties,
-          typeInfo: const _i1.ClassType<_i2.NamedDataProperties>(),
-          get: (bean) => bean.data,
+          typeInfo: _i1.ClassType<_i2.NamedDataProperties>(),
+          get: _$get99,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.NamedDataSourceProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.NamedDataSourceProperties.new,
       constructor: _i1.BeanConstructor<_i2.NamedDataSourceProperties>(
         parameters: [
           _i1.BeanParameter(
             r'url',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #url,
           ),
           _i1.BeanParameter(
             r'username',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #username,
           ),
           _i1.BeanParameter(
             r'password',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #password,
           ),
           _i1.BeanParameter(
             r'driver',
-            type: const _i1.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #driver,
           ),
           _i1.BeanParameter(
             r'pool',
-            type: const _i1.ClassType<_i2.DataSourcePoolProperties>(),
+            type: _i1.ClassType<_i2.DataSourcePoolProperties>(),
             symbol: #pool,
             hasDefaultValue: true,
-            defaultValue: const _i2.DataSourcePoolProperties(),
+            defaultValue: _i2.DataSourcePoolProperties(),
           ),
           _i1.BeanParameter(
             r'sqlite',
-            type: const _i1.ClassType<_i2.SqliteConfigProperties>(),
+            type: _i1.ClassType<_i2.SqliteConfigProperties>(),
             symbol: #sqlite,
             hasDefaultValue: true,
-            defaultValue: const _i2.SqliteConfigProperties(),
+            defaultValue: _i2.SqliteConfigProperties(),
           ),
           _i1.BeanParameter(
             r'postgresql',
-            type: const _i1.ClassType<_i2.PostgresqlConfigProperties>(),
+            type: _i1.ClassType<_i2.PostgresqlConfigProperties>(),
             symbol: #postgresql,
             hasDefaultValue: true,
-            defaultValue: const _i2.PostgresqlConfigProperties(),
+            defaultValue: _i2.PostgresqlConfigProperties(),
           ),
           _i1.BeanParameter(
             r'sql',
-            type: const _i1.ClassType<_i2.SqlProperties>(),
+            type: _i1.ClassType<_i2.SqlProperties>(),
             symbol: #sql,
             hasDefaultValue: true,
-            defaultValue: const _i2.SqlProperties(),
+            defaultValue: _i2.SqlProperties(),
           ),
           _i1.BeanParameter(
             r'data',
-            type: const _i1.ClassType<_i2.NamedDataProperties>(),
+            type: _i1.ClassType<_i2.NamedDataProperties>(),
             symbol: #data,
             hasDefaultValue: true,
-            defaultValue: const _i2.NamedDataProperties(),
+            defaultValue: _i2.NamedDataProperties(),
           ),
         ],
-        create: (positional, named) => (Function.apply(
-          _i2.NamedDataSourceProperties.new,
-          positional,
-          named,
-        ) as _i2.NamedDataSourceProperties),
+        create: _$create100,
       ),
     ),
-    _i1.BeanIntrospection<_i2.NamedDataProperties>(
+    const _i1.BeanIntrospection<_i2.NamedDataProperties>(
       className: r'NamedDataProperties',
       properties: [
         _i1.BeanProperty<_i2.NamedDataProperties>(
           r'jdbc',
-          type: _i2.NamedDataJdbcProperties,
-          typeInfo: const _i1.ClassType<_i2.NamedDataJdbcProperties>(),
-          get: (bean) => bean.jdbc,
+          typeInfo: _i1.ClassType<_i2.NamedDataJdbcProperties>(),
+          get: _$get101,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.NamedDataProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.NamedDataProperties.new,
       constructor: _i1.BeanConstructor<_i2.NamedDataProperties>(
         parameters: [
           _i1.BeanParameter(
             r'jdbc',
-            type: const _i1.ClassType<_i2.NamedDataJdbcProperties>(),
+            type: _i1.ClassType<_i2.NamedDataJdbcProperties>(),
             symbol: #jdbc,
             hasDefaultValue: true,
-            defaultValue: const _i2.NamedDataJdbcProperties(),
+            defaultValue: _i2.NamedDataJdbcProperties(),
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.NamedDataProperties.new, positional, named)
-                as _i2.NamedDataProperties),
+        create: _$create102,
       ),
     ),
-    _i1.BeanIntrospection<_i2.NamedDataJdbcProperties>(
+    const _i1.BeanIntrospection<_i2.NamedDataJdbcProperties>(
       className: r'NamedDataJdbcProperties',
       properties: [
         _i1.BeanProperty<_i2.NamedDataJdbcProperties>(
           r'schema',
-          type: _i3.SchemaMode,
-          typeInfo: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
-          get: (bean) => bean.schema,
+          typeInfo: _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
+          get: _$get103,
         ),
       ],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.NamedDataJdbcProperties(),
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.NamedDataJdbcProperties.new,
       constructor: _i1.BeanConstructor<_i2.NamedDataJdbcProperties>(
         parameters: [
           _i1.BeanParameter(
             r'schema',
-            type: const _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
+            type: _i1.EnumType<_i3.SchemaMode>(_i3.SchemaMode.values),
             symbol: #schema,
             hasDefaultValue: true,
             defaultValue: _i3.SchemaMode.validate,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i2.NamedDataJdbcProperties.new, positional, named)
-                as _i2.NamedDataJdbcProperties),
+        create: _$create104,
       ),
     ),
   ],

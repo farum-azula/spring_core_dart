@@ -1,6 +1,9 @@
+import 'dart:collection';
+
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 import 'package:spring_core_dart/src/aop/aspect_advisors.dart';
+import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/exceptions.dart';
@@ -118,6 +121,174 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
         name,
   ];
 
+  // The beans with a deferred placeholder [checkDeferredProxies] checked,
+  // with the definition and the factory in use then, and the advisors it
+  // checked them against: created later, they are not checked again while
+  // all three are the same.
+  List<PointcutAdvisor>? _checkedAdvisors;
+  final _checkedDeferred =
+      <String, (BeanDefinition<Object>, AopProxyFactory)>{};
+
+  /// Checks at startup that the proxies the build left out or pruned lose
+  /// no advice, and throws an [AopConfigException] when they would:
+  ///
+  /// - advice matches a member of a bean whose own proxy factory is an
+  ///   `AopProxyFactory.deferred` placeholder (a starter's bean) and the
+  ///   factory in use does not intercept that member: no module of the
+  ///   context brought its proxy class (a context built without the
+  ///   application's generated module), or the one registered for it
+  ///   leaves the member out;
+  /// - a bean's factory in use was pruned by the build
+  ///   (`AopProxyFactory.knownAdvisors`: no proxy class, or one for some
+  ///   members only) and an aspect or advisor bean of this context or an
+  ///   ancestor is not one the build knew of (registered in code, by a
+  ///   registrar or with `registerSingleton`).
+  ///
+  /// The context calls it before it creates the singletons (after it set
+  /// the `conversionService`), so a lazy bean fails at startup too, not on
+  /// first use. No advisor is created when no placeholder is left.
+  void checkDeferredProxies() {
+    _checkedAdvisors = null;
+    _checkedDeferred.clear();
+    final deferred = <(String, BeanDefinition<Object>)>[];
+    // Each set of known advisors in use, with a bean using it.
+    final pruned = LinkedHashMap<Set<String>, String>.identity();
+    for (final name in beanFactory.beanDefinitionNames) {
+      final definition = beanFactory.getBeanDefinition(name);
+      final own = definition.aopProxy;
+      if (own == null || definition.aspect != null) {
+        continue;
+      }
+      if (own.isDeferred) {
+        deferred.add((name, definition));
+      }
+      if (beanFactory.aopProxyOf(definition)?.knownAdvisors case final known?) {
+        pruned.putIfAbsent(known, () => name);
+      }
+    }
+    pruned.forEach(_checkKnownAdvisors);
+    if (deferred.isEmpty) {
+      return;
+    }
+    final checked = _checkedAdvisors = advisors;
+    for (final (name, definition) in deferred) {
+      _checkDeferred(name, definition, checked);
+      _checkedDeferred[name] = (
+        definition,
+        beanFactory.aopProxyOf(definition)!,
+      );
+    }
+  }
+
+  // Throws when an aspect or advisor bean of this factory or an ancestor
+  // is not in [known], the advisors the build knew of when it pruned the
+  // proxy of [beanName] (and maybe others).
+  void _checkKnownAdvisors(Set<String> known, String beanName) {
+    final seen = <String>{};
+    for (final factory in [beanFactory, ..._ancestors(beanFactory)]) {
+      final names = factory.beanDefinitionNames;
+      for (final name in names) {
+        if (seen.contains(name)) {
+          continue;
+        }
+        final definition = factory.getBeanDefinition(name);
+        if ((definition.aspect != null ||
+                definition.types.contains(Advisor) ||
+                definition.types.contains(PointcutAdvisor)) &&
+            !_isKnown(known, definition.source)) {
+          _unknownAdvisor(
+            definition.aspect != null ? 'aspect' : 'advisor',
+            name,
+            definition.source,
+            beanName,
+          );
+        }
+      }
+      seen.addAll(names);
+      for (final name in _manualAdvisorNames(factory)) {
+        if (seen.add(name)) {
+          _unknownAdvisor('advisor', name, 'registerSingleton', beanName);
+        }
+      }
+    }
+  }
+
+  // Whether [source] is one of [known]: listed, or in a package listed.
+  static bool _isKnown(Set<String> known, String? source) =>
+      source != null &&
+      (known.contains(source) ||
+          known.any(
+            (entry) =>
+                !entry.contains('#') &&
+                (source.startsWith('$entry/') || source.startsWith('$entry#')),
+          ));
+
+  static Never _unknownAdvisor(
+    String kind,
+    String name,
+    String? source,
+    String beanName,
+  ) => throw AopConfigException(
+    "The $kind bean '$name' (${source ?? 'registered in code'}) is not one "
+    'the build knew of when it generated the proxies of the beans for only '
+    "the advice it found (bean '$beanName' and maybe others): its advice "
+    'would not reach the members left out. Build the application with the '
+    'option aop_prune: false, or declare the advice where the build reads '
+    'it (an @Aspect, or a @Bean method returning a DefaultPointcutAdvisor '
+    'with a constant pointcut).',
+  );
+
+  // Throws when an advisor matches a member of the placeholder of
+  // [definition] that the factory in use does not intercept: all of them
+  // when no factory was registered for it.
+  void _checkDeferred(
+    String name,
+    BeanDefinition<Object> definition,
+    List<PointcutAdvisor> advisors,
+  ) {
+    final placeholder = definition.aopProxy!;
+    final used = beanFactory.aopProxyOf(definition)!;
+    final missing = identical(used, placeholder)
+        ? placeholder.signatures
+        : () {
+            final intercepted = {
+              for (final signature in used.signatures)
+                (signature.name, signature.kind),
+            };
+            return [
+              for (final signature in placeholder.signatures)
+                if (!intercepted.contains((signature.name, signature.kind)))
+                  signature,
+            ];
+          }();
+    if (missing.isEmpty) {
+      return;
+    }
+    final aliases = [
+      ...beanFactory.getAliases(name),
+      ...definition.qualifiers,
+    ];
+    for (final advisor in advisors) {
+      for (final signature in missing) {
+        if (!pointcutMatchesBean(advisor.pointcut, signature, name, aliases)) {
+          continue;
+        }
+        if (identical(used, placeholder)) {
+          throw AopConfigException(
+            "Advice matches bean '$name' ($advisor), but it cannot be "
+            'proxied: ${AopProxyFactory.deferredReason}',
+          );
+        }
+        throw AopConfigException(
+          "Advice matches member '${signature.name}' of bean '$name' "
+          '($advisor), but the proxy class registered for it '
+          '(${definition.source}) does not intercept that member. Build the '
+          'application with the option aop_prune: false.',
+        );
+      }
+    }
+  }
+
   /// Returns the proxy of [bean] when an advisor matches one of its
   /// members, or a `@DeclareParents` introduction of a registered aspect
   /// applies to it; else [bean] itself.
@@ -132,12 +303,29 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
       return bean;
     }
     final definition = beanFactory.getBeanDefinition(beanName);
-    final proxyFactory = definition.aopProxy;
+    final proxyFactory = beanFactory.aopProxyOf(definition);
     if (proxyFactory == null ||
         definition.aspect != null ||
         bean is Advisor ||
         bean is BeanPostProcessor) {
       return bean;
+    }
+    // A starter's bean: no advice may match a member the factory in use
+    // does not intercept. Checked at startup, against the same advisors and
+    // factory, it is not checked again.
+    if (definition.aopProxy?.isDeferred ?? false) {
+      final current = advisors;
+      final checked = _checkedDeferred[beanName];
+      if (checked == null ||
+          !identical(checked.$1, definition) ||
+          !identical(checked.$2, proxyFactory) ||
+          !identical(_checkedAdvisors, current)) {
+        _checkDeferred(beanName, definition, current);
+      }
+      // A placeholder still: nothing matches it.
+      if (proxyFactory.isDeferred) {
+        return bean;
+      }
     }
     // `bean(...)` also matches aliases and qualifier values.
     final aliases = [
@@ -283,7 +471,11 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
       final byOrder = a.$2.compareTo(b.$2);
       return byOrder != 0 ? byOrder : a.$3.compareTo(b.$3);
     });
-    final result = [for (final (advisor, _, _) in entries) advisor];
+    // Unmodifiable: the startup check knows the list it checked against
+    // by identity.
+    final result = List<PointcutAdvisor>.unmodifiable([
+      for (final (advisor, _, _) in entries) advisor,
+    ]);
     if (complete) {
       _advisors = result;
     }

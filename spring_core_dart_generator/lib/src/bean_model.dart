@@ -1381,8 +1381,17 @@ class ForeignAdvice {
   final aspects = <(String, AspectModel)>[];
 
   /// Whether another module declares an advisor bean whose pointcut the
-  /// build cannot read, which may match anything; nothing is pruned then.
+  /// build cannot read, which may match anything, or may register advice
+  /// in code (an `@Import`ed registrar, a `BeanFactoryPostProcessor`
+  /// bean); nothing is pruned then.
   bool advisors = false;
+
+  /// The `source`s of the aspect and advisor beans of the other modules,
+  /// and `package:<name>` for each auto-configuration package whose advice
+  /// the build read: the pruned proxies list them
+  /// (`AopProxyFactory.knownAdvisors`), and the context fails at startup
+  /// when another aspect or advisor is registered.
+  final knownSources = <String>{};
 
   /// Whether another module may declare advice the build cannot read (an
   /// auto-configuration with aspects); nothing is pruned then.
@@ -1748,6 +1757,27 @@ class ProxyModel {
   /// signatures are emitted either (`AopProxyFactory.pruned`).
   bool pruned = false;
 
+  /// Whether the module of a library package leaves the proxy class to the
+  /// application's build (`AopProxyFactory.deferred`, with the
+  /// signatures): only an aspect of the application can match the bean.
+  bool deferred = false;
+
+  /// The members some pointcut the build knows may match, when the build
+  /// pruned the others (`null`: every member is advisable). Only these get
+  /// a `MethodSignature` and run through the advice; a wrapper proxy
+  /// forwards the others to the target, a subclass proxy inherits them.
+  Set<ProxyMember>? advisedMembers;
+
+  /// The members that run through the advice, in the order of their
+  /// `MethodSignature` index.
+  List<ProxyMember> get advisableMembers => switch (advisedMembers) {
+    null => members,
+    final advised => [
+      for (final member in members)
+        if (advised.contains(member)) member,
+    ],
+  };
+
   /// Set when the proxy is a subclass of the target, created by the
   /// container as the bean itself, instead of a wrapper around it.
   final SubclassProxy? subclass;
@@ -1755,6 +1785,48 @@ class ProxyModel {
   /// `@DeclareParents` introductions the proxy class implements, in the
   /// order of their runtime index.
   final introductions = <IntroductionModel>[];
+}
+
+/// A bean of a library package whose module left its proxy class to the
+/// application (`AopProxyFactory.deferred`), as the
+/// `@SpringBootApplication` build found it in the modules of the
+/// auto-configurations.
+///
+/// The application's module writes [proxy]'s class, only when one of the
+/// application's pointcuts may match the bean, and registers its factory
+/// under [source] (`BeanModule.aopProxies`).
+///
+/// ```dart
+/// // Found in spring_boot_starter_logging's module:
+/// BeanDefinition<LoggingProperties>(name: r'loggingProperties',
+///     source: r'package:...#LoggingProperties',
+///     aopProxy: const AopProxyFactory.deferred(signatures: [...]))
+/// ```
+class ForeignProxyModel {
+  /// Creates the model.
+  ForeignProxyModel({
+    required this.source,
+    required this.beanName,
+    required this.proxy,
+    required this.element,
+    this.beanNames = const [],
+  });
+
+  /// The `source` of the bean's definition, the key of its factory.
+  final String source;
+
+  /// The bean's name, for `bean(...)` pointcuts.
+  final String beanName;
+
+  /// The bean's aliases and qualifiers, which `bean(...)` pointcuts match
+  /// too.
+  final List<String> beanNames;
+
+  /// The proxy to write.
+  final ProxyModel proxy;
+
+  /// The bean's class, for imports and messages.
+  final Element element;
 }
 
 /// The extra data of a subclass proxy: a generated class that extends the
@@ -2809,6 +2881,16 @@ class ModuleModel {
   /// The lazy proxies for `@Lazy` injection points, one per type, keyed by
   /// library URI and type name.
   final lazyProxies = <String, ProxyModel>{};
+
+  /// The beans of library packages whose proxy class the application's
+  /// module may write (see [ForeignProxyModel]); only the
+  /// `@SpringBootApplication` output has some.
+  final foreignProxies = <ForeignProxyModel>[];
+
+  /// The `source`s of the aspect and advisor beans the build knew of when
+  /// it pruned proxies of the module (see [ForeignAdvice.knownSources]);
+  /// `null` when it pruned none. `analyzeAop` sets it.
+  Set<String>? knownAdvisors;
 
   /// Every public class of the scanned libraries. The emitter needs it for
   /// `@args(...)` pointcuts: which classes carry an annotation.

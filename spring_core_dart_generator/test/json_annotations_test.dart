@@ -163,9 +163,10 @@ void main() {
   test(
     '@JsonValue on class properties and methods is kept for the runtime',
     () {
-      expect(output, _has("BeanProperty<Isbn>(r'value', type: String,"));
-      expect(output, _has('annotations: const [JsonValue()]'));
-      expect(output, _has("BeanProperty<Code>(r'text', type: String,"));
+      // Constant descriptions: the type comes from typeInfo.
+      expect(output, _has("BeanProperty<Isbn>(r'value', typeInfo:"));
+      expect(output, _has('annotations: [JsonValue()]'));
+      expect(output, _has("BeanProperty<Code>(r'text', typeInfo:"));
       expect(output, _has("BeanMethod<Label>(r'render',"));
       expect(
         output,

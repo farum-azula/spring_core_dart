@@ -10,91 +10,97 @@
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i5;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i4;
 import 'package:spring_boot_dart/src/runners.dart' as _i3;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
-import '../example.dart' as _i2;
+import '../example.dart' as _i1;
+
+const _$knownAdvisors0 = {r'package:spring_boot_dart'};
+Object? _$get1(_i1.GreetingProperties bean) => bean.name;
+void _$set2(_i1.GreetingProperties bean, Object? value) =>
+    bean.name = (value as String);
+Object? _$get3(_i1.GreetingProperties bean) => bean.times;
+void _$set4(_i1.GreetingProperties bean, Object? value) =>
+    bean.times = (value as int);
+_i1.GreetingProperties _$create5(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.GreetingProperties();
 
 /// Beans found by `@ComponentScan` in `example/`.
-_i1.BeanModule get $application => _i1.BeanModule(
+_i2.BeanModule get $application => _i2.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i2.GreetingProperties>(
+    _i2.BeanDefinition<_i1.GreetingProperties>(
       name: r'greetingProperties',
       source: r'asset:spring_boot_dart/example/example.dart#GreetingProperties',
-      types: const [_i2.GreetingProperties],
-      create: (r) => _i2.GreetingProperties(),
-      annotations: const [_i1.ConfigurationProperties(r'greeting')],
-      aopProxy: _i1.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches GreetingProperties, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      create: (r) => _i1.GreetingProperties(),
+      annotations: const [_i2.ConfigurationProperties(r'greeting')],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.Greeter>(
+    _i2.BeanDefinition<_i1.Greeter>(
       name: r'greeter',
       source: r'asset:spring_boot_dart/example/example.dart#Greeter',
-      types: const [_i2.Greeter],
       dependencies: const [
-        _i1.Dependency(_i2.GreetingProperties, name: r'properties'),
+        _i2.Dependency(_i1.GreetingProperties, name: r'properties'),
       ],
-      create: (r) => _i2.Greeter(
-        r.dependency<_i2.GreetingProperties>(name: r'properties'),
+      create: (r) => _i1.Greeter(
+        r.dependency<_i1.GreetingProperties>(name: r'properties'),
       ),
-      annotations: const [_i1.Service()],
-      aopProxy: _i1.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches Greeter, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      annotations: const [_i2.Service()],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.GreetOnStartup>(
+    _i2.BeanDefinition<_i1.GreetOnStartup>(
       name: r'greetOnStartup',
       source: r'asset:spring_boot_dart/example/example.dart#GreetOnStartup',
-      types: const [_i2.GreetOnStartup, _i3.CommandLineRunner],
+      types: const [_i1.GreetOnStartup, _i3.CommandLineRunner],
       dependencies: const [
-        _i1.Dependency(_i2.Greeter, name: r'greeter'),
-        _i1.Dependency(_i2.GreetingProperties, name: r'properties'),
+        _i2.Dependency(_i1.Greeter, name: r'greeter'),
+        _i2.Dependency(_i1.GreetingProperties, name: r'properties'),
       ],
-      create: (r) => _i2.GreetOnStartup(
-        r.dependency<_i2.Greeter>(name: r'greeter'),
-        r.dependency<_i2.GreetingProperties>(name: r'properties'),
+      create: (r) => _i1.GreetOnStartup(
+        r.dependency<_i1.Greeter>(name: r'greeter'),
+        r.dependency<_i1.GreetingProperties>(name: r'properties'),
       ),
       annotations: const [
-        _i1.Component(),
-        _i1.Log(topic: r'greeting'),
+        _i2.Component(),
+        _i2.Log(topic: r'greeting'),
       ],
-      aopProxy: _i1.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches GreetOnStartup, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
   ],
   introspections: [
-    _i1.BeanIntrospection<_i2.GreetingProperties>(
+    const _i2.BeanIntrospection<_i1.GreetingProperties>(
       className: r'GreetingProperties',
       properties: [
-        _i1.BeanProperty<_i2.GreetingProperties>(
+        _i2.BeanProperty<_i1.GreetingProperties>(
           r'name',
-          type: String,
-          typeInfo: const _i1.ClassType<String>(),
+          typeInfo: _i2.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'World',
-          get: (bean) => bean.name,
-          set: (bean, value) => bean.name = (value as String),
+          get: _$get1,
+          set: _$set2,
         ),
-        _i1.BeanProperty<_i2.GreetingProperties>(
+        _i2.BeanProperty<_i1.GreetingProperties>(
           r'times',
-          type: int,
-          typeInfo: const _i1.ClassType<int>(),
+          typeInfo: _i2.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 1,
-          get: (bean) => bean.times,
-          set: (bean, value) => bean.times = (value as int),
+          get: _$get3,
+          set: _$set4,
         ),
       ],
-      annotations: const [_i1.ConfigurationProperties(r'greeting')],
-      parts: const {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
-      instantiate: () => _i2.GreetingProperties(),
-      constructor: _i1.BeanConstructor<_i2.GreetingProperties>(
+      annotations: [_i2.ConfigurationProperties(r'greeting')],
+      parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+      instantiate: _i1.GreetingProperties.new,
+      constructor: _i2.BeanConstructor<_i1.GreetingProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i2.GreetingProperties.new, positional, named)
-                as _i2.GreetingProperties),
+        create: _$create5,
       ),
     ),
   ],
@@ -159,7 +165,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '97d1f367',
+  fingerprint: '738c1964',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -189,6 +195,6 @@ Future<_i4.ConfigurableApplicationContext> reloadApplicationAsync(
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// `@Log` of [GreetOnStartup]: the logger 'greeting'.
-extension $GreetOnStartupLog on _i2.GreetOnStartup {
-  _i1.SpringLog get log => const _i1.SpringLog(r'greeting');
+extension $GreetOnStartupLog on _i1.GreetOnStartup {
+  _i2.SpringLog get log => const _i2.SpringLog(r'greeting');
 }

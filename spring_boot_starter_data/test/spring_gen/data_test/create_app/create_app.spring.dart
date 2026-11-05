@@ -47,6 +47,13 @@ class _$TaskRepositoryImpl extends _i1.SimpleRepository<_i2.Task, int>
       this.operations.list(_findByDone, [done]);
 }
 
+const _$knownAdvisors0 = {
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_cache',
+  r'package:spring_boot_starter_data',
+  r'package:spring_boot_starter_logging',
+};
+
 /// Beans found by `@ComponentScan` in `lib/ and test/data_test/create_app/`.
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
@@ -64,8 +71,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i5.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$TaskRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches TaskRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i3.BeanDefinition<_i1.EntityIntrospections>(
@@ -479,7 +486,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '847d2cc8',
+  fingerprint: '2e0f4283',
 );
 
 /// Starts the application: config files, environment, context, runners

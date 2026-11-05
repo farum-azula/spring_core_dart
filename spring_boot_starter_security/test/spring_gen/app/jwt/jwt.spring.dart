@@ -9,52 +9,35 @@
 
 import 'dart:async' as _i6;
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i9;
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart' as _i7;
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart' as _i5;
-import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i1;
+import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i2;
 import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i4;
 import 'package:spring_web_dart/src/server/server_http_request.dart' as _i3;
 
 import '../../../app/jwt/jwt.dart' as _i8;
 
 class _$JwtSecurityConfig$ApiProxy
-    implements _i1.SecurityFilterChain, _i2.Advised {
-  _$JwtSecurityConfig$ApiProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i2.SecurityFilterChain {
+  _$JwtSecurityConfig$ApiProxy(this._target, this.aopInvoker);
 
-  final _i1.SecurityFilterChain _target;
+  final _i2.SecurityFilterChain _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  bool matches(_i3.ServerHttpRequest request) => (this._invoker.invoke(
+  bool matches(_i3.ServerHttpRequest request) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -63,7 +46,7 @@ class _$JwtSecurityConfig$ApiProxy
   ) as bool);
 
   @override
-  List<_i4.WebFilter> get filters => (this._invoker.invoke(
+  List<_i4.WebFilter> get filters => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -73,41 +56,24 @@ class _$JwtSecurityConfig$ApiProxy
 }
 
 class _$JwtSecurityConfig$JwtDecoderProxy
-    implements _i5.JwtDecoder, _i2.Advised {
-  _$JwtSecurityConfig$JwtDecoderProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i5.JwtDecoder {
+  _$JwtSecurityConfig$JwtDecoderProxy(this._target, this.aopInvoker);
 
   final _i5.NimbusJwtDecoder _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   _i6.Future<_i7.Jwt> decode(String token) =>
-      this._invoker.invokeAsync<_i7.Jwt>(this, this._target, 0, [
+      this.aopInvoker.invokeAsync<_i7.Jwt>(this, this._target, 0, [
         token,
       ], (args) => this._target.decode((args[0] as String)));
 }
@@ -117,23 +83,23 @@ class _$JwtSecurityConfig$JwtDecoderProxy
 class _$JwtSecurityConfigConfiguration extends _i8.JwtSecurityConfig {
   _$JwtSecurityConfigConfiguration(this._$beanFactory);
 
-  final _i2.BeanFactory _$beanFactory;
+  final _i1.BeanFactory _$beanFactory;
 
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i1.SecurityFilterChain api(_i9.HttpSecurity http) {
+  _i2.SecurityFilterChain api(_i9.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'api'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'api')
-          as _i1.SecurityFilterChain);
+          as _i2.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'api');
     }
   }
 
-  _i1.SecurityFilterChain _$api(_i2.DependencyResolver r) {
+  _i2.SecurityFilterChain _$api(_i1.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'api');
     if (_$args != null) {
       return super.api((_$args[0] as _i9.HttpSecurity));
@@ -145,86 +111,85 @@ class _$JwtSecurityConfigConfiguration extends _i8.JwtSecurityConfig {
   _i5.JwtDecoder jwtDecoder() =>
       (this._$beanFactory.getBeanByName(r'jwtDecoder') as _i5.JwtDecoder);
 
-  _i5.JwtDecoder _$jwtDecoder(_i2.DependencyResolver r) => super.jwtDecoder();
+  _i5.JwtDecoder _$jwtDecoder(_i1.DependencyResolver r) => super.jwtDecoder();
 }
 
+const _$target0 = _i1.AopTarget(
+  r'SecurityFilterChain',
+  types: [r'SecurityFilterChain'],
+);
+const _$target1 = _i1.AopTarget(
+  r'NimbusJwtDecoder',
+  types: [r'NimbusJwtDecoder', r'JwtDecoder'],
+);
+
 /// Beans found by `@ComponentScan` in `test/app/jwt`.
-_i2.BeanModule get $jwtSecurityBeans => _i2.BeanModule(r'jwtSecurityBeans', [
-  _i2.BeanDefinition<_i8.JwtSecurityConfig>(
+_i1.BeanModule get $jwtSecurityBeans => _i1.BeanModule(r'jwtSecurityBeans', [
+  _i1.BeanDefinition<_i8.JwtSecurityConfig>(
     name: r'jwtSecurityConfig',
     source: r'asset:spring_boot_starter_security/test/app/jwt/jwt.dart#JwtSecurityConfig',
-    types: const [_i8.JwtSecurityConfig],
     create: (r) => _$JwtSecurityConfigConfiguration(r),
-    annotations: const [_i2.Configuration()],
+    annotations: const [_i1.Configuration()],
   ),
-  _i2.BeanDefinition<_i1.SecurityFilterChain>(
+  _i1.BeanDefinition<_i2.SecurityFilterChain>(
     name: r'api',
     source: r'asset:spring_boot_starter_security/test/app/jwt/jwt.dart#JwtSecurityConfig.api',
-    types: const [_i1.SecurityFilterChain],
     factoryBeanName: r'jwtSecurityConfig',
     factoryMethodName: r'api',
     dependencies: const [
-      _i2.Dependency(_i8.JwtSecurityConfig, qualifier: r'jwtSecurityConfig'),
-      _i2.Dependency(_i9.HttpSecurity, name: r'http'),
+      _i1.Dependency(_i8.JwtSecurityConfig, qualifier: r'jwtSecurityConfig'),
+      _i1.Dependency(_i9.HttpSecurity, name: r'http'),
     ],
     create: (r) => (r.dependency<_i8.JwtSecurityConfig>(
       qualifier: r'jwtSecurityConfig',
     ) as _$JwtSecurityConfigConfiguration)._$api(r),
-    annotations: const [_i2.Bean()],
-    aopProxy: _i2.AopProxyFactory(
+    annotations: const [_i1.Bean()],
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'matches',
-          declaringType: r'SecurityFilterChain',
-          targetType: r'SecurityFilterChain',
-          declaringTypes: [r'SecurityFilterChain'],
+        _i1.MethodSignature.of(
+          r'matches',
+          _$target0,
           returnType: r'bool',
           parameterTypes: [r'ServerHttpRequest'],
           parameterNames: [r'request'],
-          targetTypes: [r'SecurityFilterChain'],
         ),
-        _i2.MethodSignature(
-          name: r'filters',
-          declaringType: r'SecurityFilterChain',
-          targetType: r'SecurityFilterChain',
-          declaringTypes: [r'SecurityFilterChain'],
-          kind: _i2.MemberKind.getter,
+        _i1.MethodSignature.of(
+          r'filters',
+          _$target0,
+          kind: _i1.MemberKind.getter,
           returnType: r'List',
-          targetTypes: [r'SecurityFilterChain'],
         ),
       ],
       create: (target, invoker) => _$JwtSecurityConfig$ApiProxy(
-        (target as _i1.SecurityFilterChain),
+        (target as _i2.SecurityFilterChain),
         invoker,
       ),
     ),
   ),
-  _i2.BeanDefinition<_i5.NimbusJwtDecoder>(
+  _i1.BeanDefinition<_i5.NimbusJwtDecoder>(
     name: r'jwtDecoder',
     source: r'asset:spring_boot_starter_security/test/app/jwt/jwt.dart#JwtSecurityConfig.jwtDecoder',
     types: const [_i5.NimbusJwtDecoder, _i5.JwtDecoder],
     factoryBeanName: r'jwtSecurityConfig',
     factoryMethodName: r'jwtDecoder',
     dependencies: const [
-      _i2.Dependency(_i8.JwtSecurityConfig, qualifier: r'jwtSecurityConfig'),
+      _i1.Dependency(_i8.JwtSecurityConfig, qualifier: r'jwtSecurityConfig'),
     ],
     create: (r) =>
         ((r.dependency<_i8.JwtSecurityConfig>(
               qualifier: r'jwtSecurityConfig',
             ) as _$JwtSecurityConfigConfiguration)._$jwtDecoder(r)
             as _i5.NimbusJwtDecoder),
-    annotations: const [_i2.Bean()],
-    aopProxy: _i2.AopProxyFactory(
+    annotations: const [_i1.Bean()],
+    aopProxy: _i1.AopProxyFactory(
       signatures: const [
-        _i2.MethodSignature(
-          name: r'decode',
+        _i1.MethodSignature.of(
+          r'decode',
+          _$target1,
           declaringType: r'JwtDecoder',
-          targetType: r'NimbusJwtDecoder',
-          declaringTypes: [r'JwtDecoder'],
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'token'],
-          targetTypes: [r'NimbusJwtDecoder', r'JwtDecoder'],
         ),
       ],
       create: (target, invoker) => _$JwtSecurityConfig$JwtDecoderProxy(

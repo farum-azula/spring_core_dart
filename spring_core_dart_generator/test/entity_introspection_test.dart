@@ -344,7 +344,7 @@ EntityIntrospection<Counter>(
     EntityProperty(r'hits', ClassType<int>(),
         writable: true, hasDefaultValue: true, defaultValue: 0),
     EntityProperty(r'tags', ListType<String>(ClassType<String>()),
-        writable: true, hasDefaultValue: true, defaultValue: []),
+        writable: true, hasDefaultValue: true, defaultValue: <String>[]),
     EntityProperty(r'at', ClassType<DateTime>(nullable: true), writable: true),
   ],
   annotations: const [Table(r'counters')],
@@ -419,7 +419,7 @@ EntityIntrospection<Counter>(
         '''
     EntityProperty(r'lines', ListType<OrderLine>(ClassType<OrderLine>()),
         annotations: [MappedCollection()], parameter: true, writable: true,
-        hasDefaultValue: true, defaultValue: []),
+        hasDefaultValue: true, defaultValue: <OrderLine>[]),
   ],
   annotations: const [Table(r'orders')],
   get: (e, i) => switch (i) {

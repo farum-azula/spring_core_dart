@@ -409,7 +409,8 @@ class Usage {
     expect(
       output,
       _has(
-        r'class _$OrdersProxy extends Orders implements UsageTracked, Advised',
+        r'class _$OrdersProxy extends Orders with AdvisedSubclass '
+        'implements UsageTracked',
       ),
     );
     expect(
@@ -422,7 +423,7 @@ class Usage {
     expect(
       output,
       _has(
-        r'int get useCount => ((this._$invoker ?? '
+        'int get useCount => ((this.aopInvoker ?? '
         "ProxyInvoker.notIntroduced(this, r'UsageTracked')) "
         '.introduction(0) as UsageTracked).useCount;',
       ),
@@ -623,7 +624,7 @@ class Audit {
 }
 ''';
       final output = await _generate(source);
-      expect(output, contains(r'final_$i$$=this._$invoker;'));
+      expect(output, contains(r'final_$i$$=this.aopInvoker;'));
       expect(await _diagnostics({'lib/src/service.dart': source}), isEmpty);
     },
   );

@@ -51,6 +51,15 @@ String _normalize(String code) => code
 
 Matcher _has(String code) => contains(_normalize(code));
 
+// The definition of the bean of class [name] says its proxy was pruned (in
+// normalized output).
+Matcher _pruned(String name) => matches(
+  RegExp(
+    'BeanDefinition<$name>\\((?:(?!BeanDefinition<).)*'
+    r'AopProxyFactory\.pruned\(knownAdvisors:_\$knownAdvisors\d+,?\)',
+  ),
+);
+
 String _output(TestBuilderResult result, String path) => result
     .readerWriter
     .testing
@@ -167,10 +176,7 @@ class Clock {
       expect(root, contains(r'class_$OrdersProxy'));
       // Mail matches no pointcut of any module: pruned.
       expect(root, isNot(contains(r'class_$MailProxy')));
-      expect(
-        root,
-        _has('found no pointcut of the application that matches Mail'),
-      );
+      expect(root, _pruned('Mail'));
       // The nested module may be imported by others: every proxy stays.
       final nested = _normalize(
         _output(result, 'lib/spring_gen/src/aspects/aspects.spring.dart'),
@@ -313,29 +319,23 @@ class Cfg {
     });
 
     test('proxies are Advised: advisors can be added and removed', () async {
+      // The runtime's AdvisedWrapper / AdvisedSubclass implement Advised
+      // through `aopInvoker`.
       final output = await _generate(_orders);
-      expect(
-        output,
-        _has(
-          'void addAdvisor(PointcutAdvisor advisor) => '
-          'this._invoker.addAdvisor(advisor);',
-        ),
-      );
-      expect(
-        output,
-        _has(
-          'bool removeAdvice(MethodInterceptor advice) => '
-          'this._invoker.removeAdvice(advice);',
-        ),
-      );
+      expect(output, _has('with AdvisedWrapper'));
+      expect(output, _has('@override final ProxyInvoker aopInvoker;'));
       final subclass = await _generate(
         '@Service() class Counter { int _n = 0; int add(int i) => _n += i; }',
       );
       expect(
         subclass,
+        _has(r'class _$CounterProxy extends Counter with AdvisedSubclass {'),
+      );
+      expect(
+        subclass,
         _has(
-          r'void addAdvisor(PointcutAdvisor advisor) => (this._$invoker ?? '
-          'ProxyInvoker.notAdvised(this)).addAdvisor(advisor);',
+          r'advise: (bean, invoker) => bean is _$CounterProxy ? '
+          '(bean..aopInvoker = invoker) : null',
         ),
       );
     });
@@ -440,8 +440,8 @@ class Sub extends Base {
 }
 ''');
       String signature(String name) => output
-          .split('MethodSignature(')
-          .singleWhere((part) => part.startsWith("name:r'$name'"));
+          .split('MethodSignature.of(')
+          .singleWhere((part) => part.startsWith("r'$name'"));
       // Inherited from Base: within(Base) / @within(Marker) match it.
       expect(
         signature('inherited'),
@@ -552,9 +552,15 @@ class Usage {
       final output = await _generate(source);
       expect(
         output,
-        _has(r'class _$OrdersProxy implements Orders, UsageTracked, Advised'),
+        _has(
+          r'class _$OrdersProxy with AdvisedWrapper '
+          'implements Orders, UsageTracked',
+        ),
       );
-      expect(output, _has(r'class _$MailProxy implements Mail, Advised'));
+      expect(
+        output,
+        _has(r'class _$MailProxy with AdvisedWrapper implements Mail'),
+      );
       expect(
         output,
         _has(
@@ -566,7 +572,7 @@ class Usage {
         output,
         _has(
           'int get useCount => '
-          '(this._invoker.introduction(0) as UsageTracked).useCount;',
+          '(this.aopInvoker.introduction(0) as UsageTracked).useCount;',
         ),
       );
       expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);

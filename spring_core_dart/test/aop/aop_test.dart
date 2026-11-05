@@ -553,9 +553,11 @@ void main() {
       int? order,
       String expression = 'execution(* price(..))',
       String name = 'recorder',
+      String? source,
     }) => BeanDefinition<Recorder>(
       name: name,
       order: order,
+      source: source,
       create: (_) => Recorder(),
       aspect: AspectMetadata<Recorder>(
         pointcuts: {'prices': expression},
@@ -621,6 +623,457 @@ void main() {
         throwsA(isA<BeanNotOfRequiredTypeException>()),
       );
       context.close();
+    });
+
+    group('a proxy left to the application (AopProxyFactory.deferred)', () {
+      const source = 'package:lib/src/prices.dart#PriceService';
+      BeanDefinition<PriceService> deferred({bool lazy = false}) =>
+          BeanDefinition<PriceService>(
+            name: 'priceService',
+            source: source,
+            types: const [PriceService, Service],
+            lazy: lazy,
+            aopProxy: AopProxyFactory.deferred(
+              signatures: ServiceProxy.signatures,
+            ),
+            create: (_) => PriceService(),
+          );
+      BeanModule library({bool lazy = false}) =>
+          BeanModule('library', [deferred(lazy: lazy)]);
+      BeanModule application() =>
+          BeanModule('application', [aspect()], aopProxies: {source: factory});
+
+      for (final (order, modules) in [
+        ('application first', () => [application(), library()]),
+        ('library first', () => [library(), application()]),
+      ]) {
+        test('takes the factory the application brings ($order)', () {
+          final context = AnnotationConfigApplicationContext(
+            modules(),
+            environment: StandardEnvironment(systemEnvironment: {}),
+          )..refresh();
+          final proxy = context.getBean<Service>();
+          expect(proxy, isA<Advised>());
+          expect(proxy.price(3), 6);
+          expect(log, ['recorder:before', 'recorder:returned 6']);
+          context.close();
+        });
+      }
+
+      test('without it, matching advice fails the startup', () {
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('aspects', [aspect()]),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(
+          context.refresh,
+          throwsA(
+            predicate(
+              (Object? e) => '$e'.contains('declared in a library package'),
+            ),
+          ),
+        );
+      });
+
+      test('without it, a lazy bean fails at startup, not on first use', () {
+        final context = AnnotationConfigApplicationContext([
+          library(lazy: true),
+          BeanModule('aspects', [aspect()]),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(
+          context.refresh,
+          throwsA(
+            isA<AopConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains("bean 'priceService'"),
+                contains('ApplicationContextRunner'),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('one context taking the factory leaves the definition as it is', () {
+        // The module is shared by both contexts, as a top-level module of
+        // a starter is in one process.
+        final shared = library();
+        AnnotationConfigApplicationContext([
+            shared,
+            application(),
+          ], environment: StandardEnvironment(systemEnvironment: {}))
+          ..refresh()
+          ..close();
+        expect(shared.definitions.single.aopProxy!.isDeferred, isTrue);
+        final without = AnnotationConfigApplicationContext([
+          shared,
+          BeanModule('aspects', [aspect(expression: 'bean(nothing)')]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(without.getBean<Service>(), isNot(isA<Advised>()));
+        without.close();
+      });
+
+      test("the advisors the check creates convert with the application's "
+          'conversionService', () {
+        _Rate? rate;
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('application', [
+            BeanDefinition<DefaultConversionService>(
+              name: 'conversionService',
+              types: const [DefaultConversionService, ConversionService],
+              create: (_) =>
+                  DefaultConversionService()
+                    ..addConverter<String, _Rate>((s) => _Rate(int.parse(s))),
+            ),
+            // The advisor's dependency reads a value of a type only that
+            // service converts.
+            BeanDefinition<_RateHolder>(
+              name: 'rateHolder',
+              create: (r) => _RateHolder(r.value<_Rate>('7')),
+            ),
+            BeanDefinition<DefaultPointcutAdvisor>(
+              name: 'rated',
+              types: const [DefaultPointcutAdvisor, PointcutAdvisor, Advisor],
+              create: (r) {
+                rate = r.getBean<_RateHolder>().rate;
+                return DefaultPointcutAdvisor(
+                  ExpressionPointcut('bean(nothing)'),
+                  _Upper(),
+                );
+              },
+            ),
+          ]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(rate?.value, 7);
+        expect(context.getBean<Service>(), isNot(isA<Advised>()));
+        context.close();
+      });
+
+      test('a placeholder an ImportBeanDefinitionRegistrar registers takes '
+          'the factory too', () {
+        final context = AnnotationConfigApplicationContext([
+          BeanModule(
+            'library',
+            const [],
+            registrars: [ImportDeclaration(() => _Registers(deferred()))],
+          ),
+          application(),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        final proxy = context.getBean<Service>();
+        expect(proxy, isA<Advised>());
+        expect(proxy.price(3), 6);
+        context.close();
+      });
+
+      test('a bean checked at startup is not checked again when created', () {
+        final pointcut = _CountingPointcut();
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('aspects', [
+            BeanDefinition<DefaultPointcutAdvisor>(
+              name: 'counting',
+              types: const [DefaultPointcutAdvisor, PointcutAdvisor, Advisor],
+              create: (_) => DefaultPointcutAdvisor(pointcut, _Upper()),
+            ),
+          ]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(context.getBean<Service>(), isNot(isA<Advised>()));
+        // Each signature once, by the check at startup.
+        expect(pointcut.calls, ServiceProxy.signatures.length);
+        context.close();
+      });
+
+      test('a registered factory leaving out a member advice matches fails '
+          'the startup', () {
+        // The application's factory proxies `name` only; the aspect
+        // advises `price`.
+        final partial = AopProxyFactory(
+          signatures: [ServiceProxy.signatures[3]],
+          create: (target, invoker) =>
+              ServiceProxy(target as PriceService, invoker),
+        );
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('application', [aspect()], aopProxies: {source: partial}),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(
+          context.refresh,
+          throwsA(
+            isA<AopConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains("member 'price' of bean 'priceService'"),
+                contains('aop_prune: false'),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('a registered factory leaving out only unadvised members is '
+          'used', () {
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule(
+            'application',
+            [aspect()],
+            aopProxies: {
+              source: AopProxyFactory(
+                signatures: ServiceProxy.signatures,
+                create: (target, invoker) =>
+                    ServiceProxy(target as PriceService, invoker),
+              ),
+            },
+          ),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(context.getBean<Service>().price(3), 6);
+        expect(log, ['recorder:before', 'recorder:returned 6']);
+        context.close();
+      });
+
+      test('registerAopProxies rejects a factory that cannot proxy', () {
+        for (final unusable in [
+          const AopProxyFactory.pruned(),
+          AopProxyFactory.deferred(signatures: ServiceProxy.signatures),
+          AopProxyFactory.unavailable(
+            signatures: ServiceProxy.signatures,
+            reason: 'no class',
+          ),
+        ]) {
+          expect(
+            () => DefaultListableBeanFactory().registerAopProxies({
+              source: unusable,
+            }),
+            throwsA(isA<AopConfigException>()),
+          );
+        }
+      });
+
+      test('registerAopProxies rejects a second, different factory for a '
+          'source', () {
+        final beanFactory = DefaultListableBeanFactory()
+          ..registerAopProxies({source: factory})
+          // The same one again (the module loaded twice) is fine.
+          ..registerAopProxies({source: factory});
+        expect(
+          () => beanFactory.registerAopProxies({
+            source: AopProxyFactory(
+              signatures: [ServiceProxy.signatures[3]],
+              create: (target, invoker) =>
+                  ServiceProxy(target as PriceService, invoker),
+            ),
+          }),
+          throwsA(isA<AopConfigException>()),
+        );
+        expect(
+          beanFactory.aopProxyOf(deferred()),
+          same(factory),
+          reason: 'the first one stays',
+        );
+        // Two modules bringing different factories fail the startup.
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          application(),
+          BeanModule(
+            'other',
+            const [],
+            aopProxies: {source: const AopProxyFactory.pruned()},
+          ),
+        ], environment: StandardEnvironment(systemEnvironment: {}));
+        expect(context.refresh, throwsA(isA<AopConfigException>()));
+      });
+
+      test('without it and without matching advice, the bean is plain', () {
+        final context = AnnotationConfigApplicationContext([
+          library(),
+          BeanModule('aspects', [aspect(expression: 'bean(nothing)')]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+        expect(context.getBean<Service>(), isNot(isA<Advised>()));
+        context.close();
+      });
+    });
+
+    group('proxies the build pruned', () {
+      const known = {'package:app/src/recorder.dart#Recorder'};
+      BeanDefinition<PriceService> pruned() => BeanDefinition<PriceService>(
+        name: 'plain',
+        types: const [PriceService],
+        aopProxy: const AopProxyFactory.pruned(knownAdvisors: known),
+        create: (_) => PriceService(),
+      );
+      BeanDefinition<PriceService> partial() => BeanDefinition<PriceService>(
+        name: 'priceService',
+        types: const [PriceService, Service],
+        aopProxy: AopProxyFactory(
+          signatures: ServiceProxy.signatures,
+          create: (target, invoker) =>
+              ServiceProxy(target as PriceService, invoker),
+          knownAdvisors: known,
+        ),
+        create: (_) => PriceService(),
+      );
+      BeanDefinition<DefaultPointcutAdvisor> guard({String? source}) =>
+          BeanDefinition<DefaultPointcutAdvisor>(
+            name: 'guard',
+            source: source,
+            types: const [DefaultPointcutAdvisor, PointcutAdvisor, Advisor],
+            create: (_) => DefaultPointcutAdvisor(
+              const NameMatchMethodPointcut(['name']),
+              _Upper(),
+            ),
+          );
+      AnnotationConfigApplicationContext context(
+        List<BeanModule> modules, {
+        ApplicationContext? parent,
+      }) => AnnotationConfigApplicationContext(
+        modules,
+        parent: parent,
+        environment: StandardEnvironment(systemEnvironment: {}),
+      );
+      Matcher unknownAdvisor(String name) => throwsA(
+        isA<AopConfigException>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains("bean '$name'"), contains('aop_prune: false')),
+        ),
+      );
+
+      test('start with the advisors the build knew of', () {
+        final started = context([
+          BeanModule('app', [
+            pruned(),
+            partial(),
+            aspect(source: known.single),
+          ]),
+        ])..refresh();
+        expect(started.getBean<Service>().price(3), 6);
+        expect(log, ['recorder:before', 'recorder:returned 6']);
+        started.close();
+      });
+
+      test('an advisor an ImportBeanDefinitionRegistrar registers fails the '
+          'startup', () {
+        final failing = context([
+          BeanModule(
+            'app',
+            [pruned(), aspect(source: known.single)],
+            registrars: [ImportDeclaration(() => _Registers(guard()))],
+          ),
+        ]);
+        expect(failing.refresh, unknownAdvisor('guard'));
+      });
+
+      test(
+        'an advisor registered with registerSingleton fails the startup',
+        () {
+          final failing = context([
+            BeanModule('app', [
+              pruned(),
+              BeanDefinition<_RegistersAdvisor>(
+                name: 'registersAdvisor',
+                types: const [_RegistersAdvisor, BeanFactoryPostProcessor],
+                create: (_) => _RegistersAdvisor(),
+              ),
+            ]),
+          ]);
+          expect(failing.refresh, unknownAdvisor('manualGuard'));
+        },
+      );
+
+      test('an advisor of a known package is known', () {
+        context([
+            BeanModule('app', [
+              BeanDefinition<PriceService>(
+                name: 'plain',
+                types: const [PriceService],
+                aopProxy: const AopProxyFactory.pruned(
+                  knownAdvisors: {'package:starter'},
+                ),
+                create: (_) => PriceService(),
+              ),
+              guard(source: 'package:starter#StarterAutoConfiguration'),
+            ]),
+          ])
+          ..refresh()
+          ..close();
+        expect(
+          context([
+            BeanModule('app', [
+              BeanDefinition<PriceService>(
+                name: 'plain',
+                types: const [PriceService],
+                aopProxy: const AopProxyFactory.pruned(
+                  knownAdvisors: {'package:starter'},
+                ),
+                create: (_) => PriceService(),
+              ),
+              guard(source: 'package:starter_two#StarterAutoConfiguration'),
+            ]),
+          ]).refresh,
+          unknownAdvisor('guard'),
+        );
+      });
+
+      test(
+        "an unknown advisor of a parent context fails the child's startup",
+        () {
+          final parent = context([
+            BeanModule('parent', [guard()]),
+          ])..refresh();
+          addTearDown(parent.close);
+          expect(
+            context([
+              BeanModule('child', [pruned()]),
+            ], parent: parent).refresh,
+            unknownAdvisor('guard'),
+          );
+        },
+      );
+
+      test('without pruned proxies, any advisor is fine', () {
+        final started = context([
+          BeanModule('app', [service(), guard()]),
+        ])..refresh();
+        expect(started.getBean<Service>().name, 'PRICES');
+        started.close();
+      });
+
+      test('a partial proxy rejects advice added at run time', () {
+        final started = context([
+          BeanModule('app', [partial(), aspect(source: known.single)]),
+        ])..refresh();
+        final proxy = started.getBean<Service>() as Advised;
+        expect(
+          () => proxy.addAdvice(_Upper()),
+          throwsA(
+            isA<AopConfigException>().having(
+              (e) => e.message,
+              'message',
+              contains('aop_prune: false'),
+            ),
+          ),
+        );
+        expect(
+          () => proxy.addAdvisor(
+            DefaultPointcutAdvisor(const TruePointcut(), _Upper()),
+          ),
+          throwsA(isA<AopConfigException>()),
+        );
+        expect(
+          () => ProxyFactory.forBean(started.beanFactory, 'priceService')
+            ..addAdvice(_Upper())
+            ..getProxy(),
+          throwsA(isA<AopConfigException>()),
+        );
+        // A full proxy takes it.
+        final full = factory.createProxy(PriceService(), const []) as Advised
+          ..addAdvice(_Upper());
+        expect((full as Service).name, 'PRICES');
+        started.close();
+      });
     });
 
     test(
@@ -736,6 +1189,49 @@ void main() {
       expect(seen, [10]);
     });
   });
+}
+
+final class _Registers implements ImportBeanDefinitionRegistrar {
+  _Registers(this.definition);
+  final BeanDefinition<Object> definition;
+
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) =>
+      registry.registerBeanDefinition(definition);
+}
+
+// Registers an advisor as a plain singleton, as a post-processor may.
+final class _RegistersAdvisor implements BeanFactoryPostProcessor {
+  @override
+  void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) =>
+      beanFactory.registerSingleton(
+        'manualGuard',
+        DefaultPointcutAdvisor(
+          const NameMatchMethodPointcut(['name']),
+          _Upper(),
+        ),
+      );
+}
+
+// Matches nothing, counting how often it is asked.
+final class _CountingPointcut implements AopPointcut {
+  int calls = 0;
+
+  @override
+  bool matches(MethodSignature signature, String beanName) {
+    calls++;
+    return false;
+  }
+}
+
+class _Rate {
+  const _Rate(this.value);
+  final int value;
+}
+
+class _RateHolder {
+  const _RateHolder(this.rate);
+  final _Rate rate;
 }
 
 class _Upper implements MethodInterceptor {

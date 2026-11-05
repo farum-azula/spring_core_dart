@@ -1,3 +1,4 @@
+import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
@@ -189,7 +190,9 @@ final class BeanModule {
     Map<String, EmbeddedResource> resources = const {},
     Map<Type, bool Function(Object? value)> typeTests = const {},
     Map<Type, int> typeDepths = const {},
+    Map<String, AopProxyFactory> aopProxies = const {},
   }) : definitions = List.unmodifiable(definitions),
+       aopProxies = Map.unmodifiable(aopProxies),
        typeTests = Map.unmodifiable(typeTests),
        typeDepths = Map.unmodifiable(typeDepths),
        introspections = List.unmodifiable(introspections),
@@ -268,6 +271,14 @@ final class BeanModule {
   /// properties and methods), used by data binding, validation and SpEL
   /// instead of reflection.
   final List<BeanIntrospection<Object>> introspections;
+
+  /// The proxy factories of beans of library packages whose own modules
+  /// left them out (`AopProxyFactory.deferred`), keyed by the definition's
+  /// `source`: the application's generated module writes the proxy
+  /// classes of those an aspect of the application may match, and the
+  /// context puts each factory in the definition's place, whichever module
+  /// is loaded first.
+  final Map<String, AopProxyFactory> aopProxies;
 
   @override
   String toString() => "BeanModule('$name', ${definitions.length} beans)";

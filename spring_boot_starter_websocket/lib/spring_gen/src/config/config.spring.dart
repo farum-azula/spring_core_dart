@@ -7,347 +7,244 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart'
-    as _i1;
+    as _i2;
 
-class _$WebSocketPropertiesProxy
-    implements _i1.WebSocketProperties, _i2.Advised {
-  _$WebSocketPropertiesProxy(this._target, this._invoker);
-
-  final _i1.WebSocketProperties _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i2.DataSize get maxTextMessageSize => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (_) => this._target.maxTextMessageSize,
-  ) as _i2.DataSize);
-
-  @override
-  _i2.DataSize get maxBinaryMessageSize => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.maxBinaryMessageSize,
-  ) as _i2.DataSize);
-
-  @override
-  Map<String, _i1.WebSocketClientSettings> get config => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.config,
-  ) as Map<String, _i1.WebSocketClientSettings>);
-
-  @override
-  set maxTextMessageSize(_i2.DataSize value) {
-    this._invoker.invoke(this, this._target, 3, [value], (args) {
-      this._target.maxTextMessageSize = (args[0] as _i2.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set maxBinaryMessageSize(_i2.DataSize value) {
-    this._invoker.invoke(this, this._target, 4, [value], (args) {
-      this._target.maxBinaryMessageSize = (args[0] as _i2.DataSize);
-      return null;
-    });
-  }
-
-  @override
-  set config(Map<String, _i1.WebSocketClientSettings> value) {
-    this._invoker.invoke(this, this._target, 5, [value], (args) {
-      this._target.config =
-          (args[0] as Map<String, _i1.WebSocketClientSettings>);
-      return null;
-    });
-  }
-}
+const _$target0 = _i1.AopTarget(
+  r'WebSocketProperties',
+  types: [r'WebSocketProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.websocket.client')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get1(_i2.WebSocketProperties bean) => bean.maxTextMessageSize;
+void _$set2(_i2.WebSocketProperties bean, Object? value) =>
+    bean.maxTextMessageSize = (value as _i1.DataSize);
+Object? _$get3(_i2.WebSocketProperties bean) => bean.maxBinaryMessageSize;
+void _$set4(_i2.WebSocketProperties bean, Object? value) =>
+    bean.maxBinaryMessageSize = (value as _i1.DataSize);
+Object? _$get5(_i2.WebSocketProperties bean) => bean.config;
+void _$set6(_i2.WebSocketProperties bean, Object? value) =>
+    bean.config = (value as Map<String, _i2.WebSocketClientSettings>);
+_i2.WebSocketProperties _$create7(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebSocketProperties();
+Object? _$get8(_i2.WebSocketClientSettings bean) => bean.url;
+void _$set9(_i2.WebSocketClientSettings bean, Object? value) =>
+    bean.url = (value as String?);
+Object? _$get10(_i2.WebSocketClientSettings bean) => bean.connectTimeout;
+void _$set11(_i2.WebSocketClientSettings bean, Object? value) =>
+    bean.connectTimeout = (value as Duration?);
+Object? _$get12(_i2.WebSocketClientSettings bean) => bean.defaultRequestHeaders;
+void _$set13(_i2.WebSocketClientSettings bean, Object? value) =>
+    bean.defaultRequestHeaders = (value as Map<String, List<String>>);
+Object? _$get14(_i2.WebSocketClientSettings bean) => bean.reconnect;
+void _$set15(_i2.WebSocketClientSettings bean, Object? value) =>
+    bean.reconnect = (value as _i2.WebSocketReconnectSettings);
+_i2.WebSocketClientSettings _$create16(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebSocketClientSettings();
+Object? _$get17(_i2.WebSocketReconnectSettings bean) => bean.enabled;
+void _$set18(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.enabled = (value as bool?);
+Object? _$get19(_i2.WebSocketReconnectSettings bean) => bean.delay;
+void _$set20(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.delay = (value as Duration?);
+Object? _$get21(_i2.WebSocketReconnectSettings bean) => bean.multiplier;
+void _$set22(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.multiplier = (value as double?);
+Object? _$get23(_i2.WebSocketReconnectSettings bean) => bean.maxDelay;
+void _$set24(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.maxDelay = (value as Duration?);
+Object? _$get25(_i2.WebSocketReconnectSettings bean) => bean.jitter;
+void _$set26(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.jitter = (value as Duration?);
+Object? _$get27(_i2.WebSocketReconnectSettings bean) => bean.maxRetries;
+void _$set28(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.maxRetries = (value as int?);
+_i2.WebSocketReconnectSettings _$create29(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebSocketReconnectSettings();
 
 /// Beans found by `@ComponentScan` in `lib/src/config`.
-_i2.BeanModule get $webSocketConfigBeans => _i2.BeanModule(
+_i1.BeanModule get $webSocketConfigBeans => _i1.BeanModule(
   r'webSocketConfigBeans',
   [
-    _i2.BeanDefinition<_i1.WebSocketProperties>(
+    _i1.BeanDefinition<_i2.WebSocketProperties>(
       name: r'webSocketProperties',
       source: r'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart#WebSocketProperties',
-      types: const [_i1.WebSocketProperties],
-      create: (r) => _i1.WebSocketProperties(),
+      create: (r) => _i2.WebSocketProperties(),
       annotations: const [
-        _i2.ConfigurationProperties(r'spring.websocket.client'),
+        _i1.ConfigurationProperties(r'spring.websocket.client'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'maxTextMessageSize',
-            declaringType: r'WebSocketProperties',
-            targetType: r'WebSocketProperties',
-            declaringTypes: [r'WebSocketProperties'],
-            kind: _i2.MemberKind.getter,
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'maxTextMessageSize',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'DataSize',
-            targetTypes: [r'WebSocketProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.websocket.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxBinaryMessageSize',
-            declaringType: r'WebSocketProperties',
-            targetType: r'WebSocketProperties',
-            declaringTypes: [r'WebSocketProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'maxBinaryMessageSize',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'DataSize',
-            targetTypes: [r'WebSocketProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.websocket.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'config',
-            declaringType: r'WebSocketProperties',
-            targetType: r'WebSocketProperties',
-            declaringTypes: [r'WebSocketProperties'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'config',
+            _$target0,
+            kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            targetTypes: [r'WebSocketProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.websocket.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxTextMessageSize',
-            declaringType: r'WebSocketProperties',
-            targetType: r'WebSocketProperties',
-            declaringTypes: [r'WebSocketProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxTextMessageSize',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'DataSize',
-            targetTypes: [r'WebSocketProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.websocket.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'maxBinaryMessageSize',
-            declaringType: r'WebSocketProperties',
-            targetType: r'WebSocketProperties',
-            declaringTypes: [r'WebSocketProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'maxBinaryMessageSize',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'DataSize',
-            targetTypes: [r'WebSocketProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.websocket.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
-          _i2.MethodSignature(
-            name: r'config',
-            declaringType: r'WebSocketProperties',
-            targetType: r'WebSocketProperties',
-            declaringTypes: [r'WebSocketProperties'],
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'config',
+            _$target0,
+            kind: _i1.MemberKind.setter,
             returnType: r'Map',
-            targetTypes: [r'WebSocketProperties'],
-            targetAnnotations: [
-              _i2.ConfigurationProperties(r'spring.websocket.client'),
-            ],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
           ),
         ],
-        create: (target, invoker) => _$WebSocketPropertiesProxy(
-          (target as _i1.WebSocketProperties),
-          invoker,
-        ),
       ),
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i1.WebSocketProperties>(
+    const _i1.BeanIntrospection<_i2.WebSocketProperties>(
       className: r'WebSocketProperties',
       properties: [
-        _i2.BeanProperty<_i1.WebSocketProperties>(
+        _i1.BeanProperty<_i2.WebSocketProperties>(
           r'maxTextMessageSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxTextMessageSize,
-          set: (bean, value) =>
-              bean.maxTextMessageSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get1,
+          set: _$set2,
         ),
-        _i2.BeanProperty<_i1.WebSocketProperties>(
+        _i1.BeanProperty<_i2.WebSocketProperties>(
           r'maxBinaryMessageSize',
-          type: _i2.DataSize,
-          typeInfo: const _i2.ClassType<_i2.DataSize>(),
-          get: (bean) => bean.maxBinaryMessageSize,
-          set: (bean, value) =>
-              bean.maxBinaryMessageSize = (value as _i2.DataSize),
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get3,
+          set: _$set4,
         ),
-        _i2.BeanProperty<_i1.WebSocketProperties>(
+        _i1.BeanProperty<_i2.WebSocketProperties>(
           r'config',
-          type: Map<String, _i1.WebSocketClientSettings>,
-          typeInfo: const _i2.MapType<String, _i1.WebSocketClientSettings>(
-            _i2.ClassType<String>(),
-            _i2.ClassType<_i1.WebSocketClientSettings>(),
+          typeInfo: _i1.MapType<String, _i2.WebSocketClientSettings>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<_i2.WebSocketClientSettings>(),
           ),
-          get: (bean) => bean.config,
-          set: (bean, value) =>
-              bean.config = (value as Map<String, _i1.WebSocketClientSettings>),
+          get: _$get5,
+          set: _$set6,
         ),
       ],
-      annotations: const [
-        _i2.ConfigurationProperties(r'spring.websocket.client'),
-      ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i1.WebSocketProperties(),
-      constructor: _i2.BeanConstructor<_i1.WebSocketProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.websocket.client')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.WebSocketProperties.new,
+      constructor: _i1.BeanConstructor<_i2.WebSocketProperties>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.WebSocketProperties.new, positional, named)
-                as _i1.WebSocketProperties),
+        create: _$create7,
       ),
     ),
-    _i2.BeanIntrospection<_i1.WebSocketClientSettings>(
+    const _i1.BeanIntrospection<_i2.WebSocketClientSettings>(
       className: r'WebSocketClientSettings',
       properties: [
-        _i2.BeanProperty<_i1.WebSocketClientSettings>(
+        _i1.BeanProperty<_i2.WebSocketClientSettings>(
           r'url',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.url,
-          set: (bean, value) => bean.url = (value as String?),
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get8,
+          set: _$set9,
         ),
-        _i2.BeanProperty<_i1.WebSocketClientSettings>(
+        _i1.BeanProperty<_i2.WebSocketClientSettings>(
           r'connectTimeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.connectTimeout,
-          set: (bean, value) => bean.connectTimeout = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get10,
+          set: _$set11,
         ),
-        _i2.BeanProperty<_i1.WebSocketClientSettings>(
+        _i1.BeanProperty<_i2.WebSocketClientSettings>(
           r'defaultRequestHeaders',
-          type: Map<String, List<String>>,
-          typeInfo: const _i2.MapType<String, List<String>>(
-            _i2.ClassType<String>(),
-            _i2.ListType<String>(_i2.ClassType<String>()),
+          typeInfo: _i1.MapType<String, List<String>>(
+            _i1.ClassType<String>(),
+            _i1.ListType<String>(_i1.ClassType<String>()),
           ),
-          get: (bean) => bean.defaultRequestHeaders,
-          set: (bean, value) =>
-              bean.defaultRequestHeaders = (value as Map<String, List<String>>),
+          get: _$get12,
+          set: _$set13,
         ),
-        _i2.BeanProperty<_i1.WebSocketClientSettings>(
+        _i1.BeanProperty<_i2.WebSocketClientSettings>(
           r'reconnect',
-          type: _i1.WebSocketReconnectSettings,
-          typeInfo: const _i2.ClassType<_i1.WebSocketReconnectSettings>(),
-          get: (bean) => bean.reconnect,
-          set: (bean, value) =>
-              bean.reconnect = (value as _i1.WebSocketReconnectSettings),
+          typeInfo: _i1.ClassType<_i2.WebSocketReconnectSettings>(),
+          get: _$get14,
+          set: _$set15,
         ),
       ],
-      instantiate: () => _i1.WebSocketClientSettings(),
-      constructor: _i2.BeanConstructor<_i1.WebSocketClientSettings>(
+      instantiate: _i2.WebSocketClientSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebSocketClientSettings>(
         parameters: [],
-        create: (positional, named) =>
-            (Function.apply(_i1.WebSocketClientSettings.new, positional, named)
-                as _i1.WebSocketClientSettings),
+        create: _$create16,
       ),
     ),
-    _i2.BeanIntrospection<_i1.WebSocketReconnectSettings>(
+    const _i1.BeanIntrospection<_i2.WebSocketReconnectSettings>(
       className: r'WebSocketReconnectSettings',
       properties: [
-        _i2.BeanProperty<_i1.WebSocketReconnectSettings>(
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
           r'enabled',
-          type: bool,
           nullable: true,
-          typeInfo: const _i2.ClassType<bool>(nullable: true),
-          get: (bean) => bean.enabled,
-          set: (bean, value) => bean.enabled = (value as bool?),
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get17,
+          set: _$set18,
         ),
-        _i2.BeanProperty<_i1.WebSocketReconnectSettings>(
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
           r'delay',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.delay,
-          set: (bean, value) => bean.delay = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get19,
+          set: _$set20,
         ),
-        _i2.BeanProperty<_i1.WebSocketReconnectSettings>(
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
           r'multiplier',
-          type: double,
           nullable: true,
-          typeInfo: const _i2.ClassType<double>(nullable: true),
-          get: (bean) => bean.multiplier,
-          set: (bean, value) => bean.multiplier = (value as double?),
+          typeInfo: _i1.ClassType<double>(nullable: true),
+          get: _$get21,
+          set: _$set22,
         ),
-        _i2.BeanProperty<_i1.WebSocketReconnectSettings>(
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
           r'maxDelay',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.maxDelay,
-          set: (bean, value) => bean.maxDelay = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get23,
+          set: _$set24,
         ),
-        _i2.BeanProperty<_i1.WebSocketReconnectSettings>(
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
           r'jitter',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.jitter,
-          set: (bean, value) => bean.jitter = (value as Duration?),
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get25,
+          set: _$set26,
         ),
-        _i2.BeanProperty<_i1.WebSocketReconnectSettings>(
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
           r'maxRetries',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.maxRetries,
-          set: (bean, value) => bean.maxRetries = (value as int?),
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get27,
+          set: _$set28,
         ),
       ],
-      instantiate: () => _i1.WebSocketReconnectSettings(),
-      constructor: _i2.BeanConstructor<_i1.WebSocketReconnectSettings>(
+      instantiate: _i2.WebSocketReconnectSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebSocketReconnectSettings>(
         parameters: [],
-        create: (positional, named) => (Function.apply(
-          _i1.WebSocketReconnectSettings.new,
-          positional,
-          named,
-        ) as _i1.WebSocketReconnectSettings),
+        create: _$create29,
       ),
     ),
   ],

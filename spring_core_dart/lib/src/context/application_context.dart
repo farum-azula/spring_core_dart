@@ -924,6 +924,11 @@ class AnnotationConfigApplicationContext
     _registerListeners();
     _factory.validateBeanGraph();
     _finishBeanFactoryInitialization();
+    // A starter's bean whose proxy class no module brought fails now if
+    // advice matches it, also when it is lazy. After the application's
+    // conversionService is set: the advisors it creates, and their
+    // dependencies, convert their @Value with it.
+    _autoProxyCreator?.checkDeferredProxies();
   }
 
   // A failed refresh: like Spring's cancelRefresh, but the lifecycle beans
@@ -1153,6 +1158,9 @@ class AnnotationConfigApplicationContext
         importAgain(module, importedBy, {});
         return;
       }
+      // The proxy factories the application's module brings for beans of
+      // library packages: found by source whenever a placeholder needs one.
+      _factory.registerAopProxies(module.aopProxies);
       final moduleOwn = moduleClasses[module] = [];
       _ConfigurationClass newClass(String? key, List<Condition> conditions) {
         final configurationClass = _ConfigurationClass(
@@ -1522,7 +1530,11 @@ class AnnotationConfigApplicationContext
     return OrderComparator.sort(beans.keys, (bean) => beans[bean]);
   }
 
+  // The proxy creator of this refresh, when AOP is on.
+  AspectAutoProxyCreator? _autoProxyCreator;
+
   void _registerBeanPostProcessors() {
+    _autoProxyCreator = null;
     // AOP is on as soon as an aspect or advisor exists (here or in an
     // ancestor); its proxy creator is the first Ordered processor (Spring:
     // HIGHEST_PRECEDENCE), so later processors see the proxies.
@@ -1573,7 +1585,9 @@ class AnnotationConfigApplicationContext
         if (phase == 1) {
           addCommon();
           if (usesAop) {
-            _factory.addBeanPostProcessor(AspectAutoProxyCreator(_factory));
+            _factory.addBeanPostProcessor(
+              _autoProxyCreator = AspectAutoProxyCreator(_factory),
+            );
           }
         }
       },

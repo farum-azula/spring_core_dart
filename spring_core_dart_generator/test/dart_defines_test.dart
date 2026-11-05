@@ -8,8 +8,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
+import 'package:spring_core_dart_generator/builder.dart';
 import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
@@ -146,6 +148,184 @@ void main() {
       );
       expect(keys.keys, isNot(contains('not.read')));
       expect(keys.keys, isNot(contains('#')));
+    });
+
+    test('without: the names under a prefix, in both forms', () {
+      expect(
+        DartDefineKeys.without(
+          [
+            'DEBUG',
+            'SPRING_FLUTTER_THEME',
+            'SPRING_FLUTTER_THEME_MODE',
+            'SPRING_FLUTTER_THEMES',
+            'spring.flutter.theme',
+            'spring.flutter.theme.mode',
+            'spring.flutter.theme[0]',
+            'spring.flutter.themes',
+          ],
+          ['spring.flutter.theme'],
+        ),
+        ['DEBUG', 'SPRING_FLUTTER_THEMES', 'spring.flutter.themes'],
+      );
+      expect(DartDefineKeys.without(['a', 'B'], const []), ['a', 'B']);
+    });
+
+    group('without: relaxed, whole-segment prefixes', () {
+      const keys = [
+        'APP_A_B',
+        'APP_SECRETKEY',
+        'APP_SERVERS_0_HOST',
+        'DEBUG',
+        'SPRING_DATASOURCEISH',
+        'SPRING_DATASOURCE_APIKEY',
+        'SPRING_DATASOURCE_PASSWORD',
+        'app.a_b',
+        'app.secret-key',
+        'app.servers[0].host',
+        'app.servers[1].host',
+        'debug',
+        'spring.dataSource.apiKey',
+        'spring.datasource.password',
+        'spring.datasourceish',
+      ];
+      List<String> left(List<String> prefixes) =>
+          DartDefineKeys.without(keys, prefixes);
+      const datasource = [
+        'SPRING_DATASOURCE_APIKEY',
+        'SPRING_DATASOURCE_PASSWORD',
+        'spring.dataSource.apiKey',
+        'spring.datasource.password',
+      ];
+
+      test('the environment form of a prefix covers the dotted form', () {
+        expect(
+          left(['SPRING_DATASOURCE']),
+          isNot(anyElement(isIn(datasource))),
+        );
+        expect(left(['SPRING_DATASOURCE']), contains('spring.datasourceish'));
+      });
+
+      test('case-insensitive: spring.datasource leaves out dataSource', () {
+        expect(
+          left(['spring.datasource']),
+          isNot(anyElement(isIn(datasource))),
+        );
+        expect(
+          left(['spring.DATASOURCE']),
+          isNot(anyElement(isIn(datasource))),
+        );
+      });
+
+      test('a trailing . or [ is the same prefix, in both forms', () {
+        for (final prefix in ['spring.datasource.', 'spring.datasource[']) {
+          expect(left([prefix]), left(['spring.datasource']), reason: prefix);
+        }
+        expect(
+          left(['spring.datasource']),
+          containsAll(['spring.datasourceish', 'SPRING_DATASOURCEISH']),
+        );
+      });
+
+      test('- and _ inside a segment are ignored', () {
+        expect(
+          left(['spring.data-source']),
+          isNot(anyElement(isIn(datasource))),
+        );
+        expect(
+          left(['spring.data_source']),
+          isNot(anyElement(isIn(datasource))),
+        );
+        expect(
+          left(['app.secretKey']),
+          isNot(anyElement(isIn(['app.secret-key', 'APP_SECRETKEY']))),
+        );
+        expect(
+          left(['app.secret-key']),
+          isNot(anyElement(isIn(['app.secret-key', 'APP_SECRETKEY']))),
+        );
+      });
+
+      test('the dotted and environment forms go together', () {
+        // APP_A_B is the environment form of app.a_b, and under app.a.
+        expect(
+          left(['app.a']),
+          isNot(anyElement(isIn(['app.a_b', 'APP_A_B']))),
+        );
+        expect(
+          left(['app.a_b']),
+          isNot(anyElement(isIn(['app.a_b', 'APP_A_B']))),
+        );
+        expect(
+          left(['APP_A_B']),
+          isNot(anyElement(isIn(['app.a_b', 'APP_A_B']))),
+        );
+      });
+
+      test('indexes are segments', () {
+        expect(
+          left(['app.servers[0]']),
+          isNot(
+            anyElement(isIn(['app.servers[0].host', 'APP_SERVERS_0_HOST'])),
+          ),
+        );
+        expect(left(['app.servers[0]']), contains('app.servers[1].host'));
+        expect(
+          left(['APP_SERVERS']),
+          isNot(
+            anyElement(
+              isIn([
+                'APP_SERVERS_0_HOST',
+                'app.servers[0].host',
+                'app.servers[1].host',
+              ]),
+            ),
+          ),
+        );
+      });
+
+      test('whole segments only', () {
+        expect(left(['spring.data']), keys);
+        expect(left(['app.secret']), keys);
+        expect(left(['debu']), keys);
+        expect(left(['debug']), isNot(anyElement(isIn(['debug', 'DEBUG']))));
+      });
+    });
+
+    test('the dart_defines_exclude option', () {
+      List<String> parsed(Object? option) => (springCoreDartBuilder(
+        BuilderOptions({'dart_defines_exclude': option}),
+      ) as SpringBuilder).dartDefinesExclude;
+      expect(parsed(null), isEmpty);
+      expect(parsed(<Object>[]), isEmpty);
+      expect(
+        parsed([' spring.datasource. ', 'app.servers[', 'SPRING_X..']),
+        ['spring.datasource', 'app.servers', 'SPRING_X'],
+      );
+      for (final invalid in <Object>[
+        'spring.datasource',
+        {'spring': true},
+        [1],
+        [null],
+        [''],
+        ['   '],
+        ['.'],
+        ['*'],
+        ['spring.datasource.*'],
+        ['spring.*.password'],
+        ['spring datasource'],
+      ]) {
+        expect(
+          () => parsed(invalid),
+          throwsA(
+            isA<ArgumentError>().having(
+              (error) => error.name,
+              'name',
+              'dart_defines_exclude',
+            ),
+          ),
+          reason: '$invalid',
+        );
+      }
     });
 
     test('always includes profiles and the OS environment switch', () {

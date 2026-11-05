@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixes
+
+- An auto-configuration module with a class excluded (`@SpringBootApplication(exclude: ...)`, `spring.autoconfigure.exclude`) keeps its `typeTests`, `typeDepths` and `aopProxies`; they were dropped with the rebuilt module.
+
 ## 0.6.3
 
 ### Changes

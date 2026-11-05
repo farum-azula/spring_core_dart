@@ -22,105 +22,69 @@ import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart'
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i12;
 import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i6;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:theme_showcase_neon/src/app/logs.dart' as _i1;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
+import 'package:theme_showcase_neon/src/app/logs.dart' as _i2;
 import 'package:theme_showcase_neon/src/pages/logs_page.dart' as _i5;
 import 'package:theme_showcase_neon/src/pages/themes_page.dart' as _i7;
 
 part 'messages.spring.dart';
 part 'theme.spring.dart';
 
-class _$ThemeLogProxy extends _i1.ThemeLog implements _i2.Advised {
-  _$ThemeLogProxy(super.p0);
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$ThemeLogProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-}
+const _$knownAdvisors0 = {
+  r'package:neon_ui',
+  r'package:spring_boot_dart',
+  r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_logging',
+};
 
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i1.PageLog>(
+    _i1.BeanDefinition<_i2.PageLog>(
       name: r'pageLog',
       source: r'package:theme_showcase_neon/src/app/logs.dart#PageLog',
-      types: const [_i1.PageLog],
-      create: (r) => _i1.PageLog(),
+      create: (r) => _i2.PageLog(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_neon.pages'),
+        _i1.Component(),
+        _i1.Log(topic: r'theme_showcase_neon.pages'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches PageLog, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i1.ThemeLog>(
+    _i1.BeanDefinition<_i2.ThemeLog>(
       name: r'themeLog',
       source: r'package:theme_showcase_neon/src/app/logs.dart#ThemeLog',
-      types: const [_i1.ThemeLog],
       dependencies: const [
-        _i2.Dependency(_i3.ThemeSelection, name: r'_selection'),
+        _i1.Dependency(_i3.ThemeSelection, name: r'_selection'),
       ],
-      create: (r) => _$ThemeLogProxy(
-        r.dependency<_i3.ThemeSelection>(name: r'_selection'),
-      ),
+      create: (r) =>
+          _i2.ThemeLog(r.dependency<_i3.ThemeSelection>(name: r'_selection')),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_neon.themes'),
+        _i1.Component(),
+        _i1.Log(topic: r'theme_showcase_neon.themes'),
       ],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [],
-        advise: (bean, invoker) =>
-            bean is _$ThemeLogProxy ? bean._$advise(invoker) : null,
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i1.DemoLog>(
+    _i1.BeanDefinition<_i2.DemoLog>(
       name: r'demoLog',
       source: r'package:theme_showcase_neon/src/app/logs.dart#DemoLog',
-      types: const [_i1.DemoLog],
-      create: (r) => _i1.DemoLog(),
+      create: (r) => _i2.DemoLog(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_neon.demo'),
+        _i1.Component(),
+        _i1.Log(topic: r'theme_showcase_neon.demo'),
       ],
-      aopProxy: _i2.AopProxyFactory.pruned(
-        reason: r'the build found no pointcut of the application that matches DemoLog, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i4.SpringWidgetBindings>(
+    _i1.BeanDefinition<_i4.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
       types: const [_i4.SpringWidgetBindings],
@@ -140,13 +104,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i4.SpringWidgetBinding(
           widget: r'package:theme_showcase_neon/src/pages/logs_page.dart#_LogsPageState',
           beans: _i5.LogsBeans,
-          types: const [_i6.LogBuffer, _i1.DemoLog],
+          types: const [_i6.LogBuffer, _i2.DemoLog],
           resolve: (f) => (
             _i4.SpringWidgetBinding.bean<_i6.LogBuffer>(f),
-            _i4.SpringWidgetBinding.bean<_i1.DemoLog>(f),
+            _i4.SpringWidgetBinding.bean<_i2.DemoLog>(f),
           ),
           values: (r) {
-            final v = (r as (_i6.LogBuffer, _i1.DemoLog));
+            final v = (r as (_i6.LogBuffer, _i2.DemoLog));
             return [v.$1, v.$2];
           },
         ),
@@ -167,13 +131,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   ],
   resources: const {
-    r'application-desktop.properties': _i2.EmbeddedResource.text(
+    r'application-desktop.properties': _i1.EmbeddedResource.text(
       '# Desktops: the window opens wide and cannot get small.\nspring.flutter.desktop.window.title=Theme Showcase NEON\nspring.flutter.desktop.window.initial-size=1280x800\nspring.flutter.desktop.window.min-size=900x600\n',
     ),
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i1.EmbeddedResource.text(
       '# THEME SHOWCASE NEON: a custom design system on the theme, with no\n# Material and no Cupertino. The look of every widget is in neon_ui\'s\n# themes/neon.yml (imported below); this file holds the app and a second theme\n# of its own that extends it. The pages quote lines of these two files in\n# their code boxes (a test checks that they do).\nspring:\n   config:\n      # The theme of the library: `neon_ui` embeds its lib/resources/, so the\n      # file is found as if it were ours.\n      import: resources:themes/neon.yml\n\n   flutter:\n      web:\n         port: 1010\n      app:\n         # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino\n         # widgets. Everything on screen is a neon_ui widget or our own.\n         type: widgets\n         title: Theme Showcase NEON\n         debug-banner: false\n\n      theme:\n         # The theme shown at the start. `neon` is the library\'s.\n         active: neon\n\n         themes:\n            # The library\'s theme again, to add what is the app\'s: the splash\n            # that shows while the app starts, and loaders in the neon colors.\n            # The splash is the neon-gate loader of neon_ui\'s themes/neon.yml\n            # (a kind of the library): a gate of panels it draws itself, so\n            # the splash has no logo or title. With `reveal` the panels part\n            # over the app, not over the background. The built-in kinds are\n            # written here.\n            neon:\n               splash:\n                  background: { color: \$colors.surface-container-lowest }\n                  loader: neon-gate\n                  exit: { transition: 200ms ease-out, reveal: true }\n               loaders:\n                  spinner: { kind: spinner, color: \$neon.cyan, size: 28, stroke: 3, track: { color: \$neon.cyan, alpha: 20% } }\n                  dots: { kind: dots, color: \$neon.pink, size: 10, count: 3 }\n                  upload: { kind: bar, color: \$neon.yellow, track: { color: \$neon.yellow, alpha: 20% }, height: 4, width: 240 }\n                  card:\n                     kind: skeleton\n                     base: \$colors.surface-container-high\n                     highlight: \$colors.surface-container-highest\n                     radius: \$shape.extra-small\n                     shimmer: { duration: 1.2s, angle: 20 }\n            # A theme of our own: neon with cyan as its primary color. Only\n            # what changes is written; `extends` brings the rest. The accent,\n            # the glow, the button fills and the modal border all say\n            # `\$colors.primary` or `\$neon.accent`, so they turn cyan too.\n            neon-ice:\n               extends: neon\n               colors:\n                  primary: \$neon.cyan\n                  secondary: \$neon.yellow\n               tokens:\n                  neon:\n                     panel: "#CC0B1218"\n                     input-fill: "#B3081016"\n\n         # The tokens of this app (the library\'s are neon_ui\'s).\n         tokens:\n            showcase:\n               content-width: 980\n               tile-height: 150\n               tagline: Yellow, cyan and pink after dark\n         styles:\n            # A tile of the theme switcher: our own style, per state, made with\n            # the same ThemeStates as the library\'s widgets.\n            showcase-tile:\n               padding: [16, 14]\n               radius: \$shape.extra-small\n               border:\n                  default: \$colors.outline\n                  hovered: \$colors.secondary\n                  focused: \$colors.secondary\n                  selected: \$colors.primary\n               fill:\n                  default: { color: \$colors.surface-container-low, alpha: 80% }\n                  hovered: { color: \$colors.surface-container, alpha: 90% }\n                  selected: { color: \$colors.primary, alpha: 12% }\n               glow: { default: 0, hovered: 8, selected: 14 }\n               transition: 160ms ease-out\n',
     ),
-    r'messages.properties': _i2.EmbeddedResource.text(
+    r'messages.properties': _i1.EmbeddedResource.text(
       '# Typed messages: context.messages.nav.overview, context.messages.themes.active(name).\nnav.overview=Overview\nnav.components=Components\nnav.states=States\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.tokens=Tokens\nnav.logs=Logs\nnav.themes=Themes\nthemes.active=Theme: {0}\n',
     ),
   },
@@ -1022,7 +986,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '2cee03b4',
+  fingerprint: '1d12d3b7',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -1052,16 +1016,16 @@ Future<_i8.ConfigurableApplicationContext> reloadApplicationAsync(
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// `@Log` of [PageLog]: the logger 'theme_showcase_neon.pages'.
-extension $PageLogLog on _i1.PageLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'theme_showcase_neon.pages');
+extension $PageLogLog on _i2.PageLog {
+  _i1.SpringLog get log => const _i1.SpringLog(r'theme_showcase_neon.pages');
 }
 
 /// `@Log` of [ThemeLog]: the logger 'theme_showcase_neon.themes'.
-extension $ThemeLogLog on _i1.ThemeLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'theme_showcase_neon.themes');
+extension $ThemeLogLog on _i2.ThemeLog {
+  _i1.SpringLog get log => const _i1.SpringLog(r'theme_showcase_neon.themes');
 }
 
 /// `@Log` of [DemoLog]: the logger 'theme_showcase_neon.demo'.
-extension $DemoLogLog on _i1.DemoLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'theme_showcase_neon.demo');
+extension $DemoLogLog on _i2.DemoLog {
+  _i1.SpringLog get log => const _i1.SpringLog(r'theme_showcase_neon.demo');
 }

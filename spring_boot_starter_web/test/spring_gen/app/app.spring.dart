@@ -10,17 +10,17 @@
 import 'dart:async' as _i3;
 import 'dart:typed_data' as _i11;
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i20;
 import 'package:spring_boot_starter_web/src/handler_method.dart' as _i26;
 import 'package:spring_boot_starter_web/src/response_writer.dart' as _i15;
 import 'package:spring_boot_starter_web/src/sse_emitter.dart' as _i7;
 import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dart'
-    as _i25;
-import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
     as _i24;
-import 'package:spring_web_dart/src/annotations.dart' as _i22;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i23;
+import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
+    as _i25;
+import 'package:spring_web_dart/src/annotations.dart' as _i23;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i22;
 import 'package:spring_web_dart/src/multipart/multipart.dart' as _i14;
 import 'package:spring_web_dart/src/problem_detail.dart' as _i8;
 import 'package:spring_web_dart/src/response_entity.dart' as _i5;
@@ -28,7 +28,7 @@ import 'package:spring_web_dart/src/server/server_http_request.dart' as _i9;
 import 'package:spring_web_dart/src/server/server_http_response.dart' as _i21;
 import 'package:spring_web_dart/src/sse/event_stream.dart' as _i6;
 
-import '../../app/book_controller.dart' as _i1;
+import '../../app/book_controller.dart' as _i2;
 import '../../app/book_service.dart' as _i10;
 import '../../app/echo_endpoint.dart' as _i12;
 import '../../app/files_controller.dart' as _i13;
@@ -38,53 +38,34 @@ import '../../app/review_controller.dart' as _i17;
 import '../../app/session_controller.dart' as _i18;
 import '../../app/web_config.dart' as _i19;
 
-class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
-  _$BookControllerProxy(this._target, this._invoker);
+class _$BookControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i2.BookController {
+  _$BookControllerProxy(this._target, this.aopInvoker);
 
-  final _i1.BookController _target;
+  final _i2.BookController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i3.Future<_i4.Book> find(String isbn) => this._invoker.invokeAsync<_i4.Book>(
-    this,
-    this._target,
-    0,
-    [isbn],
-    (args) => this._target.find((args[0] as String)),
-  );
+  _i3.Future<_i4.Book> find(String isbn) =>
+      this.aopInvoker.invokeAsync<_i4.Book>(this, this._target, 0, [
+        isbn,
+      ], (args) => this._target.find((args[0] as String)));
 
   @override
   _i3.Future<List<_i4.Book>> search(
     String query, {
     int page = 0,
     _i4.Genre? genre,
-  }) => this._invoker.invokeAsync<List<_i4.Book>>(
+  }) => this.aopInvoker.invokeAsync<List<_i4.Book>>(
     this,
     this._target,
     1,
@@ -97,7 +78,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   );
 
   @override
-  String form(String title, int count) => (this._invoker.invoke(
+  String form(String title, int count) => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
@@ -112,7 +93,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
     String? tag,
     int? limit,
     String? lang,
-  }) => (this._invoker.invoke(
+  }) => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -128,7 +109,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
 
   @override
   _i3.Future<_i5.ResponseEntity<_i4.Book>> create(_i4.NewBook book) =>
-      this._invoker.invokeAsync<_i5.ResponseEntity<_i4.Book>>(
+      this.aopInvoker.invokeAsync<_i5.ResponseEntity<_i4.Book>>(
         this,
         this._target,
         4,
@@ -138,14 +119,14 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
 
   @override
   void delete(String isbn) {
-    this._invoker.invoke(this, this._target, 5, [isbn], (args) {
+    this.aopInvoker.invoke(this, this._target, 5, [isbn], (args) {
       this._target.delete((args[0] as String));
       return null;
     });
   }
 
   @override
-  _i6.EventStream<_i4.Book> changes() => (this._invoker.invoke(
+  _i6.EventStream<_i4.Book> changes() => (this.aopInvoker.invoke(
     this,
     this._target,
     6,
@@ -154,7 +135,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   ) as _i6.EventStream<_i4.Book>);
 
   @override
-  _i7.SseEmitter notifications() => (this._invoker.invoke(
+  _i7.SseEmitter notifications() => (this.aopInvoker.invoke(
     this,
     this._target,
     7,
@@ -166,7 +147,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   _i8.ProblemDetail notFound(
     _i4.BookNotFoundException e,
     _i9.ServerHttpRequest request,
-  ) => (this._invoker.invoke(
+  ) => (this.aopInvoker.invoke(
     this,
     this._target,
     8,
@@ -178,7 +159,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   ) as _i8.ProblemDetail);
 
   @override
-  _i10.BookService get books => (this._invoker.invoke(
+  _i10.BookService get books => (this.aopInvoker.invoke(
     this,
     this._target,
     9,
@@ -187,40 +168,24 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   ) as _i10.BookService);
 }
 
-class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
-  _$MiscControllerProxy(this._target, this._invoker);
+class _$MiscControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i2.MiscController {
+  _$MiscControllerProxy(this._target, this.aopInvoker);
 
-  final _i1.MiscController _target;
+  final _i2.MiscController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String text() => (this._invoker.invoke(
+  String text() => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -229,7 +194,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as String);
 
   @override
-  _i3.Future<String> slow() => this._invoker.invokeAsync<String>(
+  _i3.Future<String> slow() => this.aopInvoker.invokeAsync<String>(
     this,
     this._target,
     1,
@@ -238,7 +203,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   );
 
   @override
-  _i11.Uint8List bytes() => (this._invoker.invoke(
+  _i11.Uint8List bytes() => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
@@ -247,7 +212,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as _i11.Uint8List);
 
   @override
-  String echoHeader(String name) => (this._invoker.invoke(
+  String echoHeader(String name) => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -256,7 +221,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as String);
 
   @override
-  String cookie(String session) => (this._invoker.invoke(
+  String cookie(String session) => (this.aopInvoker.invoke(
     this,
     this._target,
     4,
@@ -265,18 +230,22 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as String);
 
   @override
-  List<int> ids(List<int> ids) => (this._invoker.invoke(this, this._target, 5, [
-    ids,
-  ], (args) => this._target.ids((args[0] as List<int>))) as List<int>);
+  List<int> ids(List<int> ids) => (this.aopInvoker.invoke(
+    this,
+    this._target,
+    5,
+    [ids],
+    (args) => this._target.ids((args[0] as List<int>)),
+  ) as List<int>);
 
   @override
-  String file(String path) => (this._invoker.invoke(this, this._target, 6, [
+  String file(String path) => (this.aopInvoker.invoke(this, this._target, 6, [
     path,
   ], (args) => this._target.file((args[0] as String))) as String);
 
   @override
   Map<String, Object?> jsonOnly(Map<String, Object?> body) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         7,
@@ -285,7 +254,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
       ) as Map<String, Object?>);
 
   @override
-  String state() => (this._invoker.invoke(
+  String state() => (this.aopInvoker.invoke(
     this,
     this._target,
     8,
@@ -294,7 +263,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as String);
 
   @override
-  String boom() => (this._invoker.invoke(
+  String boom() => (this.aopInvoker.invoke(
     this,
     this._target,
     9,
@@ -303,7 +272,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as String);
 
   @override
-  String request(_i9.ServerHttpRequest request) => (this._invoker.invoke(
+  String request(_i9.ServerHttpRequest request) => (this.aopInvoker.invoke(
     this,
     this._target,
     10,
@@ -312,7 +281,7 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as String);
 
   @override
-  _i3.Stream<_i4.Book> ndjson() => (this._invoker.invoke(
+  _i3.Stream<_i4.Book> ndjson() => (this.aopInvoker.invoke(
     this,
     this._target,
     11,
@@ -321,41 +290,23 @@ class _$MiscControllerProxy implements _i1.MiscController, _i2.Advised {
   ) as _i3.Stream<_i4.Book>);
 }
 
-class _$ApiErrorsProxy implements _i1.ApiErrors, _i2.Advised {
-  _$ApiErrorsProxy(this._target, this._invoker);
+class _$ApiErrorsProxy with _i1.AdvisedWrapper implements _i2.ApiErrors {
+  _$ApiErrorsProxy(this._target, this.aopInvoker);
 
-  final _i1.ApiErrors _target;
+  final _i2.ApiErrors _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   _i5.ResponseEntity<_i8.ProblemDetail> conflict(StateError error) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         0,
@@ -364,45 +315,12 @@ class _$ApiErrorsProxy implements _i1.ApiErrors, _i2.Advised {
       ) as _i5.ResponseEntity<_i8.ProblemDetail>);
 }
 
-class _$BookServiceProxy extends _i10.BookService implements _i2.Advised {
+class _$BookServiceProxy extends _i10.BookService with _i1.AdvisedSubclass {
   _$BookServiceProxy();
-
-  _i2.ProxyInvoker? _$invoker;
-
-  _$BookServiceProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
 
   @override
   _i3.Future<_i4.Book> find(String isbn) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.find(isbn)
         : _$i.invokeAsync<_i4.Book>(this, this, 0, [
@@ -416,7 +334,7 @@ class _$BookServiceProxy extends _i10.BookService implements _i2.Advised {
     int page = 0,
     _i4.Genre? genre,
   }) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.search(query, page: page, genre: genre)
         : _$i.invokeAsync<List<_i4.Book>>(
@@ -434,7 +352,7 @@ class _$BookServiceProxy extends _i10.BookService implements _i2.Advised {
 
   @override
   _i3.Future<_i4.Book> create(_i4.NewBook book) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.create(book)
         : _$i.invokeAsync<_i4.Book>(this, this, 2, [
@@ -444,7 +362,7 @@ class _$BookServiceProxy extends _i10.BookService implements _i2.Advised {
 
   @override
   bool delete(String isbn) {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.delete(isbn)
         : (_$i.invoke(this, this, 3, [
@@ -454,7 +372,7 @@ class _$BookServiceProxy extends _i10.BookService implements _i2.Advised {
 
   @override
   _i3.Stream<_i4.Book> changes() {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.changes()
         : (_$i.invoke(this, this, 4, const [], (args) => super.changes())
@@ -463,7 +381,7 @@ class _$BookServiceProxy extends _i10.BookService implements _i2.Advised {
 
   @override
   List<_i7.SseEmitter> get emitters {
-    final _$i = this._$invoker;
+    final _$i = this.aopInvoker;
     return _$i == null
         ? super.emitters
         : (_$i.invoke(this, this, 5, const [], (_) => super.emitters)
@@ -471,41 +389,23 @@ class _$BookServiceProxy extends _i10.BookService implements _i2.Advised {
   }
 }
 
-class _$EchoEndpointProxy implements _i12.EchoEndpoint, _i2.Advised {
-  _$EchoEndpointProxy(this._target, this._invoker);
+class _$EchoEndpointProxy with _i1.AdvisedWrapper implements _i12.EchoEndpoint {
+  _$EchoEndpointProxy(this._target, this.aopInvoker);
 
   final _i12.EchoEndpoint _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i12.Shout echo(String name, String text, _i2.Principal? user) =>
-      (this._invoker.invoke(
+  _i12.Shout echo(String name, String text, _i1.Principal? user) =>
+      (this.aopInvoker.invoke(
         this,
         this._target,
         0,
@@ -513,46 +413,30 @@ class _$EchoEndpointProxy implements _i12.EchoEndpoint, _i2.Advised {
         (args) => this._target.echo(
           (args[0] as String),
           (args[1] as String),
-          (args[2] as _i2.Principal?),
+          (args[2] as _i1.Principal?),
         ),
       ) as _i12.Shout);
 }
 
-class _$FilesControllerProxy implements _i13.FilesController, _i2.Advised {
-  _$FilesControllerProxy(this._target, this._invoker);
+class _$FilesControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i13.FilesController {
+  _$FilesControllerProxy(this._target, this.aopInvoker);
 
   final _i13.FilesController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   _i3.Future<_i13.Upload> upload(_i14.MultipartFile file, String note) =>
-      this._invoker.invokeAsync<_i13.Upload>(
+      this.aopInvoker.invokeAsync<_i13.Upload>(
         this,
         this._target,
         0,
@@ -565,13 +449,13 @@ class _$FilesControllerProxy implements _i13.FilesController, _i2.Advised {
 
   @override
   _i3.Future<List<String>> many(List<_i14.MultipartFile> files) =>
-      this._invoker.invokeAsync<List<String>>(this, this._target, 1, [
+      this.aopInvoker.invokeAsync<List<String>>(this, this._target, 1, [
         files,
       ], (args) => this._target.many((args[0] as List<_i14.MultipartFile>)));
 
   @override
   _i13.Stored book(_i4.NewBook book, {_i14.MultipartFile? cover}) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         2,
@@ -584,30 +468,30 @@ class _$FilesControllerProxy implements _i13.FilesController, _i2.Advised {
 
   @override
   _i3.Future<int> save(_i14.MultipartFile file) =>
-      this._invoker.invokeAsync<int>(this, this._target, 3, [
+      this.aopInvoker.invokeAsync<int>(this, this._target, 3, [
         file,
       ], (args) => this._target.save((args[0] as _i14.MultipartFile)));
 
   @override
-  _i5.ResponseEntity<_i2.Resource> report() => (this._invoker.invoke(
+  _i5.ResponseEntity<_i1.Resource> report() => (this.aopInvoker.invoke(
     this,
     this._target,
     4,
     const [],
     (args) => this._target.report(),
-  ) as _i5.ResponseEntity<_i2.Resource>);
+  ) as _i5.ResponseEntity<_i1.Resource>);
 
   @override
-  _i2.Resource file(String path) => (this._invoker.invoke(
+  _i1.Resource file(String path) => (this.aopInvoker.invoke(
     this,
     this._target,
     5,
     [path],
     (args) => this._target.file((args[0] as String)),
-  ) as _i2.Resource);
+  ) as _i1.Resource);
 
   @override
-  _i3.Stream<_i11.Uint8List> stream() => (this._invoker.invoke(
+  _i3.Stream<_i11.Uint8List> stream() => (this.aopInvoker.invoke(
     this,
     this._target,
     6,
@@ -616,7 +500,7 @@ class _$FilesControllerProxy implements _i13.FilesController, _i2.Advised {
   ) as _i3.Stream<_i11.Uint8List>);
 
   @override
-  _i15.StreamingResponseBody export() => (this._invoker.invoke(
+  _i15.StreamingResponseBody export() => (this.aopInvoker.invoke(
     this,
     this._target,
     7,
@@ -625,40 +509,24 @@ class _$FilesControllerProxy implements _i13.FilesController, _i2.Advised {
   ) as _i15.StreamingResponseBody);
 }
 
-class _$PlainControllerProxy implements _i16.PlainController, _i2.Advised {
-  _$PlainControllerProxy(this._target, this._invoker);
+class _$PlainControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i16.PlainController {
+  _$PlainControllerProxy(this._target, this.aopInvoker);
 
   final _i16.PlainController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i5.ResponseEntity<String> badHeader() => (this._invoker.invoke(
+  _i5.ResponseEntity<String> badHeader() => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -667,45 +535,29 @@ class _$PlainControllerProxy implements _i16.PlainController, _i2.Advised {
   ) as _i5.ResponseEntity<String>);
 
   @override
-  String text(String body) => (this._invoker.invoke(this, this._target, 1, [
+  String text(String body) => (this.aopInvoker.invoke(this, this._target, 1, [
     body,
   ], (args) => this._target.text((args[0] as String))) as String);
 }
 
-class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
-  _$ReviewControllerProxy(this._target, this._invoker);
+class _$ReviewControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i17.ReviewController {
+  _$ReviewControllerProxy(this._target, this.aopInvoker);
 
   final _i17.ReviewController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  String cors() => (this._invoker.invoke(
+  String cors() => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -714,7 +566,7 @@ class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
   ) as String);
 
   @override
-  String format() => (this._invoker.invoke(
+  String format() => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -723,7 +575,7 @@ class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
   ) as String);
 
   @override
-  String argument() => (this._invoker.invoke(
+  String argument() => (this.aopInvoker.invoke(
     this,
     this._target,
     2,
@@ -732,7 +584,7 @@ class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
   ) as String);
 
   @override
-  String unsupported() => (this._invoker.invoke(
+  String unsupported() => (this.aopInvoker.invoke(
     this,
     this._target,
     3,
@@ -742,7 +594,7 @@ class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
 
   @override
   _i5.ResponseEntity<_i6.EventStream<String>> entityEvents() =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         4,
@@ -751,7 +603,7 @@ class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
       ) as _i5.ResponseEntity<_i6.EventStream<String>>);
 
   @override
-  _i5.ResponseEntity<_i7.SseEmitter> entityEmitter() => (this._invoker.invoke(
+  _i5.ResponseEntity<_i7.SseEmitter> entityEmitter() => (this.aopInvoker.invoke(
     this,
     this._target,
     5,
@@ -760,40 +612,24 @@ class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
   ) as _i5.ResponseEntity<_i7.SseEmitter>);
 }
 
-class _$ReviewFirstErrorsProxy implements _i17.ReviewFirstErrors, _i2.Advised {
-  _$ReviewFirstErrorsProxy(this._target, this._invoker);
+class _$ReviewFirstErrorsProxy
+    with _i1.AdvisedWrapper
+    implements _i17.ReviewFirstErrors {
+  _$ReviewFirstErrorsProxy(this._target, this.aopInvoker);
 
   final _i17.ReviewFirstErrors _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  _i5.ResponseEntity<String> any(Exception error) => (this._invoker.invoke(
+  _i5.ResponseEntity<String> any(Exception error) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -803,41 +639,24 @@ class _$ReviewFirstErrorsProxy implements _i17.ReviewFirstErrors, _i2.Advised {
 }
 
 class _$ReviewSecondErrorsProxy
-    implements _i17.ReviewSecondErrors, _i2.Advised {
-  _$ReviewSecondErrorsProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i17.ReviewSecondErrors {
+  _$ReviewSecondErrorsProxy(this._target, this.aopInvoker);
 
   final _i17.ReviewSecondErrors _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   _i5.ResponseEntity<String> format(FormatException error) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         0,
@@ -847,7 +666,7 @@ class _$ReviewSecondErrorsProxy
 
   @override
   _i5.ResponseEntity<String> argument(ArgumentError error) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         1,
@@ -856,41 +675,25 @@ class _$ReviewSecondErrorsProxy
       ) as _i5.ResponseEntity<String>);
 }
 
-class _$ReviewThirdErrorsProxy implements _i17.ReviewThirdErrors, _i2.Advised {
-  _$ReviewThirdErrorsProxy(this._target, this._invoker);
+class _$ReviewThirdErrorsProxy
+    with _i1.AdvisedWrapper
+    implements _i17.ReviewThirdErrors {
+  _$ReviewThirdErrorsProxy(this._target, this.aopInvoker);
 
   final _i17.ReviewThirdErrors _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
   _i5.ResponseEntity<String> unsupported(UnsupportedError error) =>
-      (this._invoker.invoke(
+      (this.aopInvoker.invoke(
         this,
         this._target,
         0,
@@ -899,40 +702,24 @@ class _$ReviewThirdErrorsProxy implements _i17.ReviewThirdErrors, _i2.Advised {
       ) as _i5.ResponseEntity<String>);
 }
 
-class _$SessionControllerProxy implements _i18.SessionController, _i2.Advised {
-  _$SessionControllerProxy(this._target, this._invoker);
+class _$SessionControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i18.SessionController {
+  _$SessionControllerProxy(this._target, this.aopInvoker);
 
   final _i18.SessionController _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
   String toString() => _target.toString();
 
   @override
-  int count(_i9.ServerHttpRequest request) => (this._invoker.invoke(
+  int count(_i9.ServerHttpRequest request) => (this.aopInvoker.invoke(
     this,
     this._target,
     0,
@@ -941,7 +728,7 @@ class _$SessionControllerProxy implements _i18.SessionController, _i2.Advised {
   ) as int);
 
   @override
-  bool peek(_i9.ServerHttpRequest request) => (this._invoker.invoke(
+  bool peek(_i9.ServerHttpRequest request) => (this.aopInvoker.invoke(
     this,
     this._target,
     1,
@@ -951,13 +738,13 @@ class _$SessionControllerProxy implements _i18.SessionController, _i2.Advised {
 
   @override
   _i3.Future<String> rotate(_i9.ServerHttpRequest request) =>
-      this._invoker.invokeAsync<String>(this, this._target, 2, [
+      this.aopInvoker.invokeAsync<String>(this, this._target, 2, [
         request,
       ], (args) => this._target.rotate((args[0] as _i9.ServerHttpRequest)));
 
   @override
   void invalidate(_i9.ServerHttpRequest request) {
-    this._invoker.invoke(this, this._target, 3, [request], (args) {
+    this.aopInvoker.invoke(this, this._target, 3, [request], (args) {
       this._target.invalidate((args[0] as _i9.ServerHttpRequest));
       return null;
     });
@@ -965,34 +752,17 @@ class _$SessionControllerProxy implements _i18.SessionController, _i2.Advised {
 }
 
 class _$TraceFilterProxy
-    implements _i19.TraceFilter, _i20.WebFilter, _i2.Advised {
-  _$TraceFilterProxy(this._target, this._invoker);
+    with _i1.AdvisedWrapper
+    implements _i19.TraceFilter, _i20.WebFilter {
+  _$TraceFilterProxy(this._target, this.aopInvoker);
 
   final _i19.TraceFilter _target;
 
-  final _i2.ProxyInvoker _invoker;
+  @override
+  final _i1.ProxyInvoker aopInvoker;
 
   @override
   Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
@@ -1002,7 +772,7 @@ class _$TraceFilterProxy
     _i9.ServerHttpRequest request,
     _i21.ServerHttpResponse response,
     _i20.WebFilterChain chain,
-  ) => this._invoker.invokeAsync<void>(
+  ) => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
     0,
@@ -1015,1597 +785,1462 @@ class _$TraceFilterProxy
   );
 }
 
+Object? _$invoke0(_i2.BookController bean, List<Object?> arguments) =>
+    bean.find((arguments[0] as String));
+Object? _$invoke1(_i2.BookController bean, List<Object?> arguments) =>
+    bean.search((arguments[0] as String));
+Object? _$invokeNamed2(
+  _i2.BookController bean,
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => bean.search(
+  (positional[0] as String),
+  page: named.argumentOr(#page, 0),
+  genre: named.argumentOr(#genre, null),
+);
+Object? _$invoke3(_i2.BookController bean, List<Object?> arguments) =>
+    bean.form((arguments[0] as String), (arguments[1] as int));
+Object? _$invoke4(_i2.BookController bean, List<Object?> arguments) =>
+    bean.sample();
+Object? _$invokeNamed5(
+  _i2.BookController bean,
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => bean.sample(
+  size: named.argumentOr(#size, 3),
+  sort: named.argumentOr(#sort, r'title'),
+  tag: named.argumentOr(#tag, null),
+  limit: named.argumentOr(#limit, null),
+  lang: named.argumentOr(#lang, null),
+);
+Object? _$invoke6(_i2.BookController bean, List<Object?> arguments) =>
+    bean.create((arguments[0] as _i4.NewBook));
+Object? _$invoke7(_i2.BookController bean, List<Object?> arguments) {
+  bean.delete((arguments[0] as String));
+  return null;
+}
+
+Object? _$invoke8(_i2.BookController bean, List<Object?> arguments) =>
+    bean.changes();
+Object? _$invoke9(_i2.BookController bean, List<Object?> arguments) =>
+    bean.notifications();
+Object? _$invoke10(_i2.BookController bean, List<Object?> arguments) =>
+    bean.notFound(
+      (arguments[0] as _i4.BookNotFoundException),
+      (arguments[1] as _i9.ServerHttpRequest),
+    );
+const _$target11 = _i1.AopTarget(
+  r'BookController',
+  types: [r'BookController'],
+  annotations: [_i22.RestController(), _i23.RequestMapping(r'/api/books')],
+  annotationTypes: [r'RestController', r'RequestMapping'],
+);
+Object? _$invoke12(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.text();
+Object? _$invoke13(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.slow();
+Object? _$invoke14(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.bytes();
+Object? _$invoke15(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.echoHeader((arguments[0] as String));
+Object? _$invoke16(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.cookie((arguments[0] as String));
+Object? _$invoke17(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.ids((arguments[0] as List<int>));
+Object? _$invoke18(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.file((arguments[0] as String));
+Object? _$invoke19(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.jsonOnly((arguments[0] as Map<String, Object?>));
+Object? _$invoke20(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.state();
+Object? _$invoke21(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.boom();
+Object? _$invoke22(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.request((arguments[0] as _i9.ServerHttpRequest));
+Object? _$invoke23(_i2.MiscController bean, List<Object?> arguments) =>
+    bean.ndjson();
+const _$target24 = _i1.AopTarget(
+  r'MiscController',
+  types: [r'MiscController'],
+  annotations: [_i22.RestController(), _i23.RequestMapping(r'/misc')],
+  annotationTypes: [r'RestController', r'RequestMapping'],
+);
+Object? _$invoke25(_i2.ApiErrors bean, List<Object?> arguments) =>
+    bean.conflict((arguments[0] as StateError));
+const _$target26 = _i1.AopTarget(
+  r'ApiErrors',
+  types: [r'ApiErrors'],
+  annotations: [_i22.RestControllerAdvice()],
+  annotationTypes: [r'RestControllerAdvice'],
+);
+const _$target27 = _i1.AopTarget(
+  r'BookService',
+  types: [r'BookService'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
+Object? _$invoke28(_i12.EchoEndpoint bean, List<Object?> arguments) =>
+    bean.echo(
+      (arguments[0] as String),
+      (arguments[1] as String),
+      (arguments[2] as _i1.Principal?),
+    );
+const _$target29 = _i1.AopTarget(
+  r'EchoEndpoint',
+  types: [r'EchoEndpoint'],
+  annotations: [_i24.WebSocketEndpoint(r'/ws/echo/{name}')],
+  annotationTypes: [r'WebSocketEndpoint'],
+);
+Object? _$invoke30(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.upload((arguments[0] as _i14.MultipartFile), (arguments[1] as String));
+Object? _$invoke31(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.many((arguments[0] as List<_i14.MultipartFile>));
+Object? _$invoke32(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.book((arguments[0] as _i4.NewBook));
+Object? _$invokeNamed33(
+  _i13.FilesController bean,
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => bean.book(
+  (positional[0] as _i4.NewBook),
+  cover: named.argumentOr(#cover, null),
+);
+Object? _$invoke34(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.save((arguments[0] as _i14.MultipartFile));
+Object? _$invoke35(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.report();
+Object? _$invoke36(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.file((arguments[0] as String));
+Object? _$invoke37(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.stream();
+Object? _$invoke38(_i13.FilesController bean, List<Object?> arguments) =>
+    bean.export();
+const _$target39 = _i1.AopTarget(
+  r'FilesController',
+  types: [r'FilesController'],
+  annotations: [_i22.RestController(), _i23.RequestMapping(r'/files')],
+  annotationTypes: [r'RestController', r'RequestMapping'],
+);
+Object? _$invoke40(_i16.PlainController bean, List<Object?> arguments) =>
+    bean.badHeader();
+Object? _$invoke41(_i16.PlainController bean, List<Object?> arguments) =>
+    bean.text((arguments[0] as String));
+const _$target42 = _i1.AopTarget(
+  r'PlainController',
+  types: [r'PlainController'],
+  annotations: [_i22.RestController(), _i23.RequestMapping(r'/plain')],
+  annotationTypes: [r'RestController', r'RequestMapping'],
+);
+Object? _$invoke43(_i17.ReviewController bean, List<Object?> arguments) =>
+    bean.cors();
+Object? _$invoke44(_i17.ReviewController bean, List<Object?> arguments) =>
+    bean.format();
+Object? _$invoke45(_i17.ReviewController bean, List<Object?> arguments) =>
+    bean.argument();
+Object? _$invoke46(_i17.ReviewController bean, List<Object?> arguments) =>
+    bean.unsupported();
+Object? _$invoke47(_i17.ReviewController bean, List<Object?> arguments) =>
+    bean.entityEvents();
+Object? _$invoke48(_i17.ReviewController bean, List<Object?> arguments) =>
+    bean.entityEmitter();
+const _$target49 = _i1.AopTarget(
+  r'ReviewController',
+  types: [r'ReviewController'],
+  annotations: [
+    _i22.RestController(),
+    _i23.RequestMapping(r'/api/review'),
+    _i17.ReviewApi(),
+  ],
+  annotationTypes: [r'RestController', r'RequestMapping', r'ReviewApi'],
+);
+Object? _$invoke50(_i17.ReviewFirstErrors bean, List<Object?> arguments) =>
+    bean.any((arguments[0] as Exception));
+const _$target51 = _i1.AopTarget(
+  r'ReviewFirstErrors',
+  types: [r'ReviewFirstErrors'],
+  annotations: [
+    _i22.RestControllerAdvice.of(assignableTypes: [_i17.ReviewController]),
+  ],
+  annotationTypes: [r'RestControllerAdvice'],
+);
+Object? _$invoke52(_i17.ReviewSecondErrors bean, List<Object?> arguments) =>
+    bean.format((arguments[0] as FormatException));
+Object? _$invoke53(_i17.ReviewSecondErrors bean, List<Object?> arguments) =>
+    bean.argument((arguments[0] as ArgumentError));
+const _$target54 = _i1.AopTarget(
+  r'ReviewSecondErrors',
+  types: [r'ReviewSecondErrors'],
+  annotations: [
+    _i22.RestControllerAdvice.of(
+      basePackages: [
+        r'asset:spring_boot_starter_web/test/app/review_controller',
+      ],
+    ),
+  ],
+  annotationTypes: [r'RestControllerAdvice'],
+);
+Object? _$invoke55(_i17.ReviewThirdErrors bean, List<Object?> arguments) =>
+    bean.unsupported((arguments[0] as UnsupportedError));
+const _$target56 = _i1.AopTarget(
+  r'ReviewThirdErrors',
+  types: [r'ReviewThirdErrors'],
+  annotations: [
+    _i22.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
+  ],
+  annotationTypes: [r'RestControllerAdvice'],
+);
+Object? _$invoke57(_i18.SessionController bean, List<Object?> arguments) =>
+    bean.count((arguments[0] as _i9.ServerHttpRequest));
+Object? _$invoke58(_i18.SessionController bean, List<Object?> arguments) =>
+    bean.peek((arguments[0] as _i9.ServerHttpRequest));
+Object? _$invoke59(_i18.SessionController bean, List<Object?> arguments) =>
+    bean.rotate((arguments[0] as _i9.ServerHttpRequest));
+Object? _$invoke60(_i18.SessionController bean, List<Object?> arguments) {
+  bean.invalidate((arguments[0] as _i9.ServerHttpRequest));
+  return null;
+}
+
+const _$target61 = _i1.AopTarget(
+  r'SessionController',
+  types: [r'SessionController'],
+  annotations: [_i22.RestController(), _i23.RequestMapping(r'/session')],
+  annotationTypes: [r'RestController', r'RequestMapping'],
+);
+const _$target62 = _i1.AopTarget(
+  r'TraceFilter',
+  types: [r'TraceFilter', r'WebFilter'],
+  annotations: [_i1.Component()],
+  annotationTypes: [r'Component'],
+);
+Object? _$get63(_i4.Book bean) => bean.isbn;
+Object? _$get64(_i4.Book bean) => bean.title;
+Object? _$get65(_i4.Book bean) => bean.stock;
+Object? _$get66(_i4.Book bean) => bean.genre;
+_i4.Book _$create67(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i4.Book(
+      isbn: (named[#isbn] as String),
+      title: (named[#title] as String),
+      stock: named.argumentOr(#stock, 0),
+      genre: named.argumentOr(#genre, _i4.Genre.fiction),
+    );
+Object? _$get68(_i4.NewBook bean) => bean.isbn;
+Object? _$get69(_i4.NewBook bean) => bean.title;
+Object? _$get70(_i4.NewBook bean) => bean.stock;
+_i4.NewBook _$create71(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i4.NewBook(
+      isbn: (named[#isbn] as String),
+      title: (named[#title] as String),
+      stock: named.argumentOr(#stock, 0),
+    );
+Object? _$get72(_i7.SseEmitter bean) => bean.timeout;
+Object? _$get73(_i7.SseEmitter bean) => bean.isComplete;
+_i7.SseEmitter _$create74(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i7.SseEmitter(timeout: named.argumentOr(#timeout, null));
+Object? _$get75(_i12.Shout bean) => bean.text;
+Object? _$get76(_i13.Upload bean) => bean.name;
+Object? _$get77(_i13.Upload bean) => bean.filename;
+Object? _$get78(_i13.Upload bean) => bean.size;
+Object? _$get79(_i13.Upload bean) => bean.contentType;
+Object? _$get80(_i13.Upload bean) => bean.note;
+Object? _$get81(_i13.Upload bean) => bean.text;
+_i13.Upload _$create82(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i13.Upload(
+      name: (named[#name] as String),
+      filename: (named[#filename] as String?),
+      size: (named[#size] as int),
+      contentType: (named[#contentType] as String?),
+      note: (named[#note] as String),
+      text: (named[#text] as String),
+    );
+Object? _$get83(_i13.Stored bean) => bean.title;
+Object? _$get84(_i13.Stored bean) => bean.files;
+Object? _$get85(_i13.Stored bean) => bean.cover;
+_i13.Stored _$create86(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i13.Stored(
+      title: (named[#title] as String),
+      files: (named[#files] as List<String>),
+      cover: named.argumentOr(#cover, null),
+    );
+_i15.StreamingResponseBody _$create87(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i15.StreamingResponseBody(
+  (positional[0] as _i3.Future<void> Function(_i15.ResponseBodySink)),
+);
+
 /// Beans found by `@ComponentScan` in `test/app`.
-_i2.BeanModule get $webTestBeans => _i2.BeanModule(
+_i1.BeanModule get $webTestBeans => _i1.BeanModule(
   r'webTestBeans',
   [
-    _i2.BeanDefinition<_i1.BookController>(
+    _i1.BeanDefinition<_i2.BookController>(
       name: r'bookController',
       source: r'asset:spring_boot_starter_web/test/app/book_controller.dart#BookController',
-      types: const [_i1.BookController],
-      dependencies: const [_i2.Dependency(_i10.BookService, name: r'books')],
+      dependencies: const [_i1.Dependency(_i10.BookService, name: r'books')],
       create: (r) =>
-          _i1.BookController(r.dependency<_i10.BookService>(name: r'books')),
+          _i2.BookController(r.dependency<_i10.BookService>(name: r'books')),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'find',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.PathVariable()],
+              annotations: [_i23.PathVariable()],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i4.Book>(),
+          returnTypeInfo: _i1.ClassType<_i4.Book>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.find, arguments),
-          annotations: const [_i22.GetMapping(r'/{isbn}')],
+          invoke: _$invoke0,
+          annotations: [_i23.GetMapping(r'/{isbn}')],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'search',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'query',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.RequestParam(r'q')],
+              annotations: [_i23.RequestParam(r'q')],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'page',
-              type: const _i2.ClassType<int>(),
+              type: _i1.ClassType<int>(),
               symbol: #page,
-              annotations: const [_i22.RequestParam(r'page')],
+              annotations: [_i23.RequestParam(r'page')],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'genre',
-              type: const _i2.EnumType<_i4.Genre>(
-                _i4.Genre.values,
-                nullable: true,
-              ),
+              type: _i1.EnumType<_i4.Genre>(_i4.Genre.values, nullable: true),
               symbol: #genre,
-              annotations: const [_i22.RequestParam(r'genre')],
+              annotations: [_i23.RequestParam(r'genre')],
             ),
           ],
-          returnTypeInfo: const _i2.ListType<_i4.Book>(
-            _i2.ClassType<_i4.Book>(),
-          ),
+          returnTypeInfo: _i1.ListType<_i4.Book>(_i1.ClassType<_i4.Book>()),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.search, arguments),
-          invokeNamed: (bean, positional, named) =>
-              Function.apply(bean.search, positional, named),
-          annotations: const [_i22.GetMapping()],
+          invoke: _$invoke1,
+          invokeNamed: _$invokeNamed2,
+          annotations: [_i23.GetMapping()],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'form',
-          parameterTypes: const [String, int],
+          parameterTypes: [String, int],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'title',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.RequestParam(r'title')],
+              annotations: [_i23.RequestParam(r'title')],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'count',
-              type: const _i2.ClassType<int>(),
+              type: _i1.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i22.RequestParam(r'count')],
+              annotations: [_i23.RequestParam(r'count')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.form, arguments),
-          annotations: const [_i22.PostMapping(r'/form')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke3,
+          annotations: [_i23.PostMapping(r'/form')],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'sample',
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'size',
-              type: const _i2.ClassType<int>(),
+              type: _i1.ClassType<int>(),
               symbol: #size,
-              annotations: const [_i22.RequestParam(r'size')],
+              annotations: [_i23.RequestParam(r'size')],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'sort',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               symbol: #sort,
-              annotations: const [_i22.RequestParam()],
+              annotations: [_i23.RequestParam()],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'tag',
-              type: const _i2.ClassType<String>(nullable: true),
+              type: _i1.ClassType<String>(nullable: true),
               symbol: #tag,
-              annotations: const [_i22.RequestParam(r'tag')],
+              annotations: [_i23.RequestParam(r'tag')],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'limit',
-              type: const _i2.ClassType<int>(nullable: true),
+              type: _i1.ClassType<int>(nullable: true),
               symbol: #limit,
-              annotations: const [_i22.RequestParam(r'limit')],
+              annotations: [_i23.RequestParam(r'limit')],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'lang',
-              type: const _i2.ClassType<String>(nullable: true),
+              type: _i1.ClassType<String>(nullable: true),
               symbol: #lang,
-              annotations: const [_i22.RequestHeader(r'X-Lang')],
+              annotations: [_i23.RequestHeader(r'X-Lang')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.sample, arguments),
-          invokeNamed: (bean, positional, named) =>
-              Function.apply(bean.sample, positional, named),
-          annotations: const [_i22.GetMapping(r'/sample/defaults')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke4,
+          invokeNamed: _$invokeNamed5,
+          annotations: [_i23.GetMapping(r'/sample/defaults')],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'create',
-          parameterTypes: const [_i4.NewBook],
+          parameterTypes: [_i4.NewBook],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'book',
-              type: const _i2.ClassType<_i4.NewBook>(),
+              type: _i1.ClassType<_i4.NewBook>(),
               isRequired: true,
-              annotations: const [_i22.RequestBody(), _i2.Valid()],
+              annotations: [_i23.RequestBody(), _i1.Valid()],
             ),
           ],
-          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<_i4.Book>>([
-            _i2.ClassType<_i4.Book>(),
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<_i4.Book>>([
+            _i1.ClassType<_i4.Book>(),
           ]),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.create, arguments),
-          annotations: const [_i22.PostMapping()],
+          invoke: _$invoke6,
+          annotations: [_i23.PostMapping()],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'delete',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'isbn',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.PathVariable()],
+              annotations: [_i23.PathVariable()],
             ),
           ],
           isVoid: true,
-          invoke: (bean, arguments) => Function.apply(bean.delete, arguments),
-          annotations: const [
-            _i22.DeleteMapping(r'/{isbn}'),
-            _i23.ResponseStatus(204),
+          invoke: _$invoke7,
+          annotations: [
+            _i23.DeleteMapping(r'/{isbn}'),
+            _i22.ResponseStatus(204),
           ],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'changes',
-          returnTypeInfo: const _i2.GenericType<_i6.EventStream<_i4.Book>>([
-            _i2.ClassType<_i4.Book>(),
+          returnTypeInfo: _i1.GenericType<_i6.EventStream<_i4.Book>>([
+            _i1.ClassType<_i4.Book>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.changes, arguments),
-          annotations: const [_i22.GetMapping(r'/changes')],
+          invoke: _$invoke8,
+          annotations: [_i23.GetMapping(r'/changes')],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'notifications',
-          returnTypeInfo: const _i2.ClassType<_i7.SseEmitter>(),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.notifications, arguments),
-          annotations: const [_i22.GetMapping(r'/notifications')],
+          returnTypeInfo: _i1.ClassType<_i7.SseEmitter>(),
+          invoke: _$invoke9,
+          annotations: [_i23.GetMapping(r'/notifications')],
         ),
-        _i2.BeanMethod<_i1.BookController>(
+        const _i1.BeanMethod<_i2.BookController>(
           r'notFound',
-          parameterTypes: const [
-            _i4.BookNotFoundException,
-            _i9.ServerHttpRequest,
-          ],
+          parameterTypes: [_i4.BookNotFoundException, _i9.ServerHttpRequest],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'e',
-              type: const _i2.ClassType<_i4.BookNotFoundException>(),
+              type: _i1.ClassType<_i4.BookNotFoundException>(),
               isRequired: true,
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i9.ServerHttpRequest>(),
+              type: _i1.ClassType<_i9.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i8.ProblemDetail>(),
-          invoke: (bean, arguments) => Function.apply(bean.notFound, arguments),
-          annotations: const [
-            _i23.ExceptionHandler(),
-            _i23.ResponseStatus(404),
-          ],
+          returnTypeInfo: _i1.ClassType<_i8.ProblemDetail>(),
+          invoke: _$invoke10,
+          annotations: [_i22.ExceptionHandler(), _i22.ResponseStatus(404)],
         ),
       ],
       annotations: const [
-        _i23.RestController(),
-        _i22.RequestMapping(r'/api/books'),
+        _i22.RestController(),
+        _i23.RequestMapping(r'/api/books'),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'find',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'find',
+            _$target11,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i22.PathVariable()],
+              [_i23.PathVariable()],
             ],
-            annotations: [_i22.GetMapping(r'/{isbn}')],
+            annotations: [_i23.GetMapping(r'/{isbn}')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'search',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'search',
+            _$target11,
             returnType: r'Future',
             parameterTypes: [r'String', r'int', r'Genre'],
             parameterNames: [r'query', r'page', r'genre'],
             parameterAnnotations: [
-              [_i22.RequestParam(r'q')],
-              [_i22.RequestParam(r'page')],
-              [_i22.RequestParam(r'genre')],
+              [_i23.RequestParam(r'q')],
+              [_i23.RequestParam(r'page')],
+              [_i23.RequestParam(r'genre')],
             ],
-            annotations: [_i22.GetMapping()],
+            annotations: [_i23.GetMapping()],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'form',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'form',
+            _$target11,
             returnType: r'String',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'title', r'count'],
             parameterAnnotations: [
-              [_i22.RequestParam(r'title')],
-              [_i22.RequestParam(r'count')],
+              [_i23.RequestParam(r'title')],
+              [_i23.RequestParam(r'count')],
             ],
-            annotations: [_i22.PostMapping(r'/form')],
+            annotations: [_i23.PostMapping(r'/form')],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'sample',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'sample',
+            _$target11,
             returnType: r'String',
             parameterTypes: [r'int', r'String', r'String', r'int', r'String'],
             parameterNames: [r'size', r'sort', r'tag', r'limit', r'lang'],
             parameterAnnotations: [
-              [_i22.RequestParam(r'size')],
-              [_i22.RequestParam()],
-              [_i22.RequestParam(r'tag')],
-              [_i22.RequestParam(r'limit')],
-              [_i22.RequestHeader(r'X-Lang')],
+              [_i23.RequestParam(r'size')],
+              [_i23.RequestParam()],
+              [_i23.RequestParam(r'tag')],
+              [_i23.RequestParam(r'limit')],
+              [_i23.RequestHeader(r'X-Lang')],
             ],
-            annotations: [_i22.GetMapping(r'/sample/defaults')],
+            annotations: [_i23.GetMapping(r'/sample/defaults')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'create',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'create',
+            _$target11,
             returnType: r'Future',
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
             parameterAnnotations: [
-              [_i22.RequestBody(), _i2.Valid()],
+              [_i23.RequestBody(), _i1.Valid()],
             ],
-            annotations: [_i22.PostMapping()],
+            annotations: [_i23.PostMapping()],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'delete',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'delete',
+            _$target11,
             returnType: r'void',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i22.PathVariable()],
+              [_i23.PathVariable()],
             ],
             annotations: [
-              _i22.DeleteMapping(r'/{isbn}'),
-              _i23.ResponseStatus(204),
+              _i23.DeleteMapping(r'/{isbn}'),
+              _i22.ResponseStatus(204),
             ],
             annotationTypes: [r'DeleteMapping', r'ResponseStatus'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'changes',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'changes',
+            _$target11,
             returnType: r'EventStream',
-            annotations: [_i22.GetMapping(r'/changes')],
+            annotations: [_i23.GetMapping(r'/changes')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'notifications',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'notifications',
+            _$target11,
             returnType: r'SseEmitter',
-            annotations: [_i22.GetMapping(r'/notifications')],
+            annotations: [_i23.GetMapping(r'/notifications')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'notFound',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
+          _i1.MethodSignature.of(
+            r'notFound',
+            _$target11,
             returnType: r'ProblemDetail',
             parameterTypes: [r'BookNotFoundException', r'ServerHttpRequest'],
             parameterNames: [r'e', r'request'],
-            annotations: [_i23.ExceptionHandler(), _i23.ResponseStatus(404)],
+            annotations: [_i22.ExceptionHandler(), _i22.ResponseStatus(404)],
             annotationTypes: [r'ExceptionHandler', r'ResponseStatus'],
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'books',
-            declaringType: r'BookController',
-            targetType: r'BookController',
-            declaringTypes: [r'BookController'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'books',
+            _$target11,
+            kind: _i1.MemberKind.getter,
             returnType: r'BookService',
-            targetTypes: [r'BookController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/books'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$BookControllerProxy((target as _i1.BookController), invoker),
+            _$BookControllerProxy((target as _i2.BookController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.MiscController>(
+    _i1.BeanDefinition<_i2.MiscController>(
       name: r'miscController',
       source: r'asset:spring_boot_starter_web/test/app/book_controller.dart#MiscController',
-      types: const [_i1.MiscController],
-      create: (r) => _i1.MiscController(),
+      create: (r) => _i2.MiscController(),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'text',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.text, arguments),
-          annotations: const [_i22.GetMapping(r'/text')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke12,
+          annotations: [_i23.GetMapping(r'/text')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'slow',
-          returnTypeInfo: const _i2.ClassType<String>(),
+          returnTypeInfo: _i1.ClassType<String>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.slow, arguments),
-          annotations: const [_i22.GetMapping(r'/slow')],
+          invoke: _$invoke13,
+          annotations: [_i23.GetMapping(r'/slow')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'bytes',
-          returnTypeInfo: const _i2.ClassType<_i11.Uint8List>(),
-          invoke: (bean, arguments) => Function.apply(bean.bytes, arguments),
-          annotations: const [
-            _i22.GetMapping.of(
+          returnTypeInfo: _i1.ClassType<_i11.Uint8List>(),
+          invoke: _$invoke14,
+          annotations: [
+            _i23.GetMapping.of(
               path: r'/bytes',
               produces: r'application/octet-stream',
             ),
           ],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'echoHeader',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'name',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.RequestHeader(r'X-Name')],
+              annotations: [_i23.RequestHeader(r'X-Name')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.echoHeader, arguments),
-          annotations: const [_i22.GetMapping(r'/echo-header')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke15,
+          annotations: [_i23.GetMapping(r'/echo-header')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'cookie',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'session',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.CookieValue(r'session')],
+              annotations: [_i23.CookieValue(r'session')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.cookie, arguments),
-          annotations: const [_i22.GetMapping(r'/cookie')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke16,
+          annotations: [_i23.GetMapping(r'/cookie')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'ids',
-          parameterTypes: const [List<int>],
+          parameterTypes: [List<int>],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'ids',
-              type: const _i2.ListType<int>(_i2.ClassType<int>()),
+              type: _i1.ListType<int>(_i1.ClassType<int>()),
               isRequired: true,
-              annotations: const [_i22.RequestParam(r'id')],
+              annotations: [_i23.RequestParam(r'id')],
             ),
           ],
-          returnTypeInfo: const _i2.ListType<int>(_i2.ClassType<int>()),
-          invoke: (bean, arguments) => Function.apply(bean.ids, arguments),
-          annotations: const [_i22.GetMapping(r'/ids')],
+          returnTypeInfo: _i1.ListType<int>(_i1.ClassType<int>()),
+          invoke: _$invoke17,
+          annotations: [_i23.GetMapping(r'/ids')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'file',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'path',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.PathVariable()],
+              annotations: [_i23.PathVariable()],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.file, arguments),
-          annotations: const [_i22.GetMapping(r'/files/{*path}')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke18,
+          annotations: [_i23.GetMapping(r'/files/{*path}')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'jsonOnly',
-          parameterTypes: const [Map<String, Object?>],
+          parameterTypes: [Map<String, Object?>],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'body',
-              type: const _i2.MapType<String, dynamic>(
-                _i2.ClassType<String>(),
-                _i2.DynamicType(),
+              type: _i1.MapType<String, dynamic>(
+                _i1.ClassType<String>(),
+                _i1.DynamicType(),
               ),
               isRequired: true,
-              annotations: const [_i22.RequestBody()],
+              annotations: [_i23.RequestBody()],
             ),
           ],
-          returnTypeInfo: const _i2.MapType<String, dynamic>(
-            _i2.ClassType<String>(),
-            _i2.DynamicType(),
+          returnTypeInfo: _i1.MapType<String, dynamic>(
+            _i1.ClassType<String>(),
+            _i1.DynamicType(),
           ),
-          invoke: (bean, arguments) => Function.apply(bean.jsonOnly, arguments),
-          annotations: const [
-            _i22.PostMapping.of(
+          invoke: _$invoke19,
+          annotations: [
+            _i23.PostMapping.of(
               path: r'/json-only',
               consumes: r'application/json',
             ),
           ],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'state',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.state, arguments),
-          annotations: const [_i22.GetMapping(r'/state')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke20,
+          annotations: [_i23.GetMapping(r'/state')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'boom',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.boom, arguments),
-          annotations: const [_i22.GetMapping(r'/boom')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke21,
+          annotations: [_i23.GetMapping(r'/boom')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'request',
-          parameterTypes: const [_i9.ServerHttpRequest],
+          parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i9.ServerHttpRequest>(),
+              type: _i1.ClassType<_i9.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.request, arguments),
-          annotations: const [_i22.GetMapping(r'/request')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke22,
+          annotations: [_i23.GetMapping(r'/request')],
         ),
-        _i2.BeanMethod<_i1.MiscController>(
+        const _i1.BeanMethod<_i2.MiscController>(
           r'ndjson',
-          returnTypeInfo: const _i2.GenericType<_i3.Stream<_i4.Book>>([
-            _i2.ClassType<_i4.Book>(),
+          returnTypeInfo: _i1.GenericType<_i3.Stream<_i4.Book>>([
+            _i1.ClassType<_i4.Book>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.ndjson, arguments),
-          annotations: const [
-            _i22.GetMapping.of(
+          invoke: _$invoke23,
+          annotations: [
+            _i23.GetMapping.of(
               path: r'/ndjson',
               produces: r'application/x-ndjson',
             ),
           ],
         ),
       ],
-      annotations: const [_i23.RestController(), _i22.RequestMapping(r'/misc')],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i22.RestController(), _i23.RequestMapping(r'/misc')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'text',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'text',
+            _$target24,
             returnType: r'String',
-            annotations: [_i22.GetMapping(r'/text')],
+            annotations: [_i23.GetMapping(r'/text')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'slow',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'slow',
+            _$target24,
             returnType: r'Future',
-            annotations: [_i22.GetMapping(r'/slow')],
+            annotations: [_i23.GetMapping(r'/slow')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'bytes',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'bytes',
+            _$target24,
             returnType: r'Uint8List',
             annotations: [
-              _i22.GetMapping.of(
+              _i23.GetMapping.of(
                 path: r'/bytes',
                 produces: r'application/octet-stream',
               ),
             ],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'echoHeader',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'echoHeader',
+            _$target24,
             returnType: r'String',
             parameterTypes: [r'String'],
             parameterNames: [r'name'],
             parameterAnnotations: [
-              [_i22.RequestHeader(r'X-Name')],
+              [_i23.RequestHeader(r'X-Name')],
             ],
-            annotations: [_i22.GetMapping(r'/echo-header')],
+            annotations: [_i23.GetMapping(r'/echo-header')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'cookie',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'cookie',
+            _$target24,
             returnType: r'String',
             parameterTypes: [r'String'],
             parameterNames: [r'session'],
             parameterAnnotations: [
-              [_i22.CookieValue(r'session')],
+              [_i23.CookieValue(r'session')],
             ],
-            annotations: [_i22.GetMapping(r'/cookie')],
+            annotations: [_i23.GetMapping(r'/cookie')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'ids',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'ids',
+            _$target24,
             returnType: r'List',
             parameterTypes: [r'List'],
             parameterNames: [r'ids'],
             parameterAnnotations: [
-              [_i22.RequestParam(r'id')],
+              [_i23.RequestParam(r'id')],
             ],
-            annotations: [_i22.GetMapping(r'/ids')],
+            annotations: [_i23.GetMapping(r'/ids')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'file',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'file',
+            _$target24,
             returnType: r'String',
             parameterTypes: [r'String'],
             parameterNames: [r'path'],
             parameterAnnotations: [
-              [_i22.PathVariable()],
+              [_i23.PathVariable()],
             ],
-            annotations: [_i22.GetMapping(r'/files/{*path}')],
+            annotations: [_i23.GetMapping(r'/files/{*path}')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'jsonOnly',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'jsonOnly',
+            _$target24,
             returnType: r'Map',
             parameterTypes: [r'Map'],
             parameterNames: [r'body'],
             parameterAnnotations: [
-              [_i22.RequestBody()],
+              [_i23.RequestBody()],
             ],
             annotations: [
-              _i22.PostMapping.of(
+              _i23.PostMapping.of(
                 path: r'/json-only',
                 consumes: r'application/json',
               ),
             ],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'state',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'state',
+            _$target24,
             returnType: r'String',
-            annotations: [_i22.GetMapping(r'/state')],
+            annotations: [_i23.GetMapping(r'/state')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'boom',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'boom',
+            _$target24,
             returnType: r'String',
-            annotations: [_i22.GetMapping(r'/boom')],
+            annotations: [_i23.GetMapping(r'/boom')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'request',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'request',
+            _$target24,
             returnType: r'String',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i22.GetMapping(r'/request')],
+            annotations: [_i23.GetMapping(r'/request')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'ndjson',
-            declaringType: r'MiscController',
-            targetType: r'MiscController',
-            declaringTypes: [r'MiscController'],
+          _i1.MethodSignature.of(
+            r'ndjson',
+            _$target24,
             returnType: r'Stream',
             annotations: [
-              _i22.GetMapping.of(
+              _i23.GetMapping.of(
                 path: r'/ndjson',
                 produces: r'application/x-ndjson',
               ),
             ],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'MiscController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/misc'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$MiscControllerProxy((target as _i1.MiscController), invoker),
+            _$MiscControllerProxy((target as _i2.MiscController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.ApiErrors>(
+    _i1.BeanDefinition<_i2.ApiErrors>(
       name: r'apiErrors',
       source: r'asset:spring_boot_starter_web/test/app/book_controller.dart#ApiErrors',
-      types: const [_i1.ApiErrors],
-      create: (r) => _i1.ApiErrors(),
+      create: (r) => _i2.ApiErrors(),
       annotatedMethods: [
-        _i2.BeanMethod<_i1.ApiErrors>(
+        const _i1.BeanMethod<_i2.ApiErrors>(
           r'conflict',
-          parameterTypes: const [StateError],
+          parameterTypes: [StateError],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'error',
-              type: const _i2.ClassType<StateError>(),
+              type: _i1.ClassType<StateError>(),
               isRequired: true,
             ),
           ],
           returnTypeInfo:
-              const _i2.GenericType<_i5.ResponseEntity<_i8.ProblemDetail>>([
-                _i2.ClassType<_i8.ProblemDetail>(),
+              _i1.GenericType<_i5.ResponseEntity<_i8.ProblemDetail>>([
+                _i1.ClassType<_i8.ProblemDetail>(),
               ]),
-          invoke: (bean, arguments) => Function.apply(bean.conflict, arguments),
-          annotations: const [_i23.ExceptionHandler()],
+          invoke: _$invoke25,
+          annotations: [_i22.ExceptionHandler()],
         ),
       ],
-      annotations: const [_i23.RestControllerAdvice()],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i22.RestControllerAdvice()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'conflict',
-            declaringType: r'ApiErrors',
-            targetType: r'ApiErrors',
-            declaringTypes: [r'ApiErrors'],
+          _i1.MethodSignature.of(
+            r'conflict',
+            _$target26,
             returnType: r'ResponseEntity',
             parameterTypes: [r'StateError'],
             parameterNames: [r'error'],
-            annotations: [_i23.ExceptionHandler()],
+            annotations: [_i22.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
-            targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i23.RestControllerAdvice()],
-            targetAnnotationTypes: [r'RestControllerAdvice'],
           ),
         ],
         create: (target, invoker) =>
-            _$ApiErrorsProxy((target as _i1.ApiErrors), invoker),
+            _$ApiErrorsProxy((target as _i2.ApiErrors), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i10.BookService>(
+    _i1.BeanDefinition<_i10.BookService>(
       name: r'bookService',
       source: r'asset:spring_boot_starter_web/test/app/book_service.dart#BookService',
-      types: const [_i10.BookService],
       create: (r) => _$BookServiceProxy(),
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory.subclass(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'find',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
+          _i1.MethodSignature.of(
+            r'find',
+            _$target27,
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'search',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
+          _i1.MethodSignature.of(
+            r'search',
+            _$target27,
             returnType: r'Future',
             parameterTypes: [r'String', r'int', r'Genre'],
             parameterNames: [r'query', r'page', r'genre'],
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'create',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
+          _i1.MethodSignature.of(
+            r'create',
+            _$target27,
             returnType: r'Future',
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'delete',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
+          _i1.MethodSignature.of(
+            r'delete',
+            _$target27,
             returnType: r'bool',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
-          _i2.MethodSignature(
-            name: r'changes',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
-            returnType: r'Stream',
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'emitters',
-            declaringType: r'BookService',
-            targetType: r'BookService',
-            declaringTypes: [r'BookService'],
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(r'changes', _$target27, returnType: r'Stream'),
+          _i1.MethodSignature.of(
+            r'emitters',
+            _$target27,
+            kind: _i1.MemberKind.getter,
             returnType: r'List',
-            targetTypes: [r'BookService'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
           ),
         ],
         advise: (bean, invoker) =>
-            bean is _$BookServiceProxy ? bean._$advise(invoker) : null,
+            bean is _$BookServiceProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i2.BeanDefinition<_i12.EchoEndpoint>(
+    _i1.BeanDefinition<_i12.EchoEndpoint>(
       name: r'echoEndpoint',
       source: r'asset:spring_boot_starter_web/test/app/echo_endpoint.dart#EchoEndpoint',
-      types: const [_i12.EchoEndpoint],
       create: (r) => _i12.EchoEndpoint(),
       annotatedMethods: [
-        _i2.BeanMethod<_i12.EchoEndpoint>(
+        const _i1.BeanMethod<_i12.EchoEndpoint>(
           r'echo',
-          parameterTypes: const [String, String, _i2.Principal],
+          parameterTypes: [String, String, _i1.Principal],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'name',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.PathVariable()],
+              annotations: [_i23.PathVariable()],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'text',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'user',
-              type: const _i2.ClassType<_i2.Principal>(nullable: true),
+              type: _i1.ClassType<_i1.Principal>(nullable: true),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i12.Shout>(),
-          invoke: (bean, arguments) => Function.apply(bean.echo, arguments),
-          annotations: const [_i24.OnMessage()],
+          returnTypeInfo: _i1.ClassType<_i12.Shout>(),
+          invoke: _$invoke28,
+          annotations: [_i25.OnMessage()],
         ),
       ],
-      annotations: const [_i25.WebSocketEndpoint(r'/ws/echo/{name}')],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i24.WebSocketEndpoint(r'/ws/echo/{name}')],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'echo',
-            declaringType: r'EchoEndpoint',
-            targetType: r'EchoEndpoint',
-            declaringTypes: [r'EchoEndpoint'],
+          _i1.MethodSignature.of(
+            r'echo',
+            _$target29,
             returnType: r'Shout',
             parameterTypes: [r'String', r'String', r'Principal'],
             parameterNames: [r'name', r'text', r'user'],
             parameterAnnotations: [
-              [_i22.PathVariable()],
+              [_i23.PathVariable()],
               [],
               [],
             ],
-            annotations: [_i24.OnMessage()],
+            annotations: [_i25.OnMessage()],
             annotationTypes: [r'OnMessage'],
-            targetTypes: [r'EchoEndpoint'],
-            targetAnnotations: [_i25.WebSocketEndpoint(r'/ws/echo/{name}')],
-            targetAnnotationTypes: [r'WebSocketEndpoint'],
           ),
         ],
         create: (target, invoker) =>
             _$EchoEndpointProxy((target as _i12.EchoEndpoint), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i13.FilesController>(
+    _i1.BeanDefinition<_i13.FilesController>(
       name: r'filesController',
       source: r'asset:spring_boot_starter_web/test/app/files_controller.dart#FilesController',
-      types: const [_i13.FilesController],
       create: (r) => _i13.FilesController(),
       annotatedMethods: [
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'upload',
-          parameterTypes: const [_i14.MultipartFile, String],
+          parameterTypes: [_i14.MultipartFile, String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'file',
-              type: const _i2.ClassType<_i14.MultipartFile>(),
+              type: _i1.ClassType<_i14.MultipartFile>(),
               isRequired: true,
-              annotations: const [_i22.RequestPart(r'file')],
+              annotations: [_i23.RequestPart(r'file')],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'note',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.RequestParam(r'note')],
+              annotations: [_i23.RequestParam(r'note')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i13.Upload>(),
+          returnTypeInfo: _i1.ClassType<_i13.Upload>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.upload, arguments),
-          annotations: const [
-            _i22.PostMapping.of(
+          invoke: _$invoke30,
+          annotations: [
+            _i23.PostMapping.of(
               path: r'/upload',
               consumes: r'multipart/form-data',
             ),
           ],
         ),
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'many',
-          parameterTypes: const [List<_i14.MultipartFile>],
+          parameterTypes: [List<_i14.MultipartFile>],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'files',
-              type: const _i2.ListType<_i14.MultipartFile>(
-                _i2.ClassType<_i14.MultipartFile>(),
+              type: _i1.ListType<_i14.MultipartFile>(
+                _i1.ClassType<_i14.MultipartFile>(),
               ),
               isRequired: true,
-              annotations: const [_i22.RequestPart(r'files')],
+              annotations: [_i23.RequestPart(r'files')],
             ),
           ],
-          returnTypeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
+          returnTypeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.many, arguments),
-          annotations: const [_i22.PostMapping(r'/many')],
+          invoke: _$invoke31,
+          annotations: [_i23.PostMapping(r'/many')],
         ),
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'book',
-          parameterTypes: const [_i4.NewBook],
+          parameterTypes: [_i4.NewBook],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'book',
-              type: const _i2.ClassType<_i4.NewBook>(),
+              type: _i1.ClassType<_i4.NewBook>(),
               isRequired: true,
-              annotations: const [_i22.RequestPart(r'book'), _i2.Valid()],
+              annotations: [_i23.RequestPart(r'book'), _i1.Valid()],
             ),
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'cover',
-              type: const _i2.ClassType<_i14.MultipartFile>(nullable: true),
+              type: _i1.ClassType<_i14.MultipartFile>(nullable: true),
               symbol: #cover,
-              annotations: const [_i22.RequestPart(r'cover')],
+              annotations: [_i23.RequestPart(r'cover')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i13.Stored>(),
-          invoke: (bean, arguments) => Function.apply(bean.book, arguments),
-          invokeNamed: (bean, positional, named) =>
-              Function.apply(bean.book, positional, named),
-          annotations: const [_i22.PostMapping(r'/book')],
+          returnTypeInfo: _i1.ClassType<_i13.Stored>(),
+          invoke: _$invoke32,
+          invokeNamed: _$invokeNamed33,
+          annotations: [_i23.PostMapping(r'/book')],
         ),
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'save',
-          parameterTypes: const [_i14.MultipartFile],
+          parameterTypes: [_i14.MultipartFile],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'file',
-              type: const _i2.ClassType<_i14.MultipartFile>(),
+              type: _i1.ClassType<_i14.MultipartFile>(),
               isRequired: true,
-              annotations: const [_i22.RequestPart(r'file')],
+              annotations: [_i23.RequestPart(r'file')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<int>(),
+          returnTypeInfo: _i1.ClassType<int>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.save, arguments),
-          annotations: const [_i22.PostMapping(r'/save')],
+          invoke: _$invoke34,
+          annotations: [_i23.PostMapping(r'/save')],
         ),
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'report',
-          returnTypeInfo:
-              const _i2.GenericType<_i5.ResponseEntity<_i2.Resource>>([
-                _i2.ClassType<_i2.Resource>(),
-              ]),
-          invoke: (bean, arguments) => Function.apply(bean.report, arguments),
-          annotations: const [_i22.GetMapping(r'/report')],
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<_i1.Resource>>([
+            _i1.ClassType<_i1.Resource>(),
+          ]),
+          invoke: _$invoke35,
+          annotations: [_i23.GetMapping(r'/report')],
         ),
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'file',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'path',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.RequestParam(r'path')],
+              annotations: [_i23.RequestParam(r'path')],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<_i2.Resource>(),
-          invoke: (bean, arguments) => Function.apply(bean.file, arguments),
-          annotations: const [_i22.GetMapping(r'/file')],
+          returnTypeInfo: _i1.ClassType<_i1.Resource>(),
+          invoke: _$invoke36,
+          annotations: [_i23.GetMapping(r'/file')],
         ),
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'stream',
-          returnTypeInfo: const _i2.GenericType<_i3.Stream<_i11.Uint8List>>([
-            _i2.ClassType<_i11.Uint8List>(),
+          returnTypeInfo: _i1.GenericType<_i3.Stream<_i11.Uint8List>>([
+            _i1.ClassType<_i11.Uint8List>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.stream, arguments),
-          annotations: const [_i22.GetMapping(r'/stream')],
+          invoke: _$invoke37,
+          annotations: [_i23.GetMapping(r'/stream')],
         ),
-        _i2.BeanMethod<_i13.FilesController>(
+        const _i1.BeanMethod<_i13.FilesController>(
           r'export',
-          returnTypeInfo: const _i2.ClassType<_i15.StreamingResponseBody>(),
-          invoke: (bean, arguments) => Function.apply(bean.export, arguments),
-          annotations: const [
-            _i22.GetMapping.of(path: r'/export', produces: r'text/csv'),
+          returnTypeInfo: _i1.ClassType<_i15.StreamingResponseBody>(),
+          invoke: _$invoke38,
+          annotations: [
+            _i23.GetMapping.of(path: r'/export', produces: r'text/csv'),
           ],
         ),
       ],
       annotations: const [
-        _i23.RestController(),
-        _i22.RequestMapping(r'/files'),
+        _i22.RestController(),
+        _i23.RequestMapping(r'/files'),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'upload',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'upload',
+            _$target39,
             returnType: r'Future',
             parameterTypes: [r'MultipartFile', r'String'],
             parameterNames: [r'file', r'note'],
             parameterAnnotations: [
-              [_i22.RequestPart(r'file')],
-              [_i22.RequestParam(r'note')],
+              [_i23.RequestPart(r'file')],
+              [_i23.RequestParam(r'note')],
             ],
             annotations: [
-              _i22.PostMapping.of(
+              _i23.PostMapping.of(
                 path: r'/upload',
                 consumes: r'multipart/form-data',
               ),
             ],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'many',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'many',
+            _$target39,
             returnType: r'Future',
             parameterTypes: [r'List'],
             parameterNames: [r'files'],
             parameterAnnotations: [
-              [_i22.RequestPart(r'files')],
+              [_i23.RequestPart(r'files')],
             ],
-            annotations: [_i22.PostMapping(r'/many')],
+            annotations: [_i23.PostMapping(r'/many')],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'book',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'book',
+            _$target39,
             returnType: r'Stored',
             parameterTypes: [r'NewBook', r'MultipartFile'],
             parameterNames: [r'book', r'cover'],
             parameterAnnotations: [
-              [_i22.RequestPart(r'book'), _i2.Valid()],
-              [_i22.RequestPart(r'cover')],
+              [_i23.RequestPart(r'book'), _i1.Valid()],
+              [_i23.RequestPart(r'cover')],
             ],
-            annotations: [_i22.PostMapping(r'/book')],
+            annotations: [_i23.PostMapping(r'/book')],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'save',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'save',
+            _$target39,
             returnType: r'Future',
             parameterTypes: [r'MultipartFile'],
             parameterNames: [r'file'],
             parameterAnnotations: [
-              [_i22.RequestPart(r'file')],
+              [_i23.RequestPart(r'file')],
             ],
-            annotations: [_i22.PostMapping(r'/save')],
+            annotations: [_i23.PostMapping(r'/save')],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'report',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'report',
+            _$target39,
             returnType: r'ResponseEntity',
-            annotations: [_i22.GetMapping(r'/report')],
+            annotations: [_i23.GetMapping(r'/report')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'file',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'file',
+            _$target39,
             returnType: r'Resource',
             parameterTypes: [r'String'],
             parameterNames: [r'path'],
             parameterAnnotations: [
-              [_i22.RequestParam(r'path')],
+              [_i23.RequestParam(r'path')],
             ],
-            annotations: [_i22.GetMapping(r'/file')],
+            annotations: [_i23.GetMapping(r'/file')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'stream',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'stream',
+            _$target39,
             returnType: r'Stream',
-            annotations: [_i22.GetMapping(r'/stream')],
+            annotations: [_i23.GetMapping(r'/stream')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'export',
-            declaringType: r'FilesController',
-            targetType: r'FilesController',
-            declaringTypes: [r'FilesController'],
+          _i1.MethodSignature.of(
+            r'export',
+            _$target39,
             returnType: r'StreamingResponseBody',
             annotations: [
-              _i22.GetMapping.of(path: r'/export', produces: r'text/csv'),
+              _i23.GetMapping.of(path: r'/export', produces: r'text/csv'),
             ],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'FilesController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/files'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
             _$FilesControllerProxy((target as _i13.FilesController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i16.PlainController>(
+    _i1.BeanDefinition<_i16.PlainController>(
       name: r'plainController',
       source: r'asset:spring_boot_starter_web/test/app/plain_controller.dart#PlainController',
-      types: const [_i16.PlainController],
       create: (r) => _i16.PlainController(),
       annotatedMethods: [
-        _i2.BeanMethod<_i16.PlainController>(
+        const _i1.BeanMethod<_i16.PlainController>(
           r'badHeader',
-          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
-            _i2.ClassType<String>(),
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
+            _i1.ClassType<String>(),
           ]),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.badHeader, arguments),
-          annotations: const [_i22.GetMapping(r'/bad-header')],
+          invoke: _$invoke40,
+          annotations: [_i23.GetMapping(r'/bad-header')],
         ),
-        _i2.BeanMethod<_i16.PlainController>(
+        const _i1.BeanMethod<_i16.PlainController>(
           r'text',
-          parameterTypes: const [String],
+          parameterTypes: [String],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'body',
-              type: const _i2.ClassType<String>(),
+              type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i22.RequestBody()],
+              annotations: [_i23.RequestBody()],
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.text, arguments),
-          annotations: const [_i22.PostMapping(r'/text')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke41,
+          annotations: [_i23.PostMapping(r'/text')],
         ),
       ],
       annotations: const [
-        _i23.RestController(),
-        _i22.RequestMapping(r'/plain'),
+        _i22.RestController(),
+        _i23.RequestMapping(r'/plain'),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'badHeader',
-            declaringType: r'PlainController',
-            targetType: r'PlainController',
-            declaringTypes: [r'PlainController'],
+          _i1.MethodSignature.of(
+            r'badHeader',
+            _$target42,
             returnType: r'ResponseEntity',
-            annotations: [_i22.GetMapping(r'/bad-header')],
+            annotations: [_i23.GetMapping(r'/bad-header')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'PlainController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/plain'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'text',
-            declaringType: r'PlainController',
-            targetType: r'PlainController',
-            declaringTypes: [r'PlainController'],
+          _i1.MethodSignature.of(
+            r'text',
+            _$target42,
             returnType: r'String',
             parameterTypes: [r'String'],
             parameterNames: [r'body'],
             parameterAnnotations: [
-              [_i22.RequestBody()],
+              [_i23.RequestBody()],
             ],
-            annotations: [_i22.PostMapping(r'/text')],
+            annotations: [_i23.PostMapping(r'/text')],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'PlainController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/plain'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) =>
             _$PlainControllerProxy((target as _i16.PlainController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i17.ReviewController>(
+    _i1.BeanDefinition<_i17.ReviewController>(
       name: r'reviewController',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewController',
-      types: const [_i17.ReviewController],
       create: (r) => _i17.ReviewController(),
       annotatedMethods: [
-        _i2.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i17.ReviewController>(
           r'cors',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.cors, arguments),
-          annotations: const [
-            _i23.CrossOrigin(methods: [r'PUT']),
-            _i22.PutMapping(r'/cors'),
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke43,
+          annotations: [
+            _i22.CrossOrigin(methods: [r'PUT']),
+            _i23.PutMapping(r'/cors'),
           ],
         ),
-        _i2.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i17.ReviewController>(
           r'format',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.format, arguments),
-          annotations: const [_i22.GetMapping(r'/format')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke44,
+          annotations: [_i23.GetMapping(r'/format')],
         ),
-        _i2.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i17.ReviewController>(
           r'argument',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) => Function.apply(bean.argument, arguments),
-          annotations: const [_i22.GetMapping(r'/argument')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke45,
+          annotations: [_i23.GetMapping(r'/argument')],
         ),
-        _i2.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i17.ReviewController>(
           r'unsupported',
-          returnTypeInfo: const _i2.ClassType<String>(),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.unsupported, arguments),
-          annotations: const [_i22.GetMapping(r'/unsupported')],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke46,
+          annotations: [_i23.GetMapping(r'/unsupported')],
         ),
-        _i2.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i17.ReviewController>(
           r'entityEvents',
           returnTypeInfo:
-              const _i2.GenericType<
-                _i5.ResponseEntity<_i6.EventStream<String>>
-              >([
-                _i2.GenericType<_i6.EventStream<String>>([
-                  _i2.ClassType<String>(),
+              _i1.GenericType<_i5.ResponseEntity<_i6.EventStream<String>>>([
+                _i1.GenericType<_i6.EventStream<String>>([
+                  _i1.ClassType<String>(),
                 ]),
               ]),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.entityEvents, arguments),
-          annotations: const [_i22.GetMapping(r'/entity-events')],
+          invoke: _$invoke47,
+          annotations: [_i23.GetMapping(r'/entity-events')],
         ),
-        _i2.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i17.ReviewController>(
           r'entityEmitter',
-          returnTypeInfo:
-              const _i2.GenericType<_i5.ResponseEntity<_i7.SseEmitter>>([
-                _i2.ClassType<_i7.SseEmitter>(),
-              ]),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.entityEmitter, arguments),
-          annotations: const [_i22.GetMapping(r'/entity-emitter')],
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<_i7.SseEmitter>>([
+            _i1.ClassType<_i7.SseEmitter>(),
+          ]),
+          invoke: _$invoke48,
+          annotations: [_i23.GetMapping(r'/entity-emitter')],
         ),
       ],
       annotations: const [
-        _i23.RestController(),
-        _i22.RequestMapping(r'/api/review'),
+        _i22.RestController(),
+        _i23.RequestMapping(r'/api/review'),
         _i17.ReviewApi(),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'cors',
-            declaringType: r'ReviewController',
-            targetType: r'ReviewController',
-            declaringTypes: [r'ReviewController'],
+          _i1.MethodSignature.of(
+            r'cors',
+            _$target49,
             returnType: r'String',
             annotations: [
-              _i23.CrossOrigin(methods: [r'PUT']),
-              _i22.PutMapping(r'/cors'),
+              _i22.CrossOrigin(methods: [r'PUT']),
+              _i23.PutMapping(r'/cors'),
             ],
             annotationTypes: [r'CrossOrigin', r'PutMapping'],
-            targetTypes: [r'ReviewController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/review'),
-              _i17.ReviewApi(),
-            ],
-            targetAnnotationTypes: [
-              r'RestController',
-              r'RequestMapping',
-              r'ReviewApi',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'format',
-            declaringType: r'ReviewController',
-            targetType: r'ReviewController',
-            declaringTypes: [r'ReviewController'],
+          _i1.MethodSignature.of(
+            r'format',
+            _$target49,
             returnType: r'String',
-            annotations: [_i22.GetMapping(r'/format')],
+            annotations: [_i23.GetMapping(r'/format')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'ReviewController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/review'),
-              _i17.ReviewApi(),
-            ],
-            targetAnnotationTypes: [
-              r'RestController',
-              r'RequestMapping',
-              r'ReviewApi',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'argument',
-            declaringType: r'ReviewController',
-            targetType: r'ReviewController',
-            declaringTypes: [r'ReviewController'],
+          _i1.MethodSignature.of(
+            r'argument',
+            _$target49,
             returnType: r'String',
-            annotations: [_i22.GetMapping(r'/argument')],
+            annotations: [_i23.GetMapping(r'/argument')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'ReviewController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/review'),
-              _i17.ReviewApi(),
-            ],
-            targetAnnotationTypes: [
-              r'RestController',
-              r'RequestMapping',
-              r'ReviewApi',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'unsupported',
-            declaringType: r'ReviewController',
-            targetType: r'ReviewController',
-            declaringTypes: [r'ReviewController'],
+          _i1.MethodSignature.of(
+            r'unsupported',
+            _$target49,
             returnType: r'String',
-            annotations: [_i22.GetMapping(r'/unsupported')],
+            annotations: [_i23.GetMapping(r'/unsupported')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'ReviewController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/review'),
-              _i17.ReviewApi(),
-            ],
-            targetAnnotationTypes: [
-              r'RestController',
-              r'RequestMapping',
-              r'ReviewApi',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'entityEvents',
-            declaringType: r'ReviewController',
-            targetType: r'ReviewController',
-            declaringTypes: [r'ReviewController'],
+          _i1.MethodSignature.of(
+            r'entityEvents',
+            _$target49,
             returnType: r'ResponseEntity',
-            annotations: [_i22.GetMapping(r'/entity-events')],
+            annotations: [_i23.GetMapping(r'/entity-events')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'ReviewController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/review'),
-              _i17.ReviewApi(),
-            ],
-            targetAnnotationTypes: [
-              r'RestController',
-              r'RequestMapping',
-              r'ReviewApi',
-            ],
           ),
-          _i2.MethodSignature(
-            name: r'entityEmitter',
-            declaringType: r'ReviewController',
-            targetType: r'ReviewController',
-            declaringTypes: [r'ReviewController'],
+          _i1.MethodSignature.of(
+            r'entityEmitter',
+            _$target49,
             returnType: r'ResponseEntity',
-            annotations: [_i22.GetMapping(r'/entity-emitter')],
+            annotations: [_i23.GetMapping(r'/entity-emitter')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'ReviewController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/api/review'),
-              _i17.ReviewApi(),
-            ],
-            targetAnnotationTypes: [
-              r'RestController',
-              r'RequestMapping',
-              r'ReviewApi',
-            ],
           ),
         ],
         create: (target, invoker) =>
             _$ReviewControllerProxy((target as _i17.ReviewController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i17.ReviewFirstErrors>(
+    _i1.BeanDefinition<_i17.ReviewFirstErrors>(
       name: r'reviewFirstErrors',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewFirstErrors',
-      types: const [_i17.ReviewFirstErrors],
       order: 1,
       create: (r) => _i17.ReviewFirstErrors(),
       annotatedMethods: [
-        _i2.BeanMethod<_i17.ReviewFirstErrors>(
+        const _i1.BeanMethod<_i17.ReviewFirstErrors>(
           r'any',
-          parameterTypes: const [Exception],
+          parameterTypes: [Exception],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'error',
-              type: const _i2.ClassType<Exception>(),
+              type: _i1.ClassType<Exception>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
-            _i2.ClassType<String>(),
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
+            _i1.ClassType<String>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.any, arguments),
-          annotations: const [_i23.ExceptionHandler()],
+          invoke: _$invoke50,
+          annotations: [_i22.ExceptionHandler()],
         ),
       ],
       annotations: const [
-        _i23.RestControllerAdvice.of(assignableTypes: [_i17.ReviewController]),
-        _i2.Order(1),
+        _i22.RestControllerAdvice.of(assignableTypes: [_i17.ReviewController]),
+        _i1.Order(1),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'any',
-            declaringType: r'ReviewFirstErrors',
-            targetType: r'ReviewFirstErrors',
-            declaringTypes: [r'ReviewFirstErrors'],
+          _i1.MethodSignature.of(
+            r'any',
+            _$target51,
             returnType: r'ResponseEntity',
             parameterTypes: [r'Exception'],
             parameterNames: [r'error'],
-            annotations: [_i23.ExceptionHandler()],
+            annotations: [_i22.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
-            targetTypes: [r'ReviewFirstErrors'],
-            targetAnnotations: [
-              _i23.RestControllerAdvice.of(
-                assignableTypes: [_i17.ReviewController],
-              ),
-            ],
-            targetAnnotationTypes: [r'RestControllerAdvice'],
           ),
         ],
         create: (target, invoker) => _$ReviewFirstErrorsProxy(
@@ -2614,95 +2249,72 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
         ),
       ),
     ),
-    _i2.BeanDefinition<_i17.ReviewSecondErrors>(
+    _i1.BeanDefinition<_i17.ReviewSecondErrors>(
       name: r'reviewSecondErrors',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewSecondErrors',
-      types: const [_i17.ReviewSecondErrors],
       order: 2,
       create: (r) => _i17.ReviewSecondErrors(),
       annotatedMethods: [
-        _i2.BeanMethod<_i17.ReviewSecondErrors>(
+        const _i1.BeanMethod<_i17.ReviewSecondErrors>(
           r'format',
-          parameterTypes: const [FormatException],
+          parameterTypes: [FormatException],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'error',
-              type: const _i2.ClassType<FormatException>(),
+              type: _i1.ClassType<FormatException>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
-            _i2.ClassType<String>(),
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
+            _i1.ClassType<String>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.format, arguments),
-          annotations: const [_i23.ExceptionHandler()],
+          invoke: _$invoke52,
+          annotations: [_i22.ExceptionHandler()],
         ),
-        _i2.BeanMethod<_i17.ReviewSecondErrors>(
+        const _i1.BeanMethod<_i17.ReviewSecondErrors>(
           r'argument',
-          parameterTypes: const [ArgumentError],
+          parameterTypes: [ArgumentError],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'error',
-              type: const _i2.ClassType<ArgumentError>(),
+              type: _i1.ClassType<ArgumentError>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
-            _i2.ClassType<String>(),
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
+            _i1.ClassType<String>(),
           ]),
-          invoke: (bean, arguments) => Function.apply(bean.argument, arguments),
-          annotations: const [_i23.ExceptionHandler()],
+          invoke: _$invoke53,
+          annotations: [_i22.ExceptionHandler()],
         ),
       ],
       annotations: const [
-        _i23.RestControllerAdvice.of(
+        _i22.RestControllerAdvice.of(
           basePackages: [
             r'asset:spring_boot_starter_web/test/app/review_controller',
           ],
         ),
-        _i2.Order(2),
+        _i1.Order(2),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'format',
-            declaringType: r'ReviewSecondErrors',
-            targetType: r'ReviewSecondErrors',
-            declaringTypes: [r'ReviewSecondErrors'],
+          _i1.MethodSignature.of(
+            r'format',
+            _$target54,
             returnType: r'ResponseEntity',
             parameterTypes: [r'FormatException'],
             parameterNames: [r'error'],
-            annotations: [_i23.ExceptionHandler()],
+            annotations: [_i22.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
-            targetTypes: [r'ReviewSecondErrors'],
-            targetAnnotations: [
-              _i23.RestControllerAdvice.of(
-                basePackages: [
-                  r'asset:spring_boot_starter_web/test/app/review_controller',
-                ],
-              ),
-            ],
-            targetAnnotationTypes: [r'RestControllerAdvice'],
           ),
-          _i2.MethodSignature(
-            name: r'argument',
-            declaringType: r'ReviewSecondErrors',
-            targetType: r'ReviewSecondErrors',
-            declaringTypes: [r'ReviewSecondErrors'],
+          _i1.MethodSignature.of(
+            r'argument',
+            _$target54,
             returnType: r'ResponseEntity',
             parameterTypes: [r'ArgumentError'],
             parameterNames: [r'error'],
-            annotations: [_i23.ExceptionHandler()],
+            annotations: [_i22.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
-            targetTypes: [r'ReviewSecondErrors'],
-            targetAnnotations: [
-              _i23.RestControllerAdvice.of(
-                basePackages: [
-                  r'asset:spring_boot_starter_web/test/app/review_controller',
-                ],
-              ),
-            ],
-            targetAnnotationTypes: [r'RestControllerAdvice'],
           ),
         ],
         create: (target, invoker) => _$ReviewSecondErrorsProxy(
@@ -2711,52 +2323,43 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
         ),
       ),
     ),
-    _i2.BeanDefinition<_i17.ReviewThirdErrors>(
+    _i1.BeanDefinition<_i17.ReviewThirdErrors>(
       name: r'reviewThirdErrors',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewThirdErrors',
-      types: const [_i17.ReviewThirdErrors],
       order: 3,
       create: (r) => _i17.ReviewThirdErrors(),
       annotatedMethods: [
-        _i2.BeanMethod<_i17.ReviewThirdErrors>(
+        const _i1.BeanMethod<_i17.ReviewThirdErrors>(
           r'unsupported',
-          parameterTypes: const [UnsupportedError],
+          parameterTypes: [UnsupportedError],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'error',
-              type: const _i2.ClassType<UnsupportedError>(),
+              type: _i1.ClassType<UnsupportedError>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
-            _i2.ClassType<String>(),
+          returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
+            _i1.ClassType<String>(),
           ]),
-          invoke: (bean, arguments) =>
-              Function.apply(bean.unsupported, arguments),
-          annotations: const [_i23.ExceptionHandler()],
+          invoke: _$invoke55,
+          annotations: [_i22.ExceptionHandler()],
         ),
       ],
       annotations: const [
-        _i23.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
-        _i2.Order(3),
+        _i22.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
+        _i1.Order(3),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'unsupported',
-            declaringType: r'ReviewThirdErrors',
-            targetType: r'ReviewThirdErrors',
-            declaringTypes: [r'ReviewThirdErrors'],
+          _i1.MethodSignature.of(
+            r'unsupported',
+            _$target56,
             returnType: r'ResponseEntity',
             parameterTypes: [r'UnsupportedError'],
             parameterNames: [r'error'],
-            annotations: [_i23.ExceptionHandler()],
+            annotations: [_i22.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
-            targetTypes: [r'ReviewThirdErrors'],
-            targetAnnotations: [
-              _i23.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
-            ],
-            targetAnnotationTypes: [r'RestControllerAdvice'],
           ),
         ],
         create: (target, invoker) => _$ReviewThirdErrorsProxy(
@@ -2765,144 +2368,110 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
         ),
       ),
     ),
-    _i2.BeanDefinition<_i18.SessionController>(
+    _i1.BeanDefinition<_i18.SessionController>(
       name: r'sessionController',
       source: r'asset:spring_boot_starter_web/test/app/session_controller.dart#SessionController',
-      types: const [_i18.SessionController],
       create: (r) => _i18.SessionController(),
       annotatedMethods: [
-        _i2.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i18.SessionController>(
           r'count',
-          parameterTypes: const [_i9.ServerHttpRequest],
+          parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i9.ServerHttpRequest>(),
+              type: _i1.ClassType<_i9.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<int>(),
-          invoke: (bean, arguments) => Function.apply(bean.count, arguments),
-          annotations: const [_i22.GetMapping(r'/count')],
+          returnTypeInfo: _i1.ClassType<int>(),
+          invoke: _$invoke57,
+          annotations: [_i23.GetMapping(r'/count')],
         ),
-        _i2.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i18.SessionController>(
           r'peek',
-          parameterTypes: const [_i9.ServerHttpRequest],
+          parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i9.ServerHttpRequest>(),
+              type: _i1.ClassType<_i9.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<bool>(),
-          invoke: (bean, arguments) => Function.apply(bean.peek, arguments),
-          annotations: const [_i22.GetMapping(r'/peek')],
+          returnTypeInfo: _i1.ClassType<bool>(),
+          invoke: _$invoke58,
+          annotations: [_i23.GetMapping(r'/peek')],
         ),
-        _i2.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i18.SessionController>(
           r'rotate',
-          parameterTypes: const [_i9.ServerHttpRequest],
+          parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i9.ServerHttpRequest>(),
+              type: _i1.ClassType<_i9.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: const _i2.ClassType<String>(),
+          returnTypeInfo: _i1.ClassType<String>(),
           isFuture: true,
-          invoke: (bean, arguments) => Function.apply(bean.rotate, arguments),
-          annotations: const [_i22.PostMapping(r'/rotate')],
+          invoke: _$invoke59,
+          annotations: [_i23.PostMapping(r'/rotate')],
         ),
-        _i2.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i18.SessionController>(
           r'invalidate',
-          parameterTypes: const [_i9.ServerHttpRequest],
+          parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
-            _i2.BeanParameter(
+            _i1.BeanParameter(
               r'request',
-              type: const _i2.ClassType<_i9.ServerHttpRequest>(),
+              type: _i1.ClassType<_i9.ServerHttpRequest>(),
               isRequired: true,
             ),
           ],
           isVoid: true,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.invalidate, arguments),
-          annotations: const [_i22.PostMapping(r'/invalidate')],
+          invoke: _$invoke60,
+          annotations: [_i23.PostMapping(r'/invalidate')],
         ),
       ],
       annotations: const [
-        _i23.RestController(),
-        _i22.RequestMapping(r'/session'),
+        _i22.RestController(),
+        _i23.RequestMapping(r'/session'),
       ],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'count',
-            declaringType: r'SessionController',
-            targetType: r'SessionController',
-            declaringTypes: [r'SessionController'],
+          _i1.MethodSignature.of(
+            r'count',
+            _$target61,
             returnType: r'int',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i22.GetMapping(r'/count')],
+            annotations: [_i23.GetMapping(r'/count')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'SessionController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/session'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'peek',
-            declaringType: r'SessionController',
-            targetType: r'SessionController',
-            declaringTypes: [r'SessionController'],
+          _i1.MethodSignature.of(
+            r'peek',
+            _$target61,
             returnType: r'bool',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i22.GetMapping(r'/peek')],
+            annotations: [_i23.GetMapping(r'/peek')],
             annotationTypes: [r'GetMapping'],
-            targetTypes: [r'SessionController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/session'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'rotate',
-            declaringType: r'SessionController',
-            targetType: r'SessionController',
-            declaringTypes: [r'SessionController'],
+          _i1.MethodSignature.of(
+            r'rotate',
+            _$target61,
             returnType: r'Future',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i22.PostMapping(r'/rotate')],
+            annotations: [_i23.PostMapping(r'/rotate')],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'SessionController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/session'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
-          _i2.MethodSignature(
-            name: r'invalidate',
-            declaringType: r'SessionController',
-            targetType: r'SessionController',
-            declaringTypes: [r'SessionController'],
+          _i1.MethodSignature.of(
+            r'invalidate',
+            _$target61,
             returnType: r'void',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i22.PostMapping(r'/invalidate')],
+            annotations: [_i23.PostMapping(r'/invalidate')],
             annotationTypes: [r'PostMapping'],
-            targetTypes: [r'SessionController'],
-            targetAnnotations: [
-              _i23.RestController(),
-              _i22.RequestMapping(r'/session'),
-            ],
-            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) => _$SessionControllerProxy(
@@ -2911,20 +2480,20 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
         ),
       ),
     ),
-    _i2.BeanDefinition<_i19.TraceFilter>(
+    _i1.BeanDefinition<_i19.TraceFilter>(
       name: r'traceFilter',
       source:
           r'asset:spring_boot_starter_web/test/app/web_config.dart#TraceFilter',
       types: const [_i19.TraceFilter, _i20.WebFilter],
       order: 1,
       create: (r) => _i19.TraceFilter(),
-      annotations: const [_i2.Component(), _i2.Order(1)],
-      aopProxy: _i2.AopProxyFactory(
+      annotations: const [_i1.Component(), _i1.Order(1)],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature(
-            name: r'doFilter',
+          _i1.MethodSignature.of(
+            r'doFilter',
+            _$target62,
             declaringType: r'WebFilter',
-            targetType: r'TraceFilter',
             declaringTypes: [r'TraceFilter', r'WebFilter'],
             returnType: r'Future',
             parameterTypes: [
@@ -2933,332 +2502,302 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'WebFilterChain',
             ],
             parameterNames: [r'request', r'response', r'chain'],
-            targetTypes: [r'TraceFilter', r'WebFilter'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
           ),
         ],
         create: (target, invoker) =>
             _$TraceFilterProxy((target as _i19.TraceFilter), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i19.WebConfig>(
+    _i1.BeanDefinition<_i19.WebConfig>(
       name: r'webConfig',
       source:
           r'asset:spring_boot_starter_web/test/app/web_config.dart#WebConfig',
       types: const [_i19.WebConfig, _i26.WebMvcConfigurer],
       create: (r) => _i19.WebConfig(),
-      annotations: const [_i2.Configuration()],
+      annotations: const [_i1.Configuration()],
     ),
   ],
   introspections: [
-    _i2.BeanIntrospection<_i4.Book>(
+    const _i1.BeanIntrospection<_i4.Book>(
       className: r'Book',
       properties: [
-        _i2.BeanProperty<_i4.Book>(
+        _i1.BeanProperty<_i4.Book>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get63,
         ),
-        _i2.BeanProperty<_i4.Book>(
+        _i1.BeanProperty<_i4.Book>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get64,
         ),
-        _i2.BeanProperty<_i4.Book>(
+        _i1.BeanProperty<_i4.Book>(
           r'stock',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.stock,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get65,
         ),
-        _i2.BeanProperty<_i4.Book>(
+        _i1.BeanProperty<_i4.Book>(
           r'genre',
-          type: _i4.Genre,
-          typeInfo: const _i2.EnumType<_i4.Genre>(_i4.Genre.values),
-          get: (bean) => bean.genre,
+          typeInfo: _i1.EnumType<_i4.Genre>(_i4.Genre.values),
+          get: _$get66,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      constructor: _i2.BeanConstructor<_i4.Book>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      constructor: _i1.BeanConstructor<_i4.Book>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'stock',
-            type: const _i2.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #stock,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'genre',
-            type: const _i2.EnumType<_i4.Genre>(_i4.Genre.values),
+            type: _i1.EnumType<_i4.Genre>(_i4.Genre.values),
             symbol: #genre,
             hasDefaultValue: true,
             defaultValue: _i4.Genre.fiction,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i4.Book.new, positional, named) as _i4.Book),
+        create: _$create67,
       ),
     ),
-    _i2.BeanIntrospection<_i4.NewBook>(
+    const _i1.BeanIntrospection<_i4.NewBook>(
       className: r'NewBook',
       properties: [
-        _i2.BeanProperty<_i4.NewBook>(
+        _i1.BeanProperty<_i4.NewBook>(
           r'isbn',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.isbn,
-          annotations: const [_i2.NotBlank(), _i2.Size(min: 4, max: 13)],
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get68,
+          annotations: [_i1.NotBlank(), _i1.Size(min: 4, max: 13)],
         ),
-        _i2.BeanProperty<_i4.NewBook>(
+        _i1.BeanProperty<_i4.NewBook>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
-          annotations: const [_i2.NotBlank()],
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get69,
+          annotations: [_i1.NotBlank()],
         ),
-        _i2.BeanProperty<_i4.NewBook>(
+        _i1.BeanProperty<_i4.NewBook>(
           r'stock',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.stock,
-          annotations: const [_i2.PositiveOrZero()],
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get70,
+          annotations: [_i1.PositiveOrZero()],
         ),
       ],
-      parts: const {_i2.IntrospectionPart.write},
-      constructor: _i2.BeanConstructor<_i4.NewBook>(
+      parts: {_i1.IntrospectionPart.write},
+      constructor: _i1.BeanConstructor<_i4.NewBook>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'isbn',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #isbn,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'stock',
-            type: const _i2.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #stock,
             hasDefaultValue: true,
             defaultValue: 0,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i4.NewBook.new, positional, named) as _i4.NewBook),
+        create: _$create71,
       ),
     ),
-    _i2.BeanIntrospection<_i7.SseEmitter>(
+    const _i1.BeanIntrospection<_i7.SseEmitter>(
       className: r'SseEmitter',
       properties: [
-        _i2.BeanProperty<_i7.SseEmitter>(
+        _i1.BeanProperty<_i7.SseEmitter>(
           r'timeout',
-          type: Duration,
           nullable: true,
-          typeInfo: const _i2.ClassType<Duration>(nullable: true),
-          get: (bean) => bean.timeout,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get72,
         ),
-        _i2.BeanProperty<_i7.SseEmitter>(
+        _i1.BeanProperty<_i7.SseEmitter>(
           r'isComplete',
-          type: bool,
-          typeInfo: const _i2.ClassType<bool>(),
-          get: (bean) => bean.isComplete,
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get73,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      instantiate: () => _i7.SseEmitter(),
-      constructor: _i2.BeanConstructor<_i7.SseEmitter>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i7.SseEmitter.new,
+      constructor: _i1.BeanConstructor<_i7.SseEmitter>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'timeout',
-            type: const _i2.ClassType<Duration>(nullable: true),
+            type: _i1.ClassType<Duration>(nullable: true),
             symbol: #timeout,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i7.SseEmitter.new, positional, named)
-                as _i7.SseEmitter),
+        create: _$create74,
       ),
     ),
-    _i2.BeanIntrospection<_i12.Shout>(
+    const _i1.BeanIntrospection<_i12.Shout>(
       className: r'Shout',
       properties: [
-        _i2.BeanProperty<_i12.Shout>(
+        _i1.BeanProperty<_i12.Shout>(
           r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get75,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read},
+      parts: {_i1.IntrospectionPart.read},
     ),
-    _i2.BeanIntrospection<_i13.Upload>(
+    const _i1.BeanIntrospection<_i13.Upload>(
       className: r'Upload',
       properties: [
-        _i2.BeanProperty<_i13.Upload>(
+        _i1.BeanProperty<_i13.Upload>(
           r'name',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.name,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get76,
         ),
-        _i2.BeanProperty<_i13.Upload>(
+        _i1.BeanProperty<_i13.Upload>(
           r'filename',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.filename,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get77,
         ),
-        _i2.BeanProperty<_i13.Upload>(
+        _i1.BeanProperty<_i13.Upload>(
           r'size',
-          type: int,
-          typeInfo: const _i2.ClassType<int>(),
-          get: (bean) => bean.size,
+          typeInfo: _i1.ClassType<int>(),
+          get: _$get78,
         ),
-        _i2.BeanProperty<_i13.Upload>(
+        _i1.BeanProperty<_i13.Upload>(
           r'contentType',
-          type: String,
           nullable: true,
-          typeInfo: const _i2.ClassType<String>(nullable: true),
-          get: (bean) => bean.contentType,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get79,
         ),
-        _i2.BeanProperty<_i13.Upload>(
+        _i1.BeanProperty<_i13.Upload>(
           r'note',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.note,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get80,
         ),
-        _i2.BeanProperty<_i13.Upload>(
+        _i1.BeanProperty<_i13.Upload>(
           r'text',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.text,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get81,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      constructor: _i2.BeanConstructor<_i13.Upload>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      constructor: _i1.BeanConstructor<_i13.Upload>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'name',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #name,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'filename',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #filename,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'size',
-            type: const _i2.ClassType<int>(),
+            type: _i1.ClassType<int>(),
             symbol: #size,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'contentType',
-            type: const _i2.ClassType<String>(nullable: true),
+            type: _i1.ClassType<String>(nullable: true),
             symbol: #contentType,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'note',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #note,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'text',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #text,
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.Upload.new, positional, named) as _i13.Upload),
+        create: _$create82,
       ),
     ),
-    _i2.BeanIntrospection<_i13.Stored>(
+    const _i1.BeanIntrospection<_i13.Stored>(
       className: r'Stored',
       properties: [
-        _i2.BeanProperty<_i13.Stored>(
+        _i1.BeanProperty<_i13.Stored>(
           r'title',
-          type: String,
-          typeInfo: const _i2.ClassType<String>(),
-          get: (bean) => bean.title,
+          typeInfo: _i1.ClassType<String>(),
+          get: _$get83,
         ),
-        _i2.BeanProperty<_i13.Stored>(
+        _i1.BeanProperty<_i13.Stored>(
           r'files',
-          type: List<String>,
-          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
-          get: (bean) => bean.files,
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get84,
         ),
-        _i2.BeanProperty<_i13.Stored>(
+        _i1.BeanProperty<_i13.Stored>(
           r'cover',
-          type: int,
           nullable: true,
-          typeInfo: const _i2.ClassType<int>(nullable: true),
-          get: (bean) => bean.cover,
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get85,
         ),
       ],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      constructor: _i2.BeanConstructor<_i13.Stored>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      constructor: _i1.BeanConstructor<_i13.Stored>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'title',
-            type: const _i2.ClassType<String>(),
+            type: _i1.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'files',
-            type: const _i2.ListType<String>(_i2.ClassType<String>()),
+            type: _i1.ListType<String>(_i1.ClassType<String>()),
             symbol: #files,
             isRequired: true,
           ),
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'cover',
-            type: const _i2.ClassType<int>(nullable: true),
+            type: _i1.ClassType<int>(nullable: true),
             symbol: #cover,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i13.Stored.new, positional, named) as _i13.Stored),
+        create: _$create86,
       ),
     ),
-    _i2.BeanIntrospection<_i15.StreamingResponseBody>(
+    const _i1.BeanIntrospection<_i15.StreamingResponseBody>(
       className: r'StreamingResponseBody',
       properties: [],
-      parts: const {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-      constructor: _i2.BeanConstructor<_i15.StreamingResponseBody>(
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      constructor: _i1.BeanConstructor<_i15.StreamingResponseBody>(
         parameters: [
-          _i2.BeanParameter(
+          _i1.BeanParameter(
             r'writeTo',
-            type: const _i2.DynamicType(),
+            type: _i1.DynamicType(),
             isRequired: true,
           ),
         ],
-        create: (positional, named) =>
-            (Function.apply(_i15.StreamingResponseBody.new, positional, named)
-                as _i15.StreamingResponseBody),
+        create: _$create87,
       ),
     ),
   ],
