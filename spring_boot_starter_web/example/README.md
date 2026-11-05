@@ -16,11 +16,11 @@ The application listens on port **8085**, set in
 
 ```yaml
 dependencies:
-  spring_boot_starter_web: ^0.6.3
+  spring_boot_starter_web: ^0.7.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.6.3
+  spring_core_dart_generator: ^0.7.0
 ```
 
 ## Run it

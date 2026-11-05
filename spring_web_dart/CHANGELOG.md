@@ -1,3 +1,7 @@
+## 0.7.0
+
+- No changes of its own; released with the family version 0.7.0.
+
 ## 0.6.3
 
 - Ships `lib/spring_gen/spring_metadata.json`, written by hand and empty (the library reads no properties and declares no beans), so editors know the package is complete.

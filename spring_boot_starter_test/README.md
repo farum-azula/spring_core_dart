@@ -34,7 +34,7 @@ functions. The package is built on `test_api` and `matcher`, not on
 
 ```yaml
 dev_dependencies:
-  spring_boot_starter_test: ^0.6.3
+  spring_boot_starter_test: ^0.7.0
   test: ^1.25.0          # or flutter_test
 ```
 

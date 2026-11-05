@@ -1,3 +1,7 @@
+## 0.7.0
+
+- Perf/generated code (#22)
+
 ## 0.6.3
 
 ### Changes
