@@ -98,9 +98,14 @@ Future<(Map<String, String>, String)> _build({
 
 void main() {
   test('the library module keeps the signatures, not the class', () {
-    final module = File(
-      '../spring_boot_dart/lib/spring_gen/src/properties/properties.spring.dart',
-    ).readAsStringSync();
+    const path =
+        'spring_boot_dart/lib/spring_gen/src/properties/properties.spring.dart';
+    // From the generator's folder or the repository's root (the workspace
+    // run).
+    final module = [
+      File('../$path'),
+      File(path),
+    ].firstWhere((f) => f.existsSync()).readAsStringSync();
     expect(module, contains('AopProxyFactory.deferred('));
     expect(module, isNot(contains(r'class _$BannerPropertiesProxy')));
   });
