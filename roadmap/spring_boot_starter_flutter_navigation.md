@@ -1,20 +1,32 @@
 # spring_boot_starter_flutter_navigation
 
-**The next release after 0.6.3** (the owner, November 2026). Declarative
+**The release after 0.7.0** (the owner, November
+2026), together with deep links, SEO, Markdown and the screen map. Declarative
 navigation for Flutter apps as a starter of its own, like
 `spring_boot_starter_flutter_security`: routes on the SDK's `Router`
 (deep links, the web URL bar, Android's back button), no `go_router`.
 The documentation site is built on it (see the site in
 [README.md](README.md)): a site about Spring, made with Spring.
 
-## Who does what
+## The release: what goes where
 
-| Where | What |
+The release after 0.7.0 (the owner, November 2026).
+Static resources in the web starter and the actuator's first part come
+with it. Three new packages: `spring_boot_starter_flutter_navigation`,
+`spring_boot_actuator`, `spring_boot_starter_actuator`.
+
+| Package | What it gets |
 |---|---|
-| `spring_boot_starter_flutter` | only the hook: `SpringApp` uses a `RouterConfig` bean when there is one, else works as today |
-| `spring_boot_starter_flutter_navigation` | `@Route`, `@RouteShell`, `ScreenRoutes` (routes in Dart configuration), `RouteTemplate`, the `route` and `branch` scopes, route filters, `spring.flutter.navigation.*`, the restored stack, test helpers |
-| the generator | `lib/spring_gen/routes.spring.dart`, a part of `spring_gen/main.spring.dart` (like `spring_gen/theme.spring.dart`): the route table and a `<Page>Route` extension per page; written only when the starter is a dependency |
-| `spring_boot_starter_flutter_security` | ready filters by user and role (`@PreAuthorize` on a route), the redirect to the login and back |
+| `spring_web_dart` | nothing new for routes: `PathPattern` (`{name}`, `{name:regex}`, `{*rest}`) is reused by the navigation starter and the generator, no second parser; `MappingDescriptions`, the interface "describe your routes" that the web starter's handler table and the router's screen table implement (one source for the screen map now, `/actuator/mappings` and OpenAPI later) |
+| `spring_boot_starter_web` | static resources (`ResourceHttpRequestHandler`): `file:` locations, `ETag` / `304`, `Cache-Control`, `Range`, precompressed files, `index.html`, the single-page-app fallback, `.well-known/`, `ResourceHandlerRegistry`, `spring.web.resources.*`; verified in Docker (differential against Spring Boot, fuzzing, the active ZAP scan); the handler table behind `MappingDescriptions` |
+| `spring_boot_starter_flutter` | the plugin's native part of deep links on macOS; the hook (`SpringApp` uses a `RouterConfig` bean when there is one); `spring.flutter.web.seo.*` (`FlutterWebSeoProperties`, read by the generator); the dev server's keys moved to `spring.flutter.web.dev-server.*` (breaking); `spring.flutter.app.description` for the page's `<head>` and the manifest; `MarkdownView` with `styles.markdown.*` and the code tokenizer (Dart, YAML, properties, shell) colored by `styles.code.tokens.*`, on the Dart team's `markdown` package |
+| `spring_boot_starter_flutter_navigation` (new) | `@Route` (`title:`, `content:`, `params:`, `extra:`), `@RouteShell`, `@RouteInfo` (`description`, `image`, `index`, `paths`, `link`), `@RouteDeclarations`, `ScreenRoutes`, `RouteTemplate` / `context.route`, `RouteVar` / `RouteParam` / `RouteExtra` / `RouteLocation`, the `route` and `branch` scopes, route filters, the restored stack, the path URL strategy on the web, `<title>` / `description` / `og:*` on navigation, deep links at run time, the screen table behind `MappingDescriptions`, `spring.flutter.navigation.*` (with `deep-links.*`), test helpers (`openDeepLink`) |
+| `spring_boot_actuator` (new) | `@Endpoint`, `@ReadOperation`, the `health` endpoint (`HealthIndicator`, `Status`, groups, `liveness` / `readiness`, `show-details` / `show-components`; `ping`, `diskSpace`), `info` (`InfoContributor`: `build`, `git`, `env`, `os`, `dart`), `mappings` over `MappingDescriptions`; pure Dart, no HTTP |
+| `spring_boot_starter_actuator` (new) | the endpoints over HTTP through the web starter: `/actuator` with its `_links`, `management.endpoints.web.*`, `management.endpoint.<id>.*`, `management.info.*`, `EndpointRequest` for the security chain, the `db` indicator when the data starter is there |
+| `spring_boot_starter_flutter_security` | filters by user and role, `@PreAuthorize` on a route, the redirect to the login and back |
+| `spring_core_dart_generator` | the build info for the actuator's `info` (name and version from `pubspec.yaml`, the build time, the git branch and commit when there is one); `lib/spring_gen/routes.spring.dart` (a part of `main.spring.dart`: the route table, `<Page>Route` with `path` and `to(...)`, the constants per Markdown file such as `Docs.core.configuration`), checked at build time; the SEO pages in `web/` (`<path>/index.html` with the hidden text, `<path>.md`, `sitemap.xml`, `robots.txt`, `llms.txt`, `llms-full.txt`, `_headers`, `404.html`); the `<head>` and `manifest.json` of the app from `spring.flutter.app.*` and the theme; the deep links' native files (`Info.plist` and `Runner.entitlements` of iOS, `Info.plist` of macOS, `AndroidManifest.xml`, between markers) and domain files (`apple-app-site-association`, `assetlinks.json`); `web_dev_config.yaml` from the renamed keys |
+| `extensions/language_server` | completion and checks of `spring.flutter.web.seo.*`, `spring.flutter.navigation.*` and the route paths in `route.go('...')`, go to the page of a path |
+| examples | `example/flutter_guide` on the navigation starter (tabs, a deep link, a guarded route); the site is the first real app, made right after |
 
 ```yaml
 dependencies:
@@ -24,8 +36,12 @@ dependencies:
 
 ## Routes on pages
 
-Paths stay flat; a shell says where a route opens. Without `shell` a
-route opens over everything (checkout, a full-screen picture).
+Paths stay full; a route whose path starts with a shell's branch opens
+in that shell (the owner, November 2026: `/catalog/books/{isbn}` is in
+`MainTabs` because of its `/catalog` branch), so `shell:` is written only
+for a route outside every branch that still opens in a shell; a path
+under the branches of two shells fails the build. A route under no branch
+opens over everything (checkout, a full-screen picture).
 
 ```dart
 @RouteShell(branches: ['/catalog', '/basket', '/profile'])
@@ -44,7 +60,7 @@ class MainTabs extends StatelessWidget {
   );
 }
 
-@Route('/catalog/books/{isbn}', shell: MainTabs,
+@Route('/catalog/books/{isbn}',
     params: {'tab': String, 'page': int}, extra: BookSummary)
 class BookPage extends StatelessWidget { ... }
 
@@ -188,6 +204,145 @@ spring:
 
 The page transition comes from the theme (`motion.page-transition`); a
 route may set its own.
+
+## Search engines (SEO) and title
+
+The web needs URLs without `#` (the path URL strategy, the default on the
+web) and, per route, what a search result and a link preview show. With
+`spring.flutter.web.seo.from-routes: true` the generator makes every
+route a page of the site's HTML (keys, merging and the written files:
+[spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#search-engines-previews-and-models-springflutterwebseo)).
+Like springdoc's `@Operation` next to `@GetMapping`, what describes a
+route beyond navigation is an annotation of its own, `@RouteInfo` (it
+also feeds the link previews, the screen map and the deep
+links, so not `@Seo`):
+
+```dart
+@Route('/', title: 'Spring Dart')
+@RouteInfo(
+  description: 'Spring Boot for Dart servers and Flutter apps.',
+  image: 'resources:images/og.png',
+)
+class HomePage extends StatelessWidget { ... }
+
+// A page per Markdown file: {*path} is Spring's "the rest of the path"
+// (PathPattern, as in spring_web_dart), so /docs/core/configuration has
+// path = /core/configuration and shows content/docs/core/configuration.md;
+// its title and description come from the file's front matter.
+@Route('/docs/{*path}', content: 'resources:content/docs/')
+class DocPage extends StatelessWidget { ... }
+
+@Route('/about', content: 'resources:content/about.md')   // one file
+class AboutPage extends StatelessWidget { ... }
+
+@Route('/checkout')
+@RouteInfo(index: false)                     // noindex, not in the sitemap
+class CheckoutPage extends StatelessWidget { ... }
+
+@Route('/catalog/books/{isbn}')
+@RouteInfo(paths: ['/catalog/books/978-0'])  // values the build cannot know
+class BookPage extends StatelessWidget { ... }
+```
+
+- `title` is on `@Route`: it is also the browser tab's title and the
+  screen's label for screen readers, not only SEO. `title` and
+  `description` may be message keys (translated at `/ja/...`).
+- `@RouteInfo`: `description`, `image`, `index` (default `true`), `paths`,
+  `link` (default `true`: opened by a deep link).
+- `content:` binds the route to resources: a folder for a route ending in
+  `{*name}` (the rest of the path plus `.md` is the file; `/docs` itself is
+  the folder's `index.md`), or one `.md` file for a route without
+  variables; anything else fails the build. The page reads the file, the
+  build lists the files; `RouteTemplate.content` gives the page its file.
+- Route patterns are Spring's `PathPattern` syntax, the one the web starter
+  already has: `{name}`, `{name:regex}`, `{*rest}` at the end; no syntax of
+  our own.
+- On navigation the app sets `<title>` and the `description` / `og:*` tags
+  of the route it opened.
+
+## The screen map
+
+Spring has `/actuator/mappings` for controllers; the same table for
+screens. Not Swagger: no OpenAPI, no Swagger UI, no dependency. Not a
+file of the build either: routes in Dart configuration (`ScreenRoutes`)
+are code the build cannot see, so the running app describes its screens
+through `MappingDescriptions` (`spring_web_dart`), the interface the web
+starter's handler table implements too; the build writes only what must
+exist before the start (the SEO pages, the deep links' files, the
+constants).
+
+```json
+{
+  "path": "/catalog/books/{isbn}",
+  "page": "BookPage",
+  "title": "Book",
+  "shell": "MainTabs", "branch": "/catalog",
+  "variables": {"isbn": "String"},
+  "params": {"tab": "String", "page": "int"},
+  "extra": "BookSummary",
+  "security": "isAuthenticated()",
+  "info": {"index": true, "link": true}
+}
+```
+
+What it is for: a "Screens" page (on the documentation site first); the
+editor; a test that opens every screen; `/actuator/mappings` (in this
+release). Later, on the same interface, the server's OpenAPI
+(`/v3/api-docs`).
+
+## Deep links
+
+```yaml
+spring:
+  flutter:
+    navigation:
+      deep-links:
+        enabled: true
+        scheme: neonbooks                     # neonbooks://catalog/books/978-0
+        domains: [books.example.com]          # Universal Links / App Links
+        exclude: ['/checkout', '/admin/**']
+```
+
+```yaml
+# application-ios.yml (default: from the Xcode project)
+spring.flutter.navigation.deep-links.app-id: ABCDE12345.com.example.neonbooks
+# application-android.yml (package default: from build.gradle)
+spring.flutter.navigation.deep-links:
+  package: com.example.neonbooks
+  sha256-cert-fingerprints: ['AB:CD:...:EF']
+```
+
+- Every route opens by a link except `exclude` and `@RouteInfo(link:
+  false)`; filters (`@PreAuthorize`) run on a deep link like on any
+  navigation; an extra is `null`; a wrong value opens the route error page.
+- A scheme is not verified (another app may claim it); domains are, so
+  everything people share goes through `domains`. No token or secret in
+  any link.
+- The generator writes, between markers, the keys of `ios/Runner/Info.plist`
+  (`CFBundleURLTypes`, `FlutterDeepLinkingEnabled`),
+  `ios/Runner/Runner.entitlements` (`applinks:`), `macos/Runner/Info.plist`
+  (the scheme) and `AndroidManifest.xml` (the intent filters, `autoVerify`,
+  `flutter_deeplinking_enabled`; paths from the route patterns); never
+  `project.pbxproj` (entitlements not linked: a warning).
+- The domain files: `apple-app-site-association` and `assetlinks.json` in
+  `web/.well-known/` for an app with a web version (with a `_headers` rule
+  for the JSON type of Apple's file), else in `build/spring/well-known/`.
+- Profiles as for `web_dev_config.yaml` (`application-staging.yml` with
+  other domains); flavors with their own bundle IDs later.
+- A native file changed by hand between the markers fails the build (the
+  owner, November 2026).
+- In this release: iOS, Android, macOS (the scheme in `Info.plist`, the
+  URL event to the plugin when Flutter does not pass it to the router
+  itself), each checked by opening a link from the OS.
+- Windows and Linux later (the owner, November 2026): a scheme only
+  (verified web links need MSIX on Windows and do not exist on Linux).
+  Windows: the scheme under `HKCU\Software\Classes`, a second start with
+  a link hands it to the running instance and exits before its engine
+  starts (a generated block in `windows/runner/main.cpp`). Linux:
+  `MimeType=x-scheme-handler/<scheme>` in the `.desktop` file and the
+  runner's `GtkApplication` handling `open` (a generated block in
+  `linux/runner/my_application.cc`). Checked locally on Windows 11 ARM in
+  UTM over SSH and on Linux in Docker.
 
 ## Tests
 

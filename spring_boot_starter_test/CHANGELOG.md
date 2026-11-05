@@ -1,6 +1,6 @@
 ## 0.7.0
 
-- Perf/generated code (#22)
+- No changes of its own; released with the family version 0.7.0.
 
 ## 0.6.3
 

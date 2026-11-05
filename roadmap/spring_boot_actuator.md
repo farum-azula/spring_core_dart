@@ -1,4 +1,4 @@
-# spring_boot_actuator (planned)
+# spring_boot_actuator (planned; the first part with the navigation patch)
 
 Spring Boot Actuator: what a running application knows about itself, as
 endpoints with the same names and JSON shapes as Spring Boot's, so the same
@@ -46,3 +46,48 @@ Like Spring Boot, where `spring-boot-actuator` holds the code and
 `spring-boot-starter-actuator` only its dependencies:
 `spring_boot_actuator` (the endpoints) and `spring_boot_starter_actuator`
 (the endpoints plus their HTTP exposure through the web starter).
+
+## First part, with the navigation patch
+
+The owner, November 2026: the actuator starts in the release after
+0.7.0, a little at a time:
+
+- **The two packages** as above, `spring_boot_actuator` and
+  `spring_boot_starter_actuator`, with `@Endpoint`, `@ReadOperation`,
+  `management.endpoints.web.exposure.include` / `.exclude`,
+  `management.endpoints.web.base-path` (`/actuator`) and
+  `management.endpoint.<id>.enabled` as in Boot. Exposed by default over
+  HTTP: `health` only, as in Boot.
+- **`health`**: `HealthIndicator` beans, `Status` (`UP`, `DOWN`,
+  `OUT_OF_SERVICE`, `UNKNOWN`) aggregated by Boot's order, groups
+  (`management.endpoint.health.group.<name>.include`), the `liveness` and
+  `readiness` groups (`management.endpoint.health.probes.enabled`) from
+  the application's availability state, `show-details` / `show-components`
+  (`never` by default, `when-authorized` through the security starter);
+  ready indicators where the starters already know the state: `ping`,
+  `diskSpace` on `dart:io`, `db` for the data starter's data sources.
+- **`info`**: `InfoContributor` beans and `management.info.*`: `build`
+  (name, version, time, written by the generator, Boot's
+  `build-info.properties`), `git` (branch, commit, from `git.properties`
+  when the build writes one), `env` (`info.*` properties, off by default
+  as in Boot), `os` and `dart` (Boot's `java` contributor, renamed; both
+  off by default as in Boot), each switched by
+  `management.info.<id>.enabled`.
+- **`mappings`**: in WebFlux's shape (`dispatcherHandlers`, Spring's own
+  name, no `servlet`): the web starter's handlers (method, pattern, the
+  controller method, consumes / produces, static resources) and, our
+  addition, `screens` for a Flutter app with the navigation starter
+  ([the screen map](spring_boot_starter_flutter_navigation.md#the-screen-map)),
+  both read through `MappingDescriptions`.
+- Security: the endpoints go through the security filter chain like any
+  handler; `EndpointRequest.toAnyEndpoint()` for the chain's matchers.
+  `management.server.port` (a port of their own) later.
+
+Next patches, one or two endpoints each: `loggers`, `env`, `beans`,
+`conditions`, `startup`, `logfile`, then `metrics` / Prometheus.
+
+The site (the owner, November 2026) is on Cloudflare Pages: static, no
+process of ours, so no `/actuator/health` there; Cloudflare's analytics
+and an outside check watch it. The actuator watches the servers (the
+server guide first) and later the site's functions on Cloudflare Workers
+through the edge starter ([serverless.md](serverless.md)).

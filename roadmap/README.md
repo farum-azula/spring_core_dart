@@ -135,31 +135,40 @@ What comes next, in order:
    design system as a library (`example/themes/neon_ui`), next to a Material
    and a Cupertino showcase (`example/themes/`), later a repository of
    its own used as a library.
-   Then **the navigation starter** (the next release; the owner, November
-   2026; [spring_boot_starter_flutter_navigation.md](spring_boot_starter_flutter_navigation.md)):
-   routes on pages and in Dart configuration, shells with a stack per
-   branch, `RouteTemplate` for the current route, generated constants per
-   page, the `route` and `branch` scopes.
+   Then **the release after 0.7.0** (the owner,
+   November 2026): navigation, deep links, SEO, Markdown and the screen
+   map, released together; what goes into which package is in
+   [spring_boot_starter_flutter_navigation.md](spring_boot_starter_flutter_navigation.md#the-release-what-goes-where).
+   With them, static resources in the web starter
+   ([spring_boot_starter_web.md](spring_boot_starter_web.md#static-resources-the-navigation-patch-the-owner-november-2026)),
+   verified hard in Docker, and the actuator's first part (`health`,
+   `info`, `mappings`; [spring_boot_actuator.md](spring_boot_actuator.md#first-part-with-the-navigation-patch)).
+   Three new packages: `spring_boot_starter_flutter_navigation`,
+   `spring_boot_actuator`, `spring_boot_starter_actuator`.
    Then **the site** (the owner, November 2026): the documentation site
    built on Spring itself (a Flutter web app on the starters and the
    navigation starter); the guides, the examples and the docs move there.
    It must read well for other models too: `llms.txt` with a map of the
    docs, a plain Markdown page per topic, full examples to copy. A
    Flutter web page draws on a canvas, so search engines and models see
-   no text; the plan (the owner finds it not pretty, a better way is
-   welcome): one source, `site/content/**.md`, and a build
-   (`dart run tool/site.dart build`) that writes for every page, at the
-   same URL, `<path>/index.html` with the text in plain HTML (title,
-   description, `<link rel="alternate" type="text/markdown">`) plus the
-   Flutter bootstrap, which replaces the static text once loaded; the
-   page as `<path>.md`; `llms.txt` (the map of the `.md` pages),
-   `llms-full.txt` (everything in one file) and `sitemap.xml`. The app
-   reads the same `content/` as resources, so people, search engines and
-   models get the same text. The other way: the site served by our own
-   web starter, choosing by content negotiation like Spring MVC
-   (`Accept: text/markdown` → Markdown, a crawler → HTML, a browser → the
-   app) — prettier and more Spring, but it needs a server instead of
-   static hosting.
+   no text; not a tool of the site's own but a feature of the starters
+   (the owner, November 2026): `spring.flutter.web.seo.*` in the Flutter
+   starter ([spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#search-engines-previews-and-models-springflutterwebseo))
+   and `@Route(title:, content:)` / `@RouteInfo` in the navigation starter
+   ([spring_boot_starter_flutter_navigation.md](spring_boot_starter_flutter_navigation.md#search-engines-seo-and-title)).
+   The docs are Markdown in the site's `lib/resources/content/`; the app
+   renders them with the theme (code colored by `styles.code.*`), and the
+   build writes for every page `<path>/index.html` with its `<head>` and
+   its text in plain HTML under the page loader, never shown and never
+   removed, plus `<path>.md`, `llms.txt`, `llms-full.txt` and
+   `sitemap.xml`; pages come from the routes, from Markdown folders in the
+   configuration and from pages listed by hand. Hosted on Cloudflare
+   Pages (the owner, November 2026; the free plan, with the domain): it
+   serves `<path>/index.html` at `<path>`, and the build also writes its
+   `_headers` (the security headers and the CSP of the configuration) and
+   `404.html`. The way kept in mind: the site served by our own web starter,
+   choosing by content negotiation like Spring MVC (`Accept:
+   text/markdown` → Markdown, a crawler → HTML, a browser → the app).
 11. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
    `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
    `@HttpExchange` later.
@@ -196,7 +205,7 @@ What comes next, in order:
    done without it
    ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)):
    Flutter web uses the server as its backend-for-frontend.
-16. **Generated code: speed, size, platforms** ([generated_code_performance.md](generated_code_performance.md)):
+16. **Generated code: speed, size, platforms**, released in 0.7.0 (November 2026; what is left stays in the file) ([generated_code_performance.md](generated_code_performance.md)):
    a release of its own (the owner's decision, November 2026), measured
    before and after: no `Function.apply` in generated code, direct AOP
    when the chain is known, conditions and bean order decided by the
