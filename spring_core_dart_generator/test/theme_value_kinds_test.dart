@@ -162,7 +162,7 @@ spring.flutter.theme:
       final (:code, :diagnostics) = _theme('''
 spring.flutter.theme:
   tokens:
-    art: { hero: { source: https://x.test/a.png, source-sha256: ab, allow-http: true } }
+    art: { hero: { source: https://x.test/a.png, source-sha256: ab, timeout: 5s } }
 ''');
       expect(diagnostics.errors, isEmpty);
       expect(
