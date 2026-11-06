@@ -224,11 +224,14 @@ final class WebPageLoaderBuilder implements Builder {
         : WebPageLoader.pageColors(set, diagnostics);
     final updated = loaded == null
         ? null
-        : WebPageHead.html(
-            loaded,
-            title: app.title,
-            description: app.description,
-            themeColor: colors?.primary,
+        : WebPageHead.swipe(
+            WebPageHead.html(
+              loaded,
+              title: app.title,
+              description: app.description,
+              themeColor: colors?.primary,
+            ),
+            swipeToClose: app.swipeToClose,
           );
     await _manifest(buildStep, package, app, colors);
     // Theme errors are the typed keys' to report.
@@ -248,7 +251,7 @@ final class WebPageLoaderBuilder implements Builder {
   // spring.flutter.app.title and .description as the app reads them in a
   // browser; none when the config cannot be read (its own builders say
   // why).
-  static ({String? title, String? description}) _appText(
+  static ({String? title, String? description, bool swipeToClose}) _appText(
     Map<String, String> texts,
   ) {
     try {
@@ -264,16 +267,19 @@ final class WebPageLoaderBuilder implements Builder {
       return (
         title: value('spring.flutter.app.title'),
         description: value('spring.flutter.app.description'),
+        swipeToClose:
+            value('spring.flutter.web.page.swipe-to-close')?.toLowerCase() !=
+            'false',
       );
     } on Exception {
-      return (title: null, description: null);
+      return (title: null, description: null, swipeToClose: true);
     }
   }
 
   Future<void> _manifest(
     BuildStep buildStep,
     String package,
-    ({String? title, String? description}) app,
+    ({String? title, String? description, bool swipeToClose}) app,
     ({String primary, String surface})? colors,
   ) async {
     const path = 'web/manifest.json';

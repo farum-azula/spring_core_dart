@@ -60,6 +60,8 @@ spring:
         from-routes: true
         title: '{title} · Spring Dart'
         description: Spring for Dart and Flutter.
+        site-name: Spring Dart
+        image: resources:images/preview.png
         pages:
           - path: /
             title: Spring Dart
@@ -211,6 +213,21 @@ void main() {
       root,
       contains('content="Spring Boot for Dart servers and Flutter apps."'),
     );
+
+    // A link preview: the site's name and a large card with the picture.
+    const image =
+        'https://spring-dart.dev/assets/lib/resources/images/preview.png';
+    const description = 'How Spring Dart reads application.yml.';
+    for (final tag in [
+      '<meta property="og:site_name" content="Spring Dart">',
+      '<meta property="og:image" content="$image">',
+      '<meta name="twitter:card" content="summary_large_image">',
+      '<meta name="twitter:title" content="Configuration">',
+      '<meta name="twitter:description" content="$description">',
+      '<meta name="twitter:image" content="$image">',
+    ]) {
+      expect(page, contains(tag), reason: tag);
+    }
 
     // A guarded screen: a page, but noindex and out of the sitemap.
     expect(

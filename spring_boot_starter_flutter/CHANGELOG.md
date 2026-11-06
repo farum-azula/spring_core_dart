@@ -1,5 +1,9 @@
 ## Unreleased
 
+- `motion.overscroll` (`platform`, `none`): `none` turns off the stretch or glow at a scrollable's end for the whole app (Material's stretch distorts the content on Android).
+- `spring.flutter.web.page.swipe-to-close` (`FlutterWebPageProperties`), read by the generator.
+- `motion.wheel-scroll` (`WheelScrollSpec`, `WheelScrollSmoother`): a mouse wheel's steps eased over `duration` and scaled by `speed` for every scrollable of the app; `none`, Flutter's own jump, by default.
+- `spring.flutter.web.seo.site-name`: the site's name in link previews.
 - `motion.scroll-to-top` (`SpringThemeData.scrollToTop`): how a screen goes back to its top when it shows another page; 400ms ease-out-cubic by default, `none` jumps.
 - The build is an active profile, after the platform's: `release`, `profile` or `debug` (`buildModeProfile`), so `application-release.yml` configures what users run (`logging.level.root: warn`, say).
 - Fixed: two pages on screen at once (`motion.content-change`) with headings of the same text no longer share their keys (`MarkdownOutline.keyOf(id, page:)`), which failed with "Multiple widgets used the same GlobalKey".

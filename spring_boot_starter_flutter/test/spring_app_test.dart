@@ -73,6 +73,40 @@ void main() {
     expect(settings(tester).supportedLocales, [const Locale('en')]);
   });
 
+  testWidgets('motion.overscroll: none turns the stretch off', (
+    tester,
+  ) async {
+    bool overscroll(WidgetTester tester) {
+      final context = tester.element(find.byType(Page));
+      return ScrollConfiguration.of(context).buildOverscrollIndicator(
+        context,
+        const SizedBox(),
+        const ScrollableDetails.vertical(),
+      ) is! SizedBox;
+    }
+
+    await pump(
+      tester,
+      () => application(
+        autoConfiguration: true,
+        properties: {'spring.flutter.app.type': 'material'},
+      ),
+    );
+    expect(overscroll(tester), isTrue); // Android in tests: the stretch
+    await tester.pumpWidget(const SizedBox());
+    await pump(
+      tester,
+      () => application(
+        autoConfiguration: true,
+        properties: {
+          'spring.flutter.app.type': 'material',
+          'spring.flutter.theme.motion.overscroll': 'none',
+        },
+      ),
+    );
+    expect(overscroll(tester), isFalse);
+  });
+
   testWidgets('properties: type, title, debug banner, theme, locales', (
     tester,
   ) async {

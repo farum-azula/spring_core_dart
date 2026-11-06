@@ -7,7 +7,9 @@ import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.da
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_background_widget.dart';
+import 'package:spring_boot_starter_flutter/src/theme/wheel_scroll.dart';
 
 /// The kind of app widget [SpringApp] builds, chosen with
 /// `spring.flutter.app.type` (`widgets`, `material` or `cupertino`).
@@ -292,6 +294,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         final platform =
             WidgetsBinding.instance.platformDispatcher.platformBrightness;
         final shown = themes.data(selection.current(platform));
+        WheelScrollSmoother.instance.spec = shown.wheelScroll;
         return SpringTheme(
           data: shown,
           child: _app(app, themes, selection, shown),
@@ -302,11 +305,18 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
 
   // The theme's background goes around the navigator, inside the app's own
   // builder.
-  TransitionBuilder _builder(FlutterAppSettings app) =>
-      (context, child) => (app.builder ?? (_, child) => child!)(
-        context,
-        ThemeBackground(child: child ?? const SizedBox.shrink()),
+  // `motion.overscroll: none` turns the stretch or glow at a
+  // scrollable's end off for the whole app.
+  TransitionBuilder _builder(FlutterAppSettings app) => (context, child) {
+    Widget content = ThemeBackground(child: child ?? const SizedBox.shrink());
+    if (SpringTheme.maybeOf(context)?.overscroll == OverscrollEffect.none) {
+      content = ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+        child: content,
       );
+    }
+    return (app.builder ?? (_, child) => child!)(context, content);
+  };
 
   Widget _app(
     FlutterAppSettings app,

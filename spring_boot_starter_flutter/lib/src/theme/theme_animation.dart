@@ -309,6 +309,17 @@ final class PageTransitionSpec {
   int get hashCode => Object.hash(type, duration, curve);
 }
 
+/// What a scrollable shows when it is pulled past its end,
+/// `motion.overscroll`.
+enum OverscrollEffect {
+  /// The app type's own: Material's stretch or glow on Android, nothing
+  /// elsewhere.
+  platform,
+
+  /// Nothing: the content stays as it is.
+  none,
+}
+
 /// The kinds of `motion.text-change`: what a [ThemeText] does when its text
 /// changes (another language, a new value).
 enum TextChangeType {

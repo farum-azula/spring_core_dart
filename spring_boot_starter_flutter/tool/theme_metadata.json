@@ -2245,6 +2245,41 @@
       "default": "40ms"
     },
     {
+      "name": "motion.overscroll",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "platform",
+        "none"
+      ],
+      "description": "What a scrollable shows when pulled past its end: the app type's own (`platform`: Material's stretch on Android, which distorts the content) or nothing (`none`).",
+      "default": "platform"
+    },
+    {
+      "name": "motion.wheel-scroll",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "How a mouse wheel scrolls every scrollable of the app: `none` (the default) moves by the wheel's step at once, as Flutter does; a map of `duration` and `speed` eases each step and scales it.",
+      "default": "none"
+    },
+    {
+      "name": "motion.wheel-scroll.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How long a step of the wheel takes to arrive.",
+      "default": "250ms"
+    },
+    {
+      "name": "motion.wheel-scroll.speed",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "The share of the wheel's step: below 1 slower, above faster.",
+      "default": "1"
+    },
+    {
       "name": "motion.scroll-to-top",
       "type": "text",
       "states": false,

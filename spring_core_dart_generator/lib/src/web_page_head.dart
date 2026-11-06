@@ -14,6 +14,42 @@ abstract final class WebPageHead {
   /// Where the SEO build's head block of a page starts.
   static const seoHeadStart = '<!-- spring:seo:head:start -->';
 
+  /// Where the block that keeps the page open on a swipe down starts.
+  static const swipeStart = '<!-- spring:page:swipe:start -->';
+
+  /// Where it ends.
+  static const swipeEnd = '<!-- spring:page:swipe:end -->';
+
+  /// The block of `spring.flutter.web.page.swipe-to-close: false`. A
+  /// Telegram Mini App turns its vertical swipes off
+  /// (`disableVerticalSwipes`). In an app's own browser (Telegram's,
+  /// Instagram's...) a swipe down closes the page when the page is at its
+  /// top, and a Flutter page always is: the page is made one pixel taller
+  /// than the screen and kept one pixel down, so the swipe is no close.
+  /// Touch screens only; the pixel is never seen.
+  static const swipeBlock =
+      '''
+  $swipeStart
+  <style>@media (pointer: coarse){html{height:calc(100% + 1px);scrollbar-width:none}html::-webkit-scrollbar{display:none}}</style>
+  <script>(function(){var t=window.Telegram&&window.Telegram.WebApp;if(t){try{t.expand();if(t.disableVerticalSwipes)t.disableVerticalSwipes();}catch(e){}}if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function keep(){if(window.scrollY<1)window.scrollTo(0,1);}addEventListener('load',keep);addEventListener('scroll',keep,{passive:true});addEventListener('resize',keep);setTimeout(keep,0);})();</script>
+  $swipeEnd''';
+
+  /// [html] with the [swipeBlock] in its head when [swipeToClose] is
+  /// `false`, without it when `true`.
+  static String swipe(String html, {required bool swipeToClose}) {
+    final block = RegExp(
+      r'\n?[ \t]*' +
+          RegExp.escape(swipeStart) +
+          r'[\s\S]*?' +
+          RegExp.escape(swipeEnd),
+    );
+    final without = html.replaceAll(block, '');
+    if (swipeToClose) {
+      return without;
+    }
+    return without.replaceFirst('</head>', '$swipeBlock\n</head>');
+  }
+
   /// [html] with [title] in `<title>` and `apple-mobile-web-app-title`,
   /// [description] in `<meta name="description">` and [themeColor] in
   /// `<meta name="theme-color">` (added when missing); a `null` value

@@ -498,6 +498,35 @@ List<ThemeProp> _motion() => [
     defaultValue: '40ms',
   ),
   _p(
+    'motion.overscroll',
+    'choice',
+    'What a scrollable shows when pulled past its end: the app type\'s own '
+        '(`platform`: Material\'s stretch on Android, which distorts the '
+        'content) or nothing (`none`).',
+    defaultValue: 'platform',
+    values: ['platform', 'none'],
+  ),
+  _p(
+    'motion.wheel-scroll',
+    'text',
+    'How a mouse wheel scrolls every scrollable of the app: `none` (the '
+        'default) moves by the wheel\'s step at once, as Flutter does; a map '
+        'of `duration` and `speed` eases each step and scales it.',
+    defaultValue: 'none',
+  ),
+  _p(
+    'motion.wheel-scroll.duration',
+    'duration',
+    'How long a step of the wheel takes to arrive.',
+    defaultValue: '250ms',
+  ),
+  _p(
+    'motion.wheel-scroll.speed',
+    'number',
+    'The share of the wheel\'s step: below 1 slower, above faster.',
+    defaultValue: '1',
+  ),
+  _p(
     'motion.scroll-to-top',
     'text',
     'How a screen goes back to its top when it shows another page '

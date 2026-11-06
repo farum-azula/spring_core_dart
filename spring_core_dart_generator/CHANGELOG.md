@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `spring.flutter.web.page.swipe-to-close: false`: a block in `web/index.html` keeps the page open on a swipe down in apps' own browsers (Telegram, Instagram) and Telegram Mini Apps (`disableVerticalSwipes`).
+- The pages for search engines carry what link previews read: `og:site_name` (`spring.flutter.web.seo.site-name`) and `twitter:card` (a large card with the page's image), `twitter:title`, `twitter:description`, `twitter:image`.
 - Fixed: a loader's `tracks` and `web-sha256` no longer become fields of the props class of its kind; the keys every loader has are one list (`loaderOwnKeys`).
 - The web page loader's script records the start's first stages, `page` and `engine`, with their times in `window.springLoader.stages`, sets `data-splash-stage` and sends a `spring-splash-stage` event; the Flutter splash goes on from them.
 - A page loader's downloaded `web:` follows `spring.remote.allow-insecure` as the app does: an `http://` address fails the build step unless it is allowed.

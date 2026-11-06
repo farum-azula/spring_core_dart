@@ -11,6 +11,7 @@ import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_styles.dart';
+import 'package:spring_boot_starter_flutter/src/theme/wheel_scroll.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 
 /// What the properties set for one text style of a theme (font family,
@@ -319,6 +320,14 @@ final class SpringThemeData {
     contentChange =
         ContentChangeSpec.parseAt(p, 'motion.contentchange') ??
         const ContentChangeSpec();
+    wheelScroll = WheelScrollSpec.parseAt(p, 'motion.wheelscroll');
+    overscroll =
+        p.read(
+          'motion.overscroll',
+          (v) => ThemeValues.enumValue(OverscrollEffect.values, v),
+          'platform or none',
+        ) ??
+        OverscrollEffect.platform;
     scrollToTop = switch (p['motion.scrolltotop']) {
       final kind? when ThemeValues.canonical(kind) == 'none' => null,
       final kind? => throw ThemePropertyException(
@@ -473,13 +482,16 @@ final class SpringThemeData {
                 second != 'textchange' &&
                 second != 'contentchange' &&
                 second != 'scrolltotop' &&
+                second != 'wheelscroll' &&
+                second != 'overscroll' &&
                 second != 'durations' &&
                 second != 'curves':
           throw ThemePropertyException(
             p.propertyName(key),
             p.values[key]!,
             'motion.page-transition, motion.text-change, '
-            'motion.content-change, motion.scroll-to-top, '
+            'motion.content-change, motion.scroll-to-top, motion.wheel-scroll, '
+            'motion.overscroll, '
             'motion.durations.<name> or motion.curves.<name>',
           );
         case 'typography'
@@ -605,6 +617,15 @@ final class SpringThemeData {
   /// (`ContentChange`), from `motion.content-change`; none when it is not
   /// written.
   late final ContentChangeSpec contentChange;
+
+  /// What a scrollable shows when pulled past its end, from
+  /// `motion.overscroll`: the app type's own (`platform`, the default:
+  /// Material's stretch on Android) or nothing (`none`).
+  late final OverscrollEffect overscroll;
+
+  /// How a mouse wheel scrolls, from `motion.wheel-scroll`: Flutter's own
+  /// step at once (`none`, the default), or eased and scaled.
+  late final WheelScrollSpec wheelScroll;
 
   /// How a screen goes back to its top when it shows another page
   /// (`RouteContentView`), from `motion.scroll-to-top`: an animation, or

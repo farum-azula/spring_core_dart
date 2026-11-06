@@ -45,6 +45,8 @@ spring:
 | `motion.page-transition.type` / `.duration` / `.curve` | enum / duration / curve | as above, `200ms`, a curve name | the kind's own | The map form: the kind with its duration and curve |
 | `motion.text-change` | enum, or a map | `none`, `fade`, `morph` | `none` | What a `ThemeText` does when its text changes, another language say |
 | `motion.text-change.type` / `.duration` / `.curve` / `.stagger` / `.keep-unchanged` / `.glyphs` / `.glyph-duration` | enum / duration / curve / duration / boolean / text / duration | as above, `450ms`, a curve name, `12ms`, `true` / `false`, any characters, a duration over zero | `none`, `450ms`, `ease-out`, `12ms`, `false`, `▓▒░<>/\|=+*#%&@$?!01`, `40ms` | The map form; `stagger` is how much later each character of `morph` starts; `keep-unchanged` leaves the characters that stay the same in place |
+| `motion.overscroll` | `platform`, `none` | | `platform` | What a scrollable shows when pulled past its end: the app type's own (Material's stretch on Android, which distorts the content for a moment) or nothing |
+| `motion.wheel-scroll` | `none`, or a map of `duration` and `speed` | | `none` (`250ms`, `1` in the map) | How a mouse wheel scrolls every scrollable: `none` jumps by the wheel's step as Flutter does; a map eases each step over `duration` and scales it by `speed` |
 | `motion.scroll-to-top` | `none`, or a map of `duration` and `curve` | | `400ms`, `ease-out-cubic` | How a screen goes back to its top when it shows another page (`RouteContentView`); `none` jumps |
 | `motion.content-change` | a kind, or a map | `none`, `fade`, `fade-up`, or a kind of the app's own | `none` | How a part of a screen shows other content in its place (another page in `RouteContentView`) |
 | `motion.content-change.type` / `.duration` / `.curve` | kind / duration / curve | as above, `200ms`, a curve name | `none`, `200ms`, `ease-out` | The map form |
@@ -54,7 +56,7 @@ spring:
 | `animations.<name>.curve` | curve | a curve name, or four numbers | `linear` | The curve of one run |
 | `animations.<name>.repeat` | enum | `none`, `loop`, `reverse` | `none` | What happens at the end of a run |
 
-Inside `motion` only `page-transition`, `text-change`, `content-change`, `scroll-to-top`, `durations` and `curves` exist.
+Inside `motion` only `page-transition`, `text-change`, `content-change`, `scroll-to-top`, `wheel-scroll`, `overscroll`, `durations` and `curves` exist.
 Inside an animation only `duration`, `curve` and `repeat` exist; another key
 stops the start and names the closest one.
 
@@ -202,6 +204,28 @@ void main() {
   runApp(SpringApplicationWidget(application: createApplication));
 }
 ```
+
+## The mouse wheel
+
+Flutter moves a scrollable by the wheel's whole step at once: on the web
+a page jumps 100 pixels or so per notch, which reads as a stutter.
+`motion.wheel-scroll` eases every step of the wheel, for every scrollable
+of the app, with no controller to set:
+
+```yaml
+motion:
+  wheel-scroll: { duration: 250ms, speed: 0.8 }
+```
+
+- `duration`: how long a step takes to arrive; steps that come one after
+  the other add up and keep moving.
+- `speed`: the share of the step, below 1 slower, above faster.
+- `none` (the default): Flutter's own behavior.
+
+Touch scrolling keeps its physics. A trackpad that the platform reports
+as wheel steps (the web) is eased too; its steps are small, so it moves
+almost as before. `WheelScrollSmoother` does the work, and `SpringApp`
+sets it from the active theme.
 
 ## Durations
 

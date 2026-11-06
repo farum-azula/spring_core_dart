@@ -195,6 +195,7 @@ final class SeoSettings {
     required this.title,
     required this.description,
     required this.image,
+    required this.siteName,
     required this.content,
     required this.pages,
     required this.sitemap,
@@ -276,6 +277,7 @@ final class SeoSettings {
       title: string('title') ?? '{title}',
       description: string('description'),
       image: string('image'),
+      siteName: string('site-name'),
       content: [
         for (var i = 0; string('content[$i].location') != null; i++)
           (
@@ -319,6 +321,9 @@ final class SeoSettings {
 
   /// The preview image of a page that has none.
   final String? image;
+
+  /// The site's name in a link preview (`og:site_name`).
+  final String? siteName;
 
   /// The Markdown folders.
   final List<ContentGroup> content;
@@ -921,8 +926,16 @@ final class SeoPages {
         '<meta property="og:description" content="${_attr(description)}">',
       '<meta property="og:url" content="${_attr(url)}">',
       '<meta property="og:type" content="website">',
+      if (settings.siteName case final name?)
+        '<meta property="og:site_name" content="${_attr(name)}">',
       if (image != null)
         '<meta property="og:image" content="${_attr(_imageUrl(image))}">',
+      '<meta name="twitter:card" content="${_card(image)}">',
+      '<meta name="twitter:title" content="${_attr(page.title ?? title)}">',
+      if (description != null)
+        '<meta name="twitter:description" content="${_attr(description)}">',
+      if (image != null)
+        '<meta name="twitter:image" content="${_attr(_imageUrl(image))}">',
       if (settings.markdown && page.markdown != null && !page.fallback)
         _alternate(settings.url('$at.md')),
       _headEnd,
@@ -981,6 +994,10 @@ final class SeoPages {
     }
     return result;
   }
+
+  // A large card where a preview has a picture (Telegram, X, Slack...).
+  static String _card(String? image) =>
+      image == null ? 'summary' : 'summary_large_image';
 
   String _imageUrl(String image) {
     if (Uri.tryParse(image)?.hasScheme == true &&

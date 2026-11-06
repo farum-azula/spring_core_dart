@@ -907,7 +907,7 @@ final class _StaticConfig {
         }
         // A key of the dev server before it moved under dev-server.
         if (_flutterWeb.isAncestorOf(name) &&
-            !const {'devserver', 'seo'}.contains(
+            !const {'devserver', 'seo', 'page'}.contains(
               name.getElement(3, form: ConfigurationPropertyNameForm.uniform),
             )) {
           moved.putIfAbsent(keys.first, () => path);

@@ -107,6 +107,16 @@ void main() {
     expect(files.content, isNull);
   });
 
+  test("the page's keys and the SEO's are no dev-server keys", () async {
+    final files = _Files();
+    final logs = await _build(files, {
+      'application-web.properties':
+          'spring.flutter.web.page.swipe-to-close=false\n'
+          'spring.flutter.web.seo.enabled=false\n',
+    });
+    expect(_severe(logs), isEmpty);
+  });
+
   test('the port of application.yaml', () async {
     final files = _Files();
     await _build(files, {

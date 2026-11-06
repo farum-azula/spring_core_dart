@@ -61,6 +61,19 @@ final class FlutterProperties {
   final Map<String, List<String>> shortcuts;
 }
 
+/// The web page around the app, `spring.flutter.web.page.*`; read by
+/// the generator, which writes it into `web/index.html`.
+@ConfigurationProperties('spring.flutter.web.page')
+final class FlutterWebPageProperties {
+  /// Settings with these values.
+  const FlutterWebPageProperties({this.swipeToClose = true});
+
+  /// Whether a swipe down may close the page where the browser does so:
+  /// an app's own browser (Telegram's, Instagram's), a Telegram Mini App.
+  /// `false` keeps the page open; the swipe then scrolls the app.
+  final bool swipeToClose;
+}
+
 /// The lifecycle of the app, `spring.flutter.lifecycle.*`.
 @ConfigurationProperties('spring.flutter.lifecycle')
 final class FlutterLifecycleProperties {
@@ -252,6 +265,7 @@ final class FlutterWebSeoProperties {
     this.title = '{title}',
     this.description,
     this.image,
+    this.siteName,
     this.content,
     this.pages,
     this.sitemap = true,
@@ -278,8 +292,12 @@ final class FlutterWebSeoProperties {
   final String? description;
 
   /// The preview image of a page that has none
-  /// (`resources:images/og.png`).
+  /// (`resources:images/og.png`). Link previews (Telegram, X, Slack) show
+  /// it large: about 1200×630.
   final String? image;
+
+  /// The site's name in a link preview (`og:site_name`).
+  final String? siteName;
 
   /// Folders of Markdown files, a page per file.
   final List<FlutterWebSeoContent>? content;

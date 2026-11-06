@@ -3857,6 +3857,27 @@ runs, which the policy forbids: use
 `content-security-policy-report-only=true` in a development profile when
 it gets in the way.
 
+### The page in apps' own browsers
+
+A link opened in Telegram, Instagram and other apps shows in the app's own
+browser, which closes the page on a swipe down when the page is at its
+top. A Flutter page always is (it scrolls inside its canvas), so every
+swipe down closes it instead of scrolling. A Telegram Mini App does the
+same with its vertical swipes.
+
+```yaml
+# lib/resources/application-web.yml
+spring:
+  flutter:
+    web:
+      page:
+        swipe-to-close: false
+```
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. In a Telegram Mini App it calls `Telegram.WebApp.disableVerticalSwipes()`; in other apps' browsers it makes the page one pixel taller than the screen and keeps it one pixel down, so the swipe is no close. Touch screens only; the pixel is never seen |
+
 ### The page loader
 
 While the browser downloads Flutter it shows what the generator writes into
@@ -4141,7 +4162,8 @@ Then build as usual: `dart run build_runner build` writes the pages into
 | `spring.flutter.web.seo.from-routes` | `true` / `false` | `false` | Every screen of the navigation is a page (see below) |
 | `spring.flutter.web.seo.title` | text with `{title}` | `{title}` | The `<title>` of every page; `{title}` is the page's own title |
 | `spring.flutter.web.seo.description` | string | none | The description of a page that has none of its own |
-| `spring.flutter.web.seo.image` | `resources:` location or URL | none | The preview image (`og:image`) of a page that has none of its own |
+| `spring.flutter.web.seo.image` | `resources:` location or URL | none | The preview image (`og:image`, `twitter:image`) of a page that has none of its own; with one, link previews (Telegram, X, Slack) show a large card (`twitter:card: summary_large_image`). About 1200×630 |
+| `spring.flutter.web.seo.site-name` | text | none | The site's name in link previews (`og:site_name`) |
 | `spring.flutter.web.seo.content[n].location` | `resources:` folder | none | A folder of Markdown files, a page per file |
 | `spring.flutter.web.seo.content[n].path` | path | `/` | The folder's address: `first.md` is `<path>/first`, `index.md` is `<path>` itself |
 | `spring.flutter.web.seo.content[n].exclude` | list of globs | none | Files of the folder left out (`_*.md`) |

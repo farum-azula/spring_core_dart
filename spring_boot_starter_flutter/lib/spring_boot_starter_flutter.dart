@@ -81,6 +81,7 @@ export 'src/spring_scope.dart';
 export 'src/spring_widgets.dart';
 export 'src/text/highlighted_text.dart';
 export 'src/theme/content_change.dart';
+export 'src/theme/wheel_scroll.dart';
 export 'src/splash/frame_pacer.dart';
 export 'src/splash/splash_properties.dart';
 export 'src/splash/splash_stage.dart';
