@@ -13,7 +13,7 @@ import 'support/app.dart';
 const html = {'Accept': 'text/html,application/xhtml+xml'};
 
 void main() {
-  final build = Directory('../app/build/web');
+  final build = Directory(inPackage('../app/build/web'));
   final required = Platform.environment['STATIC_SITE_BUILD_REQUIRED'] == 'true';
   if (!File('${build.path}/index.html').existsSync()) {
     test(
@@ -23,7 +23,7 @@ void main() {
     );
     return;
   }
-  final app = staticSite(web: 'file:../app/build/web/');
+  final app = staticSite(web: 'file:${build.path}/');
 
   test("index.html, at / and at the app's addresses", () async {
     for (final path in ['/', '/guide', '/server']) {
