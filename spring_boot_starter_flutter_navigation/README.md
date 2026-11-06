@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 Navigation for Flutter apps built on
 [`spring_boot_starter_flutter`](https://pub.dev/packages/spring_boot_starter_flutter):
 screens on routes, on the SDK's `Router` (the web's address bar, deep

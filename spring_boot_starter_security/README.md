@@ -1,5 +1,7 @@
 # spring_boot_starter_security
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 Security for web applications built with
 [`spring_boot_starter_web`](../spring_boot_starter_web/README.md): a filter
 chain in front of the controllers decides who may call which endpoint,

@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 OAuth 2.0 and OpenID Connect clients for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications: Spring Security's OAuth2 client with Spring Boot's

@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 A web server for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications. You write controller classes whose methods carry
 annotations such as `@GetMapping('/books/{isbn}')`; the starter routes

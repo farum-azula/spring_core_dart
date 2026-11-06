@@ -3,6 +3,7 @@ description: >-
   Spring MVC for Dart: @RestController with @GetMapping and @PostMapping on dart:io, JSON bodies, @Valid, ProblemDetail errors, server-sent events, filters, CORS.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_web
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - http

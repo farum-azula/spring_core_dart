@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 Tools for testing an application built with
 [`spring_boot_dart`](../spring_boot_dart), or a starter written for it.
 

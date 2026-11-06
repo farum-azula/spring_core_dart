@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 Scheduled tasks for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications: annotate a bean method with `@Scheduled` and the

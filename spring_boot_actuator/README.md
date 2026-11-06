@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 Spring Boot Actuator's endpoints for Dart, without HTTP: the health
 report, the info and the mappings of a running application, with Spring
 Boot's names, properties and JSON.

@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components/spring-core-dart)
+
 `spring_core_dart` creates the objects of your application, gives each
 one the other objects it needs, and configures them from settings files.
 You write the classes and mark them with annotations; the package does

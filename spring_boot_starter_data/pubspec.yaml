@@ -3,6 +3,7 @@ description: >-
   Spring Data for spring_boot_dart: entities, repositories, derived and @Query methods, transactions, optimistic and pessimistic locks; no driver inside.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_data
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - data

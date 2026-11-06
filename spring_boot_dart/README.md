@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 The part of Spring for Dart that starts an application. With
 [`spring_core_dart`](../spring_core_dart) alone you have a container of
 beans (your services, created and wired together), but you still write

@@ -3,6 +3,7 @@ description: >-
   Spring Web for Dart: @GetMapping, @PathVariable, @RequestBody, ResponseEntity, server-sent events and HTTP/WebSocket client transports for the VM, Flutter and the web.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_web_dart
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - http

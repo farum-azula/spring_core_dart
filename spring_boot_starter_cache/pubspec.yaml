@@ -3,6 +3,7 @@ description: >-
   Cache starter for spring_boot_dart: @Cacheable, @CachePut, @CacheEvict and @Caching on bean methods, SpEL keys, a CacheManager with TTL and size limits.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_cache
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - cache

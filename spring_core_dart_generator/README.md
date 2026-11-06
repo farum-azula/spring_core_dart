@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 `spring_core_dart_generator` is the code generator of
 [`spring_core_dart`](https://pub.dev/packages/spring_core_dart). It reads
 the annotations of your classes (`@Service`, `@Value`, `@Bean`,

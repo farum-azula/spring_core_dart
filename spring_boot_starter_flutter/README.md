@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 Spring Boot for Flutter apps. It gives a Flutter app one place for its
 state and services, and a way to hand them to widgets without passing
 them through constructors.

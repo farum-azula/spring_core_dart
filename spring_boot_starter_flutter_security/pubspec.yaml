@@ -3,6 +3,7 @@ description: >-
   Security for Spring Boot Flutter apps: the OAuth2 / OpenID Connect app login, secrets in the Keychain / Keystore, widgets that follow the logged-in user.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter_security
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - flutter

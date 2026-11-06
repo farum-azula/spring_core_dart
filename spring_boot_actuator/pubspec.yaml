@@ -3,6 +3,7 @@ description: >-
   Spring Boot Actuator for Dart: @Endpoint beans, the health endpoint with indicators and groups, info contributors and the mappings, no HTTP of its own.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_actuator
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - actuator

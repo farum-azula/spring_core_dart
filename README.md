@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org), the site of Spring for Dart, with a page for every annotation and type of `spring_core_dart`.
+
 Spring for Dart and Flutter: a family of packages that port Spring
 Framework and Spring Boot, the Java frameworks, to Dart. You write plain
 classes and mark them with annotations such as `@Service()` or

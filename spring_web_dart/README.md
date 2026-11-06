@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 The shared web vocabulary of the Spring for Dart packages: the
 annotations that describe an HTTP call, the types of HTTP itself
 (headers, status codes, media types, response bodies, errors), and

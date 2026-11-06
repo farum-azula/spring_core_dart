@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 > **First release.** Repositories run in memory (with transactions and
 > locks) or on SQLite and PostgreSQL from properties. What is planned next
 > is in

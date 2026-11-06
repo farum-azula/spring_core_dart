@@ -3,6 +3,7 @@ description: >-
   Spring Boot for Flutter apps: SpringApplicationWidget, beans in widgets, state beans that rebuild widgets, lifecycle, platform profiles, themes from properties.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - dependency-injection

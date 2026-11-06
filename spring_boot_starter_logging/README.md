@@ -4,6 +4,8 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
+**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+
 Logging for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications: formatted console lines, log files that roll over, an
 in-memory list of recent records for an in-app log screen, and logger

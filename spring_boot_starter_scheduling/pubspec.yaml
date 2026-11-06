@@ -3,6 +3,7 @@ description: >-
   Scheduling starter for spring_boot_dart: @Scheduled methods with fixed rate, fixed delay or cron expressions, a TaskScheduler bean, stopped with the context.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_scheduling
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - scheduling

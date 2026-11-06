@@ -3,6 +3,7 @@ description: >-
   OAuth 2.0 and OpenID Connect clients for spring_boot_dart: registrations from spring.security.oauth2.client.*, every grant, token refresh, Bearer tokens on Feign calls.
 version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_oauth2_client
+documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - oauth2
