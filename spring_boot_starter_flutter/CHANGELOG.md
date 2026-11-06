@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `ThemeText(changeKey:, appear:)`: another `changeKey` plays the change again though the text is the same (the results of a search at every query); `appear` brings the text in the theme's way when it first shows.
 - `motion.overscroll` (`platform`, `none`): `none` turns off the stretch or glow at a scrollable's end for the whole app (Material's stretch distorts the content on Android).
 - `spring.flutter.web.page.swipe-to-close` (`FlutterWebPageProperties`), read by the generator.
 - `motion.wheel-scroll` (`WheelScrollSpec`, `WheelScrollSmoother`): a mouse wheel's steps eased over `duration` and scaled by `speed` for every scrollable of the app; `none`, Flutter's own jump, by default.

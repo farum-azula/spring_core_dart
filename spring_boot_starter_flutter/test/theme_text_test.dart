@@ -5,17 +5,22 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
-Widget _app(Map<String, String> theme, String text, {bool reduce = false}) =>
-    MediaQuery(
-      data: MediaQueryData(disableAnimations: reduce),
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: SpringTheme(
-          data: SpringThemes(theme).data('light'),
-          child: ThemeText(text),
-        ),
-      ),
-    );
+Widget _app(
+  Map<String, String> theme,
+  String text, {
+  bool reduce = false,
+  Object? changeKey,
+  bool appear = false,
+}) => MediaQuery(
+  data: MediaQueryData(disableAnimations: reduce),
+  child: Directionality(
+    textDirection: TextDirection.ltr,
+    child: SpringTheme(
+      data: SpringThemes(theme).data('light'),
+      child: ThemeText(text, changeKey: changeKey, appear: appear),
+    ),
+  ),
+);
 
 String _shown(WidgetTester tester) => [
   for (final text in tester.widgetList<Text>(find.byType(Text))) text.data!,
@@ -116,6 +121,25 @@ void main() {
         reason: key,
       );
     }
+  });
+
+  testWidgets('another changeKey plays the change again; appear from nothing', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(morph, 'Results', changeKey: 'b'));
+    expect(_shown(tester), 'Results');
+    await tester.pumpWidget(_app(morph, 'Results', changeKey: 'be'));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(_shown(tester), isNot('Results'));
+    await tester.pumpAndSettle();
+    expect(_shown(tester), 'Results');
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(_app(morph, 'Hello', appear: true));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(_shown(tester), isNot('Hello'));
+    await tester.pumpAndSettle();
+    expect(_shown(tester), 'Hello');
   });
 
   testWidgets('none: the new text at once', (tester) async {

@@ -30,8 +30,19 @@ class ThemeText extends StatefulWidget {
     this.softWrap,
     this.highlights = const [],
     this.highlightStyle = const TextStyle(fontWeight: FontWeight.w700),
+    this.changeKey,
+    this.appear = false,
     super.key,
   });
+
+  /// Another value plays the change again even when [data] is the same:
+  /// the results of a search change the theme's way at every query
+  /// (`changeKey: query`).
+  final Object? changeKey;
+
+  /// Whether the text comes in the theme's way when it first shows, from
+  /// nothing.
+  final bool appear;
 
   /// Stretches of [data] shown in [highlightStyle].
   final List<TextRange> highlights;
@@ -110,12 +121,29 @@ class _ThemeTextState extends State<ThemeText>
   String _from = '';
   TextChangeSpec _spec = const TextChangeSpec();
 
+  bool _appeared = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.appear && !_appeared) {
+      _appeared = true;
+      _play('');
+    }
+  }
+
   @override
   void didUpdateWidget(ThemeText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.data == widget.data) {
+    if (oldWidget.data == widget.data &&
+        oldWidget.changeKey == widget.changeKey) {
       return;
     }
+    _play(_controller.isAnimating ? _shown(oldWidget.data) : oldWidget.data);
+  }
+
+  // Plays the change from [from] to the widget's text, the theme's way.
+  void _play(String from) {
     final spec =
         SpringTheme.maybeOf(context)?.textChange ?? const TextChangeSpec();
     if (spec.type == TextChangeType.none ||
@@ -124,7 +152,7 @@ class _ThemeTextState extends State<ThemeText>
       _controller.value = 1;
       return;
     }
-    _from = _controller.isAnimating ? _shown(oldWidget.data) : oldWidget.data;
+    _from = from;
     _spec = spec;
     _controller
       ..duration = spec.duration
