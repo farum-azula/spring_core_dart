@@ -358,7 +358,7 @@ theme of the app with `source` on `spring.flutter.theme` itself (see
 spring:
   flutter:
     theme:
-      source: github:farum-azula/themes/themes/code.yml@code-v0.1.0
+      source: github:farum-azula/themes/themes/code.yml@code-v0.2.0
       themes:
         neon:
           syntax:

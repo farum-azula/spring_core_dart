@@ -5,11 +5,11 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:test/test.dart';
 
 final class _Pacer implements StartupPacer {
+  _Pacer(this.created);
+
   final asked = <String>[];
   final List<String> created;
-  var pauses = 0;
-
-  _Pacer(this.created);
+  int pauses = 0;
 
   @override
   Future<void>? pace() {
@@ -33,21 +33,21 @@ BeanModule _module(List<String> created) => BeanModule('test', [
 void main() {
   test('a step per bean, tagged with its name', () {
     final startup = BufferingApplicationStartup();
-    final factory = DefaultListableBeanFactory()
-      ..applicationStartup = startup;
+    final factory = DefaultListableBeanFactory()..applicationStartup = startup;
     final created = <String>[];
-    for (final definition in _module(created).definitions) {
-      factory.registerBeanDefinition(definition);
-    }
+    _module(created).definitions.forEach(factory.registerBeanDefinition);
     factory.preInstantiateSingletons();
     final steps = startup.steps.where(
       (s) => s.name == 'spring.beans.instantiate',
     );
-    expect([for (final s in steps) s.tags.single], [
-      ('beanName', 'a'),
-      ('beanName', 'b'),
-      ('beanName', 'c'),
-    ]);
+    expect(
+      [for (final s in steps) s.tags.single],
+      [
+        ('beanName', 'a'),
+        ('beanName', 'b'),
+        ('beanName', 'c'),
+      ],
+    );
     expect(steps.every((s) => s.duration != null), isTrue);
   });
 
@@ -68,9 +68,7 @@ void main() {
     final created = <String>[];
     final pacer = _Pacer(created);
     final factory = DefaultListableBeanFactory()..startupPacer = pacer;
-    for (final definition in _module(created).definitions) {
-      factory.registerBeanDefinition(definition);
-    }
+    _module(created).definitions.forEach(factory.registerBeanDefinition);
     await factory.preInstantiateSingletonsAsync();
     expect(pacer.asked, ['a', 'b', 'c']);
     expect(created, ['a', 'b', 'c']);

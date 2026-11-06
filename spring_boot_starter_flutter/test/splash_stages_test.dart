@@ -18,30 +18,29 @@ final class _Slow {
   _Slow();
 }
 
-SpringApplication _app(String properties, {int beans = 0}) =>
-    SpringApplication(
+SpringApplication _app(String properties, {int beans = 0}) => SpringApplication(
+  [
+    BeanModule(
+      'test',
       [
-        BeanModule(
-          'test',
-          [
-            for (var i = 0; i < beans; i++)
-              BeanDefinition<_Slow>(
-                name: 'slow$i',
-                types: const [_Slow],
-                create: (_) {
-                  final watch = Stopwatch()..start();
-                  while (watch.elapsedMilliseconds < 3) {}
-                  return _Slow();
-                },
-              ),
-          ],
-          resources: {
-            'application.properties': EmbeddedResource.text(properties),
-          },
-        ),
+        for (var i = 0; i < beans; i++)
+          BeanDefinition<_Slow>(
+            name: 'slow$i',
+            types: const [_Slow],
+            create: (_) {
+              final watch = Stopwatch()..start();
+              while (watch.elapsedMilliseconds < 3) {}
+              return _Slow();
+            },
+          ),
       ],
-      bannerMode: BannerMode.off,
-    );
+      resources: {
+        'application.properties': EmbeddedResource.text(properties),
+      },
+    ),
+  ],
+  bannerMode: BannerMode.off,
+);
 
 Future<ApplicationContext> _pump(
   WidgetTester tester,

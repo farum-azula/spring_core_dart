@@ -1,0 +1,80 @@
+# The languages of the code blocks (`syntax.<language>`), a copy of
+# themes/code.yml of github.com/farum-azula/themes: the starter knows no
+# language by itself. The colors of the pieces are each theme's
+# `styles.code`. An app online can take the file instead:
+#   spring.flutter.theme.source: github:farum-azula/themes/themes/code.yml@<tag>
+spring:
+  flutter:
+    theme:
+      syntax:
+        dart:
+          keywords: [abstract, as, assert, async, await, base, break, case, catch, class, const, continue, covariant, default, deferred, do, dynamic, else, enum, export, extends, extension, external, factory, 'false', final, finally, for, Function, get, hide, if, implements, import, in, interface, is, late, library, mixin, new, 'null', of, 'on', operator, part, required, rethrow, return, sealed, set, show, static, super, switch, sync, this, throw, 'true', try, typedef, var, void, when, while, with, yield]
+          types: '^(?:int|double|num|bool|_?[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*)$'
+          rules:
+            - { match: '//[^\n]*|/\*[\s\S]*?\*/', kind: comment }
+            - { match: 'r?''''''[\s\S]*?''''''|r?"""[\s\S]*?"""|r?''(?:\\.|[^''\\\n])*''|r?"(?:\\.|[^"\\\n])*"', kind: string }
+            - { match: '@[A-Za-z_][A-Za-z0-9_.]*', kind: annotation }
+            - { match: '\b(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b', kind: number }
+            - { match: '[A-Za-z_$][A-Za-z0-9_$]*', kind: word }
+            - { match: '[{}()\[\];,]', kind: punctuation }
+
+        java:
+          keywords: [abstract, assert, boolean, break, byte, case, catch, char, class, const, continue, default, do, double, else, enum, extends, 'false', final, finally, float, for, if, implements, import, instanceof, int, interface, long, native, new, 'null', package, permits, private, protected, public, record, return, sealed, short, static, super, switch, synchronized, this, throw, throws, 'true', try, var, void, volatile, while, yield]
+          types: '^[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*$'
+          rules:
+            - { match: '//[^\n]*|/\*[\s\S]*?\*/', kind: comment }
+            - { match: '"""[\s\S]*?"""|"(?:\\.|[^"\\\n])*"|''(?:\\.|[^''\\\n])*''', kind: string }
+            - { match: '@[A-Za-z_][A-Za-z0-9_.]*', kind: annotation }
+            - { match: '\b(?:0x[0-9a-fA-F_]+[lL]?|\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?[lLfFdD]?)\b', kind: number }
+            - { match: '[A-Za-z_$][A-Za-z0-9_$]*', kind: word }
+            - { match: '[{}()\[\];,]', kind: punctuation }
+
+        yaml:
+          aliases: [yml]
+          rules:
+            - { match: '(?<=^|\s)#[^\n]*', kind: comment }
+            - { match: '^(?:---|\.\.\.)(?=\s|$)', kind: punctuation }
+            - { match: '(?<=^[ \t]*(?:-[ \t]+)*)-(?=\s|$)', kind: punctuation }
+            - { match: '(?<=^[ \t]*(?:-[ \t]+)*)(?:"(?:\\.|[^"\\\n])*"|''(?:''''|[^''\n])*''|[^\s#:,{}\[\]&*!|>%@`''"-][^#:,{}\[\]\n]*?|-[^\s#:,{}\[\]][^#:,{}\[\]\n]*?)(?=[ \t]*:(?:\s|$))', kind: key }
+            - { match: '(?<=[{,][ \t]*)[^\s#:,{}\[\]''"][^#:,{}\[\]\n]*?(?=[ \t]*:(?:\s|$|[,}\]]))', kind: key }
+            - { match: ':(?=\s|$|[,}\]])', kind: punctuation }
+            - { match: '[{}\[\],]', kind: punctuation }
+            - { match: '"(?:\\.|[^"\\\n])*"?|''(?:''''|[^''\n])*''?', kind: string }
+            - { match: '[|>][-+0-9]*(?=[ \t]*$)', kind: punctuation }
+            - { match: '[&*][\w.-]+', kind: variable }
+            - { match: '![\w!./:-]*', kind: annotation }
+            - { match: '\$\{[^}\n]*\}|\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*', kind: variable }
+            - { match: '(?<![\w.$-])[-+]?(?:0x[0-9a-fA-F]+|(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?(?:ms|us|ns|s|m|h|d|%|px|x)?)(?![\w.$-])', kind: number }
+            - { match: '(?<![\w.$-])(?:true|false|null|yes|no|on|off|True|False|Null|TRUE|FALSE|NULL|~)(?![\w.$-])', kind: keyword }
+            - { match: '[^\s,{}\[\]#$]+', kind: string }
+
+        properties:
+          aliases: [ini]
+          rules:
+            - { match: '^[ \t]*[#!][^\n]*', kind: comment }
+            - { match: '(?<=^[ \t]*)[^\s=:#!][^=:\n]*?(?=[ \t]*[=:]|[ \t]+\S|[ \t]*$)', kind: key }
+            - { match: '(?<=^[ \t]*[^\s=:#!][^=:\n]*?[ \t]*)[=:]', kind: punctuation }
+            - { match: ',', kind: punctuation }
+            - { match: '\$\{[^}\n]*\}|\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*', kind: variable }
+            - { match: '(?<![\w.$-])[-+]?(?:0x[0-9a-fA-F]+|(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?(?:ms|us|ns|s|m|h|d|%|px|x)?)(?![\w.$-])', kind: number }
+            - { match: '(?<![\w.$-])(?:true|false|null|yes|no|on|off)(?![\w.$-])', kind: keyword }
+            - { match: '[^\s,$]+', kind: string }
+
+        shell:
+          aliases: [sh, bash, zsh, console]
+          keywords: [if, then, else, elif, fi, for, in, do, done, while, case, esac, function, export, cd, echo, return]
+          rules:
+            - { match: '#[^\n]*', kind: comment }
+            - { match: '''[^'']*''|"(?:\\.|[^"\\])*"', kind: string }
+            - { match: '\s--?[A-Za-z][\w-]*', kind: key }
+            - { match: '\$\{[^}\n]*\}|\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*', kind: variable }
+            - { match: '\|\||&&|[|;<>]', kind: punctuation }
+            - { match: '[A-Za-z_][A-Za-z0-9_-]*', kind: word }
+
+        json:
+          rules:
+            - { match: '"(?:\\.|[^"\\])*"(?=\s*:)', kind: key }
+            - { match: '"(?:\\.|[^"\\])*"', kind: string }
+            - { match: '-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b', kind: number }
+            - { match: '\b(?:true|false|null)\b', kind: keyword }
+            - { match: '[{}\[\],:]', kind: punctuation }

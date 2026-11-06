@@ -15,6 +15,7 @@
 spring:
   config:
     import: >-
+      resources:themes/code.yml,
       resources:themes/graphite.yml, resources:themes/sunset.yml
 
   flutter:

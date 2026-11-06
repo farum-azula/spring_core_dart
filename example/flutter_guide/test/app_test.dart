@@ -19,7 +19,7 @@ void main() {
     final server = FakeServer();
     final context = await startApp(tester, server);
 
-    expect(context.environment.activeProfiles, ['mobile', 'android']);
+    expect(context.environment.activeProfiles, ['mobile', 'android', 'debug']);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('NEON Books'), findsOneWidget);
     // application-android.properties: the emulator's way to the computer.
@@ -37,7 +37,7 @@ void main() {
       size: const Size(1024, 640),
     );
 
-    expect(context.environment.activeProfiles, ['desktop', 'macos']);
+    expect(context.environment.activeProfiles, ['desktop', 'macos', 'debug']);
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.text('NEON Books for desktop'), findsOneWidget);
     expect(server.http.requests.first.url.origin, 'http://localhost:8080');

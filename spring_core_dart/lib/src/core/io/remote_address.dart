@@ -135,7 +135,7 @@ final class GitHubAddressResolver implements RemoteAddressResolver {
 ///
 /// ```dart
 /// final address = const RemoteAddresses().parse(
-///   'github:farum-azula/themes/themes/code.yml@code-v0.1.0',
+///   'github:farum-azula/themes/themes/code.yml@code-v0.2.0',
 ///   property: 'spring.flutter.theme.source',
 /// );
 /// ```
@@ -187,7 +187,7 @@ final class RemoteAddresses {
         written,
         property,
         'is no address: https://..., github:owner/repo/path@ref, or a kind '
-            'of an address resolver of the application',
+        'of an address resolver of the application',
       );
     }
     return RemoteAddress(

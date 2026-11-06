@@ -276,11 +276,13 @@ class DarkThemeTest {
 ## 7. Platforms and their profiles
 
 In the app, the platform's profiles are active: `android` and `mobile`,
-`ios` and `mobile`, `macos` and `desktop`, and so on. In a widget test
-the platform is Android unless the test changes it.
+`ios` and `mobile`, `macos` and `desktop`, and so on, then the build's:
+`debug`, `profile` or `release`. In a widget test the platform is Android
+unless the test changes it, and the build is `debug`.
 
 *Works today:* a test that pumps `SpringApplicationWidget` gets the
-profiles of the test's platform (`mobile` and `android` by default; set
+profiles of the test's platform (`mobile` and `android` by default, then
+`debug`; set
 `debugDefaultTargetPlatformOverride` before pumping for another one).
 `springBootTest` adds no platform profile; pass `profiles:` to it.
 
@@ -327,9 +329,9 @@ testWidgets('SpringApplicationWidget starts the application', (tester) async {
   );
   await tester.pumpAndSettle();
 
-  // The test runs as Android: the phone's profiles are active.
+  // The test runs as Android, a debug build: those profiles are active.
   final context = SpringScope.of(tester.element(find.byType(CounterPage)));
-  expect(context.environment.activeProfiles, ['mobile', 'android']);
+  expect(context.environment.activeProfiles, ['mobile', 'android', 'debug']);
   expect(find.text('0'), findsOneWidget);
 
   await tester.pumpWidget(const SizedBox()); // removing the widget closes the context

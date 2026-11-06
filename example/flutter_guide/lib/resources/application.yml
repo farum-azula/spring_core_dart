@@ -5,7 +5,8 @@ spring:
   config:
     import: >-
       resources:themes/neon.yml, resources:themes/neon-night.yml,
-      resources:themes/sepia.yml, resources:themes/high-contrast.yml
+      resources:themes/sepia.yml, resources:themes/high-contrast.yml,
+      resources:themes/code.yml
 
   flutter:
     theme:

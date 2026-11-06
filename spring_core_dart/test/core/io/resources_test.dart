@@ -225,13 +225,15 @@ void main() {
       containsAll(['docs/guide/a.md', 'docs/b.md']),
     );
     expect(
-      (Resources.resolve('resources:docs/guide/a.md') as ContextResource)
-          .pathWithinContext,
+      (Resources.resolve(
+        'resources:docs/guide/a.md',
+      ) as ContextResource).pathWithinContext,
       'docs/guide/a.md',
     );
     expect(
-      (Resources.resolve('app/greeting.txt') as ContextResource)
-          .pathWithinContext,
+      (Resources.resolve(
+        'app/greeting.txt',
+      ) as ContextResource).pathWithinContext,
       'app/greeting.txt',
     );
     expect(

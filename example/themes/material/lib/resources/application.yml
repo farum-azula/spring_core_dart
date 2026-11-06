@@ -16,7 +16,8 @@ spring:
   config:
     import: >-
       resources:themes/ocean.yml, resources:themes/neon.yml,
-      resources:themes/high-contrast.yml
+      resources:themes/high-contrast.yml,
+      resources:themes/code.yml
 
   flutter:
     web:

@@ -3276,7 +3276,7 @@ repository:
 spring:
   flutter:
     theme:
-      source: github:farum-azula/themes/themes/code.yml@code-v0.1.0
+      source: github:farum-azula/themes/themes/code.yml@code-v0.2.0
 ```
 
 See [the languages of code](flutter/theme/styles-and-states.md#the-languages-of-code-syntax).
