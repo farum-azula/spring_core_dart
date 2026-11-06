@@ -7,187 +7,298 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
-import 'package:spring_search_dart/src/config/search_properties.dart' as _i1;
-import 'package:spring_search_dart/src/index/search_index.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
+import 'package:spring_search_dart/src/config/search_properties.dart' as _i2;
+import 'package:spring_search_dart/src/index/search_index.dart' as _i3;
 
-const _$knownAdvisors0 = {
-  r'package:spring_boot_dart',
-  r'package:spring_search_dart',
-};
-Object? _$get1(_i1.SearchProperties bean) => bean.enabled;
-void _$set2(_i1.SearchProperties bean, Object? value) =>
+const _$target0 = _i1.AopTarget(
+  r'SearchProperties',
+  types: [r'SearchProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.search')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get1(_i2.SearchProperties bean) => bean.enabled;
+void _$set2(_i2.SearchProperties bean, Object? value) =>
     bean.enabled = (value as bool);
-Object? _$get3(_i1.SearchProperties bean) => bean.defaultLanguage;
-void _$set4(_i1.SearchProperties bean, Object? value) =>
+Object? _$get3(_i2.SearchProperties bean) => bean.defaultLanguage;
+void _$set4(_i2.SearchProperties bean, Object? value) =>
     bean.defaultLanguage = (value as String);
-Object? _$get5(_i1.SearchProperties bean) => bean.fields;
-void _$set6(_i1.SearchProperties bean, Object? value) =>
+Object? _$get5(_i2.SearchProperties bean) => bean.fields;
+void _$set6(_i2.SearchProperties bean, Object? value) =>
     bean.fields = (value as Map<String, double>);
-Object? _$get7(_i1.SearchProperties bean) => bean.fuzzy;
-void _$set8(_i1.SearchProperties bean, Object? value) =>
+Object? _$get7(_i2.SearchProperties bean) => bean.fuzzy;
+void _$set8(_i2.SearchProperties bean, Object? value) =>
     bean.fuzzy = (value as int);
-Object? _$get9(_i1.SearchProperties bean) => bean.maxHits;
-void _$set10(_i1.SearchProperties bean, Object? value) =>
+Object? _$get9(_i2.SearchProperties bean) => bean.maxHits;
+void _$set10(_i2.SearchProperties bean, Object? value) =>
     bean.maxHits = (value as int);
-Object? _$get11(_i1.SearchProperties bean) => bean.operator;
-void _$set12(_i1.SearchProperties bean, Object? value) =>
-    bean.operator = (value as _i2.SearchOperator);
-Object? _$get13(_i1.SearchProperties bean) => bean.analyzers;
-void _$set14(_i1.SearchProperties bean, Object? value) =>
+Object? _$get11(_i2.SearchProperties bean) => bean.operator;
+void _$set12(_i2.SearchProperties bean, Object? value) =>
+    bean.operator = (value as _i3.SearchOperator);
+Object? _$get13(_i2.SearchProperties bean) => bean.analyzers;
+void _$set14(_i2.SearchProperties bean, Object? value) =>
     bean.analyzers = (value as Map<String, String>);
-Object? _$get15(_i1.SearchProperties bean) => bean.collapseBy;
-void _$set16(_i1.SearchProperties bean, Object? value) =>
+Object? _$get15(_i2.SearchProperties bean) => bean.collapseBy;
+void _$set16(_i2.SearchProperties bean, Object? value) =>
     bean.collapseBy = (value as String?);
-Object? _$get17(_i1.SearchProperties bean) => bean.markdown;
-void _$set18(_i1.SearchProperties bean, Object? value) =>
-    bean.markdown = (value as List<_i1.MarkdownSearchProperties>);
-_i1.SearchProperties _$create19(
+Object? _$get17(_i2.SearchProperties bean) => bean.markdown;
+void _$set18(_i2.SearchProperties bean, Object? value) =>
+    bean.markdown = (value as List<_i2.MarkdownSearchProperties>);
+_i2.SearchProperties _$create19(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i1.SearchProperties();
-Object? _$get20(_i1.MarkdownSearchProperties bean) => bean.location;
-void _$set21(_i1.MarkdownSearchProperties bean, Object? value) =>
+) => _i2.SearchProperties();
+Object? _$get20(_i2.MarkdownSearchProperties bean) => bean.location;
+void _$set21(_i2.MarkdownSearchProperties bean, Object? value) =>
     bean.location = (value as String);
-Object? _$get22(_i1.MarkdownSearchProperties bean) => bean.exclude;
-void _$set23(_i1.MarkdownSearchProperties bean, Object? value) =>
+Object? _$get22(_i2.MarkdownSearchProperties bean) => bean.exclude;
+void _$set23(_i2.MarkdownSearchProperties bean, Object? value) =>
     bean.exclude = (value as List<String>);
-Object? _$get24(_i1.MarkdownSearchProperties bean) => bean.link;
-void _$set25(_i1.MarkdownSearchProperties bean, Object? value) =>
+Object? _$get24(_i2.MarkdownSearchProperties bean) => bean.link;
+void _$set25(_i2.MarkdownSearchProperties bean, Object? value) =>
     bean.link = (value as String);
-_i1.MarkdownSearchProperties _$create26(
+_i2.MarkdownSearchProperties _$create26(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i1.MarkdownSearchProperties();
+) => _i2.MarkdownSearchProperties();
 
 /// Beans found by `@ComponentScan` in `lib/src/config`.
-_i3.BeanModule get $searchProperties => _i3.BeanModule(
+_i1.BeanModule get $searchProperties => _i1.BeanModule(
   r'searchProperties',
   [
-    _i3.BeanDefinition<_i1.SearchProperties>(
+    _i1.BeanDefinition<_i2.SearchProperties>(
       name: r'searchProperties',
       source: r'package:spring_search_dart/src/config/search_properties.dart#SearchProperties',
-      create: (r) => _i1.SearchProperties(),
-      annotations: const [_i3.ConfigurationProperties(r'spring.search')],
-      aopProxy: const _i3.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors0,
+      create: (r) => _i2.SearchProperties(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.search')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'defaultLanguage',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'fields',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'Map',
+          ),
+          _i1.MethodSignature.of(
+            r'fuzzy',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'int',
+          ),
+          _i1.MethodSignature.of(
+            r'maxHits',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'int',
+          ),
+          _i1.MethodSignature.of(
+            r'operator',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'SearchOperator',
+          ),
+          _i1.MethodSignature.of(
+            r'analyzers',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'Map',
+          ),
+          _i1.MethodSignature.of(
+            r'collapseBy',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'markdown',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'defaultLanguage',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'fields',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'Map',
+          ),
+          _i1.MethodSignature.of(
+            r'fuzzy',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'int',
+          ),
+          _i1.MethodSignature.of(
+            r'maxHits',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'int',
+          ),
+          _i1.MethodSignature.of(
+            r'operator',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'SearchOperator',
+          ),
+          _i1.MethodSignature.of(
+            r'analyzers',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'Map',
+          ),
+          _i1.MethodSignature.of(
+            r'collapseBy',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'markdown',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'List',
+          ),
+        ],
       ),
     ),
   ],
   introspections: [
-    const _i3.BeanIntrospection<_i1.SearchProperties>(
+    const _i1.BeanIntrospection<_i2.SearchProperties>(
       className: r'SearchProperties',
       properties: [
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'enabled',
-          typeInfo: _i3.ClassType<bool>(),
+          typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
           get: _$get1,
           set: _$set2,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'defaultLanguage',
-          typeInfo: _i3.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'en',
           get: _$get3,
           set: _$set4,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'fields',
-          typeInfo: _i3.MapType<String, double>(
-            _i3.ClassType<String>(),
-            _i3.ClassType<double>(),
+          typeInfo: _i1.MapType<String, double>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<double>(),
           ),
           get: _$get5,
           set: _$set6,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'fuzzy',
-          typeInfo: _i3.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 1,
           get: _$get7,
           set: _$set8,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'maxHits',
-          typeInfo: _i3.ClassType<int>(),
+          typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 20,
           get: _$get9,
           set: _$set10,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'operator',
-          typeInfo: _i3.EnumType<_i2.SearchOperator>(_i2.SearchOperator.values),
+          typeInfo: _i1.EnumType<_i3.SearchOperator>(_i3.SearchOperator.values),
           hasInitialValue: true,
-          initialValue: _i2.SearchOperator.and,
+          initialValue: _i3.SearchOperator.and,
           get: _$get11,
           set: _$set12,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'analyzers',
-          typeInfo: _i3.MapType<String, String>(
-            _i3.ClassType<String>(),
-            _i3.ClassType<String>(),
+          typeInfo: _i1.MapType<String, String>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<String>(),
           ),
           get: _$get13,
           set: _$set14,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'collapseBy',
           nullable: true,
-          typeInfo: _i3.ClassType<String>(nullable: true),
+          typeInfo: _i1.ClassType<String>(nullable: true),
           get: _$get15,
           set: _$set16,
         ),
-        _i3.BeanProperty<_i1.SearchProperties>(
+        _i1.BeanProperty<_i2.SearchProperties>(
           r'markdown',
-          typeInfo: _i3.ListType<_i1.MarkdownSearchProperties>(
-            _i3.ClassType<_i1.MarkdownSearchProperties>(),
+          typeInfo: _i1.ListType<_i2.MarkdownSearchProperties>(
+            _i1.ClassType<_i2.MarkdownSearchProperties>(),
           ),
           get: _$get17,
           set: _$set18,
         ),
       ],
-      annotations: [_i3.ConfigurationProperties(r'spring.search')],
-      parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
-      instantiate: _i1.SearchProperties.new,
-      constructor: _i3.BeanConstructor<_i1.SearchProperties>(
+      annotations: [_i1.ConfigurationProperties(r'spring.search')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.SearchProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SearchProperties>(
         parameters: [],
         create: _$create19,
       ),
     ),
-    const _i3.BeanIntrospection<_i1.MarkdownSearchProperties>(
+    const _i1.BeanIntrospection<_i2.MarkdownSearchProperties>(
       className: r'MarkdownSearchProperties',
       properties: [
-        _i3.BeanProperty<_i1.MarkdownSearchProperties>(
+        _i1.BeanProperty<_i2.MarkdownSearchProperties>(
           r'location',
-          typeInfo: _i3.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'',
           get: _$get20,
           set: _$set21,
         ),
-        _i3.BeanProperty<_i1.MarkdownSearchProperties>(
+        _i1.BeanProperty<_i2.MarkdownSearchProperties>(
           r'exclude',
-          typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
           get: _$get22,
           set: _$set23,
         ),
-        _i3.BeanProperty<_i1.MarkdownSearchProperties>(
+        _i1.BeanProperty<_i2.MarkdownSearchProperties>(
           r'link',
-          typeInfo: _i3.ClassType<String>(),
+          typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'/{path}',
           get: _$get24,
           set: _$set25,
         ),
       ],
-      instantiate: _i1.MarkdownSearchProperties.new,
-      constructor: _i3.BeanConstructor<_i1.MarkdownSearchProperties>(
+      instantiate: _i2.MarkdownSearchProperties.new,
+      constructor: _i1.BeanConstructor<_i2.MarkdownSearchProperties>(
         parameters: [],
         create: _$create26,
       ),

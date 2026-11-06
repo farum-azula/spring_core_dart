@@ -27,6 +27,11 @@ import 'dart:io';
 
 import 'version.dart' as family;
 
+/// Packages of the family kept in the repository, not on pub.dev yet: a
+/// git dependency until they are released (their version stays the
+/// family's).
+const notPublished = {'spring_search_dart'};
+
 Future<void> main(List<String> args) async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final dryRun = args.contains('--dry-run');
@@ -64,6 +69,10 @@ Future<void> main(List<String> args) async {
   }
   // `family` is already in dependency order: core, generator, Boot, starters.
   for (final package in [?only, if (only == null) ...family.family]) {
+    if (notPublished.contains(package)) {
+      stdout.writeln('$package is not published yet, skipped.');
+      continue;
+    }
     if ((dartOnly && _usesFlutter(package)) ||
         (flutterOnly && !_usesFlutter(package))) {
       continue;

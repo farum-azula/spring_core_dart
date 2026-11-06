@@ -2,8 +2,6 @@ name: spring_search_dart
 description: >-
   Full-text search for Spring for Dart: documents from beans and Markdown, analyzers per language, BM25 ranking, prefixes, typos and highlights.
 version: 0.7.1
-# Not on pub.dev yet: taken from this repository by git.
-publish_to: none
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_search_dart
 documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
