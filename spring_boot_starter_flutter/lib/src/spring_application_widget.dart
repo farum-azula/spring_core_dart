@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -15,6 +16,7 @@ import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
 import 'package:spring_boot_starter_flutter/src/splash/frame_pacer.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_stage.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_tasks.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_trace.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
@@ -179,6 +181,11 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   bool _firstFrameHeld = false;
   // The start's progress for the theme's splash, 0 to 1.
   final _progress = ValueNotifier<double>(0);
+  // The context being started, and the share of the loader its beans take:
+  // the splash tasks take the rest, once it is known they exist.
+  ConfigurableApplicationContext? _starting;
+  double _beanSpan = 1;
+  bool _beanSpanKnown = false;
   // The active theme once the properties are read, when it has a splash.
   SpringThemeData? _splashTheme;
   bool _splashDone = false;
@@ -272,7 +279,42 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         factory.applicationStartup = SplashTrace(_stages);
       }
     }
+    _starting = context;
+    _beanSpan = 1 - SplashTasks.shareIn(environment);
     _stages.enter(SplashStage.starting);
+  }
+
+  // The beans' progress on the loader: their share of it, known for sure
+  // once the definitions are frozen (no splash task: all of it).
+  double _beansProgress(double fraction) {
+    final starting = _starting;
+    final factory = starting?.beanFactory;
+    if (!_beanSpanKnown &&
+        factory is DefaultListableBeanFactory &&
+        factory.isConfigurationFrozen) {
+      _beanSpanKnown = true;
+      if (!SplashTasks.any(starting!)) {
+        _beanSpan = 1;
+      }
+    }
+    return fraction * _beanSpan;
+  }
+
+  // The splash tasks of [context], the loader going on from the beans'.
+  Future<void> _runSplashTasks(ApplicationContext context) async {
+    if (!SplashTasks.any(context)) {
+      return;
+    }
+    _stages.enter(SplashStage.tasks);
+    final from = _progress.value;
+    await SplashTasks.of(context).run((fraction) {
+      if (mounted) {
+        _progress.value = math.max(
+          _progress.value,
+          from + (1 - from) * fraction,
+        );
+      }
+    });
   }
 
   void _handOffAfterFrame() {
@@ -333,7 +375,10 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       _windowSetup.provideTo(application);
       application.progressListener = (progress) {
         if (mounted) {
-          _progress.value = progress.fraction;
+          _progress.value = math.max(
+            _progress.value,
+            _beansProgress(progress.fraction),
+          );
         }
       };
       if (widget.splash == null) {
@@ -357,6 +402,11 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         return;
       }
       _window = await _windowSetup.settle();
+      if (!mounted) {
+        await context.closeAsync();
+        return;
+      }
+      await _runSplashTasks(context);
       if (!mounted) {
         await context.closeAsync();
         return;

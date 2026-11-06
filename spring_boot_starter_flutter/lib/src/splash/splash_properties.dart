@@ -18,3 +18,40 @@ class SplashProperties {
   /// browser's performance timeline (the Performance tab). Off by default.
   bool trace = false;
 }
+
+/// The tasks run while the splash shows: `spring.flutter.splash.tasks.*`
+/// (`SplashTask` beans).
+@ConfigurationProperties('spring.flutter.splash.tasks')
+class SplashTasksProperties {
+  /// Runs the `SplashTask` beans before the app is shown; `false`: none
+  /// runs, the beans take the whole loader.
+  bool enabled = true;
+
+  /// How long the splash waits for the tasks; one still running goes on
+  /// behind the app.
+  Duration timeout = const Duration(seconds: 5);
+
+  /// The share of the splash's loader the tasks take, from 0 to 1, when
+  /// the app has any.
+  double share = 0.2;
+}
+
+/// The fonts of the app's text downloaded while the splash shows:
+/// `spring.flutter.splash.warm-up.text.*` (`TextWarmUp`).
+@ConfigurationProperties('spring.flutter.splash.warm-up.text')
+class TextWarmUpProperties {
+  /// Lays out the characters of the app's text while the splash shows. Off
+  /// by default; worth it on the web, where the fonts for Japanese, Chinese
+  /// or emoji are downloaded.
+  bool enabled = false;
+
+  /// The files whose characters are laid out (location patterns).
+  List<String> resources = ['resources:messages*.properties'];
+
+  /// No font downloaded in that time: none is needed.
+  Duration firstFont = const Duration(milliseconds: 400);
+
+  /// After a font came in, how long without another before the warm-up
+  /// ends.
+  Duration settle = const Duration(milliseconds: 250);
+}

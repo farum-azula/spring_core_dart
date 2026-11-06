@@ -272,6 +272,7 @@ come in this order (`SplashStage`):
 | `engine` | Flutter's engine starts (CanvasKit or skwasm). The page loader still shows |
 | `splash` | Flutter drew its first frame: the theme's splash is on screen and the page loader is removed |
 | `starting` | The application starts: the configuration is read, the beans are created; the splash shows the progress |
+| `tasks` | The [splash tasks](#tasks-during-the-splash) run (fonts downloaded, a cache filled); the loader goes on with their progress. Skipped when the app has none |
 | `ready` | The context is ready: the loader plays its last phase, the splash waits for its `min-duration` |
 | `exit` | The splash plays its exit (`exit.transition` or `exit.reveal`) |
 | `app` | The splash is gone; the app shows |
@@ -280,9 +281,9 @@ Each platform goes through the stages it has:
 
 | Platform | Stages | Before the first stage |
 |---|---|---|
-| Web | `page`, `engine`, `splash`, `starting`, `ready`, `exit`, `app` | Nothing: the page loader shows from the first paint of the page |
-| Android, iOS | `splash`, `starting`, `ready`, `exit`, `app` | The system's launch screen (`launch_background.xml`, `LaunchScreen.storyboard`) while the engine starts |
-| macOS, Windows, Linux | `splash`, `starting`, `ready`, `exit`, `app` | The window is not shown yet: the starter holds the first frame until the window's size and title are set |
+| Web | `page`, `engine`, `splash`, `starting`, `tasks`, `ready`, `exit`, `app` | Nothing: the page loader shows from the first paint of the page |
+| Android, iOS | `splash`, `starting`, `tasks`, `ready`, `exit`, `app` | The system's launch screen (`launch_background.xml`, `LaunchScreen.storyboard`) while the engine starts |
+| macOS, Windows, Linux | `splash`, `starting`, `tasks`, `ready`, `exit`, `app` | The window is not shown yet: the starter holds the first frame until the window's size and title are set |
 
 The stages only go forward. When no splash shows (no theme splash, no
 `splash:` builder) the app is shown with the context, so `splash` may be
@@ -406,6 +407,83 @@ Limits:
 Another `StartupPacer` is set on the bean factory
 (`DefaultListableBeanFactory.startupPacer`) by an
 `ApplicationContextInitializedEvent` listener, for a pacing of your own.
+
+## Tasks during the splash
+
+Work the app needs before it is shown runs while the splash shows: a
+`SplashTask` bean. Each runs once the beans exist, in the stage `tasks`,
+before `ready`; all run at the same time, and the loader's last share
+follows their progress.
+
+```dart
+@Component()
+class WarmCache extends SplashTask {
+  WarmCache(this.articles);
+
+  final ArticleRepository articles;
+
+  @override
+  String get name => 'articles';
+
+  @override
+  Future<void> run(SplashTaskContext task) async {
+    final ids = await articles.latest();
+    for (final (i, id) in ids.indexed) {
+      await articles.load(id);
+      task.progress((i + 1) / ids.length);
+    }
+  }
+}
+```
+
+```yaml
+spring:
+  flutter:
+    splash:
+      tasks:
+        enabled: true    # false: no task runs, the beans take the loader
+        timeout: 5s      # the app is shown then; a task still running goes on
+        share: 0.2       # the loader's share the tasks take
+```
+
+- A task that does not report its progress counts when it ends.
+- A task that fails is logged as a warning; the start goes on.
+- `@Order` (or `Ordered`) sets the order they begin.
+- `SplashTaskContext.applicationContext` is the started context.
+
+### Fonts for the app's text (web)
+
+On the web, Flutter has no font for characters the app's fonts lack
+(Japanese, Chinese, Arabic, emoji). It downloads a Noto font for them the
+first time it lays them out, in pieces, and lays out all the text again
+after each piece. A language changed for the first time then stutters
+for a second.
+
+The starter's `textWarmUp` task, once turned on, lays out every character of the app's text
+while the splash shows and waits until no font comes in any more. The text
+comes from:
+
+- the files of `spring.flutter.splash.warm-up.text.resources` (default:
+  the messages, `resources:messages*.properties`);
+- each `TextWarmUpSource` bean, for text not in a file.
+
+```yaml
+spring:
+  flutter:
+    splash:
+      warm-up:
+        text:
+          enabled: true        # off by default
+          resources:
+            - resources:messages*.properties
+            - resources:content/**/contents*.md
+          first-font: 400ms    # no font in that time: none is needed
+          settle: 250ms        # after a font, how long without another
+```
+
+Only the characters count, each once: a large file costs its reading, not
+its layout. Characters missing from it are still downloaded when they are
+shown.
 
 ## Tracing the start
 

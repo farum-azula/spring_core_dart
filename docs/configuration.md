@@ -2051,6 +2051,13 @@ The start behind the splash (the splash's look is the theme's `splash`; see
 | `spring.flutter.splash.yield-frames` | `true` / `false` | `true` on the web, `false` elsewhere | Lets Flutter draw a frame between the beans while they are created, so the splash keeps moving. See [yielding frames](flutter/theme/loaders.md#yielding-frames-during-the-start) |
 | `spring.flutter.splash.frame-budget` | duration | `8ms` | The work between two frames when `yield-frames` is on |
 | `spring.flutter.splash.trace` | `true` / `false` | `false` | Measures the start: each stage and each bean's creation, logged at the end and, on the web, marked in the browser's Performance tab. See [tracing](flutter/theme/loaders.md#tracing-the-start) |
+| `spring.flutter.splash.tasks.enabled` | `true` / `false` | `true` | Runs the `SplashTask` beans while the splash shows, before the app. See [tasks during the splash](flutter/theme/loaders.md#tasks-during-the-splash) |
+| `spring.flutter.splash.tasks.timeout` | duration | `5s` | How long the splash waits for the tasks; one still running goes on behind the app |
+| `spring.flutter.splash.tasks.share` | 0 to 1 | `0.2` | The loader's share the tasks take, when the app has any |
+| `spring.flutter.splash.warm-up.text.enabled` | `true` / `false` | `false` | Lays out the characters of the app's text while the splash shows, so the fonts they need are downloaded before the app shows. See [fonts for the app's text](flutter/theme/loaders.md#fonts-for-the-apps-text-web) |
+| `spring.flutter.splash.warm-up.text.resources` | list of locations | `resources:messages*.properties` | The files whose characters are laid out (patterns) |
+| `spring.flutter.splash.warm-up.text.first-font` | duration | `400ms` | No font downloaded in that time: none is needed |
+| `spring.flutter.splash.warm-up.text.settle` | duration | `250ms` | After a font came in, how long without another before the warm-up ends |
 
 The window of a desktop app (macOS, Windows, Linux) has keys of its own.
 They carry `desktop` in their name because only desktop apps read them: a

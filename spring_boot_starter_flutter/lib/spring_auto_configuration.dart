@@ -7,7 +7,6 @@
 library;
 
 import 'package:flutter/cupertino.dart' show CupertinoThemeData;
-import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
 import 'package:flutter/material.dart' show ThemeData;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
@@ -17,8 +16,11 @@ import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
 import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
 import 'package:spring_boot_starter_flutter/src/properties/properties_beans.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
 import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts_customizer.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_task.dart';
+import 'package:spring_boot_starter_flutter/src/splash/text_warm_up.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
@@ -30,6 +32,12 @@ export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
 const _source =
     'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
+
+// The text warm-up: only when turned on.
+const _textWarmUp = ConditionalOnProperty(
+  'spring.flutter.splash.warm-up.text.enabled',
+  havingValue: 'true',
+);
 
 /// The beans the starter adds to every Flutter application:
 ///
@@ -46,7 +54,11 @@ const _source =
 ///   (`fileTemplate`), each only when the app declares none;
 /// - the keyboard shortcuts of `spring.flutter.shortcuts.*` and the
 ///   `@Shortcut` methods (`keyboardShortcuts`), around the app's navigator
-///   (`keyboardShortcutsCustomizer`).
+///   (`keyboardShortcutsCustomizer`);
+/// - with `spring.flutter.splash.warm-up.text.enabled`, the fonts of the
+///   app's text downloaded while the splash shows (`textWarmUp`, a `SplashTask`, of the text of
+///   `spring.flutter.splash.warm-up.text.resources` and the
+///   `TextWarmUpSource` beans).
 ///
 /// Logins and secrets (the platform's secure storage, the login window)
 /// are `spring_boot_starter_flutter_security`'s.
@@ -100,6 +112,45 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       create: (r) => KeyboardShortcutsCustomizer(
         r.dependency<KeyboardShortcuts>(),
       ),
+    ),
+    BeanDefinition<ResourceTextWarmUpSource>(
+      name: 'resourceTextWarmUpSource',
+      types: const [ResourceTextWarmUpSource, TextWarmUpSource],
+      source: _source,
+      conditions: const [_textWarmUp],
+      create: (r) => ResourceTextWarmUpSource(
+        r.dependency<ApplicationContext>(),
+        r.dependency<ConfigurableEnvironment>().getPropertyAs<List<String>>(
+              'spring.flutter.splash.warm-up.text.resources',
+            ) ??
+            const ['resources:messages*.properties'],
+      ),
+    ),
+    BeanDefinition<TextWarmUp>(
+      name: 'textWarmUp',
+      types: const [TextWarmUp, SplashTask],
+      source: _source,
+      conditions: const [_textWarmUp],
+      create: (r) {
+        final environment = r.dependency<ConfigurableEnvironment>();
+        final themes = r.dependency<SpringThemes>();
+        return TextWarmUp(
+          r.optionalDependencyList<TextWarmUpSource>() ?? const [],
+          fontFamilies: {
+            for (final name in themes.names) ...themes.data(name).fontFamilies,
+          },
+          firstFont:
+              environment.getPropertyAs<Duration>(
+                'spring.flutter.splash.warm-up.text.first-font',
+              ) ??
+              const Duration(milliseconds: 400),
+          settle:
+              environment.getPropertyAs<Duration>(
+                'spring.flutter.splash.warm-up.text.settle',
+              ) ??
+              const Duration(milliseconds: 250),
+        );
+      },
     ),
     BeanDefinition<SpringThemes>(
       name: 'springThemes',

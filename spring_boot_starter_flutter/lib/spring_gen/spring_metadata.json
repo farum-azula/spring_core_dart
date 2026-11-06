@@ -213,6 +213,36 @@
       "class": "SplashProperties"
     },
     {
+      "name": "spring.flutter.splash.tasks.enabled",
+      "type": "bool",
+      "description": "Runs the `SplashTask` beans before the app is shown; `false`: none runs, the beans take the whole loader.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 28,
+      "class": "SplashTasksProperties"
+    },
+    {
+      "name": "spring.flutter.splash.tasks.share",
+      "type": "double",
+      "description": "The share of the splash's loader the tasks take, from 0 to 1, when the app has any.",
+      "default": 0.2,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 36,
+      "class": "SplashTasksProperties"
+    },
+    {
+      "name": "spring.flutter.splash.tasks.timeout",
+      "type": "Duration",
+      "description": "How long the splash waits for the tasks; one still running goes on behind the app.",
+      "default": "5s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 32,
+      "class": "SplashTasksProperties"
+    },
+    {
       "name": "spring.flutter.splash.trace",
       "type": "bool",
       "description": "Measures the start: each stage of the splash and each bean's creation with its time, in the log at the end; on the web also as marks of the browser's performance timeline (the Performance tab). Off by default.",
@@ -221,6 +251,48 @@
       "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
       "line": 19,
       "class": "SplashProperties"
+    },
+    {
+      "name": "spring.flutter.splash.warm-up.text.enabled",
+      "type": "bool",
+      "description": "Lays out the characters of the app's text while the splash shows. Off by default; worth it on the web, where the fonts for Japanese, Chinese or emoji are downloaded.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 46,
+      "class": "TextWarmUpProperties"
+    },
+    {
+      "name": "spring.flutter.splash.warm-up.text.first-font",
+      "type": "Duration",
+      "description": "No font downloaded in that time: none is needed.",
+      "default": "400ms",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 52,
+      "class": "TextWarmUpProperties"
+    },
+    {
+      "name": "spring.flutter.splash.warm-up.text.resources",
+      "type": "List<String>",
+      "description": "The files whose characters are laid out (location patterns).",
+      "default": [
+        "resources:messages*.properties"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 49,
+      "class": "TextWarmUpProperties"
+    },
+    {
+      "name": "spring.flutter.splash.warm-up.text.settle",
+      "type": "Duration",
+      "description": "After a font came in, how long without another before the warm-up ends.",
+      "default": "250ms",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 56,
+      "class": "TextWarmUpProperties"
     },
     {
       "name": "spring.flutter.splash.yield-frames",
@@ -735,7 +807,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 57,
+      "line": 69,
       "injects": [],
       "members": [
         {
@@ -771,7 +843,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 76,
+      "line": 88,
       "injects": [],
       "members": [
         {
@@ -853,7 +925,7 @@
         "@ConditionalOnMissingBean(FileTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 137,
+      "line": 188,
       "injects": [],
       "members": [
         {
@@ -1336,7 +1408,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 85,
+      "line": 97,
       "injects": [],
       "members": [
         {
@@ -1438,7 +1510,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 96,
+      "line": 108,
       "injects": [],
       "members": [
         {
@@ -1471,7 +1543,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 67,
+      "line": 79,
       "injects": [],
       "members": [
         {
@@ -1511,7 +1583,7 @@
         "@ConditionalOnMissingBean(FileStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 126,
+      "line": 177,
       "injects": [],
       "members": [
         {
@@ -1592,6 +1664,42 @@
       ]
     },
     {
+      "name": "resourceTextWarmUpSource",
+      "type": "ResourceTextWarmUpSource",
+      "types": [
+        "ResourceTextWarmUpSource",
+        "TextWarmUpSource"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
+      ],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 116,
+      "injects": [],
+      "members": [
+        {
+          "name": "locations",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "resources",
+          "kind": "field",
+          "type": "ResourcePatternResolver"
+        },
+        {
+          "name": "texts",
+          "kind": "method",
+          "type": "Future<Iterable<String>>",
+          "parameters": []
+        }
+      ]
+    },
+    {
       "name": "splashProperties",
       "type": "SplashProperties",
       "types": [
@@ -1624,6 +1732,38 @@
       ]
     },
     {
+      "name": "splashTasksProperties",
+      "type": "SplashTasksProperties",
+      "types": [
+        "SplashTasksProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 25,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "share",
+          "kind": "field",
+          "type": "double"
+        },
+        {
+          "name": "timeout",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
       "name": "springThemes",
       "type": "SpringThemes",
       "types": [
@@ -1637,7 +1777,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 104,
+      "line": 155,
       "injects": [],
       "members": [
         {
@@ -1769,6 +1909,109 @@
       ]
     },
     {
+      "name": "textWarmUp",
+      "type": "TextWarmUp",
+      "types": [
+        "TextWarmUp",
+        "SplashTask"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
+      ],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 129,
+      "injects": [],
+      "members": [
+        {
+          "name": "firstFont",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "fontFamilies",
+          "kind": "field",
+          "type": "Set<String>"
+        },
+        {
+          "name": "fontsChanged",
+          "kind": "field",
+          "type": "Listenable?"
+        },
+        {
+          "name": "layOut",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String text"
+          ]
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "SplashTaskContext task"
+          ]
+        },
+        {
+          "name": "settle",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "sources",
+          "kind": "field",
+          "type": "List<TextWarmUpSource>"
+        }
+      ]
+    },
+    {
+      "name": "textWarmUpProperties",
+      "type": "TextWarmUpProperties",
+      "types": [
+        "TextWarmUpProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 42,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "firstFont",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "resources",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "settle",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
       "name": "themeImageLoader",
       "type": "ThemeImageLoader",
       "types": [
@@ -1781,7 +2024,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 163,
+      "line": 214,
       "injects": [],
       "members": [
         {
@@ -1845,7 +2088,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 120,
+      "line": 171,
       "injects": [],
       "members": [
         {
@@ -1937,7 +2180,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 151,
+      "line": 202,
       "injects": [],
       "members": [
         {

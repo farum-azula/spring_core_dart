@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `SplashTask` beans run while the splash shows, once the beans exist and before the app: the new stage `SplashStage.tasks`, their progress the loader's last share (`spring.flutter.splash.tasks.enabled`, `timeout`, `share`). A task that fails or hangs does not stop the start.
+- `textWarmUp` (`TextWarmUp`, a `SplashTask`, off by default: `spring.flutter.splash.warm-up.text.enabled`): lays out the characters of the app's text while the splash shows, so the Noto fonts for Japanese, Chinese or emoji are downloaded then, not at the first change of the language. The text is the files of `spring.flutter.splash.warm-up.text.resources` (default the messages) and the `TextWarmUpSource` beans.
 - `ThemeText(changeKey:, appear:)`: another `changeKey` plays the change again though the text is the same (the results of a search at every query); `appear` brings the text in the theme's way when it first shows.
 - `motion.overscroll` (`platform`, `none`): `none` turns off the stretch or glow at a scrollable's end for the whole app (Material's stretch distorts the content on Android).
 - `spring.flutter.web.page.swipe-to-close` (`FlutterWebPageProperties`), read by the generator.

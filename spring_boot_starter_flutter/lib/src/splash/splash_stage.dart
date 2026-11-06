@@ -23,6 +23,11 @@ enum SplashStage {
   /// created. The splash shows the start's progress.
   starting,
 
+  /// The beans are created; the `SplashTask` beans run (a font downloaded,
+  /// a cache filled) and the splash's loader follows them. Skipped when
+  /// the app has none.
+  tasks,
+
   /// The context is ready; the splash ends its loader, waits for its
   /// `min-duration`.
   ready,
