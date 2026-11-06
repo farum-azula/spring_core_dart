@@ -15,9 +15,14 @@ Dart, no server, no native code.
 Add the dependency, say where the documents come from, and ask the
 `SearchService` bean:
 
+Not on pub.dev yet; take it from the repository:
+
 ```yaml
 dependencies:
-  spring_search_dart: ^0.7.1
+  spring_search_dart:
+    git:
+      url: https://github.com/farum-azula/spring_core_dart.git
+      path: spring_search_dart
 ```
 
 ```yaml
