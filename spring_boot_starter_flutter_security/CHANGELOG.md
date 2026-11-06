@@ -1,3 +1,7 @@
+## Unreleased
+
+- The package's page on pub.dev links its documentation, [farum-azula.org](https://farum-azula.org) (`documentation` in `pubspec.yaml`).
+
 ## 0.7.1
 
 - **Breaking:** the Feign starter no longer comes through this import (the OAuth2 client stopped re-exporting it): an app with Feign clients lists `spring_boot_starter_feign` and imports it. The package itself now depends on it directly (the web app's transport reads the Feign clients' connect timeout).

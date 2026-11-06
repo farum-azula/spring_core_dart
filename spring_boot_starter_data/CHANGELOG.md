@@ -1,3 +1,7 @@
+## Unreleased
+
+- The package's page on pub.dev links its documentation, [farum-azula.org](https://farum-azula.org) (`documentation` in `pubspec.yaml`).
+
 ## 0.7.1
 
 ### Changes
