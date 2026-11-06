@@ -210,6 +210,27 @@ void main() {
       }
       debugDefaultTargetPlatformOverride = null;
     });
+
+    test('the build is a profile: release, profile or debug', () {
+      expect(buildModeProfile(release: true), 'release');
+      expect(buildModeProfile(release: false, profile: true), 'profile');
+      expect(buildModeProfile(release: false, profile: false), 'debug');
+    });
+
+    testWidgets('application-<build>.properties is read, after the '
+        "platform's", (tester) async {
+      final context = await pumpApp(
+        tester,
+        () => app(
+          resources: {
+            'application-android.properties': 'greeting=Android',
+            'application-debug.properties': 'greeting=Debug',
+          },
+        ),
+      );
+      expect(context.environment.activeProfiles, contains('debug'));
+      expect(context.getBean<Greeter>().greeting, 'Debug');
+    });
   });
 
   group('OS environment', () {

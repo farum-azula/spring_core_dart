@@ -100,12 +100,19 @@ abstract interface class HttpTransport {
 ///
 /// [credentials] matters in the browser only: whether `fetch` sends
 /// cookies to the server (see [FetchCredentials]).
+///
+/// [allowBadCertificates] accepts a certificate that is expired,
+/// self-signed or for another host (`dart:io` only: a browser checks
+/// certificates by itself). For the downloads of the configuration with
+/// `spring.remote.allow-insecure` only; never for an API.
 HttpTransport platformHttpTransport({
   Duration? connectTimeout,
   FetchCredentials credentials = FetchCredentials.sameOrigin,
+  bool allowBadCertificates = false,
 }) => platform.createTransport(
   connectTimeout: connectTimeout,
   credentials: credentials,
+  allowBadCertificates: allowBadCertificates,
 );
 
 /// Whether a browser sends its cookies (and HTTP authentication) with a

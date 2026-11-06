@@ -209,6 +209,37 @@ void main() {
     expect(resolver.getResources('resources:emb/../../emb/*.txt'), isEmpty);
   });
 
+  test('a resources: file knows its path within lib/resources/', () {
+    final root = Directory.systemTemp.createTempSync('cp_context_');
+    addTearDown(() => root.deleteSync(recursive: true));
+    Directory('${root.path}/docs/guide').createSync(recursive: true);
+    File('${root.path}/docs/guide/a.md').writeAsStringSync('a');
+    addTearDown(Resources.addDirectory(root.path));
+    Resources.registerAll(const {'docs/b.md': EmbeddedResource.text('b')});
+    final resolver = PathMatchingResourcePatternResolver();
+    expect(
+      [
+        for (final r in resolver.getResources('resources*:docs/**/*.md'))
+          (r as ContextResource).pathWithinContext,
+      ],
+      containsAll(['docs/guide/a.md', 'docs/b.md']),
+    );
+    expect(
+      (Resources.resolve('resources:docs/guide/a.md') as ContextResource)
+          .pathWithinContext,
+      'docs/guide/a.md',
+    );
+    expect(
+      (Resources.resolve('app/greeting.txt') as ContextResource)
+          .pathWithinContext,
+      'app/greeting.txt',
+    );
+    expect(
+      (Resources.resolve('../x') as ContextResource).pathWithinContext,
+      '../x',
+    );
+  });
+
   test('normalized patterns also find files of added directories', () {
     final root = Directory.systemTemp.createTempSync('cp_pattern_');
     addTearDown(() => root.deleteSync(recursive: true));

@@ -1,0 +1,11 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/*.spring.dart"
+    - build/**
+
+# The width CI checks with `dart format --set-exit-if-changed`.
+formatter:
+  page_width: 80
+  trailing_commas: preserve

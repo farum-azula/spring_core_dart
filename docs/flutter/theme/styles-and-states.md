@@ -287,6 +287,10 @@ spring:
 | `variable` | `$colors.on-tertiary-container` | References and placeholders: `$colors.primary`, `${PORT}`, a shell's `$HOME`, YAML anchors and aliases (`&base`, `*base`) |
 | `type` | `$colors.on-secondary-container` | Dart types: `String`, `Basket`, `int` |
 | `punctuation` | `$colors.on-surface-variant` | Brackets, braces, commas, colons, a list's dash |
+| `inline-text` | the `code` text style's color | Inline code (`` `@Bean()` ``) |
+| `inline-background` | `background` | Inline code's background |
+| `header` | `background` | The header of a block with a title |
+| `title` | `$colors.on-surface-variant` | A block's title and its copy button |
 
 The block itself takes four more properties:
 
@@ -298,17 +302,142 @@ The block itself takes four more properties:
 | `border-width` | `1` | Border width, when `border` is set |
 
 Every property is optional; without `styles.code` the code follows the
-color scheme, so it fits every theme already. A fenced block names its
-language after the backticks: `dart`, `yaml` (`yml`), `properties`, `json`
-and `shell` (`sh`, `bash`, `zsh`, `console`) are colored, any other language is shown in the
-`text` color. A theme of `themes.<name>` overrides only the colors it
-writes, like any other key.
+color scheme, so it fits every theme already. A theme of `themes.<name>`
+overrides only the colors it writes, like any other key.
+
+A fenced block names its language after the backticks (` ```dart `). The
+starter knows no language by itself: what the code is made of comes from
+the theme's `syntax.<language>` (next section). A block in a language no
+theme has is shown in the `text` color.
+
+## The languages of code: `syntax`
+
+`syntax.<language>` splits code into the pieces `styles.code` colors. A
+language is a list of rules, each a regular expression and the kind of
+what it matches, tried in order at each position of the code; the first
+that matches makes a piece:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      syntax:
+        java:
+          aliases: [jav]                    # other names in a fenced block
+          keywords: [class, public, return, new, 'true', 'false', 'null']
+          types: '^[A-Z][A-Za-z0-9_]*[a-z]' # a word that is a type name
+          rules:
+            - { match: '//[^\n]*|/\*[\s\S]*?\*/', kind: comment }
+            - { match: '"(?:\\.|[^"\\\n])*"', kind: string }
+            - { match: '@[A-Za-z_][\w.]*', kind: annotation }
+            - { match: '\b\d+(?:\.\d+)?\b', kind: number }
+            - { match: '[A-Za-z_$][\w$]*', kind: word }
+            - { match: '[{}()\[\];,]', kind: punctuation }
+```
+
+| Property | Meaning |
+|---|---|
+| `rules` | Required. Each `{ match, kind }`. `match` is a regular expression, taken as written (no `$` reference); `^` and `$` are a line's start and end. `kind` is `comment`, `string`, `annotation`, `number`, `key`, `keyword`, `type`, `variable`, `punctuation`, `plain`, or `word` |
+| `keywords` | The words a `word` rule colors as `keyword`. Quote `'true'`, `'false'` and `'null'`, which YAML reads as values |
+| `types` | A regular expression: a word of a `word` rule that matches it is a `type` |
+| `aliases` | Other names of the language in a fenced block (`yml` for `yaml`) |
+
+What no rule matches is plain text. An invalid rule (an unknown kind, a
+regular expression that does not compile, a language without rules)
+stops the start and names the property.
+
+### Languages from a URL
+
+You rarely write a language yourself. The repository
+[farum-azula/themes](https://github.com/farum-azula/themes) has Dart,
+Java, YAML, properties, shell and JSON in one file; download it for every
+theme of the app with `source` on `spring.flutter.theme` itself (see
+[a theme from a URL](properties.md#a-theme-from-a-url)):
+
+```yaml
+spring:
+  flutter:
+    theme:
+      source: github:farum-azula/themes/themes/code.yml@code-v0.1.0
+      themes:
+        neon:
+          syntax:
+            java: { ... }   # a theme may still replace one language
+```
+
+The downloaded values are shared by every theme and lie under your own
+files: a `syntax.<language>` you write wins.
 
 ```dart
 MarkdownView(text, onLink: (href) => launchUrl(Uri.parse(href)));
 MarkdownView.resource('resources:content/docs/beans.md');
 const MarkdownView.code('server:\n  port: 8080', language: 'yaml'); // one block
 ```
+
+A fenced block with a `title` after its language gets a header with the
+title and a button that copies the code:
+
+````markdown
+```dart title="lib/orders.dart"
+@Service()
+class OrderService { ... }
+```
+````
+
+Links take `styles.link.color` (`$colors.primary` by default).
+
+### Callouts
+
+GitHub's callouts are boxes in their kind's color, with the kind's name as
+a title:
+
+```markdown
+> [!WARNING]
+> A missing bean stops the start.
+```
+
+The kinds are `note`, `tip`, `important`, `warning` and `caution`; their
+colors are `styles.callout.<kind>` (by default `primary`, `tertiary`,
+`secondary`, `error`, `error`), and the titles the messages
+`markdown.alert.<kind>` (`Note`, `Tip`, ... without them), so a
+`messages_ja.properties` translates them:
+
+```yaml
+styles:
+  callout:
+    note: $colors.secondary
+    warning: '#FF5C7A'
+```
+
+### The page's headings
+
+`MarkdownOutline` gets the headings of the page a `MarkdownView` (or the
+navigation's `RouteContentView`) shows, each with GitHub's anchor
+(`## Bean methods` is `#bean-methods`), for an "On this page" list;
+`show(id)` scrolls to one. A link to `#id` in the page scrolls by itself,
+and an address with an anchor (`/docs/beans#scopes`) opens at its heading.
+
+```dart
+final outline = MarkdownOutline();
+
+RouteContentView(outline: outline);
+ListenableBuilder(
+  listenable: outline,
+  builder: (context, _) => Column(children: [
+    for (final heading in outline.headings.where((h) => h.level == 2))
+      TextButton(
+        onPressed: () => outline.show(heading.id),
+        child: Text(heading.text),
+      ),
+  ]),
+);
+```
+
+### Languages of resources
+
+`MarkdownView.resource('resources:content/beans.md')` shows
+`beans.ja.md` instead when the app's language is Japanese and the file
+exists, and changes with the language.
 
 `MarkdownView.code` shows a single block of code exactly as a fenced block
 of a Markdown page, so every code sample of an app shares one look. The

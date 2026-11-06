@@ -37,3 +37,23 @@ List<String> platformProfiles() {
     TargetPlatform.fuchsia => const ['fuchsia'],
   };
 }
+
+/// The profile of the build: `release` in a release build, `profile` in a
+/// profile build, `debug` otherwise. `SpringApplicationWidget` adds it
+/// after the platform's, so `application-release.yml` configures what
+/// users run and wins over `application-web.yml`:
+///
+/// ```yaml
+/// # lib/resources/application-release.yml
+/// logging:
+///   level:
+///     root: warn
+/// ```
+String buildModeProfile({
+  bool release = kReleaseMode,
+  bool profile = kProfileMode,
+}) => release
+    ? 'release'
+    : profile
+    ? 'profile'
+    : 'debug';

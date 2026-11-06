@@ -542,10 +542,15 @@ final class ThemeScope {
       _error('References form a cycle: ${chain.join(' -> ')}.');
       return ValueKind.text;
     }
+    final section = entry.key.split('.').first;
+    // The languages' rules are regular expressions, and the glyphs of a
+    // text change any characters: taken as written.
+    if (section == 'syntax' || entry.key.split('.').last == 'glyphs') {
+      return _memo[entry.key] = ValueKind.text;
+    }
     _stack.add(entry);
     var kind = _classify(entry.value.trim(), entry);
     _stack.removeLast();
-    final section = entry.key.split('.').first;
     if (section == 'colors' && entry.key.split('.').length == 2) {
       if (kind != ValueKind.color) {
         _error('${entry.origin}: a color is expected, found ${kind.label}.');

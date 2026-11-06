@@ -2,6 +2,10 @@ import 'package:spring_core_dart_generator/src/dart_names.dart';
 import 'package:spring_core_dart_generator/src/did_you_mean.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 
+/// The keys of a `loaders.<name>` that every kind has (canonical): they are
+/// read by the starter, not part of a kind's props.
+const loaderOwnKeys = {'kind', 'phases', 'tracks', 'web', 'websha256'};
+
 /// The loader kinds a theme may name besides the built-in ones, by canonical
 /// name: those of `@ThemeLoaderKind` classes in the package itself (their
 /// props class is generated here) and in its dependencies (known only).
@@ -357,7 +361,7 @@ final class TypedThemeKeys {
       final leaves = <String, _Leaf>{};
       for (final MapEntry(key: keyCanon, value: child)
           in node.children.entries) {
-        if (const {'kind', 'phases', 'web'}.contains(keyCanon)) {
+        if (loaderOwnKeys.contains(keyCanon)) {
           continue;
         }
         _flattenLoader(scope, child, [child.spelling], leaves);

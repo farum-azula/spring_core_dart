@@ -17,6 +17,9 @@ import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
 import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
 import 'package:spring_boot_starter_flutter/src/properties/properties_beans.dart';
+import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts.dart';
+import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts_customizer.dart';
+import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_source.dart';
@@ -40,7 +43,10 @@ const _source =
 ///   the themes that come from a URL (`themes.<name>.source`);
 /// - the app's files: a `FileStore` (`platformFileStore`: the device's
 ///   directories, IndexedDB in a browser) and the `FileTemplate` on it
-///   (`fileTemplate`), each only when the app declares none.
+///   (`fileTemplate`), each only when the app declares none;
+/// - the keyboard shortcuts of `spring.flutter.shortcuts.*` and the
+///   `@Shortcut` methods (`keyboardShortcuts`), around the app's navigator
+///   (`keyboardShortcutsCustomizer`).
 ///
 /// Logins and secrets (the platform's secure storage, the login window)
 /// are `spring_boot_starter_flutter_security`'s.
@@ -76,6 +82,25 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
         const BeanReadsInterceptor(),
       ),
     ),
+    BeanDefinition<KeyboardShortcuts>(
+      name: 'keyboardShortcuts',
+      types: const [
+        KeyboardShortcuts,
+        BeanPostProcessor,
+        BeanFactoryAware,
+        SmartInitializingSingleton,
+      ],
+      source: _source,
+      create: (r) => KeyboardShortcuts(r.dependency<ConfigurableEnvironment>()),
+    ),
+    BeanDefinition<KeyboardShortcutsCustomizer>(
+      name: 'keyboardShortcutsCustomizer',
+      types: const [KeyboardShortcutsCustomizer, FlutterAppCustomizer],
+      source: _source,
+      create: (r) => KeyboardShortcutsCustomizer(
+        r.dependency<KeyboardShortcuts>(),
+      ),
+    ),
     BeanDefinition<SpringThemes>(
       name: 'springThemes',
       types: const [SpringThemes, ChangeNotifier, Listenable],
@@ -88,6 +113,8 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
         light: r.optionalDependency<ThemeData>(qualifier: 'theme'),
         dark: r.optionalDependency<ThemeData>(qualifier: 'darkTheme'),
         cupertino: r.optionalDependency<CupertinoThemeData>(),
+        addresses:
+            r.optionalDependency<RemoteAddresses>() ?? const RemoteAddresses(),
       ),
     ),
     BeanDefinition<ThemeSelection>(
@@ -141,6 +168,9 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
         themes: r.dependency<SpringThemes>(),
         files: r.dependency<FileTemplate>(),
         transport: r.optionalDependency<HttpTransport>(),
+        allowInsecure: RemoteAddressPolicy.of(
+          r.dependency<ConfigurableEnvironment>(),
+        ).allowInsecure,
       ),
       preDestroy: (loader) => loader.dispose(),
     ),

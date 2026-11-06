@@ -1,7 +1,7 @@
 part of 'config_editor.dart';
 
 // The keys each built-in loader kind takes (the starter's
-// `ThemeLoaderSpec`), besides `kind`, `phases` and `web`.
+// `ThemeLoaderSpec`), besides the keys every loader has.
 const _builtInLoaderKeys = {
   'spinner': ['color', 'size', 'stroke', 'track', 'animation'],
   'dots': ['color', 'size', 'count', 'gap', 'animation'],
@@ -10,7 +10,8 @@ const _builtInLoaderKeys = {
   'skeleton': ['base', 'highlight', 'radius', 'shimmer'],
 };
 
-const _loaderCommonKeys = ['kind', 'phases', 'web'];
+// The keys every loader has, as the generator's `loaderOwnKeys`.
+const _loaderCommonKeys = ['kind', 'phases', 'tracks', 'web', 'web-sha256'];
 
 // Loaders and the splash in the editor: the keys a kind takes, the names
 // `splash.loader` and `splash.animation` refer to, and the `web:` file.

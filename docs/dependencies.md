@@ -98,6 +98,7 @@ dart run tool/check_dependencies.dart            # the pub workspace
 (cd spring_boot_starter_flutter && flutter pub get)
 (cd spring_boot_starter_flutter_security && flutter pub get)
 (cd example/flutter_guide && flutter pub get)
+(cd example/themes/neon_ui && flutter pub get)
 (cd example/themes/neon && flutter pub get)
 (cd example/themes/material && flutter pub get)
 (cd example/themes/cupertino && flutter pub get)
@@ -208,6 +209,7 @@ in its `pubspec.yaml`.
 | `spring_core_dart_generator` | The code generator (`build_runner` builder) | yes | `spring_core_dart`, `analyzer`, `build`, `code_builder`, `dart_style`, `glob`, `path`, `pub_semver`, `source_gen`, `yaml` | `spring_boot_dart`, `build_test`, `coverage`, `package_config`, `test` |
 | `spring_boot_dart` | Spring Boot: `@SpringBootApplication`, auto-configuration | yes | `spring_core_dart` | `build_runner`, `spring_core_dart_generator`, `test` |
 | `spring_web_dart` | Spring Web: `@GetMapping`, `ResponseEntity`, server-sent events, HTTP and WebSocket client transports | yes | `spring_core_dart` | `test` |
+| `spring_search_dart` | Full-text search: `SearchService`, documents from `SearchDocumentSource` beans and Markdown resources, analyzers per language, BM25 with prefixes and typos, highlights | yes | `spring_boot_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_logging` | Logging: console, files, `logging.*` properties (the base starter) | yes | `spring_boot_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_scheduling` | `@Scheduled`, `TaskScheduler` | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `clock` | same as logging, plus `fake_async` |
 | `spring_boot_starter_cache` | `@Cacheable`, `@CachePut`, `@CacheEvict`, `CacheManager` | yes | `spring_boot_dart`, `spring_boot_starter_logging` | same as logging |
@@ -227,7 +229,7 @@ in its `pubspec.yaml`.
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
 | `neon_books_server` (`example/server_guide`) | The server guide: a bookstore's server using every feature | no | the web, security, Feign, WebSocket, cache and scheduling starters (which bring the rest) | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
 | `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter_security` (which brings the Flutter starter, the OAuth2 client and `spring_security_core`), the Feign, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test`, `integration_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
-| `neon_ui` ([farum-azula/themes](https://github.com/farum-azula/themes), `packages/neon_ui`) | The NEON design system: widgets and a YAML theme for apps of type `widgets`; taken by git at a release tag | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
+| `neon_ui` (`example/themes/neon_ui`) | The NEON design system: widgets and a YAML theme for apps of type `widgets` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
 | `theme_showcase_neon` (`example/themes/neon`) | The NEON theme showcase: an app of type `widgets` on `neon_ui` | no | `flutter` (SDK), `neon_ui`, `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
 | `theme_showcase_material` (`example/themes/material`) | The Material theme showcase: every part of the theme on a `MaterialApp` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
 | `theme_showcase_cupertino` (`example/themes/cupertino`) | The Cupertino theme showcase: the theme on a `CupertinoApp` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/navigation.dart';
@@ -23,10 +25,28 @@ import 'package:spring_boot_starter_flutter_navigation/src/route_template.dart';
 class RouteContentView extends StatelessWidget {
   /// The content of the widget's screen; [onLink] gets the links that are
   /// no file of the site (an `https` address).
-  const RouteContentView({this.onLink, this.selectable = true, super.key});
+  const RouteContentView({
+    this.onLink,
+    this.selectable = true,
+    this.outline,
+    this.scrollToTop = true,
+    super.key,
+  });
+
+  /// Whether another page of the route (another address, not an `#anchor`
+  /// or a translation of the same page) starts at the top of the
+  /// scrollable it is in, as a browser opens a page. The screen and its
+  /// scrollable stay; the position goes back the theme's way
+  /// (`motion.scroll-to-top`: 400ms ease-out-cubic by default, `none` to
+  /// jump).
+  final bool scrollToTop;
 
   /// Called with a link to no Markdown file of the site.
   final void Function(String href)? onLink;
+
+  /// Gets the page's headings ("On this page"); the address's `#anchor`
+  /// scrolls to its heading either way.
+  final MarkdownOutline? outline;
 
   /// Whether the text can be selected.
   final bool selectable;
@@ -60,29 +80,58 @@ class RouteContentView extends StatelessWidget {
     String content,
     String? language,
   ) {
+    final file = fileOf(SpringScope.of(context), navigation, content, language);
+    return _FragmentScroll(
+      outline: outline,
+      fragment: route.uri.fragment,
+      file: file,
+      page: scrollToTop ? content : null,
+      builder: (outline) => MarkdownView.resource(
+        file,
+        selectable: selectable,
+        outline: outline,
+        onLink: (href) {
+          final target = contentAddress(navigation, file, href);
+          if (target != null) {
+            route.go(target);
+          } else {
+            onLink?.call(href);
+          }
+        },
+      ),
+    );
+  }
+
+  /// The file [content] (a route's `content` for its address) shows in
+  /// [language]: `<path>.md`, or `<path>/index.md` when the address is a
+  /// folder; its translation `<file>.<language>.md` next to it when there
+  /// is one and [language] is not the first of the navigation's.
+  static String fileOf(
+    ResourceLoader resources,
+    Navigation navigation,
+    String content,
+    String? language,
+  ) {
     var file = content;
+    if (file.endsWith('.md') &&
+        !file.endsWith('/index.md') &&
+        !resources.getResource(file).exists()) {
+      final folder =
+          '${file.substring(0, file.length - '.md'.length)}/index.md';
+      if (resources.getResource(folder).exists()) {
+        file = folder;
+      }
+    }
     if (language != null &&
         language != navigation.languages.firstOrNull &&
-        content.endsWith('.md')) {
+        file.endsWith('.md')) {
       final translation =
-          '${content.substring(0, content.length - '.md'.length)}.$language.md';
-      if (SpringScope.of(context).getResource(translation).exists()) {
+          '${file.substring(0, file.length - '.md'.length)}.$language.md';
+      if (resources.getResource(translation).exists()) {
         file = translation;
       }
     }
-    return MarkdownView.resource(
-      file,
-      key: ValueKey(file),
-      selectable: selectable,
-      onLink: (href) {
-        final target = contentAddress(navigation, content, href);
-        if (target != null) {
-          route.go(target);
-        } else {
-          onLink?.call(href);
-        }
-      },
-    );
+    return file;
   }
 
   /// The address of the site that [href], a link of the Markdown resource
@@ -148,4 +197,111 @@ class RouteContentView extends StatelessWidget {
   }
 
   static String? _fragment(Uri uri) => uri.hasFragment ? uri.fragment : null;
+}
+
+// Scrolls to the address's [fragment] once the headings of [file] are
+// known, again when the address or the file changes.
+class _FragmentScroll extends StatefulWidget {
+  const _FragmentScroll({
+    required this.outline,
+    required this.fragment,
+    required this.file,
+    required this.page,
+    required this.builder,
+  });
+
+  // The page shown, whatever its language; `null` when another page keeps
+  // the scroll position.
+  final String? page;
+
+  final MarkdownOutline? outline;
+  final String fragment;
+  final String file;
+  final Widget Function(MarkdownOutline outline) builder;
+
+  @override
+  State<_FragmentScroll> createState() => _FragmentScrollState();
+}
+
+class _FragmentScrollState extends State<_FragmentScroll> {
+  final _own = MarkdownOutline();
+  MarkdownOutline? _listened;
+  String? _done;
+
+  MarkdownOutline get _outline => widget.outline ?? _own;
+
+  @override
+  void initState() {
+    super.initState();
+    _listen();
+  }
+
+  @override
+  void didUpdateWidget(_FragmentScroll oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _listen();
+    final page = widget.page;
+    if (page != null &&
+        oldWidget.page != null &&
+        page != oldWidget.page &&
+        widget.fragment.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        final position = Scrollable.maybeOf(context)?.position;
+        if (position == null || !position.hasContentDimensions) {
+          return;
+        }
+        final motion = SpringTheme.maybeOf(context)?.scrollToTop;
+        final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+        if (motion == null || reduce || motion.duration == Duration.zero) {
+          position.jumpTo(position.minScrollExtent);
+        } else {
+          unawaited(
+            position.animateTo(
+              position.minScrollExtent,
+              duration: motion.duration,
+              curve: motion.curve,
+            ),
+          );
+        }
+      });
+    }
+    if (oldWidget.fragment != widget.fragment ||
+        oldWidget.file != widget.file) {
+      _done = null;
+      _scroll();
+    }
+  }
+
+  void _listen() {
+    if (identical(_listened, _outline)) {
+      return;
+    }
+    _listened?.removeListener(_scroll);
+    _listened = _outline..addListener(_scroll);
+  }
+
+  void _scroll() {
+    final wanted = '${widget.file}#${widget.fragment}';
+    if (widget.fragment.isEmpty || _done == wanted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _outline.show(widget.fragment)) {
+        _done = wanted;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _listened?.removeListener(_scroll);
+    _own.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_outline);
 }

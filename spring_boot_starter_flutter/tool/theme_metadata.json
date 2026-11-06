@@ -1,6 +1,6 @@
 {
   "generatedBy": "tool/theme_metadata.dart",
-  "flutterVersion": "3.47.7",
+  "flutterVersion": "3.47.9",
   "states": [
     "default",
     "hovered",
@@ -586,9 +586,8 @@
       "type": "text",
       "states": false,
       "values": [],
-      "description": "Download the theme from an https URL or `github:owner/repo/path@ref`.",
-      "default": null,
-      "scope": "theme"
+      "description": "Download the theme from an https URL or `github:owner/repo/path@ref`. Under `spring.flutter.theme` itself, the values every theme shares (the languages of code blocks, say), under what your files set.",
+      "default": null
     },
     {
       "name": "source-sha256",
@@ -596,8 +595,7 @@
       "states": false,
       "values": [],
       "description": "Refuse a download that does not have this SHA-256 digest (64 hexadecimal digits).",
-      "default": null,
-      "scope": "theme"
+      "default": null
     },
     {
       "name": "refresh",
@@ -605,8 +603,7 @@
       "states": false,
       "values": [],
       "description": "Look at the address again in the background when the cache is older than this.",
-      "default": null,
-      "scope": "theme"
+      "default": null
     },
     {
       "name": "brightness",
@@ -2134,14 +2131,14 @@
       "type": "choice",
       "states": false,
       "values": [
+        "none",
         "platform",
         "fade-upwards",
         "zoom",
         "cupertino",
-        "fade",
-        "none"
+        "fade"
       ],
-      "description": "The page transition of every screen: none by default; the router of spring_boot_starter_flutter_navigation follows it in every app type, and Material's page routes too. A kind alone, or a map of type, duration and curve.",
+      "description": "How a new screen comes in, on every platform: a kind, or a map of `type`, `duration`, `curve`.",
       "default": "none"
     },
     {
@@ -2149,14 +2146,14 @@
       "type": "choice",
       "states": false,
       "values": [
+        "none",
         "platform",
         "fade-upwards",
         "zoom",
         "cupertino",
-        "fade",
-        "none"
+        "fade"
       ],
-      "description": "The kind of the page transition, in the map form.",
+      "description": "The map form's kind.",
       "default": "none"
     },
     {
@@ -2164,7 +2161,7 @@
       "type": "duration",
       "states": false,
       "values": [],
-      "description": "How long the page transition takes; the kind's own when not set.",
+      "description": "How long the transition takes.",
       "default": null
     },
     {
@@ -2172,8 +2169,144 @@
       "type": "curve",
       "states": false,
       "values": [],
-      "description": "The curve of the page transition; the kind's own when not set.",
+      "description": "The curve of the transition.",
       "default": null
+    },
+    {
+      "name": "motion.text-change",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "none",
+        "fade",
+        "morph"
+      ],
+      "description": "What a `ThemeText` does when its text changes (another language): at once, a cross-fade, or `morph`, character after character from the start of the line. A kind, or a map of `type`, `duration`, `curve`, `stagger`.",
+      "default": "none"
+    },
+    {
+      "name": "motion.text-change.type",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "none",
+        "fade",
+        "morph"
+      ],
+      "description": "The map form's kind.",
+      "default": "none"
+    },
+    {
+      "name": "motion.text-change.keep-unchanged",
+      "type": "true / false",
+      "states": false,
+      "values": [],
+      "description": "For `morph`: `true` keeps the characters that are the same in the old and the new text, so only the changed part runs through glyphs; `false` runs the wave over the whole line.",
+      "default": "false"
+    },
+    {
+      "name": "motion.text-change.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How long the whole change takes.",
+      "default": "450ms"
+    },
+    {
+      "name": "motion.text-change.curve",
+      "type": "curve",
+      "states": false,
+      "values": [],
+      "description": "The curve of the change.",
+      "default": "ease-out"
+    },
+    {
+      "name": "motion.text-change.stagger",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "For `morph`, how much later each character starts than the one before it.",
+      "default": "12ms"
+    },
+    {
+      "name": "motion.text-change.glyphs",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "For `morph`: the characters a changing character runs through, taken as written (no `$` references).",
+      "default": "▓▒░<>/\\|=+*#%&@$?!01"
+    },
+    {
+      "name": "motion.text-change.glyph-duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "For `morph`: how long each glyph shows before the next.",
+      "default": "40ms"
+    },
+    {
+      "name": "motion.scroll-to-top",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "How a screen goes back to its top when it shows another page (`RouteContentView`): `none` jumps; else a map of `duration` and `curve`.",
+      "default": "400ms ease-out-cubic"
+    },
+    {
+      "name": "motion.scroll-to-top.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How long the scroll to the top takes.",
+      "default": "400ms"
+    },
+    {
+      "name": "motion.scroll-to-top.curve",
+      "type": "curve",
+      "states": false,
+      "values": [],
+      "description": "The curve of the scroll to the top.",
+      "default": "ease-out-cubic"
+    },
+    {
+      "name": "motion.content-change",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "none",
+        "fade",
+        "fade-up"
+      ],
+      "description": "How a part of a screen shows other content in its place (another page in `RouteContentView`, `ContentChange`): at once, a cross-fade, or a cross-fade rising a little; a kind of the app's own with `ContentTransitions.register`. A kind, or a map of `type`, `duration`, `curve`.",
+      "default": "none"
+    },
+    {
+      "name": "motion.content-change.type",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "none",
+        "fade",
+        "fade-up"
+      ],
+      "description": "The map form's kind; a kind of the app's own too.",
+      "default": "none"
+    },
+    {
+      "name": "motion.content-change.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How long the change takes.",
+      "default": "200ms"
+    },
+    {
+      "name": "motion.content-change.curve",
+      "type": "curve",
+      "states": false,
+      "values": [],
+      "description": "The curve of the change.",
+      "default": "ease-out"
     },
     {
       "name": "motion.durations.*",
@@ -2232,7 +2365,7 @@
       "type": "text",
       "states": false,
       "values": [],
-      "description": "The picture: an asset path, an https URL, or an http URL with `allow-http`. Required.",
+      "description": "The picture: an asset path, an https URL or a `github:owner/repo/path@ref` address (`http` only with `spring.remote.allow-insecure`). Required.",
       "default": null
     },
     {
@@ -2274,14 +2407,6 @@
       "values": [],
       "description": "An asset shown while a network image is not there yet.",
       "default": null
-    },
-    {
-      "name": "background.image.allow-http",
-      "type": "true / false",
-      "states": false,
-      "values": [],
-      "description": "Allows an `http://` source. Without it an `http://` source stops the start.",
-      "default": "false"
     },
     {
       "name": "background.image.fit",
@@ -2415,7 +2540,7 @@
       "type": "text",
       "states": false,
       "values": [],
-      "description": "The picture: an asset path, an https URL, or an http URL with `allow-http`. Required.",
+      "description": "The picture: an asset path, an https URL or a `github:owner/repo/path@ref` address (`http` only with `spring.remote.allow-insecure`). Required.",
       "default": null
     },
     {
@@ -2457,14 +2582,6 @@
       "values": [],
       "description": "An asset shown while a network image is not there yet.",
       "default": null
-    },
-    {
-      "name": "background.screens.*.image.allow-http",
-      "type": "true / false",
-      "states": false,
-      "values": [],
-      "description": "Allows an `http://` source. Without it an `http://` source stops the start.",
-      "default": "false"
     },
     {
       "name": "background.screens.*.image.fit",
@@ -2788,8 +2905,93 @@
       "type": "text",
       "states": false,
       "values": [],
-      "description": "A kind of the app's own: the HTML file that shows it before Flutter runs (the web page loader).",
+      "description": "A kind of the app's own: the HTML that shows it before Flutter runs (the web page loader). A path below `lib/resources/` (the app's or a package's), or an address the build downloads: `https://...` or `github:owner/repo/path@ref`.",
       "default": null
+    },
+    {
+      "name": "loaders.*.web-sha256",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "For a downloaded `web`: the SHA-256 (64 hexadecimal digits) the file must have; another file is refused.",
+      "default": "none"
+    },
+    {
+      "name": "loaders.*.tracks.*.follows",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "What the track (a value from 0 to 1 a loader reads each frame) follows: `time` (the clock), `stage` (from a stage of the start on), `progress` (the start's progress, smoothed), or a driver of the app's own (`LoaderTrackDrivers.register`).",
+      "default": "time"
+    },
+    {
+      "name": "loaders.*.tracks.*.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "A time or stage track: how long one run takes.",
+      "default": null
+    },
+    {
+      "name": "loaders.*.tracks.*.curve",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The curve of the track: a name or four numbers.",
+      "default": "linear"
+    },
+    {
+      "name": "loaders.*.tracks.*.repeat",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "none",
+        "loop",
+        "reverse"
+      ],
+      "description": "A time or stage track: once, looping, or back and forth.",
+      "default": "none"
+    },
+    {
+      "name": "loaders.*.tracks.*.delay",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "A time or stage track: how long it waits before it starts.",
+      "default": "0"
+    },
+    {
+      "name": "loaders.*.tracks.*.from",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "page",
+        "engine",
+        "splash",
+        "starting",
+        "ready",
+        "exit",
+        "app"
+      ],
+      "description": "A stage track: the stage it starts at.",
+      "default": null
+    },
+    {
+      "name": "loaders.*.tracks.*.smoothing",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "A progress track: how fast it catches up with the progress (a time constant), so it never jumps.",
+      "default": "300ms"
+    },
+    {
+      "name": "loaders.*.tracks.*.*",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "A track of a driver of the app's own takes the keys it declares.",
+      "default": null,
+      "open": true
     },
     {
       "name": "loaders.*.*",
@@ -2813,7 +3015,7 @@
       "type": "text",
       "states": false,
       "values": [],
-      "description": "The picture: an asset path, an https URL, or an http URL with `allow-http`. Required.",
+      "description": "The picture: an asset path, an https URL or a `github:owner/repo/path@ref` address (`http` only with `spring.remote.allow-insecure`). Required.",
       "default": null
     },
     {
@@ -2855,14 +3057,6 @@
       "values": [],
       "description": "An asset shown while a network image is not there yet.",
       "default": null
-    },
-    {
-      "name": "splash.background.image.allow-http",
-      "type": "true / false",
-      "states": false,
-      "values": [],
-      "description": "Allows an `http://` source. Without it an `http://` source stops the start.",
-      "default": "false"
     },
     {
       "name": "splash.background.image.fit",
@@ -3046,6 +3240,66 @@
       "values": [],
       "description": "When the last phase of a loader with phases of its own starts, the background, the logo and the title go at once: the loader plays its way out over the app, which is built under the splash.",
       "default": "false"
+    },
+    {
+      "name": "syntax.*.rules",
+      "type": "list of maps",
+      "states": false,
+      "values": [],
+      "description": "The rules, tried in order at each position of the code: each `{ match, kind }`, a regular expression (`^` and `$` are a line's start and end) and the kind of what it matches. Required.",
+      "default": null
+    },
+    {
+      "name": "syntax.*.rules.*.match",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "A regular expression, taken as written (no `$` reference). An invalid one stops the start.",
+      "default": null
+    },
+    {
+      "name": "syntax.*.rules.*.kind",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "comment",
+        "string",
+        "annotation",
+        "number",
+        "key",
+        "keyword",
+        "type",
+        "variable",
+        "punctuation",
+        "plain",
+        "word"
+      ],
+      "description": "What a match is: a piece colored by `styles.code.<kind>`, or `word`, a keyword when it is in `keywords`, a type when it matches `types`, plain otherwise.",
+      "default": null
+    },
+    {
+      "name": "syntax.*.keywords",
+      "type": "list of texts",
+      "states": false,
+      "values": [],
+      "description": "The words a `word` rule colors as keywords.",
+      "default": "none"
+    },
+    {
+      "name": "syntax.*.types",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "A regular expression a word of a `word` rule must match to be a type name.",
+      "default": "none"
+    },
+    {
+      "name": "syntax.*.aliases",
+      "type": "list of texts",
+      "states": false,
+      "values": [],
+      "description": "Other names of the language in a fenced block's info (`yml`, `bash`).",
+      "default": "none"
     },
     {
       "name": "tokens.*",

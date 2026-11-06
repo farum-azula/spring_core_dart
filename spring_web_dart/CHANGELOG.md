@@ -1,3 +1,7 @@
+## Unreleased
+
+- `platformHttpTransport(allowBadCertificates:)` accepts a certificate that is expired, self-signed or for another host (`dart:io` only), for the configuration's downloads with `spring.remote.allow-insecure`.
+
 ## 0.7.1
 
 - `MappingDescriptions`: a bean that describes the addresses a part of the application answers (the web server's handlers, an app's screens), for the actuator's `mappings` endpoint and the editor.

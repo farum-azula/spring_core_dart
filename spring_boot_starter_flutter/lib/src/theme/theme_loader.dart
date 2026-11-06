@@ -1,4 +1,6 @@
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stage.dart';
+import 'package:spring_boot_starter_flutter/src/theme/loader_tracks.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart'
@@ -47,6 +49,23 @@ final class LoaderValues {
     _p.propertyName(_path(key)),
     '',
     '$expected (the loader needs it)',
+  );
+
+  /// Throws a [ThemePropertyException] that names the property [key]: its
+  /// value is not [expected]. For readers of an application's own (a
+  /// `LoaderTrackDriver`).
+  Never fail(String key, String expected) => throw ThemePropertyException(
+    _p.propertyName(_path(key)),
+    _p[_path(key)] ?? '',
+    expected,
+  );
+
+  /// The value [key] as one of [values] by name (`-`, `_` and case do not
+  /// matter), or `null` when the theme does not give it.
+  T? choiceOrNull<T extends Enum>(String key, List<T> values) => _p.read(
+    _path(key),
+    (v) => ThemeValues.enumValue(values, v),
+    'one of ${[for (final v in values) v.name].join(', ')}',
   );
 
   /// The color [key]: a color or a `{ color, mix, alpha }` object.
@@ -290,6 +309,7 @@ final class ThemeLoaderSpec {
     this.look,
     this.animation,
     this.web,
+    this.tracks,
   );
 
   /// The built-in kinds.
@@ -310,6 +330,7 @@ final class ThemeLoaderSpec {
        },
        values = null,
        web = null,
+       tracks = const {},
        animation = animation ?? _defaultAnimation(kind, look);
 
   /// The loader's name in canonical form (`neondoors`).
@@ -333,6 +354,11 @@ final class ThemeLoaderSpec {
   /// The `web` key: the HTML file that shows the kind before Flutter runs
   /// (the generator's page loader reads it); `null` when not given.
   final String? web;
+
+  /// The loader's tracks (`tracks.<name>`): values from 0 to 1 led by
+  /// time, a stage or the progress, which the kind reads with
+  /// `LoaderFrame.track` (see [LoaderTrackDrivers]).
+  final Map<String, LoaderTrack> tracks;
 
   /// Whether the loader has phases of its own (more than the one a
   /// built-in kind has).
@@ -380,7 +406,7 @@ final class ThemeLoaderSpec {
     'skeleton': ['base', 'highlight', 'radius', 'shimmer'],
   };
 
-  static const _common = ['kind', 'web'];
+  static const _common = ['kind', 'web', 'web-sha256', 'tracks'];
   static const _phaseKeys = ['progress', 'min-duration'];
 
   /// Reads `loaders.<name>` of [p]. Throws a [ThemePropertyException] for
@@ -418,6 +444,7 @@ final class ThemeLoaderSpec {
       checkThemeKeys(p, base, [
         ..._common,
         'phases',
+        'tracks',
         ...allowed,
       ], "a '$kindText' loader");
     }
@@ -431,6 +458,7 @@ final class ThemeLoaderSpec {
       null,
       null,
       webText,
+      LoaderTrackDrivers.parseAll(LoaderValues(p, base)),
     );
     registration.makeProps(values); // reads the keys the kind needs now
     return spec;
@@ -495,6 +523,7 @@ final class ThemeLoaderSpec {
       look,
       moving,
       web,
+      LoaderTrackDrivers.parseAll(LoaderValues(p, base)),
     );
   }
 
@@ -556,7 +585,24 @@ final class LoaderFrame<P> {
     this.progress,
     this.reduceMotion = false,
     this.elapsed = Duration.zero,
+    this.stage,
+    this.tracks = const {},
   });
+
+  /// The start's stage (`page` to `app`); `null` for a loader that is not
+  /// the splash's.
+  final SplashStage? stage;
+
+  /// Each track's value, 0 to 1, by canonical name.
+  final Map<String, double> tracks;
+
+  /// The value of the track [name], 0 to 1. Throws a [StateError] for a
+  /// track the loader does not have.
+  double track(String name) =>
+      tracks[ThemeValues.canonical(name)] ??
+      (throw StateError(
+        "The loader has no track '$name'; it has ${tracks.keys.join(', ')}.",
+      ));
 
   /// How long the loader has been running; for movement that is not a
   /// phase (a flicker). Zero when the system asks for less motion.
@@ -712,6 +758,8 @@ abstract final class ThemeLoaderKinds {
     progress: frame.progress,
     reduceMotion: frame.reduceMotion,
     elapsed: frame.elapsed,
+    stage: frame.stage,
+    tracks: frame.tracks,
   );
 
   /// The kind [name] (any case, `-`, `_`); `null` when none is

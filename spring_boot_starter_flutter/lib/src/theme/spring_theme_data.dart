@@ -1,5 +1,7 @@
+import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_background.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_loader.dart';
@@ -311,6 +313,23 @@ final class SpringThemeData {
     );
     final transition = PageTransitionSpec.parseAt(p, 'motion.pagetransition');
     pageTransitions = transition ?? const PageTransitionSpec();
+    textChange =
+        TextChangeSpec.parseAt(p, 'motion.textchange') ??
+        const TextChangeSpec();
+    contentChange =
+        ContentChangeSpec.parseAt(p, 'motion.contentchange') ??
+        const ContentChangeSpec();
+    scrollToTop = switch (p['motion.scrolltotop']) {
+      final kind? when ThemeValues.canonical(kind) == 'none' => null,
+      final kind? => throw ThemePropertyException(
+        p.propertyName('motion.scrolltotop'),
+        kind,
+        'none, or a map of duration and curve',
+      ),
+      null when p.children('motion.scrolltotop').isNotEmpty =>
+        AnimationSpec.parseAt(p, 'motion.scrolltotop'),
+      null => defaultScrollToTop,
+    };
     // Not set: none, for Material's own page routes too.
     pageTransition = switch (transition?.type) {
       null => const _NoTransition(),
@@ -352,6 +371,12 @@ final class SpringThemeData {
     background = ThemeBackgroundData.parse(p);
     for (final name in p.children('loaders')) {
       loaders[name] = ThemeLoaderSpec.parse(p, name);
+    }
+    for (final name in p.children('syntax')) {
+      final language = CodeSyntax.parse(p, name);
+      for (final alias in [name, ...language.aliases]) {
+        _syntax[ThemeValues.canonical(alias)] = language;
+      }
     }
     splash = ThemeSplashData.parse(p);
     _readImageTokens(p);
@@ -416,6 +441,7 @@ final class SpringThemeData {
     'animations',
     'background',
     'loaders',
+    'syntax',
   ];
 
   static const _textSpecProperties = {
@@ -444,13 +470,17 @@ final class SpringThemeData {
       switch (segments.first) {
         case 'motion'
             when second != 'pagetransition' &&
+                second != 'textchange' &&
+                second != 'contentchange' &&
+                second != 'scrolltotop' &&
                 second != 'durations' &&
                 second != 'curves':
           throw ThemePropertyException(
             p.propertyName(key),
             p.values[key]!,
-            'motion.page-transition, motion.durations.<name> or '
-            'motion.curves.<name>',
+            'motion.page-transition, motion.text-change, '
+            'motion.content-change, motion.scroll-to-top, '
+            'motion.durations.<name> or motion.curves.<name>',
           );
         case 'typography'
             when segments.length == 3 &&
@@ -482,7 +512,11 @@ final class SpringThemeData {
     final resolved = config.nameOf(name) ?? name;
     return SpringThemeData._(
       resolved,
-      ThemeProperties(resolved, config.resolve(resolved)),
+      ThemeProperties(
+        resolved,
+        config.resolve(resolved),
+        addresses: config.addresses,
+      ),
     );
   }
 
@@ -563,6 +597,26 @@ final class SpringThemeData {
   /// it; [pageTransition] is the same for Material's page routes.
   late final PageTransitionSpec pageTransitions;
 
+  /// What a [ThemeText] does when its text changes (another language),
+  /// from `motion.text-change`; none when it is not written.
+  late final TextChangeSpec textChange;
+
+  /// How a part of a screen shows other content in its place
+  /// (`ContentChange`), from `motion.content-change`; none when it is not
+  /// written.
+  late final ContentChangeSpec contentChange;
+
+  /// How a screen goes back to its top when it shows another page
+  /// (`RouteContentView`), from `motion.scroll-to-top`: an animation, or
+  /// `null` (`none`) to jump. [defaultScrollToTop] when not written.
+  late final AnimationSpec? scrollToTop;
+
+  /// 400ms, ease-out-cubic.
+  static const defaultScrollToTop = AnimationSpec(
+    duration: Duration(milliseconds: 400),
+    curve: Curves.easeOutCubic,
+  );
+
   /// The motion durations the properties set (`motion.durations.medium`),
   /// by canonical name.
   final Map<String, Duration> durations = {};
@@ -581,6 +635,14 @@ final class SpringThemeData {
 
   /// The loaders of `loaders.*` by canonical name (`neondoors`).
   final Map<String, ThemeLoaderSpec> loaders = {};
+
+  final Map<String, CodeSyntax> _syntax = {};
+
+  /// The language of `syntax.<name>` that [language] (a fenced block's
+  /// language: `dart`, `yml`) names, by name or alias; `null` when the
+  /// theme has none, and the block is plain text.
+  CodeSyntax? syntaxOf(String? language) =>
+      language == null ? null : _syntax[ThemeValues.canonical(language)];
 
   /// The `splash` map of the theme (what shows while the application
   /// starts); `null` when the theme has none. (A plain `splash: ripple` is
@@ -610,7 +672,6 @@ final class SpringThemeData {
       'headers',
       'timeout',
       'fallback',
-      'allowhttp',
     };
     for (final key in p.values.keys.toList()) {
       if (!key.startsWith('tokens.') || !key.endsWith('.source')) {

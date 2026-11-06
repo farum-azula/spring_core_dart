@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/cupertino.dart'
@@ -6,13 +8,17 @@ import 'package:flutter/cupertino.dart'
         cupertinoTextSelectionHandleControls;
 import 'package:flutter/material.dart'
     show
+        Icons,
         MaterialLocalizations,
         SelectionArea,
         Theme,
         desktopTextSelectionHandleControls,
         materialTextSelectionHandleControls;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
+import 'package:spring_boot_starter_flutter/src/markdown/markdown_outline.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
@@ -29,8 +35,9 @@ import 'package:spring_boot_starter_flutter/src/theme/theme_styles.dart';
 /// The colors of code come from the theme's `styles.code`: `background`,
 /// `text`, and one color per kind of piece (`keyword`, `string`,
 /// `comment`, `number`, `key`, `annotation`); one that is not set falls
-/// back on the color scheme. Fenced blocks name their language (Dart,
-/// YAML, properties, shell, JSON are colored).
+/// back on the color scheme. Fenced blocks name their language, which the
+/// theme's `syntax.<language>` splits into those pieces ([CodeSyntax]);
+/// a language the theme does not have is plain text.
 ///
 /// ```yaml
 /// # themes/site.yml
@@ -53,17 +60,21 @@ class MarkdownView extends StatefulWidget {
     String this.markdown, {
     this.onLink,
     this.selectable = true,
+    this.outline,
     super.key,
   }) : location = null,
        _code = null,
        _language = null;
 
   /// Shows the Markdown of the application's resource [location]
-  /// (`resources:content/docs/beans.md`), read once.
+  /// (`resources:content/docs/beans.md`), read once; in the app's language
+  /// when there is a translation next to it (`beans.ja.md` for Japanese),
+  /// read again when the language changes.
   const MarkdownView.resource(
     String this.location, {
     this.onLink,
     this.selectable = true,
+    this.outline,
     super.key,
   }) : markdown = null,
        _code = null,
@@ -78,7 +89,8 @@ class MarkdownView extends StatefulWidget {
     super.key,
   }) : markdown = null,
        location = null,
-       onLink = null;
+       onLink = null,
+       outline = null;
 
   /// The Markdown shown, or `null` for a [location].
   final String? markdown;
@@ -94,6 +106,10 @@ class MarkdownView extends StatefulWidget {
 
   /// Whether the text can be selected.
   final bool selectable;
+
+  /// Gets the page's headings, and scrolls to one; a link to `#id` scrolls
+  /// to its heading by itself.
+  final MarkdownOutline? outline;
 
   // A fence longer than any run of backticks in [code].
   static String _fenced(String code, String? language) {
@@ -126,19 +142,92 @@ class MarkdownView extends StatefulWidget {
   State<MarkdownView> createState() => _MarkdownViewState();
 }
 
+class _CopyButton extends StatefulWidget {
+  const _CopyButton(this.text, {this.color});
+
+  final String text;
+  final Color? color;
+
+  @override
+  State<_CopyButton> createState() => _CopyButtonState();
+}
+
+class _CopyButtonState extends State<_CopyButton> {
+  var _copied = false;
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.text));
+    if (mounted) {
+      setState(() => _copied = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: 'Copy',
+    child: MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _copy,
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            _copied ? Icons.check_rounded : Icons.copy_rounded,
+            size: 16,
+            color: widget.color,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class _MarkdownViewState extends State<MarkdownView> {
-  final _recognizers = <GestureRecognizer>[];
+  var _recognizers = <GestureRecognizer>[];
+  // The links of the content going out while another comes in; disposed at
+  // the next change, long after its transition.
+  var _retired = <GestureRecognizer>[];
+  Object? _builtFor;
+  String? _shownFile;
+  String? _shown;
+  final _ids = <String>{};
+  final _headings = <MarkdownHeading>[];
+  final _ownOutline = MarkdownOutline();
+
+  MarkdownOutline get _outline => widget.outline ?? _ownOutline;
   Future<String>? _loading;
+  String? _file;
+
+  // The file of [location] in the app's language: `beans.ja.md` next to
+  // `beans.md` when there is one.
+  String _localized(String location) {
+    final language = Localizations.maybeLocaleOf(context)?.languageCode;
+    if (language == null || !location.endsWith('.md')) {
+      return location;
+    }
+    final base = location.substring(0, location.length - '.md'.length);
+    if (base.endsWith('.$language')) {
+      return location;
+    }
+    final translation = '$base.$language.md';
+    return SpringScope.of(
+          context,
+          listen: false,
+        ).getResource(translation).exists()
+        ? translation
+        : location;
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final location = widget.location;
-    if (location != null && _loading == null) {
-      _loading = SpringScope.of(
-        context,
-        listen: false,
-      ).getResource(location).readAsString();
+    if (location != null) {
+      final file = _localized(location);
+      if (file != _file) {
+        _load(file);
+      }
     }
   }
 
@@ -146,26 +235,75 @@ class _MarkdownViewState extends State<MarkdownView> {
   void didUpdateWidget(MarkdownView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.location != widget.location) {
-      _loading = widget.location == null
-          ? null
-          : SpringScope.of(
-              context,
-              listen: false,
-            ).getResource(widget.location!).readAsString();
+      final location = widget.location;
+      if (location == null) {
+        _file = null;
+        _loading = null;
+      } else {
+        _load(_localized(location));
+      }
     }
+  }
+
+  // Reads [file]; the content shown stays until it is read, so the view
+  // keeps its height instead of collapsing for a frame.
+  void _load(String file) {
+    _file = file;
+    final loading = _loading = SpringScope.of(
+      context,
+      listen: false,
+    ).getResource(file).readAsString();
+    loading.then(
+      (text) {
+        if (mounted && identical(_loading, loading)) {
+          setState(() {
+            _shownFile = file;
+            _shown = text;
+          });
+        }
+      },
+      // A file that cannot be read shows nothing, not the last one.
+      onError: (Object _) {
+        if (mounted && identical(_loading, loading)) {
+          setState(() {
+            _shownFile = file;
+            _shown = '';
+          });
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
     _disposeRecognizers();
+    _ownOutline.dispose();
     super.dispose();
   }
 
   void _disposeRecognizers() {
-    for (final recognizer in _recognizers) {
+    for (final recognizer in [..._recognizers, ..._retired]) {
       recognizer.dispose();
     }
     _recognizers.clear();
+    _retired.clear();
+  }
+
+  // A new build of [content]: the links of its last build go; those of
+  // other content (going out) wait for the next change.
+  void _renewRecognizers(Object? content) {
+    if (content == _builtFor) {
+      for (final recognizer in _recognizers) {
+        recognizer.dispose();
+      }
+    } else {
+      for (final recognizer in _retired) {
+        recognizer.dispose();
+      }
+      _retired = _recognizers;
+      _builtFor = content;
+    }
+    _recognizers = [];
   }
 
   @override
@@ -177,26 +315,38 @@ class _MarkdownViewState extends State<MarkdownView> {
     if (markdown != null) {
       return _view(context, markdown);
     }
-    return FutureBuilder<String>(
-      future: _loading,
-      builder: (context, snapshot) => snapshot.hasData
-          ? _view(context, snapshot.data!)
-          : const SizedBox.shrink(),
+    final shown = _shown;
+    if (shown == null) {
+      return const SizedBox.shrink();
+    }
+    return ContentChange(
+      id: _shownFile,
+      child: _view(context, shown, content: _shownFile),
     );
   }
 
-  Widget _view(BuildContext context, String markdown) {
-    _disposeRecognizers();
+  Widget _view(BuildContext context, String markdown, {Object? content}) {
+    _renewRecognizers(content ?? markdown);
+    _ids.clear();
+    _headings.clear();
     final nodes = md.Document(
       extensionSet: MarkdownView.syntax,
     ).parse(MarkdownView.withoutFrontMatter(markdown));
     final look = _Look.of(context);
+    final blocks = _blocks(nodes, look);
+    final headings = List.of(_headings);
+    final page = _builtFor;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _outline.update(headings, page: page);
+      }
+    });
     final view = DefaultTextStyle.merge(
       style: look.body,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: _blocks(nodes, look),
+        children: blocks,
       ),
     );
     if (!widget.selectable) {
@@ -269,8 +419,16 @@ class _MarkdownViewState extends State<MarkdownView> {
     switch (node.tag) {
       case 'h1' || 'h2' || 'h3' || 'h4' || 'h5' || 'h6':
         final level = int.parse(node.tag.substring(1));
+        final text = _unescape(node.textContent);
+        final heading = MarkdownHeading(
+          level: level,
+          text: text,
+          id: MarkdownHeading.idOf(text, _ids),
+        );
+        _headings.add(heading);
         return [
           Text.rich(
+            key: _outline.keyOf(heading.id, page: _builtFor),
             TextSpan(children: _inline(children, look)),
             style: look.heading(level),
           ),
@@ -286,7 +444,17 @@ class _MarkdownViewState extends State<MarkdownView> {
         final text = _unescape(
           code?.textContent ?? node.textContent,
         ).replaceFirst(RegExp(r'\n$'), '');
-        return [_codeBlock(text, language, look)];
+        final title = _title.firstMatch(
+          _unescape(node.attributes['data-metadata'] ?? ''),
+        );
+        return [
+          _codeBlock(
+            text,
+            language,
+            look,
+            title: title == null ? null : title[1] ?? title[2] ?? title[3],
+          ),
+        ];
       case 'ul' || 'ol':
         final start = int.tryParse(node.attributes['start'] ?? '') ?? 1;
         var number = start;
@@ -323,6 +491,9 @@ class _MarkdownViewState extends State<MarkdownView> {
         ];
       case 'table':
         return [_table(node, look)];
+      case 'div'
+          when (node.attributes['class'] ?? '').startsWith('markdown-alert'):
+        return [_callout(node, look)];
       default:
         return _blocks(children, look);
     }
@@ -370,14 +541,127 @@ class _MarkdownViewState extends State<MarkdownView> {
     );
   }
 
-  Widget _codeBlock(String text, String? language, _Look look) => Container(
+  // `title="lib/main.dart"` (or 'x', or a word) after a fence's language.
+  static final _title = RegExp(r'''title=(?:"([^"]*)"|'([^']*)'|(\S+))''');
+
+  // A callout of GitHub's Markdown (`> [!NOTE]`): a box in the kind's
+  // color, with the kind's name (the message `markdown.alert.<kind>`).
+  Widget _callout(md.Element node, _Look look) {
+    final kind = (node.attributes['class'] ?? '').split('-').last;
+    final children = (node.children ?? const <md.Node>[])
+        .where(
+          (child) =>
+              child is! md.Element ||
+              child.attributes['class'] != 'markdown-alert-title',
+        )
+        .toList();
+    final color = look.callouts[kind] ?? look.link;
+    final label = (node.children?.firstOrNull?.textContent ?? kind);
+    final title =
+        SpringScope.maybeOf(context, listen: false)?.getMessage(
+          'markdown.alert.$kind',
+          defaultMessage: label,
+          locale:
+              (Localizations.maybeLocaleOf(context) ??
+                      PlatformDispatcher.instance.locale)
+                  .toString(),
+        ) ??
+        label;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(look.codeRadius),
+        border: Border.all(color: color.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: look.body.copyWith(
+              color: color,
+              fontSize: (look.body.fontSize ?? 14) * 0.75,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          ..._blocks(children, look),
+        ],
+      ),
+    );
+  }
+
+  Widget _codeBlock(
+    String text,
+    String? language,
+    _Look look, {
+    String? title,
+  }) {
+    final block = _code(text, language, look);
+    if (title == null) {
+      return block;
+    }
+    final border = look.codeBorder;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(look.codeRadius),
+        border: border == null
+            ? null
+            : Border.all(color: border, width: look.codeBorderWidth),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: look.codePadding.left,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: look.codeHeader,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(look.codeRadius),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    overflow: TextOverflow.ellipsis,
+                    style: look.code.copyWith(color: look.codeTitle),
+                  ),
+                ),
+                _CopyButton(text, color: look.codeTitle),
+              ],
+            ),
+          ),
+          _code(text, language, look, header: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _code(
+    String text,
+    String? language,
+    _Look look, {
+    bool header = false,
+  }) => Container(
     padding: look.codePadding,
     decoration: BoxDecoration(
       color: look.codeBackground,
-      borderRadius: BorderRadius.circular(look.codeRadius),
+      borderRadius: header
+          ? BorderRadius.vertical(bottom: Radius.circular(look.codeRadius))
+          : BorderRadius.circular(look.codeRadius),
       border: switch (look.codeBorder) {
-        final color? => Border.all(color: color, width: look.codeBorderWidth),
-        null => null,
+        final color? when !header => Border.all(
+          color: color,
+          width: look.codeBorderWidth,
+        ),
+        _ => null,
       },
     ),
     child: SingleChildScrollView(
@@ -386,7 +670,7 @@ class _MarkdownViewState extends State<MarkdownView> {
         TextSpan(
           style: look.code,
           children: [
-            for (final token in CodeTokens.of(text, language))
+            for (final token in CodeTokens.of(text, look.syntax(language)))
               TextSpan(
                 text: token.text,
                 style: switch (look.token(token.kind)) {
@@ -469,7 +753,10 @@ class _MarkdownViewState extends State<MarkdownView> {
       case 'code':
         return TextSpan(
           text: _unescape(node.textContent).replaceAll('\n', ' '),
-          style: look.code.copyWith(backgroundColor: look.codeBackground),
+          style: look.code.copyWith(
+            color: look.inlineText,
+            backgroundColor: look.inlineBackground ?? look.codeBackground,
+          ),
         );
       case 'br':
         return const TextSpan(text: '\n');
@@ -477,7 +764,11 @@ class _MarkdownViewState extends State<MarkdownView> {
         final href = node.attributes['href'];
         final onLink = widget.onLink;
         TapGestureRecognizer? recognizer;
-        if (href != null && onLink != null) {
+        if (href != null && href.startsWith('#')) {
+          recognizer = TapGestureRecognizer()
+            ..onTap = () => _outline.show(href.substring(1));
+          _recognizers.add(recognizer);
+        } else if (href != null && onLink != null) {
           recognizer = TapGestureRecognizer()..onTap = () => onLink(href);
           _recognizers.add(recognizer);
         }
@@ -538,7 +829,15 @@ final class _Look {
     required this.rule,
     required this.headings,
     required this.tokens,
+    this.syntax = _noSyntax,
+    this.inlineText,
+    this.inlineBackground,
+    this.codeHeader,
+    this.codeTitle,
+    this.callouts = const {},
   });
+
+  static CodeSyntax? _noSyntax(String? language) => null;
 
   static _Look of(BuildContext context) {
     final theme = SpringTheme.maybeOf(context);
@@ -576,6 +875,22 @@ final class _Look {
 
     Color? color(String prop) => read((values) => values.color(prop));
 
+    // Another style's color, or `null` when it is not written.
+    Color? colorOf(String styleName, String prop) {
+      final other = theme.styles[styleName]?.resolve(const {});
+      if (other == null) {
+        return null;
+      }
+      try {
+        return other.color(prop);
+      } on StateError {
+        return null;
+      }
+    }
+
+    final link = colorOf('link', 'color');
+    Color? callout(String kind) => colorOf('callout', kind);
+
     // Theme.of's styles: the theme's, with the sizes of the locale's
     // script (a SpringTheme's own text styles have only what was set).
     final text = Theme.of(context).textTheme;
@@ -598,7 +913,7 @@ final class _Look {
       codeRadius: read((values) => values.number('radius')) ?? 6,
       codeBorder: color('border'),
       codeBorderWidth: read((values) => values.number('border-width')) ?? 1,
-      link: scheme.primary,
+      link: link ?? scheme.primary,
       rule: scheme.outlineVariant,
       headings: {
         for (var level = 1; level <= 6; level++)
@@ -616,6 +931,20 @@ final class _Look {
         CodeTokenKind.variable: color('variable') ?? scheme.onTertiaryContainer,
         CodeTokenKind.type: color('type') ?? scheme.onSecondaryContainer,
       },
+      syntax: theme.syntaxOf,
+      inlineText: color('inline-text'),
+      inlineBackground: color('inline-background'),
+      codeHeader:
+          color('header') ??
+          (color('background') ?? scheme.surfaceContainerHighest),
+      codeTitle: color('title') ?? scheme.onSurfaceVariant,
+      callouts: {
+        'note': callout('note') ?? scheme.primary,
+        'tip': callout('tip') ?? scheme.tertiary,
+        'important': callout('important') ?? scheme.secondary,
+        'warning': callout('warning') ?? scheme.error,
+        'caution': callout('caution') ?? scheme.error,
+      },
     );
   }
 
@@ -630,6 +959,25 @@ final class _Look {
   final Color rule;
   final Map<String, TextStyle> headings;
   final Map<CodeTokenKind, Color> tokens;
+
+  /// The theme's language of a fenced block (`syntax.<name>`).
+  final CodeSyntax? Function(String? language) syntax;
+
+  /// Inline code's text color (`styles.code.inline-text`); the code's.
+  final Color? inlineText;
+
+  /// Inline code's background (`styles.code.inline-background`); the
+  /// block's.
+  final Color? inlineBackground;
+
+  /// The fill of a titled block's header (`styles.code.header`).
+  final Color? codeHeader;
+
+  /// The title and copy button of a titled block (`styles.code.title`).
+  final Color? codeTitle;
+
+  /// The colors of the callouts by kind (`styles.callout.<kind>`).
+  final Map<String, Color> callouts;
 
   TextStyle heading(int level) => headings['h$level'] ?? body;
 

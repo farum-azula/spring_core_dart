@@ -186,7 +186,6 @@ void main() {
           'brand.logo.headers.x-key': 'k',
           'brand.logo.refresh': '1h',
           'brand.logo.timeout': '5s',
-          'brand.logo.allow-http': 'false',
           'brand.logo.source-sha256': 'a' * 64,
         }),
         {'assets/a.png'},

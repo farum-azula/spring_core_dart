@@ -1,3 +1,11 @@
+## Unreleased
+
+- Fixed: a loader's `tracks` and `web-sha256` no longer become fields of the props class of its kind; the keys every loader has are one list (`loaderOwnKeys`).
+- The web page loader's script records the start's first stages, `page` and `engine`, with their times in `window.springLoader.stages`, sets `data-splash-stage` and sends a `spring-splash-stage` event; the Flutter splash goes on from them.
+- A page loader's downloaded `web:` follows `spring.remote.allow-insecure` as the app does: an `http://` address fails the build step unless it is allowed.
+- A loader's `web:` may be an address the build downloads, `https://...` or `github:owner/repo/path@ref`, with an optional `web-sha256` pin; a copy in `.dart_tool/spring/loaders/` serves an offline build.
+- Fixed: a loader's `web:` file of the app itself is found below `lib/resources/` as a dependency's is (`web: loaders/spring-leaf.html`); before, only a path from the app's directory was read, so the page showed an empty loader until Flutter ran. The values of `syntax.*` (the languages of code blocks) are taken as written, no `$` reference.
+
 ## 0.7.1
 
 - **Breaking:** the dev server's keys moved under `spring.flutter.web.dev-server.*` (`spring.flutter.web.port` is `spring.flutter.web.dev-server.port`, the same for `host`, `base-href`, `https.*`, `headers.*`, `content-security-policy*`, `proxy[n].*`), so `spring.flutter.web.*` holds the dev server and the site's pages (`seo`). A key at its old place fails the build of `web_dev_config.yaml` and names its new one.

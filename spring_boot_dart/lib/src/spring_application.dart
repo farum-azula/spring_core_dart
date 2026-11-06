@@ -126,6 +126,8 @@ class SpringApplication {
     Map<String, Object?> defaultProperties = const {},
     List<String> additionalProfiles = const [],
     List<EnvironmentPostProcessor> environmentPostProcessors = const [],
+    List<RemoteAddressResolver> addressResolvers = const [],
+    this.applicationStartup = ApplicationStartup.none,
     Map<String, String> dartDefines = const {},
     this.banner,
     this.bannerMode = BannerMode.console,
@@ -143,7 +145,8 @@ class SpringApplication {
        _defaultProperties = {...defaultProperties},
        additionalProfiles = List.unmodifiable(additionalProfiles),
        dartDefines = Map.unmodifiable(dartDefines),
-       environmentPostProcessors = List.unmodifiable(environmentPostProcessors);
+       environmentPostProcessors = List.unmodifiable(environmentPostProcessors),
+       remoteAddresses = RemoteAddresses(List.unmodifiable(addressResolvers));
 
   /// The application's own bean modules, registered first and in this
   /// order. The generator passes one module with every bean of the
@@ -378,6 +381,22 @@ class SpringApplication {
   /// created, some before the config files are read and some after,
   /// depending on their order. See [EnvironmentPostProcessor].
   final List<EnvironmentPostProcessor> environmentPostProcessors;
+
+  /// The addresses the configuration downloads from (themes, images, page
+  /// loaders): the `addressResolvers` given to the constructor, then the
+  /// built-in ones (`github:`, `https://`). Passed to the application, as
+  /// [environmentPostProcessors] are, because the themes are read before
+  /// the beans exist; the context has it as the `remoteAddresses` bean.
+  final RemoteAddresses remoteAddresses;
+
+  /// Where the steps of the start go (`spring.boot.application.starting`,
+  /// `spring.boot.application.environment-prepared`,
+  /// `spring.boot.application.context`, and the context's
+  /// `spring.beans.instantiate` per bean); nothing is recorded by default.
+  /// Give a `BufferingApplicationStartup` to measure the start.
+  ///
+  /// Spring (Java): `SpringApplication.setApplicationStartup`.
+  final ApplicationStartup applicationStartup;
 
   // The post-processors before (`true`) or after config data, in order;
   // Boot's built-in SpringApplicationJsonEnvironmentPostProcessor among
@@ -643,9 +662,15 @@ class SpringApplication {
     required bool runners,
   }) async {
     final watch = Stopwatch()..start();
+    final starting = applicationStartup.start(
+      'spring.boot.application.starting',
+    );
     final run = _RunListeners(this, args)..starting();
     final environment = run.releasingLogsOnError(
       () => _environment(args, systemEnvironment, properties),
+    );
+    final prepared = applicationStartup.start(
+      'spring.boot.application.environment-prepared',
     );
     try {
       _postProcessEnvironment(environment, before: true);
@@ -659,17 +684,27 @@ class SpringApplication {
       _applyLoggingLevels(run, environment);
       _printBanner(environment, await _readBannerAsync(environment));
     } catch (error, stackTrace) {
+      prepared.end();
+      starting.end();
       _report(run, error, stackTrace: stackTrace);
       rethrow;
     }
-    final (context, arguments) = await _guardAsync(
-      run,
-      () => _startAsync(run, args, environment, watch, (
-        systemEnvironment,
-        properties,
-        launchProfiles,
-      )),
+    prepared.end();
+    final contextStep = applicationStartup.start(
+      'spring.boot.application.context',
     );
+    final (context, arguments) =
+        await _guardAsync(
+          run,
+          () => _startAsync(run, args, environment, watch, (
+            systemEnvironment,
+            properties,
+            launchProfiles,
+          )),
+        ).whenComplete(() {
+          contextStep.end();
+          starting.end();
+        });
     try {
       run.started(context, watch.elapsed);
       if (runners) {
@@ -1074,8 +1109,8 @@ class SpringApplication {
     final logStartupInfo = main.logStartupInfo;
     final name = application.name ?? 'application';
     (context.beanFactory as DefaultListableBeanFactory)
-            .allowBeanDefinitionOverriding =
-        main.allowBeanDefinitionOverriding;
+      ..allowBeanDefinitionOverriding = main.allowBeanDefinitionOverriding
+      ..applicationStartup = applicationStartup;
     context.beanFactory
       ..registerSingleton(
         'springApplicationArguments',
@@ -1086,6 +1121,11 @@ class SpringApplication {
         DeferredLogs.beanName,
         run.deferredLogs,
         types: const [DeferredLogs],
+      )
+      ..registerSingleton(
+        'remoteAddresses',
+        remoteAddresses,
+        types: const [RemoteAddresses],
       )
       ..addBeanPostProcessor(
         ConfigurationPropertiesBinder(

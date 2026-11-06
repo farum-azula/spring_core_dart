@@ -44,12 +44,21 @@ final class FlutterAppProperties {
 @ConfigurationProperties('spring.flutter')
 final class FlutterProperties {
   /// Settings with these values.
-  const FlutterProperties({this.scanOsEnvironment = false});
+  const FlutterProperties({
+    this.scanOsEnvironment = false,
+    this.shortcuts = const {},
+  });
 
   /// Whether the operating system environment is read as properties. The
   /// application reads it before it has an environment, from the
   /// `--dart-define` values (`scanOsEnvironmentIn`).
   final bool scanOsEnvironment;
+
+  /// The keys of each keyboard shortcut's action (`search.open:
+  /// primary+k`): one or a list, `primary` being ⌘ on Apple's platforms
+  /// and Ctrl elsewhere, `char:?` a character. They run the action's
+  /// `@Shortcut` methods and `ShortcutHandler` beans.
+  final Map<String, List<String>> shortcuts;
 }
 
 /// The lifecycle of the app, `spring.flutter.lifecycle.*`.

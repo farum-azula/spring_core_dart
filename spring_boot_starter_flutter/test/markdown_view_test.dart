@@ -1,15 +1,36 @@
 // MarkdownView: Markdown as widgets with the theme's styles, the code
-// colored by kind (CodeTokens: Dart, YAML, properties, shell, JSON), links
+// colored by the theme's languages (syntax.<name>, CodeSyntax), links
 // handed to onLink, HTML in the Markdown shown as text, a front matter
 // left out.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
-List<(String, CodeTokenKind)> _tokens(String code, String language) => [
-  for (final token in CodeTokens.of(code, language))
-    if (token.kind != CodeTokenKind.plain) (token.text, token.kind),
+List<(String, CodeTokenKind)> _pieces(List<CodeToken> tokens) => [
+  for (final token in tokens)
+    if (token.kind != CodeTokenKind.plain && token.text.trim().isNotEmpty)
+      (token.text, token.kind),
 ];
+
+const _java = {
+  'syntax.java.aliases': 'jav',
+  'syntax.java.keywords': 'public, long, int, return',
+  'syntax.java.types': '^[A-Z][A-Za-z0-9_]*[a-z]',
+  'syntax.java.rules.0.match': r'//[^\n]*',
+  'syntax.java.rules.0.kind': 'comment',
+  'syntax.java.rules.1.match': r'"(?:\\.|[^"\\\n])*"',
+  'syntax.java.rules.1.kind': 'string',
+  'syntax.java.rules.2.match': r'@[A-Za-z_][\w.]*',
+  'syntax.java.rules.2.kind': 'annotation',
+  'syntax.java.rules.3.match': r'[A-Za-z_$][\w$]*',
+  'syntax.java.rules.3.kind': 'word',
+  'syntax.java.rules.4.match': r'[{}()\[\];,]',
+  'syntax.java.rules.4.kind': 'punctuation',
+};
+
+CodeSyntax? _syntax(Map<String, String> values, String language) =>
+    SpringThemes(values).data('light').syntaxOf(language);
 
 Widget _app(Widget child) => Directionality(
   textDirection: TextDirection.ltr,
@@ -20,195 +41,106 @@ Widget _app(Widget child) => Directionality(
 );
 
 void main() {
-  group('CodeTokens', () {
-    test('Dart', () {
+  group('the languages of the theme (syntax)', () {
+    test('rules in order, words by keywords and types, neighbors joined', () {
+      final java = _syntax(_java, 'java')!;
       expect(
-        _tokens(
-          "@Service()\nfinal class A { // one\n  var b = 'x'; int c = 42;\n}",
-          'dart',
-        ),
+        _pieces(java.tokens('@Bean public Store store(long n) { // one\n}')),
         [
-          ('@Service', CodeTokenKind.annotation),
-          ('()', CodeTokenKind.punctuation),
-          ('final', CodeTokenKind.keyword),
-          ('class', CodeTokenKind.keyword),
+          ('@Bean', CodeTokenKind.annotation),
+          ('public', CodeTokenKind.keyword),
+          ('Store', CodeTokenKind.type),
+          ('(', CodeTokenKind.punctuation),
+          ('long', CodeTokenKind.keyword),
+          (')', CodeTokenKind.punctuation),
           ('{', CodeTokenKind.punctuation),
           ('// one', CodeTokenKind.comment),
-          ('var', CodeTokenKind.keyword),
-          ("'x'", CodeTokenKind.string),
-          (';', CodeTokenKind.punctuation),
-          ('int', CodeTokenKind.type),
-          ('42', CodeTokenKind.number),
-          (';', CodeTokenKind.punctuation),
           ('}', CodeTokenKind.punctuation),
         ],
       );
+      const code = 'String s = "a\\"b"; // c\nint n = 42;';
+      expect(java.tokens(code).map((t) => t.text).join(), code);
     });
 
-    test('YAML', () {
-      expect(
-        _tokens(
-          'server:\n  port: 8080 # the port\n  name: "shop"\n  ssl: false',
-          'yaml',
-        ),
-        [
-          ('server', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('port', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('8080', CodeTokenKind.number),
-          ('# the port', CodeTokenKind.comment),
-          ('name', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('"shop"', CodeTokenKind.string),
-          ('ssl', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('false', CodeTokenKind.keyword),
-        ],
-      );
+    test('a language by its name or an alias, in any case', () {
+      final themes = SpringThemes(_java);
+      final data = themes.data('light');
+      expect(data.syntaxOf('java'), isNotNull);
+      expect(data.syntaxOf('JAV'), same(data.syntaxOf('java')));
+      expect(data.syntaxOf('cobol'), isNull);
+      expect(data.syntaxOf(null), isNull);
     });
 
-    test('YAML: flow maps and lists, units, references, anchors', () {
-      expect(
-        _tokens(
-          '- durations: { fast: 120ms, medium: 0.25s }\n'
-              '  colors: [\$neon.accent, \$neon.cyan]\n'
-              '  base: &base { alpha: 35% }\n'
-              '  copy: *base\n'
-              '  port: \${PORT:8080} # env\n'
-              '  text: |\n'
-              '  url: https://a.dev/x:1',
-          'yaml',
-        ),
-        [
-          ('-', CodeTokenKind.punctuation),
-          ('durations', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('{', CodeTokenKind.punctuation),
-          ('fast', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('120ms', CodeTokenKind.number),
-          (',', CodeTokenKind.punctuation),
-          ('medium', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('0.25s', CodeTokenKind.number),
-          ('}', CodeTokenKind.punctuation),
-          ('colors', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('[', CodeTokenKind.punctuation),
-          (r'$neon.accent', CodeTokenKind.variable),
-          (',', CodeTokenKind.punctuation),
-          (r'$neon.cyan', CodeTokenKind.variable),
-          (']', CodeTokenKind.punctuation),
-          ('base', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('&base', CodeTokenKind.variable),
-          ('{', CodeTokenKind.punctuation),
-          ('alpha', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('35%', CodeTokenKind.number),
-          ('}', CodeTokenKind.punctuation),
-          ('copy', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('*base', CodeTokenKind.variable),
-          ('port', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          (r'${PORT:8080}', CodeTokenKind.variable),
-          ('# env', CodeTokenKind.comment),
-          ('text', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('|', CodeTokenKind.punctuation),
-          ('url', CodeTokenKind.key),
-          (':', CodeTokenKind.punctuation),
-          ('https://a.dev/x:1', CodeTokenKind.string),
-        ],
-      );
-    });
-
-    test('YAML and properties: a value without quotes is a string', () {
-      expect(_tokens('curve: ease-out\nb: { c: linear }', 'yaml'), [
-        ('curve', CodeTokenKind.key),
-        (':', CodeTokenKind.punctuation),
-        ('ease-out', CodeTokenKind.string),
-        ('b', CodeTokenKind.key),
-        (':', CodeTokenKind.punctuation),
-        ('{', CodeTokenKind.punctuation),
-        ('c', CodeTokenKind.key),
-        (':', CodeTokenKind.punctuation),
-        ('linear', CodeTokenKind.string),
-        ('}', CodeTokenKind.punctuation),
-      ]);
-      expect(_tokens('a.b=on-time', 'properties'), [
-        ('a.b', CodeTokenKind.key),
-        ('=', CodeTokenKind.punctuation),
-        ('on-time', CodeTokenKind.string),
+    test('no language: one plain piece', () {
+      expect(CodeTokens.of('a b', null), [
+        (text: 'a b', kind: CodeTokenKind.plain),
       ]);
     });
 
-    test('YAML: a flow collection over several lines', () {
-      expect(_tokens('a: [\n  b: 1,\n  2 ]', 'yaml'), [
-        ('a', CodeTokenKind.key),
-        (':', CodeTokenKind.punctuation),
-        ('[', CodeTokenKind.punctuation),
-        ('b', CodeTokenKind.key),
-        (':', CodeTokenKind.punctuation),
-        ('1', CodeTokenKind.number),
-        (',', CodeTokenKind.punctuation),
-        ('2', CodeTokenKind.number),
-        (']', CodeTokenKind.punctuation),
-      ]);
-    });
-
-    test('Dart: types and punctuation', () {
-      expect(_tokens('int a = 1;', 'dart').first, ('int', CodeTokenKind.type));
-      expect(_tokens('final a = <String>[];', 'dart'), [
-        ('final', CodeTokenKind.keyword),
-        ('String', CodeTokenKind.type),
-        ('[];', CodeTokenKind.punctuation),
-      ]);
-    });
-
-    test('shell and JSON', () {
-      expect(_tokens(r'echo $HOME && ls', 'sh'), [
-        ('echo', CodeTokenKind.keyword),
+    test(r'the rules are taken as written: no $ reference, no $$', () {
+      final syntax = _syntax({
+        'syntax.shell.rules.0.match': r'\$[A-Za-z_]\w*|\$\$',
+        'syntax.shell.rules.0.kind': 'variable',
+      }, 'shell')!;
+      expect(_pieces(syntax.tokens(r'echo $HOME $$')), [
         (r'$HOME', CodeTokenKind.variable),
-        ('&&', CodeTokenKind.punctuation),
-      ]);
-      expect(_tokens('{"a": [1]}', 'json'), [
-        ('{', CodeTokenKind.punctuation),
-        ('"a"', CodeTokenKind.key),
-        (':', CodeTokenKind.punctuation),
-        ('[', CodeTokenKind.punctuation),
-        ('1', CodeTokenKind.number),
-        (']}', CodeTokenKind.punctuation),
+        (r'$$', CodeTokenKind.variable),
       ]);
     });
 
-    test('properties', () {
-      expect(_tokens('# c\nserver.port=8080', 'properties'), [
-        ('# c', CodeTokenKind.comment),
-        ('server.port', CodeTokenKind.key),
-        ('=', CodeTokenKind.punctuation),
-        ('8080', CodeTokenKind.number),
+    test('^ and \$ are a line\'s start and end', () {
+      final syntax = _syntax({
+        'syntax.ini.rules.0.match': r'^[a-z]+(?==)',
+        'syntax.ini.rules.0.kind': 'key',
+      }, 'ini')!;
+      expect(_pieces(syntax.tokens('a=1\nbc=2')), [
+        ('a', CodeTokenKind.key),
+        ('bc', CodeTokenKind.key),
       ]);
     });
 
-    test('the pieces join to the code', () {
-      const code = "a: 'b' # c\n- d: [1, 2]";
-      expect(CodeTokens.of(code, 'yaml').map((t) => t.text).join(), code);
-      expect(CodeTokens.of(code, 'cobol').single.kind, CodeTokenKind.plain);
-      for (final (text, language) in [
-        ("a: { b: [1, 'x', \"y\"], c: \${d:e} } # f\n- - g: &h *i", 'yaml'),
-        ("k: 'it''s'\nl: \"\\\"\"\nm: [\n  n,\n  { o: p }\n]\n---\n", 'yaml'),
-        ('q: |\n  r: s\n  t\nu: !tag v', 'yaml'),
-        (r'a=${b:c},d  # e', 'properties'),
-        (r'echo "$A" | grep -v ${B}; ls', 'sh'),
-        ("final f = <A<B>>{'k': [1, 2.5e3]}; // c", 'dart'),
+    test('a wrong language stops the start and names the property', () {
+      for (final (values, problem) in [
+        (
+          {'syntax.x.rules.0.match': 'a', 'syntax.x.rules.0.kind': 'color'},
+          'a kind',
+        ),
+        (
+          {'syntax.x.rules.0.match': '(', 'syntax.x.rules.0.kind': 'string'},
+          'a regular expression',
+        ),
+        ({'syntax.x.rules.0.kind': 'string'}, 'a regular expression'),
+        ({'syntax.x.keywords': 'a'}, 'a list of rules'),
+        (
+          {
+            'syntax.x.rules.0.match': 'a',
+            'syntax.x.rules.0.kind': 'string',
+            'syntax.x.colors': 'red',
+          },
+          'a key of a language',
+        ),
+        (
+          {
+            'syntax.x.types': '(',
+            'syntax.x.rules.0.match': 'a',
+            'syntax.x.rules.0.kind': 'word',
+          },
+          'a regular expression',
+        ),
       ]) {
         expect(
-          CodeTokens.of(text, language).map((t) => t.text).join(),
-          text,
-          reason: text,
+          () => SpringThemes(values).data('light'),
+          throwsA(
+            isA<ThemePropertyException>().having(
+              (e) => e.toString(),
+              'message',
+              allOf(
+                contains('spring.flutter.theme.syntax.x'),
+                contains(problem),
+              ),
+            ),
+          ),
+          reason: '$values',
         );
       }
     });
@@ -277,7 +209,9 @@ void main() {
 
   testWidgets("in a SpringTheme: headings in Theme.of's sizes, code in "
       'styles.code', (tester) async {
-    final themes = SpringThemes(const {
+    final themes = SpringThemes({
+      ..._java,
+      'syntax.java.aliases': 'jav, dart',
       'styles.code.keyword': '#123456',
       'styles.code.background': '#ABCDEF',
       'styles.code.radius': '10',
@@ -293,7 +227,7 @@ void main() {
         home: SpringTheme(
           data: data,
           child: const MarkdownView(
-            '# Big\n\nbody\n\n```dart\nfinal a = 1;\n```\n',
+            '# Big\n\nbody\n\n```dart\npublic a = 1;\n```\n',
             selectable: false,
           ),
         ),
@@ -317,7 +251,7 @@ void main() {
     Color? keyword;
     for (final rich in tester.widgetList<RichText>(find.byType(RichText))) {
       rich.text.visitChildren((span) {
-        if (span is TextSpan && span.text == 'final') {
+        if (span is TextSpan && span.text == 'public') {
           keyword = span.style?.color;
         }
         return keyword == null;
@@ -398,5 +332,186 @@ void main() {
       tester.getSize(find.byType(MarkdownView)).height,
       tester.getSize(find.byType(Container)).height,
     );
+  });
+
+  group('documentation pieces', () {
+    // The color of the span that reads [text] (a link's color is on the
+    // span around its pieces).
+    Color? colorOf(WidgetTester tester, String text) {
+      Color? find_(InlineSpan span) {
+        if (span is! TextSpan) {
+          return null;
+        }
+        if (span.toPlainText() == text && span.style?.color != null) {
+          return span.style!.color;
+        }
+        for (final child in span.children ?? const <InlineSpan>[]) {
+          final found = find_(child);
+          if (found != null) {
+            return found;
+          }
+        }
+        return null;
+      }
+
+      for (final rich in tester.widgetList<RichText>(find.byType(RichText))) {
+        final found = find_(rich.text);
+        if (found != null) {
+          return found;
+        }
+      }
+      return null;
+    }
+
+    Future<void> pumpThemed(
+      WidgetTester tester,
+      Map<String, String> theme,
+      String markdown,
+    ) {
+      final data = SpringThemes(theme).data('light');
+      return tester.pumpWidget(
+        MaterialApp(
+          theme: data.toMaterial(),
+          home: SpringTheme(
+            data: data,
+            child: MarkdownView(markdown, selectable: false),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('a callout: its kind as a title, in styles.callout', (
+      tester,
+    ) async {
+      await pumpThemed(tester, const {
+        'styles.callout.warning': '#AA0000',
+      }, '> [!WARNING]\n> Checked at startup.\n');
+      expect(find.text('WARNING'), findsOneWidget);
+      expect(find.text('Checked at startup.'), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.text('WARNING')).style?.color,
+        const Color(0xFFAA0000),
+      );
+    });
+
+    testWidgets('a titled code block: its title and a copy button', (
+      tester,
+    ) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpThemed(
+        tester,
+        const {'styles.code.title': '#00AA00'},
+        '```dart title="lib/main.dart"\nvoid main() {}\n```\n\n```dart\nuntitled\n```\n',
+      );
+      expect(find.text('lib/main.dart'), findsOneWidget);
+      expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.copy_rounded));
+      await tester.pump();
+      expect(copied, 'void main() {}');
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.text('lib/main.dart')).style?.color,
+        const Color(0xFF00AA00),
+      );
+    });
+
+    testWidgets('inline code and links in their own colors', (tester) async {
+      await pumpThemed(tester, const {
+        'styles.code.inline-text': '#112233',
+        'styles.link.color': '#445566',
+      }, 'Use `@Bean()` and [the docs](x.md).');
+      expect(colorOf(tester, '@Bean()'), const Color(0xFF112233));
+      expect(colorOf(tester, 'the docs'), const Color(0xFF445566));
+    });
+
+    testWidgets("a resource in the app's language", (tester) async {
+      final context = await SpringApplication([
+        BeanModule(
+          'test',
+          const [],
+          resources: {
+            'content/a.md': const EmbeddedResource.text('# English\n'),
+            'content/a.ja.md': const EmbeddedResource.text('# 日本語\n'),
+          },
+        ),
+      ], bannerMode: BannerMode.off).runAsync(const []);
+      addTearDown(context.close);
+      Widget at(Locale locale) => SpringScope(
+        applicationContext: context,
+        child: Localizations(
+          locale: locale,
+          delegates: const [DefaultWidgetsLocalizations.delegate],
+          child: const Directionality(
+            textDirection: TextDirection.ltr,
+            child: MarkdownView.resource(
+              'resources:content/a.md',
+              selectable: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpWidget(at(const Locale('en')));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      expect(find.text('English'), findsOneWidget);
+      await tester.pumpWidget(at(const Locale('ja')));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      expect(find.text('日本語'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the outline: headings with their anchors, #links scroll', (
+    tester,
+  ) async {
+    final outline = MarkdownOutline();
+    addTearDown(outline.dispose);
+    var notified = 0;
+    outline.addListener(() => notified++);
+    await tester.pumpWidget(
+      _app(
+        SingleChildScrollView(
+          child: MarkdownView(
+            '# Beans\n\nSee [the methods](#bean-methods).\n\n'
+            '${'text\n\n' * 60}'
+            '## `@Bean()` methods\n\n## Why\n\n## Why\n',
+            outline: outline,
+            selectable: false,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(notified, 1);
+    expect(
+      [for (final h in outline.headings) '${h.level} ${h.text} #${h.id}'],
+      [
+        '1 Beans #beans',
+        '2 @Bean() methods #bean-methods',
+        '2 Why #why',
+        '2 Why #why-1',
+      ],
+    );
+    final scroll = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scroll.position.pixels, 0);
+    await tester.tapOnText(find.textRange.ofSubstring('the methods'));
+    await tester.pumpAndSettle();
+    expect(scroll.position.pixels, greaterThan(0));
+    expect(outline.show('nowhere'), isFalse);
   });
 }

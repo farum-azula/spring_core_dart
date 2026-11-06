@@ -43,13 +43,18 @@ spring:
 |---|---|---|---|---|
 | `motion.page-transition` | enum, or a map | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `none` | `none` | The page transition of every screen |
 | `motion.page-transition.type` / `.duration` / `.curve` | enum / duration / curve | as above, `200ms`, a curve name | the kind's own | The map form: the kind with its duration and curve |
+| `motion.text-change` | enum, or a map | `none`, `fade`, `morph` | `none` | What a `ThemeText` does when its text changes, another language say |
+| `motion.text-change.type` / `.duration` / `.curve` / `.stagger` / `.keep-unchanged` / `.glyphs` / `.glyph-duration` | enum / duration / curve / duration / boolean / text / duration | as above, `450ms`, a curve name, `12ms`, `true` / `false`, any characters, a duration over zero | `none`, `450ms`, `ease-out`, `12ms`, `false`, `▓▒░<>/\|=+*#%&@$?!01`, `40ms` | The map form; `stagger` is how much later each character of `morph` starts; `keep-unchanged` leaves the characters that stay the same in place |
+| `motion.scroll-to-top` | `none`, or a map of `duration` and `curve` | | `400ms`, `ease-out-cubic` | How a screen goes back to its top when it shows another page (`RouteContentView`); `none` jumps |
+| `motion.content-change` | a kind, or a map | `none`, `fade`, `fade-up`, or a kind of the app's own | `none` | How a part of a screen shows other content in its place (another page in `RouteContentView`) |
+| `motion.content-change.type` / `.duration` / `.curve` | kind / duration / curve | as above, `200ms`, a curve name | `none`, `200ms`, `ease-out` | The map form |
 | `motion.durations.<name>` | duration | `120ms`, `1.5s`, `2m`, `1h` | `short` 100ms, `medium` 250ms, `long` 450ms | A named duration |
 | `motion.curves.<name>` | curve | a curve name, or four numbers | `standard` | A named curve |
 | `animations.<name>.duration` | duration | `4s`, `250ms` | required | How long one run takes |
 | `animations.<name>.curve` | curve | a curve name, or four numbers | `linear` | The curve of one run |
 | `animations.<name>.repeat` | enum | `none`, `loop`, `reverse` | `none` | What happens at the end of a run |
 
-Inside `motion` only `page-transition`, `durations` and `curves` exist.
+Inside `motion` only `page-transition`, `text-change`, `content-change`, `scroll-to-top`, `durations` and `curves` exist.
 Inside an animation only `duration`, `curve` and `repeat` exist; another key
 stops the start and names the closest one.
 
@@ -103,6 +108,100 @@ instant. One screen can still choose its own
 (`@ScreenRoute(transition: PageTransition.none)`), and one navigation too
 (`context.route.go(path, transition: PageTransition.none)`): see the
 navigation starter.
+
+## Text changes
+
+When the app's language switches, every text changes at once. Write
+`motion.text-change` and the texts shown with `ThemeText` change the
+theme's way instead:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      motion:
+        text-change: { type: morph, duration: 600ms, curve: ease-out, stagger: 12ms }
+```
+
+```dart
+ThemeText(context.messages.home.title, style: theme.typography.displaySmall);
+```
+
+- `morph`: the characters change one after the other from the start of
+  the line, each running through a few glyphs before it settles on the
+  new one; `stagger` is the delay from one character to the next. By
+  default the wave runs over the whole line, the characters that stay the
+  same too; `keep-unchanged: true` leaves those in place, so only the part
+  that changed runs (a breadcrumb whose last part changes).
+  `glyphs` are the characters it runs through (taken as written, `$`
+  included), `glyph-duration` how long each one shows:
+
+```yaml
+text-change:
+  type: morph
+  duration: 650ms
+  stagger: 14ms
+  glyphs: '01<>/'          # default ▓▒░<>/\|=+*#%&@$?!01
+  glyph-duration: 30ms     # default 40ms
+```
+- `fade`: the old text fades out while the new one fades in.
+- `none` (the default): the new text at once.
+
+A `ThemeText` changes whenever the same widget gets another text: a new
+language, a value that updated, a result of a search as the query is
+typed. Its `highlights` (ranges of the text, the words a search found)
+show in `highlightStyle` once the change has settled. With reduced motion it changes at once.
+To act on the language itself, listen to the navigation's
+`LanguageChangedEvent` with `@EventListener`.
+
+## Content changes
+
+A part of a screen that shows other content in its place, the article of
+a documentation page when another page of the same screen opens, keeps
+what it shows until the next content is read: it never collapses to
+nothing for a frame. `motion.content-change` says how the new content
+replaces the old one:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      motion:
+        content-change: { type: fade-up, duration: 220ms, curve: ease-out }
+```
+
+- `fade`: the old content fades out while the new one fades in.
+- `fade-up`: the same, the new content rising a little.
+- `none` (the default): the new content at once.
+
+When another page opens on the same screen (`RouteContentView`), the
+screen also goes back to its top, as a browser opens a page:
+`motion.scroll-to-top` (400ms ease-out-cubic by default; `none` jumps,
+and so does reduced motion):
+
+```yaml
+motion:
+  scroll-to-top: { duration: 500ms, curve: ease-in-out }
+```
+
+The new content gives the height; the old one is cut to it while it goes.
+`RouteContentView` and `MarkdownView.resource` change this way. Wrap any
+other content in `ContentChange(id: ..., child: ...)`: a new `id` is a
+change. With reduced motion the content changes at once.
+
+A kind of your own is registered before the application starts (the
+themes are read at the start, and a kind no one registered stops it with
+the names that exist):
+
+```dart
+void main() {
+  ContentTransitions.register(
+    'scale',
+    (child, animation) => ScaleTransition(scale: animation, child: child),
+  );
+  runApp(SpringApplicationWidget(application: createApplication));
+}
+```
 
 ## Durations
 

@@ -9,7 +9,8 @@ name: 'Release: publish to pub.dev'
 #         → spring_boot_starter_logging, spring_boot_starter_scheduling,
 #           spring_boot_starter_cache, spring_boot_starter_feign,
 #           spring_boot_starter_websocket, spring_boot_actuator,
-#           spring_boot_starter_web, spring_boot_starter_test
+#           spring_boot_starter_web, spring_boot_starter_test,
+#           spring_search_dart
 #         → spring_boot_starter_actuator (after the web starter and
 #           spring_boot_actuator)
 #         → spring_boot_starter_data (after spring_boot_actuator)
@@ -153,6 +154,7 @@ jobs:
           - spring_boot_actuator
           - spring_boot_starter_web
           - spring_boot_starter_test
+          - spring_search_dart
     steps:
       - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1

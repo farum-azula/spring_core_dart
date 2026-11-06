@@ -60,6 +60,7 @@ List<ThemeProp> themeSections() => [
   ..._background(),
   ..._loaders(),
   ..._splash(),
+  ..._syntax(),
   _p(
     'tokens.*',
     'map',
@@ -73,6 +74,53 @@ List<ThemeProp> themeSections() => [
     'A look per state for your own widgets: `styles.<name>.<property>` '
         'holds a value, or a map from a state to a value.',
     open: true,
+  ),
+];
+
+// The languages of code blocks: docs/flutter/theme/syntax.md.
+List<ThemeProp> _syntax() => [
+  _p(
+    'syntax.*.rules',
+    'list of maps',
+    'The rules, tried in order at each position of the code: each '
+        '`{ match, kind }`, a regular expression (`^` and `\$` are a '
+        "line's start and end) and the kind of what it matches. Required.",
+  ),
+  _p(
+    'syntax.*.rules.*.match',
+    'text',
+    'A regular expression, taken as written (no `\$` reference). An '
+        'invalid one stops the start.',
+  ),
+  _p(
+    'syntax.*.rules.*.kind',
+    'choice',
+    'What a match is: a piece colored by `styles.code.<kind>`, or `word`, '
+        'a keyword when it is in `keywords`, a type when it matches '
+        '`types`, plain otherwise.',
+    values: [
+      'comment', 'string', 'annotation', 'number', 'key', 'keyword', //
+      'type', 'variable', 'punctuation', 'plain', 'word',
+    ],
+  ),
+  _p(
+    'syntax.*.keywords',
+    'list of texts',
+    'The words a `word` rule colors as keywords.',
+    defaultValue: 'none',
+  ),
+  _p(
+    'syntax.*.types',
+    'text',
+    'A regular expression a word of a `word` rule must match to be a type '
+        'name.',
+    defaultValue: 'none',
+  ),
+  _p(
+    'syntax.*.aliases',
+    'list of texts',
+    "Other names of the language in a fenced block's info (`yml`, `bash`).",
+    defaultValue: 'none',
   ),
 ];
 
@@ -112,22 +160,21 @@ List<ThemeProp> _root() => [
     'source',
     'text',
     'Download the theme from an https URL or '
-        '`github:owner/repo/path@ref`.',
-    scope: 'theme',
+        '`github:owner/repo/path@ref`. Under `spring.flutter.theme` itself, '
+        'the values every theme shares (the languages of code blocks, '
+        'say), under what your files set.',
   ),
   _p(
     'source-sha256',
     'text',
     'Refuse a download that does not have this SHA-256 digest (64 '
         'hexadecimal digits).',
-    scope: 'theme',
   ),
   _p(
     'refresh',
     'duration',
     'Look at the address again in the background when the cache is older '
         'than this.',
-    scope: 'theme',
   ),
   _p(
     'brightness',
@@ -371,9 +418,134 @@ List<ThemeProp> _motion() => [
   _p(
     'motion.page-transition',
     'choice',
-    'The page transition used on every platform.',
-    defaultValue: 'platform',
-    values: ['platform', 'fade-upwards', 'zoom', 'cupertino', 'none'],
+    'How a new screen comes in, on every platform: a kind, or a map of '
+        '`type`, `duration`, `curve`.',
+    defaultValue: 'none',
+    values: ['none', 'platform', 'fade-upwards', 'zoom', 'cupertino', 'fade'],
+  ),
+  _p(
+    'motion.page-transition.type',
+    'choice',
+    'The map form\'s kind.',
+    defaultValue: 'none',
+    values: ['none', 'platform', 'fade-upwards', 'zoom', 'cupertino', 'fade'],
+  ),
+  _p(
+    'motion.page-transition.duration',
+    'duration',
+    'How long the transition takes.',
+  ),
+  _p(
+    'motion.page-transition.curve',
+    'curve',
+    'The curve of the transition.',
+  ),
+  _p(
+    'motion.text-change',
+    'choice',
+    'What a `ThemeText` does when its text changes (another language): '
+        'at once, a cross-fade, or `morph`, character after character from '
+        'the start of the line. A kind, or a map of `type`, `duration`, '
+        '`curve`, `stagger`.',
+    defaultValue: 'none',
+    values: ['none', 'fade', 'morph'],
+  ),
+  _p(
+    'motion.text-change.type',
+    'choice',
+    'The map form\'s kind.',
+    defaultValue: 'none',
+    values: ['none', 'fade', 'morph'],
+  ),
+  _p(
+    'motion.text-change.keep-unchanged',
+    'true / false',
+    'For `morph`: `true` keeps the characters that are the same in the old '
+        'and the new text, so only the changed part runs through glyphs; '
+        '`false` runs the wave over the whole line.',
+    defaultValue: 'false',
+  ),
+  _p(
+    'motion.text-change.duration',
+    'duration',
+    'How long the whole change takes.',
+    defaultValue: '450ms',
+  ),
+  _p(
+    'motion.text-change.curve',
+    'curve',
+    'The curve of the change.',
+    defaultValue: 'ease-out',
+  ),
+  _p(
+    'motion.text-change.stagger',
+    'duration',
+    'For `morph`, how much later each character starts than the one before '
+        'it.',
+    defaultValue: '12ms',
+  ),
+  _p(
+    'motion.text-change.glyphs',
+    'text',
+    'For `morph`: the characters a changing character runs through, taken '
+        'as written (no `\$` references).',
+    defaultValue: '▓▒░<>/\\|=+*#%&@\$?!01',
+  ),
+  _p(
+    'motion.text-change.glyph-duration',
+    'duration',
+    'For `morph`: how long each glyph shows before the next.',
+    defaultValue: '40ms',
+  ),
+  _p(
+    'motion.scroll-to-top',
+    'text',
+    'How a screen goes back to its top when it shows another page '
+        '(`RouteContentView`): `none` jumps; else a map of `duration` and '
+        '`curve`.',
+    defaultValue: '400ms ease-out-cubic',
+  ),
+  _p(
+    'motion.scroll-to-top.duration',
+    'duration',
+    'How long the scroll to the top takes.',
+    defaultValue: '400ms',
+  ),
+  _p(
+    'motion.scroll-to-top.curve',
+    'curve',
+    'The curve of the scroll to the top.',
+    defaultValue: 'ease-out-cubic',
+  ),
+  _p(
+    'motion.content-change',
+    'choice',
+    'How a part of a screen shows other content in its place (another page '
+        'in `RouteContentView`, `ContentChange`): at once, a cross-fade, or '
+        'a cross-fade rising a little; a kind of the app\'s own with '
+        '`ContentTransitions.register`. A kind, or a map of `type`, '
+        '`duration`, `curve`.',
+    defaultValue: 'none',
+    values: ['none', 'fade', 'fade-up'],
+  ),
+  _p(
+    'motion.content-change.type',
+    'choice',
+    'The map form\'s kind; a kind of the app\'s own too.',
+    defaultValue: 'none',
+    values: ['none', 'fade', 'fade-up'],
+  ),
+  _p(
+    'motion.content-change.duration',
+    'duration',
+    'How long the change takes.',
+    defaultValue: '200ms',
+  ),
+  _p(
+    'motion.content-change.curve',
+    'curve',
+    'The curve of the change.',
+    defaultValue: 'ease-out',
   ),
   _p(
     'motion.durations.*',
@@ -420,8 +592,9 @@ List<ThemeProp> _background() {
     _p(
       '$root.image.source',
       'text',
-      'The picture: an asset path, an https URL, or an http URL with '
-          '`allow-http`. Required.',
+      'The picture: an asset path, an https URL or a '
+          '`github:owner/repo/path@ref` address (`http` only with '
+          '`spring.remote.allow-insecure`). Required.',
     ),
     _p(
       '$root.image.refresh',
@@ -451,13 +624,6 @@ List<ThemeProp> _background() {
       '$root.image.fallback',
       'text',
       'An asset shown while a network image is not there yet.',
-    ),
-    _p(
-      '$root.image.allow-http',
-      'true / false',
-      'Allows an `http://` source. Without it an `http://` source stops '
-          'the start.',
-      defaultValue: 'false',
     ),
     _p(
       '$root.image.fit',
@@ -702,8 +868,69 @@ List<ThemeProp> _loaders() => [
   _p(
     'loaders.*.web',
     'text',
-    'A kind of the app\'s own: the HTML file that shows it before Flutter '
-        'runs (the web page loader).',
+    'A kind of the app\'s own: the HTML that shows it before Flutter runs '
+        '(the web page loader). A path below `lib/resources/` (the app\'s or '
+        "a package's), or an address the build downloads: `https://...` or "
+        '`github:owner/repo/path@ref`.',
+  ),
+  _p(
+    'loaders.*.web-sha256',
+    'text',
+    'For a downloaded `web`: the SHA-256 (64 hexadecimal digits) the file '
+        'must have; another file is refused.',
+    defaultValue: 'none',
+  ),
+  _p(
+    'loaders.*.tracks.*.follows',
+    'text',
+    'What the track (a value from 0 to 1 a loader reads each frame) '
+        'follows: `time` (the clock), `stage` (from a stage of the start '
+        'on), `progress` (the start\'s progress, smoothed), or a driver of '
+        'the app\'s own (`LoaderTrackDrivers.register`).',
+    defaultValue: 'time',
+  ),
+  _p(
+    'loaders.*.tracks.*.duration',
+    'duration',
+    'A time or stage track: how long one run takes.',
+  ),
+  _p(
+    'loaders.*.tracks.*.curve',
+    'text',
+    'The curve of the track: a name or four numbers.',
+    defaultValue: 'linear',
+  ),
+  _p(
+    'loaders.*.tracks.*.repeat',
+    'choice',
+    'A time or stage track: once, looping, or back and forth.',
+    defaultValue: 'none',
+    values: ['none', 'loop', 'reverse'],
+  ),
+  _p(
+    'loaders.*.tracks.*.delay',
+    'duration',
+    'A time or stage track: how long it waits before it starts.',
+    defaultValue: '0',
+  ),
+  _p(
+    'loaders.*.tracks.*.from',
+    'choice',
+    'A stage track: the stage it starts at.',
+    values: ['page', 'engine', 'splash', 'starting', 'ready', 'exit', 'app'],
+  ),
+  _p(
+    'loaders.*.tracks.*.smoothing',
+    'duration',
+    'A progress track: how fast it catches up with the progress (a time '
+        'constant), so it never jumps.',
+    defaultValue: '300ms',
+  ),
+  _p(
+    'loaders.*.tracks.*.*',
+    'text',
+    'A track of a driver of the app\'s own takes the keys it declares.',
+    open: true,
   ),
   _p(
     'loaders.*.*',

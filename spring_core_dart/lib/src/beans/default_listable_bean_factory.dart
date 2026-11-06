@@ -15,12 +15,14 @@ import 'package:spring_core_dart/src/beans/null_bean.dart';
 import 'package:spring_core_dart/src/beans/object_provider.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
 import 'package:spring_core_dart/src/beans/scope.dart';
+import 'package:spring_core_dart/src/beans/startup_pacer.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
 import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/log.dart';
+import 'package:spring_core_dart/src/core/metrics/application_startup.dart';
 import 'package:spring_core_dart/src/core/order.dart';
 
 Type _typeOf<T>() => T;
@@ -2141,12 +2143,21 @@ class DefaultListableBeanFactory
     _afterSingletonsInstantiated();
   }
 
+  /// Asked between two beans by [preInstantiateSingletonsAsync] whether to
+  /// pause (a UI's frame); `null`, the default, never pauses.
+  StartupPacer? startupPacer;
+
+  /// Where the steps of the beans' creation go
+  /// (`spring.beans.instantiate`, tagged with the bean's name); records
+  /// nothing by default.
+  ApplicationStartup applicationStartup = ApplicationStartup.none;
+
   @override
   Future<void> preInstantiateSingletonsAsync() async {
     _log.trace(
       () => 'Pre-instantiating singletons in DefaultListableBeanFactory',
     );
-    final pending = _createEagerSingletons();
+    final pending = await _createEagerSingletonsPaced();
     // Every Future gets its listener right away (no unhandled errors);
     // the first failure wins, named after its bean.
     await Future.wait<void>([
@@ -2159,18 +2170,46 @@ class DefaultListableBeanFactory
     _afterSingletonsInstantiated();
   }
 
+  // As [_createEagerSingletons], asking [startupPacer] between two beans.
+  Future<List<(String, Future<void>)>> _createEagerSingletonsPaced() async {
+    final pacer = startupPacer;
+    // Copy: creating beans may register further definitions.
+    for (final definition in _definitions.values.toList()) {
+      if (definition.isSingleton && !definition.lazy) {
+        _createEager(definition);
+        final pause = pacer?.pace();
+        if (pause != null) {
+          await pause;
+        }
+      }
+    }
+    final pending = _pendingInits ?? const [];
+    _pendingInits = null;
+    return pending;
+  }
+
+  void _createEager(BeanDefinition<Object> definition) {
+    final step = applicationStartup.start('spring.beans.instantiate')
+      ..tag('beanName', definition.name);
+    try {
+      final instance = _instanceOf(definition);
+      if (definition.isFactoryBean &&
+          instance is SmartFactoryBean<Object> &&
+          instance.isEagerInit) {
+        _productOf(definition, instance);
+      }
+    } finally {
+      step.end();
+    }
+  }
+
   // Creates the eager singletons and ends the collection of asynchronous
   // init callbacks, returning the pending ones.
   List<(String, Future<void>)> _createEagerSingletons() {
     // Copy: creating beans may register further definitions.
     for (final definition in _definitions.values.toList()) {
       if (definition.isSingleton && !definition.lazy) {
-        final instance = _instanceOf(definition);
-        if (definition.isFactoryBean &&
-            instance is SmartFactoryBean<Object> &&
-            instance.isEagerInit) {
-          _productOf(definition, instance);
-        }
+        _createEager(definition);
       }
     }
     final pending = _pendingInits ?? const [];

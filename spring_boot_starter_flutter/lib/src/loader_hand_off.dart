@@ -34,6 +34,16 @@ abstract final class LoaderHandOff {
       ? pageElapsedOverride!()
       : springPageLoaderElapsed();
 
+  /// Replaces [pageStages] in tests.
+  @visibleForTesting
+  static Map<String, Duration> Function()? pageStagesOverride;
+
+  /// The stages the web page loader went through with their times
+  /// (`page`, `engine`), while its element is in the page; empty elsewhere.
+  static Map<String, Duration> pageStages() => pageStagesOverride != null
+      ? pageStagesOverride!()
+      : springPageLoaderStages();
+
   /// Hands over with the start's [progress], 0 to 1.
   static void call(double progress) =>
       (override ?? springLoaderHandOff)(progress);

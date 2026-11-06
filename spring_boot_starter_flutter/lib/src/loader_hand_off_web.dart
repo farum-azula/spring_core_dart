@@ -61,3 +61,28 @@ Duration? springPageLoaderElapsed() {
     return null;
   }
 }
+
+/// The stages the page loader recorded (`window.springLoader.stages`: a
+/// list of `{stage, at}`, `at` in milliseconds from the page's start).
+Map<String, Duration> springPageLoaderStages() {
+  try {
+    final loader = globalContext.getProperty<JSObject?>('springLoader'.toJS);
+    final stages = loader?.getProperty<JSAny?>('stages'.toJS);
+    if (!stages.isA<JSArray>()) {
+      return const {};
+    }
+    final result = <String, Duration>{};
+    for (final item in (stages as JSArray<JSObject>).toDart) {
+      final stage = item.getProperty<JSAny?>('stage'.toJS);
+      final at = item.getProperty<JSAny?>('at'.toJS);
+      if (stage.isA<JSString>() && at.isA<JSNumber>()) {
+        result[(stage as JSString).toDart] = Duration(
+          microseconds: ((at as JSNumber).toDartDouble * 1000).round(),
+        );
+      }
+    }
+    return result;
+  } on Object {
+    return const {};
+  }
+}

@@ -4,12 +4,11 @@
 // too differently for any tolerance). The fonts are neon_ui's own, loaded
 // from the package, so screenshots show the real letters.
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'support/neon_ui_files.dart';
 
 /// Share of differing pixels a golden may have and still match. The
 /// goldens are made on one Mac and compared on GitHub's macOS runner: the
@@ -49,7 +48,7 @@ Future<void> _loadNeonFonts() async {
   for (final MapEntry(:key, :value) in fonts.entries) {
     final loader = FontLoader(key);
     for (final file in value) {
-      final bytes = neonUiFile('assets/fonts/$file').readAsBytesSync();
+      final bytes = File('../neon_ui/assets/fonts/$file').readAsBytesSync();
       loader.addFont(Future.value(ByteData.sublistView(bytes)));
     }
     await loader.load();

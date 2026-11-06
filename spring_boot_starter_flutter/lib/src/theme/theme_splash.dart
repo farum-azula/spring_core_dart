@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/loader_hand_off.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
@@ -199,10 +200,20 @@ class ThemeSplash extends StatefulWidget {
     required this.theme,
     required this.progress,
     required this.ready,
+    this.stages,
     this.onShown,
+    this.onExiting,
     this.onExited,
     super.key,
   });
+
+  /// The start's stages, given to the loader (`LoaderFrame.stage`, the
+  /// tracks that follow a stage).
+  final SplashStages? stages;
+
+  /// Called once, when the exit starts (the loader's last phase with
+  /// `reveal`, or the fade).
+  final VoidCallback? onExiting;
 
   /// The theme whose `splash` is shown (it also gives the loaders).
   final SpringThemeData theme;
@@ -334,6 +345,7 @@ class _ThemeSplashState extends State<ThemeSplash>
       return;
     }
     _exiting = true;
+    _exitingNow();
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     _exit.duration = reduce ? Duration.zero : _data.exit.duration;
     // Not from a build: the parent changes its state when this is over.
@@ -352,6 +364,14 @@ class _ThemeSplashState extends State<ThemeSplash>
   }
 
   bool _built = false;
+  bool _exitingTold = false;
+
+  void _exitingNow() {
+    if (!_exitingTold) {
+      _exitingTold = true;
+      widget.onExiting?.call();
+    }
+  }
 
   @override
   void dispose() {
@@ -380,13 +400,13 @@ class _ThemeSplashState extends State<ThemeSplash>
       resumeFrom: _resumed,
       resumeElapsed: _resumedElapsed,
       ready: widget.ready,
-      onExiting: data.reveal
-          ? () {
-              if (mounted && !_revealing) {
-                setState(() => _revealing = true);
-              }
-            }
-          : null,
+      stages: widget.stages,
+      onExiting: () {
+        _exitingNow();
+        if (data.reveal && mounted && !_revealing) {
+          setState(() => _revealing = true);
+        }
+      },
       onFinished: () {
         _loaderDone = true;
         _maybeExit();

@@ -140,6 +140,8 @@ void main() {
         'map',
         'list of colors',
         'list of numbers',
+        'list of texts',
+        'list of maps',
       };
       for (final p in properties) {
         final type = p['type'] as String;

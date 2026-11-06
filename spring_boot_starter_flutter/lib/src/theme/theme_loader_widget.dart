@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
+import 'package:spring_boot_starter_flutter/src/theme/loader_tracks.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_loader.dart';
 
@@ -229,8 +231,13 @@ class ThemeLoader extends StatefulWidget {
     this.onExiting,
     this.resumeFrom,
     this.resumeElapsed,
+    this.stages,
     super.key,
   });
+
+  /// The start's stages, for `LoaderFrame.stage` and the tracks that
+  /// follow a stage; `null` for a loader that is not the splash's.
+  final SplashStages? stages;
 
   /// The loader to show.
   final ThemeLoaderSpec spec;
@@ -276,6 +283,45 @@ class _ThemeLoaderState extends State<ThemeLoader>
   bool _reduce = false;
   bool _notified = false;
   late Object? _props = _makeProps();
+  late Map<String, LoaderTrackRun> _runs = _newRuns();
+  // The first frame is built before the ticker's first tick.
+  late Map<String, double> _tracks = _trackValues(Duration.zero);
+
+  Map<String, LoaderTrackRun> _newRuns() => {
+    for (final MapEntry(:key, :value) in widget.spec.tracks.entries)
+      key: value.run(),
+  };
+
+  void _advanceTracks(Duration dt) {
+    if (_runs.isNotEmpty) {
+      _tracks = _trackValues(dt);
+    }
+  }
+
+  Map<String, double> _trackValues(Duration dt) {
+    final stages = widget.stages;
+    final clock = LoaderClock(
+      elapsed: _elapsed,
+      dt: dt,
+      progress: widget.progress,
+      stage: stages?.value,
+      since: stages == null
+          ? null
+          : (stage) => switch (stages.at(stage)) {
+              final at? => stages.now - at,
+              null => null,
+            },
+    );
+    return {
+      for (final MapEntry(:key, :value) in _runs.entries)
+        key: value.advance(clock),
+    };
+  }
+
+  Map<String, double> _stillTracks() => {
+    for (final MapEntry(:key, :value) in widget.spec.tracks.entries)
+      key: value.still(widget.progress),
+  };
 
   LoaderTimeline _newTimeline() {
     final timeline = LoaderTimeline(widget.spec.phases);
@@ -300,10 +346,11 @@ class _ThemeLoaderState extends State<ThemeLoader>
     _last = elapsed;
     _elapsed += dt;
     _timeline.advance(dt, progress: widget.progress, ready: _ready);
+    _advanceTracks(dt);
     _repaint.touch();
     _checkExiting();
     _checkFinished();
-    if (_timeline.settled(_target) || _barWithProgress) {
+    if (_runs.isEmpty && (_timeline.settled(_target) || _barWithProgress)) {
       _ticker.stop();
       _last = Duration.zero;
     }
@@ -347,6 +394,7 @@ class _ThemeLoaderState extends State<ThemeLoader>
     if (_reduce) {
       _ticker.stop();
       _timeline.still(widget.progress ?? 1.0);
+      _tracks = _stillTracks();
       _repaint.touch();
       _checkExiting();
       _checkFinished();
@@ -381,6 +429,8 @@ class _ThemeLoaderState extends State<ThemeLoader>
     if (!identical(widget.spec, oldWidget.spec)) {
       _timeline = _newTimeline();
       _props = _makeProps();
+      _runs = _newRuns();
+      _tracks = _trackValues(Duration.zero);
       _notified = false;
       _exitingNotified = false;
       _last = Duration.zero;
@@ -408,6 +458,8 @@ class _ThemeLoaderState extends State<ThemeLoader>
     progress: widget.progress,
     reduceMotion: _reduce,
     elapsed: _reduce ? Duration.zero : _elapsed,
+    stage: widget.stages?.value,
+    tracks: Map.unmodifiable(_tracks),
   );
 
   @override

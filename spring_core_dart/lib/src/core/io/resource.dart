@@ -375,3 +375,23 @@ final class EncodedResource {
   @override
   String toString() => resource.toString();
 }
+
+/// A resource of a context with a path within it: a `resources:` file
+/// knows its path below `lib/resources/` (`content/guide/index.md`),
+/// whether it is embedded or read from disk. A feature that lists files by
+/// a pattern (`resources:content/**/*.md`) reads it to name each file.
+///
+/// ```dart
+/// for (final page in context.getResources('resources:content/**/*.md')) {
+///   if (page case final ContextResource resource) {
+///     log.info(resource.pathWithinContext); // content/guide/index.md
+///   }
+/// }
+/// ```
+///
+/// Spring (Java): `ContextResource.getPathWithinContext()`, and
+/// `ClassPathResource.getPath()`.
+abstract interface class ContextResource implements Resource {
+  /// The path within the context, without a leading `/`.
+  String get pathWithinContext;
+}

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart'
     show SynchronousFuture, ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter_navigation/src/language_changed_event.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_location.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_scopes.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_state.dart';
@@ -119,9 +120,29 @@ final class Navigation extends ChangeNotifier {
     this.initial,
     this.linkExclude = const [],
     this.languages = const [],
+    this.events,
   }) : _language = ValueNotifier(languages.firstOrNull) {
     _checkAuthorization();
     scopes.attach(this);
+    _published = _language.value;
+    _language.addListener(_languageChanged);
+  }
+
+  /// Where [LanguageChangedEvent]s go; `null` publishes none.
+  final ApplicationEventPublisher? events;
+
+  String? _published;
+
+  void _languageChanged() {
+    final language = _language.value;
+    if (language == null || language == _published) {
+      return;
+    }
+    final from = _published;
+    _published = language;
+    events?.publishEvent(
+      LanguageChangedEvent(this, from: from, to: language),
+    );
   }
 
   // A route that asks for a user must not open to everyone because nothing
@@ -604,9 +625,8 @@ final class Navigation extends ChangeNotifier {
       if (i < existing.length &&
           existing[i].state.error == null &&
           states[i].error == null &&
-          existing[i].state.location == states[i].location &&
           existing[i].state.route == states[i].route)
-        existing[i]
+        _moved(existing[i], states[i])
       else
         ScreenEntry(
           _nextId++,
@@ -616,6 +636,16 @@ final class Navigation extends ChangeNotifier {
           transition: transition,
         ),
   ];
+
+  // A screen of the same route at another address (`/docs/a` to
+  // `/docs/b`): the same screen, its state and scroll kept, rebuilt with
+  // the new address.
+  ScreenEntry _moved(ScreenEntry entry, RouteState state) {
+    if (entry.state.location != state.location) {
+      entry.state = state;
+    }
+    return entry;
+  }
 
   (ShellRouteDefinition, int)? _placeOf(RouteState state) {
     final route = state.route;

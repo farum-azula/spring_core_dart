@@ -3,10 +3,10 @@
 A custom design system on the theme of
 [`spring_boot_starter_flutter`](../../../spring_boot_starter_flutter/README.md),
 in an app of type `widgets`: **no Material, no Cupertino, no `ThemeData`**.
-Everything on screen is a widget of [`neon_ui`](https://github.com/farum-azula/themes/tree/main/packages/neon_ui), the
+Everything on screen is a widget of [`neon_ui`](../neon_ui/README.md), the
 NEON design system shipped as a library, or a small widget of this app.
 
-The look is YAML. [`neon_ui`'s `themes/neon.yml`](https://github.com/farum-azula/themes/blob/main/packages/neon_ui/lib/resources/themes/neon.yml)
+The look is YAML. [`neon_ui`'s `themes/neon.yml`](../neon_ui/lib/resources/themes/neon.yml)
 is imported with `spring.config.import: resources:themes/neon.yml`, and
 [`lib/resources/application.yml`](lib/resources/application.yml) adds a theme
 of its own, `neon-ice`, that `extends: neon` and changes one color.

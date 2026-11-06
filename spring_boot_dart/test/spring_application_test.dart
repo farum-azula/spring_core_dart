@@ -82,6 +82,52 @@ final autoModule = BeanModule('auto', [
 ]);
 
 void main() {
+  test('applicationStartup: the steps of the start and of each bean', () async {
+    final startup = BufferingApplicationStartup();
+    final context = await SpringApplication(
+      [
+        BeanModule('test', [
+          BeanDefinition<Object>(name: 'catalog', create: (_) => Object()),
+        ]),
+      ],
+      applicationStartup: startup,
+      bannerMode: BannerMode.off,
+    ).runAsync(const [], systemEnvironment: const {});
+    addTearDown(context.close);
+    final names = [for (final step in startup.steps) step.name];
+    expect(
+      names,
+      containsAllInOrder([
+        'spring.boot.application.starting',
+        'spring.boot.application.environment-prepared',
+        'spring.boot.application.context',
+      ]),
+    );
+    expect(
+      startup.steps
+          .where((s) => s.name == 'spring.beans.instantiate')
+          .map(
+            (s) => s.tags.single.$2,
+          ),
+      contains('catalog'),
+    );
+    expect(startup.steps.every((s) => s.duration != null), isTrue);
+  });
+
+  test('addressResolvers: the remoteAddresses bean asks them first', () {
+    final context = SpringApplication(
+      const [],
+      addressResolvers: const [_Cdn()],
+      bannerMode: BannerMode.off,
+    ).run(const [], systemEnvironment: const {});
+    addTearDown(context.close);
+    final addresses = context.getBean<RemoteAddresses>();
+    expect(
+      addresses.parse('cdn:a.yml', property: 'p').uri.toString(),
+      'https://cdn.example.com/a.yml',
+    );
+    expect(addresses.isAddress('github:o/r/f'), isTrue);
+  });
   final lines = <String>[];
   // INFO records of SpringApplication (the startup info).
   final logs = <String>[];
@@ -866,4 +912,15 @@ class _Flag {
 class _AsyncInit {
   bool ready = false;
   bool closed = false;
+}
+
+final class _Cdn implements RemoteAddressResolver {
+  const _Cdn();
+
+  @override
+  bool supports(String text) => text.startsWith('cdn:');
+
+  @override
+  Uri resolve(String text, {required String property}) =>
+      Uri.https('cdn.example.com', '/${text.substring(4)}');
 }

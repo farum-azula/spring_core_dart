@@ -95,7 +95,8 @@ These keys exist at the root (shared by every theme) and in each
 | `tokens.*` | any | | none | Your own values, at any depth. See [tokens and references](tokens-and-references.md) |
 | `cupertino.*` | map | | iOS's | The `CupertinoThemeData`. See [Cupertino](cupertino.md) |
 | `styles.<name>.*` | map | | none | A look per state for your own widgets. See [styles and states](styles-and-states.md) |
-| `styles.code.*` | map | `background`, `text`, `keyword`, `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`, `punctuation`, `padding`, `radius`, `border`, `border-width` | the color scheme | The colors of code in `MarkdownView`. See [Markdown and code](styles-and-states.md#markdown-and-code-stylescode) |
+| `styles.code.*` | map | `background`, `text`, `keyword`, `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`, `punctuation`, `inline-text`, `inline-background`, `header`, `title`, `padding`, `radius`, `border`, `border-width` | the color scheme | The colors of code in `MarkdownView`. See [Markdown and code](styles-and-states.md#markdown-and-code-stylescode) |
+| `syntax.<language>` | map | `rules` (`match`, `kind`), `keywords`, `types`, `aliases` | none | The languages of code blocks. See [the languages of code](styles-and-states.md#the-languages-of-code-syntax) |
 | `animations.<name>.*` | map | | none | Named animations: `duration`, `curve`, `repeat`. See [motion](motion-and-animations.md#animations) |
 | `background.*` | map | | none | A color, image, overlay and animation behind every screen. See [background](background.md) |
 
@@ -162,6 +163,12 @@ another shape; maps of states merge state by state.
 A custom theme can be downloaded under a name your app chooses. The file's
 own name for its theme does not matter.
 
+`source` on `spring.flutter.theme` itself (with its `source-sha256` and
+`refresh`) downloads values that **every** theme shares, under what your
+own files set: the languages of code blocks
+([`syntax`](styles-and-states.md#the-languages-of-code-syntax)), a palette
+of tokens. A `themes.<name>.source` is one theme, over its files.
+
 ```yaml
 spring:
   flutter:
@@ -216,6 +223,36 @@ How it works:
   headers.
 - **Typed keys.** The generated `context.theme` comes from the build. The
   downloaded file changes values; it does not add keys.
+
+## Kinds of addresses
+
+An address is read by a chain of resolvers: the application's own first,
+then `github:owner/repo/path@ref` and `https://` / `http://`. Add a kind
+(a company's `cdn:`) with a `RemoteAddressResolver`, given to
+`SpringApplication(addressResolvers: [...])`, and every place that takes
+an address (theme sources, images) accepts it. The build reads a page
+loader's `web:` with the built-in kinds only.
+
+## Insecure connections
+
+Every address the configuration downloads from (a theme's `source`, the
+shared `source`, an image, a page loader's `web:`) is read the same way
+(`https://`, `github:owner/repo/path@ref`) and checked at the start: an
+`http://` address stops the application with "the connection is not
+secure", naming the address and its property. For a server without
+https (a theme server of the local network, say):
+
+```yaml
+spring:
+  remote:
+    allow-insecure: true
+```
+
+Then `http://` works, as `https://` with a certificate that is expired,
+self-signed or for another host (not in a browser, which checks
+certificates by itself), and a warning at the start lists every insecure
+address. A page loader's `web:` is downloaded by the build, which applies
+the same rule.
 
 ## Related settings outside the theme
 

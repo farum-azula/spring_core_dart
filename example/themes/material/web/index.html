@@ -76,9 +76,20 @@
     load: [0.08, 0.45], app: [0.5, 0.6], engine: [0.6, 0.88],
     run: [0.9, 0.95], done: [1, 1]
   };
+  var reached = [], splashStages = { load: 'page', engine: 'engine' };
+  function enter(stage) {
+    for (var i = 0; i < reached.length; i++) if (reached[i].stage === stage) return;
+    var entry = { stage: stage, at: now() };
+    reached.push(entry);
+    root.setAttribute('data-splash-stage', stage);
+    try {
+      window.dispatchEvent(new CustomEvent('spring-splash-stage', { detail: entry }));
+    } catch (e) {}
+  }
   function show(stage) {
     var s = stages[stage];
     if (done || !s) return;
+    if (splashStages[stage]) enter(splashStages[stage]);
     floor = s[0]; cap = s[1];
     if (progress < floor) progress = floor;
     root.setAttribute('data-stage', stage);
@@ -107,6 +118,7 @@
     get progress() { return shown; },
     get stage() { return root.getAttribute('data-stage'); },
     get elapsed() { return now() - started; },
+    get stages() { return reached.slice(); },
     handOff: remove
   };
   window.springLoaderHandOff = remove;

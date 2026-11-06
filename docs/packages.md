@@ -90,6 +90,7 @@ main library and their main libraries come with it.
 | `spring_core_dart` | — | The container: beans, configuration, profiles, events, SpEL, validation, AOP. `jakarta.dart` (`Provider`, `@Resource`, `@Priority`) is a library of its own |
 | `spring_web_dart` | — | The HTTP model and clients. It exports the part of `spring_core_dart` its types use (`core.dart`). `io.dart` and `browser.dart` (the platform transports) and `testing.dart` (the fake transports) are libraries of their own |
 | `spring_boot_dart` | `spring_core_dart` | `@SpringBootApplication`, auto-configuration |
+| `spring_search_dart` | — | Full-text search: `SearchService`, documents from beans and Markdown, analyzers per language. Apps import `spring_boot_dart` (or a starter) for the annotations |
 | `spring_boot_starter_logging` | `spring_boot_dart`, `spring_core_dart` | The base starter: Spring Boot with log output |
 | `spring_boot_starter_cache` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart` | `@Cacheable` and the cache manager |
 | `spring_boot_starter_scheduling` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart` | `@Scheduled` |

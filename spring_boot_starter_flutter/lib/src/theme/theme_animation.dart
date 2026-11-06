@@ -308,3 +308,167 @@ final class PageTransitionSpec {
   @override
   int get hashCode => Object.hash(type, duration, curve);
 }
+
+/// The kinds of `motion.text-change`: what a [ThemeText] does when its text
+/// changes (another language, a new value).
+enum TextChangeType {
+  /// The new text at once.
+  none,
+
+  /// The old text fades out as the new one fades in.
+  fade,
+
+  /// The characters change one after the other from the start of the line:
+  /// each runs through a few glyphs before it settles on the new one.
+  morph,
+}
+
+/// The theme's text change, `motion.text-change`: a kind alone, or a map
+/// of `type`, `duration`, `curve` and `stagger` (the delay from one
+/// character to the next, for `morph`). None by default.
+///
+/// ```yaml
+/// motion:
+///   text-change: { type: morph, duration: 600ms, curve: ease-out, stagger: 12ms }
+/// ```
+final class TextChangeSpec {
+  /// A text change of [type], [duration], [curve] and [stagger].
+  const TextChangeSpec({
+    this.type = TextChangeType.none,
+    this.duration = const Duration(milliseconds: 450),
+    this.curve = Curves.easeOut,
+    this.stagger = const Duration(milliseconds: 12),
+    this.keepUnchanged = false,
+    this.glyphs = defaultGlyphs,
+    this.glyphDuration = const Duration(milliseconds: 40),
+  });
+
+  /// The glyphs of `morph` when the theme gives none.
+  static const defaultGlyphs = r'▓▒░<>/\|=+*#%&@$?!01';
+
+  /// Reads the text change written at [base] of [p]; `null` when nothing
+  /// is written. Throws a [ThemePropertyException] for a wrong value or
+  /// key.
+  static TextChangeSpec? parseAt(ThemeProperties p, String base) {
+    const kinds = 'none, fade or morph';
+    TextChangeType? kind(String value) =>
+        ThemeValues.enumValue(TextChangeType.values, value);
+    final children = p.children(base);
+    if (children.isEmpty) {
+      final type = p.read(base, kind, kinds);
+      return type == null ? null : TextChangeSpec(type: type);
+    }
+    const keys = [
+      'type',
+      'duration',
+      'curve',
+      'stagger',
+      'keepunchanged',
+      'glyphs',
+      'glyphduration',
+    ];
+    for (final key in children) {
+      if (!keys.contains(key)) {
+        throw ThemePropertyException(
+          p.propertyName('$base.$key'),
+          p['$base.$key'] ?? '',
+          'type, duration, curve, stagger, keep-unchanged, glyphs or '
+          'glyph-duration'
+          '${didYouMean(key, keys)}',
+        );
+      }
+    }
+    const defaults = TextChangeSpec();
+    return TextChangeSpec(
+      type: p.read('$base.type', kind, kinds) ?? TextChangeType.none,
+      duration:
+          p.read(
+            '$base.duration',
+            ThemeValues.duration,
+            'a duration like 450ms',
+          ) ??
+          defaults.duration,
+      curve:
+          p.read(
+            '$base.curve',
+            ThemeValues.anyCurve,
+            'a curve: ${ThemeValues.curveNames.join(', ')}, or four numbers',
+          ) ??
+          defaults.curve,
+      stagger:
+          p.read(
+            '$base.stagger',
+            ThemeValues.duration,
+            'a duration like 12ms',
+          ) ??
+          defaults.stagger,
+      keepUnchanged:
+          p.read('$base.keepunchanged', ThemeValues.boolean, 'true or false') ??
+          defaults.keepUnchanged,
+      glyphs:
+          p.read(
+            '$base.glyphs',
+            (v) => v.isEmpty ? null : v,
+            'one character or more',
+          ) ??
+          defaults.glyphs,
+      glyphDuration:
+          p.read(
+            '$base.glyphduration',
+            (v) => switch (ThemeValues.duration(v)) {
+              final d? when d > Duration.zero => d,
+              _ => null,
+            },
+            'a duration over zero, like 40ms',
+          ) ??
+          defaults.glyphDuration,
+    );
+  }
+
+  /// The kind of change.
+  final TextChangeType type;
+
+  /// How long the whole change takes.
+  final Duration duration;
+
+  /// The curve of the change.
+  final Curve curve;
+
+  /// For `morph`, how much later each character starts than the one
+  /// before it.
+  final Duration stagger;
+
+  /// For `morph`: `true` keeps the characters that are the same in the old
+  /// and the new text, so only the changed part runs through glyphs;
+  /// `false` (the default) runs the wave over the whole line.
+  final bool keepUnchanged;
+
+  /// For `morph`: the characters a changing character runs through, one
+  /// after the other in a random order.
+  final String glyphs;
+
+  /// For `morph`: how long each glyph shows before the next.
+  final Duration glyphDuration;
+
+  @override
+  bool operator ==(Object other) =>
+      other is TextChangeSpec &&
+      other.keepUnchanged == keepUnchanged &&
+      other.glyphs == glyphs &&
+      other.glyphDuration == glyphDuration &&
+      other.type == type &&
+      other.duration == duration &&
+      other.curve == curve &&
+      other.stagger == stagger;
+
+  @override
+  int get hashCode => Object.hash(
+    type,
+    duration,
+    curve,
+    stagger,
+    keepUnchanged,
+    glyphs,
+    glyphDuration,
+  );
+}

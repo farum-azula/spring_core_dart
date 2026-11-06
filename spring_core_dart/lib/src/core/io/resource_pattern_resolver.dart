@@ -444,7 +444,7 @@ final class _DirectoryRoot extends _ClasspathRoot {
       : const [];
 
   @override
-  Resource resolve(String path) => FileSystemResource('$directory/$path');
+  Resource resolve(String path) => ClasspathFileResource(directory, path);
 }
 
 final class _EmbeddedRoot extends _ClasspathRoot {
@@ -477,6 +477,6 @@ final class _EmbeddedRoot extends _ClasspathRoot {
     if (Resources.paths.contains(path)) {
       return Resources.resolveEmbedded(path);
     }
-    return FileSystemResource('$_directory/$path');
+    return ClasspathFileResource(_directory, path);
   }
 }

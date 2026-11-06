@@ -30,21 +30,30 @@ final class ThemeSource {
   /// A source of theme [name] at [uri].
   ThemeSource({
     required this.name,
-    required this.configured,
-    required this.uri,
+    required this.address,
     this.sha256,
     this.refresh,
   });
 
   /// The theme's name: what the app calls it, whatever the file calls its
-  /// theme.
+  /// theme; empty for the source of `spring.flutter.theme` itself, whose
+  /// values every theme shares.
   final String name;
 
-  /// The `source` as written.
-  final String configured;
+  /// Whether this is the shared source (`spring.flutter.theme.source`).
+  bool get shared => name.isEmpty;
 
-  /// The `https` address to download from.
-  final Uri uri;
+  /// The source in log lines: `spring.flutter.theme` or `theme <name>`.
+  String get label => shared ? 'spring.flutter.theme' : 'theme $name';
+
+  /// The `source`: where to download from, and how it was written.
+  final RemoteAddress address;
+
+  /// The `source` as written.
+  String get configured => address.written;
+
+  /// The address to download from.
+  Uri get uri => address.uri;
 
   /// The digest the content must have (lowercase hexadecimal), if pinned.
   final String? sha256;
@@ -65,42 +74,6 @@ final class ThemeSource {
   /// The folder of all the caches, relative to the place `support`.
   static const cacheRoot = 'spring/themes';
 
-  /// The address `source` means: an `https` URL as it is, or
-  /// `github:owner/repo/path@ref` as `raw.githubusercontent.com` serves it
-  /// (`ref` is a branch, tag or commit, `HEAD` when omitted). Throws an
-  /// `ArgumentError` for anything else, `http` included.
-  static Uri parseUri(String source) {
-    final text = source.trim();
-    if (text.startsWith('github:')) {
-      final reference = text.substring('github:'.length);
-      final at = reference.lastIndexOf('@');
-      final path = at < 0 ? reference : reference.substring(0, at);
-      final ref = at < 0 ? 'HEAD' : reference.substring(at + 1);
-      final parts = path.split('/');
-      if (parts.length < 3 || parts.any((p) => p.isEmpty) || ref.isEmpty) {
-        throw ArgumentError.value(
-          source,
-          'source',
-          'github: sources look like github:owner/repo/path/to/theme.yml@ref',
-        );
-      }
-      return Uri(
-        scheme: 'https',
-        host: 'raw.githubusercontent.com',
-        pathSegments: [parts[0], parts[1], ref, ...parts.skip(2)],
-      );
-    }
-    final uri = Uri.tryParse(text);
-    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
-      throw ArgumentError.value(
-        source,
-        'source',
-        'must be an https URL or github:owner/repo/path@ref',
-      );
-    }
-    return uri;
-  }
-
   /// The sources among [properties] (relative to `spring.flutter.theme`,
   /// as `SpringThemes` takes them), by theme name. Throws an
   /// `ArgumentError` naming the property when a value is invalid.
@@ -109,14 +82,21 @@ final class ThemeSource {
     SpringThemes themes,
   ) {
     final byName = <String, Map<String, String>>{};
+    const fields = {'source', 'sourcesha256', 'refresh'};
     for (final MapEntry(:key, :value) in properties.entries) {
       final segments = key.split('.');
+      if (segments.length == 1 &&
+          fields.contains(ThemeValues.canonical(segments[0]))) {
+        byName.putIfAbsent('', () => {})[ThemeValues.canonical(segments[0])] =
+            value.trim();
+        continue;
+      }
       if (segments.length != 3 ||
           ThemeValues.canonical(segments[0]) != 'themes') {
         continue;
       }
       final field = ThemeValues.canonical(segments[2]);
-      if (field == 'source' || field == 'sourcesha256' || field == 'refresh') {
+      if (fields.contains(field)) {
         final name = themes.nameOf(segments[1]) ?? segments[1];
         byName.putIfAbsent(name, () => {})[field] = value.trim();
       }
@@ -124,7 +104,9 @@ final class ThemeSource {
     final sources = <ThemeSource>[];
     for (final MapEntry(:key, :value) in byName.entries) {
       final text = value['source'];
-      final property = 'spring.flutter.theme.themes.$key';
+      final property = key.isEmpty
+          ? 'spring.flutter.theme'
+          : 'spring.flutter.theme.themes.$key';
       if (text == null || text.isEmpty) {
         throw ArgumentError.value(
           value.keys.join(', '),
@@ -132,12 +114,10 @@ final class ThemeSource {
           'is needed with source-sha256 and refresh',
         );
       }
-      final Uri uri;
-      try {
-        uri = parseUri(text);
-      } on ArgumentError catch (error) {
-        throw ArgumentError.value(text, '$property.source', error.message);
-      }
+      final address = themes.addresses.parse(
+        text,
+        property: '$property.source',
+      );
       final pin = value['sourcesha256']?.toLowerCase();
       if (pin != null && !RegExp(r'^[0-9a-f]{64}$').hasMatch(pin)) {
         throw ArgumentError.value(
@@ -150,8 +130,7 @@ final class ThemeSource {
       sources.add(
         ThemeSource(
           name: key,
-          configured: text,
-          uri: uri,
+          address: address,
           sha256: pin == null || pin.isEmpty ? null : pin,
           refresh: refreshText == null || refreshText.isEmpty
               ? null
@@ -268,7 +247,7 @@ final class ThemeSourceContent {
     final own = {...shared, ...?theme};
     return ThemeSourceContent._({
       for (final MapEntry(:key, :value) in own.entries)
-        'themes.$name.$key': value,
+        name.isEmpty ? key : 'themes.$name.$key': value,
     }, ignored);
   }
 }
@@ -290,7 +269,8 @@ final class ThemeSourceContent {
 /// The cache is `spring/themes/<sha256 of source and pin>/theme.yml` and
 /// `meta.json` in the files' `support` place, so another `source` or
 /// `source-sha256` downloads again and folders of sources no longer
-/// configured are removed at start. Only `https` is followed.
+/// configured are removed at start. Only `https` is followed, unless
+/// `spring.remote.allow-insecure` allows `http`.
 ///
 /// Internal to the starter.
 final class ThemeSourceLoader implements ApplicationRunner {
@@ -304,26 +284,31 @@ final class ThemeSourceLoader implements ApplicationRunner {
     HttpTransport? transport,
     this.maxBytes = defaultMaxBytes,
     this.timeout = defaultTimeout,
+    bool allowInsecure = false,
     DateTime Function()? clock,
     // ignore: prefer_initializing_formals, named parameters cannot be private
   }) : _fetcher = RemoteFetcher(
          transport: transport,
          timeout: timeout,
          maxBytes: maxBytes,
+         allowInsecure: allowInsecure,
        ),
        _clock = clock ?? DateTime.now;
 
   /// The sources of [environment]'s `spring.flutter.theme.themes.*`.
+  /// The sources of [environment]'s `spring.flutter.theme` (its own
+  /// `source` and those of `themes.*`). Every address of the themes, the
+  /// sources' and the images', is checked first by the
+  /// [RemoteAddressPolicy] of [environment]: an insecure one stops the
+  /// start ([InsecureConnectionException]) unless
+  /// `spring.remote.allow-insecure` allows it.
   factory ThemeSourceLoader.fromEnvironment(
     ConfigurableEnvironment environment, {
     required SpringThemes themes,
     required FileTemplate files,
     HttpTransport? transport,
-  }) => ThemeSourceLoader(
-    themes: themes,
-    files: files,
-    transport: transport,
-    sources: ThemeSource.read(
+  }) {
+    final sources = ThemeSource.read(
       Binder.get(environment)
           .bind(
             SpringThemes.prefix,
@@ -332,8 +317,20 @@ final class ThemeSourceLoader implements ApplicationRunner {
           .orElse(const <String, String>{})
           .cast<String, String>(),
       themes,
-    ),
-  );
+    );
+    final policy = RemoteAddressPolicy.of(environment)
+      ..check([
+        for (final source in sources) source.address,
+        ...themes.downloads,
+      ]);
+    return ThemeSourceLoader(
+      themes: themes,
+      files: files,
+      transport: transport,
+      sources: sources,
+      allowInsecure: policy.allowInsecure,
+    );
+  }
 
   /// The size a theme file may have: 1 MiB.
   static const defaultMaxBytes = 1024 * 1024;
@@ -417,7 +414,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
       }
       await _refresh(source);
     } on Object catch (error) {
-      _log.warning(() => 'theme ${source.name}: $error');
+      _log.warning(() => '${source.label}: $error');
     }
   }
 
@@ -444,7 +441,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
         } on Object catch (error) {
           _log.warning(
             () =>
-                'theme ${source.name}: ${source.configured} could not be '
+                '${source.label}: ${source.configured} could not be '
                 'loaded ($error); the theme in use stays',
           );
           final refresh = source.refresh;
@@ -515,7 +512,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
         lastModified: response.headers[HttpHeaders.lastModifiedHeader],
       ),
     );
-    _log.info(() => 'theme ${source.name} loaded from ${source.configured}');
+    _log.info(() => '${source.label} loaded from ${source.configured}');
     _afterLoad(source, now);
   }
 
@@ -527,7 +524,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
       if (content.ignored.isNotEmpty) {
         _log.warning(
           () =>
-              'theme ${source.name}: ${source.configured} has keys that are '
+              '${source.label}: ${source.configured} has keys that are '
               'not a theme\'s, ignored: ${content.ignored.join(', ')}',
         );
       }
@@ -538,7 +535,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
         rethrow;
       }
       _log.warning(
-        () => 'theme ${source.name}: the cached file is invalid ($error)',
+        () => '${source.label}: the cached file is invalid ($error)',
       );
       return false;
     }
@@ -563,7 +560,7 @@ final class ThemeSourceLoader implements ApplicationRunner {
       }
       return (text: text, meta: meta);
     } on Object catch (error) {
-      _log.debug(() => 'theme ${source.name}: no usable cache ($error)');
+      _log.debug(() => '${source.label}: no usable cache ($error)');
       return null;
     }
   }

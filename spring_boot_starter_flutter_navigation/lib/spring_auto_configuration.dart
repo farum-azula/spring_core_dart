@@ -98,6 +98,7 @@ final BeanModule springBootStarterFlutterNavigationAutoConfiguration =
               initial: properties.initial,
               linkExclude: properties.deepLinks.exclude ?? const [],
               languages: properties.languages ?? const [],
+              events: r.dependency<ApplicationEventPublisher>(),
             );
           },
           preDestroy: (navigation) {

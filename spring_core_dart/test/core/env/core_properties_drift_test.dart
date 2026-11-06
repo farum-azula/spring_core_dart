@@ -62,6 +62,7 @@ void main() {
       StandardEnvironment.activeProfilesPropertyName,
       StandardEnvironment.defaultProfilesPropertyName,
       CloudPlatform.propertyName,
+      RemoteAddressPolicy.property,
     };
     expect(read, described);
   });

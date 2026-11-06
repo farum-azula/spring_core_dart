@@ -35,6 +35,30 @@ the whole application. What it sets:
   started must be awaited or marked `unawaited(...)`),
   `prefer_final_locals`, `prefer_single_quotes` and `directives_ordering`.
 
+## Infrastructure is extensible and reusable
+
+The framework's infrastructure is built for a new case to be added, not
+edited in: a new kind of address, of loader, of source of values must not
+mean another `if` in an existing class. As Spring does, rely first on:
+
+- **chains of responsibility**: an interface whose implementations are
+  asked in order, the first that supports a value handles it
+  (`RemoteAddressResolver` in `RemoteAddresses`, `PropertySourceLoader`,
+  `HandlerMethodArgumentResolver`);
+- **factories and registries**: one place that makes or finds the
+  implementation for a name (`ThemeLoaderKinds`, `ConversionService`);
+- **observers**: events and listeners instead of calls into the feature
+  that reacts (`LanguageChangedEvent` with `@EventListener`);
+- **advisors**: behavior added around beans by aspects, not copied into
+  them.
+
+Built-in implementations use the same extension point as the
+application's own, and come after them; the application adds its own
+through a bean, or, for what runs before the beans exist, through
+`SpringApplication` (as `environmentPostProcessors` and
+`addressResolvers`). The extension point is public and documented, so an
+application or a library can use it for its own needs.
+
 ## Beans of a widget
 
 In a Flutter app, `SpringStatelessWidget<(...)>`,

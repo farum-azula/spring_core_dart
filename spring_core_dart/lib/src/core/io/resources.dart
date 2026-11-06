@@ -158,7 +158,7 @@ abstract final class Resources {
       return _OutsideClasspathResource(_clean(relative));
     }
     for (final directory in _directories) {
-      final file = FileSystemResource('$directory/$normalized');
+      final file = ClasspathFileResource(directory, normalized);
       if (file.exists()) {
         return file;
       }
@@ -182,7 +182,7 @@ abstract final class Resources {
     if (embedded != null) {
       return _EmbeddedClasspathResource(normalized, embedded.bytes);
     }
-    return FileSystemResource('$directory/$normalized');
+    return ClasspathFileResource(directory, normalized);
   }
 
   /// [path] relative to `lib/resources/` (without `resources:`): a
@@ -206,10 +206,14 @@ abstract final class Resources {
 
 // What a path that climbs above `lib/resources/` resolves to: nothing, as
 // Java's class loader refuses `../` names.
-final class _OutsideClasspathResource extends AbstractResource {
+final class _OutsideClasspathResource extends AbstractResource
+    implements ContextResource {
   const _OutsideClasspathResource(this.path);
 
   final String path;
+
+  @override
+  String get pathWithinContext => path;
 
   @override
   String get description => 'class path resource [$path]';
@@ -244,11 +248,15 @@ final class _OutsideClasspathResource extends AbstractResource {
 
 // An embedded file, with a file name and relative resources like Spring's
 // ClassPathResource.
-final class _EmbeddedClasspathResource extends ByteArrayResource {
+final class _EmbeddedClasspathResource extends ByteArrayResource
+    implements ContextResource {
   _EmbeddedClasspathResource(this.path, Uint8List bytes)
     : super(bytes, description: 'class path resource [$path]');
 
   final String path;
+
+  @override
+  String get pathWithinContext => path;
 
   @override
   String get filename => path.substring(path.lastIndexOf('/') + 1);
@@ -262,4 +270,17 @@ final class _EmbeddedClasspathResource extends ByteArrayResource {
         : relativePath;
     return Resources.resolve('$directory$relative');
   }
+}
+
+/// A `resources:` file read from disk (below `lib/resources/` or a
+/// directory added for tests): a [FileSystemResource] that knows its
+/// [pathWithinContext].
+final class ClasspathFileResource extends FileSystemResource
+    implements ContextResource {
+  /// The file [pathWithinContext] of the classpath [root] directory.
+  ClasspathFileResource(String root, this.pathWithinContext)
+    : super('$root/$pathWithinContext');
+
+  @override
+  final String pathWithinContext;
 }

@@ -15,10 +15,7 @@ dependencies:
   # The design system: widgets, fonts, the background picture and the theme
   # themes/neon.yml, which the app imports.
   neon_ui:
-    git:
-      url: https://github.com/farum-azula/themes.git
-      path: packages/neon_ui
-      ref: neon_ui-v0.2.0
+    path: ../neon_ui
   # The pages as screens with addresses (@ScreenRoute, @RouteShell). It
   # brings and exports the Flutter starter: SpringApplicationWidget, the
   # theme (spring.flutter.theme.*), the typed keys, ThemeStates,

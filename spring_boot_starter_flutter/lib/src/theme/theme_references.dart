@@ -24,9 +24,10 @@ import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 ///   (the declared `colors.*` do not change the other roles), and
 ///   `$shape.extra-small` is Material 3's corner radius. A declared value
 ///   wins.
-/// - Values under `headers` and the image keys `source`, `fallback` and
-///   `source-sha256` are left as they are: no reference, and `$$` stays
-///   `$$` (a secret from a placeholder may hold a `$`).
+/// - Values under `headers` and `syntax` (regular expressions), the
+///   image keys `source`, `fallback` and `source-sha256` and the `glyphs`
+///   of a text change are left as they are: no reference, and `$$` stays `$$` (a secret from a placeholder
+///   may hold a `$`).
 /// - `$$` is a literal `$`. `${...}` is Spring's placeholder and is left
 ///   to the `Environment`; `$` followed by anything but a letter is text.
 /// - A cycle or an unknown path throws a [ThemePropertyException] with the
@@ -96,11 +97,18 @@ final class _Context {
 
   // Request headers and the image sources are not theme text: a `$` in a
   // secret that came from a placeholder must stay as it is (`$$` too).
-  static const _literalLast = {'source', 'fallback', 'sourcesha256'};
+  static const _literalLast = {
+    'source',
+    'fallback',
+    'sourcesha256',
+    'glyphs',
+  };
 
   static bool _literal(String key) {
     final segments = key.split('.');
-    return segments.contains('headers') || _literalLast.contains(segments.last);
+    return segments.first == 'syntax' ||
+        segments.contains('headers') ||
+        _literalLast.contains(segments.last);
   }
 
   String _target(String key, String path, List<String> chain) {

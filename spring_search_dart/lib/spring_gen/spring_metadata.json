@@ -1,0 +1,301 @@
+{
+  "version": 1,
+  "package": "spring_search_dart",
+  "properties": [
+    {
+      "name": "spring.search.analyzers.*",
+      "type": "String",
+      "description": "The analyzer of each language (`ja: standard`); `en` is `english`, every other language `standard`, unless named here.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 44,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.collapse-by",
+      "type": "String?",
+      "description": "The attribute that groups the hits: only the best of each value stays (`page`: one section per page). None by default.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 48,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.default-language",
+      "type": "String",
+      "description": "The language of the documents that name none, and of a search that names none or one without documents.",
+      "default": "en",
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 26,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.enabled",
+      "type": "bool",
+      "description": "`false`: no `SearchService`.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 22,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.fields.*",
+      "type": "double",
+      "description": "The weight of each field; a field not named weighs 1. Empty: `title` 8, `heading` 4, `body` 1.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 30,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.fuzzy",
+      "type": "int",
+      "description": "The typos a word of the query may have: one for a word of five to seven letters, up to this many for a longer one. `0`: none.",
+      "default": 1,
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 34,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.markdown[*].exclude",
+      "type": "List<String>",
+      "description": "Patterns of files to leave out, relative to the location's directory (`**/contents*.md`).",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 63,
+      "class": "MarkdownSearchProperties"
+    },
+    {
+      "name": "spring.search.markdown[*].link",
+      "type": "String",
+      "description": "The link of a page: `{path}` is the file's path from the location's directory, without `.md`, its language and a last `index`.",
+      "default": "/{path}",
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 67,
+      "class": "MarkdownSearchProperties"
+    },
+    {
+      "name": "spring.search.markdown[*].location",
+      "type": "String",
+      "description": "The files: a `resources:` pattern (`resources:content/**/*.md`).",
+      "default": "",
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 59,
+      "class": "MarkdownSearchProperties"
+    },
+    {
+      "name": "spring.search.max-hits",
+      "type": "int",
+      "description": "The most hits a search gives.",
+      "default": 20,
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 37,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.operator",
+      "type": "SearchOperator",
+      "description": "`and`: a document has every word of the query; `or`: one of them.",
+      "default": "and",
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 40,
+      "class": "SearchProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.search.operator",
+      "values": [
+        {
+          "value": "and",
+          "description": "Every word and phrase (the default)."
+        },
+        {
+          "value": "or",
+          "description": "One of them; more of them rank higher."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "searchProperties",
+      "type": "SearchProperties",
+      "types": [
+        "SearchProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 20,
+      "injects": [],
+      "members": [
+        {
+          "name": "analyzers",
+          "kind": "field",
+          "type": "Map<String, String>"
+        },
+        {
+          "name": "collapseBy",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "defaultLanguage",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "fields",
+          "kind": "field",
+          "type": "Map<String, double>"
+        },
+        {
+          "name": "fuzzy",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "markdown",
+          "kind": "field",
+          "type": "List<MarkdownSearchProperties>"
+        },
+        {
+          "name": "maxHits",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "operator",
+          "kind": "field",
+          "type": "SearchOperator"
+        }
+      ]
+    },
+    {
+      "name": "searchService",
+      "type": "SearchService",
+      "types": [
+        "SearchService",
+        "GenericApplicationListener"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('enabled', prefix: 'spring.search', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_search_dart/src/search_auto_configuration.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "analyzers",
+          "kind": "field",
+          "type": "SearchAnalyzers"
+        },
+        {
+          "name": "collapseBy",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "defaultLanguage",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "fuzzy",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "index",
+          "kind": "method",
+          "type": "Future<SearchIndex?>",
+          "parameters": [
+            "String language"
+          ]
+        },
+        {
+          "name": "invalidate",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "maxHits",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "onApplicationEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object event"
+          ]
+        },
+        {
+          "name": "operator",
+          "kind": "field",
+          "type": "SearchOperator"
+        },
+        {
+          "name": "rankers",
+          "kind": "field",
+          "type": "List<SearchRanker>"
+        },
+        {
+          "name": "search",
+          "kind": "method",
+          "type": "Future<List<SearchHit>>",
+          "parameters": [
+            "String query",
+            "{String? language}",
+            "{int? limit}"
+          ]
+        },
+        {
+          "name": "sources",
+          "kind": "field",
+          "type": "List<SearchDocumentSource>"
+        },
+        {
+          "name": "supportsEvent",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object event"
+          ]
+        },
+        {
+          "name": "weights",
+          "kind": "field",
+          "type": "Map<String, double>"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

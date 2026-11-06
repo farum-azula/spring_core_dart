@@ -113,36 +113,111 @@ void main() {
 
   group('the source', () {
     test('https URLs and github: shorthand', () {
+      String uriOf(String source) => ThemeSource.read({
+        'themes.a.source': source,
+      }, SpringThemes(const {})).single.uri.toString();
       expect(
-        ThemeSource.parseUri('github:neon/themes/dir/ocean.yml@v3').toString(),
+        uriOf('github:neon/themes/dir/ocean.yml@v3'),
         'https://raw.githubusercontent.com/neon/themes/v3/dir/ocean.yml',
       );
-      expect(
-        ThemeSource.parseUri('github:neon/themes/ocean.yml').toString(),
-        'https://raw.githubusercontent.com/neon/themes/HEAD/ocean.yml',
-      );
-      expect(ThemeSource.parseUri(_url).toString(), _url);
+      expect(uriOf(_url), _url);
       for (final bad in [
-        'http://example.com/t.yml',
         'file:///etc/passwd',
         'ftp://x/t.yml',
         '/relative.yml',
         'github:only/two',
         'github:a/b/c@',
       ]) {
-        expect(
-          () => ThemeSource.parseUri(bad),
-          throwsArgumentError,
-          reason: bad,
-        );
+        expect(() => uriOf(bad), throwsArgumentError, reason: bad);
       }
+    });
+
+    ConfigurableEnvironment environment(Map<String, Object> properties) =>
+        StandardEnvironment()
+          ..propertySources.addFirst(
+            MapPropertySource('test', properties),
+          );
+
+    test("an application's resolver reads its kind of address", () {
+      final themes = SpringThemes(const {
+        'background.image.source': 'cdn:images/bg.jpg',
+      }, addresses: const RemoteAddresses([_Cdn()]));
+      expect(
+        themes.data('light').background!.image!.image!.uri.toString(),
+        'https://cdn.example.com/images/bg.jpg',
+      );
+      expect(
+        ThemeSource.read({
+          'themes.a.source': 'cdn:themes/a.yml',
+        }, themes).single.uri.toString(),
+        'https://cdn.example.com/themes/a.yml',
+      );
+      expect(
+        () => SpringThemes(const {
+          'background.image.source': 'cdn:images/bg.jpg',
+        }),
+        throwsA(isA<ThemePropertyException>()),
+      );
+    });
+
+    test('an insecure address stops the start, naming it', () {
+      final env = environment({
+        'spring.flutter.theme.themes.a.source': 'http://themes.lan/a.yml',
+        'spring.flutter.theme.background.image.source': 'http://cdn.lan/bg.jpg',
+      });
+      final themes = SpringThemes(const {
+        'background.image.source': 'http://cdn.lan/bg.jpg',
+      });
+      expect(
+        () => ThemeSourceLoader.fromEnvironment(
+          env,
+          themes: themes,
+          files: files,
+          transport: server,
+        ),
+        throwsA(
+          isA<InsecureConnectionException>().having(
+            (e) => e.toString(),
+            'message',
+            allOf(
+              contains('http://themes.lan/a.yml'),
+              contains('spring.flutter.theme.themes.a.source'),
+              contains('http://cdn.lan/bg.jpg'),
+              contains('spring.remote.allow-insecure'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('spring.remote.allow-insecure: they are used, and listed', () {
+      final records = <SpringLogRecord>[];
+      final stop = SpringLog.listen(records.add);
+      addTearDown(stop);
+      final loader = ThemeSourceLoader.fromEnvironment(
+        environment({
+          'spring.flutter.theme.source': 'http://themes.lan/code.yml',
+          'spring.remote.allow-insecure': 'true',
+        }),
+        themes: SpringThemes(const {}),
+        files: files,
+        transport: server,
+      );
+      expect(
+        loader.sources.single.uri.toString(),
+        'http://themes.lan/code.yml',
+      );
+      expect(
+        records.map((r) => r.message.toString()),
+        contains(contains('http://themes.lan/code.yml')),
+      );
     });
 
     test('invalid keys name the property', () {
       final themes = SpringThemes(const {});
       expect(
         () => ThemeSource.read(const {
-          'themes.a.source': 'http://x/t.yml',
+          'themes.a.source': 'file:///x/t.yml',
         }, themes),
         throwsA(
           isA<ArgumentError>().having(
@@ -565,6 +640,98 @@ spring.flutter.theme.seed-color: '#0000FF'
     });
   });
 
+  group('the shared source (spring.flutter.theme.source)', () {
+    const languages = '''
+spring:
+  flutter:
+    theme:
+      seed-color: '#00FF00'
+      syntax:
+        java:
+          keywords: [class]
+          rules:
+            - { match: '[a-z]+', kind: word }
+''';
+
+    test('every theme gets its values; the app\'s own win', () async {
+      server.handler = (_) => _ok(languages);
+      final (themes, _) = await start(const {
+        'source': 'github:farum-azula/themes/themes/code.yml@code-v1',
+        'seed-color': '#0000FF',
+        'themes.night.brightness': 'dark',
+      });
+      expect(
+        server.requests.single.url.toString(),
+        'https://raw.githubusercontent.com/farum-azula/themes/code-v1/themes/code.yml',
+      );
+      for (final name in ['light', 'dark', 'night']) {
+        expect(
+          themes.data(name).syntaxOf('java')!.tokens('class x').first,
+          (text: 'class', kind: CodeTokenKind.keyword),
+          reason: name,
+        );
+      }
+      expect(
+        _primary(themes, 'light'),
+        _primary(SpringThemes(const {'seed-color': '#0000FF'}), 'light'),
+      );
+    });
+
+    test('a theme of the app overrides one language', () async {
+      server.handler = (_) => _ok(languages);
+      final (themes, _) = await start(const {
+        'source': 'https://x.example/code.yml',
+        'themes.plain.syntax.java.rules.0.match': '[a-z]+',
+        'themes.plain.syntax.java.rules.0.kind': 'string',
+      });
+      expect(
+        themes.data('plain').syntaxOf('java')!.tokens('class').single.kind,
+        CodeTokenKind.string,
+      );
+      expect(
+        themes.data('light').syntaxOf('java')!.tokens('class').single.kind,
+        CodeTokenKind.keyword,
+      );
+    });
+
+    test('offline at the first start: the themes as the files say', () async {
+      server.handler = (_) => throw HttpTransportException('offline');
+      final (themes, _) = await start(const {
+        'source': 'https://x.example/code.yml',
+      });
+      expect(themes.data('light').syntaxOf('java'), isNull);
+    });
+
+    test('its keys are not theme keys, and invalid ones name the property', () {
+      expect(
+        SpringThemes(const {'source': 'https://x.example/a.yml'}).data('light'),
+        isNotNull,
+      );
+      expect(
+        () => ThemeSource.read(const {
+          'source': 'ftp://x.example/a.yml',
+        }, SpringThemes(const {})),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.name,
+            'name',
+            'spring.flutter.theme.source',
+          ),
+        ),
+      );
+      expect(
+        () => ThemeSource.read(const {'refresh': '1h'}, SpringThemes(const {})),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.name,
+            'name',
+            'spring.flutter.theme.source',
+          ),
+        ),
+      );
+    });
+  });
+
   group('names and extends', () {
     test(
       'github: shorthand downloads from raw.githubusercontent.com',
@@ -724,4 +891,15 @@ spring:
       );
     },
   );
+}
+
+final class _Cdn implements RemoteAddressResolver {
+  const _Cdn();
+
+  @override
+  bool supports(String text) => text.startsWith('cdn:');
+
+  @override
+  Uri resolve(String text, {required String property}) =>
+      Uri.https('cdn.example.com', '/${text.substring('cdn:'.length)}');
 }

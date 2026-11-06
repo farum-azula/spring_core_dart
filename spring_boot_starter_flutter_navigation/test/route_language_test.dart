@@ -158,4 +158,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(route.pattern, isNull);
   });
+
+  testWidgets('a LanguageChangedEvent when the language switches', (
+    tester,
+  ) async {
+    final (route, _) = await _start(tester);
+    final context = SpringScope.of(
+      tester.element(find.byType(Navigator).first),
+    ) as ConfigurableApplicationContext;
+    final events = <LanguageChangedEvent>[];
+    context.addApplicationListener(
+      ApplicationListenerAdapter.of<LanguageChangedEvent>(events.add),
+    );
+
+    await route.go('/ja/docs');
+    await tester.pumpAndSettle();
+    route.switchLanguage('en');
+    await tester.pumpAndSettle();
+    route.switchLanguage('en');
+    await route.go('/docs');
+    await tester.pumpAndSettle();
+
+    expect(
+      [for (final e in events) '${e.from}->${e.to}'],
+      ['en->ja', 'ja->en'],
+    );
+  });
 }

@@ -7,4 +7,5 @@ import 'package:spring_web_dart/src/client/http_transport.dart';
 HttpTransport createTransport({
   Duration? connectTimeout,
   FetchCredentials credentials = FetchCredentials.sameOrigin,
+  bool allowBadCertificates = false,
 }) => FetchHttpTransport(credentials: credentials);

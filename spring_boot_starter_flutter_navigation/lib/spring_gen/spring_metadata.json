@@ -188,6 +188,11 @@
           "parameters": []
         },
         {
+          "name": "events",
+          "kind": "field",
+          "type": "ApplicationEventPublisher?"
+        },
+        {
           "name": "filters",
           "kind": "field",
           "type": "List<RouteFilter>"
@@ -449,7 +454,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 108,
+      "line": 109,
       "injects": [],
       "members": [
         {
@@ -481,7 +486,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 119,
+      "line": 120,
       "injects": [],
       "members": [
         {
@@ -650,7 +655,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 129,
+      "line": 130,
       "injects": [],
       "members": [
         {
@@ -686,7 +691,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 143,
+      "line": 144,
       "injects": [],
       "members": [
         {

@@ -1,3 +1,11 @@
+## Unreleased
+
+- `ContextResource` (`pathWithinContext`): a `resources:` file knows its path below `lib/resources/`, embedded or read from disk (`ClasspathFileResource`), so a feature that lists files by a pattern can name them.
+- `ApplicationStartup` and `StartupStep` (Spring's startup metrics; `ApplicationStartup.none` by default) and `BufferingApplicationStartup`, which keeps the ended steps (`RecordedStartupStep`). The bean factory records each eager bean as `spring.beans.instantiate` with its `beanName`.
+- `StartupPacer` (`DefaultListableBeanFactory.startupPacer`): asked between eager beans, it may make the start wait (for a frame of a splash, say).
+- `RemoteAddressResolver` and `RemoteAddresses`: the addresses are read by a chain of resolvers, the application's first (by `Ordered`), then the built-in `GitHubAddressResolver` and `UrlAddressResolver`; a new kind of address (`cdn:`) is a resolver, not a change of the others.
+- `RemoteAddress` and `RemoteAddressPolicy`: every address the configuration downloads from is read one way (`https://`, `http://`, `github:owner/repo/path@ref`) and checked one way: an insecure one stops the start with `InsecureConnectionException`, naming it and its property, unless `spring.remote.allow-insecure=true`, which logs a warning listing them.
+
 ## 0.7.1
 
 - No changes of its own; released with the family version 0.7.1.

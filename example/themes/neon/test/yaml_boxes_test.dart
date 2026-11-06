@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
 
 import 'support/app.dart';
-import 'support/neon_ui_files.dart';
 
 /// A line without its indentation and with one space between words.
 String _normal(String line) => line.trim().replaceAll(RegExp(r'\s+'), ' ');
@@ -15,7 +14,7 @@ String _normal(String line) => line.trim().replaceAll(RegExp(r'\s+'), ' ');
 Set<String> _fileLines() => {
   for (final file in [
     File('lib/resources/application.yml'),
-    neonUiFile('lib/resources/themes/neon.yml'),
+    File('../neon_ui/lib/resources/themes/neon.yml'),
   ])
     for (final line in file.readAsLinesSync()) _normal(line),
 };

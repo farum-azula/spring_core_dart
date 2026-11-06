@@ -12,6 +12,10 @@ import 'package:spring_boot_starter_flutter/src/loader_hand_off.dart';
 import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
 import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
+import 'package:spring_boot_starter_flutter/src/splash/frame_pacer.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stage.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_trace.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/spring_widgets.dart';
@@ -61,7 +65,9 @@ const _log = SpringLog('spring_boot_starter_flutter.SpringApplicationWidget');
 /// - The platform is an active profile ([platformProfiles]): `android` and
 ///   `mobile` on Android, `web` in a browser, `macos` and `desktop` on a
 ///   Mac, and so on. So `application-android.properties` and
-///   `@Profile(['ios'])` beans just work.
+///   `@Profile(['ios'])` beans just work. The build is one too
+///   ([buildModeProfile]): `release`, `profile` or `debug`, so
+///   `application-release.yml` configures what users run.
 /// - The OS environment is not read: on a phone it is noise, and values
 ///   come from `--dart-define` instead. A build that defines
 ///   `spring.flutter.scan-os-environment=true` reads it.
@@ -177,6 +183,8 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   SpringThemeData? _splashTheme;
   bool _splashDone = false;
   bool _handedOff = false;
+  // The stages of the start, from the web page's (with their times).
+  late final SplashStages _stages = SplashStages(reached: _pageStages());
   final _splashKey = GlobalKey();
   final _appKey = GlobalKey();
 
@@ -212,12 +220,59 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     }
   }
 
+  // The stages the web page loader went through (none elsewhere).
+  static Map<SplashStage, Duration> _pageStages() => {
+    for (final MapEntry(:key, :value) in LoaderHandOff.pageStages().entries)
+      ?SplashStage.values.where((s) => s.name == key).firstOrNull: value,
+  };
+
   // Tells the web page loader the Flutter side is on screen; once.
   void _handOff() {
     if (!_handedOff) {
       _handedOff = true;
+      _stages.enter(SplashStage.splash);
       LoaderHandOff.call(_progress.value);
     }
+  }
+
+  // The context exists, its beans not yet: the start's stage, the
+  // `splashStages` bean, the pacer and the trace of
+  // `spring.flutter.splash.*`.
+  void _contextInitialized(ApplicationContextInitializedEvent event) {
+    // The listener stays on the application: a later run of the same
+    // application by another widget is not this one's.
+    if (!mounted || _context != null) {
+      return;
+    }
+    final context = event.applicationContext;
+    final environment = context.environment;
+    final factory = context.beanFactory;
+    factory.registerSingleton(
+      'splashStages',
+      _stages,
+      types: const [SplashStages, ChangeNotifier, Listenable],
+    );
+    final yieldFrames =
+        environment.getPropertyAs<bool>(
+          'spring.flutter.splash.yield-frames',
+        ) ??
+        kIsWeb;
+    if (factory is DefaultListableBeanFactory) {
+      if (yieldFrames) {
+        factory.startupPacer = FramePacer(
+          budget:
+              environment.getPropertyAs<Duration>(
+                'spring.flutter.splash.frame-budget',
+              ) ??
+              const Duration(milliseconds: 8),
+        );
+      }
+      if (environment.getPropertyAs<bool>('spring.flutter.splash.trace') ??
+          false) {
+        factory.applicationStartup = SplashTrace(_stages);
+      }
+    }
+    _stages.enter(SplashStage.starting);
   }
 
   void _handOffAfterFrame() {
@@ -235,7 +290,10 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   void _environmentPrepared(ApplicationEnvironmentPreparedEvent event) {
     SpringThemeData? theme;
     try {
-      final themes = SpringThemes.fromEnvironment(event.environment);
+      final themes = SpringThemes.fromEnvironment(
+        event.environment,
+        addresses: event.springApplication.remoteAddresses,
+      );
       theme = themes.data(_splashThemeName(themes));
     } on Object catch (error) {
       _log.debug(() => 'No theme splash: $error');
@@ -283,10 +341,13 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
           _environmentPrepared,
         );
       }
+      application.addListener<ApplicationContextInitializedEvent>(
+        _contextInitialized,
+      );
       final context = started = await application.runAsync(
         widget.args,
         systemEnvironment: _scanOsEnvironment(application) ? null : const {},
-        additionalProfiles: platformProfiles(),
+        additionalProfiles: [...platformProfiles(), buildModeProfile()],
       );
       SpringWidgetBindings.check(context);
       _checkApp(context);
@@ -300,9 +361,15 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         await context.closeAsync();
         return;
       }
+      _stages
+        ..enter(SplashStage.ready)
+        ..publishTo(context);
       setState(() => _context = context);
       if (_splashTheme == null) {
         _handOffAfterFrame();
+        _stages
+          ..enter(SplashStage.exit)
+          ..enter(SplashStage.app);
       }
     } catch (error) {
       // The application started, then a check of the widget failed: its
@@ -489,6 +556,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   @override
   void dispose() {
     _progress.dispose();
+    _stages.dispose();
     _releaseFirstFrame();
     _lifecycle.dispose();
     final context = _context;
@@ -552,8 +620,11 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
           theme: theme,
           progress: _progress,
           ready: ready,
+          stages: _stages,
           onShown: _handOff,
+          onExiting: () => _stages.enter(SplashStage.exit),
           onExited: () {
+            _stages.enter(SplashStage.app);
             if (mounted) {
               setState(() => _splashDone = true);
             }

@@ -18,7 +18,7 @@ typedef RemoteFile = ({Uint8List bytes, HttpHeaders headers});
 /// from the network): GET with the request headers, redirects followed by
 /// hand, a size limit, a timeout, and `null` for a `304 Not Modified`.
 ///
-/// Only `https` is followed, `http` too when [get] is told so. The HTTP
+/// Only `https` is followed, `http` too with [allowInsecure]. The HTTP
 /// client is [transport], else the platform's, made on the first request
 /// and closed by [close].
 ///
@@ -30,6 +30,7 @@ final class RemoteFetcher {
     HttpTransport? transport,
     required this.timeout,
     required this.maxBytes,
+    this.allowInsecure = false,
     // ignore: prefer_initializing_formals, named parameters cannot be private
   }) : _transport = transport;
 
@@ -38,6 +39,10 @@ final class RemoteFetcher {
 
   /// The most bytes a file may have.
   final int maxBytes;
+
+  /// Whether `http` and certificates that are not valid are accepted
+  /// (`spring.remote.allow-insecure`).
+  final bool allowInsecure;
 
   static final _conditional = {
     HttpHeaders.ifNoneMatchHeader.toLowerCase(),
@@ -49,7 +54,10 @@ final class RemoteFetcher {
 
   HttpTransport get _http {
     if (_transport == null) {
-      _transport = platformHttpTransport(connectTimeout: timeout);
+      _transport = platformHttpTransport(
+        connectTimeout: timeout,
+        allowBadCertificates: allowInsecure,
+      );
       _ownsTransport = true;
     }
     return _transport!;
@@ -63,7 +71,6 @@ final class RemoteFetcher {
     Uri uri,
     Map<String, String> headers, {
     required String accept,
-    bool allowHttp = false,
     Duration? timeout,
   }) async {
     final limit = timeout ?? this.timeout;
@@ -100,10 +107,11 @@ final class RemoteFetcher {
         final location = response.headers[HttpHeaders.locationHeader];
         final next = location == null ? null : current.resolve(location);
         if (next == null ||
-            !(next.scheme == 'https' || (allowHttp && next.scheme == 'http'))) {
+            !(next.scheme == 'https' ||
+                (allowInsecure && next.scheme == 'http'))) {
           throw StateError(
             'redirected to ${location ?? 'nowhere'}, not '
-            '${allowHttp ? 'http(s)' : 'https'}',
+            '${allowInsecure ? 'http(s)' : 'https'}',
           );
         }
         current = next;

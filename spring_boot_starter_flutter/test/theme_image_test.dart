@@ -70,12 +70,14 @@ void main() {
   Future<(SpringThemes, ThemeImageLoader, ThemeImage)> start(
     Map<String, String> properties, {
     _Server? over,
+    bool allowInsecure = false,
   }) async {
     final themes = SpringThemes(properties);
     final loader = ThemeImageLoader(
       themes: themes,
       files: files,
       transport: over ?? server,
+      allowInsecure: allowInsecure,
       clock: () => now,
     );
     await loader.run(ApplicationArguments(const []));
@@ -124,22 +126,23 @@ void main() {
       expect((image.provider! as AssetImage).assetName, 'assets/bg.jpg');
     });
 
-    test('http is refused with a hint unless allow-http is true', () {
-      expect(
-        () => SpringThemes({'background.image.source': 'http://x.test/a.png'}),
-        throwsA(
-          isA<ThemePropertyException>().having(
-            (e) => e.toString(),
-            'text',
-            allOf(contains('allow-http'), contains('background.image.source')),
-          ),
-        ),
-      );
-      final image = SpringThemes({
+    test('an address names its property; the policy decides about http', () {
+      final themes = SpringThemes({
         'background.image.source': 'http://x.test/a.png',
-        'background.image.allow-http': 'true',
-      }).data('light').background!.image!.image!;
+      });
+      final image = themes.data('light').background!.image!.image!;
       expect(image.uri!.scheme, 'http');
+      expect(
+        image.address!.property,
+        startsWith('spring.flutter.theme.background.image.source'),
+      );
+      expect(themes.downloads, contains(image.address));
+      expect(
+        SpringThemes({
+          'background.image.source': 'github:neon/assets/bg.jpg@v1',
+        }).data('light').background!.image!.image!.uri.toString(),
+        'https://raw.githubusercontent.com/neon/assets/v1/bg.jpg',
+      );
     });
 
     test('wrong values and keys fail the start', () {
@@ -245,18 +248,21 @@ void main() {
       loader.dispose();
     });
 
-    test('http redirects are refused without allow-http', () async {
-      server.handler = (r) => HttpResponse(
-        302,
-        headers: HttpHeaders({'Location': 'http://evil.test/a.png'}),
-        request: r,
-      );
-      final (_, loader, image) = await start(_props());
-      await loader.idle;
-      expect(image.provider, isNull);
-      expect(server.requests, hasLength(1));
-      loader.dispose();
-    });
+    test(
+      'http redirects are refused without spring.remote.allow-insecure',
+      () async {
+        server.handler = (r) => HttpResponse(
+          302,
+          headers: HttpHeaders({'Location': 'http://evil.test/a.png'}),
+          request: r,
+        );
+        final (_, loader, image) = await start(_props());
+        await loader.idle;
+        expect(image.provider, isNull);
+        expect(server.requests, hasLength(1));
+        loader.dispose();
+      },
+    );
 
     test('the credentials do not follow a redirect to another host', () async {
       server.handler = (r) => r.url.host == 'cdn.example.com'
@@ -308,10 +314,8 @@ void main() {
             )
           : _ok('plain');
       final (_, loader, image) = await start(
-        _props({
-          'headers.authorization': 'Bearer abc',
-          'allow-http': 'true',
-        }),
+        _props({'headers.authorization': 'Bearer abc'}),
+        allowInsecure: true,
       );
       await loader.idle;
       expect(_shown(image), _bytes('plain'));

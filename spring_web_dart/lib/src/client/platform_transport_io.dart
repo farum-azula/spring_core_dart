@@ -1,3 +1,5 @@
+import 'dart:io' show HttpClient;
+
 import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/io_transport.dart';
 
@@ -7,4 +9,10 @@ import 'package:spring_web_dart/src/client/io_transport.dart';
 HttpTransport createTransport({
   Duration? connectTimeout,
   FetchCredentials credentials = FetchCredentials.sameOrigin,
-}) => IoHttpTransport(connectTimeout: connectTimeout);
+  bool allowBadCertificates = false,
+}) => allowBadCertificates
+    ? IoHttpTransport(
+        client: HttpClient()..badCertificateCallback = (_, _, _) => true,
+        connectTimeout: connectTimeout,
+      )
+    : IoHttpTransport(connectTimeout: connectTimeout);

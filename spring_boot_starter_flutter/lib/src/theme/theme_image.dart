@@ -51,7 +51,6 @@ void checkThemeKeys(
 ///   headers: { Authorization: Bearer ${cdn.token} }
 ///   timeout: 10s
 ///   fallback: packages/neon_ui/assets/images/neon-background.jpg
-///   allow-http: false            # true for an http:// source
 /// ```
 ///
 /// The [provider] is what to paint: the asset, or for a network source the
@@ -70,10 +69,12 @@ void checkThemeKeys(
 /// );
 /// ```
 final class ThemeImage {
-  /// An image from [source]: an asset path, an `https://` URL, or an
-  /// `http://` one with [allowHttp]. Throws an `ArgumentError` for an empty
-  /// source, another scheme, an `http://` source without [allowHttp] or a
-  /// [sha256] that is not 64 hexadecimal digits.
+  /// An image from [source]: an asset path, or an address
+  /// ([RemoteAddress]: `https://`, `http://`, `github:`), the value of
+  /// [property]. Throws an `ArgumentError` for an empty source, another
+  /// scheme or a [sha256] that is not 64 hexadecimal digits. Whether an
+  /// insecure address may be used is the [RemoteAddressPolicy]'s to say,
+  /// at the start.
   ThemeImage({
     required String source,
     this.refresh,
@@ -81,7 +82,8 @@ final class ThemeImage {
     this.headers = const {},
     this.timeout = defaultTimeout,
     this.fallback,
-    this.allowHttp = false,
+    String property = 'source',
+    RemoteAddresses addresses = const RemoteAddresses(),
   }) : source = source.trim(),
        sha256 = sha256?.toLowerCase() {
     final text = this.source;
@@ -96,28 +98,17 @@ final class ThemeImage {
         'must be 64 hexadecimal digits',
       );
     }
-    final scheme = Uri.tryParse(text)?.scheme ?? '';
-    if (scheme.isEmpty || RegExp(r'^[a-zA-Z]:').hasMatch(text)) {
-      uri = null;
-    } else if (scheme == 'https' || (scheme == 'http' && allowHttp)) {
-      uri = Uri.parse(text);
-      if (uri!.host.isEmpty) {
-        throw ArgumentError.value(source, 'source', 'has no host');
-      }
-    } else if (scheme == 'http') {
+    if (addresses.isAddress(text)) {
+      address = addresses.parse(text, property: property);
+    } else if ((Uri.tryParse(text)?.scheme ?? '').isNotEmpty &&
+        !RegExp(r'^[a-zA-Z]:').hasMatch(text)) {
       throw ArgumentError.value(
         source,
         'source',
-        'is plain http, which is refused: use https, or set allow-http: '
-            'true (Android and iOS refuse clear text anyway)',
+        'must be an asset path, an https:// URL or a github: address',
       );
     } else {
-      throw ArgumentError.value(
-        source,
-        'source',
-        'must be an asset path, an https:// URL or (with allow-http) an '
-            'http:// URL',
-      );
+      address = null;
     }
     _provider = ValueNotifier(_initial());
   }
@@ -130,7 +121,6 @@ final class ThemeImage {
     'headers',
     'timeout',
     'fallback',
-    'allow-http',
   ];
 
   /// How long a download may take unless `timeout` says otherwise.
@@ -139,8 +129,11 @@ final class ThemeImage {
   /// The asset path or URL as written.
   final String source;
 
+  /// Where to download from; `null` for an asset.
+  late final RemoteAddress? address;
+
   /// The address to download from; `null` for an asset.
-  late final Uri? uri;
+  Uri? get uri => address?.uri;
 
   /// How old the cache may get before it is read again in the background;
   /// `null`: never, the first download is kept for ever.
@@ -158,9 +151,6 @@ final class ThemeImage {
 
   /// The asset shown while the network image is not there.
   final String? fallback;
-
-  /// Whether an `http://` source is allowed.
-  final bool allowHttp;
 
   /// Whether the image comes from the network.
   bool get isNetwork => uri != null;
@@ -204,7 +194,8 @@ final class ThemeImage {
       throw ThemePropertyException(
         p.propertyName('$path.source'),
         '',
-        'an asset path or an https:// URL (every image needs a source)',
+        'an asset path, an https:// URL or a github: address (every image '
+            'needs a source)',
       );
     }
     Duration? duration(String key) => p.read(
@@ -216,13 +207,6 @@ final class ThemeImage {
     for (final name in p.children('$path.headers')) {
       headers[name] = p['$path.headers.$name'] ?? '';
     }
-    final allowHttp =
-        p.read(
-          '$path.allowhttp',
-          ThemeValues.boolean,
-          'true or false',
-        ) ??
-        false;
     try {
       return ThemeImage(
         source: source,
@@ -231,7 +215,8 @@ final class ThemeImage {
         headers: headers,
         timeout: duration('timeout') ?? defaultTimeout,
         fallback: p['$path.fallback'],
-        allowHttp: allowHttp,
+        property: p.propertyName('$path.source'),
+        addresses: p.addresses,
       );
     } on ArgumentError catch (error) {
       final key = error.name == 'source-sha256' ? 'sourcesha256' : 'source';
@@ -277,6 +262,7 @@ final class ThemeImageLoader implements ApplicationRunner {
     required this.files,
     HttpTransport? transport,
     this.maxBytes = defaultMaxBytes,
+    this.allowInsecure = false,
     DateTime Function()? clock,
     // ignore: prefer_initializing_formals, named parameters cannot be private
   }) : _transport = transport,
@@ -284,6 +270,10 @@ final class ThemeImageLoader implements ApplicationRunner {
 
   /// The size an image may have: 20 MiB.
   static const defaultMaxBytes = 20 * 1024 * 1024;
+
+  /// Whether `http` and certificates that are not valid are accepted
+  /// (`spring.remote.allow-insecure`).
+  final bool allowInsecure;
 
   static const _log = SpringLog('spring_boot_starter_flutter.ThemeImage');
 
@@ -309,6 +299,7 @@ final class ThemeImageLoader implements ApplicationRunner {
       transport: _transport,
       timeout: timeout,
       maxBytes: maxBytes,
+      allowInsecure: allowInsecure,
     ),
   );
 
@@ -478,7 +469,6 @@ final class ThemeImageLoader implements ApplicationRunner {
           image.uri!,
           {...image.headers, ...?meta?.conditionalHeaders},
           accept: 'image/*',
-          allowHttp: image.allowHttp,
         )
         .timeout(image.timeout);
     final now = _clock();

@@ -161,6 +161,8 @@ targets:
         // It depends on the generator (the SQL lexer and the derived query
         // grammar of lib/query_syntax.dart).
         'extensions/language_server',
+        // Its typed properties are generated (lib/src/config/).
+        'spring_search_dart',
       });
     });
 

@@ -1,0 +1,12 @@
+# The generator writes the binding of the typed properties (lib/src/config/);
+# the rest of the package is written by hand.
+targets:
+  $default:
+    builders:
+      spring_core_dart_generator:spring_core_dart:
+        enabled: false
+      spring_core_dart_generator:spring_properties:
+        enabled: true
+        generate_for: [lib/src/config/**]
+      spring_core_dart_generator:spring_test:
+        enabled: false

@@ -33,6 +33,7 @@ library;
 export 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 export 'src/annotations.dart';
+export 'src/language_changed_event.dart';
 export 'src/navigation.dart'
     show Navigation, NavigationEntry, ScreenEntry, ShellEntry;
 export 'src/properties/navigation_properties.dart';

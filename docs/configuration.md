@@ -636,7 +636,16 @@ In Flutter apps, the platform is a profile as well: `android`, `ios`,
 `web`, `macos`, `windows` or `linux`, plus `mobile` (Android, iOS) or
 `desktop` (macOS, Windows, Linux). So `application-ios.yml` and
 `application-desktop.properties` are read on those platforms with no
-setup.
+setup. The build is a profile too, after the platform's: `release` in a
+release build, `profile` in a profile build, `debug` otherwise. A
+release that logs only warnings:
+
+```yaml
+# lib/resources/application-release.yml
+logging:
+  level:
+    root: warn
+```
 
 ### Documents for some profiles or platforms
 
@@ -2034,6 +2043,15 @@ comma-separated value, also in YAML. The app widget reads them as single
 values, so a YAML list (`[en, ja]`) is not seen.
 
 
+The start behind the splash (the splash's look is the theme's `splash`; see
+[the stages of the start](flutter/theme/loaders.md#the-stages-of-the-start)):
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.splash.yield-frames` | `true` / `false` | `true` on the web, `false` elsewhere | Lets Flutter draw a frame between the beans while they are created, so the splash keeps moving. See [yielding frames](flutter/theme/loaders.md#yielding-frames-during-the-start) |
+| `spring.flutter.splash.frame-budget` | duration | `8ms` | The work between two frames when `yield-frames` is on |
+| `spring.flutter.splash.trace` | `true` / `false` | `false` | Measures the start: each stage and each bean's creation, logged at the end and, on the web, marked in the browser's Performance tab. See [tracing](flutter/theme/loaders.md#tracing-the-start) |
+
 The window of a desktop app (macOS, Windows, Linux) has keys of its own.
 They carry `desktop` in their name because only desktop apps read them: a
 phone or the web ignores them, even a malformed value. A value for one OS
@@ -3040,10 +3058,19 @@ spring.flutter.theme.themes.brand-dark.brightness=dark
 
 | Key (under `spring.flutter.theme.themes.<name>.`) | Default | Meaning |
 |---|---|---|
-| `source` | none | where the theme comes from: an `https` URL, or `github:owner/repo/path@ref`, which is `https://raw.githubusercontent.com/owner/repo/ref/path` (`HEAD` without `@ref`). `http` and other schemes stop the start, naming the property |
+| `source` | none | where the theme comes from: an `https` URL, or `github:owner/repo/path@ref`, which is `https://raw.githubusercontent.com/owner/repo/ref/path` (`HEAD` without `@ref`). Other schemes stop the start, naming the property; `http` too unless `spring.remote.allow-insecure` (below). `source` on `spring.flutter.theme` itself downloads values every theme shares, under your own files |
 | `source-sha256` | none | 64 hexadecimal digits: content with another digest is refused (not shown, not cached). Part of the cache's identity |
 | `refresh` | none (cached for ever) | a duration (`30m`, `1h`, `1.5d`): when the cache is older, the file is read again in the background |
 
+- **Insecure connections.** Every address the configuration downloads
+  from (theme sources, images, a page loader's `web:`) is read by one
+  parser (`RemoteAddress`) and checked at the start by one rule
+  (`RemoteAddressPolicy`): an `http://` address stops the start with "the
+  connection is not secure", naming the address and its property.
+  `spring.remote.allow-insecure=true` allows it, and an `https` address
+  whose certificate is expired, self-signed or for another host (not in a
+  browser, which checks certificates by itself); a warning then lists
+  every insecure address.
 - The file is written like the theme part of `application.yml`: the keys
   under `spring.flutter.theme`, or at the top, or one `themes.<any name>`
   block. Only the theme's look is taken and it becomes `<name>`; any other
@@ -3236,9 +3263,23 @@ styles:
 same way, for the code samples of an app.
 
 Every color is optional and falls back on the color scheme, so code reads
-well in every theme without `styles.code`. Fenced blocks of `dart`, `yaml`,
-`properties`, `json` and `shell` are colored. The full list, with the
+well in every theme without `styles.code`. The full list, with the
 defaults: [Markdown and code](flutter/theme/styles-and-states.md#markdown-and-code-stylescode).
+
+What the code of a language is made of comes from the theme's
+`syntax.<language>` (rules of regular expressions and kinds, keywords,
+types, aliases); the starter has no language of its own. Take Dart, Java,
+YAML, properties, shell and JSON for every theme from the themes
+repository:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      source: github:farum-azula/themes/themes/code.yml@code-v0.1.0
+```
+
+See [the languages of code](flutter/theme/styles-and-states.md#the-languages-of-code-syntax).
 
 #### Motion and animations
 
@@ -3332,7 +3373,6 @@ image:
   headers: { Authorization: 'Bearer ${cdn.token}' }
   timeout: 10s
   fallback: packages/neon_ui/assets/images/neon-background.jpg
-  allow-http: false
 ```
 
 An image token is a token map with `source` and only the keys of this table:
@@ -3354,13 +3394,12 @@ ValueListenableBuilder(
 
 | Key | Default | Meaning |
 |---|---|---|
-| `source` | required | an asset path, an `https` URL, or an `http` URL with `allow-http` |
+| `source` | required | an asset path, an `https` URL or a `github:owner/repo/path@ref` address (`http` only with `spring.remote.allow-insecure`) |
 | `refresh` | none | a duration. Without it the file is downloaded once and read from the cache for ever. With it the cache is shown at once and checked again in the background when older |
 | `source-sha256` | none | 64 hexadecimal digits. A file with another digest is dropped with a warning |
 | `headers` | none | request headers. A map (`{ Authorization: ... }`). `${...}` placeholders work here |
 | `timeout` | `10s` | how long a download may take |
 | `fallback` | none | an asset shown while there is no cache |
-| `allow-http` | `false` | `true` for an `http://` source. Without it the start stops with a hint. Android and iOS refuse clear text anyway |
 
 - It works like [a theme from a URL](#a-theme-from-a-url): the same HTTP
   client, and a cache through `FileTemplate`.
@@ -3454,8 +3493,95 @@ flutter run --dart-define=spring.flutter.scan-os-environment=true
 ```
 
 The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
-`linux`, `mobile`, `desktop`) are always active; see
+`linux`, `mobile`, `desktop`) and the build's (`release`, `profile`,
+`debug`) are always active; see
 [Profiles](#profile-files-and-activation).
+
+### Keyboard shortcuts
+
+An action's keys are configuration, its handler is a bean method. Change the
+keys per platform or per profile without touching the code.
+
+```yaml
+spring:
+  flutter:
+    shortcuts:
+      search.open: primary+k                  # ⌘K on macOS and iOS, Ctrl+K elsewhere
+      navigation.back: [alt+left, primary+bracket-left]
+      help.show: char:?                       # the character, whatever keys type it
+```
+
+```dart
+@Component()
+class SearchActions {
+  @Shortcut('search.open', keys: ['primary+k']) // keys when the configuration has none
+  void open(BuildContext context) => SearchDialog.show(context);
+}
+```
+
+Writing keys:
+
+| Form | Meaning |
+|---|---|
+| `primary+shift+k` | Modifiers and one key, joined by `+`. Modifiers: `primary` (⌘ on Apple's platforms, Ctrl elsewhere), `shift`, `alt` (`option`), `control` (`ctrl`), `meta` (`cmd`). Keys: letters, digits, `f1`–`f12`, `enter`, `escape`, `space`, `tab`, `backspace`, `delete`, `home`, `end`, `page-up`, `page-down`, `up`, `down`, `left`, `right`, `slash`, `backslash`, `comma`, `period`, `semicolon`, `quote`, `minus`, `equal`, `bracket-left`, `bracket-right`, `backquote` |
+| `char:?` | The character typed, on any keyboard layout |
+| a list | Any of them: `[primary+k, slash]` |
+
+A value no notation reads stops the start, naming the property
+(`spring.flutter.shortcuts.search.open: 'moon' is no key ...`). The same
+keys given to two actions log a warning.
+
+Handlers:
+
+- A `@Shortcut` method takes nothing, a `BuildContext` (the focused
+  widget's, below the navigator, so it can show a dialog) or a
+  `ShortcutInvocation`. It returns nothing (handled) or a `bool`: `false`
+  passes the press on. Another signature stops the start.
+- A bean that implements `ShortcutHandler` handles its `action`; with
+  `Ordered` it takes its place among the others.
+- An action's handlers are asked by `@Shortcut(order:)` / `Ordered`, lower
+  first, until one handles the press.
+- A screen's own handlers sit in the widget tree and are asked first while
+  the focus is below them. An action they do not have, or a handler that
+  returns `false`, goes on to the handlers above and then the beans:
+
+```dart
+ShortcutHandlers(
+  handlers: {
+    'editor.save': (_) => draft.save(),
+    'search.open': (_) => searchInThisBook(),   // instead of the app's
+  },
+  child: EditorPage(draft),
+)
+```
+
+- Plain keys (`slash`, `char:?`) are ignored while a text field has the
+  focus, so they still type. Keys with Ctrl, ⌘ or Alt work there too.
+
+Showing the keys: `ShortcutLabel('search.open')` writes the action's first
+keys the platform's way (`⌘K`, `Ctrl+K`), from the same configuration;
+`ShortcutLabel.of(context, action)` gives the text.
+
+The starter installs the shortcuts around the app's navigator
+(`KeyboardShortcutsScope`, through a `FlutterAppCustomizer`). An app with
+its own `MaterialApp` puts `KeyboardShortcutsScope(shortcuts:
+context.bean<KeyboardShortcuts>(), child: child)` in its `builder`.
+
+To read keys written another way (`numpad:5`, a chord), declare a
+`ShortcutNotation` bean. The notations form a chain of responsibility: the
+app's own are asked first (by `@Order`), then `CharacterNotation` and
+`KeyCombinationNotation`.
+
+```dart
+@Component()
+class NumpadNotation implements ShortcutNotation {
+  @override
+  bool supports(String text) => text.startsWith('numpad:');
+
+  @override
+  ShortcutKeys parse(String text, TargetPlatform platform) => ...;
+}
+```
 
 ### Files of the app
 
@@ -3755,13 +3881,18 @@ spring.flutter.theme:
       kind: neon-gate                     # @ThemeLoaderKind('neon-gate')
       bar: { color: $colors.error, glow: 22 }
       edge: { color: $colors.primary, width: 2 }
-      web: web/loaders/neon-gate.html     # how it looks before Flutter runs
+      web: loaders/neon-gate.html         # lib/resources/loaders/neon-gate.html
 ```
 
 - The built-in kinds (`spinner`, `dots`, `pulse`, `bar`, `skeleton`) have a
   CSS form made from their keys. A kind of the app's own gives a `web:` HTML
-  file, below the app's directory (or `lib/resources/` of a package it
-  uses). The keys of the loader are CSS variables on the loader, named after
+  file: a path below `lib/resources/`, the app's own or a package's it
+  uses (`loaders/neon-gate.html`), or below the app's directory; or an
+  address the build downloads, `https://...` or
+  `github:owner/repo/path@ref`, to share a loader without a package. The
+  build keeps a copy in `.dart_tool/spring/loaders/` and uses it offline;
+  `web-sha256` pins the file (another one is refused). The HTML goes into
+  the page as it is: take it from an address you trust, at a tag. The keys of the loader are CSS variables on the loader, named after
   the key path in kebab case: `bar.color` is `--bar-color`,
   `edge.width` is `--edge-width`. Colors are resolved (references, color
   objects, the Material roles of the seed) to `#rrggbb` or `rgba()`; numbers

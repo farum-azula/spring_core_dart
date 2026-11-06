@@ -202,7 +202,9 @@ spring:
           [
             'kind',
             'phases',
+            'tracks',
             'web',
+            'web-sha256',
             'color',
             'size',
             'count',
@@ -222,7 +224,15 @@ spring:
 ''';
       expect(
         labels(custom, '          |\n'),
-        unorderedEquals(['kind', 'phases', 'web', 'door', 'seam']),
+        unorderedEquals([
+          'kind',
+          'phases',
+          'tracks',
+          'web',
+          'web-sha256',
+          'door',
+          'seam',
+        ]),
       );
     });
 

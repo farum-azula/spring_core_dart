@@ -88,3 +88,14 @@ class CloudPlatformProperties {
   /// detection off.
   CloudPlatform? cloudPlatform;
 }
+
+/// The addresses the configuration downloads from (`RemoteAddressPolicy`).
+@ConfigurationProperties('spring.remote')
+class RemoteProperties {
+  /// Allows insecure connections for the configuration's downloads (themes,
+  /// images, page loaders): `http://`, and `https://` with a certificate
+  /// that is expired, self-signed or for another host (not in a browser).
+  /// A warning at the start lists them. Without it an insecure address
+  /// stops the start.
+  bool allowInsecure = false;
+}

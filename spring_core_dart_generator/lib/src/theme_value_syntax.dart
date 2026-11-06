@@ -10,14 +10,19 @@ abstract final class ThemeValueSyntax {
     'brightness', 'seedcolor', 'schemevariant', 'contrast', 'colors', //
     'typography', 'shape', 'elevation', 'spacing', 'visualdensity', //
     'taptargetsize', 'splash', 'motion', 'components', 'tokens', //
-    'cupertino', 'styles', 'animations', 'background', 'loaders',
+    'cupertino', 'styles', 'animations', 'background', 'loaders', //
+    'syntax',
   };
 
   /// The keys of an image token, canonical: a token map with `source` and
   /// only these is an image.
   static const imageKeys = {
-    'source', 'refresh', 'sourcesha256', 'headers', 'timeout', 'fallback', //
-    'allowhttp',
+    'source',
+    'refresh',
+    'sourcesha256',
+    'headers',
+    'timeout',
+    'fallback',
   };
 
   static const _number = r'(?:\d+\.?\d*|\.\d+)';

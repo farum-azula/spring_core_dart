@@ -1,3 +1,12 @@
+## Unreleased
+
+- `RouteContentView(scrollToTop:)`, `true` by default: another page of the same screen opens at the top of its scrollable, as a browser opens a page, scrolling there the theme's way (`motion.scroll-to-top`) (an `#anchor` scrolls to its heading; a translation of the same page keeps the position). The screen stays.
+- Fixed: `RouteContentView` no longer collapses to nothing for a frame when another page of the same screen opens; it keeps its view and changes the content the theme's way (`motion.content-change`).
+- `RouteContentView(outline:)` hands the page's headings to a `MarkdownOutline`; the address's `#anchor` (`/docs/core/beans#scopes`) scrolls to its heading.
+- `LanguageChangedEvent` (`from`, `to`): the navigation publishes one when the app's language switches, by the address (`/ja/...`) or `switchLanguage`; listen with `@EventListener`. `ThemeText` of the Flutter starter changes the texts the theme's way (`motion.text-change`).
+- **Behavior change:** another address of the same route (`/docs/a` to `/docs/b`, `/books/1` to `/books/2`) keeps the screen: its state, its scroll and the shell around it stay, and it rebuilds with the new address and variables. Before, every `go` made a new screen, so a page of a content route started from nothing and its menus lost their scroll.
+- Fixed: a folder's `index.md` below the root of a content route (`content/docs/guides/index.md` at `/docs/guides`) is the folder's page, as the site's pages and the links between the files already said; its relative links are relative to its own folder. `RouteContentView.fileOf` says which file an address shows (the folder's `index.md`, the language's translation).
+
 ## 0.7.1
 
 - First version: screens on routes (`ScreenRoutes` in Dart configuration),

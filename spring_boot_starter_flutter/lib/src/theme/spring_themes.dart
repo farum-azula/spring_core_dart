@@ -104,6 +104,7 @@ final class SpringThemes extends ChangeNotifier {
     ThemeData? light,
     ThemeData? dark,
     CupertinoThemeData? cupertino,
+    RemoteAddresses addresses = const RemoteAddresses(),
   }) : this._(
          properties,
          customizers: customizers,
@@ -111,6 +112,7 @@ final class SpringThemes extends ChangeNotifier {
          light: light,
          dark: dark,
          cupertino: cupertino,
+         addresses: addresses,
        );
 
   SpringThemes._(
@@ -121,11 +123,12 @@ final class SpringThemes extends ChangeNotifier {
     ThemeData? dark,
     CupertinoThemeData? cupertino,
     Map<String, SpringThemeData>? read,
+    this.addresses = const RemoteAddresses(),
   }) : _files = Map.of(properties),
        _lightOverride = light,
        _darkOverride = dark,
        _cupertinoOverride = cupertino {
-    final config = ThemeConfig(_files);
+    final config = _configOf(_files);
     _use(config, read ?? _read(config));
   }
 
@@ -146,6 +149,7 @@ final class SpringThemes extends ChangeNotifier {
     ThemeData? light,
     ThemeData? dark,
     CupertinoThemeData? cupertino,
+    RemoteAddresses addresses = const RemoteAddresses(),
   }) {
     final properties = Binder.get(environment)
         .bind(prefix, const MapType(ClassType<String>(), ClassType<String>()))
@@ -162,6 +166,7 @@ final class SpringThemes extends ChangeNotifier {
       read: earlier != null && mapEquals(earlier.properties, properties)
           ? earlier.data
           : null,
+      addresses: addresses,
     );
     _readFor[environment] = (
       properties: themes._files,
@@ -199,9 +204,15 @@ final class SpringThemes extends ChangeNotifier {
   // under what `load` adds.
   final _sourced = <String, Map<String, String>>{};
 
-  Map<String, String> get _fromFiles => {
+  // The shared source (`spring.flutter.theme.source`, name '') goes under
+  // the files, so the app's own values win; a theme's source over them.
+  Map<String, String> get _fromFiles => _layered(_sourced);
+
+  Map<String, String> _layered(Map<String, Map<String, String>> sourced) => {
+    ...?sourced[''],
     ..._files,
-    for (final properties in _sourced.values) ...properties,
+    for (final MapEntry(:key, :value) in sourced.entries)
+      if (key.isNotEmpty) ...value,
   };
 
   /// The customizers applied to every Material theme, in order.
@@ -273,7 +284,7 @@ final class SpringThemes extends ChangeNotifier {
   /// `ThemePropertyException` and changes nothing. Then the listeners
   /// (the app) are told, and the app shows the new values at once.
   void load(Map<String, String> properties) {
-    final config = ThemeConfig({..._fromFiles, ...properties});
+    final config = _configOf({..._fromFiles, ...properties});
     final data = _read(config); // throws before anything changes
     _remote = Map.of(properties);
     _use(config, data);
@@ -314,15 +325,32 @@ final class SpringThemes extends ChangeNotifier {
   /// a theme that is gone falls back to `system`.
   void unload() {
     _remote = const {};
-    _apply(ThemeConfig(_fromFiles));
+    _apply(_configOf(_fromFiles));
     notifyListeners();
   }
+
+  /// Reads the addresses of the themes: the application's resolvers
+  /// (`SpringApplication(addressResolvers:)`), then the built-in ones.
+  final RemoteAddresses addresses;
+
+  ThemeConfig _configOf(Map<String, String> properties) =>
+      ThemeConfig(properties, addresses: addresses);
+
+  /// Every address the themes download from: the images of every theme
+  /// (backgrounds, the splash's logo, image tokens).
+  Iterable<RemoteAddress> get downloads => {
+    for (final name in names)
+      for (final image in data(name).images) ?image.address,
+  };
 
   /// Sets the properties of the theme read from a URL under [name]
   /// (`themes.<name>.seed-color`, keys relative to `spring.flutter.theme`),
   /// or takes them away with `null`; the starter's theme source loader
   /// calls it. They go over the files' properties and under what [load]
-  /// adds, and replace what an earlier call for the same [name] set.
+  /// adds, and replace what an earlier call for the same [name] set. The
+  /// empty [name] is `spring.flutter.theme.source`: its values (keys
+  /// without `themes.`) are shared by every theme and go under the files,
+  /// so the app's own values win.
   ///
   /// Every theme is checked first: an invalid property throws a
   /// `ThemePropertyException` and changes nothing. Then the listeners (the
@@ -334,11 +362,7 @@ final class SpringThemes extends ChangeNotifier {
     } else {
       next[name] = Map.of(properties);
     }
-    final config = ThemeConfig({
-      ..._files,
-      for (final values in next.values) ...values,
-      ..._remote,
-    });
+    final config = _configOf({..._layered(next), ..._remote});
     final data = _read(config); // throws before anything changes
     _sourced
       ..clear()

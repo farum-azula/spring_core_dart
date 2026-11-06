@@ -39,6 +39,8 @@ spring.flutter.theme:
       phases:
         close: { duration: 500ms, curve: ease-in }
         fill: { progress: true }
+      tracks:
+        spin: { duration: 2s, repeat: loop }
       door: { color: '#0B0D14', edge: { color: $neon.cyan, width: 2, glow: 12 } }
       seam:
         width: 6
@@ -51,6 +53,7 @@ spring.flutter.theme:
         delay: 120ms
         flicker: { duration: 120ms, repeat: reverse }
       web: web/loaders/neon-doors.html
+      web-sha256: 0000000000000000000000000000000000000000000000000000000000000000
   splash:
     title: NEON
     loader: neon-doors
@@ -102,6 +105,9 @@ void main() {
       }
       expect(flat, isNot(contains("at('phases')")));
       expect(flat, isNot(contains("at('web')")));
+      // The keys every loader has are the starter's, not the kind's.
+      expect(flat, isNot(contains("at('tracks')")));
+      expect(flat, isNot(contains('websha256')));
     });
 
     test('built-in and foreign kinds get no props class', () {

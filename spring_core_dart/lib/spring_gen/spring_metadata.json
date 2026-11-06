@@ -133,6 +133,16 @@
       "source": "package:spring_core_dart/src/core/env/core_properties.dart",
       "line": 81,
       "class": "ProfilesProperties"
+    },
+    {
+      "name": "spring.remote.allow-insecure",
+      "type": "bool",
+      "description": "Allows insecure connections for the configuration's downloads (themes, images, page loaders): `http://`, and `https://` with a certificate that is expired, self-signed or for another host (not in a browser). A warning at the start lists them. Without it an insecure address stops the start.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 100,
+      "class": "RemoteProperties"
     }
   ],
   "hints": [
@@ -343,6 +353,28 @@
         },
         {
           "name": "validate",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "remoteProperties",
+      "type": "RemoteProperties",
+      "types": [
+        "RemoteProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_core_dart/src/core/env/core_properties.dart",
+      "line": 94,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowInsecure",
           "kind": "field",
           "type": "bool"
         }

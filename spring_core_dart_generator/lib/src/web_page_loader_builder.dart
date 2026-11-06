@@ -1,6 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart' hide Resource;
+import 'package:spring_core_dart/core.dart'
+    show
+        InsecureConnectionException,
+        RemoteAddress,
+        RemoteAddressPolicy,
+        RemoteAddresses;
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
@@ -8,6 +15,7 @@ import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
     show readPlatformEnvironment;
+import 'package:spring_core_dart_generator/src/web_loader_download.dart';
 import 'package:spring_core_dart_generator/src/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 import 'package:yaml/yaml.dart';
@@ -101,13 +109,40 @@ Future<String?> _fromDependency(BuildStep buildStep, String path) async {
 final class WebPageLoaderBuilder implements Builder {
   /// Creates the builder; [files] reads and writes the page (on disk
   /// unless given).
-  WebPageLoaderBuilder({WebPageFiles? files})
+  /// [fetch] downloads a loader's `web:` address (the network unless
+  /// given).
+  WebPageLoaderBuilder({WebPageFiles? files, this.fetch})
     : _files = files ?? const _DiskPageFiles();
 
   final WebPageFiles _files;
 
+  /// Downloads a loader's `web:` address; the network when `null`.
+  final WebLoaderFetch? fetch;
+
   /// The page the block goes into.
   static const pagePath = 'web/index.html';
+
+  // `spring.remote.allow-insecure` of the application's files.
+  static bool _allowInsecure(
+    Map<String, String> texts,
+    KeysDiagnostics diagnostics,
+  ) {
+    for (final property in SpringKeyFiles.readProperties(texts, diagnostics)) {
+      if (property.name == RemoteAddressPolicy.property) {
+        return property.value.trim().toLowerCase() == 'true';
+      }
+    }
+    return false;
+  }
+
+  // The copies of downloaded loaders, in the package's .dart_tool/.
+  static String _cacheFolder(String package) {
+    final pubspec = PackageDirectories.current.file(
+      AssetId(package, 'pubspec.yaml'),
+    );
+    final root = pubspec?.parent.path ?? Directory.systemTemp.path;
+    return '$root/.dart_tool/spring/loaders';
+  }
 
   // No declared outputs, as for web_dev_config.yaml: the file lives
   // outside lib/ and is the app's own.
@@ -137,8 +172,38 @@ final class WebPageLoaderBuilder implements Builder {
     // Files the loaders name, read before the (synchronous) generation.
     final files = <String, String?>{};
     if (set != null) {
-      for (final path in WebPageLoader.webFiles(set)) {
+      final policy = RemoteAddressPolicy(
+        allowInsecure: _allowInsecure(texts, diagnostics),
+      );
+      for (final (:path, :sha256) in WebPageLoader.webSources(set)) {
+        if (WebPageLoader.isRemote(path)) {
+          final RemoteAddress address;
+          try {
+            address = const RemoteAddresses().parse(
+              path,
+              property: 'spring.flutter.theme.loaders.*.web',
+            );
+            policy.check([address]);
+          } on ArgumentError catch (error) {
+            log.warning("A loader's web: ${error.message} ($path).");
+            continue;
+          } on InsecureConnectionException catch (error) {
+            log.severe('The page loader: $error');
+            continue;
+          }
+          final (:text, :problem) = await WebLoaderDownload(
+            cache: Directory(_cacheFolder(package)),
+            fetch: fetch,
+            allowInsecure: policy.allowInsecure,
+          ).read(address.uri, sha256);
+          if (problem != null) {
+            log.warning('The page loader: $problem.');
+          }
+          files[path] = text;
+          continue;
+        }
         files[path] =
+            await _files.read(buildStep, package, 'lib/resources/$path') ??
             await _files.read(buildStep, package, path) ??
             await _fromDependency(buildStep, path);
       }

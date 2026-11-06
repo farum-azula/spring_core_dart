@@ -44,4 +44,5 @@ export 'package:spring_core_dart/src/beans/null_bean.dart';
 export 'package:spring_core_dart/src/beans/object_provider.dart';
 export 'package:spring_core_dart/src/beans/post_processors.dart';
 export 'package:spring_core_dart/src/beans/scope.dart';
+export 'package:spring_core_dart/src/beans/startup_pacer.dart';
 export 'package:spring_core_dart/src/beans/type_info.dart';

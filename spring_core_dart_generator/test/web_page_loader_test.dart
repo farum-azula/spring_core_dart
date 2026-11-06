@@ -7,11 +7,15 @@ library;
 
 import 'dart:convert';
 
+import 'dart:io';
+
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:crypto/crypto.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/web_loader_download.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
 import 'package:test/test.dart';
@@ -208,6 +212,59 @@ void main() {
       expect(text, contains(WebPageLoader.script));
       expect(WebPageLoader.scriptHash, startsWith("'sha256-"));
     });
+
+    test(
+      "the script records the page's stages for the splash",
+      () async {
+        // A page of its own: the loader's element, Flutter's loader that
+        // loads the app and starts the engine, then the hand-off.
+        const page = '''
+var attributes = {}, events = [];
+var root = {
+  getAttribute: function (n) { return attributes[n] || null; },
+  setAttribute: function (n, v) { attributes[n] = v; },
+  style: { setProperty: function () {} }
+};
+globalThis.window = globalThis;
+globalThis.document = { getElementById: function (id) { return id === 'spring-loader' ? root : null; } };
+globalThis.requestAnimationFrame = function () {};
+globalThis.CustomEvent = function (type, init) { this.type = type; this.detail = init.detail; };
+globalThis.addEventListener = function () {};
+globalThis.dispatchEvent = function (e) { events.push(e.type + ':' + e.detail.stage); };
+''';
+        const run = '''
+window._flutter.loader = {
+  load: function (options) {
+    return options.onEntrypointLoaded({
+      initializeEngine: function () { return Promise.resolve({ runApp: function () {} }); }
+    });
+  }
+};
+window._flutter.loader.load({}).then(function () {
+  var stages = window.springLoader.stages.map(function (s) { return s.stage; });
+  var timed = window.springLoader.stages.every(function (s) { return typeof s.at === 'number'; });
+  window.springLoaderHandOff();
+  console.log(JSON.stringify({ stages: stages, events: events, timed: timed, attribute: attributes['data-splash-stage'] }));
+});
+''';
+        final result = await Process.run('node', [
+          '-e',
+          '$page\n${WebPageLoader.script}\n$run',
+        ]);
+        expect(result.exitCode, 0, reason: '${result.stderr}');
+        final out = jsonDecode(result.stdout as String) as Map<String, Object?>;
+        expect(out['stages'], ['page', 'engine']);
+        expect(out['events'], [
+          'spring-splash-stage:page',
+          'spring-splash-stage:engine',
+        ]);
+        expect(out['timed'], isTrue);
+        expect(out['attribute'], 'engine');
+      },
+      skip: Process.runSync('which', ['node']).exitCode == 0
+          ? false
+          : 'node is not installed',
+    );
 
     test('a fill with a min-duration: when it starts and its minimum', () {
       final text = _block(
@@ -479,6 +536,7 @@ spring.flutter.theme:
       Map<String, String> web = const {},
       String pubspec =
           'name: app\ndependencies:\n  spring_boot_starter_flutter: any\n',
+      WebLoaderFetch? fetch,
     }) async {
       final files = _Files({
         'web/index.html': ?page,
@@ -486,7 +544,7 @@ spring.flutter.theme:
       });
       final logs = <String>[];
       await testBuilder(
-        WebPageLoaderBuilder(files: files),
+        WebPageLoaderBuilder(files: files, fetch: fetch),
         {
           'app|pubspec.yaml': pubspec,
           'app|lib/app.dart': 'void main() {}',
@@ -613,6 +671,114 @@ spring.flutter.theme:
       );
       expect(written, contains('<p class="mine"></p>'));
       expect(logs.where((l) => l.startsWith('WARNING')), isEmpty);
+    });
+
+    test("the web file is read from the app's lib/resources/ first, as a "
+        "dependency's", () async {
+      final (written, logs) = await run(
+        page: _page,
+        yaml: '''
+spring.flutter.theme:
+  loaders: { l: { kind: doors, web: loaders/l.html } }
+  splash: { loader: l }
+''',
+        web: {'lib/resources/loaders/l.html': '<p class="resource"></p>'},
+      );
+      expect(written, contains('<p class="resource"></p>'));
+      expect(logs.where((l) => l.startsWith('WARNING')), isEmpty);
+    });
+
+    group('a web: address, downloaded at build time', () {
+      String yamlOf(String web, [String? pin]) =>
+          '''
+spring.flutter.theme:
+  loaders:
+    l:
+      kind: doors
+      web: '$web'
+${pin == null ? '' : "      web-sha256: '$pin'"}
+  splash: { loader: l }
+''';
+      const html = '<p class="shared"></p>';
+      final digest = sha256.convert(utf8.encode(html)).toString();
+      final stamp = DateTime.now().microsecondsSinceEpoch;
+
+      test('https and github:, without a pin', () async {
+        final asked = <Uri>[];
+        Future<String?> fetch(Uri uri) async {
+          asked.add(uri);
+          return html;
+        }
+
+        var (written, logs) = await run(
+          page: _page,
+          yaml: yamlOf('https://loaders.example/$stamp/a.html'),
+          fetch: fetch,
+        );
+        expect(written, contains(html));
+        expect(logs.where((l) => l.startsWith('WARNING')), isEmpty);
+        (written, logs) = await run(
+          page: _page,
+          yaml: yamlOf('github:farum-azula/themes/loaders/$stamp.html@v1'),
+          fetch: fetch,
+        );
+        expect(written, contains(html));
+        expect(
+          asked.last.toString(),
+          'https://raw.githubusercontent.com/farum-azula/themes/v1/loaders/$stamp.html',
+        );
+        expect(written, isNot(contains('--web-sha256')));
+      });
+
+      test('a pin: the right digest is used, another one refused', () async {
+        var (written, logs) = await run(
+          page: _page,
+          yaml: yamlOf('https://loaders.example/$stamp/b.html', digest),
+          fetch: (_) async => html,
+        );
+        expect(written, contains(html));
+        expect(written, isNot(contains('--web-sha256')));
+        (written, logs) = await run(
+          page: _page,
+          yaml: yamlOf('https://loaders.example/$stamp/c.html', digest),
+          fetch: (_) async => '<p class="changed"></p>',
+        );
+        expect(written, isNot(contains('changed')));
+        expect(logs.join('\n'), contains('does not have the SHA-256'));
+      });
+
+      test('http: refused unless spring.remote.allow-insecure', () async {
+        final web = 'http://loaders.lan/$stamp/e.html';
+        var (written, logs) = await run(
+          page: _page,
+          yaml: yamlOf(web),
+          fetch: (_) async => html,
+        );
+        expect(written, isNot(contains(html)));
+        expect(
+          logs.where((l) => l.startsWith('SEVERE')).join('\n'),
+          allOf(contains('not secure'), contains(web)),
+        );
+        (written, logs) = await run(
+          page: _page,
+          yaml: 'spring.remote.allow-insecure: true\n${yamlOf(web)}',
+          fetch: (_) async => html,
+        );
+        expect(written, contains(html));
+        expect(logs.where((l) => l.startsWith('SEVERE')), isEmpty);
+      });
+
+      test('offline: the copy of an earlier build', () async {
+        final web = 'https://loaders.example/$stamp/d.html';
+        await run(page: _page, yaml: yamlOf(web), fetch: (_) async => html);
+        final (written, logs) = await run(
+          page: _page,
+          yaml: yamlOf(web),
+          fetch: (_) async => throw const SocketException('offline'),
+        );
+        expect(written, contains(html));
+        expect(logs.join('\n'), contains('the copy of an earlier build'));
+      });
     });
 
     test('a broken pair of markers is a warning, the page is kept', () async {

@@ -216,8 +216,7 @@ final class SpringMetadataBuilder implements Builder {
           }
           keys.putIfAbsent(canonicalName(kind), () => {}).addAll([
             for (final MapEntry(:key, :value) in loader.children.entries)
-              if (!const {'kind', 'phases', 'web'}.contains(key))
-                value.spelling,
+              if (!loaderOwnKeys.contains(key)) value.spelling,
           ]);
         }
       }

@@ -72,6 +72,7 @@ export 'package:spring_core_dart/src/core/env/system_environment_property_source
 export 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 export 'package:spring_core_dart/src/core/io/path_matcher.dart';
 export 'package:spring_core_dart/src/core/io/properties_parser.dart';
+export 'package:spring_core_dart/src/core/io/remote_address.dart';
 export 'package:spring_core_dart/src/core/io/resource.dart';
 export 'package:spring_core_dart/src/core/io/resource_loader.dart';
 export 'package:spring_core_dart/src/core/io/resource_pattern_resolver.dart';
@@ -80,5 +81,6 @@ export 'package:spring_core_dart/src/core/io/resources.dart';
 export 'package:spring_core_dart/src/core/io/url_resource.dart';
 export 'package:spring_core_dart/src/core/log.dart';
 export 'package:spring_core_dart/src/core/log_format.dart';
+export 'package:spring_core_dart/src/core/metrics/application_startup.dart';
 export 'package:spring_core_dart/src/core/order.dart';
 export 'package:spring_core_dart/src/core/principal.dart';

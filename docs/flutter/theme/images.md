@@ -29,7 +29,6 @@ spring:
             Authorization: Bearer ${cdn.token}
           timeout: 10s
           fallback: assets/images/background.jpg
-          allow-http: false
       tokens:
         brand:
           hero:
@@ -41,13 +40,12 @@ spring:
 
 | Property | Type | Values | Default | What it does |
 |---|---|---|---|---|
-| `source` | text | an asset path, an `https://` URL, or an `http://` URL with `allow-http` | required | Where the image is. A path with no scheme (and a Windows drive such as `C:`) is an asset; `https` is downloaded. Any other scheme stops the start |
+| `source` | text | an asset path, an `https://` URL, a `github:owner/repo/path@ref` address | required | Where the image is. A path with no scheme (and a Windows drive such as `C:`) is an asset; an address is downloaded. `http://` stops the start unless `spring.remote.allow-insecure` is `true` (see [insecure connections](properties.md#insecure-connections)). Any other scheme stops the start |
 | `refresh` | duration | `30m`, `12h`, `1.5d` | none | How old the cache may get before the file is looked at again in the background. Without it the first download is kept for ever and there is never another request |
 | `source-sha256` | text | 64 hexadecimal digits | none | The file must have exactly this digest. Any other file is refused |
 | `headers` | map | header name to value | none | Request headers, such as `Authorization`. `${...}` placeholders are resolved by the application's configuration. Header names keep their spelling |
 | `timeout` | duration | `10s`, `1m` | `10s` | The longest a download may take |
 | `fallback` | text | an asset path | none | An asset shown while a network image is not there yet |
-| `allow-http` | bool | `true`, `false` | `false` | Allows an `http://` source. Without it an `http://` source stops the start. Android and iOS refuse clear text anyway |
 
 Durations here are the same as everywhere in a theme: a number (decimals
 allowed) with a unit (`ms`, `s`, `m`, `h`, `d`), like `1.5s` or `0.5d`. A
@@ -134,10 +132,10 @@ without the generator.
 ## Errors
 
 A wrong value stops the start and names the property, for example
-`tokens.neon.hero.source-sha256` with "must be 64 hexadecimal digits", or
-`background.image.source` with "is plain http, which is refused: use https, or
-set allow-http: true". A missing `source` is an error too: every image needs
-one.
+`tokens.neon.hero.source-sha256` with "must be 64 hexadecimal digits". An
+`http://` source stops the start with "the connection is not secure", naming
+the address and its property, unless `spring.remote.allow-insecure` is
+`true`. A missing `source` is an error too: every image needs one.
 
 ## See also
 

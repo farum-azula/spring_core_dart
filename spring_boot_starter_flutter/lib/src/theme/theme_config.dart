@@ -4,6 +4,7 @@ import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart'
     show didYouMean;
 import 'package:spring_boot_starter_flutter/src/theme/theme_references.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
+import 'package:spring_boot_dart/spring_boot_dart.dart' show RemoteAddresses;
 
 /// The theme properties (`spring.flutter.theme.*`) sorted into named
 /// themes: the shared part at the root, each theme of `themes.<name>` on
@@ -17,7 +18,10 @@ import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 final class ThemeConfig {
   /// Sorts [properties], whose keys are relative to `spring.flutter.theme`
   /// in any form (as a `Binder` gives them).
-  ThemeConfig(Map<String, String> properties) {
+  ThemeConfig(
+    Map<String, String> properties, {
+    this.addresses = const RemoteAddresses(),
+  }) {
     for (final MapEntry(:key, :value) in properties.entries) {
       final segments = key.split('.');
       if (segments.length >= 3 &&
@@ -37,11 +41,17 @@ final class ThemeConfig {
           systemLight = value.trim();
         case 'systemdark':
           systemDark = value.trim();
+        case 'source' || 'sourcesha256' || 'refresh':
+          break;
         default:
           _base[path] = value;
       }
     }
   }
+
+  /// Reads the addresses of the themes (sources, images): the
+  /// application's resolvers, then the built-in ones.
+  final RemoteAddresses addresses;
 
   /// The theme to show at the start, from `active`: `system` (the default)
   /// or a theme name.
@@ -235,8 +245,16 @@ final class ThemeConfig {
 /// values by path, lists, child keys, parsed values, and the full property
 /// name for error messages. Internal to the starter.
 final class ThemeProperties {
-  /// The resolved [values] of theme [name].
-  ThemeProperties(this.name, this.values);
+  /// The resolved [values] of theme [name]; [addresses] reads its
+  /// addresses (images).
+  ThemeProperties(
+    this.name,
+    this.values, {
+    this.addresses = const RemoteAddresses(),
+  });
+
+  /// Reads the addresses of the theme (an image's `source`).
+  final RemoteAddresses addresses;
 
   /// The theme's name, used in error messages.
   final String name;

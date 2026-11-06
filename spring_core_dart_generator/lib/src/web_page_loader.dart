@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
+import 'package:spring_core_dart/core.dart' show RemoteAddresses;
 import 'package:spring_core_dart_generator/src/theme_palette.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
@@ -24,7 +25,10 @@ import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 /// The script follows Flutter's loader (`_flutter.loader.load`) for the
 /// progress (`--spring-progress`, `data-stage`; a progress phase with a
 /// `min-duration` shows no more than its eased clock, from the
-/// `data-fill-at` and `data-fill-min` attributes), and removes the loader
+/// `data-fill-at` and `data-fill-min` attributes), records the start's
+/// first stages (`page` when the page runs, `engine` when Flutter's engine
+/// starts) in `window.springLoader.stages`, `data-splash-stage` and a
+/// `spring-splash-stage` event, and removes the loader
 /// when the Flutter side calls `window.springLoaderHandOff()`; a timeout
 /// removes it anyway. Because the script never changes, a
 /// Content-Security-Policy can allow it by hash ([scriptHash]).
@@ -73,9 +77,20 @@ abstract final class WebPageLoader {
     load: [0.08, 0.45], app: [0.5, 0.6], engine: [0.6, 0.88],
     run: [0.9, 0.95], done: [1, 1]
   };
+  var reached = [], splashStages = { load: 'page', engine: 'engine' };
+  function enter(stage) {
+    for (var i = 0; i < reached.length; i++) if (reached[i].stage === stage) return;
+    var entry = { stage: stage, at: now() };
+    reached.push(entry);
+    root.setAttribute('data-splash-stage', stage);
+    try {
+      window.dispatchEvent(new CustomEvent('spring-splash-stage', { detail: entry }));
+    } catch (e) {}
+  }
   function show(stage) {
     var s = stages[stage];
     if (done || !s) return;
+    if (splashStages[stage]) enter(splashStages[stage]);
     floor = s[0]; cap = s[1];
     if (progress < floor) progress = floor;
     root.setAttribute('data-stage', stage);
@@ -104,6 +119,7 @@ abstract final class WebPageLoader {
     get progress() { return shown; },
     get stage() { return root.getAttribute('data-stage'); },
     get elapsed() { return now() - started; },
+    get stages() { return reached.slice(); },
     handOff: remove
   };
   window.$handOffHook = remove;
@@ -260,32 +276,48 @@ abstract final class WebPageLoader {
 
   /// The `web:` files of the loader the splash of the active theme shows,
   /// to be read before [generate].
-  static Set<String> webFiles(ThemeSet set) {
+  static Set<String> webFiles(ThemeSet set) => {
+    for (final file in webSources(set)) file.path,
+  };
+
+  /// The `web:` files of the active themes' splash loaders with their
+  /// `web-sha256` pins: a path below `lib/resources/` (or the app's
+  /// directory), or an address to download at build time (`https://...`,
+  /// `github:owner/repo/path@ref`).
+  static Set<({String path, String? sha256})> webSources(ThemeSet set) {
     final (:light, :dark) = _active(set);
-    final result = <String>{};
+    final result = <({String path, String? sha256})>{};
     for (final name in [light, ?dark]) {
       final scope = set.scope(name);
       final splash = _splashOf(scope);
       final loader = splash?.children['loader']?.entry?.value.trim();
-      final web = loader == null
-          ? null
-          : scope
-                .node([
-                  'loaders',
-                  canonicalName(loader),
-                  'web',
-                ])
-                ?.entry
-                ?.value
-                .trim();
+      if (loader == null) {
+        continue;
+      }
+      String? value(String key) => scope
+          .node(['loaders', canonicalName(loader), key])
+          ?.entry
+          ?.value
+          .trim();
+      final web = value('web');
       if (web != null && web.isNotEmpty && _safePath(web)) {
-        result.add(web);
+        final pin = value('websha256')?.toLowerCase();
+        result.add((
+          path: web,
+          sha256: pin == null || pin.isEmpty ? null : pin,
+        ));
       }
     }
     return result;
   }
 
+  /// Whether [path] is an address to download: one the built-in address
+  /// resolvers read (`https://`, `http://`, `github:`). The build has no
+  /// application, so an application's own resolvers are not asked here.
+  static bool isRemote(String path) => const RemoteAddresses().isAddress(path);
+
   static bool _safePath(String path) =>
+      isRemote(path) ||
       !(path.startsWith('/') ||
           path.contains(RegExp(r'(^|[\\/])\.\.([\\/]|$)')) ||
           path.contains(RegExp(r'^[A-Za-z]:|\\')));
@@ -481,7 +513,8 @@ abstract final class WebPageLoader {
       _warn(
         look.diagnostics,
         'loaders.${node.spelling}.web "$path" must be a path below the '
-        "app's directory (no .. and not absolute).",
+        "app's directory (no .. and not absolute) or an https:// or "
+        'github: address.',
       );
       return '';
     }
@@ -489,8 +522,12 @@ abstract final class WebPageLoader {
     if (html == null) {
       _warn(
         look.diagnostics,
-        'loaders.${node.spelling}.web: the file "$path" does not exist '
-        "(it is relative to the app's directory).",
+        isRemote(path)
+            ? 'loaders.${node.spelling}.web: "$path" could not be '
+                  'downloaded and has no copy from an earlier build.'
+            : 'loaders.${node.spelling}.web: the file "$path" does not '
+                  "exist (a path below lib/resources/, the app's own or a "
+                  "dependency's).",
       );
       return '';
     }
@@ -792,7 +829,11 @@ final class _Look {
     for (final child in node.children.values) {
       final here = [...path, child.spelling];
       if (path.isEmpty &&
-          const {'kind', 'web'}.contains(canonicalName(child.spelling))) {
+          const {
+            'kind',
+            'web',
+            'websha256',
+          }.contains(canonicalName(child.spelling))) {
         continue;
       }
       final value = _value(child, here);

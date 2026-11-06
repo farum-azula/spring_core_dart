@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "package": "neon_ui",
+  "properties": [],
+  "hints": [],
+  "beans": [],
+  "profiles": [],
+  "loaderKinds": [
+    {
+      "name": "neon-gate",
+      "class": "NeonGateLoader",
+      "source": "package:neon_ui/src/neon_gate_loader.dart",
+      "line": 27,
+      "props": [
+        "box",
+        "edge",
+        "flicker",
+        "gate",
+        "label"
+      ]
+    }
+  ]
+}

@@ -901,4 +901,31 @@ void main(List<String> args) {}
       expect(source, isNot(contains('unused_import')));
     });
   });
+
+  test(
+    r'the languages of code blocks are taken as written: no $ reference',
+    () {
+      final (:code, :diagnostics) = _theme(r'''
+spring.flutter.theme:
+  syntax:
+    shell:
+      aliases: [sh]
+      keywords: [echo]
+      rules:
+        - { match: '\$[A-Za-z_]\w*|\$\{[^}]*\}', kind: variable }
+        - { match: '[a-z]+', kind: word }
+''');
+      expect(diagnostics.errors, isEmpty);
+      expect(_flat(code), isNot(contains('Syntax')));
+    },
+  );
+
+  test(r'the glyphs of a text change are taken as written: no $ reference', () {
+    final (:diagnostics, code: _) = _theme(r'''
+spring.flutter.theme:
+  motion:
+    text-change: { type: morph, glyphs: '$ab#%', glyph-duration: 30ms }
+''');
+    expect(diagnostics.errors, isEmpty);
+  });
 }

@@ -58,6 +58,16 @@ const _notProperties = <String, String>{
   'spring_boot_actuator:spring.boot.actuate.endpoint.target':
       'a request attribute name',
   'spring_boot_starter_web:server.ports': 'the name of a property source',
+  'spring_core_dart:spring.beans.instantiate':
+      'a startup step name (ApplicationStartup)',
+  'spring_boot_starter_flutter:spring.beans.instantiate':
+      'a startup step name (ApplicationStartup)',
+  'spring_boot_dart:spring.boot.application.starting':
+      'a startup step name (ApplicationStartup)',
+  'spring_boot_dart:spring.boot.application.environment-prepared':
+      'a startup step name (ApplicationStartup)',
+  'spring_boot_dart:spring.boot.application.context':
+      'a startup step name (ApplicationStartup)',
   'spring_boot_starter_flutter_security:'
           'spring.security.oauth2.authorization-request':
       'a session storage key',

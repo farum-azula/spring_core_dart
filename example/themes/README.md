@@ -21,7 +21,7 @@ loader kind of its own: a gate of panels, written in Dart in `neon_ui` (see belo
 |---|---|---|
 | Material | [`material/`](material/README.md) | A `MaterialApp`. The theme sets Flutter's own components (buttons, inputs, cards, bars...) per state, and styles for our own widgets. Port 5070 on the web. |
 | Cupertino | [`cupertino/`](cupertino/README.md) | A `CupertinoApp` with only Cupertino widgets, themed from the `cupertino:` section. Port 5080 on the web. |
-| Custom widgets | [`neon/`](neon/README.md) on [`neon_ui`](https://github.com/farum-azula/themes/tree/main/packages/neon_ui) | An app of type `widgets` (no Material, no Cupertino). Its components are not Flutter's: they are the widgets of a **component library**, `neon_ui`, delivered as a Dart package with its fonts, picture and a theme file (`themes/neon.yml`) that the app imports. Port 1010 on the web. |
+| Custom widgets | [`neon/`](neon/README.md) on [`neon_ui/`](neon_ui/README.md) | An app of type `widgets` (no Material, no Cupertino). Its components are not Flutter's: they are the widgets of a **component library**, `neon_ui`, delivered as a Dart package with its fonts, picture and a theme file (`themes/neon.yml`) that the app imports. Port 1010 on the web. |
 
 The **gate** loader (`neon_ui`'s `@ThemeLoaderKind('neon-gate')` widget, the
 `loaders.neon-gate` in its `themes/neon.yml` and
@@ -37,18 +37,7 @@ uses the `neon` theme gets it.
 
 `neon_ui` is a library: it has tests and no app of its own. A design system
 can live in its own package and be reused by many apps; the app only adds
-its own tokens, styles and themes (`extends`). It lives in its own
-repository, [farum-azula/themes](https://github.com/farum-azula/themes), and
-the app takes a released tag of it:
-
-```yaml
-dependencies:
-  neon_ui:
-    git:
-      url: https://github.com/farum-azula/themes.git
-      path: packages/neon_ui
-      ref: neon_ui-v0.2.0
-```
+its own tokens, styles and themes (`extends`).
 
 ## Run
 
@@ -76,3 +65,4 @@ flutter test --exclude-tags golden     # everywhere
 flutter test --tags golden             # screenshots, made on macOS
 ```
 
+For `neon`, `neon_ui` has to be resolved too (`cd ../neon_ui && flutter pub get`).
