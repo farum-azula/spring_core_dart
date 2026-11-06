@@ -98,7 +98,6 @@ dart run tool/check_dependencies.dart            # the pub workspace
 (cd spring_boot_starter_flutter && flutter pub get)
 (cd spring_boot_starter_flutter_security && flutter pub get)
 (cd example/flutter_guide && flutter pub get)
-(cd example/themes/neon_ui && flutter pub get)
 (cd example/themes/neon && flutter pub get)
 (cd example/themes/material && flutter pub get)
 (cd example/themes/cupertino && flutter pub get)
@@ -228,7 +227,7 @@ in its `pubspec.yaml`.
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
 | `neon_books_server` (`example/server_guide`) | The server guide: a bookstore's server using every feature | no | the web, security, Feign, WebSocket, cache and scheduling starters (which bring the rest) | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
 | `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter_security` (which brings the Flutter starter, the OAuth2 client and `spring_security_core`), the Feign, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test`, `integration_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
-| `neon_ui` (`example/themes/neon_ui`) | The NEON design system: widgets and a YAML theme for apps of type `widgets` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
+| `neon_ui` ([farum-azula/themes](https://github.com/farum-azula/themes), `packages/neon_ui`) | The NEON design system: widgets and a YAML theme for apps of type `widgets`; taken by git at a release tag | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
 | `theme_showcase_neon` (`example/themes/neon`) | The NEON theme showcase: an app of type `widgets` on `neon_ui` | no | `flutter` (SDK), `neon_ui`, `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
 | `theme_showcase_material` (`example/themes/material`) | The Material theme showcase: every part of the theme on a `MaterialApp` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
 | `theme_showcase_cupertino` (`example/themes/cupertino`) | The Cupertino theme showcase: the theme on a `CupertinoApp` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |

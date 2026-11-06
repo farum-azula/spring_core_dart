@@ -54,12 +54,15 @@ const repositoryOnly = {
 /// Packages outside the pub workspace, with their own resolution (Flutter:
 /// `flutter_test` pins versions the workspace cannot use); checked with
 /// `--flutter`. The Flutter SDK's packages count as the SDK.
+/// Packages of the family's other repositories, taken by git (not on
+/// pub.dev): the design systems of github.com/farum-azula/themes.
+const familyGitPackages = {'neon_ui'};
+
 const flutterPackages = [
   'spring_boot_starter_flutter',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'example/flutter_guide',
-  'example/themes/neon_ui',
   'example/themes/neon',
   'example/themes/material',
   'example/themes/cupertino',
@@ -160,7 +163,6 @@ const allowedPackages = {
       'spring_boot_starter_flutter_security',
       'spring_boot_starter_flutter_navigation',
       'neon_books_app',
-      'neon_ui',
       'theme_showcase_neon',
       'theme_showcase_material',
       'theme_showcase_cupertino',
@@ -228,7 +230,9 @@ Future<void> _check(String directory, {required bool standalone}) async {
   // workspace run themselves).
   final workspace = {
     for (final MapEntry(:key, :value) in packages.entries)
-      if (value['kind'] == 'root' || (standalone && value['source'] == 'path'))
+      if (value['kind'] == 'root' ||
+          (standalone && value['source'] == 'path') ||
+          (value['source'] == 'git' && familyGitPackages.contains(key)))
         key,
   };
 

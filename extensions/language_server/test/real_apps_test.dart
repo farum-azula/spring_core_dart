@@ -17,7 +17,6 @@ void main() {
     'server_guide',
     'flutter_guide',
     'themes/neon',
-    'themes/neon_ui',
     'themes/material',
     'themes/cupertino',
   ];

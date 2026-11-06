@@ -24,7 +24,7 @@
 //   flutter_guide    example/flutter_guide affected, or the server guide
 //                    its end-to-end tests run against (incl. goldens)
 //   theme_showcase_neon, theme_showcase_material, theme_showcase_cupertino
-//                    the app in example/themes/ (neon: or neon_ui)
+//                    the app in example/themes/
 //                    affected (incl. goldens)
 //   static_site      example/static_site/app or its server affected (the
 //                    server's tests against the app's real web build)
@@ -47,7 +47,6 @@ const flutterPackages = [
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'example/flutter_guide',
-  'example/themes/neon_ui',
   'example/themes/neon',
   'example/themes/material',
   'example/themes/cupertino',
@@ -128,8 +127,7 @@ Future<void> main(List<String> args) async {
     // The app's end-to-end tests run against the server guide: a change of
     // the server tests the app too.
     final app = has('example/flutter_guide') || server;
-    final showcaseNeon =
-        has('example/themes/neon') || has('example/themes/neon_ui');
+    final showcaseNeon = has('example/themes/neon');
     final showcaseMaterial = has('example/themes/material');
     final showcaseCupertino = has('example/themes/cupertino');
     // The server's built-site tests read the app's web build.

@@ -664,7 +664,6 @@ jobs:
           (cd spring_boot_starter_flutter_security && flutter pub get)
           (cd spring_boot_starter_flutter_navigation && flutter pub get)
           (cd example/flutter_guide && flutter pub get)
-          (cd example/themes/neon_ui && flutter pub get)
           (cd example/themes/neon && flutter pub get)
           (cd example/themes/material && flutter pub get)
           (cd example/themes/cupertino && flutter pub get)
@@ -702,7 +701,7 @@ jobs:
 
       - name: Generated code is up to date (Flutter guide, theme examples and packages)
         run: |
-          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site spring_boot_starter_flutter spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation; do
+          for example in example/flutter_guide example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site spring_boot_starter_flutter spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
@@ -722,7 +721,6 @@ jobs:
           (cd spring_boot_starter_flutter_security && flutter analyze --fatal-infos)
           (cd spring_boot_starter_flutter_navigation && flutter analyze --fatal-infos)
           (cd example/flutter_guide && flutter analyze --fatal-infos)
-          (cd example/themes/neon_ui && flutter analyze --fatal-infos)
           (cd example/themes/neon && flutter analyze --fatal-infos)
           (cd example/themes/material && flutter analyze --fatal-infos)
           (cd example/themes/cupertino && flutter analyze --fatal-infos)
@@ -793,14 +791,9 @@ jobs:
         working-directory: example/flutter_guide
         run: flutter build web --release
 
-      # The theme examples (example/themes/): the NEON design system (a
-      # library) with its showcase app of type widgets, and the Material and
-      # Cupertino showcases.
-      - name: Tests of neon_ui
-        if: needs.changes.outputs.theme_showcase_neon == 'true'
-        working-directory: example/themes/neon_ui
-        run: flutter test
-
+      # The theme examples (example/themes/): the NEON showcase app of type
+      # widgets (on neon_ui from github.com/farum-azula/themes), and the
+      # Material and Cupertino showcases.
       - name: Tests of the NEON theme showcase
         if: needs.changes.outputs.theme_showcase_neon == 'true'
         working-directory: example/themes/neon
@@ -989,7 +982,6 @@ jobs:
           flutter --version
           dart pub get
           (cd example/flutter_guide && flutter pub get)
-          (cd example/themes/neon_ui && flutter pub get)
           (cd example/themes/neon && flutter pub get)
           (cd example/themes/material && flutter pub get)
           (cd example/themes/cupertino && flutter pub get)

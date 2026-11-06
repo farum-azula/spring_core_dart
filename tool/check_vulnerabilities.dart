@@ -24,7 +24,6 @@ const _flutterLocks = [
   'spring_boot_starter_flutter_security/pubspec.lock',
   'spring_boot_starter_flutter_navigation/pubspec.lock',
   'example/flutter_guide/pubspec.lock',
-  'example/themes/neon_ui/pubspec.lock',
   'example/themes/neon/pubspec.lock',
   'example/themes/material/pubspec.lock',
   'example/themes/cupertino/pubspec.lock',

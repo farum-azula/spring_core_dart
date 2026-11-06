@@ -132,7 +132,7 @@ What comes next, in order:
    the background in the theme (`ThemeBackground`); images from the
    network with a persistent cache (`ThemeImage`) — all done in 0.6.3
    (unreleased); the example is `example/themes/neon` with its
-   design system as a library (`example/themes/neon_ui`), next to a Material
+   design system as a library (`example/themes/neon_ui`; since November 2026 in [farum-azula/themes](https://github.com/farum-azula/themes), released by tags), next to a Material
    and a Cupertino showcase (`example/themes/`), later a repository of
    its own used as a library.
    Then **the release after 0.7.0** (the owner,

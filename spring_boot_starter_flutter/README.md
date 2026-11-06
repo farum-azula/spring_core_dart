@@ -100,7 +100,7 @@ explained chapter by chapter. And the
 [theme examples](https://github.com/farum-azula/spring_core_dart/tree/main/example/themes):
 a Material app, a Cupertino app and the NEON theme showcase, a custom design
 system (an app of type `widgets`) built from the library
-[`neon_ui`](https://github.com/farum-azula/spring_core_dart/tree/main/example/themes/neon_ui).
+[`neon_ui`](https://github.com/farum-azula/themes/tree/main/packages/neon_ui).
 
 *In the guides:* [app, 1. The application](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#1-the-application), [2. State in beans](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#2-state-in-beans), [3. Themes](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#3-themes).
 

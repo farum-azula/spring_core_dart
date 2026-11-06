@@ -1,8 +1,0 @@
-targets:
-  $default:
-    builders:
-      spring_core_dart_generator:spring_core_dart:
-        options:
-          # A publish_to: none package counts as an application, and the
-          # generator then stops on the auto-configuration file.
-          aop_prune: false
