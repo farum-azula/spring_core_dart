@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.1
 
 - **Breaking:** the dev server's keys moved under `spring.flutter.web.dev-server.*` (`spring.flutter.web.port` is `spring.flutter.web.dev-server.port`, the same for `host`, `base-href`, `https.*`, `headers.*`, `content-security-policy*`, `proxy[n].*`), so `spring.flutter.web.*` holds the dev server and the site's pages (`seo`). A key at its old place fails the build of `web_dev_config.yaml` and names its new one.
 - `@ScreenRoute(branch: ..., transition: ...)` are written into the screen's route (`branch:`, `transition: PageTransition.x`; the theme's transition, the default, is not written); `spring_metadata.json` lists a screen's `branch`.

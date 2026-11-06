@@ -17,11 +17,11 @@ closes the context, which cancels every task.
 
 ```yaml
 dependencies:
-  spring_boot_starter_scheduling: ^0.7.0
+  spring_boot_starter_scheduling: ^0.7.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.0   # required: turns annotations into code
+  spring_core_dart_generator: ^0.7.1   # required: turns annotations into code
 ```
 
 Adding the dependency and running the generator is all the setup: the

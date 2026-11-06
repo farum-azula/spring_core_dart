@@ -59,12 +59,12 @@ and test time.
 
 ```yaml
 dependencies:
-  spring_boot_starter_logging: ^0.7.0
+  spring_boot_starter_logging: ^0.7.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.0
-  spring_boot_starter_test: ^0.7.0
+  spring_core_dart_generator: ^0.7.1
+  spring_boot_starter_test: ^0.7.1
   test: ^1.25.0
 ```
 
@@ -262,11 +262,11 @@ one re-exports. For the core alone:
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.7.0
+  spring_core_dart: ^0.7.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.0
+  spring_core_dart_generator: ^0.7.1
 ```
 
 Versions not yet released can be used from git:
@@ -631,7 +631,7 @@ loading and no persistence context.
 
 ```yaml
 dependencies:
-  spring_boot_starter_data: ^0.7.0
+  spring_boot_starter_data: ^0.7.1
   sqlite3: ^3.8.0          # or postgres: ^3.5.0; the driver is yours
 ```
 

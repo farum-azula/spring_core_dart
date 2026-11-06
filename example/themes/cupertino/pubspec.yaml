@@ -16,15 +16,15 @@ dependencies:
   # tab, the browser's addresses. It brings and exports the Flutter starter:
   # SpringApplicationWidget, the theme (spring.flutter.theme.*), the typed
   # keys, ThemeStates, ThemeAnimation, ThemeBackground, ThemeImage.
-  spring_boot_starter_flutter_navigation: ^0.7.0
+  spring_boot_starter_flutter_navigation: ^0.7.1
 
 dev_dependencies:
   build_runner: ^2.17.0
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.7.0
-  spring_core_dart_generator: ^0.7.0
+  spring_boot_starter_test: ^0.7.1
+  spring_core_dart_generator: ^0.7.1
 
 flutter:
   # MaterialApp and CupertinoApp are both in the starter (the theme picks

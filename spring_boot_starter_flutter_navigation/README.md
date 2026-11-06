@@ -56,11 +56,11 @@ links, Android's back button), without `go_router`.
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_navigation: ^0.7.0
+  spring_boot_starter_flutter_navigation: ^0.7.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.0
+  spring_core_dart_generator: ^0.7.1
 ```
 
 The starter brings and re-exports `spring_boot_starter_flutter`; an app

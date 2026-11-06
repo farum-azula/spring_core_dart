@@ -1,3 +1,3 @@
-## Unreleased
+## 0.7.1
 
 - First version: the endpoints of `spring_boot_actuator` over HTTP through the web starter: `/actuator/health` (with `{*path}`, groups, the Kubernetes probes and their additional paths, `503` for `DOWN` and `OUT_OF_SERVICE`), `/actuator/info`, `/actuator/mappings`, the discovery page with `_links`, Spring Boot's media types (`application/vnd.spring-boot.actuator.v3+json`, `v2`, `application/json`), `management.endpoints.web.base-path`, `.exposure.include` / `.exclude` (only `health` by default), `.path-mapping`, `.discovery.enabled`, `management.endpoint.<id>.enabled` / `.access` and `management.endpoints.enabled-by-default`; the request attribute `EndpointRequest` of the security starter reads.

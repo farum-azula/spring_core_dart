@@ -1,7 +1,7 @@
 name: spring_boot_starter_flutter_navigation
 description: >-
   Navigation for Spring Boot Flutter apps: screens on routes with Spring's path patterns, shells with a stack per branch, RouteTemplate, the route and branch scopes, deep links.
-version: 0.7.0
+version: 0.7.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter_navigation
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -20,17 +20,17 @@ dependencies:
   # The web's path URL strategy (no `#` in the address).
   flutter_web_plugins:
     sdk: flutter
-  spring_boot_dart: ^0.7.0
+  spring_boot_dart: ^0.7.1
   # Re-exported: an app lists only this package.
-  spring_boot_starter_flutter: ^0.7.0
+  spring_boot_starter_flutter: ^0.7.1
   # PathPattern: the routes' paths, the syntax of the web starter.
-  spring_web_dart: ^0.7.0
+  spring_web_dart: ^0.7.1
 
 dev_dependencies:
   # For example/ and the typed properties (lib/src/properties/).
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.0
+  spring_core_dart_generator: ^0.7.1
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.7.0
+  spring_boot_starter_test: ^0.7.1
   lints: ^6.0.0

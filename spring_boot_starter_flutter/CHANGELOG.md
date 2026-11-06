@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.1
 
 - **Breaking:** `FlutterWebProperties` is `spring.flutter.web.dev-server.*` (the dev server of `flutter run` on the web: `host`, `port`, `base-href`, `https.*`, `headers.*`, the CSP keys, `proxy[n].*`); a key at its old place under `spring.flutter.web` fails the build with its new name.
 - The web start no longer jumps when the page's loader hands over to the theme's splash: the splash keeps a square box of the logo's size from its first frame, lays out its logo, title and loader as the page's loader does (20 between them, the title's letter spacing), and the page's loader goes only after the frame that painted the logo (at most `ThemeSplash.logoWait`, 1.5 s, later).

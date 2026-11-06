@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.1
 
 - First version: screens on routes (`ScreenRoutes` in Dart configuration),
   Spring's path patterns, shells with a stack per branch, `RouteTemplate`

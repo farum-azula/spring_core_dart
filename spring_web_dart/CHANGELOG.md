@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.1
 
 - `MappingDescriptions`: a bean that describes the addresses a part of the application answers (the web server's handlers, an app's screens), for the actuator's `mappings` endpoint and the editor.
 - `CacheControl`, Spring's builder of `Cache-Control` values (`maxAge`, `noCache`, `noStore`, `mustRevalidate`, `noTransform`, `cachePublic`, `cachePrivate`, `proxyRevalidate`, `sMaxAge`, `staleIfError`, `staleWhileRevalidate`, `immutable`, `headerValue`).
