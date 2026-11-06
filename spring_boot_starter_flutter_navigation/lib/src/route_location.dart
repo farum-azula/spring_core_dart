@@ -130,11 +130,15 @@ final class RouteLocation {
   RouteLocation withExtra(Object? extra) =>
       RouteLocation._(path, queryParameters, fragment, extra);
 
+  // `/docs/beans/` is `/docs/beans`: static hosts (Cloudflare Pages,
+  // GitHub Pages, nginx) send a folder's address with a `/` at its end
+  // when the build wrote `docs/beans/index.html`.
   static String _normalize(String path) {
-    if (path.isEmpty) {
+    final trimmed = path.replaceFirst(RegExp(r'/+$'), '');
+    if (trimmed.isEmpty) {
       return '/';
     }
-    return path.startsWith('/') ? path : '/$path';
+    return trimmed.startsWith('/') ? trimmed : '/$trimmed';
   }
 
   static Map<String, List<String>> _query(Map<String, Object?> params) => {

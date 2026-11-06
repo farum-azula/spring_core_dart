@@ -113,6 +113,21 @@ void main() {
     expect(find.text('Beans'), findsOneWidget);
   });
 
+  testWidgets('an address with a / at its end is the same page', (
+    tester,
+  ) async {
+    // Static hosts send /docs/core/beans/ for docs/core/beans/index.html.
+    await tester.pumpWidget(SpringApplicationWidget(application: _application));
+    await tester.pumpAndSettle();
+    final route = SpringScope.of(
+      tester.element(find.text('Docs')),
+    ).getBean<RouteTemplate>();
+    await route.go('/docs/core/beans/');
+    await tester.pumpAndSettle();
+    expect(find.text('Beans'), findsOneWidget);
+    expect(route.uri.path, '/docs/core/beans');
+  });
+
   testWidgets("a folder's index.md at the folder's address", (tester) async {
     await tester.pumpWidget(SpringApplicationWidget(application: _application));
     await tester.pumpAndSettle();
