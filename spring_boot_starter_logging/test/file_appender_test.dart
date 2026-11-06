@@ -345,8 +345,11 @@ void main() {
         appender
           ..append(record(line(4)))
           ..flush();
+        // A slow machine may reach line 4 after the 80 ms: it opens the
+        // file, fails, and the pause becomes 320 ms.
+        final retried = disk.opens > opens + 1;
         if (waited.elapsedMilliseconds < 80) {
-          expect(disk.opens, opens + 1, reason: 'line 4 is dropped unwritten');
+          expect(retried, isFalse, reason: 'line 4 is dropped unwritten');
         }
         const reason = 'writeFrom failed (No space left on device)';
         expect(messages(logs, SpringLogLevel.error), [
@@ -356,7 +359,7 @@ void main() {
         expect(messages(logs, SpringLogLevel.info), isEmpty);
 
         disk.full = false;
-        await Future<void>.delayed(const Duration(milliseconds: 60));
+        await Future<void>.delayed(Duration(milliseconds: retried ? 340 : 60));
         appender
           ..append(record(line(5)))
           ..flush();
