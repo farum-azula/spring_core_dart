@@ -55,6 +55,8 @@ Spring Cloud OpenFeign's OAuth2 interceptor.
 ```yaml
 dependencies:
   spring_boot_starter_oauth2_client: ^0.7.0
+  # Only for Feign clients that carry the token, as above.
+  spring_boot_starter_feign: ^0.7.0
 
 dev_dependencies:
   build_runner: ^2.17.0
@@ -67,8 +69,11 @@ dart run build_runner build
 
 One import is enough:
 `package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart`
-re-exports `spring_boot_starter_feign` (and through it `spring_web_dart`,
-`spring_boot_dart` and logging) and `spring_security_core`.
+re-exports `spring_security_core` and `spring_web_dart` (and through them
+`spring_boot_dart` and logging). It does not re-export the Feign starter:
+an application with Feign clients lists `spring_boot_starter_feign` and
+imports it where it declares them
+([the packages an application lists](../docs/packages.md)).
 
 ## Which flow where
 

@@ -9,9 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_dart: ^0.7.0
   # The theme (spring.flutter.theme.*), the typed keys, ThemeStates,
-  # ThemeAnimation. LogBuffer comes with it.
+  # ThemeAnimation. LogBuffer comes with it, and spring_boot_dart
+  # (@AutoConfiguration), which it exports.
   spring_boot_starter_flutter: ^0.7.0
 
 dev_dependencies:

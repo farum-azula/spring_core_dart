@@ -10,6 +10,7 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 /// The page only calls `catalog.search`, it reads no state, so a new
 /// answer does not rebuild it (nor the text field in it): only
 /// [CatalogList] rebuilds, the widget that reads `catalog.books`.
+@ScreenRoute('/catalog', title: '#{section.catalog}')
 class CatalogPage extends SpringStatefulWidget<(Catalog,)> {
   const CatalogPage({super.key});
 

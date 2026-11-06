@@ -153,6 +153,56 @@ final class PathPattern implements Comparable<PathPattern> {
     return PathMatch(variables);
   }
 
+  /// The part of [path] the pattern does not fix: everything from the
+  /// first segment with a wildcard or a variable on, as written in [path]
+  /// (still percent-encoded, matrix parameters kept), without a leading
+  /// `/`; empty segments (`//`) are dropped, a trailing `/` is kept. For a
+  /// pattern without wildcards or variables it is empty. Call it with a
+  /// path the pattern [matches].
+  ///
+  /// The static resources use it to find the file a request asks for:
+  /// under `/assets/**`, the request `/assets/css/app.css` asks for
+  /// `css/app.css` of the locations.
+  ///
+  /// ```dart
+  /// PathPattern.parse('/assets/**').extractPathWithinPattern(
+  ///   '/assets/css/app.css',
+  /// ); // css/app.css
+  /// PathPattern.parse('/docs/*').extractPathWithinPattern('/docs/a'); // a
+  /// PathPattern.parse('/docs').extractPathWithinPattern('/docs'); // (empty)
+  /// ```
+  ///
+  /// Spring (Java):
+  /// `pattern.extractPathWithinPattern(PathContainer.parsePath(path))`.
+  String extractPathWithinPattern(String path) {
+    final first = _segments.indexWhere((s) => !s.isLiteral);
+    if (first < 0) {
+      return '';
+    }
+    var text = path.isEmpty ? '/' : path;
+    if (!text.startsWith('/')) {
+      text = '/$text';
+    }
+    final trailingSlash = text.length > 1 && text.endsWith('/');
+    // The segments as [match] counts them, so the literal ones skipped
+    // here are those the pattern compared.
+    final raw = text.substring(1).split('/');
+    if (trailingSlash) {
+      raw.removeLast();
+    }
+    if (first >= raw.length) {
+      return '';
+    }
+    final rest = [
+      for (final segment in raw.sublist(first))
+        if (segment.isNotEmpty) segment,
+    ];
+    if (rest.isEmpty) {
+      return '';
+    }
+    return '${rest.join('/')}${trailingSlash ? '/' : ''}';
+  }
+
   /// This pattern followed by [other]: `/api` and `/books/{isbn}` give
   /// `/api/books/{isbn}`. An empty side gives the other one. The server
   /// uses it to join a controller's base path and a method's path.

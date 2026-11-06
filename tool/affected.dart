@@ -20,11 +20,16 @@
 //                    Spring Security itself)
 //   flutter_starter  spring_boot_starter_flutter affected
 //   flutter_security spring_boot_starter_flutter_security affected
+//   flutter_navigation spring_boot_starter_flutter_navigation affected
 //   flutter_guide    example/flutter_guide affected, or the server guide
 //                    its end-to-end tests run against (incl. goldens)
 //   theme_showcase_neon, theme_showcase_material, theme_showcase_cupertino
 //                    the app in example/themes/ (neon: or neon_ui)
 //                    affected (incl. goldens)
+//   static_site      example/static_site/app or its server affected (the
+//                    server's tests against the app's real web build)
+//   seo_site         example/seo_site affected (its pages for search
+//                    engines)
 //   flutter          any Flutter package
 //   family           a published Dart package of the family (the
 //                    applications of tool/check_app_dependencies.dart)
@@ -40,11 +45,14 @@ import 'version.dart' as version;
 const flutterPackages = [
   'spring_boot_starter_flutter',
   'spring_boot_starter_flutter_security',
+  'spring_boot_starter_flutter_navigation',
   'example/flutter_guide',
   'example/themes/neon_ui',
   'example/themes/neon',
   'example/themes/material',
   'example/themes/cupertino',
+  'example/static_site/app',
+  'example/seo_site',
 ];
 
 /// Changed paths (prefixes) that affect every package.
@@ -115,6 +123,7 @@ Future<void> main(List<String> args) async {
     bool has(String package) => affected.contains(package);
     final starter = has('spring_boot_starter_flutter');
     final security = has('spring_boot_starter_flutter_security');
+    final navigation = has('spring_boot_starter_flutter_navigation');
     final server = has('example/server_guide');
     // The app's end-to-end tests run against the server guide: a change of
     // the server tests the app too.
@@ -123,13 +132,20 @@ Future<void> main(List<String> args) async {
         has('example/themes/neon') || has('example/themes/neon_ui');
     final showcaseMaterial = has('example/themes/material');
     final showcaseCupertino = has('example/themes/cupertino');
+    // The server's built-site tests read the app's web build.
+    final staticSite =
+        has('example/static_site/app') || has('example/static_site/server');
+    final seoSite = has('example/seo_site');
     final anyFlutter =
         starter ||
         security ||
+        navigation ||
         app ||
         showcaseNeon ||
         showcaseMaterial ||
-        showcaseCupertino;
+        showcaseCupertino ||
+        staticSite ||
+        seoSite;
     final dartPackages = ordered
         .where((p) => !flutterPackages.contains(p))
         .join(',');
@@ -139,12 +155,16 @@ Future<void> main(List<String> args) async {
         'core=${has('spring_core_dart')}',
         'server_guide=$server',
         'security=${has('spring_boot_starter_security')}',
+        'actuator=${has('spring_boot_starter_actuator')}',
         'flutter_starter=$starter',
         'flutter_security=$security',
+        'flutter_navigation=$navigation',
         'flutter_guide=$app',
         'theme_showcase_neon=$showcaseNeon',
         'theme_showcase_material=$showcaseMaterial',
         'theme_showcase_cupertino=$showcaseCupertino',
+        'static_site=$staticSite',
+        'seo_site=$seoSite',
         'flutter=$anyFlutter',
         'family=${familyAffected(affected)}',
         '',

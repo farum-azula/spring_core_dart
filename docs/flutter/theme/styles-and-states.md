@@ -245,9 +245,80 @@ spring:
   component for the exact properties: [components](components/index.md),
   for example [app bar](components/app-bar.md).
 
+## Markdown and code: `styles.code`
+
+`MarkdownView` (and the navigation's `RouteContentView`, which shows a
+route's Markdown) takes its look from the theme: the headings from
+`headline-*` and `title-*`, the text from `body-large`, links from
+`colors.primary`. Code, inline and in fenced blocks, uses the `code` text
+style (`typography.code`) and the colors of the style `styles.code`:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      typography:
+        code: { font-family: JetBrains Mono, size: 13 }
+      styles:
+        code:
+          background: $colors.surface-container-low
+          text: $colors.on-surface
+          keyword: '#C678DD'     # final, class, true
+          string: '#98C379'      # 'text', "text"
+          comment: '#5C6370'     # // and #
+          number: '#D19A66'      # 42, 1.5
+          key: '#E06C75'         # YAML and .properties keys
+          annotation: '#61AFEF'  # @Service
+          variable: '#E5C07B'    # $colors.primary, ${PORT}, &anchor
+          type: '#56B6C2'        # String, Basket, int
+          punctuation: '#ABB2BF' # { } [ ] , : -
+```
+
+| Property | Default | Colors |
+|---|---|---|
+| `background` | `$colors.surface-container-highest` | The block's fill and inline code's background |
+| `text` | the `code` text style's color | Everything not listed below |
+| `keyword` | `$colors.primary` | Keywords, `true` / `false` / `null` |
+| `string` | `$colors.tertiary` | Strings, and YAML and `.properties` values without quotes (`ease-out`) |
+| `comment` | `$colors.outline` | Comments |
+| `number` | `$colors.secondary` | Numbers, with a unit too (`120ms`, `1.5s`, `35%`) |
+| `key` | `$colors.primary` | Keys of YAML, `.properties` and JSON; options of a shell command (`--port`) |
+| `annotation` | `$colors.secondary` | Annotations, YAML tags (`!include`) |
+| `variable` | `$colors.on-tertiary-container` | References and placeholders: `$colors.primary`, `${PORT}`, a shell's `$HOME`, YAML anchors and aliases (`&base`, `*base`) |
+| `type` | `$colors.on-secondary-container` | Dart types: `String`, `Basket`, `int` |
+| `punctuation` | `$colors.on-surface-variant` | Brackets, braces, commas, colons, a list's dash |
+
+The block itself takes four more properties:
+
+| Property | Default | Meaning |
+|---|---|---|
+| `padding` | `12` | Insets inside the block: `16`, `[16, 12]` |
+| `radius` | `6` | Corner radius |
+| `border` | none | Border color |
+| `border-width` | `1` | Border width, when `border` is set |
+
+Every property is optional; without `styles.code` the code follows the
+color scheme, so it fits every theme already. A fenced block names its
+language after the backticks: `dart`, `yaml` (`yml`), `properties`, `json`
+and `shell` (`sh`, `bash`, `zsh`, `console`) are colored, any other language is shown in the
+`text` color. A theme of `themes.<name>` overrides only the colors it
+writes, like any other key.
+
+```dart
+MarkdownView(text, onLink: (href) => launchUrl(Uri.parse(href)));
+MarkdownView.resource('resources:content/docs/beans.md');
+const MarkdownView.code('server:\n  port: 8080', language: 'yaml'); // one block
+```
+
+`MarkdownView.code` shows a single block of code exactly as a fenced block
+of a Markdown page, so every code sample of an app shares one look. The
+text can be selected; outside a `MaterialApp` (a `CupertinoApp`, a
+`WidgetsApp`) the selection has no menu.
+
 ## See also
 
 - [Tokens and references](tokens-and-references.md): how values are typed and referenced
 - [Motion and animations](motion-and-animations.md): curves and durations
 - [Shape, spacing and elevation](shape-spacing-elevation.md)
 - [Components](components/index.md)
+- [Typography](typography.md): the `code` text style

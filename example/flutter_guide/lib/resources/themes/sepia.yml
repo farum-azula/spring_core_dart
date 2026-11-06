@@ -18,3 +18,14 @@ spring:
             button: { shape: small }
           tokens:
             brand: { accent: '#8B4513' }
+          styles:
+            code:
+              background: '#EADCC0'
+              keyword: '#8B4513'
+              string: '#5E7A1F'
+              comment: '#9C8468'
+              number: '#B0561A'
+              key: '#7A4E2D'
+              annotation: '#8B5E3C'
+              variable: '#8E3B5E'
+              type: '#3E6B6B'

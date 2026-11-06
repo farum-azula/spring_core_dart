@@ -1,67 +1,65 @@
 import 'package:flutter/widgets.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/app/logs.dart';
 import 'package:theme_showcase_neon/src/app/theme_switcher.dart';
-import 'package:theme_showcase_neon/src/pages/background_page.dart';
-import 'package:theme_showcase_neon/src/pages/components_page.dart';
-import 'package:theme_showcase_neon/src/pages/loaders_page.dart';
-import 'package:theme_showcase_neon/src/pages/logs_page.dart';
-import 'package:theme_showcase_neon/src/pages/motion_page.dart';
-import 'package:theme_showcase_neon/src/pages/overview_page.dart';
-import 'package:theme_showcase_neon/src/pages/states_page.dart';
-import 'package:theme_showcase_neon/src/pages/themes_page.dart';
-import 'package:theme_showcase_neon/src/pages/tokens_page.dart';
 
-/// One page of the showcase: its id (logs and tests), its name (a typed
-/// message) and its content.
+/// One page of the showcase: its id (its address `/<id>`, the logs, the
+/// tests) and its name (a typed message). The page itself is the
+/// `@ScreenRoute('/<id>')` widget of lib/src/pages/.
 class ShowcasePage {
-  const ShowcasePage(this.id, this.label, this.builder);
+  const ShowcasePage(this.id, this.label);
 
   final String id;
   final String Function(AppMessagesNav) label;
-  final WidgetBuilder builder;
+
+  /// The page's address, a branch of the [Shell].
+  String get path => '/$id';
 }
 
 /// The nine pages, in the order of the navigation.
 final pages = <ShowcasePage>[
-  ShowcasePage('overview', (m) => m.overview, (_) => const OverviewPage()),
-  ShowcasePage(
-    'components',
-    (m) => m.components,
-    (_) => const ComponentsPage(),
-  ),
-  ShowcasePage('states', (m) => m.states, (_) => const StatesPage()),
-  ShowcasePage('motion', (m) => m.motion, (_) => const MotionPage()),
-  ShowcasePage('loaders', (m) => m.loaders, (_) => const LoadersPage()),
-  ShowcasePage(
-    'background',
-    (m) => m.background,
-    (_) => const BackgroundPage(),
-  ),
-  ShowcasePage('tokens', (m) => m.tokens, (_) => const TokensPage()),
-  ShowcasePage('logs', (m) => m.logs, (_) => const LogsPage()),
-  ShowcasePage('themes', (m) => m.themes, (_) => const ThemesPage()),
+  ShowcasePage('overview', (m) => m.overview),
+  ShowcasePage('components', (m) => m.components),
+  ShowcasePage('states', (m) => m.states),
+  ShowcasePage('motion', (m) => m.motion),
+  ShowcasePage('loaders', (m) => m.loaders),
+  ShowcasePage('background', (m) => m.background),
+  ShowcasePage('tokens', (m) => m.tokens),
+  ShowcasePage('logs', (m) => m.logs),
+  ShowcasePage('transitions', (m) => m.transitions),
+  ShowcasePage('themes', (m) => m.themes),
 ];
 
 /// The window: the logo, the navigation and the theme switcher, all neon_ui
 /// widgets (chips, a panel), then the page. A column on the left of a wide
 /// window, a strip on top of a narrow one.
-class Shell extends StatefulWidget {
-  const Shell({super.key, this.initialPage = 0});
+/// The shell of the navigation: each page is a branch (`/overview`,
+/// `/components`, ...), so a page keeps its state when another one is shown,
+/// and every page has its own address in the browser.
+@RouteShell(
+  branches: [
+    '/overview',
+    '/components',
+    '/states',
+    '/motion',
+    '/loaders',
+    '/background',
+    '/tokens',
+    '/logs',
+    '/transitions',
+    '/themes',
+  ],
+)
+class Shell extends StatelessWidget {
+  const Shell(this.shell, {super.key});
 
-  final int initialPage;
+  /// The page shown and the way to switch.
+  final ShellState shell;
 
-  @override
-  State<Shell> createState() => _ShellState();
-}
-
-class _ShellState extends State<Shell> {
-  late int _index = widget.initialPage;
-
-  void _open(int index) {
-    setState(() => _index = index);
+  void _open(BuildContext context, int index) {
+    shell.select(index);
     context.bean<PageLog>().opened(pages[index].id);
   }
 
@@ -71,20 +69,13 @@ class _ShellState extends State<Shell> {
     final space = theme.spacing;
     final nav = context.messages.nav;
     final wide = MediaQuery.sizeOf(context).width >= 840;
-    final page = pages[_index];
-    // The page changes with the theme's own medium duration (zero with
-    // "reduce motion").
-    final body = AnimatedSwitcher(
-      duration: theme.motion.medium,
-      switchInCurve: theme.motion.curves.out,
-      child: KeyedSubtree(key: ValueKey(page.id), child: page.builder(context)),
-    );
+    final body = shell.child;
     final chips = [
       for (final (i, item) in pages.indexed)
         NeonChip(
           label: item.label(nav),
-          selected: i == _index,
-          onPressed: () => _open(i),
+          selected: i == shell.index,
+          onPressed: () => _open(context, i),
         ),
     ];
     const logo = NeonLogo(text: 'NEON');

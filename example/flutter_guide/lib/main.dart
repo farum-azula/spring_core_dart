@@ -8,13 +8,12 @@
 // spring.flutter.theme.* in lib/resources/application.yml.
 import 'package:flutter/widgets.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
-import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 @SpringBootApplication()
 void main() => runApp(
-  SpringApplicationWidget(
-    application: () => springApplication,
-    home: const HomePage(),
-  ),
+  // No home: the screens of the navigation (@ScreenRoute, the HomePage
+  // shell) make the app; `/` opens the catalog
+  // (spring.flutter.navigation.initial).
+  SpringApplicationWidget(application: () => springApplication),
 );

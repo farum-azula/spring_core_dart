@@ -187,7 +187,9 @@ final class ThemeSplashData {
 /// following [progress] (0 to 1); when [ready] is set the loader ends,
 /// and once [ThemeSplashData.minDuration] is over too, the splash fades
 /// out and calls [onExited]. [onShown] is called after the first frame
-/// that painted it.
+/// that painted it, its logo included (at most [ThemeSplash.logoWait]
+/// later): on the web the page's loader, drawn the same way, goes then, so
+/// the hand-over shows nothing move.
 ///
 /// `SpringApplicationWidget` shows it; it is public for tests and for
 /// apps that show the splash themselves.
@@ -211,8 +213,12 @@ class ThemeSplash extends StatefulWidget {
   /// Whether the application is ready.
   final bool ready;
 
-  /// Called once, after the first frame that has the splash painted.
+  /// Called once, after the first frame that has the splash painted, with
+  /// its logo once the logo's image is ready (or [logoWait] has passed).
   final VoidCallback? onShown;
+
+  /// How long [onShown] waits for the logo's image at most.
+  static const logoWait = Duration(milliseconds: 1500);
 
   /// Called once, when the fade out is over.
   final VoidCallback? onExited;
@@ -235,6 +241,12 @@ class _ThemeSplashState extends State<ThemeSplash>
   // goes on from there instead of playing its first phases again.
   final double? _resumed = LoaderHandOff.pageProgress();
   final Duration? _resumedElapsed = LoaderHandOff.pageElapsed();
+  // [ThemeSplash.onShown] waits for the logo's image: the web page's
+  // loader, which already shows the logo, stays above until then.
+  bool _shown = false;
+  Timer? _logoTimeout;
+  ImageStream? _logoStream;
+  ImageStreamListener? _logoListener;
 
   ThemeSplashData get _data => widget.theme.splash!;
 
@@ -250,11 +262,45 @@ class _ThemeSplashState extends State<ThemeSplash>
         _maybeExit();
       });
     }
+    final logo = _data.logo;
+    if (logo == null) {
+      _showAfterFrame();
+    } else {
+      _logoTimeout = Timer(ThemeSplash.logoWait, _showAfterFrame);
+      logo.listenable.addListener(_watchLogo);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _watchLogo());
+    }
+  }
+
+  // Calls [ThemeSplash.onShown] after the next frame; once.
+  void _showAfterFrame() {
+    if (_shown || !mounted) {
+      return;
+    }
+    _shown = true;
+    _logoTimeout?.cancel();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         widget.onShown?.call();
       }
     });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  // Shows once the logo's image is decoded (or failed: the page's loader
+  // must not wait for it).
+  void _watchLogo() {
+    final provider = _data.logo?.listenable.value;
+    if (_shown || !mounted || provider == null || _logoStream != null) {
+      return;
+    }
+    final stream = provider.resolve(createLocalImageConfiguration(context));
+    final listener = ImageStreamListener(
+      (_, _) => _showAfterFrame(),
+      onError: (_, _) => _showAfterFrame(),
+    );
+    _logoStream = stream..addListener(listener);
+    _logoListener = listener;
   }
 
   late final CurvedAnimation _fade = CurvedAnimation(
@@ -309,6 +355,11 @@ class _ThemeSplashState extends State<ThemeSplash>
 
   @override
   void dispose() {
+    _logoTimeout?.cancel();
+    _data.logo?.listenable.removeListener(_watchLogo);
+    if (_logoListener case final listener?) {
+      _logoStream?.removeListener(listener);
+    }
     _minimum?.cancel();
     _fade.dispose();
     _exit.dispose();
@@ -347,15 +398,25 @@ class _ThemeSplashState extends State<ThemeSplash>
     Widget logo = const SizedBox.shrink();
     final image = data.logo;
     if (image != null) {
-      logo = ValueListenableBuilder<ImageProvider?>(
-        valueListenable: image.listenable,
-        builder: (context, provider, _) => provider == null
-            ? const SizedBox.shrink()
-            : Image(
-                image: provider,
-                width: data.logoSize ?? 96,
-                excludeFromSemantics: true,
-              ),
+      // A square box of the logo's size from the first frame, the image
+      // contained in it: as the web page's loader lays it out
+      // (`object-fit: contain`), so nothing moves when the image arrives
+      // or the page's loader hands over.
+      final size = data.logoSize ?? 96;
+      logo = SizedBox.square(
+        dimension: size,
+        child: ValueListenableBuilder<ImageProvider?>(
+          valueListenable: image.listenable,
+          builder: (context, provider, _) => provider == null
+              ? const SizedBox.shrink()
+              : Image(
+                  image: provider,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                ),
+        ),
       );
       if (animation != null) {
         final plain = logo;
@@ -372,24 +433,30 @@ class _ThemeSplashState extends State<ThemeSplash>
         );
       }
     }
+    // The web page's loader lays out the same column (spring_core_dart's
+    // generator, `#spring-loader .sl-body`): a gap of 20 between the
+    // parts, the title at 28 with a letter spacing of .04em.
+    const gap = 20.0;
     final column = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (image != null) logo,
         if (data.title != null) ...[
-          if (image != null) const SizedBox(height: 16),
+          if (image != null) const SizedBox(height: gap),
           Text(
             data.title!,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: scheme.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.w600,
+              letterSpacing: 28 * .04,
               decoration: TextDecoration.none,
             ),
           ),
         ],
         if (loader != null && !custom) ...[
-          if (image != null || data.title != null) const SizedBox(height: 32),
+          if (image != null || data.title != null) const SizedBox(height: gap),
           ValueListenableBuilder<double>(
             valueListenable: widget.progress,
             builder: (context, progress, _) => loaderWidget(progress),

@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/aop/timed.dart';
 import 'package:neon_books_server/src/orders/order.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 @Aspect()
 @Component()

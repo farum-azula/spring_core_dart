@@ -1,0 +1,25 @@
+# The pages for search engines, link previews and language models. Only
+# the web build reads this profile's file.
+spring:
+  flutter:
+    web:
+      seo:
+        enabled: true
+        # Required: canonical, og:url and the sitemap are absolute.
+        site-url: https://lumen.example
+        # Every screen is a page: paths without variables, a page per file
+        # of a screen's Markdown folder, @RouteInfo(paths:) for the rest.
+        from-routes: true
+        title: '{title} · Lumen'
+        description: Lumen, a small library documented with a Flutter web site.
+        image: resources:images/preview.png
+        # A Markdown folder the routes cannot name: /legal/{*path} reads it
+        # itself, without content:.
+        content:
+          - location: resources:content/legal/
+            path: /legal
+            exclude: ['_*.md']
+        # A route's page, said differently: a longer title on the home page.
+        pages:
+          - path: /
+            title: Lumen, a small library

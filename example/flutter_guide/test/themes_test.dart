@@ -122,12 +122,61 @@ void main() {
     await stopApp(tester);
   });
 
+  testWidgets('Markdown in the theme: the code colored by styles.code', (
+    tester,
+  ) async {
+    // The color of the first piece of code that reads [text].
+    Color? colorOf(String text) {
+      Color? found;
+      for (final rich in tester.widgetList<RichText>(
+        find.descendant(
+          of: find.byType(ThemeMarkdown),
+          matching: find.byType(RichText),
+        ),
+      )) {
+        rich.text.visitChildren((span) {
+          if (span is TextSpan && span.text == text) {
+            found = span.style?.color;
+            return false;
+          }
+          return true;
+        });
+        if (found != null) {
+          break;
+        }
+      }
+      return found;
+    }
+
+    final context = await startApp(
+      tester,
+      FakeServer(),
+      args: ['--spring.flutter.theme.active=sepia'],
+      size: const Size(390, 3000),
+    );
+    await openMore(tester, 'Settings');
+    expect(find.text('The basket, a bean'), findsOneWidget);
+    // sepia.yml's own colors.
+    expect(colorOf('final'), const Color(0xFF8B4513));
+    expect(colorOf("'Spring in Action'"), const Color(0xFF5E7A1F));
+    expect(colorOf('@Service'), const Color(0xFF8B5E3C));
+    expect(colorOf('spring'), const Color(0xFF7A4E2D));
+
+    // `dark` writes no colors: the scheme's, and application.yml's comment.
+    context.getBean<ThemeSelection>().select('dark');
+    await tester.pumpAndSettle();
+    final dark = context.getBean<SpringThemes>().material('dark').colorScheme;
+    expect(colorOf('final'), dark.primary);
+    expect(colorOf("'Spring in Action'"), dark.tertiary);
+    expect(colorOf('// 1'), dark.onSurfaceVariant);
+    await stopApp(tester);
+  });
+
   testWidgets('a broken theme property stops the start', (tester) async {
     await tester.pumpWidget(
       SpringApplicationWidget(
         application: FakeServer().application,
         args: const ['--spring.flutter.theme.themes.neon.seed-color=pinc'],
-        home: const HomePage(),
       ),
     );
     await tester.pumpAndSettle();

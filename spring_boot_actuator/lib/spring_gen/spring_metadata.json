@@ -1,0 +1,1100 @@
+{
+  "version": 1,
+  "package": "spring_boot_actuator",
+  "properties": [
+    {
+      "name": "management.endpoint.health.access",
+      "type": "EndpointAccess?",
+      "description": "The endpoint's access (`none` disables it). Default: on.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 40,
+      "class": "HealthEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.health.enabled",
+      "type": "bool?",
+      "description": "Whether the endpoint is enabled. Default: on.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 37,
+      "class": "HealthEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.additional-path",
+      "type": "String?",
+      "description": "An extra path of the group on the main server (`server:/healthz`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 111,
+      "class": "HealthGroupProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.exclude",
+      "type": "List<String>",
+      "description": "The contributors left out of the group.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 93,
+      "class": "HealthGroupProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.include",
+      "type": "List<String>",
+      "description": "The contributors of the group (`*` for all, `db/primary` for one inside a composite). Default: all.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 90,
+      "class": "HealthGroupProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.roles",
+      "type": "List<String>?",
+      "description": "The roles of `when-authorized`. Default: `management.endpoint.health.roles`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 104,
+      "class": "HealthGroupProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.show-components",
+      "type": "Show?",
+      "description": "Who sees the components. Default: `show-details` of the group.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 100,
+      "class": "HealthGroupProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.show-details",
+      "type": "Show?",
+      "description": "Who sees the details. Default: `management.endpoint.health.show-details`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 97,
+      "class": "HealthGroupProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.status.http-mapping.*",
+      "type": "int",
+      "description": "The HTTP status of each health status (`http-mapping.down=503`). Default: `DOWN` and `OUT_OF_SERVICE` are `503`, the others `200`.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 82,
+      "class": "HealthStatusProperties"
+    },
+    {
+      "name": "management.endpoint.health.group.*.status.order",
+      "type": "List<String>",
+      "description": "The status codes from the most to the least severe; the first status of the parts in this order is the aggregate. Default: `DOWN`, `OUT_OF_SERVICE`, `UP`, `UNKNOWN`.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 77,
+      "class": "HealthStatusProperties"
+    },
+    {
+      "name": "management.endpoint.health.logging.slow-indicator-threshold",
+      "type": "Duration",
+      "description": "An indicator slower than this is logged as a warning.",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 131,
+      "class": "HealthLoggingProperties"
+    },
+    {
+      "name": "management.endpoint.health.probes.add-additional-paths",
+      "type": "bool",
+      "description": "Whether the probes are also at `/livez` and `/readyz` on the main server.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 124,
+      "class": "HealthProbesProperties"
+    },
+    {
+      "name": "management.endpoint.health.probes.enabled",
+      "type": "bool?",
+      "description": "Whether the `liveness` and `readiness` groups (with the `livenessState` and `readinessState` indicators) exist. On by default on Kubernetes and Cloud Foundry, as in Spring Boot.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 120,
+      "class": "HealthProbesProperties"
+    },
+    {
+      "name": "management.endpoint.health.roles",
+      "type": "List<String>",
+      "description": "The roles `when-authorized` asks for (any one); empty: any logged-in user.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 51,
+      "class": "HealthEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.health.show-components",
+      "type": "Show?",
+      "description": "Who sees the components (the parts by name). Default: the same as `show-details`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 47,
+      "class": "HealthEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.health.show-details",
+      "type": "Show",
+      "description": "Who sees the details of each indicator (sizes, versions, errors).",
+      "default": "never",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 43,
+      "class": "HealthEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.health.status.http-mapping.*",
+      "type": "int",
+      "description": "The HTTP status of each health status (`http-mapping.down=503`). Default: `DOWN` and `OUT_OF_SERVICE` are `503`, the others `200`.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 82,
+      "class": "HealthStatusProperties"
+    },
+    {
+      "name": "management.endpoint.health.status.order",
+      "type": "List<String>",
+      "description": "The status codes from the most to the least severe; the first status of the parts in this order is the aggregate. Default: `DOWN`, `OUT_OF_SERVICE`, `UP`, `UNKNOWN`.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 77,
+      "class": "HealthStatusProperties"
+    },
+    {
+      "name": "management.endpoint.health.validate-group-membership",
+      "type": "bool",
+      "description": "Whether a group that includes or excludes a contributor that does not exist stops the start.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 67,
+      "class": "HealthEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.info.access",
+      "type": "EndpointAccess?",
+      "description": "The endpoint's access (`none` disables it). Default: on.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 141,
+      "class": "InfoEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.info.enabled",
+      "type": "bool?",
+      "description": "Whether the endpoint is enabled. Default: on.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 138,
+      "class": "InfoEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.mappings.access",
+      "type": "EndpointAccess?",
+      "description": "The endpoint's access (`none` disables it). Default: on.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 151,
+      "class": "MappingsEndpointProperties"
+    },
+    {
+      "name": "management.endpoint.mappings.enabled",
+      "type": "bool?",
+      "description": "Whether the endpoint is enabled. Default: on.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 148,
+      "class": "MappingsEndpointProperties"
+    },
+    {
+      "name": "management.endpoints.access.default",
+      "type": "EndpointAccess?",
+      "description": "The access of an endpoint whose `management.endpoint.<id>.access` is not set: `none` disables it, `read-only` and `unrestricted` enable it. Default: the endpoint's own default.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 28,
+      "class": "EndpointsAccessProperties"
+    },
+    {
+      "name": "management.endpoints.enabled-by-default",
+      "type": "bool?",
+      "description": "Whether the endpoints are enabled when their own `management.endpoint.<id>.enabled` is not set. Default: each endpoint's own default (on for the built-in ones).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 15,
+      "class": "EndpointsProperties"
+    },
+    {
+      "name": "management.health.db.enabled",
+      "type": "bool?",
+      "description": "Whether the indicator exists. Default: `management.health.defaults.enabled`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 194,
+      "class": "HealthIndicatorProperties"
+    },
+    {
+      "name": "management.health.defaults.enabled",
+      "type": "bool",
+      "description": "Whether the indicators whose own `enabled` is not set exist.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 186,
+      "class": "HealthIndicatorDefaults"
+    },
+    {
+      "name": "management.health.diskspace.enabled",
+      "type": "bool?",
+      "description": "Whether the indicator exists. Default: `management.health.defaults.enabled`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 210,
+      "class": "DiskSpaceHealthIndicatorProperties"
+    },
+    {
+      "name": "management.health.diskspace.path",
+      "type": "String",
+      "description": "The path whose file system is checked. Default: the working directory.",
+      "default": ".",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 214,
+      "class": "DiskSpaceHealthIndicatorProperties"
+    },
+    {
+      "name": "management.health.diskspace.threshold",
+      "type": "DataSize",
+      "description": "The least free space that is `UP`.",
+      "default": "10MB",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 217,
+      "class": "DiskSpaceHealthIndicatorProperties"
+    },
+    {
+      "name": "management.health.livenessstate.enabled",
+      "type": "bool",
+      "description": "Whether the indicator exists without the probes (which add it).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 202,
+      "class": "AvailabilityStateIndicatorProperties"
+    },
+    {
+      "name": "management.health.ping.enabled",
+      "type": "bool?",
+      "description": "Whether the indicator exists. Default: `management.health.defaults.enabled`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 194,
+      "class": "HealthIndicatorProperties"
+    },
+    {
+      "name": "management.health.readinessstate.enabled",
+      "type": "bool",
+      "description": "Whether the indicator exists without the probes (which add it).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 202,
+      "class": "AvailabilityStateIndicatorProperties"
+    },
+    {
+      "name": "management.info.build.enabled",
+      "type": "bool?",
+      "description": "Whether the contributor exists. Default: `management.info.defaults.enabled`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 257,
+      "class": "InfoContributorProperties"
+    },
+    {
+      "name": "management.info.dart.enabled",
+      "type": "bool",
+      "description": "Whether the contributor exists.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 276,
+      "class": "OptInInfoContributorProperties"
+    },
+    {
+      "name": "management.info.defaults.enabled",
+      "type": "bool",
+      "description": "Whether `build` and `git` exist when their own `enabled` is not set.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 249,
+      "class": "InfoContributorDefaults"
+    },
+    {
+      "name": "management.info.env.enabled",
+      "type": "bool",
+      "description": "Whether the contributor exists.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 276,
+      "class": "OptInInfoContributorProperties"
+    },
+    {
+      "name": "management.info.git.enabled",
+      "type": "bool?",
+      "description": "Whether the contributor exists. Default: `management.info.defaults.enabled`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 265,
+      "class": "GitInfoContributorProperties"
+    },
+    {
+      "name": "management.info.git.mode",
+      "type": "InfoPropertiesMode",
+      "description": "`simple` (branch, short commit id and time) or `full` (every key).",
+      "default": "simple",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 268,
+      "class": "GitInfoContributorProperties"
+    },
+    {
+      "name": "management.info.os.enabled",
+      "type": "bool",
+      "description": "Whether the contributor exists.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 276,
+      "class": "OptInInfoContributorProperties"
+    },
+    {
+      "name": "spring.info.build.encoding",
+      "type": "String",
+      "description": "The file's encoding: `UTF-8` or `ISO-8859-1`.",
+      "default": "UTF-8",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 310,
+      "class": "BuildInfoLocation"
+    },
+    {
+      "name": "spring.info.build.location",
+      "type": "String",
+      "description": "Where `build-info.properties` is (`resources:`, `file:`).",
+      "default": "resources:build-info.properties",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 306,
+      "class": "BuildInfoLocation"
+    },
+    {
+      "name": "spring.info.git.encoding",
+      "type": "String",
+      "description": "The file's encoding: `UTF-8` or `ISO-8859-1`.",
+      "default": "UTF-8",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 322,
+      "class": "GitInfoLocation"
+    },
+    {
+      "name": "spring.info.git.location",
+      "type": "String",
+      "description": "Where `git.properties` is (`resources:`, `file:`).",
+      "default": "resources:git.properties",
+      "deprecated": null,
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 318,
+      "class": "GitInfoLocation"
+    }
+  ],
+  "hints": [
+    {
+      "name": "management.endpoint.health.access",
+      "values": [
+        {
+          "value": "none",
+          "description": "The endpoint is off."
+        },
+        {
+          "value": "read-only",
+          "description": "Only its read operations."
+        },
+        {
+          "value": "unrestricted",
+          "description": "Every operation."
+        }
+      ]
+    },
+    {
+      "name": "management.endpoint.health.group.*.show-components",
+      "values": [
+        {
+          "value": "never",
+          "description": "Nobody."
+        },
+        {
+          "value": "when-authorized",
+          "description": "Logged-in users who have one of the configured roles (any logged-in user when no role is configured)."
+        },
+        {
+          "value": "always",
+          "description": "Everybody."
+        }
+      ]
+    },
+    {
+      "name": "management.endpoint.health.group.*.show-details",
+      "values": [
+        {
+          "value": "never",
+          "description": "Nobody."
+        },
+        {
+          "value": "when-authorized",
+          "description": "Logged-in users who have one of the configured roles (any logged-in user when no role is configured)."
+        },
+        {
+          "value": "always",
+          "description": "Everybody."
+        }
+      ]
+    },
+    {
+      "name": "management.endpoint.health.show-components",
+      "values": [
+        {
+          "value": "never",
+          "description": "Nobody."
+        },
+        {
+          "value": "when-authorized",
+          "description": "Logged-in users who have one of the configured roles (any logged-in user when no role is configured)."
+        },
+        {
+          "value": "always",
+          "description": "Everybody."
+        }
+      ]
+    },
+    {
+      "name": "management.endpoint.health.show-details",
+      "values": [
+        {
+          "value": "never",
+          "description": "Nobody."
+        },
+        {
+          "value": "when-authorized",
+          "description": "Logged-in users who have one of the configured roles (any logged-in user when no role is configured)."
+        },
+        {
+          "value": "always",
+          "description": "Everybody."
+        }
+      ]
+    },
+    {
+      "name": "management.endpoint.info.access",
+      "values": [
+        {
+          "value": "none",
+          "description": "The endpoint is off."
+        },
+        {
+          "value": "read-only",
+          "description": "Only its read operations."
+        },
+        {
+          "value": "unrestricted",
+          "description": "Every operation."
+        }
+      ]
+    },
+    {
+      "name": "management.endpoint.mappings.access",
+      "values": [
+        {
+          "value": "none",
+          "description": "The endpoint is off."
+        },
+        {
+          "value": "read-only",
+          "description": "Only its read operations."
+        },
+        {
+          "value": "unrestricted",
+          "description": "Every operation."
+        }
+      ]
+    },
+    {
+      "name": "management.endpoints.access.default",
+      "values": [
+        {
+          "value": "none",
+          "description": "The endpoint is off."
+        },
+        {
+          "value": "read-only",
+          "description": "Only its read operations."
+        },
+        {
+          "value": "unrestricted",
+          "description": "Every operation."
+        }
+      ]
+    },
+    {
+      "name": "management.info.git.mode",
+      "values": [
+        {
+          "value": "simple",
+          "description": "A summary (for git: the branch, the short commit id and its time)."
+        },
+        {
+          "value": "full",
+          "description": "Every key."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "endpointsProperties",
+      "type": "EndpointsProperties",
+      "types": [
+        "EndpointsProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 11,
+      "injects": [],
+      "members": [
+        {
+          "name": "access",
+          "kind": "field",
+          "type": "EndpointsAccessProperties"
+        },
+        {
+          "name": "enabledByDefault",
+          "kind": "field",
+          "type": "bool?"
+        }
+      ]
+    },
+    {
+      "name": "healthEndpoint",
+      "type": "HealthEndpoint",
+      "types": [
+        "HealthEndpoint",
+        "HealthEndpointSupport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/health/health_endpoint.dart",
+      "line": 212,
+      "injects": [
+        {
+          "parameter": "registry",
+          "type": "HealthContributorRegistry",
+          "qualifier": null
+        },
+        {
+          "parameter": "groups",
+          "type": "HealthEndpointGroups",
+          "qualifier": null
+        },
+        {
+          "parameter": "slowIndicatorLoggingThreshold",
+          "type": "Duration",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "getHealth",
+          "kind": "method",
+          "type": "Future<(HealthDescriptor, HealthEndpointGroup)?>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext",
+            "List<String> path",
+            "{bool showAll}"
+          ]
+        },
+        {
+          "name": "groups",
+          "kind": "field",
+          "type": "HealthEndpointGroups"
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Future<HealthDescriptor?>",
+          "parameters": []
+        },
+        {
+          "name": "healthForPath",
+          "kind": "method",
+          "type": "Future<HealthDescriptor?>",
+          "parameters": [
+            "List<String> path"
+          ]
+        },
+        {
+          "name": "registry",
+          "kind": "field",
+          "type": "HealthContributorRegistry"
+        },
+        {
+          "name": "slowIndicatorLoggingThreshold",
+          "kind": "field",
+          "type": "Duration?"
+        }
+      ]
+    },
+    {
+      "name": "healthEndpointProperties",
+      "type": "HealthEndpointProperties",
+      "types": [
+        "HealthEndpointProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 35,
+      "injects": [],
+      "members": [
+        {
+          "name": "access",
+          "kind": "field",
+          "type": "EndpointAccess?"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "group",
+          "kind": "field",
+          "type": "Map<String, HealthGroupProperties>"
+        },
+        {
+          "name": "logging",
+          "kind": "field",
+          "type": "HealthLoggingProperties"
+        },
+        {
+          "name": "probes",
+          "kind": "field",
+          "type": "HealthProbesProperties"
+        },
+        {
+          "name": "roles",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "showComponents",
+          "kind": "field",
+          "type": "Show?"
+        },
+        {
+          "name": "showDetails",
+          "kind": "field",
+          "type": "Show"
+        },
+        {
+          "name": "status",
+          "kind": "field",
+          "type": "HealthStatusProperties"
+        },
+        {
+          "name": "validateGroupMembership",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "healthEndpointWebExtension",
+      "type": "HealthEndpointWebExtension",
+      "types": [
+        "HealthEndpointWebExtension",
+        "HealthEndpointSupport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/health/health_endpoint.dart",
+      "line": 245,
+      "injects": [
+        {
+          "parameter": "registry",
+          "type": "HealthContributorRegistry",
+          "qualifier": null
+        },
+        {
+          "parameter": "groups",
+          "type": "HealthEndpointGroups",
+          "qualifier": null
+        },
+        {
+          "parameter": "slowIndicatorLoggingThreshold",
+          "type": "Duration",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "getHealth",
+          "kind": "method",
+          "type": "Future<(HealthDescriptor, HealthEndpointGroup)?>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext",
+            "List<String> path",
+            "{bool showAll}"
+          ]
+        },
+        {
+          "name": "groups",
+          "kind": "field",
+          "type": "HealthEndpointGroups"
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Future<WebEndpointResponse<HealthDescriptor>>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext"
+          ]
+        },
+        {
+          "name": "healthForPath",
+          "kind": "method",
+          "type": "Future<WebEndpointResponse<HealthDescriptor>>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext",
+            "List<String> path"
+          ]
+        },
+        {
+          "name": "registry",
+          "kind": "field",
+          "type": "HealthContributorRegistry"
+        },
+        {
+          "name": "slowIndicatorLoggingThreshold",
+          "kind": "field",
+          "type": "Duration?"
+        }
+      ]
+    },
+    {
+      "name": "infoEndpoint",
+      "type": "InfoEndpoint",
+      "types": [
+        "InfoEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/info/info.dart",
+      "line": 76,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "InfoContributor",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "contributors",
+          "kind": "field",
+          "type": "List<InfoContributor>"
+        },
+        {
+          "name": "info",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "infoEndpointProperties",
+      "type": "InfoEndpointProperties",
+      "types": [
+        "InfoEndpointProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 136,
+      "injects": [],
+      "members": [
+        {
+          "name": "access",
+          "kind": "field",
+          "type": "EndpointAccess?"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool?"
+        }
+      ]
+    },
+    {
+      "name": "managementHealthProperties",
+      "type": "ManagementHealthProperties",
+      "types": [
+        "ManagementHealthProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 159,
+      "injects": [],
+      "members": [
+        {
+          "name": "db",
+          "kind": "field",
+          "type": "HealthIndicatorProperties"
+        },
+        {
+          "name": "defaults",
+          "kind": "field",
+          "type": "HealthIndicatorDefaults"
+        },
+        {
+          "name": "diskspace",
+          "kind": "field",
+          "type": "DiskSpaceHealthIndicatorProperties"
+        },
+        {
+          "name": "livenessstate",
+          "kind": "field",
+          "type": "AvailabilityStateIndicatorProperties"
+        },
+        {
+          "name": "ping",
+          "kind": "field",
+          "type": "HealthIndicatorProperties"
+        },
+        {
+          "name": "readinessstate",
+          "kind": "field",
+          "type": "AvailabilityStateIndicatorProperties"
+        }
+      ]
+    },
+    {
+      "name": "managementInfoProperties",
+      "type": "ManagementInfoProperties",
+      "types": [
+        "ManagementInfoProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 225,
+      "injects": [],
+      "members": [
+        {
+          "name": "build",
+          "kind": "field",
+          "type": "InfoContributorProperties"
+        },
+        {
+          "name": "dart",
+          "kind": "field",
+          "type": "OptInInfoContributorProperties"
+        },
+        {
+          "name": "defaults",
+          "kind": "field",
+          "type": "InfoContributorDefaults"
+        },
+        {
+          "name": "env",
+          "kind": "field",
+          "type": "OptInInfoContributorProperties"
+        },
+        {
+          "name": "git",
+          "kind": "field",
+          "type": "GitInfoContributorProperties"
+        },
+        {
+          "name": "os",
+          "kind": "field",
+          "type": "OptInInfoContributorProperties"
+        }
+      ]
+    },
+    {
+      "name": "mappingsEndpoint",
+      "type": "MappingsEndpoint",
+      "types": [
+        "MappingsEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/web/mappings_endpoint.dart",
+      "line": 22,
+      "injects": [
+        {
+          "parameter": null,
+          "type": "MappingDescriptions",
+          "qualifier": null
+        },
+        {
+          "parameter": "contextId",
+          "type": "String",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "contextId",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "descriptions",
+          "kind": "field",
+          "type": "List<MappingDescriptions>"
+        },
+        {
+          "name": "mappings",
+          "kind": "method",
+          "type": "ApplicationMappingsDescriptor",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "mappingsEndpointProperties",
+      "type": "MappingsEndpointProperties",
+      "types": [
+        "MappingsEndpointProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 146,
+      "injects": [],
+      "members": [
+        {
+          "name": "access",
+          "kind": "field",
+          "type": "EndpointAccess?"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool?"
+        }
+      ]
+    },
+    {
+      "name": "projectInfoProperties",
+      "type": "ProjectInfoProperties",
+      "types": [
+        "ProjectInfoProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/properties/actuator_properties.dart",
+      "line": 284,
+      "injects": [],
+      "members": [
+        {
+          "name": "build",
+          "kind": "field",
+          "type": "BuildInfoLocation"
+        },
+        {
+          "name": "git",
+          "kind": "field",
+          "type": "GitInfoLocation"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

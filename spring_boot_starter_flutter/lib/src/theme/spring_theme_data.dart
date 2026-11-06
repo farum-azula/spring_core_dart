@@ -309,18 +309,19 @@ final class SpringThemeData {
       },
       'ripple, sparkle or none',
     );
-    pageTransition = p.read(
-      'motion.pagetransition',
-      (v) => switch (ThemeValues.canonical(v)) {
-        'platform' => const _Platform(),
-        'fadeupwards' => const FadeUpwardsPageTransitionsBuilder(),
-        'zoom' => const ZoomPageTransitionsBuilder(),
-        'cupertino' => const CupertinoPageTransitionsBuilder(),
-        'none' => const _NoTransition(),
-        _ => null,
-      },
-      'platform, fadeUpwards, zoom, cupertino or none',
-    );
+    final transition = PageTransitionSpec.parseAt(p, 'motion.pagetransition');
+    pageTransitions = transition ?? const PageTransitionSpec();
+    // Not set: none, for Material's own page routes too.
+    pageTransition = switch (transition?.type) {
+      null => const _NoTransition(),
+      PageTransitionType.platform => const _Platform(),
+      PageTransitionType.fadeUpwards =>
+        const FadeUpwardsPageTransitionsBuilder(),
+      PageTransitionType.zoom => const ZoomPageTransitionsBuilder(),
+      PageTransitionType.cupertino => const CupertinoPageTransitionsBuilder(),
+      PageTransitionType.fade => const _FadeTransition(),
+      PageTransitionType.none => const _NoTransition(),
+    };
     for (final key in p.children('motion')) {
       if (key == 'durations') {
         for (final name in p.children('motion.durations')) {
@@ -553,8 +554,14 @@ final class SpringThemeData {
   /// set.
   late final InteractiveInkFeatureFactory? splashFactory;
 
-  /// The page transition used on every platform; `null` when not set.
+  /// The page transition used on every platform: none when not set, `null`
+  /// for `platform` (Flutter's own).
   late final PageTransitionsBuilder? pageTransition;
+
+  /// `motion.page-transition`: the kind, duration and curve of a router's
+  /// page transitions (none when not set). The navigation starter reads
+  /// it; [pageTransition] is the same for Material's page routes.
+  late final PageTransitionSpec pageTransitions;
 
   /// The motion durations the properties set (`motion.durations.medium`),
   /// by canonical name.
@@ -1265,6 +1272,20 @@ final class _Platform extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) => child;
+}
+
+// `motion.page-transition: fade`.
+final class _FadeTransition extends PageTransitionsBuilder {
+  const _FadeTransition();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => FadeTransition(opacity: animation, child: child);
 }
 
 // `motion.page-transition: none`.

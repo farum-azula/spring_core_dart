@@ -71,5 +71,20 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<!-- spring:deep-links:start sha=449287e501d5 (generated from spring.flutter.navigation.deep-links.*; do not edit) -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>neonbooks</string>
+			</array>
+		</dict>
+	</array>
+	<!-- spring:deep-links:end -->
 </dict>
 </plist>

@@ -11,6 +11,7 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
 import 'package:spring_core_dart_generator/src/part_tree.dart';
 
 /// What an injection point asks for: one bean, all beans of a type in some
@@ -2910,6 +2911,13 @@ class ModuleModel {
 
   /// The `@Log` classes, each of which gets a logger getter.
   final loggers = <LogModel>[];
+
+  /// The `@ScreenRoute` widgets (`spring_boot_starter_flutter_navigation`),
+  /// in scan order: the module's `ScreenRoutes` bean and their constants.
+  final screens = <ScreenRouteModel>[];
+
+  /// The `@RouteShell` widgets (`spring_boot_starter_flutter_navigation`).
+  final shells = <RouteShellModel>[];
 
   final _proxyNames = <String>{};
 

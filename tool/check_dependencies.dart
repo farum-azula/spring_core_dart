@@ -34,6 +34,7 @@ const repositoryOnly = {
   'spring_core_dart',
   'spring_boot_dart',
   'spring_boot_starter_logging',
+  'spring_boot_actuator',
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
   'spring_boot_starter_data',
@@ -41,11 +42,13 @@ const repositoryOnly = {
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
   'spring_boot_starter_web',
+  'spring_boot_starter_actuator',
   'spring_security_core',
   'spring_boot_starter_oauth2_client',
   'spring_boot_starter_security',
   'spring_boot_starter_flutter',
   'spring_boot_starter_flutter_security',
+  'spring_boot_starter_flutter_navigation',
 };
 
 /// Packages outside the pub workspace, with their own resolution (Flutter:
@@ -54,11 +57,14 @@ const repositoryOnly = {
 const flutterPackages = [
   'spring_boot_starter_flutter',
   'spring_boot_starter_flutter_security',
+  'spring_boot_starter_flutter_navigation',
   'example/flutter_guide',
   'example/themes/neon_ui',
   'example/themes/neon',
   'example/themes/material',
   'example/themes/cupertino',
+  'example/static_site/app',
+  'example/seo_site',
 ];
 
 /// Dart-team packages that [repositoryOnly] packages may depend on anyway,
@@ -81,6 +87,10 @@ const repositoryOnlyExceptions = {
       'the Flutter starter asks whether a platform implementation is '
       'registered before it reads a directory, as a widget test has none '
       'and the call would wait for ever.',
+  'markdown':
+      "GitHub's Markdown parser (tools.dart.dev): the Flutter starter's "
+      'MarkdownView shows Markdown resources with the theme; the generator '
+      "parses the same files for the site's pages, so both read them alike.",
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
       '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '
@@ -148,11 +158,14 @@ const allowedPackages = {
     onlyIn: {
       'spring_boot_starter_flutter',
       'spring_boot_starter_flutter_security',
+      'spring_boot_starter_flutter_navigation',
       'neon_books_app',
       'neon_ui',
       'theme_showcase_neon',
       'theme_showcase_material',
       'theme_showcase_cupertino',
+      'static_site_app',
+      'seo_site_app',
     },
   ),
   'pointycastle': AllowedPackage(

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
@@ -9,6 +9,7 @@ import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 /// Loaders: a spinner for a refresh, a bar with the progress of a fake
 /// upload, a skeleton of a list, and the splash of the app.
+@ScreenRoute('/loaders', title: '#{nav.loaders}')
 class LoadersPage extends StatelessWidget {
   const LoadersPage({super.key});
 
@@ -77,11 +78,12 @@ splash:
         ),
         Section(
           title: 'In Dart',
-          child: SelectableText(
+          child: MarkdownView.code(
             'ThemeLoader(context.theme.loaders.spinner)\n'
             'ThemeLoader(context.theme.loaders.bar, progress: sent)\n'
             'ThemeSkeleton(context.theme.loaders.card, loading: !loaded, '
             'child: list)',
+            language: 'dart',
           ),
         ),
       ],

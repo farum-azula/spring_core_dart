@@ -13,7 +13,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 
 import 'support/app.dart';
@@ -78,7 +78,7 @@ void main() {
   });
 
   goldenTest('themes in neon-ice', (tester) async {
-    await startApp(tester, theme: AppThemes.neonIce, page: 8);
+    await startApp(tester, theme: AppThemes.neonIce, page: 9);
     await loadImages(tester);
     await matchesScreen(tester, 'themes_neon-ice');
   });

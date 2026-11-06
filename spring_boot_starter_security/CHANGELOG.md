@@ -1,6 +1,15 @@
+## Unreleased
+
+### Changes
+
+- **Breaking:** the Feign starter no longer comes through this import (the OAuth2 client stopped re-exporting it): an application with Feign clients lists `spring_boot_starter_feign` and imports it.
+- `EndpointRequest.toAnyEndpoint()`, `.to(...)`, `.toLinks()`, `.excluding(...)` and `.excludingLinks()`: request matchers of the actuator's endpoints for a `SecurityFilterChain`, as Spring Boot's; they match the requests the actuator starter recorded as endpoint requests, so they follow its base path and exposure.
+- `AuthenticationRoleChecker` (the `authenticationRoleChecker` bean, unless the application declares a `PrincipalRoleChecker`): the roles of the request's `Authentication` for the actuator's `show-details=when-authorized` (`ROLE_ADMIN` is the role `ADMIN`).
+- The starter now depends on `spring_boot_actuator` (the endpoints' model only: no endpoint and no auto-configuration come with it).
+
 ## 0.7.0
 
-- Perf/generated code (#22)
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.7.0.
 
 ## 0.6.3
 

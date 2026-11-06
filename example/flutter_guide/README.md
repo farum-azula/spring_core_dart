@@ -51,7 +51,7 @@ flutter run -d chrome                                 # the web, on http://local
 ```
 
 `flutter run` serves the web version on port 5050, the origin the server's
-CORS and SSO settings expect: `spring.flutter.web.port=5050` in
+CORS and SSO settings expect: `spring.flutter.web.dev-server.port=5050` in
 `lib/resources/application-web.properties`, which the generator writes
 into `web_dev_config.yaml` for the Flutter tool. No `--web-port` flag is
 needed, from the command line or an editor.
@@ -132,16 +132,14 @@ test/                          a test file per chapter, test/support/ (the fake 
 ```dart
 @SpringBootApplication()
 void main() => runApp(
-  SpringApplicationWidget(
-    application: () => springApplication,
-    home: const HomePage(),
-  ),
+  SpringApplicationWidget(application: () => springApplication),
 );
 ```
 
 `SpringApplicationWidget` starts the application (configuration files,
 beans) and gives it to the widgets. There is no hand-written
-`MaterialApp`. The app widget is built from `spring.flutter.app.*` in
+`MaterialApp`, and no `home`: the screens of the navigation make the app
+(below). The app widget is built from `spring.flutter.app.*` in
 `lib/resources/application.properties` (`type=material`, the title, no
 debug banner), its locales from the message files, and its themes from
 `application.yml` (chapter 3).
@@ -163,11 +161,30 @@ debug banner), its locales from the message files, and its themes from
   `application-android.properties` points the app at `10.0.2.2:8080`,
   the Android emulator's way to the computer. `@Profile(['!web'])` keeps
   two beans out of the browser (chapter 6).
-- **Navigation.** `HomePage` (`lib/src/app/home_page.dart`) shows the
-  sections; other screens are pushed with `Navigator`. The starter has no
-  route properties yet, so its part is the `NavigatorObserver` beans:
+- **Navigation** (`spring_boot_starter_flutter_navigation`, which the
+  Flutter security starter brings and re-exports). Every screen is a
+  widget with `@ScreenRoute`: `@ScreenRoute('/books/{isbn}')` on
+  `BookPage`, `/settings`, `/admin`, `/login` and the others. `HomePage`
+  (`lib/src/app/home_page.dart`) is a shell,
+  `@RouteShell(branches: ['/catalog', '/basket', '/orders', '/stock', '/more'])`:
+  each section keeps its own stack, so switching sections loses nothing,
+  and the other screens open over it. In `application.properties`,
+  `spring.flutter.navigation.initial=/catalog` is the first screen and
+  `spring.flutter.navigation.login=/login` the screen a guarded route
+  sends a logged-out user to. Widgets navigate with `context.route`
+  (`context.route.push('/settings')`) or the generated typed address
+  (`BookPageRoute.to(isbn: isbn)`). On the web each screen has its address
+  in the browser (`/books/9780441013593`), reload included.
+- **Deep links.** `spring.flutter.navigation.deep-links.scheme=neonbooks`:
+  `neonbooks://books/9780441013593` opens a book from a link outside the
+  app. The generator writes the scheme into `ios/Runner/Info.plist`,
+  `macos/Runner/Info.plist` and `android/app/src/main/AndroidManifest.xml`
+  (a marked block it keeps up to date; an edit by hand inside it fails the
+  build). See the navigation starter's
+  [README](../../spring_boot_starter_flutter_navigation/README.md).
+- **`NavigatorObserver` beans** observe the app's navigators:
   `RouteLog` (`lib/src/app/route_log.dart`) logs every screen opened and
-  closed.
+  closed (`open /books/9780441013593`).
 - **The app lifecycle** arrives as application events. `LifecycleLog`
   (`lib/src/app/lifecycle_log.dart`) logs each `AppLifecycleStateEvent`,
   and the `ContextPausedEvent` and `ContextRestartedEvent` that follow
@@ -323,15 +340,23 @@ spring:
   Loaders section with a skeleton, an indeterminate bar and a bar with the
   progress of a fake download, next to the YAML that makes them
   (`lib/src/settings/loaders_preview.dart`).
+- **Markdown and code.** Settings shows
+  `lib/resources/content/theme-preview.md` with `MarkdownView.resource`
+  (`ThemeMarkdown` in `lib/src/settings/theme_preview.dart`). The headings
+  and text follow the theme's text styles; the Dart and YAML blocks are
+  colored by `styles.code`: a background and a comment color shared in
+  `application.yml`, and each theme's own colors in `themes/*.yml`
+  (`dark` sets none and uses its color scheme).
 
 Try: More → Settings and pick each theme. `flutter run
 --dart-define=SPRING_FLUTTER_THEME_ACTIVE=neon` starts in one.
 
 Test: `test/themes_test.dart` (the themes and their order, `extends`,
-the fonts, switching, `loadYaml`, a broken property), `test/loaders_test.dart`
+the fonts, switching, `loadYaml`, a broken property, the code colors of
+`styles.code`), `test/loaders_test.dart`
 (the splash and its hand-over, the catalog's skeleton until the server
 answers, the Loaders section, the quoted YAML lines) and the
-screenshots of Settings in every theme (chapter 11).
+screenshots of Settings and of its Markdown in every theme (chapter 11).
 
 ## 4. Texts
 
@@ -471,10 +496,14 @@ the Admin form).
 
 The app lists one package for all of it,
 [`spring_boot_starter_flutter_security`](../../spring_boot_starter_flutter_security/README.md):
-it brings and re-exports the Flutter starter, the OAuth2 client and
-`spring_security_core`, and adds the platform code of logins and secrets
-(an app without a login lists only the Flutter starter and carries none
-of it).
+it brings and re-exports the Flutter and navigation starters, the OAuth2
+client and `spring_security_core`, and adds the platform code of logins
+and secrets (an app without a login lists only the Flutter starter and
+carries none of it). Its `testing.dart` gives the tests `withMockUser`.
+The Feign starter is listed on its own: the app writes Feign clients
+(chapter 6), and the files that use Feign's types import
+`package:spring_boot_starter_feign/spring_boot_starter_feign.dart`
+([the packages an application lists](../../docs/packages.md)).
 
 - **Logging in.** The Login screen (`lib/src/account/login_page.dart`)
   calls `Session.login`. `Session` asks Spring Security's
@@ -513,7 +542,8 @@ server's, which checks the session and the role of every request again.
 Try: log in as `ada`, then as `root`; More shows Admin only for `root`.
 
 Test: `test/security_test.dart` (a wrong password, a USER, an ADMIN,
-`@PreAuthorize` with `withMockUser`, logout).
+`@PreAuthorize` with `withMockUser` from
+`package:spring_boot_starter_flutter_security/testing.dart`, logout).
 
 ### Single sign-on with Keycloak
 
@@ -768,8 +798,9 @@ so the cookies and the CSRF header are tested too.
 - **Screens and services: `springBootTest`.** Most tests start the
   application once per file with `springBootTest` and the fake server's
   overrides; `setUp(app.markDirty)` gives every test a fresh context.
-  Screens are shown under `SpringScope` and `SpringApp` (`showPage`,
-  `test/support/app.dart`); services are tested with plain `test`s.
+  A screen is shown under `SpringScope` and `SpringApp` (`showPage`,
+  `test/support/app.dart`), or the whole app on the navigation's first
+  screen (`showApp`); services are tested with plain `test`s.
 - **The whole app: `SpringApplicationWidget`.** Some tests start the app
   as `flutter run` does (`startApp`): the profiles, the lifecycle, the
   fonts, a failed start. `SpringApplicationWidget` takes no overrides
@@ -778,8 +809,9 @@ so the cookies and the CSRF header are tested too.
   in an `ApplicationContextInitializer`).
 - **Golden screenshots.** `test/golden_test.dart` compares screens with
   `test/goldens/*.png`: the catalog, a book, the basket, live stock, the
-  chat, the Admin errors, Login, Japanese, About (English and Japanese),
-  desktop, and Settings in every theme of the files (a gallery of the
+  chat, the Admin errors, Login and the starter's login buttons,
+  Japanese, About (English and Japanese), desktop, and in every theme of
+  the files Settings and its Markdown with code (a gallery of the
   themes). They use real fonts: the app's Roboto files, the SDK's
   Material icons and a Japanese subset (`test/fonts/`,
   `test/flutter_test_config.dart`). Tagged `golden`: made on macOS and
@@ -795,7 +827,7 @@ so the cookies and the CSRF header are tested too.
 |---|---|
 | 1 | `test/app_test.dart` |
 | 2 | `test/state_test.dart` |
-| 3 | `test/themes_test.dart` |
+| 3 | `test/themes_test.dart`, `test/loaders_test.dart`, `test/web_page_loader_test.dart` |
 | 4 | `test/texts_test.dart` |
 | 5 | `test/assets_test.dart` |
 | 6 | `test/server_access_test.dart` |
@@ -839,9 +871,9 @@ the pixels, are tolerated (`test/flutter_test_config.dart`).
   the cookies of another site. The server allows the page's origin with
   credentials (CORS, `neon.cors.*`), and with SSO sends the browser back
   to `neon.app.web-url` (`http://localhost:5050/`), the port
-  `spring.flutter.web.port` gives `flutter run` on the web.
-- **Routes.** The starter has no route or router properties yet;
-  navigation is `Navigator.push`, with `NavigatorObserver` beans.
+  `spring.flutter.web.dev-server.port` gives `flutter run` on the web.
+- **Deep links on Windows and Linux.** The `neonbooks://` scheme is
+  written for iOS, macOS and Android only.
 - **The language** is picked with a `FlutterAppCustomizer`, as no
   property sets the locale shown.
 

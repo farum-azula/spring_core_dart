@@ -83,8 +83,8 @@ void main() {
     expect(
       logged(context, 'neon.navigation'),
       containsAllInOrder([
-        'open book/9780441013593',
-        'close book/9780441013593',
+        'open /books/9780441013593',
+        'close /books/9780441013593',
       ]),
     );
     await stopApp(tester);
@@ -95,7 +95,6 @@ void main() {
       SpringApplicationWidget(
         application: FakeServer().application,
         args: const ['--api.base-url=localhost:8080'],
-        home: const HomePage(),
       ),
     );
     await tester.pumpAndSettle();

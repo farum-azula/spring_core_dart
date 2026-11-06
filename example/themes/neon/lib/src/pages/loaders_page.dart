@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
 import 'package:theme_showcase_neon/src/widgets/section.dart';
@@ -10,6 +10,7 @@ import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
 
 /// Loaders: the gate loader of neon_ui with a progress slider, the
 /// built-in kinds, a skeleton, and the splash that shows at the start.
+@ScreenRoute('/loaders', title: '#{nav.loaders}')
 class LoadersPage extends StatelessWidget {
   const LoadersPage({super.key});
 
@@ -116,6 +117,7 @@ card:
 ThemeLoader(context.theme.loaders.neonGate, progress: progress)
 ThemeLoader(context.theme.loaders.upload, progress: sent)
 ThemeSkeleton(context.theme.loaders.card, loading: !loaded, child: list)''',
+            language: 'dart',
           ),
         ),
       ],

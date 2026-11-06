@@ -55,6 +55,8 @@ final class SpringMetadataBuilder implements Builder {
     '@Configuration',
     '@Bean',
     '@ThemeLoaderKind',
+    '@ScreenRoute',
+    '@RouteShell',
   ];
 
   @override
@@ -175,6 +177,8 @@ final class SpringMetadataBuilder implements Builder {
         entities: scanner.entityMetadata(),
         repositories: scanner.repositoryMetadata(),
         loaderKinds: await _loaderKinds(buildStep, loaderKinds),
+        routes: [for (final screen in module.screens) screen.toMetadata()],
+        shells: [for (final shell in module.shells) shell.toMetadata()],
         theme: package == 'spring_boot_starter_flutter'
             ? await _theme(buildStep)
             : null,

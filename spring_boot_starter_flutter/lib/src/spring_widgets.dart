@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/bean_lookup_scope.dart';
 import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 
@@ -239,7 +240,10 @@ abstract class SpringState<W extends SpringStatefulWidget<B>, B extends Record>
       return current;
     }
     final context = _context ?? SpringScope.of(this.context, listen: false);
-    final beans = SpringWidgetBindings.resolve(context, B, runtimeType) as B;
+    final beans = BeanLookupScope.run(
+      this.context,
+      () => SpringWidgetBindings.resolve(context, B, runtimeType),
+    ) as B;
     _listening.setBeans(SpringWidgetBindings.valuesOf(context, B, beans));
     return _beans = beans;
   }
@@ -283,10 +287,13 @@ class SpringStatelessElement extends ComponentElement {
   Widget build() {
     final widget = this.widget as SpringStatelessWidget<Record>;
     final context = SpringScope.of(this);
-    final beans = SpringWidgetBindings.resolve(
-      context,
-      widget.beansType,
-      widget.runtimeType,
+    final beans = BeanLookupScope.run(
+      this,
+      () => SpringWidgetBindings.resolve(
+        context,
+        widget.beansType,
+        widget.runtimeType,
+      ),
     );
     _listening.setBeans(
       SpringWidgetBindings.valuesOf(context, widget.beansType, beans),

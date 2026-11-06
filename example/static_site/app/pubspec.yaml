@@ -1,0 +1,28 @@
+name: static_site_app
+description: "A small Flutter web site served by its own Spring server (../server): the build is static files, the API on the same origin."
+publish_to: none
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The pages (@ScreenRoute), their Markdown (RouteContentView), the
+  # browser's addresses. It brings and exports the Flutter starter (the app
+  # widget and theme from properties, MarkdownView, and spring_web_dart's
+  # HttpTransport for the request to the server's /api/info).
+  spring_boot_starter_flutter_navigation: ^0.7.0
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  spring_boot_starter_test: ^0.7.0
+  spring_core_dart_generator: ^0.7.0
+
+flutter:
+  uses-material-design: true

@@ -23,18 +23,21 @@ const family = [
   'spring_web_dart',
   'spring_boot_starter_logging',
   'spring_security_core',
+  'spring_boot_actuator',
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
   'spring_boot_starter_data',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
   'spring_boot_starter_web',
+  'spring_boot_starter_actuator',
   'spring_boot_starter_oauth2_client',
   'spring_boot_starter_security',
   'spring_boot_starter_test',
   // Flutter: outside the pub workspace, published with `flutter pub`.
   'spring_boot_starter_flutter',
   'spring_boot_starter_flutter_security',
+  'spring_boot_starter_flutter_navigation',
 ];
 
 /// Packages that only depend on the family (not published).
@@ -45,6 +48,9 @@ const dependents = [
   'example/themes/neon',
   'example/themes/material',
   'example/themes/cupertino',
+  'example/static_site/server',
+  'example/static_site/app',
+  'example/seo_site',
   'extensions/language_server',
 ];
 

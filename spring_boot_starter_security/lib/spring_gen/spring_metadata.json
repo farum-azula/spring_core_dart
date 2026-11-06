@@ -210,6 +210,34 @@
   ],
   "beans": [
     {
+      "name": "authenticationRoleChecker",
+      "type": "PrincipalRoleChecker",
+      "types": [
+        "PrincipalRoleChecker"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(PrincipalRoleChecker)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 402,
+      "injects": [],
+      "members": [
+        {
+          "name": "isUserInRole",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Principal principal",
+            "String role"
+          ]
+        }
+      ]
+    },
+    {
       "name": "authorizedClientRepository",
       "type": "OAuth2AuthorizedClientRepository",
       "types": [
@@ -224,7 +252,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientRepository)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 351,
+      "line": 354,
       "injects": [],
       "members": [
         {
@@ -276,7 +304,7 @@
         "@ConditionalOnMissingBean(CookieSigner)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 219,
+      "line": 222,
       "injects": [],
       "members": [
         {
@@ -316,7 +344,7 @@
         "@ConditionalOnMissingBean(SecurityFilterChain)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 324,
+      "line": 327,
       "injects": [],
       "members": [
         {
@@ -346,7 +374,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 204,
+      "line": 207,
       "injects": [],
       "members": [
         {
@@ -560,7 +588,7 @@
         "@_OnNoClientRegistrationsOrUserProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 275,
+      "line": 278,
       "injects": [],
       "members": [
         {
@@ -628,7 +656,7 @@
         "@ConditionalOnMissingBean(JwtAuthenticationConverter)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 263,
+      "line": 266,
       "injects": [],
       "members": [
         {
@@ -666,7 +694,7 @@
         "@_OnResourceServerProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 233,
+      "line": 236,
       "injects": [],
       "members": [
         {
@@ -692,7 +720,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 391,
+      "line": 394,
       "injects": [],
       "members": [
         {
@@ -720,7 +748,7 @@
         "@ConditionalOnMissingBean(OidcIdTokenDecoder)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 446,
+      "line": 463,
       "injects": [],
       "members": [
         {
@@ -748,7 +776,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 369,
+      "line": 372,
       "injects": [],
       "members": [
         {
@@ -837,7 +865,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 385,
+      "line": 388,
       "injects": [],
       "members": [
         {
@@ -862,6 +890,14 @@
           "type": "void",
           "parameters": [
             "InterceptorRegistry registry"
+          ]
+        },
+        {
+          "name": "addResourceHandlers",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ResourceHandlerRegistry registry"
           ]
         }
       ]

@@ -3,6 +3,8 @@
 
 import 'dart:math';
 
+import 'package:spring_boot_actuator/spring_boot_actuator.dart'
+    show PrincipalRoleChecker;
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     show
         ClientRegistrationRepository,
@@ -19,6 +21,7 @@ import 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_fa
 import 'package:spring_boot_starter_security/src/properties/security_properties.dart';
 import 'package:spring_boot_starter_security/src/web/arguments.dart';
 import 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
+import 'package:spring_boot_starter_security/src/web/endpoint_request.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
 import 'package:spring_boot_starter_security/src/web/firewall.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
@@ -393,6 +396,20 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
     types: const [JwtExpressionCustomizer, SecurityExpressionContextCustomizer],
     source: _source,
     create: (r) => const JwtExpressionCustomizer(),
+  ),
+  // The actuator's `when-authorized` reads the roles of the request's
+  // Authentication through it (unless the application has its own).
+  BeanDefinition<PrincipalRoleChecker>(
+    name: 'authenticationRoleChecker',
+    factoryMethodName: 'authenticationRoleChecker',
+    types: const [AuthenticationRoleChecker, PrincipalRoleChecker],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.authenticationRoleChecker', [
+        ConditionalOnMissingBean(PrincipalRoleChecker),
+      ]),
+    ],
+    create: (_) => const AuthenticationRoleChecker(),
   ),
 ];
 

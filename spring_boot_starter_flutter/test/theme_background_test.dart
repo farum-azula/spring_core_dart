@@ -10,7 +10,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter/src/files/sha256.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
 
 // A 1x1 PNG.
 final _png = Uint8List.fromList(

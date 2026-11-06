@@ -327,6 +327,57 @@ void main() {
       );
     });
 
+    test('the page transition for the router: a kind, or a map', () {
+      // Not set: none, for the router and Material's page routes alike.
+      expect(
+        theme({}).pageTransitions,
+        const PageTransitionSpec(type: PageTransitionType.none),
+      );
+      expect(theme({}).pageTransition.runtimeType.toString(), '_NoTransition');
+      expect(
+        theme({'motion.page-transition': 'none'}).pageTransitions,
+        const PageTransitionSpec(type: PageTransitionType.none),
+      );
+      final map = theme({
+        'motion.durations.fast': '140ms',
+        'motion.page-transition.type': 'fade',
+        'motion.page-transition.duration': r'$motion.durations.fast',
+        'motion.page-transition.curve': 'ease-out',
+      });
+      expect(map.pageTransitions.type, PageTransitionType.fade);
+      expect(
+        map.pageTransitions.duration,
+        const Duration(milliseconds: 140),
+      );
+      expect(map.pageTransitions.curve, Curves.easeOut);
+      // The same for Material's page routes.
+      expect(
+        material({'motion.page-transition': 'fade'})
+            .pageTransitionsTheme
+            .builders[TargetPlatform.android]
+            .runtimeType
+            .toString(),
+        '_FadeTransition',
+      );
+    });
+
+    test('a wrong page transition key or kind fails the start, named', () {
+      expect(
+        () => theme({'motion.page-transition.speed': 'fast'}),
+        throwsA(
+          isA<ThemePropertyException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('type, duration or curve'),
+          ),
+        ),
+      );
+      expect(
+        () => theme({'motion.page-transition': 'slide'}),
+        throwsA(isA<ThemePropertyException>()),
+      );
+    });
+
     test('a page transition of none shows the page as it is', () {
       final builder = material({'motion.page-transition': 'none'})
           .pageTransitionsTheme

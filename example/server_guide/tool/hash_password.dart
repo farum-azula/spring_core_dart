@@ -12,7 +12,7 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
 void main(List<String> args) {
   if (args.length != 1) {

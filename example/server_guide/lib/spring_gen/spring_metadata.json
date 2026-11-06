@@ -4145,6 +4145,14 @@
           "parameters": [
             "InterceptorRegistry registry"
           ]
+        },
+        {
+          "name": "addResourceHandlers",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ResourceHandlerRegistry registry"
+          ]
         }
       ]
     }

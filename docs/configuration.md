@@ -2024,7 +2024,8 @@ spring.flutter.app.locales=en,ja,pt_BR
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `spring.flutter.app.type` | `widgets` / `material` / `cupertino` | `widgets` | The app widget: `WidgetsApp`, `MaterialApp` (needed by `Scaffold` and `AppBar`) or `CupertinoApp` |
-| `spring.flutter.app.title` | string | empty | The app's name for the OS, shown in the task switcher or the browser tab |
+| `spring.flutter.app.title` | string | empty | The app's name for the OS, shown in the task switcher or the browser tab; the build also writes it into `web/index.html` (`<title>`) and `web/manifest.json` (`name`, `short_name`) |
+| `spring.flutter.app.description` | string | none | What the app is, in a sentence: the build writes it into `web/index.html` (`<meta name="description">`) and `web/manifest.json`. With a theme, the build also writes its `primary` (`theme-color`) and `surface` (`background_color`) |
 | `spring.flutter.app.debug-banner` | `true` / `false` | `true` | Flutter's DEBUG banner in debug builds |
 | `spring.flutter.app.locales` | comma list of locales (`en`, `pt_BR`, `zh_Hant_TW`) | the languages of the messages files | The locales the app supports. By default `messages.properties` counts as English, and each `messages_<locale>.properties` of `spring.messages.basename` adds its locale |
 
@@ -2771,12 +2772,13 @@ theme starts from the root, or from the theme it `extends`:
 | `visual-density` | `adaptive` / `standard` / `comfortable` / `compact` | Flutter's | How dense the components are |
 | `tap-target-size` | `padded` / `shrinkWrap` | Flutter's | The minimum tap target size |
 | `splash` | `ripple` / `sparkle` / `none` | Flutter's | The ink splash on taps |
-| `motion.page-transition` | `platform`, `fadeUpwards`, `zoom`, `cupertino`, `none` | `platform` | The page transition, on every platform |
+| `motion.page-transition` | `platform`, `fadeUpwards`, `zoom`, `cupertino`, `fade`, `none`, or a map of `type`, `duration`, `curve` | `none` | The page transition of every screen, in every app type (the navigation starter's router follows it): none by default, `platform` for the app type's own. See [page transitions](flutter/theme/motion-and-animations.md#page-transitions) |
 | `motion.durations.<name>` | duration | `short` 100ms, `medium` 250ms, `long` 450ms | Durations for the app's animations |
 | `motion.curves.<name>` | four numbers | `standard`: Material's | Curves for the app's animations |
 | `components.<component>.<property>` | see the next table | Material 3's | Adjusts one component |
 | `tokens.<group>.<key>` | any value | — | The app's own values, read with `tokenColor('brand.accent')`, `tokenNumber(...)` or `token(...)` |
 | `cupertino.<property>` | see the reference below | iOS's | The `CupertinoThemeData`: `primary-color` (default `colors.primary`, else the seed, else iOS blue), `primary-contrasting-color`, `scaffold-background-color`, `bar-background-color`, `selection-handle-color`, `apply-theme-to-all`, and `text-theme.*` (the text styles) |
+| `styles.code.<property>` | color, number or insets | the color scheme | The code blocks of `MarkdownView`: the colors `background`, `text`, `keyword`, `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`, `punctuation`, and the block's `padding`, `radius`, `border`, `border-width`. See [Markdown and code](flutter/theme/styles-and-states.md#markdown-and-code-stylescode) |
 
 **Components.** `components.<component>.<property>` adjusts Flutter's own
 component themes (`ThemeData` and its 48 component themes, plus
@@ -3204,6 +3206,40 @@ mouse cursor, and blends the values over `transition`. `selected` and `error`
 come from your arguments. Names can be written in any spelling: `neon-chip`,
 `neonChip`, `neon_chip`.
 
+#### Markdown and code: `styles.code`
+
+`MarkdownView` shows Markdown (a string, or a resource such as
+`resources:content/docs/beans.md`) with the theme's text styles; the
+navigation's `RouteContentView` shows a route's Markdown with it. Code is
+written in the `code` text style, colored by the style `styles.code`:
+
+```yaml
+typography:
+  code: { font-family: JetBrains Mono, size: 13 }
+styles:
+  code:
+    background: $colors.surface-container-low
+    border: $colors.outline-variant
+    radius: $shape.small
+    padding: 16
+    keyword: '#C678DD'
+    string: '#98C379'
+    comment: '#5C6370'
+    number: '#D19A66'
+    key: '#E06C75'          # YAML and .properties keys
+    annotation: '#61AFEF'
+    variable: '#E5C07B'     # $colors.primary, ${PORT}
+    punctuation: '#ABB2BF'  # { } [ ] , :
+```
+
+`MarkdownView.code(text, language: 'yaml')` shows one block of code the
+same way, for the code samples of an app.
+
+Every color is optional and falls back on the color scheme, so code reads
+well in every theme without `styles.code`. Fenced blocks of `dart`, `yaml`,
+`properties`, `json` and `shell` are colored. The full list, with the
+defaults: [Markdown and code](flutter/theme/styles-and-states.md#markdown-and-code-stylescode).
+
 #### Motion and animations
 
 ```yaml
@@ -3513,7 +3549,7 @@ the config (any `.properties`, `.yml` or `.yaml` file of
 names with a file hint, such as `resources:dev.conf[.yaml]` or
 `resources:web.properties[encoding=iso-8859-1]` (a file that is not UTF-8
 is read only that way), its placeholders resolved with their defaults or
-the files' values) sets a `spring.flutter.web.*` key or
+the files' values) sets a `spring.flutter.web.dev-server.*` key or
 `spring.flutter.security.web.mode`. An import whose name only the running
 app knows (`resources:${ENV}.conf[.yaml]`, `ENV` without a default) cannot
 be followed there, so keys that only its file sets do not count. Without
@@ -3569,22 +3605,23 @@ them. See
 spring:
   flutter:
     web:
-      port: 5050
-      headers:
-        Cross-Origin-Opener-Policy: same-origin
-      proxy:
-        - prefix: /api/
-          target: http://localhost:8080
+      dev-server:
+        port: 5050
+        headers:
+          Cross-Origin-Opener-Policy: same-origin
+        proxy:
+          - prefix: /api/
+            target: http://localhost:8080
 ```
 
 </td><td>
 
 ```properties
 # application-web.properties
-spring.flutter.web.port=5050
-spring.flutter.web.headers.Cross-Origin-Opener-Policy=same-origin
-spring.flutter.web.proxy[0].prefix=/api/
-spring.flutter.web.proxy[0].target=http://localhost:8080
+spring.flutter.web.dev-server.port=5050
+spring.flutter.web.dev-server.headers.Cross-Origin-Opener-Policy=same-origin
+spring.flutter.web.dev-server.proxy[0].prefix=/api/
+spring.flutter.web.dev-server.proxy[0].target=http://localhost:8080
 ```
 
 </td></tr>
@@ -3592,19 +3629,19 @@ spring.flutter.web.proxy[0].target=http://localhost:8080
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.web.host` | string, not empty | any address | The address the dev server listens on: `localhost`, or `0.0.0.0` for other devices on the LAN |
-| `spring.flutter.web.port` | integer, 0 to 65535 | a free port | The dev server's port |
-| `spring.flutter.web.base-href` | path starting and ending with `/` | `/` | The path the app is served under (`/shop/`) |
-| `spring.flutter.web.https.cert-path` | file path | none (HTTP) | The TLS certificate (PEM). With `cert-key-path`, the dev server speaks HTTPS; set both or neither |
-| `spring.flutter.web.https.cert-key-path` | file path | none | The certificate's private key (PEM) |
-| `spring.flutter.web.headers.<Name>` | string | none | A header added to every response; the map merges across files, the more specific file winning per header |
-| `spring.flutter.web.proxy[n].target` | absolute URL | none | Where requests matching rule `n` are forwarded (`http://localhost:8080`). Required in every rule |
-| `spring.flutter.web.proxy[n].prefix` | path | none | Rule `n` matches paths starting with it (`/api/`) |
-| `spring.flutter.web.proxy[n].regex` | regular expression | none | Or the paths matching it; each rule sets exactly one of `prefix` and `regex` |
-| `spring.flutter.web.proxy[n].replace` | string | the path unchanged | The forwarded path: the matched part replaced, `$1` for the first group |
-| `spring.flutter.web.content-security-policy` | string, not empty | none; in spa mode a ready policy (below) | The page's Content Security Policy, sent as the `Content-Security-Policy` header. Setting it and `headers.Content-Security-Policy` both fails the build |
-| `spring.flutter.web.content-security-policy-report-only` | `true` / `false` | `false` | Send the policy as `Content-Security-Policy-Report-Only`: violations are reported in the console, nothing is blocked (for development) |
-| `spring.flutter.web.content-security-policy-connect-src` | list of origins (`https://api.neon.books`, `wss://...`) | none | Origins added to the `connect-src` of spa mode's ready policy (below): the APIs the app calls, a provider's endpoints on other hosts. Setting it with an own policy fails the build; without spa mode it is ignored (a warning) |
+| `spring.flutter.web.dev-server.host` | string, not empty | any address | The address the dev server listens on: `localhost`, or `0.0.0.0` for other devices on the LAN |
+| `spring.flutter.web.dev-server.port` | integer, 0 to 65535 | a free port | The dev server's port |
+| `spring.flutter.web.dev-server.base-href` | path starting and ending with `/` | `/` | The path the app is served under (`/shop/`) |
+| `spring.flutter.web.dev-server.https.cert-path` | file path | none (HTTP) | The TLS certificate (PEM). With `cert-key-path`, the dev server speaks HTTPS; set both or neither |
+| `spring.flutter.web.dev-server.https.cert-key-path` | file path | none | The certificate's private key (PEM) |
+| `spring.flutter.web.dev-server.headers.<Name>` | string | none | A header added to every response; the map merges across files, the more specific file winning per header |
+| `spring.flutter.web.dev-server.proxy[n].target` | absolute URL | none | Where requests matching rule `n` are forwarded (`http://localhost:8080`). Required in every rule |
+| `spring.flutter.web.dev-server.proxy[n].prefix` | path | none | Rule `n` matches paths starting with it (`/api/`) |
+| `spring.flutter.web.dev-server.proxy[n].regex` | regular expression | none | Or the paths matching it; each rule sets exactly one of `prefix` and `regex` |
+| `spring.flutter.web.dev-server.proxy[n].replace` | string | the path unchanged | The forwarded path: the matched part replaced, `$1` for the first group |
+| `spring.flutter.web.dev-server.content-security-policy` | string, not empty | none; in spa mode a ready policy (below) | The page's Content Security Policy, sent as the `Content-Security-Policy` header. Setting it and `headers.Content-Security-Policy` both fails the build |
+| `spring.flutter.web.dev-server.content-security-policy-report-only` | `true` / `false` | `false` | Send the policy as `Content-Security-Policy-Report-Only`: violations are reported in the console, nothing is blocked (for development) |
+| `spring.flutter.web.dev-server.content-security-policy-connect-src` | list of origins (`https://api.neon.books`, `wss://...`) | none | Origins added to the `connect-src` of spa mode's ready policy (below): the APIs the app calls, a provider's endpoints on other hosts. Setting it with an own policy fails the build; without spa mode it is ignored (a warning) |
 
 The proxy list comes whole from the most specific file that has one, as
 lists do in Spring Boot. Forwarding `/api/` to the server is the simplest
@@ -3612,7 +3649,7 @@ way to avoid CORS and third-party cookie trouble in development: the page
 and the API share one origin, so a session login works in every browser.
 
 An invalid value fails the build with the key's name; an unknown
-`spring.flutter.web.*` key is a warning. Without any of these keys (and
+`spring.flutter.web.dev-server.*` key is a warning. Without any of these keys (and
 not in spa mode) no file is written, and a hand-written
 `web_dev_config.yaml` is never changed or deleted: with the keys set as
 well, the build fails and asks to remove one of the two.
@@ -3622,7 +3659,7 @@ well, the build fails and asks to remove one of the two.
 A Content Security Policy tells the browser which scripts, styles and
 connections the page may use, so a script injected into it (or loaded
 from a place the app never meant) is refused. The generator sends
-`spring.flutter.web.content-security-policy` with every answer of
+`spring.flutter.web.dev-server.content-security-policy` with every answer of
 `flutter run`, so development runs under the policy production sends.
 An app whose browser logs in by itself
 (`spring.flutter.security.web.mode=spa`) and sets no policy gets this
@@ -3656,7 +3693,7 @@ their discovery documents name besides the issuer
 authorization endpoint is not in the list: the page goes there, it does
 not fetch it. Any other issuer's discovery document is read at run time,
 so an endpoint it names on another host is not known to the build: list
-that host in `spring.flutter.web.content-security-policy-connect-src`,
+that host in `spring.flutter.web.dev-server.content-security-policy-connect-src`,
 with the APIs the app calls (`ws:` / `wss:` origins for sockets); they
 are added after the providers:
 
@@ -3674,7 +3711,7 @@ Or set the whole policy yourself:
 
 ```properties
 # application-web.properties
-spring.flutter.web.content-security-policy=default-src 'self'; \
+spring.flutter.web.dev-server.content-security-policy=default-src 'self'; \
   script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com; \
   style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; \
   font-src 'self' https://fonts.gstatic.com; \
@@ -3802,6 +3839,338 @@ spring.flutter.security.web.logout-url=/api/logout
 An invalid value stops the app at startup with the key's name. Outside a
 browser the keys are not read.
 
+### Navigation
+
+`spring_boot_starter_flutter_navigation` (brought by
+`spring_boot_starter_flutter_security` too) puts the screens of
+`@ScreenRoute` and `ScreenRoutes` beans on the SDK's `Router`: the
+browser's address bar, deep links and Android's back button. How to write
+screens, shells, guards and tests is in the
+[starter's README](../spring_boot_starter_flutter_navigation/README.md);
+these are its properties.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  flutter:
+    navigation:
+      initial: /catalog
+      login: /login
+      redirects:
+        "[/home]": /catalog
+      languages: [en, ja]
+      web:
+        url-strategy: path
+      deep-links:
+        scheme: neonbooks
+        domains: [books.example.com]
+        exclude: [/checkout, /admin/**]
+```
+
+</td><td>
+
+```properties
+spring.flutter.navigation.initial=/catalog
+spring.flutter.navigation.login=/login
+spring.flutter.navigation.redirects[/home]=/catalog
+spring.flutter.navigation.languages=en,ja
+spring.flutter.navigation.web.url-strategy=path
+spring.flutter.navigation.deep-links.scheme=neonbooks
+spring.flutter.navigation.deep-links.domains[0]=books.example.com
+spring.flutter.navigation.deep-links.exclude[0]=/checkout
+spring.flutter.navigation.deep-links.exclude[1]=/admin/**
+```
+
+</td></tr>
+</table>
+
+A key of `redirects` is a path, so it is written in brackets: `[/home]`
+(in YAML in quotes too).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.navigation.initial` | path | none | Where the app starts when the platform gives `/` (no deep link, the site's root) |
+| `spring.flutter.navigation.login` | path | none | Where a guarded screen (`@PreAuthorize`, `RouteSecurity.preAuthorize`) sends nobody logged in; the app comes back after the login. Without it, such a navigation shows the route's error screen |
+| `spring.flutter.navigation.redirects.<from>` | path | none | An address that leads to another (`"[/]": /catalog`); a route's own redirect of the same path wins |
+| `spring.flutter.navigation.languages` | list of language tags | none (one language, no prefix) | The languages with their own addresses: the first is the default, without a prefix; the others under `/<language>` (`/ja/catalog`). An address of a language sets the app's locale (`context.message`, Flutter's widgets); the app's own paths are written without a prefix and keep the current language; `RouteTemplate.switchLanguage('ja')` changes it. The build writes the pages for search engines in each language ([The site's pages](#the-sites-pages-springflutterwebseo)) |
+| `spring.flutter.navigation.web.url-strategy` | `path` / `hash` | `path` | How a browser's address bar shows the route: `/catalog/books/1` (a static host answers every path with `index.html`, or the build writes a page per path) or Flutter's `/#/catalog/books/1` |
+| `spring.flutter.navigation.deep-links.enabled` | `true` / `false` | `true` | Whether the deep links are written; `false` in a platform's profile file turns them off there |
+| `spring.flutter.navigation.deep-links.scheme` | URL scheme | none | The app's own scheme (`neonbooks://catalog/books/1`); not verified, another app may claim it. The generator writes it into `Info.plist` (iOS, macOS) and the Android manifest |
+| `spring.flutter.navigation.deep-links.domains` | list of host names | none | The domains whose `https` links open the app (Universal Links, App Links): `applinks:` in `ios/Runner/Runner.entitlements` (when the file exists), a verified intent filter on Android, and `apple-app-site-association` / `assetlinks.json` for the domain to serve under `/.well-known/` |
+| `spring.flutter.navigation.deep-links.exclude` | list of path patterns | none | Addresses a link does not open (the app's first screen opens instead), as `@RouteInfo(link: false)`; excluded in Apple's file too |
+| `spring.flutter.navigation.deep-links.app-id` | `TEAMID.bundle.id` | from the Xcode project | The iOS app id of `apple-app-site-association` (set it in `application-ios.yml`) |
+| `spring.flutter.navigation.deep-links.package` | Android package | the Gradle file's `applicationId` | The package of `assetlinks.json` |
+| `spring.flutter.navigation.deep-links.sha256-cert-fingerprints` | list | none | The SHA-256 fingerprints of the Android signing keys; without them `assetlinks.json` is not written and Android does not verify the domain |
+
+What the build writes for the deep links, per platform:
+
+| Platform | File | What |
+|---|---|---|
+| iOS | `ios/Runner/Info.plist` | `FlutterDeepLinkingEnabled` and the scheme (`CFBundleURLTypes`) |
+| iOS | `ios/Runner/Runner.entitlements` | `applinks:<domain>` for each domain, when the file exists (create it in Xcode with the Associated Domains capability; the build only warns when it is missing) |
+| macOS | `macos/Runner/Info.plist` | The scheme |
+| Android | `android/app/src/main/AndroidManifest.xml` | In the main activity: `flutter_deeplinking_enabled`, an intent filter for the scheme and a verified (`autoVerify`) one for the domains |
+| Each domain | `web/.well-known/` (a web app), else `build/spring/well-known/` | `apple-app-site-association` and `assetlinks.json`, which the domain serves under `https://<domain>/.well-known/`; the excluded paths are left out of Apple's file |
+
+Windows and Linux get no deep links yet. Every link that opens the app
+goes through its routes: a screen with `@RouteInfo(link: false)` or under
+`deep-links.exclude` opens the first screen instead, and a guarded screen
+asks for the login first.
+
+The generator writes the platforms' blocks between
+`spring:deep-links:start` and `spring:deep-links:end` comments with their
+hash: a block changed by hand, or a key of the block the file declares
+outside it (`CFBundleURLTypes`), fails the build. It never edits the Xcode
+project.
+
+### The site's pages: `spring.flutter.web.seo.*`
+
+A Flutter web app draws on a canvas: its HTML holds no text, so a search
+engine, a link preview or a language model sees an empty page. With
+`spring.flutter.web.seo.enabled`, the generator gives every page of the
+site real HTML, made from the same sources the app shows, without a
+second version of the site to keep up:
+
+- **A page per address.** For each route and each Markdown file, a copy
+  of `web/index.html` with the page's own `<head>`: `<title>`,
+  `description`, `canonical`, the `og:*` tags of link previews, and
+  `robots` (`noindex` where asked). The site's root page is
+  `web/index.html` itself.
+- **The page's text, hidden.** The text goes into the page as plain HTML
+  (`<main id="spring-content">`) under the page loader, and then under
+  Flutter's view: a visitor never sees it, it is never removed, and a
+  crawler reads it. It is the page's Markdown as HTML; a screen without
+  Markdown has its `<head>` only (title, description, preview).
+- **Files for crawlers and models.** `sitemap.xml` and `robots.txt`;
+  `llms.txt` (a map of the Markdown pages) and `llms-full.txt` (all their
+  text); `<path>.md`, the Markdown as written, next to each Markdown
+  page.
+
+#### Turning it on
+
+Put the keys in the web profile's file, since only the web build reads
+them. `site-url` is required: it makes the absolute addresses of
+`canonical`, `og:url` and the sitemap.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+# lib/resources/application-web.yml
+spring:
+  flutter:
+    web:
+      seo:
+        enabled: true
+        site-url: https://spring-dart.dev
+        from-routes: true
+        title: '{title} · Spring Dart'
+        description: Spring Boot for Dart servers and Flutter apps.
+        image: resources:images/preview.png
+        content:
+          - location: resources:content/blog/
+            path: /blog
+            exclude: ['_*.md']
+        pages:
+          - path: /
+            title: Spring Dart
+```
+
+</td><td>
+
+```properties
+# lib/resources/application-web.properties
+spring.flutter.web.seo.enabled=true
+spring.flutter.web.seo.site-url=https://spring-dart.dev
+spring.flutter.web.seo.from-routes=true
+spring.flutter.web.seo.title={title} · Spring Dart
+spring.flutter.web.seo.description=Spring Boot for Dart servers and Flutter apps.
+spring.flutter.web.seo.image=resources:images/preview.png
+spring.flutter.web.seo.content[0].location=resources:content/blog/
+spring.flutter.web.seo.content[0].path=/blog
+spring.flutter.web.seo.content[0].exclude[0]=_*.md
+spring.flutter.web.seo.pages[0].path=/
+spring.flutter.web.seo.pages[0].title=Spring Dart
+```
+
+</td></tr>
+</table>
+
+Then build as usual: `dart run build_runner build` writes the pages into
+`web/`, and `flutter build web` copies them into `build/web/`.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.web.seo.enabled` | `true` / `false` | `false` | Whether the pages are written |
+| `spring.flutter.web.seo.site-url` | absolute URL | none (required) | The site's address: `canonical`, `og:url` and the sitemap. Its path is where the app is served (`https://example.com/docs/` for an app under `/docs/`) |
+| `spring.flutter.web.seo.from-routes` | `true` / `false` | `false` | Every screen of the navigation is a page (see below) |
+| `spring.flutter.web.seo.title` | text with `{title}` | `{title}` | The `<title>` of every page; `{title}` is the page's own title |
+| `spring.flutter.web.seo.description` | string | none | The description of a page that has none of its own |
+| `spring.flutter.web.seo.image` | `resources:` location or URL | none | The preview image (`og:image`) of a page that has none of its own |
+| `spring.flutter.web.seo.content[n].location` | `resources:` folder | none | A folder of Markdown files, a page per file |
+| `spring.flutter.web.seo.content[n].path` | path | `/` | The folder's address: `first.md` is `<path>/first`, `index.md` is `<path>` itself |
+| `spring.flutter.web.seo.content[n].exclude` | list of globs | none | Files of the folder left out (`_*.md`) |
+| `spring.flutter.web.seo.pages[n].path` | path | none | A page by hand, or the page of a route whose values below override the route's |
+| `spring.flutter.web.seo.pages[n].title` | string | the route's title | The page's title |
+| `spring.flutter.web.seo.pages[n].description` | string | the route's | The page's description |
+| `spring.flutter.web.seo.pages[n].image` | `resources:` location or URL | the route's | The page's preview image |
+| `spring.flutter.web.seo.pages[n].index` | `true` / `false` | the route's | `false`: `noindex`, and not in the sitemap |
+| `spring.flutter.web.seo.sitemap` | `true` / `false` | `true` | Whether `sitemap.xml` and `robots.txt` are written |
+| `spring.flutter.web.seo.llms` | `true` / `false` | `true` | Whether `llms.txt` and `llms-full.txt` are written |
+| `spring.flutter.web.seo.markdown` | `true` / `false` | `true` | Whether `<path>.md` is written next to a Markdown page |
+
+#### Where the pages come from
+
+Three sources, which can be combined:
+
+1. **The routes** (`from-routes: true`, with
+   `spring_boot_starter_flutter_navigation`). Every screen whose path has
+   no variables is a page (`/about`). A screen that shows a folder of
+   Markdown (`@ScreenRoute('/docs/{*path}', content:
+   'resources:content/docs/')`) gives a page per file:
+   `content/docs/core/beans.md` is `/docs/core/beans`. A screen with
+   other path variables has no page unless `@RouteInfo(paths: [...])`
+   lists its addresses. A guarded screen (`@PreAuthorize`) gets
+   `noindex` and stays out of the sitemap.
+2. **Markdown folders** (`content[n]`), for pages that are no screen of
+   their own.
+3. **Pages by hand** (`pages[n]`), for anything else, or to change what a
+   route says about itself (a longer title on `/`).
+
+`@RouteInfo` next to `@ScreenRoute` says what a screen's page needs
+beyond navigation:
+
+```dart
+@ScreenRoute('/', title: 'Spring Dart')
+@RouteInfo(description: 'Spring Boot for Dart servers and Flutter apps.')
+class HomePage extends StatelessWidget { ... }
+
+@ScreenRoute('/catalog/books/{isbn}', title: 'Book')
+@RouteInfo(paths: ['/catalog/books/978-0441013593'])
+class BookPage extends StatelessWidget { ... }
+
+@ScreenRoute('/checkout')
+@RouteInfo(index: false, link: false)
+class CheckoutPage extends StatelessWidget { ... }
+```
+
+| `@RouteInfo` | Default | Meaning |
+|---|---|---|
+| `description` | none | The text under the title in a search result and a link preview; `#{key}` is a message key |
+| `image` | none | The preview picture (`resources:images/book.png`, or a URL) |
+| `index` | `true` | `false`: the page gets `noindex` and stays out of the sitemap |
+| `paths` | none | The addresses of a screen with path variables, which the build cannot know |
+| `link` | `true` | `false`: a deep link from outside the app does not open the screen (see [Navigation](#navigation)) |
+
+A screen's `title:` is the page's title; `#{key}` in a title or a
+description is read from the default messages (`messages.properties`).
+
+A Markdown page may start with a front matter; without a `title`, its
+first `#` heading is the title:
+
+```markdown
+---
+title: Beans
+description: How the container creates, wires and scopes beans.
+image: resources:images/beans.png
+index: true
+---
+
+# Beans
+...
+```
+
+Links between the Markdown files become the site's addresses
+(`beans.md#scopes` from `/docs/core/configuration` is
+`/docs/core/beans#scopes`). The build fails on a link to a Markdown file
+that is no page, on two files with one address, and without `site-url`.
+HTML written in the Markdown is kept as text, in the page and in the app.
+
+#### What is written, and what to commit
+
+The generator writes into `web/`: `<path>/index.html` per page, the
+root page into `web/index.html` between `spring:seo` markers, and
+`sitemap.xml`, `robots.txt`, `llms.txt`, `llms-full.txt` and the `.md`
+files. It lists them in `web/.spring-seo`, and deletes a page that is
+gone at the next build. The files are generated: commit them if the site
+is built elsewhere from the repository without `build_runner`, or add
+them to `.gitignore` (the folders of the pages, the `.txt`, `.xml` and
+`.md` files, and `web/.spring-seo`).
+
+A preview image given as `resources:images/preview.png` is written as
+`<site-url>/assets/lib/resources/images/preview.png`: the address
+`flutter build web` gives a Flutter asset. List the image's folder under
+`flutter: assets:` in `pubspec.yaml`, or give an absolute URL.
+
+#### Serving the site
+
+The pages are files named `<path>/index.html`, so the server must answer
+`/docs/core/beans` with `docs/core/beans/index.html`:
+
+- **Static hosts** (Cloudflare Pages, GitHub Pages, Netlify, Firebase
+  Hosting) do that, and answer other addresses of the app with the root
+  `index.html` when told to.
+- **`spring_boot_starter_web`** does with
+  `spring.web.resources.directory-index: true`: `/docs/core/beans` gets
+  `docs/core/beans/index.html`, before `spa-fallback` answers the other
+  addresses with the root `index.html`. Without it, only `/` gets its
+  page and a crawler reads the root page's text and `<head>` everywhere.
+  [`example/seo_site`](../example/seo_site/README.md) is served this way.
+
+Keep `spring.flutter.navigation.web.url-strategy` at `path`, its default:
+the pages have the app's addresses (`/docs/core/beans`), while the `hash`
+strategy puts the route after a `#` (`/#/docs/core/beans`), which a
+crawler does not follow and these pages do not match.
+
+#### Languages
+
+With `spring.flutter.navigation.languages` (`[en, ja]`), the build writes
+every page in each language: the default one at its address, the others
+under `/<language>` (`/ja/docs/getting-started`), the addresses the app
+itself opens.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  flutter:
+    navigation:
+      languages: [en, ja]
+```
+
+</td><td>
+
+```properties
+spring.flutter.navigation.languages=en,ja
+```
+
+</td></tr>
+</table>
+
+- **Titles and descriptions:** `#{key}` from that language's messages
+  (`messages_ja.properties`), else the default ones.
+- **Markdown:** the translation sits next to the file, with the language
+  before `.md`: `getting-started.ja.md` next to `getting-started.md`. Its
+  front matter gives the page's title and description; a link in it may
+  name `routing.md` or `routing.ja.md`, both lead to `/ja/...`. A
+  translation file makes no page of its own. The app's Markdown screens
+  (`RouteContentView`) show the same translation under `/ja`.
+- **No translation:** the page is written anyway (the address works), with
+  the default language's text, its `canonical` the default language's
+  page, `noindex`, out of the sitemap and of the alternates.
+- **Every page** gets `<html lang="...">`; a translated page gets
+  `<link rel="alternate" hreflang="...">` for each language that has its
+  text, and `x-default` for the default one; the sitemap lists each
+  translated page with its `xhtml:link` alternates. `llms.txt` and
+  `llms-full.txt` stay in the default language; the `.md` copy of a
+  translation is at `/ja/<path>.md`.
+
 ---
 
 ## 18. Reference: web server
@@ -3809,7 +4178,9 @@ browser the keys are not read.
 `spring_boot_starter_web` runs the application's controllers on a
 `dart:io` HTTP server. It reads Spring Boot's `server.*` keys for the
 port, TLS and shutdown, the keys of the controllers' server-sent events,
-and the upload limits (`spring.web.multipart.*`; see the starter's
+the static resources (`spring.web.resources.*`,
+`spring.mvc.static-path-pattern`), and the upload limits
+(`spring.web.multipart.*`; see the starter's
 [Files](../spring_boot_starter_web/README.md#files-uploads-and-downloads)
 section).
 
@@ -3845,11 +4216,20 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 20s
   mvc:
+    static-path-pattern: /**
     async:
       request-timeout: 30m
     sse:
       heartbeat-interval: 15s
   web:
+    resources:
+      static-locations: file:build/web/
+      spa-fallback: true
+      directory-index: true
+      cache:
+        period: 1h
+      chain:
+        compressed: true
     multipart:
       enabled: true
       max-file-size: 5MB
@@ -3882,8 +4262,14 @@ server.ssl.key-password=s3cret
 server.ssl.trust-certificate=/etc/shop/clients.pem
 server.ssl.client-auth=want
 spring.lifecycle.timeout-per-shutdown-phase=20s
+spring.mvc.static-path-pattern=/**
 spring.mvc.async.request-timeout=30m
 spring.mvc.sse.heartbeat-interval=15s
+spring.web.resources.static-locations=file:build/web/
+spring.web.resources.spa-fallback=true
+spring.web.resources.directory-index=true
+spring.web.resources.cache.period=1h
+spring.web.resources.chain.compressed=true
 spring.web.multipart.enabled=true
 spring.web.multipart.max-file-size=5MB
 spring.web.multipart.max-request-size=20MB
@@ -3923,6 +4309,19 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `spring.main.web-application-type` | `none`, or anything else | — | `none`: the beans (and `MockMvc`) exist, but no server starts. Other values start it |
 | `spring.mvc.async.request-timeout` | duration | no limit | The timeout of an `SseEmitter` created without one; when it passes, the emitter completes after running its `onTimeout` callbacks |
 | `spring.mvc.sse.heartbeat-interval` | duration | — (none) | Sends a comment line in every open event stream at this interval, so proxies keep idle streams open. This starter's own key |
+| `spring.mvc.static-path-pattern` | path pattern | `/**` | The path pattern the static resources of `spring.web.resources.static-locations` are served under (`/assets/**` serves `static/app.css` as `/assets/app.css`). The welcome page only with `/**`, as in Spring Boot |
+| `spring.web.resources.static-locations` | list of locations | `resources:static/`, `resources:public/` | Where the static resources are read from, in order: folders of `lib/resources/` (`resources:`, embedded by the generator) and directories read at run time (`file:build/web/`). Spring Boot's defaults with `classpath:` written `resources:`, without `META-INF/resources/` and `resources/`. The root of `lib/resources/` (`resources:`) and other prefixes stop the start |
+| `spring.web.resources.add-mappings` | bool | `true` | `false` turns off the default mapping and the welcome page; mappings of `WebMvcConfigurer.addResourceHandlers` stay |
+| `spring.web.resources.spa-fallback` | bool | `false` | For a single-page app: a `GET` or `HEAD` of a path that is no file and no handler, whose last segment has no extension and whose `Accept` names `text/html`, gets the `index.html` of the locations instead of a 404 (never under `.well-known/`). This starter's own key: Spring Boot has none |
+| `spring.web.resources.directory-index` | bool | `false` | A path with no file whose folder holds an `index.html` gets that file: `/guide` and `/guide/` get `guide/index.html`, as static hosts answer (the pages `spring.flutter.web.seo.*` writes are such files). Asked before `spa-fallback`; found as any file, inside the locations, with the same checks. This starter's own key: Spring Boot's welcome page covers `/` only |
+| `spring.web.resources.cache.period` | duration (seconds without a unit) | — (no `Cache-Control`) | `Cache-Control: max-age` of the static resources; `0` sends `no-store`. The `cachecontrol.*` keys win over it |
+| `spring.web.resources.cache.use-last-modified` | bool | `true` | Whether `Last-Modified` is sent and `If-Modified-Since` checked |
+| `spring.web.resources.cache.cachecontrol.max-age` | duration (seconds without a unit) | — | `max-age` |
+| `spring.web.resources.cache.cachecontrol.no-cache` / `no-store` | bool | — | `no-cache` / `no-store` (which wins over `no-cache` and `max-age`) |
+| `spring.web.resources.cache.cachecontrol.must-revalidate` / `no-transform` / `cache-public` / `cache-private` / `proxy-revalidate` | bool | — | The directive of the same name (`public`, `private` for the `cache-` ones) |
+| `spring.web.resources.cache.cachecontrol.s-max-age` / `stale-while-revalidate` / `stale-if-error` | duration (seconds without a unit) | — | `s-maxage`, `stale-while-revalidate`, `stale-if-error` |
+| `spring.web.resources.chain.compressed` | bool | `false` | Serves `app.js.br` (first) or `app.js.gz` next to `app.js` to a client whose `Accept-Encoding` takes it, with `Content-Encoding` and `Vary: Accept-Encoding`. `chain.enabled`, `chain.cache` and the version strategies are not supported |
+| `server.mime-mappings.<extension>` | media type | — | More media types of the static resources by extension, on top of the built-in ones (`server.mime-mappings.wasm=application/wasm`) |
 | `spring.web.multipart.enabled` | bool | `true` | `false`: `multipart/*` requests are not parsed, and `@RequestPart` parameters answer 400 |
 | `spring.web.multipart.max-file-size` | data size, or `-1` | `1MB` | The largest file (or other part) of an upload; above it the answer is 413 (`MaxUploadSizeExceededException`). `-1` means no limit |
 | `spring.web.multipart.max-request-size` | data size, or `-1` | `10MB` | The largest multipart request as a whole; above it the answer is 413. `-1` means no limit |
@@ -3931,6 +4330,13 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `spring.web.multipart.location` | directory path | the system's temporary directory | Where the private directory (`0700`) of the uploads' temporary files is made; the files have random names and are deleted when the request ends or fails |
 | `spring.test.web-environment` | `mock` / `random-port` / `defined-port` / `none` | not set: a server starts | Set by `springBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`). In tests only `random-port` (port `0`) and `defined-port` start a server |
 | `local.server.port` | int, **written by the server** | — | The port the server listens on, set once it listens (also in `WebServerInitializedEvent`). Read it; do not set it |
+
+The static resources (the starter's
+[Static resources](../spring_boot_starter_web/README.md#static-resources)
+section) answer with `Content-Type` by extension and
+`X-Content-Type-Options: nosniff`, a weak `ETag`, `Last-Modified`,
+`Range` and `HEAD`; they never serve a dot file (except under
+`.well-known/`) or anything outside their location.
 
 An invalid `server.port`, `server.shutdown` or `server.ssl.client-auth`,
 or a certificate without its private key, fails the start naming the key.
@@ -4032,6 +4438,107 @@ Not supported:
 - `spring.web.resources.*`: there are no static files yet;
 - the `server.tomcat.*`, `jetty`, `undertow` and `netty` keys; there is
   no connection limit (Tomcat's `max-connections`).
+
+### Actuator: `management.*`
+
+`spring_boot_starter_actuator` answers Spring Boot Actuator's endpoints
+under `/actuator` (its
+[README](../spring_boot_starter_actuator/README.md)). The keys are Spring
+Boot's; `access` (Spring Boot 3.4+) and `enabled` (Spring Boot 2–3) are
+both read, `access` first.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      roles: ADMIN
+      probes:
+        enabled: true
+      group:
+        core:
+          include: ping,db
+  info:
+    git:
+      mode: full
+```
+
+</td><td>
+
+```properties
+management.endpoints.web.base-path=/actuator
+management.endpoints.web.exposure.include=health,info
+management.endpoint.health.show-details=when-authorized
+management.endpoint.health.roles=ADMIN
+management.endpoint.health.probes.enabled=true
+management.endpoint.health.group.core.include=ping,db
+management.info.git.mode=full
+```
+
+</td></tr>
+</table>
+
+**Endpoints and their exposure**
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `management.endpoints.web.base-path` | path | `/actuator` | Where the endpoints are; `/` puts them at the root, without the discovery page |
+| `management.endpoints.web.exposure.include` | comma list | `health` | The ids exposed over HTTP; `*` for all |
+| `management.endpoints.web.exposure.exclude` | comma list | — | The ids not exposed; wins over `include` |
+| `management.endpoints.web.path-mapping.<id>` | path | the id | Another path of an endpoint (`path-mapping.health=healthcheck`) |
+| `management.endpoints.web.discovery.enabled` | bool | `true` | The base path answers the `_links` of the exposed endpoints |
+| `management.endpoint.<id>.enabled` | bool | `true` | Whether the endpoint exists (`health`, `info`, `mappings`, your own) |
+| `management.endpoint.<id>.access` | `none` / `read-only` / `unrestricted` | — | Spring Boot 3.4's switch; `none` disables the endpoint |
+| `management.endpoints.enabled-by-default` | bool | — | The default of every `management.endpoint.<id>.enabled` |
+| `management.endpoints.access.default` | `none` / `read-only` / `unrestricted` | — | The default of every `management.endpoint.<id>.access` |
+
+**Health**
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `management.endpoint.health.show-details` | `never` / `when-authorized` / `always` | `never` | Who sees the details of the indicators; `when-authorized` is a logged-in user (with the security starter) |
+| `management.endpoint.health.show-components` | same | as `show-details` | Who sees the components by name |
+| `management.endpoint.health.roles` | comma list | — | The roles `when-authorized` asks for (any one); `ADMIN` matches the authority `ROLE_ADMIN` |
+| `management.endpoint.health.status.order` | comma list | `down,out-of-service,up,unknown` | The statuses from the most severe; the first one of the parts is the aggregate |
+| `management.endpoint.health.status.http-mapping.<status>` | int | `down` and `out-of-service`: 503 | The HTTP status of a health status; setting one replaces the defaults |
+| `management.endpoint.health.group.<name>.include` / `.exclude` | comma list | all / — | The members of a group at `/actuator/health/<name>` (`db/primary` for a part of a composite) |
+| `management.endpoint.health.group.<name>.show-details` / `.show-components` / `.roles` / `.status.*` | as above | the endpoint's | The rules of the group |
+| `management.endpoint.health.group.<name>.additional-path` | `server:/path` | — | The group at another path of the server too |
+| `management.endpoint.health.probes.enabled` | bool | on Kubernetes and Cloud Foundry | The `liveness` and `readiness` groups (and their indicators) |
+| `management.endpoint.health.probes.add-additional-paths` | bool | `false` | The probes at `/livez` and `/readyz` too |
+| `management.endpoint.health.validate-group-membership` | bool | `true` | A group naming a contributor that does not exist stops the start |
+| `management.endpoint.health.logging.slow-indicator-threshold` | duration | `10s` | An indicator slower than this is logged as a warning |
+| `management.health.defaults.enabled` | bool | `true` | The default of every indicator's `enabled` |
+| `management.health.<name>.enabled` | bool | `defaults.enabled` | Whether the indicator `ping`, `diskspace` or `db` exists |
+| `management.health.livenessstate.enabled` / `readinessstate.enabled` | bool | `false` | The availability indicators without the probes |
+| `management.health.diskspace.path` | path | `.` | The path whose file system is checked |
+| `management.health.diskspace.threshold` | data size | `10MB` | The least free space that is `UP` |
+
+**Info**
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `management.info.defaults.enabled` | bool | `true` | The default of `build` and `git` |
+| `management.info.build.enabled` / `git.enabled` | bool | `defaults.enabled` | The build and git details, when their files exist |
+| `management.info.git.mode` | `simple` / `full` | `simple` | The branch, short commit id and time, or every key |
+| `management.info.env.enabled` | bool | `false` | The `info.*` properties, without the prefix |
+| `management.info.os.enabled` / `dart.enabled` | bool | `false` | The operating system; the Dart version (Spring Boot's `java`) |
+| `spring.info.build.location` / `.encoding` | location / charset | `resources:build-info.properties` / `UTF-8` | The build's `build.*` keys (Spring Boot: `classpath:META-INF/build-info.properties`) |
+| `spring.info.git.location` / `.encoding` | location / charset | `resources:git.properties` / `UTF-8` | The `git.*` keys |
+| `info.*` | any | — | Free details shown with `management.info.env.enabled=true` |
+
+Not supported yet: `management.server.*` (a port of the endpoints' own),
+`management.endpoints.web.cors.*`, `management.endpoints.jmx.*`, and the
+endpoints other than `health`, `info` and `mappings`.
 
 ---
 
@@ -4482,6 +4989,7 @@ targets:
 |---|---|---|---|
 | `aop_proxies` | `all`, `interfaces`, `none` | `all` | Which beans get AOP proxy classes: every bean that can be proxied, only beans with an abstract supertype (proxied through that type), or none |
 | `aop_prune` | bool | `true` | With `all`, the `@SpringBootApplication` output and the `@ComponentScan` modules of an application package (`publish_to: none`) leave out the proxy classes of beans that no advice can match |
+| `aop_defer` | bool | `false` | In a library package without `lib/spring_auto_configuration.dart` whose modules a starter's auto-configuration imports: its `lib/` modules leave to the application the proxy classes only the application's aspects can match, as a starter's do |
 
 The generator also writes only what the application uses of each class
 (there is no option for it). A class that a controller only returns is

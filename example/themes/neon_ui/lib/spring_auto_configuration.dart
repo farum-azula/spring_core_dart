@@ -4,7 +4,7 @@
 /// typed theme keys of the library (`lib/spring_gen/theme.spring.dart`).
 library;
 
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 import 'spring_gen/spring_auto_configuration.spring.dart';
 

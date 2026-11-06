@@ -1,0 +1,5 @@
+tags:
+  # test/built_site_test.dart: the real `flutter build web` of ../app.
+  # CI runs it after building the site (the `flutter` job); without a build
+  # it is skipped unless STATIC_SITE_BUILD_REQUIRED=true.
+  built-site:

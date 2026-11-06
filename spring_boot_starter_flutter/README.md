@@ -121,6 +121,7 @@ system (an app of type `widgets`) built from the library
 - [Desktop window](#desktop-window)
 - [Configuration at build time](#configuration-at-build-time)
 - [The web version's port](#the-web-versions-port)
+- [Search engines and link previews](#search-engines-and-link-previews)
 - [Hot reload](#hot-reload)
 - [Tests](#tests)
 - [Known limits](#known-limits)
@@ -649,7 +650,7 @@ spring:
       tap-target-size: padded
       splash: sparkle                         # ripple | sparkle | none
       motion:
-        page-transition: zoom                 # platform | fadeUpwards | zoom | cupertino | none
+        page-transition: zoom                 # platform | fadeUpwards | zoom | cupertino | fade | none, or { type, duration, curve }
         durations:
           medium: 250ms
         curves:
@@ -980,6 +981,36 @@ ThemeBackground.screen('login', child: const LoginForm()); // or ThemeBackground
 
 Every key, with more examples, is in
 [Configuration, Themes without Dart](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#themes-without-dart-references-states-motion-background-images).
+
+### Markdown
+
+`MarkdownView` shows GitHub's Markdown with the theme: the headings,
+text and links from its text styles and colors, code in the `code` text
+style, colored by `styles.code` (`background`, `text`, `keyword`,
+`string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`,
+`punctuation`; each falls back on the
+color scheme) and the block's `padding`, `radius`, `border` and
+`border-width`. Fenced blocks of `dart`, `yaml`, `properties`, `json` and
+`shell` are colored. HTML written in the Markdown is shown as text, and a
+front matter is left out.
+
+```yaml
+styles:
+  code:
+    background: $colors.surface-container-low
+    keyword: '#C678DD'
+    string: '#98C379'
+```
+
+```dart
+MarkdownView(text, onLink: (href) => launchUrl(Uri.parse(href)));
+MarkdownView.resource('resources:content/docs/beans.md');
+const MarkdownView.code('server:\n  port: 8080', language: 'yaml'); // one block
+```
+
+The navigation starter's `RouteContentView` shows a route's Markdown
+(`@ScreenRoute(content: ...)`) with it. See
+[Markdown and code](https://github.com/farum-azula/spring_core_dart/blob/main/docs/flutter/theme/styles-and-states.md#markdown-and-code-stylescode).
 
 ## Messages and languages
 
@@ -1381,7 +1412,7 @@ spring:
 Since Flutter 3.38, `flutter run` on the web reads its dev server's
 settings from `web_dev_config.yaml` in the project directory.
 `spring_core_dart_generator` writes that file from the
-`spring.flutter.web.*` properties when `build_runner` runs. It reads them
+`spring.flutter.web.dev-server.*` properties when `build_runner` runs. It reads them
 as the app reads its config in a browser: `application.*`, then
 `application-web.*` (the `web` platform profile), and the files of the
 profiles `spring.profiles.active` names there. Environment variables and
@@ -1395,16 +1426,16 @@ default) leaves out the profile name it is in (`dev,${ENV}-eu` is read as
 
 | Property | Default | Description |
 |---|---|---|
-| `spring.flutter.web.host` | any address | The address to listen on (`localhost`, `0.0.0.0` for other devices on the LAN) |
-| `spring.flutter.web.port` | a free port | The port, from 0 to 65535 |
-| `spring.flutter.web.base-href` | `/` | The path the app is served under, starting and ending with `/` (`/shop/`) |
-| `spring.flutter.web.https.cert-path` | none (HTTP) | The TLS certificate (PEM); serves HTTPS together with `cert-key-path` |
-| `spring.flutter.web.https.cert-key-path` | none | Its private key (PEM) |
-| `spring.flutter.web.headers.<Name>` | none | A header added to every response (`spring.flutter.web.headers.Cross-Origin-Opener-Policy=same-origin`) |
-| `spring.flutter.web.proxy[n].target` | none | The server that the requests matching the rule are forwarded to (`http://localhost:8080`) |
-| `spring.flutter.web.proxy[n].prefix` | none | The rule matches paths starting with it (`/api/`) |
-| `spring.flutter.web.proxy[n].regex` | none | Or the paths matching this pattern; set exactly one of `prefix` and `regex` |
-| `spring.flutter.web.proxy[n].replace` | the path unchanged | The forwarded path: the matched part replaced, `$1` for a group |
+| `spring.flutter.web.dev-server.host` | any address | The address to listen on (`localhost`, `0.0.0.0` for other devices on the LAN) |
+| `spring.flutter.web.dev-server.port` | a free port | The port, from 0 to 65535 |
+| `spring.flutter.web.dev-server.base-href` | `/` | The path the app is served under, starting and ending with `/` (`/shop/`) |
+| `spring.flutter.web.dev-server.https.cert-path` | none (HTTP) | The TLS certificate (PEM); serves HTTPS together with `cert-key-path` |
+| `spring.flutter.web.dev-server.https.cert-key-path` | none | Its private key (PEM) |
+| `spring.flutter.web.dev-server.headers.<Name>` | none | A header added to every response (`spring.flutter.web.dev-server.headers.Cross-Origin-Opener-Policy=same-origin`) |
+| `spring.flutter.web.dev-server.proxy[n].target` | none | The server that the requests matching the rule are forwarded to (`http://localhost:8080`) |
+| `spring.flutter.web.dev-server.proxy[n].prefix` | none | The rule matches paths starting with it (`/api/`) |
+| `spring.flutter.web.dev-server.proxy[n].regex` | none | Or the paths matching this pattern; set exactly one of `prefix` and `regex` |
+| `spring.flutter.web.dev-server.proxy[n].replace` | the path unchanged | The forwarded path: the matched part replaced, `$1` for a group |
 
 The proxy is the simplest way to talk to your own server during
 development. With `/api/` forwarded to the server, the page and the API
@@ -1414,16 +1445,16 @@ browser, including those that block third-party cookies.
 
 ```properties
 # lib/resources/application-web.properties
-spring.flutter.web.port=5050
-spring.flutter.web.proxy[0].prefix=/api/
-spring.flutter.web.proxy[0].target=http://localhost:8080
+spring.flutter.web.dev-server.port=5050
+spring.flutter.web.dev-server.proxy[0].prefix=/api/
+spring.flutter.web.dev-server.proxy[0].target=http://localhost:8080
 # the app calls the API at its own origin: http://localhost:5050/api/...
 ```
 
 The build fails, naming the property, for a port outside 0..65535 or not
 a number, an empty host, a `base-href` without the slashes, only one of
 the two HTTPS paths, or a proxy rule without `target` or without exactly
-one of `prefix` and `regex`. A misspelt `spring.flutter.web.*` name is a
+one of `prefix` and `regex`. A misspelt `spring.flutter.web.dev-server.*` name is a
 warning.
 
 The generated file starts with a `# GENERATED FILE - DO NOT MODIFY BY HAND.`
@@ -1438,6 +1469,34 @@ deleting the file, run `dart run build_runner clean` or change a file of
 
 These settings are for `flutter run` only: `flutter build web` makes
 files for your own web server, which has its own settings.
+
+## Search engines and link previews
+
+A Flutter web app draws on a canvas, so its HTML has no text for a search
+engine or a link preview. With `spring.flutter.web.seo.enabled`, the
+generator writes a page per address into `web/`: a copy of `index.html`
+with the page's title, description, `canonical` and `og:*` tags, and its
+text as plain HTML under the page loader (never shown, never removed).
+It also writes `sitemap.xml`, `robots.txt`, `llms.txt` and
+`llms-full.txt`. The pages come from Markdown folders, from pages listed
+in the properties, and, with `spring_boot_starter_flutter_navigation`,
+from the app's routes (`from-routes: true`):
+
+```yaml
+# lib/resources/application-web.yml
+spring:
+  flutter:
+    web:
+      seo:
+        enabled: true
+        site-url: https://example.com
+        from-routes: true
+```
+
+The build also fills `web/index.html` and `web/manifest.json` from
+`spring.flutter.app.title`, `spring.flutter.app.description` and the
+theme's colors. Every key, what is written where, and how to serve the
+pages: [Configuration, the site's pages](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-sites-pages-springflutterwebseo).
 
 ## Hot reload
 

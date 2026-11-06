@@ -52,6 +52,7 @@ export 'src/data_source_auto_configuration.dart'
         jdbcQueryTimeout;
 export 'src/exceptions.dart';
 export 'src/jdbc/data_source.dart';
+export 'src/jdbc/data_source_health_indicator.dart';
 export 'src/jdbc/data_source_properties.dart';
 export 'src/jdbc/data_source_transaction_manager.dart';
 export 'src/jdbc/data_source_utils.dart';

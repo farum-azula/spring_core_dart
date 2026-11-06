@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:build/build.dart' hide Resource;
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
+    show readPlatformEnvironment;
+import 'package:spring_core_dart_generator/src/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 import 'package:yaml/yaml.dart';
 
@@ -146,7 +151,21 @@ final class WebPageLoaderBuilder implements Builder {
             readFile: (path) => files[path],
           );
     final problems = <String>[];
-    final updated = WebPageLoader.apply(page, block, problem: problems.add);
+    final loaded = WebPageLoader.apply(page, block, problem: problems.add);
+    // The head and the manifest from spring.flutter.app.* and the theme.
+    final app = _appText(texts);
+    final colors = set == null
+        ? null
+        : WebPageLoader.pageColors(set, diagnostics);
+    final updated = loaded == null
+        ? null
+        : WebPageHead.html(
+            loaded,
+            title: app.title,
+            description: app.description,
+            themeColor: colors?.primary,
+          );
+    await _manifest(buildStep, package, app, colors);
     // Theme errors are the typed keys' to report.
     diagnostics.warnings.forEach(log.warning);
     problems.forEach(log.warning);
@@ -158,6 +177,59 @@ final class WebPageLoaderBuilder implements Builder {
                   'no splash.'
             : 'Wrote the page loader of the splash into $pagePath.',
       );
+    }
+  }
+
+  // spring.flutter.app.title and .description as the app reads them in a
+  // browser; none when the config cannot be read (its own builders say
+  // why).
+  static ({String? title, String? description}) _appText(
+    Map<String, String> texts,
+  ) {
+    try {
+      final environment = readPlatformEnvironment(
+        texts,
+        profiles: const ['web'],
+      );
+      String? value(String key) {
+        final text = environment.getProperty(key)?.trim();
+        return text == null || text.isEmpty ? null : text;
+      }
+
+      return (
+        title: value('spring.flutter.app.title'),
+        description: value('spring.flutter.app.description'),
+      );
+    } on Exception {
+      return (title: null, description: null);
+    }
+  }
+
+  Future<void> _manifest(
+    BuildStep buildStep,
+    String package,
+    ({String? title, String? description}) app,
+    ({String primary, String surface})? colors,
+  ) async {
+    const path = 'web/manifest.json';
+    final manifest = await _files.read(buildStep, package, path);
+    if (manifest == null) {
+      return;
+    }
+    final updated = WebPageHead.manifest(
+      manifest,
+      title: app.title,
+      description: app.description,
+      themeColor: colors?.primary,
+      backgroundColor: colors?.surface,
+    );
+    if (updated == null) {
+      log.warning('$path is no JSON object; it is left as it is.');
+      return;
+    }
+    // Only a value of the configuration changes the file (not the layout).
+    if (jsonEncode(jsonDecode(updated)) != jsonEncode(jsonDecode(manifest))) {
+      await _files.write(buildStep, package, path, updated);
     }
   }
 }

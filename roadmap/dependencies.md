@@ -64,7 +64,13 @@ application does list.
   dependency.
 - The docs' setup blocks, the package examples, the guides (`example/`)
   and the project template (`dart_spring_lsp create`) list only the chosen
-  packages.
+  packages. The examples were cleaned up in 0.7.1: the server guide's
+  imports go through its starters, and the Flutter apps and theme
+  showcases no longer list `spring_boot_dart`, `spring_core_dart` and the
+  logging starter "for the generated code" (it needs no entry).
+- [docs/packages.md](../docs/packages.md) (a page of the website) says
+  what each package re-exports; `tool/test/docs_packages_test.dart` checks
+  its table against the `export` directives.
 
 ## Gaps
 
@@ -86,7 +92,28 @@ application does list.
    check it in the analyzer test below.
 4. **The analyzer test** — done (`tool/check_app_dependencies.dart`, in
    CI). Not yet for the Flutter starter (it needs the Flutter SDK).
-5. **`example/server_guide`** lists `spring_core_dart`, `spring_boot_dart`,
-   `spring_web_dart`, `spring_security_core` and the logging starter next
-   to its starters, and imports them directly. Move its imports to the
-   starters it uses and drop the packages that come with them.
+5. **`example/server_guide`** — done in 0.7.1: its imports go through the
+   starters it uses, and it lists only those.
+
+## Decided in 0.7.1
+
+What a package may re-export ([docs/packages.md](../docs/packages.md#which-packages-re-export-what)):
+
+1. **A starter re-exports another starter only when its own API is built
+   on it.** The security starter keeps the web starter and the OAuth2
+   client; the Flutter security starter the Flutter and navigation
+   starters and the OAuth2 client. The OAuth2 client no longer re-exports
+   Feign: its interceptor is an optional integration, and an application
+   with Feign clients lists Feign (the Flutter guide and the server guide
+   do, and import it where they use it). The Flutter security starter now
+   depends on Feign itself (its web transport reads the Feign clients'
+   connect timeout) without re-exporting it.
+2. **The Flutter starter re-exports `spring_web_dart`**: its API takes an
+   `HttpTransport` (`RemoteCache`, the theme's network images), and an app
+   sending its own requests needs no other dependency.
+3. **`package:spring_boot_starter_flutter_security/testing.dart`**
+   re-exports `spring_security_core`'s test helpers (`withMockUser`), as
+   the server's security starter does.
+4. **`tool/check_app_dependencies.dart --flutter`** writes an app per
+   Flutter starter (flutter, navigation, flutter security); CI runs it in
+   the `flutter` job.

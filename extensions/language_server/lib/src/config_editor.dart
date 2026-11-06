@@ -1122,6 +1122,12 @@ final class ConfigEditor {
         column - valueKey.valueStart - part.innerStart,
       );
     }
+    // A path of `spring.flutter.navigation.initial`, `login` or
+    // `redirects`: the screen it opens.
+    if (_isNavigationPath(valueKey.segments) &&
+        (valueKey.value ?? '').trim().startsWith('/')) {
+      return workspace.routeDefinition(path, valueKey.value!.trim());
+    }
     if (_isTheme(valueKey.segments)) {
       final relative = column - valueKey.valueStart;
       final theme = _themeOf(valueKey.segments);
@@ -1136,6 +1142,20 @@ final class ConfigEditor {
       }
     }
     return const [];
+  }
+
+  // `spring.flutter.navigation.initial`, `login` and `redirects.*`.
+  static bool _isNavigationPath(List<String> segments) {
+    final canonical = [for (final segment in segments) canonicalName(segment)];
+    if (canonical.length < 4 ||
+        canonical[0] != 'spring' ||
+        canonical[1] != 'flutter' ||
+        canonical[2] != 'navigation') {
+      return false;
+    }
+    return canonical.length == 4 &&
+            (canonical[3] == 'initial' || canonical[3] == 'login') ||
+        canonical[3].startsWith('redirects');
   }
 
   // The name of the theme a key belongs to; `null` for the root.

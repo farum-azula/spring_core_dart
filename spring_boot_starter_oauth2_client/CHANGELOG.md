@@ -1,6 +1,12 @@
+## Unreleased
+
+### Changes
+
+- **Breaking:** the main library no longer re-exports `spring_boot_starter_feign`. It re-exports `spring_security_core` and `spring_web_dart` (whose `HttpTransport` the clients take). The access token on Feign calls (`OAuth2AccessTokenInterceptor`, `OAuth2AccessTokenErrorDecoder`) is unchanged; an application with Feign clients lists `spring_boot_starter_feign` and imports it where it declares them (docs/packages.md).
+
 ## 0.7.0
 
-- Perf/generated code (#22)
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.7.0.
 
 ## 0.6.3
 

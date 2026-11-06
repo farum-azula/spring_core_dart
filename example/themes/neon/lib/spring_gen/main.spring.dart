@@ -9,23 +9,34 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:flutter/widgets.dart';
-import 'package:neon_ui/spring_auto_configuration.dart' as _i9;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
+import 'package:neon_ui/spring_auto_configuration.dart' as _i18;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i19;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i17;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i11;
+    as _i20;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i4;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart'
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i21;
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
     as _i3;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i12;
-import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i6;
+    as _i22;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 import 'package:theme_showcase_neon/src/app/logs.dart' as _i2;
+import 'package:theme_showcase_neon/src/app/shell.dart' as _i7;
+import 'package:theme_showcase_neon/src/pages/background_page.dart' as _i8;
+import 'package:theme_showcase_neon/src/pages/components_page.dart' as _i9;
+import 'package:theme_showcase_neon/src/pages/loaders_page.dart' as _i10;
 import 'package:theme_showcase_neon/src/pages/logs_page.dart' as _i5;
-import 'package:theme_showcase_neon/src/pages/themes_page.dart' as _i7;
+import 'package:theme_showcase_neon/src/pages/motion_page.dart' as _i11;
+import 'package:theme_showcase_neon/src/pages/not_found_page.dart' as _i12;
+import 'package:theme_showcase_neon/src/pages/overview_page.dart' as _i13;
+import 'package:theme_showcase_neon/src/pages/states_page.dart' as _i14;
+import 'package:theme_showcase_neon/src/pages/themes_page.dart' as _i6;
+import 'package:theme_showcase_neon/src/pages/tokens_page.dart' as _i15;
+import 'package:theme_showcase_neon/src/pages/transitions_page.dart' as _i16;
 
 part 'messages.spring.dart';
 part 'theme.spring.dart';
@@ -34,6 +45,7 @@ const _$knownAdvisors0 = {
   r'package:neon_ui',
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_flutter_navigation',
   r'package:spring_boot_starter_logging',
 };
 
@@ -87,7 +99,6 @@ _i1.BeanModule get $application => _i1.BeanModule(
     _i1.BeanDefinition<_i4.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
-      types: const [_i4.SpringWidgetBindings],
       autowireCandidate: false,
       create: (r) => _i4.SpringWidgetBindings([
         _i4.SpringWidgetBinding(
@@ -104,19 +115,19 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i4.SpringWidgetBinding(
           widget: r'package:theme_showcase_neon/src/pages/logs_page.dart#_LogsPageState',
           beans: _i5.LogsBeans,
-          types: const [_i6.LogBuffer, _i2.DemoLog],
+          types: const [_i3.LogBuffer, _i2.DemoLog],
           resolve: (f) => (
-            _i4.SpringWidgetBinding.bean<_i6.LogBuffer>(f),
+            _i4.SpringWidgetBinding.bean<_i3.LogBuffer>(f),
             _i4.SpringWidgetBinding.bean<_i2.DemoLog>(f),
           ),
           values: (r) {
-            final v = (r as (_i6.LogBuffer, _i2.DemoLog));
+            final v = (r as (_i3.LogBuffer, _i2.DemoLog));
             return [v.$1, v.$2];
           },
         ),
         _i4.SpringWidgetBinding(
           widget: r'package:theme_showcase_neon/src/pages/themes_page.dart#ThemesPage',
-          beans: _i7.ThemesBeans,
+          beans: _i6.ThemesBeans,
           types: const [_i3.ThemeSelection, _i3.SpringThemes],
           resolve: (f) => (
             _i4.SpringWidgetBinding.bean<_i3.ThemeSelection>(f),
@@ -129,29 +140,146 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ]),
     ),
+    _i1.BeanDefinition<_i3.ScreenRoutes>(
+      name: r'screenRoutes#application',
+      source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
+      create: (r) => _i3.ScreenRoutes.route(source: r'application')
+          .shell(
+            (s) => _i7.Shell(s),
+            (t) => t
+                .branch(r'/overview', (b) => b)
+                .branch(r'/components', (b) => b)
+                .branch(r'/states', (b) => b)
+                .branch(r'/motion', (b) => b)
+                .branch(r'/loaders', (b) => b)
+                .branch(r'/background', (b) => b)
+                .branch(r'/tokens', (b) => b)
+                .branch(r'/logs', (b) => b)
+                .branch(r'/transitions', (b) => b)
+                .branch(r'/themes', (b) => b),
+            key: _i7.Shell,
+            source: r'package:theme_showcase_neon/src/app/shell.dart#Shell',
+          )
+          .screen(
+            r'/background',
+            (r) => const _i8.BackgroundPage(),
+            name: r'background-page',
+            title: r'#{nav.background}',
+            source: r'package:theme_showcase_neon/src/pages/background_page.dart#BackgroundPage',
+          )
+          .screen(
+            r'/components',
+            (r) => const _i9.ComponentsPage(),
+            name: r'components-page',
+            title: r'#{nav.components}',
+            source: r'package:theme_showcase_neon/src/pages/components_page.dart#ComponentsPage',
+          )
+          .screen(
+            r'/loaders',
+            (r) => const _i10.LoadersPage(),
+            name: r'loaders-page',
+            title: r'#{nav.loaders}',
+            source: r'package:theme_showcase_neon/src/pages/loaders_page.dart#LoadersPage',
+          )
+          .screen(
+            r'/logs',
+            (r) => const _i5.LogsPage(),
+            name: r'logs-page',
+            title: r'#{nav.logs}',
+            source: r'package:theme_showcase_neon/src/pages/logs_page.dart#LogsPage',
+          )
+          .screen(
+            r'/motion',
+            (r) => const _i11.MotionPage(),
+            name: r'motion-page',
+            title: r'#{nav.motion}',
+            source: r'package:theme_showcase_neon/src/pages/motion_page.dart#MotionPage',
+          )
+          .notFound((r) => const _i12.NotFoundPage())
+          .screen(
+            r'/overview',
+            (r) => const _i13.OverviewPage(),
+            name: r'overview-page',
+            title: r'#{nav.overview}',
+            source: r'package:theme_showcase_neon/src/pages/overview_page.dart#OverviewPage',
+          )
+          .screen(
+            r'/states',
+            (r) => const _i14.StatesPage(),
+            name: r'states-page',
+            title: r'#{nav.states}',
+            source: r'package:theme_showcase_neon/src/pages/states_page.dart#StatesPage',
+          )
+          .screen(
+            r'/themes',
+            (r) => const _i6.ThemesPage(),
+            name: r'themes-page',
+            title: r'#{nav.themes}',
+            source: r'package:theme_showcase_neon/src/pages/themes_page.dart#ThemesPage',
+          )
+          .screen(
+            r'/tokens',
+            (r) => const _i15.TokensPage(),
+            name: r'tokens-page',
+            title: r'#{nav.tokens}',
+            source: r'package:theme_showcase_neon/src/pages/tokens_page.dart#TokensPage',
+          )
+          .screen(
+            r'/transitions',
+            (r) => const _i16.TransitionsPage(),
+            name: r'transitions-page',
+            title: r'#{nav.transitions}',
+            source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionsPage',
+          )
+          .screen(
+            r'/transitions/default',
+            (r) => const _i16.TransitionThemePage(),
+            name: r'transition-theme-page',
+            title: r'With the default',
+            source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionThemePage',
+          )
+          .screen(
+            r'/transitions/platform',
+            (r) => const _i16.TransitionPlatformPage(),
+            name: r'transition-platform-page',
+            title: "With the platform's",
+            transition: _i3.PageTransition.platform,
+            source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionPlatformPage',
+          )
+          .screen(
+            r'/transitions/zoom',
+            (r) => const _i16.TransitionZoomPage(),
+            name: r'transition-zoom-page',
+            title: r'With a zoom',
+            transition: _i3.PageTransition.zoom,
+            source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionZoomPage',
+          )
+          .build(),
+    ),
   ],
   resources: const {
     r'application-desktop.properties': _i1.EmbeddedResource.text(
       '# Desktops: the window opens wide and cannot get small.\nspring.flutter.desktop.window.title=Theme Showcase NEON\nspring.flutter.desktop.window.initial-size=1280x800\nspring.flutter.desktop.window.min-size=900x600\n',
     ),
     r'application.yml': _i1.EmbeddedResource.text(
-      '# THEME SHOWCASE NEON: a custom design system on the theme, with no\n# Material and no Cupertino. The look of every widget is in neon_ui\'s\n# themes/neon.yml (imported below); this file holds the app and a second theme\n# of its own that extends it. The pages quote lines of these two files in\n# their code boxes (a test checks that they do).\nspring:\n   config:\n      # The theme of the library: `neon_ui` embeds its lib/resources/, so the\n      # file is found as if it were ours.\n      import: resources:themes/neon.yml\n\n   flutter:\n      web:\n         port: 1010\n      app:\n         # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino\n         # widgets. Everything on screen is a neon_ui widget or our own.\n         type: widgets\n         title: Theme Showcase NEON\n         debug-banner: false\n\n      theme:\n         # The theme shown at the start. `neon` is the library\'s.\n         active: neon\n\n         themes:\n            # The library\'s theme again, to add what is the app\'s: the splash\n            # that shows while the app starts, and loaders in the neon colors.\n            # The splash is the neon-gate loader of neon_ui\'s themes/neon.yml\n            # (a kind of the library): a gate of panels it draws itself, so\n            # the splash has no logo or title. With `reveal` the panels part\n            # over the app, not over the background. The built-in kinds are\n            # written here.\n            neon:\n               splash:\n                  background: { color: \$colors.surface-container-lowest }\n                  loader: neon-gate\n                  exit: { transition: 200ms ease-out, reveal: true }\n               loaders:\n                  spinner: { kind: spinner, color: \$neon.cyan, size: 28, stroke: 3, track: { color: \$neon.cyan, alpha: 20% } }\n                  dots: { kind: dots, color: \$neon.pink, size: 10, count: 3 }\n                  upload: { kind: bar, color: \$neon.yellow, track: { color: \$neon.yellow, alpha: 20% }, height: 4, width: 240 }\n                  card:\n                     kind: skeleton\n                     base: \$colors.surface-container-high\n                     highlight: \$colors.surface-container-highest\n                     radius: \$shape.extra-small\n                     shimmer: { duration: 1.2s, angle: 20 }\n            # A theme of our own: neon with cyan as its primary color. Only\n            # what changes is written; `extends` brings the rest. The accent,\n            # the glow, the button fills and the modal border all say\n            # `\$colors.primary` or `\$neon.accent`, so they turn cyan too.\n            neon-ice:\n               extends: neon\n               colors:\n                  primary: \$neon.cyan\n                  secondary: \$neon.yellow\n               tokens:\n                  neon:\n                     panel: "#CC0B1218"\n                     input-fill: "#B3081016"\n\n         # The tokens of this app (the library\'s are neon_ui\'s).\n         tokens:\n            showcase:\n               content-width: 980\n               tile-height: 150\n               tagline: Yellow, cyan and pink after dark\n         styles:\n            # A tile of the theme switcher: our own style, per state, made with\n            # the same ThemeStates as the library\'s widgets.\n            showcase-tile:\n               padding: [16, 14]\n               radius: \$shape.extra-small\n               border:\n                  default: \$colors.outline\n                  hovered: \$colors.secondary\n                  focused: \$colors.secondary\n                  selected: \$colors.primary\n               fill:\n                  default: { color: \$colors.surface-container-low, alpha: 80% }\n                  hovered: { color: \$colors.surface-container, alpha: 90% }\n                  selected: { color: \$colors.primary, alpha: 12% }\n               glow: { default: 0, hovered: 8, selected: 14 }\n               transition: 160ms ease-out\n',
+      '# THEME SHOWCASE NEON: a custom design system on the theme, with no\n# Material and no Cupertino. The look of every widget is in neon_ui\'s\n# themes/neon.yml (imported below); this file holds the app and a second theme\n# of its own that extends it. The pages quote lines of these two files in\n# their code boxes (a test checks that they do).\nspring:\n   config:\n      # The theme of the library: `neon_ui` embeds its lib/resources/, so the\n      # file is found as if it were ours.\n      import: resources:themes/neon.yml\n\n   flutter:\n      web:\n         dev-server:\n            port: 1010\n      # The pages are screens with their own addresses (/components,\n      # /themes, ...): `/` opens the overview.\n      navigation:\n         initial: /overview\n      app:\n         # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino\n         # widgets. Everything on screen is a neon_ui widget or our own.\n         type: widgets\n         title: Theme Showcase NEON\n         debug-banner: false\n\n      theme:\n         # The theme shown at the start. `neon` is the library\'s.\n         active: neon\n\n         themes:\n            # The library\'s theme again, to add what is the app\'s: the splash\n            # that shows while the app starts, and loaders in the neon colors.\n            # The splash is the neon-gate loader of neon_ui\'s themes/neon.yml\n            # (a kind of the library): a gate of panels it draws itself, so\n            # the splash has no logo or title. With `reveal` the panels part\n            # over the app, not over the background. The built-in kinds are\n            # written here.\n            neon:\n               splash:\n                  background: { color: \$colors.surface-container-lowest }\n                  loader: neon-gate\n                  exit: { transition: 200ms ease-out, reveal: true }\n               loaders:\n                  spinner: { kind: spinner, color: \$neon.cyan, size: 28, stroke: 3, track: { color: \$neon.cyan, alpha: 20% } }\n                  dots: { kind: dots, color: \$neon.pink, size: 10, count: 3 }\n                  upload: { kind: bar, color: \$neon.yellow, track: { color: \$neon.yellow, alpha: 20% }, height: 4, width: 240 }\n                  card:\n                     kind: skeleton\n                     base: \$colors.surface-container-high\n                     highlight: \$colors.surface-container-highest\n                     radius: \$shape.extra-small\n                     shimmer: { duration: 1.2s, angle: 20 }\n            # A theme of our own: neon with cyan as its primary color. Only\n            # what changes is written; `extends` brings the rest. The accent,\n            # the glow, the button fills and the modal border all say\n            # `\$colors.primary` or `\$neon.accent`, so they turn cyan too.\n            neon-ice:\n               extends: neon\n               colors:\n                  primary: \$neon.cyan\n                  secondary: \$neon.yellow\n               tokens:\n                  neon:\n                     panel: "#CC0B1218"\n                     input-fill: "#B3081016"\n\n         # The tokens of this app (the library\'s are neon_ui\'s).\n         tokens:\n            showcase:\n               content-width: 980\n               tile-height: 150\n               tagline: Yellow, cyan and pink after dark\n         styles:\n            # A tile of the theme switcher: our own style, per state, made with\n            # the same ThemeStates as the library\'s widgets.\n            showcase-tile:\n               padding: [16, 14]\n               radius: \$shape.extra-small\n               border:\n                  default: \$colors.outline\n                  hovered: \$colors.secondary\n                  focused: \$colors.secondary\n                  selected: \$colors.primary\n               fill:\n                  default: { color: \$colors.surface-container-low, alpha: 80% }\n                  hovered: { color: \$colors.surface-container, alpha: 90% }\n                  selected: { color: \$colors.primary, alpha: 12% }\n               glow: { default: 0, hovered: 8, selected: 14 }\n               transition: 160ms ease-out\n',
     ),
     r'messages.properties': _i1.EmbeddedResource.text(
-      '# Typed messages: context.messages.nav.overview, context.messages.themes.active(name).\nnav.overview=Overview\nnav.components=Components\nnav.states=States\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.tokens=Tokens\nnav.logs=Logs\nnav.themes=Themes\nthemes.active=Theme: {0}\n',
+      '# Typed messages: context.messages.nav.overview, context.messages.themes.active(name).\nnav.overview=Overview\nnav.components=Components\nnav.states=States\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.tokens=Tokens\nnav.logs=Logs\nnav.transitions=Transitions\nnav.themes=Themes\nthemes.active=Theme: {0}\n',
     ),
   },
 );
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i8.SpringApplication get springApplication => _i8.SpringApplication(
+_i17.SpringApplication get springApplication => _i17.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i9.neonUiAutoConfiguration,
-    _i10.springBootAutoConfiguration,
-    _i11.springBootStarterFlutterAutoConfiguration,
-    _i12.springBootStarterLoggingAutoConfiguration,
+    _i18.neonUiAutoConfiguration,
+    _i19.springBootAutoConfiguration,
+    _i20.springBootStarterFlutterAutoConfiguration,
+    _i21.springBootStarterFlutterNavigationAutoConfiguration,
+    _i22.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -185,6 +313,10 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('SPRING_FLUTTER_DESKTOP_WINDOW_TITLE'))
       'SPRING_FLUTTER_DESKTOP_WINDOW_TITLE': const String.fromEnvironment(
         'SPRING_FLUTTER_DESKTOP_WINDOW_TITLE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_NAVIGATION_INITIAL'))
+      'SPRING_FLUTTER_NAVIGATION_INITIAL': const String.fromEnvironment(
+        'SPRING_FLUTTER_NAVIGATION_INITIAL',
       ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
@@ -551,9 +683,9 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
           const String.fromEnvironment(
             'SPRING_FLUTTER_THEME_TOKENS_SHOWCASE_TILEHEIGHT',
           ),
-    if (const bool.hasEnvironment('SPRING_FLUTTER_WEB_PORT'))
-      'SPRING_FLUTTER_WEB_PORT': const String.fromEnvironment(
-        'SPRING_FLUTTER_WEB_PORT',
+    if (const bool.hasEnvironment('SPRING_FLUTTER_WEB_DEVSERVER_PORT'))
+      'SPRING_FLUTTER_WEB_DEVSERVER_PORT': const String.fromEnvironment(
+        'SPRING_FLUTTER_WEB_DEVSERVER_PORT',
       ),
     if (const bool.hasEnvironment('SPRING_MAIN_BANNERMODE'))
       'SPRING_MAIN_BANNERMODE': const String.fromEnvironment(
@@ -601,6 +733,10 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('spring.flutter.desktop.window.title'))
       'spring.flutter.desktop.window.title': const String.fromEnvironment(
         'spring.flutter.desktop.window.title',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.navigation.initial'))
+      'spring.flutter.navigation.initial': const String.fromEnvironment(
+        'spring.flutter.navigation.initial',
       ),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
@@ -967,9 +1103,9 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
           const String.fromEnvironment(
             'spring.flutter.theme.tokens.showcase.tile-height',
           ),
-    if (const bool.hasEnvironment('spring.flutter.web.port'))
-      'spring.flutter.web.port': const String.fromEnvironment(
-        'spring.flutter.web.port',
+    if (const bool.hasEnvironment('spring.flutter.web.dev-server.port'))
+      'spring.flutter.web.dev-server.port': const String.fromEnvironment(
+        'spring.flutter.web.dev-server.port',
       ),
     if (const bool.hasEnvironment('spring.main.banner-mode'))
       'spring.main.banner-mode': const String.fromEnvironment(
@@ -986,34 +1122,190 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '1d12d3b7',
+  fingerprint: 'b657dd4e',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i8.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i17.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i8.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i17.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i8.ConfigurableApplicationContext reloadApplication(
-  _i8.ConfigurableApplicationContext running, {
+_i17.ConfigurableApplicationContext reloadApplication(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i8.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i8.ConfigurableApplicationContext running, {
+Future<_i17.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// The route of [BackgroundPage]: its path, name, values and `to`.
+extension BackgroundPageRoute on _i8.BackgroundPage {
+  /// The path pattern.
+  static const pattern = r'/background';
+
+  /// The route's name.
+  static const routeName = r'background-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [ComponentsPage]: its path, name, values and `to`.
+extension ComponentsPageRoute on _i9.ComponentsPage {
+  /// The path pattern.
+  static const pattern = r'/components';
+
+  /// The route's name.
+  static const routeName = r'components-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [LoadersPage]: its path, name, values and `to`.
+extension LoadersPageRoute on _i10.LoadersPage {
+  /// The path pattern.
+  static const pattern = r'/loaders';
+
+  /// The route's name.
+  static const routeName = r'loaders-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [LogsPage]: its path, name, values and `to`.
+extension LogsPageRoute on _i5.LogsPage {
+  /// The path pattern.
+  static const pattern = r'/logs';
+
+  /// The route's name.
+  static const routeName = r'logs-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [MotionPage]: its path, name, values and `to`.
+extension MotionPageRoute on _i11.MotionPage {
+  /// The path pattern.
+  static const pattern = r'/motion';
+
+  /// The route's name.
+  static const routeName = r'motion-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [OverviewPage]: its path, name, values and `to`.
+extension OverviewPageRoute on _i13.OverviewPage {
+  /// The path pattern.
+  static const pattern = r'/overview';
+
+  /// The route's name.
+  static const routeName = r'overview-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [StatesPage]: its path, name, values and `to`.
+extension StatesPageRoute on _i14.StatesPage {
+  /// The path pattern.
+  static const pattern = r'/states';
+
+  /// The route's name.
+  static const routeName = r'states-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [ThemesPage]: its path, name, values and `to`.
+extension ThemesPageRoute on _i6.ThemesPage {
+  /// The path pattern.
+  static const pattern = r'/themes';
+
+  /// The route's name.
+  static const routeName = r'themes-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [TokensPage]: its path, name, values and `to`.
+extension TokensPageRoute on _i15.TokensPage {
+  /// The path pattern.
+  static const pattern = r'/tokens';
+
+  /// The route's name.
+  static const routeName = r'tokens-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [TransitionsPage]: its path, name, values and `to`.
+extension TransitionsPageRoute on _i16.TransitionsPage {
+  /// The path pattern.
+  static const pattern = r'/transitions';
+
+  /// The route's name.
+  static const routeName = r'transitions-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [TransitionThemePage]: its path, name, values and `to`.
+extension TransitionThemePageRoute on _i16.TransitionThemePage {
+  /// The path pattern.
+  static const pattern = r'/transitions/default';
+
+  /// The route's name.
+  static const routeName = r'transition-theme-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [TransitionPlatformPage]: its path, name, values and `to`.
+extension TransitionPlatformPageRoute on _i16.TransitionPlatformPage {
+  /// The path pattern.
+  static const pattern = r'/transitions/platform';
+
+  /// The route's name.
+  static const routeName = r'transition-platform-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
+
+/// The route of [TransitionZoomPage]: its path, name, values and `to`.
+extension TransitionZoomPageRoute on _i16.TransitionZoomPage {
+  /// The path pattern.
+  static const pattern = r'/transitions/zoom';
+
+  /// The route's name.
+  static const routeName = r'transition-zoom-page';
+
+  /// The location of this screen with these values.
+  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+}
 
 /// `@Log` of [PageLog]: the logger 'theme_showcase_neon.pages'.
 extension $PageLogLog on _i2.PageLog {

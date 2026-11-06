@@ -203,3 +203,108 @@ class _ThemeAnimationState extends State<ThemeAnimation>
   @override
   Widget build(BuildContext context) => widget.builder(context, _animation);
 }
+
+/// The kinds of `motion.page-transition`: how a router's screens come in
+/// and go out.
+enum PageTransitionType {
+  /// The app type's own: Material's per platform in a `MaterialApp`, the
+  /// iOS slide in a `CupertinoApp`, none in a `WidgetsApp`.
+  platform,
+
+  /// Material's fade with an upward slide.
+  fadeUpwards,
+
+  /// Material's zoom.
+  zoom,
+
+  /// The iOS slide, in any app type.
+  cupertino,
+
+  /// A fade.
+  fade,
+
+  /// None: the screen shows at once.
+  none,
+}
+
+/// The theme's page transition, `motion.page-transition`: a kind alone,
+/// or a kind with its duration and curve. None when not set: screens show
+/// at once unless the theme (or the screen) asks for a transition.
+///
+/// ```yaml
+/// motion:
+///   page-transition: platform             # the app type's own
+/// # or
+/// motion:
+///   page-transition: { type: fade, duration: $motion.durations.fast, curve: ease-out }
+/// ```
+///
+/// The navigation starter's router follows it for every app type; a
+/// screen may choose its own (`@ScreenRoute(transition: ...)`). Reduced
+/// motion on the device makes every transition instant.
+@immutable
+final class PageTransitionSpec {
+  /// A transition of [type], [duration] and [curve] (`null`: the kind's
+  /// own). None by default.
+  const PageTransitionSpec({
+    this.type = PageTransitionType.none,
+    this.duration,
+    this.curve,
+  });
+
+  /// Reads the transition written at [base] of [p] (a kind, or a map of
+  /// `type`, `duration` and `curve`); `null` when nothing is written.
+  /// Throws a [ThemePropertyException] for a wrong value or key.
+  static PageTransitionSpec? parseAt(ThemeProperties p, String base) {
+    const kinds = 'platform, fadeUpwards, zoom, cupertino, fade or none';
+    PageTransitionType? kind(String value) =>
+        ThemeValues.enumValue(PageTransitionType.values, value);
+    final children = p.children(base);
+    if (children.isEmpty) {
+      final type = p.read(base, kind, kinds);
+      return type == null ? null : PageTransitionSpec(type: type);
+    }
+    const keys = ['type', 'duration', 'curve'];
+    for (final key in children) {
+      if (!keys.contains(key)) {
+        throw ThemePropertyException(
+          p.propertyName('$base.$key'),
+          p['$base.$key'] ?? '',
+          'type, duration or curve${didYouMean(key, keys)}',
+        );
+      }
+    }
+    return PageTransitionSpec(
+      type: p.read('$base.type', kind, kinds) ?? PageTransitionType.none,
+      duration: p.read(
+        '$base.duration',
+        ThemeValues.duration,
+        'a duration like 250ms',
+      ),
+      curve: p.read(
+        '$base.curve',
+        ThemeValues.anyCurve,
+        'a curve: ${ThemeValues.curveNames.join(', ')}, or four numbers',
+      ),
+    );
+  }
+
+  /// The kind of transition.
+  final PageTransitionType type;
+
+  /// How long it takes, or `null` for the kind's own.
+  final Duration? duration;
+
+  /// The curve of the animation, or `null` for the kind's own.
+  final Curve? curve;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PageTransitionSpec &&
+      other.type == type &&
+      other.duration == duration &&
+      other.curve == curve;
+
+  @override
+  int get hashCode => Object.hash(type, duration, curve);
+}

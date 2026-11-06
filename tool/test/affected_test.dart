@@ -146,6 +146,10 @@ targets:
         'spring_boot_starter_web',
         'spring_boot_starter_security',
         'example/server_guide',
+        // The actuator's properties are generated; the starter's test
+        // applications (test/app/) are started through MockMvc.
+        'spring_boot_actuator',
+        'spring_boot_starter_actuator',
         // Its test applications are generated: repositories, transactions,
         // the SQLite driver glue.
         'spring_boot_starter_data',
@@ -160,16 +164,21 @@ targets:
       });
     });
 
-    test('the Flutter starter reaches the Flutter security package', () {
+    test('the Flutter starter reaches the Flutter security and navigation '
+        'packages', () {
       expect(affected('spring_boot_starter_flutter/lib/x.dart'), {
         'spring_boot_starter_flutter',
         'spring_boot_starter_flutter_security',
+        'spring_boot_starter_flutter_navigation',
       });
       expect(affected('spring_boot_starter_oauth2_client/lib/x.dart'), {
         'spring_boot_starter_oauth2_client',
         'spring_boot_starter_security',
         'spring_boot_starter_flutter_security',
         'example/server_guide',
+        // Its example and tests secure the endpoints with the security
+        // starter.
+        'spring_boot_starter_actuator',
       });
     });
 

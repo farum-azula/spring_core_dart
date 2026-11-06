@@ -5,8 +5,9 @@ import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/catalog/book_tile.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
-/// A few lines of the YAML that make the loaders; a test checks that every
-/// line is in `lib/resources/`, so the box cannot drift from the files.
+/// A few lines of the YAML that make the loaders, as a block of Markdown
+/// colored by the theme's `styles.code`; a test checks that every line is
+/// in `lib/resources/`, so the box cannot drift from the files.
 class YamlBox extends StatelessWidget {
   const YamlBox(this.text, {super.key, this.label});
 
@@ -16,36 +17,22 @@ class YamlBox extends StatelessWidget {
   final String? label;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(context.theme.spacing.m),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(context.theme.spacing.s),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (label != null)
-            Text(
-              label!,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: scheme.outline),
-            ),
-          SelectableText(
-            text,
-            style: context.theme.typography.code.copyWith(
-              color: scheme.onSurfaceVariant,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (label != null)
+        Padding(
+          padding: EdgeInsets.only(bottom: context.theme.spacing.s / 2),
+          child: Text(
+            label!,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.outline,
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      MarkdownView.code(text, language: 'yaml'),
+    ],
+  );
 }
 
 /// The loaders of the theme at work: a skeleton of the catalog, a bar with

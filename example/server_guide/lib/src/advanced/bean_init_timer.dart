@@ -1,7 +1,7 @@
 // A BeanPostProcessor of our own: it sees every bean created after it,
 // before and after the bean's init callbacks, and here measures them.
 import 'package:neon_books_server/src/advanced/advanced_tour.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 @Component()
 @AdvancedTour()

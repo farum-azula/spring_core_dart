@@ -1,6 +1,6 @@
 // The last log lines for admins (chapter 11): the logging starter keeps
 // them in memory, in the LogBuffer bean.
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
 /// A log line as JSON: `{"time": "...", "level": "INFO", "logger":
 /// "neon.mail", "message": "...", "fields": {"order": "1"}}`.

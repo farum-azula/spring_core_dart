@@ -20,6 +20,8 @@ write by hand:
 - server-sent events from a `Stream`;
 - file uploads (`multipart/form-data`) and downloads with `Range`
   support;
+- static resources: files of `lib/resources/static/` or of a directory,
+  a built Flutter web app, with caching headers;
 - filters, interceptors, CORS and sessions.
 
 Use it for a backend in Dart, or for a local server inside a Flutter app
@@ -692,6 +694,102 @@ A `MockMultipartFile` without a file name is a plain part; with
 `application/json` it is a JSON part for `@RequestPart`. More in
 [docs/testing.md](../docs/testing.md#files-uploads-and-downloads).
 
+## Static resources
+
+Files put in `lib/resources/static/` (or `public/`) are served as they
+are, as Spring Boot serves `src/main/resources/static/`:
+`lib/resources/static/app.css` is `GET /app.css`, and
+`lib/resources/static/index.html` is the welcome page at `/`. The
+generator embeds them with the rest of `lib/resources/`, so they are in
+the executable. A directory read at run time is a `file:` location: the
+files an AOT executable ships next to it, or the output of
+`flutter build web` (a file over 1 MB is not embedded, so a Flutter
+build stays a folder; [example/static_site](../example/static_site/README.md)
+serves one with its API):
+
+```yaml
+# lib/resources/application.yaml
+spring:
+  web:
+    resources:
+      static-locations: file:build/web/   # instead of resources:static/, resources:public/
+      spa-fallback: true                   # deep links of the app get index.html
+      directory-index: true                # /guide gets guide/index.html (SEO pages)
+      cache:
+        cachecontrol:
+          max-age: 1h
+      chain:
+        compressed: true                   # app.js.br / app.js.gz when the client takes them
+  mvc:
+    static-path-pattern: /**               # the default
+```
+
+- **Controllers win:** the static resources are asked after every
+  controller, so a mapping always takes its path. Filters (the security
+  filter chain among them) run before the files as before any handler.
+- **Answers:** `Content-Type` from the extension (`server.mime-mappings`
+  adds or changes types: `server.mime-mappings.wasm=application/wasm`),
+  never guessed from the content, with `X-Content-Type-Options: nosniff`;
+  a weak `ETag` and `Last-Modified`, with `304` for `If-None-Match` and
+  `If-Modified-Since`; `Cache-Control` from
+  `spring.web.resources.cache.period` or `cache.cachecontrol.*`; one
+  `Range`; `HEAD`. Only `GET` and `HEAD` read a file: `OPTIONS` gets
+  `Allow`, other methods a 405, and a path without a file a 404.
+- **The welcome page:** `GET /` from a client that takes HTML gets
+  `index.html`, when `static-path-pattern` is `/**`. Other directories
+  get theirs only with `directory-index` (below); there is never a
+  directory listing.
+- **Folder pages (`directory-index`, this starter's own key):** a path
+  with no file whose folder holds an `index.html` gets that file, `/guide`
+  and `/guide/` alike, as static hosts answer. It is how the pages the
+  Flutter build writes for search engines (`spring.flutter.web.seo.*`)
+  are served at their addresses. Asked before `spa-fallback`; the file is
+  looked up as any other (inside the location, the same checks on every
+  segment). Off by default: Spring Boot's welcome page covers `/` only.
+- **Single-page apps (`spa-fallback`, this starter's own key):** a
+  browser's `GET` of a path that is no file and no controller, whose last
+  segment has no extension (`/books/42`), gets `index.html`, so the app's
+  router opens the page. A request that does not name `text/html` in
+  `Accept` (a script's `fetch`), a missing `.js` and anything under
+  `.well-known/` still get a 404.
+- **Precompressed files (`chain.compressed`):** `app.js.br` (first) or
+  `app.js.gz` next to `app.js` is sent with `Content-Encoding` to a
+  client whose `Accept-Encoding` takes it; the answer carries `Vary:
+  Accept-Encoding`. `server.compression` does not compress it again.
+- **Hidden files are not served:** a path with a segment that starts
+  with a dot (`.env`, `.git/`) is a 404, except `.well-known/` at the
+  top, so the deep-link files `apple-app-site-association` (sent as
+  `application/json`, though it has no extension) and `assetlinks.json`
+  work.
+- **A request never reads outside its location.** The path is decoded
+  once and checked before any file is looked up: dot segments, encoded
+  or doubly encoded separators and dots, backslashes, invalid UTF-8,
+  control characters, Windows' device names, short names, streams and
+  trailing dots, look-alike characters, `;` and empty segments are all
+  refused with a 404. The file found is resolved with its symbolic links
+  and refused when it leaves the location or is not a regular file.
+  `WEB-INF` and `META-INF` are refused, as in Spring.
+
+More mappings come from a `WebMvcConfigurer`, with their own locations
+and caching; a mapping with the same pattern as the default replaces it:
+
+```dart
+@Configuration()
+class WebConfig with WebMvcConfigurer {
+  // Fingerprinted assets under /assets/, kept by browsers for a year.
+  @override
+  void addResourceHandlers(ResourceHandlerRegistry registry) => registry
+      .addResourceHandler(['/assets/**'])
+      .addResourceLocations(['file:build/web/assets/'])
+      .setCacheControl(CacheControl.maxAge(const Duration(days: 365)).immutable());
+}
+```
+
+The properties are listed in
+[docs/configuration.md](../docs/configuration.md#18-reference-web-server).
+Large files are read from `file:` locations: the generator embeds files
+of up to 1 MB.
+
 ## Sessions: `HttpSession`
 
 HTTP forgets everything between two requests. A session remembers data
@@ -1275,7 +1373,9 @@ The `dispatcherHandler` bean plays the role of Spring's
 `DispatcherServlet`: it runs the filters, then asks every
 `HandlerMapping` bean in order for a handler. The controllers come at
 order 0, the WebSocket endpoints of `spring_boot_starter_websocket` at
-order 1. A starter or the application adds its own by declaring a
+order 1, the static resources (`resourceHandlerMapping`) last but one
+(`Ordered.lowestPrecedence - 1`, as in Spring). A starter or the
+application adds its own by declaring a
 `HandlerMapping` bean:
 
 ```dart
@@ -1491,8 +1591,29 @@ the bean as the context holds it, so AOP advice on a controller
   bytes.** Spring MVC has no byte stream result; Spring WebFlux writes a
   `Flux<DataBuffer>` the same way. Other streams are server-sent events.
 - **Resources: one byte range** per request. Several ranges get the
-  whole content, not `multipart/byteranges`, and resources have no
-  `ETag`.
+  whole content, not `multipart/byteranges`, and a `Resource` a
+  controller returns has no `ETag` (the static resources have one).
+- **Static resources are stricter than Spring's
+  `ResourceHttpRequestHandler`:** dot files are not served (Spring serves
+  them; `.well-known/` is), `;` and empty segments in the path are a 404
+  (Spring Security's firewall answers them with a 400; plain Spring MVC
+  serves them), a symbolic link that leaves the location is refused, and
+  so is a path that only Windows would read as another file. They send a
+  weak `ETag` (Spring sends none unless an `etagGenerator` is set),
+  `X-Content-Type-Options: nosniff` (Spring Security adds it in Spring),
+  `Cache-Control` on a `304` too, and `application/json` for
+  `apple-app-site-association`. A path without a file is the
+  dispatcher's 404 (`No endpoint GET /x.`), where Spring 6.1 answers
+  `No static resource x.`. `HandlerInterceptor`s do not run for them
+  (they are for controller methods). `spring.web.resources.spa-fallback`
+  is not in Spring Boot; `spring.web.resources.chain.enabled`, `cache`
+  and the version strategies, and the webjars mapping are not
+  supported. A precompressed variant is a `ResourceHandlerRegistration`
+  setting (`setCompressed`) instead of Spring's
+  `resourceChain(true).addResolver(new EncodedResourceResolver())`.
+  Locations are `resources:` (a folder, not the root of
+  `lib/resources/`, which holds the configuration) and `file:`; another
+  prefix stops the start.
 - **Event streams start with a `:` comment line**, because `dart:io`
   sends the headers with the first body bytes.
 - **An `SseEmitter` without a timeout never times out** when

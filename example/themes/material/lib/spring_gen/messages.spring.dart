@@ -57,6 +57,9 @@ final class AppMessagesNav {
   /// `nav.tokens`: Tokens
   String get tokens => _context.message('nav.tokens');
 
+  /// `nav.transitions`: Transitions
+  String get transitions => _context.message('nav.transitions');
+
   /// `nav.type`: Type and space
   String get type => _context.message('nav.type');
 }

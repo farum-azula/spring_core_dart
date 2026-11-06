@@ -3,8 +3,9 @@
 One folder, three designs, all made the same way: **the look is YAML** in
 `lib/resources/`, and the Dart code only reads it (`context.theme`,
 `ThemeStates`, `ThemeAnimation`, `ThemeBackground`, `ThemeImage`). Each app
-has pages that show a part of the theme next to the YAML that makes it; a
-test checks that every quoted line is in the files.
+has pages that show a part of the theme next to the YAML that makes it, in
+a block of Markdown (`MarkdownView.code`) colored by the theme's own
+`styles.code`; a test checks that every quoted line is in the files.
 
 Every app also shows all three loaders of the theme, and starts with a
 **splash** written in YAML (`splash:` with a logo, a title, a loader and a

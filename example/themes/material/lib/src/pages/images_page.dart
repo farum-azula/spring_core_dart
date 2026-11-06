@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
@@ -7,6 +8,7 @@ import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 /// Images from the theme: an asset here, an https URL with a cache and an
 /// asset fallback in the `network` profile.
+@ScreenRoute('/images', title: '#{nav.images}')
 class ImagesPage extends StatelessWidget {
   const ImagesPage({super.key});
 

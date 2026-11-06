@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 /// A ThemeImage on screen. Its `listenable` gives the picture to paint: the
 /// asset, or for a network image the cache, else the fallback, else nothing

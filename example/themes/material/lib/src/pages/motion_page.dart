@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
-import 'package:theme_showcase_material/src/widgets/styled_widgets.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
+import 'package:theme_showcase_material/src/widgets/styled_widgets.dart';
 import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 /// Motion: durations, curves, animations that repeat, and page transitions.
+@ScreenRoute('/motion', title: '#{nav.motion}')
 class MotionPage extends StatefulWidget {
   const MotionPage({super.key});
 
@@ -252,16 +253,16 @@ class _MotionPageState extends State<MotionPage> {
         Section(
           title: 'Page transitions',
           note:
-              'motion.page-transition: platform, fade-upwards, zoom, '
-              'cupertino or none. This theme uses $transition. Neon zooms, '
-              'high contrast has none; try them.',
+              'motion.page-transition: none by default; platform, '
+              'fade-upwards, zoom, cupertino or fade turn one on. This theme '
+              'uses $transition. Neon zooms; the Transitions page shows the '
+              'rest.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const YamlBox(
-                'page-transition: fade-upwards',
-                label:
-                    'application.yml: motion (neon: zoom, high-contrast: none)',
+                'page-transition: zoom',
+                label: 'themes/neon.yml: motion',
               ),
               SizedBox(height: space.m),
               FilledButton.tonalIcon(

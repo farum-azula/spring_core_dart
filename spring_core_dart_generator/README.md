@@ -141,7 +141,7 @@ and the testing guide
 
 **`spring_flutter_web`** writes `web_dev_config.yaml`, the file
 `flutter run` reads on the web (Flutter 3.38 and later), from the
-`spring.flutter.web.*` properties of `lib/resources/` (see
+`spring.flutter.web.dev-server.*` properties of `lib/resources/` (see
 [Flutter](#flutter-spring_boot_starter_flutter) below). Without those
 properties it does not load the config, and writes and reports nothing,
 whatever the config files hold (imports, placeholders an environment
@@ -311,7 +311,7 @@ public method, setter or field of the class, or when a
 one of `ChangeNotifier`'s members itself.
 
 **The web dev server.** The `spring_flutter_web` builder turns the
-`spring.flutter.web.*` properties (host, port, base-href, HTTPS
+`spring.flutter.web.dev-server.*` properties (host, port, base-href, HTTPS
 certificate, headers, proxy rules) into `web_dev_config.yaml` in the
 package directory, so `flutter run -d chrome` serves the app on a fixed
 port without flags. It runs for every package that depends on the
@@ -321,7 +321,7 @@ can read without loading the config (any `.properties`, `.yml` or `.yaml`
 file of `lib/resources/`, in any document, for any profile, or a file an
 import names with a file hint, `[.yaml]` or `[encoding=iso-8859-1]` (a
 file that is not UTF-8 is read only that way), its placeholders resolved
-with their defaults or the files' values) sets a `spring.flutter.web.*`
+with their defaults or the files' values) sets a `spring.flutter.web.dev-server.*`
 key or
 `spring.flutter.security.web.mode`. An import whose name only the running
 app knows (`resources:${ENV}.conf[.yaml]`) cannot be followed there, so
@@ -347,7 +347,7 @@ and a document whose `spring.config.activate.*` guard has one is skipped,
 each with a warning naming it. Where a key may be is still checked:
 `spring.profiles.active` in `application-web.yaml` fails the build
 whatever its value, as it fails the app's start. A placeholder in
-`spring.flutter.security.web.mode`, as in a `spring.flutter.web.*` value,
+`spring.flutter.security.web.mode`, as in a `spring.flutter.web.dev-server.*` value,
 must resolve at build time. A `file:`, `configtree:` or `package:` import
 (or an absolute path), with a wildcard or not, is not read from the build
 machine's disk, as a browser has none: it is skipped, `optional:` or not;
@@ -500,6 +500,17 @@ ThemeLoaderKinds.register<DoorsLoaderProps>(r'doors',
     painter: DoorsLoader(), props: DoorsLoaderProps._, keys: DoorsLoaderProps.keys);
 ```
 
+**`spring_flutter_seo`** writes the pages of `spring.flutter.web.seo.*`
+for a Flutter web app: a page per route and Markdown file (`<path>/index.html`
+with the page's head and its text, under the page loader), `<path>.md`,
+`sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`, into `web/`
+(see `docs/configuration.md`, *The site's pages*).
+
+**`spring_flutter_deep_links`** writes the deep links of
+`spring.flutter.navigation.deep-links.*` (the scheme, the domains) into the
+platforms' files between `spring:deep-links` markers, and the files the
+domains serve (`apple-app-site-association`, `assetlinks.json`).
+
 **`spring_flutter_page_loader`** writes the page loader of the active
 theme's `splash` into `web/index.html`: a block between
 `<!-- spring:loader:start -->` and `<!-- spring:loader:end -->` (the markers
@@ -576,6 +587,7 @@ targets:
 |---|---|---|
 | `aop_proxies` | `all`: a proxy class for every bean whose class or one of its interfaces can be implemented (and subclass proxies for the classes that can only be extended); `interfaces`: proxies only through a bean's abstract supertypes, so a bean without one gets no proxy; `none`: no proxies, so AOP cannot advise the beans of the module | `all` |
 | `aop_prune` | `true`: with `aop_proxies: all`, the `@SpringBootApplication` output (which knows every module of the application), and the `@ComponentScan` modules of an application package (`publish_to: none`: nothing outside imports them), generate no proxy class for a bean that no advice of the application can match, wrapper or subclass proxy alike (`AopProxyFactory.pruned()`; the runtime's `AopProxyFactory.prunedReason` says why), and in the proxy of a bean that keeps one only the members some advice may match run through it: a wrapper forwards the others to the bean, a subclass inherits them. Advice registered at run time without the build seeing it is not applied to what was left out. The `@ComponentScan` modules of a library package are never pruned, since any module may import them; the `lib/` modules of a starter (a package with `lib/spring_auto_configuration.dart`) leave to the application the proxy classes only its aspects can match (`AopProxyFactory.deferred`), and the `@SpringBootApplication` output writes those its pointcuts may match (`BeanModule.aopProxies`). `false`: every bean keeps its proxy class, with every member, and the application writes every proxy left to it | `true` |
+| `aop_defer` | `true`: the `lib/` modules of a library package without `lib/spring_auto_configuration.dart` leave to the application the proxy classes only its aspects can match, as a starter's do; for a library whose modules a starter's auto-configuration imports (`spring_boot_actuator`), where the `@SpringBootApplication` output finds them | `false` |
 | `dart_defines_exclude` | A list of property name prefixes (`[spring.flutter.theme]`): the properties under them, in both forms (`spring.flutter.theme.mode`, `SPRING_FLUTTER_THEME_MODE`), are not written into `springApplication.dartDefines`, so `--dart-define` does not set them; config files, the environment and the arguments still do | `[]` |
 
 Any other value of either option fails the build with an
@@ -703,10 +715,12 @@ names; applications do not import it.
 
 | Factory | Builder | `build.yaml` entry |
 |---|---|---|
-| `springCoreDartBuilder` | the main builder, with the `aop_proxies`, `aop_prune` and `dart_defines_exclude` options | `spring_core_dart`: `auto_apply: dependents`, `build_to: source`, `lib/{{}}.dart` → `lib/spring_gen/{{}}.spring.dart` (the same for `bin/`, `test/`, `example/`) |
+| `springCoreDartBuilder` | the main builder, with the `aop_proxies`, `aop_prune`, `aop_defer` and `dart_defines_exclude` options | `spring_core_dart`: `auto_apply: dependents`, `build_to: source`, `lib/{{}}.dart` → `lib/spring_gen/{{}}.spring.dart` (the same for `bin/`, `test/`, `example/`) |
 | `springTestBuilder` | the test builder, no options | `spring_test`: `auto_apply: dependents`, `build_to: source`, `test/<name>_test.dart` → `test/spring_gen/<name>.test.spring.dart` |
 | `springFlutterPageLoaderBuilder` | the page loader builder, no options | `spring_flutter_page_loader`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web/index.html` itself) |
 | `springFlutterWebBuilder` | the `web_dev_config.yaml` builder, no options | `spring_flutter_web`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web_dev_config.yaml` itself) |
+| `springFlutterSeoBuilder` | the site's pages, no options | `spring_flutter_seo`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes the pages into `web/` itself, after `spring_metadata` and `spring_flutter_page_loader`) |
+| `springFlutterDeepLinksBuilder` | the deep links, no options | `spring_flutter_deep_links`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes its blocks into `Info.plist`, `Runner.entitlements`, `AndroidManifest.xml` and the domain files itself) |
 
 ## Dependencies
 
@@ -751,7 +765,7 @@ lib/
     asset_check.dart            @Value('asset:...') against pubspec.yaml
     dart_define_keys.dart       --dart-define keys
     test_builder.dart           @SpringBootTest, @DataTest → test/spring_gen/*.test.spring.dart
-    web_dev_config_builder.dart spring.flutter.web.* → web_dev_config.yaml
+    web_dev_config_builder.dart spring.flutter.web.dev-server.* → web_dev_config.yaml
     web_page_loader.dart        the page loader block of web/index.html; web_page_loader_builder.dart writes it
 build.yaml
 test/                           generated output and every rejected declaration

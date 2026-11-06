@@ -412,6 +412,9 @@ final class AppMessagesSettings {
   /// `settings.loaders`: Loaders
   String get loaders => _context.message('settings.loaders');
 
+  /// `settings.markdown`: Markdown and code
+  String get markdown => _context.message('settings.markdown');
+
   /// `settings.preview`: Preview
   String get preview => _context.message('settings.preview');
 

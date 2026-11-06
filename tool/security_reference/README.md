@@ -27,6 +27,30 @@ Spring discovers at startup, or
 `--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=...`). The Dart
 applications get the same requests.
 
+## Static resources
+
+`spring_boot_starter_web/test/static_resources_differential_test.dart`
+starts the jar with the profile `static` (`StaticResourcesReference`: every
+request permitted, Spring Security's headers off) and
+`--spring.web.resources.static-locations=file:<dir>/`, a directory the test
+writes; the Dart application serves the same directory. Statuses and the
+headers of the answers are compared request by request; the paths that try
+to leave the directory must be refused by both, and the differences that
+are on purpose are listed in the test with their reason.
+
+## Actuator
+
+`spring_boot_starter_actuator/test/actuator_differential_test.dart` starts
+the jar with the profile `actuator` (`ActuatorReference`: Spring Boot
+Actuator's `health` and `info`, the probes at `/livez` and `/readyz`, all
+permitted through a chain matched with `EndpointRequest`; the settings are
+in `application-actuator.properties`). The other profiles have no
+endpoint (`management.endpoints.access.default=none`). The Dart
+application gets the same `management.*` settings and the same requests;
+the statuses, the media types and the JSON are compared, with the disk's
+sizes, the hosts of the links, Spring Boot's `ssl` indicator and the Dart
+application's own indicator left out.
+
 ## Password hashes, both ways
 
 Spring writes hashes with its encoders (Argon2, PBKDF2, scrypt with

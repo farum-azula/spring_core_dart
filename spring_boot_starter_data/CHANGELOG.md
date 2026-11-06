@@ -1,6 +1,12 @@
+## Unreleased
+
+### Changes
+
+- The actuator's `db` health indicator: `DataSourceHealthIndicator` (`UP` with the database and `validationQuery` when a connection is valid, `DOWN` with the error otherwise) and the `dbHealthContributor` bean, one indicator per data source by bean name (a composite when there are several), switched off by `management.health.db.enabled=false` (Spring Boot's `DataSourceHealthContributorAutoConfiguration`). The starter now depends on `spring_boot_actuator` (the endpoints' model only: no endpoint and no auto-configuration come with it; the endpoints come with `spring_boot_starter_actuator`).
+
 ## 0.7.0
 
-- Perf/generated code (#22)
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.7.0.
 
 ## 0.6.3
 

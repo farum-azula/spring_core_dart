@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "package": "static_site_server",
+  "properties": [
+    {
+      "name": "spring.application.name",
+      "type": "String",
+      "description": null,
+      "default": null,
+      "deprecated": null,
+      "source": "package:static_site_server/src/info_controller.dart",
+      "line": 9,
+      "class": "new"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "infoController",
+      "type": "InfoController",
+      "types": [
+        "InfoController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:static_site_server/src/info_controller.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "info",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": []
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    "prod"
+  ]
+}

@@ -5,6 +5,7 @@ import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
 import 'package:spring_boot_starter_web/src/forwarded_headers.dart';
 import 'package:spring_boot_starter_web/src/handler_exception_resolver.dart';
+import 'package:spring_boot_starter_web/src/handler_mapping_descriptions.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/http_session.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
@@ -13,6 +14,7 @@ import 'package:spring_boot_starter_web/src/platform_web_server_stub.dart'
     as platform;
 import 'package:spring_boot_starter_web/src/request_mapping.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
+import 'package:spring_boot_starter_web/src/static_resources.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_boot_starter_web/src/web_server_lifecycle.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
@@ -77,6 +79,11 @@ CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
 ///   `WebMvcConfigurer` beans' interceptors, CORS mappings and argument
 ///   resolvers, the `CorsConfigurationSource` bean named
 ///   `corsConfigurationSource` and the [HandlerExceptionResolver] beans;
+/// - `resourceHandlerMapping` — the static resources, asked after the
+///   controllers: `spring.web.resources.static-locations` under
+///   `spring.mvc.static-path-pattern` (unless
+///   `spring.web.resources.add-mappings=false`), the welcome page, the
+///   mappings of the `WebMvcConfigurer` beans' `addResourceHandlers`;
 /// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
 ///   `request.getSession()` (`server.session.*`), sessions in
 ///   memory unless the application declares an [HttpSessionRepository];
@@ -90,7 +97,10 @@ CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
 ///   the [HandlerMapping] beans;
 /// - `webServerStartStopLifecycle` — starts and stops the server with the
 ///   context;
-/// - `portInUseFailureAnalyzer` — the startup report for a port in use.
+/// - `portInUseFailureAnalyzer` — the startup report for a port in use;
+/// - `dispatcherHandlersMappingDescriptions` — the handlers of the
+///   dispatcher for the actuator's `mappings` endpoint
+///   ([DispatcherHandlersMappingDescriptions], `dispatcherHandlers`).
 ///
 /// Spring Boot spreads the same beans over
 /// `ServletWebServerFactoryAutoConfiguration` and
@@ -182,6 +192,55 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
             r.optionalDependencyList<HandlerExceptionResolver>() ??
             const <HandlerExceptionResolver>[],
         multipartResolver: r.dependency<MultipartResolver>(),
+      );
+    },
+  ),
+  BeanDefinition<ResourceHandlerMapping>(
+    name: 'resourceHandlerMapping',
+    types: const [ResourceHandlerMapping, HandlerMapping, Ordered],
+    source: _source,
+    create: (r) {
+      final resources = r.dependency<WebResourcesSettings>();
+      final mvc = r.dependency<MvcSettings>();
+      final registry = ResourceHandlerRegistry();
+      for (final configurer
+          in r.optionalDependencyList<WebMvcConfigurer>() ??
+              const <WebMvcConfigurer>[]) {
+        configurer.addResourceHandlers(registry);
+      }
+      final pattern = mvc.staticPathPattern.trim();
+      // Spring Boot's addResourceHandlers: the default mapping unless one
+      // of the application's has the same pattern.
+      if (resources.addMappings && !registry.hasMappingForPattern(pattern)) {
+        final cache = resources.cache;
+        registry
+            .addResourceHandler([pattern])
+            .addResourceLocations(resources.staticLocations)
+            .setCachePeriod(cache.period?.inSeconds)
+            .setCacheControl(_cacheControl(cache.cachecontrol))
+            .setUseLastModified(cache.useLastModified)
+            .setCompressed(resources.chain.compressed);
+      }
+      final requestMapping = r.dependency<RequestMappingHandlerMapping>();
+      return ResourceHandlerMapping.fromRegistry(
+        registry,
+        writer: r.dependency<ResponseWriter>(),
+        mimeMappings: r.dependency<ServerSettings>().mimeMappings,
+        welcomePage: resources.addMappings && pattern == '/**',
+        spaFallback: resources.spaFallback,
+        directoryIndex: resources.directoryIndex,
+        // The global rules, as Spring gives its resource handler mapping
+        // the CORS configurations of addCorsMappings.
+        corsConfigurationFor: (request) {
+          final config =
+              requestMapping.corsConfigurationSource?.getCorsConfiguration(
+                request,
+              ) ??
+              requestMapping.corsSource?.getCorsConfiguration(request);
+          return config
+            ?..validateAllowCredentials()
+            ..validateAllowPrivateNetwork();
+        },
       );
     },
   ),
@@ -289,7 +348,58 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     create: (_) => const PortInUseFailureAnalyzer(),
   ),
+  BeanDefinition<DispatcherHandlersMappingDescriptions>(
+    name: 'dispatcherHandlersMappingDescriptions',
+    types: const [DispatcherHandlersMappingDescriptions, MappingDescriptions],
+    source: _source,
+    create: (r) {
+      // Asked when the mappings are read: the dispatcher needs every
+      // handler mapping, which may read the descriptions themselves.
+      final dispatcher = r.provider<DispatcherHandler>();
+      return DispatcherHandlersMappingDescriptions(dispatcher.getIfUnique);
+    },
+  ),
 ];
+
+// Spring Boot's Cachecontrol.toHttpCacheControl: no-store, else no-cache,
+// else max-age, then the other directives; null when none is set.
+CacheControl? _cacheControl(WebResourcesCacheControlSettings settings) {
+  final CacheControl control;
+  if (settings.noStore ?? false) {
+    control = CacheControl.noStore();
+  } else if (settings.noCache ?? false) {
+    control = CacheControl.noCache();
+  } else if (settings.maxAge case final maxAge?) {
+    control = CacheControl.maxAge(maxAge);
+  } else {
+    control = CacheControl.empty();
+  }
+  if (settings.mustRevalidate ?? false) {
+    control.mustRevalidate();
+  }
+  if (settings.noTransform ?? false) {
+    control.noTransform();
+  }
+  if (settings.cachePublic ?? false) {
+    control.cachePublic();
+  }
+  if (settings.cachePrivate ?? false) {
+    control.cachePrivate();
+  }
+  if (settings.proxyRevalidate ?? false) {
+    control.proxyRevalidate();
+  }
+  if (settings.staleWhileRevalidate case final value?) {
+    control.staleWhileRevalidate(value);
+  }
+  if (settings.staleIfError case final value?) {
+    control.staleIfError(value);
+  }
+  if (settings.sMaxAge case final value?) {
+    control.sMaxAge(value);
+  }
+  return control.headerValue == null ? null : control;
+}
 
 // server.forward-headers-strategy=native or framework. The condition is
 // decided before any bean exists, so it binds the setting itself; another

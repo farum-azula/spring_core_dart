@@ -29,7 +29,7 @@ void main() {
   testWidgets('a book added from the list: only the badge rebuilds', (
     tester,
   ) async {
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     expect(find.text('Dune'), findsOneWidget);
 
     final rebuilt = await rebuiltBy(() async {
@@ -51,7 +51,7 @@ void main() {
   });
 
   testWidgets('context.basket is the Basket bean', (tester) async {
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     final context = tester.element(find.byType(CatalogPage));
     expect(context.basket, same(app.getBean<Basket>()));
     expect(context.bean<Basket>(), same(context.basket));
@@ -71,7 +71,7 @@ void main() {
             'total': 1,
           },
         );
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     await tester.enterText(find.byKey(const Key('catalog-search')), 'dune');
 
     final rebuilt = await rebuiltBy(() async {
@@ -92,7 +92,7 @@ void main() {
   testWidgets('the basket screen follows the bean, whoever changes it', (
     tester,
   ) async {
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     await tester.tap(find.text('Basket'));
     await tester.pumpAndSettle();
     expect(find.text('The basket is empty'), findsOneWidget);

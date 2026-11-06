@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 
 // The app's own widgets. The Cupertino widgets get their look from the

@@ -3,7 +3,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/app/shell.dart';
 import 'package:theme_showcase_neon/src/widgets/state_tile.dart';
@@ -170,7 +170,7 @@ void main() {
   testWidgets('a tile of the app\'s own style is selected by a tap', (
     tester,
   ) async {
-    await startApp(tester, page: 8);
+    await startApp(tester, page: 9);
     final tiles = find.byType(StateTile);
     Color border(int i) =>
         ((tester

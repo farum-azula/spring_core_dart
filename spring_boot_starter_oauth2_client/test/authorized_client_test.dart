@@ -3,6 +3,7 @@
 // invalid_grant) and the Feign interceptor.
 import 'dart:async';
 
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:test/test.dart';
 

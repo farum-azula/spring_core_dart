@@ -1,6 +1,20 @@
+## Unreleased
+
+- **Breaking:** `FlutterWebProperties` is `spring.flutter.web.dev-server.*` (the dev server of `flutter run` on the web: `host`, `port`, `base-href`, `https.*`, `headers.*`, the CSP keys, `proxy[n].*`); a key at its old place under `spring.flutter.web` fails the build with its new name.
+- The web start no longer jumps when the page's loader hands over to the theme's splash: the splash keeps a square box of the logo's size from its first frame, lays out its logo, title and loader as the page's loader does (20 between them, the title's letter spacing), and the page's loader goes only after the frame that painted the logo (at most `ThemeSplash.logoWait`, 1.5 s, later).
+- `SpringThemes.fromEnvironment` reads the themes once per environment: the bean reuses those the splash read while the app started (and their Material themes), so the start no longer reads every theme twice while the splash animates. Customizers and replacing themes still apply per instance.
+- **Behavior change:** screens show at once by default. `motion.page-transition` not set is `none` (it was Flutter's own per platform), for Material's page routes too; write `motion.page-transition: platform` to get the platform's transition back.
+- `motion.page-transition` takes `fade` and a map form, `{ type, duration, curve }` (references such as `$motion.durations.fast` allowed); `SpringThemeData.pageTransitions` (`PageTransitionSpec`, `PageTransitionType`) is what the navigation starter's router follows in every app type.
+- Re-exports `spring_web_dart`: the starter's API takes an `HttpTransport` (`RemoteCache`, the theme's network images), and an app that sends its own requests needs no other dependency.
+- `spring.flutter.web.seo.*` (`FlutterWebSeoProperties`, read by the generator): the pages the build writes for search engines, link previews and models.
+- `spring.flutter.app.description`: what the app is, which the build writes into `web/index.html` and the web manifest (with the title, and the theme's colors).
+- `MarkdownView` (`MarkdownView.resource` for a resource): GitHub's Markdown as widgets with the theme's text styles, HTML in it shown as text, a front matter left out, links to `onLink`; code blocks colored by `CodeTokens` (Dart, YAML, properties, shell, JSON) with the theme's `styles.code` (`background`, `text`, `keyword`, `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`, `punctuation`; the color scheme otherwise; the block's `padding`, `radius`, `border`, `border-width`). `MarkdownView.code` shows one block of code the same way. Selectable in any app: Material's `SelectionArea` under a `MaterialApp`, a `SelectableRegion` without a menu otherwise. New dependency: the Dart team's `markdown`.
+- `SpringApp` without a `home` builds `MaterialApp.router` (or the Cupertino or widgets one) on the application's `RouterConfig<Object>` bean, the one `spring_boot_starter_flutter_navigation` adds or the app's own (`SpringApp.routerOf`); `SpringApplicationWidget` takes neither `home` nor `child` for it, and a start without a router then fails with a message saying what to add.
+- `BeanLookupScope`: the bean lookups of the widgets below it (`context.bean<T>()`, the generated getters, the bean records of Spring widgets) run in its zone, so a custom scope knows which part of the app asks; the navigation starter puts one around every screen for its `route` and `branch` scopes.
+
 ## 0.7.0
 
-- Perf/generated code (#22)
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.7.0.
 
 ## 0.6.3
 

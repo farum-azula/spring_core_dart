@@ -13,7 +13,6 @@ import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter/src/files/sha256.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_source.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _url = 'https://raw.githubusercontent.com/neon/themes/main/ocean.yml';
 

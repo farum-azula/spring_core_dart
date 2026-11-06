@@ -24,6 +24,7 @@ export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.da
         objectMapperFromProperties;
 export 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart'
     show MessagesBundleCondition;
+export 'package:spring_boot_dart/src/availability.dart';
 export 'package:spring_boot_dart/src/banner.dart';
 export 'package:spring_boot_dart/src/binder.dart'
     show BindHandler, BindResult, Binder;

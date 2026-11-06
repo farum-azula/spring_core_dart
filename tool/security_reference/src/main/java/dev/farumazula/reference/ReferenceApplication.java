@@ -62,7 +62,7 @@ public class ReferenceApplication {
    * the dpop profile DPoPResourceServerReference's.
    */
   @Bean
-  @Profile("!oauth2 & !dpop")
+  @Profile("!oauth2 & !dpop & !static")
   SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.authorizeHttpRequests(auth -> auth
             .requestMatchers("/public/**", "/form").permitAll()

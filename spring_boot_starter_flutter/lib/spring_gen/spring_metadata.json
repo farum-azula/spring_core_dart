@@ -9,7 +9,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 250,
+      "line": 378,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 234,
+      "line": 362,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 250,
+      "line": 378,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 234,
+      "line": 362,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 215,
+      "line": 343,
       "class": "FlutterRestartProperties"
     },
     {
@@ -59,7 +59,17 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 29,
+      "line": 36,
+      "class": "FlutterAppProperties"
+    },
+    {
+      "name": "spring.flutter.app.description",
+      "type": "String?",
+      "description": "What the app is, in a sentence: the build writes it into web/index.html (the description search engines show) and the web manifest.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 33,
       "class": "FlutterAppProperties"
     },
     {
@@ -69,17 +79,17 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 33,
+      "line": 40,
       "class": "FlutterAppProperties"
     },
     {
       "name": "spring.flutter.app.title",
       "type": "String?",
-      "description": "The title of the app (task switcher, browser tab).",
+      "description": "The title of the app (task switcher, browser tab; the build writes it into web/index.html and the web manifest).",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 26,
+      "line": 28,
       "class": "FlutterAppProperties"
     },
     {
@@ -89,7 +99,7 @@
       "default": "widgets",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 23,
+      "line": 24,
       "class": "FlutterAppProperties"
     },
     {
@@ -99,7 +109,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 98,
+      "line": 105,
       "class": "DesktopWindowProperties"
     },
     {
@@ -109,7 +119,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 104,
+      "line": 111,
       "class": "DesktopWindowProperties"
     },
     {
@@ -119,7 +129,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 101,
+      "line": 108,
       "class": "DesktopWindowProperties"
     },
     {
@@ -129,7 +139,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 88,
+      "line": 95,
       "class": "DesktopWindowProperties"
     },
     {
@@ -139,7 +149,7 @@
       "default": "default",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 94,
+      "line": 101,
       "class": "DesktopWindowProperties"
     },
     {
@@ -149,7 +159,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 65,
+      "line": 72,
       "class": "FlutterFontsProperties"
     },
     {
@@ -159,7 +169,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 68,
+      "line": 75,
       "class": "FlutterFontsProperties"
     },
     {
@@ -169,7 +179,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 55,
+      "line": 62,
       "class": "FlutterLifecycleProperties"
     },
     {
@@ -179,33 +189,53 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 45,
+      "line": 52,
       "class": "FlutterProperties"
     },
     {
-      "name": "spring.flutter.web.base-href",
+      "name": "spring.flutter.web.dev-server.base-href",
       "type": "String?",
       "description": "The path the app is served under; starts and ends with /.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 147,
+      "line": 157,
       "class": "FlutterWebProperties"
     },
     {
-      "name": "spring.flutter.web.content-security-policy",
+      "name": "spring.flutter.web.dev-server.content-security-policy",
       "type": "String?",
       "description": "The Content-Security-Policy header of the web dev server.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 156,
+      "line": 166,
       "class": "FlutterWebProperties"
     },
     {
-      "name": "spring.flutter.web.content-security-policy-connect-src",
+      "name": "spring.flutter.web.dev-server.content-security-policy-connect-src",
       "type": "List<String>?",
       "description": "Origins added to the `connect-src` of spa mode's ready policy: the APIs the app calls, a provider's endpoints on other hosts. Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 173,
+      "class": "FlutterWebProperties"
+    },
+    {
+      "name": "spring.flutter.web.dev-server.content-security-policy-report-only",
+      "type": "String?",
+      "description": "The report-only Content-Security-Policy header.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 169,
+      "class": "FlutterWebProperties"
+    },
+    {
+      "name": "spring.flutter.web.dev-server.headers.*",
+      "type": "String",
+      "description": "A header added to every response of the web dev server.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
@@ -213,104 +243,254 @@
       "class": "FlutterWebProperties"
     },
     {
-      "name": "spring.flutter.web.content-security-policy-report-only",
-      "type": "String?",
-      "description": "The report-only Content-Security-Policy header.",
-      "default": null,
-      "deprecated": null,
-      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 159,
-      "class": "FlutterWebProperties"
-    },
-    {
-      "name": "spring.flutter.web.headers.*",
-      "type": "String",
-      "description": "A header added to every response of the web dev server.",
-      "default": null,
-      "deprecated": null,
-      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 153,
-      "class": "FlutterWebProperties"
-    },
-    {
-      "name": "spring.flutter.web.host",
+      "name": "spring.flutter.web.dev-server.host",
       "type": "String?",
       "description": "The address the dev server of flutter run on the web listens on, e.g. localhost or 0.0.0.0.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 129,
+      "line": 139,
       "class": "FlutterWebProperties"
     },
     {
-      "name": "spring.flutter.web.https.cert-key-path",
+      "name": "spring.flutter.web.dev-server.https.cert-key-path",
       "type": "String?",
       "description": "The private key (PEM) of the certificate.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 178,
+      "line": 188,
       "class": "FlutterWebHttps"
     },
     {
-      "name": "spring.flutter.web.https.cert-path",
+      "name": "spring.flutter.web.dev-server.https.cert-path",
       "type": "String?",
       "description": "The TLS certificate (PEM) of the web dev server.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 175,
+      "line": 185,
       "class": "FlutterWebHttps"
     },
     {
-      "name": "spring.flutter.web.port",
+      "name": "spring.flutter.web.dev-server.port",
       "type": "int?",
       "description": "The port of the web dev server; 0 picks a free port.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 144,
+      "line": 154,
       "class": "FlutterWebProperties"
     },
     {
-      "name": "spring.flutter.web.proxy[*].prefix",
+      "name": "spring.flutter.web.dev-server.proxy[*].prefix",
       "type": "String?",
       "description": "Rule `n` matches paths starting with it (`/api/`). Default: none.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 192,
+      "line": 203,
       "class": "FlutterWebProxyRule"
     },
     {
-      "name": "spring.flutter.web.proxy[*].regex",
+      "name": "spring.flutter.web.dev-server.proxy[*].regex",
       "type": "String?",
       "description": "Or the paths matching it; each rule sets exactly one of `prefix` and `regex`. Default: none.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 196,
+      "line": 207,
       "class": "FlutterWebProxyRule"
     },
     {
-      "name": "spring.flutter.web.proxy[*].replace",
+      "name": "spring.flutter.web.dev-server.proxy[*].replace",
       "type": "String?",
       "description": "The forwarded path: the matched part replaced, `$1` for the first group. Default: the path unchanged.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 200,
+      "line": 211,
       "class": "FlutterWebProxyRule"
     },
     {
-      "name": "spring.flutter.web.proxy[*].target",
+      "name": "spring.flutter.web.dev-server.proxy[*].target",
       "type": "String?",
       "description": "Where requests matching rule `n` are forwarded (`http://localhost:8080`). Default: none.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 204,
+      "line": 215,
       "class": "FlutterWebProxyRule"
+    },
+    {
+      "name": "spring.flutter.web.seo.content[*].exclude",
+      "type": "List<String>?",
+      "description": "Files left out, globs below the folder (`_*.md`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 304,
+      "class": "FlutterWebSeoContent"
+    },
+    {
+      "name": "spring.flutter.web.seo.content[*].location",
+      "type": "String?",
+      "description": "The folder (`resources:content/blog/`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 297,
+      "class": "FlutterWebSeoContent"
+    },
+    {
+      "name": "spring.flutter.web.seo.content[*].path",
+      "type": "String",
+      "description": "The address of the folder (`/blog`): `first.md` is `/blog/first`, `index.md` is `/blog`.",
+      "default": "/",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 301,
+      "class": "FlutterWebSeoContent"
+    },
+    {
+      "name": "spring.flutter.web.seo.description",
+      "type": "String?",
+      "description": "The description of a page that has none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 269,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.enabled",
+      "type": "bool",
+      "description": "Whether the build writes the pages.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 254,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.from-routes",
+      "type": "bool",
+      "description": "Whether every screen of `spring_boot_starter_flutter_navigation` is a page (its title, `@RouteInfo`, its Markdown).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 263,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.image",
+      "type": "String?",
+      "description": "The preview image of a page that has none (`resources:images/og.png`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 273,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.llms",
+      "type": "bool",
+      "description": "Whether `llms.txt` and `llms-full.txt` are written.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 285,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.markdown",
+      "type": "bool",
+      "description": "Whether the Markdown of a page is written next to it (`<path>.md`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 288,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.pages[*].description",
+      "type": "String?",
+      "description": "Its description.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 325,
+      "class": "FlutterWebSeoPage"
+    },
+    {
+      "name": "spring.flutter.web.seo.pages[*].image",
+      "type": "String?",
+      "description": "Its preview image.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 328,
+      "class": "FlutterWebSeoPage"
+    },
+    {
+      "name": "spring.flutter.web.seo.pages[*].index",
+      "type": "bool?",
+      "description": "`false`: search engines may not list it (`noindex`, not in the sitemap).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 332,
+      "class": "FlutterWebSeoPage"
+    },
+    {
+      "name": "spring.flutter.web.seo.pages[*].path",
+      "type": "String?",
+      "description": "The page's address (`/`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 319,
+      "class": "FlutterWebSeoPage"
+    },
+    {
+      "name": "spring.flutter.web.seo.pages[*].title",
+      "type": "String?",
+      "description": "Its title.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 322,
+      "class": "FlutterWebSeoPage"
+    },
+    {
+      "name": "spring.flutter.web.seo.site-url",
+      "type": "String?",
+      "description": "The site's address (`https://spring-dart.dev`), for the absolute addresses of `canonical`, `og:url` and the sitemap; required when [enabled]. Its path is where the app is served.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 259,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.sitemap",
+      "type": "bool",
+      "description": "Whether `sitemap.xml` and `robots.txt` are written.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 282,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.title",
+      "type": "String",
+      "description": "The page's `<title>`; `{title}` is the page's own.",
+      "default": "{title}",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 266,
+      "class": "FlutterWebSeoProperties"
     }
   ],
   "hints": [
@@ -383,7 +563,7 @@
       ]
     },
     {
-      "name": "spring.flutter.web.port",
+      "name": "spring.flutter.web.dev-server.port",
       "range": [
         0,
         65535
@@ -569,7 +749,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 74,
+      "line": 81,
       "injects": [],
       "members": [
         {
@@ -751,6 +931,11 @@
           "type": "bool"
         },
         {
+          "name": "description",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
           "name": "locales",
           "kind": "field",
           "type": "List<String>?"
@@ -779,7 +964,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 222,
+      "line": 350,
       "injects": [],
       "members": [
         {
@@ -806,7 +991,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 255,
+      "line": 383,
       "injects": [],
       "members": [
         {
@@ -828,7 +1013,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 60,
+      "line": 67,
       "injects": [],
       "members": [
         {
@@ -855,7 +1040,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 50,
+      "line": 57,
       "injects": [],
       "members": [
         {
@@ -877,7 +1062,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 38,
+      "line": 45,
       "injects": [],
       "members": [
         {
@@ -899,7 +1084,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 209,
+      "line": 337,
       "injects": [],
       "members": [
         {
@@ -921,7 +1106,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 113,
+      "line": 123,
       "injects": [],
       "members": [
         {
@@ -968,6 +1153,78 @@
           "name": "proxy",
           "kind": "field",
           "type": "List<FlutterWebProxyRule>?"
+        }
+      ]
+    },
+    {
+      "name": "flutterWebSeoProperties",
+      "type": "FlutterWebSeoProperties",
+      "types": [
+        "FlutterWebSeoProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 237,
+      "injects": [],
+      "members": [
+        {
+          "name": "content",
+          "kind": "field",
+          "type": "List<FlutterWebSeoContent>?"
+        },
+        {
+          "name": "description",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "fromRoutes",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "image",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "llms",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "markdown",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "pages",
+          "kind": "field",
+          "type": "List<FlutterWebSeoPage>?"
+        },
+        {
+          "name": "siteUrl",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "sitemap",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "title",
+          "kind": "field",
+          "type": "String"
         }
       ]
     },
@@ -3589,10 +3846,42 @@
           "fade-upwards",
           "zoom",
           "cupertino",
+          "fade",
           "none"
         ],
-        "description": "The page transition used on every platform.",
-        "default": "platform"
+        "description": "The page transition of every screen: none by default; the router of spring_boot_starter_flutter_navigation follows it in every app type, and Material's page routes too. A kind alone, or a map of type, duration and curve.",
+        "default": "none"
+      },
+      {
+        "name": "motion.page-transition.type",
+        "type": "choice",
+        "states": false,
+        "values": [
+          "platform",
+          "fade-upwards",
+          "zoom",
+          "cupertino",
+          "fade",
+          "none"
+        ],
+        "description": "The kind of the page transition, in the map form.",
+        "default": "none"
+      },
+      {
+        "name": "motion.page-transition.duration",
+        "type": "duration",
+        "states": false,
+        "values": [],
+        "description": "How long the page transition takes; the kind's own when not set.",
+        "default": null
+      },
+      {
+        "name": "motion.page-transition.curve",
+        "type": "curve",
+        "states": false,
+        "values": [],
+        "description": "The curve of the page transition; the kind's own when not set.",
+        "default": null
       },
       {
         "name": "motion.durations.*",

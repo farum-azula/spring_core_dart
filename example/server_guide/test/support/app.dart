@@ -3,7 +3,7 @@
 import 'dart:convert';
 
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 import '../../bin/spring_gen/main.spring.dart';
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -98,21 +99,46 @@ final class SpringThemes extends ChangeNotifier {
   /// [cupertinoCustomizers] then change every theme, replaced ones too.
   SpringThemes(
     Map<String, String> properties, {
-    this.customizers = const [],
-    this.cupertinoCustomizers = const [],
+    List<ThemeCustomizer> customizers = const [],
+    List<CupertinoThemeCustomizer> cupertinoCustomizers = const [],
     ThemeData? light,
     ThemeData? dark,
     CupertinoThemeData? cupertino,
+  }) : this._(
+         properties,
+         customizers: customizers,
+         cupertinoCustomizers: cupertinoCustomizers,
+         light: light,
+         dark: dark,
+         cupertino: cupertino,
+       );
+
+  SpringThemes._(
+    Map<String, String> properties, {
+    required this.customizers,
+    required this.cupertinoCustomizers,
+    ThemeData? light,
+    ThemeData? dark,
+    CupertinoThemeData? cupertino,
+    Map<String, SpringThemeData>? read,
   }) : _files = Map.of(properties),
        _lightOverride = light,
        _darkOverride = dark,
        _cupertinoOverride = cupertino {
-    _apply(ThemeConfig(_files));
+    final config = ThemeConfig(_files);
+    _use(config, read ?? _read(config));
   }
 
   /// The themes of the `spring.flutter.theme.*` properties of
   /// [environment], with the same options as the main constructor; how the
   /// starter creates its bean.
+  ///
+  /// The themes are read once per [environment]: `SpringApplicationWidget`
+  /// reads them for the splash while the application starts, and the bean
+  /// made later from the same environment and the same properties reuses
+  /// them (and the Material themes they made) instead of reading them again
+  /// during the splash. The customizers and replacing themes still apply to
+  /// each instance.
   factory SpringThemes.fromEnvironment(
     ConfigurableEnvironment environment, {
     List<ThemeCustomizer> customizers = const [],
@@ -120,17 +146,36 @@ final class SpringThemes extends ChangeNotifier {
     ThemeData? light,
     ThemeData? dark,
     CupertinoThemeData? cupertino,
-  }) => SpringThemes(
-    Binder.get(environment)
+  }) {
+    final properties = Binder.get(environment)
         .bind(prefix, const MapType(ClassType<String>(), ClassType<String>()))
         .orElse(const <String, String>{})
-        .cast<String, String>(),
-    customizers: customizers,
-    cupertinoCustomizers: cupertinoCustomizers,
-    light: light,
-    dark: dark,
-    cupertino: cupertino,
-  );
+        .cast<String, String>();
+    final earlier = _readFor[environment];
+    final themes = SpringThemes._(
+      properties,
+      customizers: customizers,
+      cupertinoCustomizers: cupertinoCustomizers,
+      light: light,
+      dark: dark,
+      cupertino: cupertino,
+      read: earlier != null && mapEquals(earlier.properties, properties)
+          ? earlier.data
+          : null,
+    );
+    _readFor[environment] = (
+      properties: themes._files,
+      data: Map.unmodifiable(themes._data),
+    );
+    return themes;
+  }
+
+  // The themes read from an environment's properties, for the next
+  // [SpringThemes.fromEnvironment] of the same environment.
+  static final _readFor =
+      Expando<
+        ({Map<String, String> properties, Map<String, SpringThemeData> data})
+      >('SpringThemes.fromEnvironment');
 
   /// The themes of [context]: its bean, else, for a context without the
   /// starter's auto-configuration (in a test), themes made once from its

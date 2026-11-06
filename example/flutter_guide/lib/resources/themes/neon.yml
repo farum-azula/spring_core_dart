@@ -14,3 +14,12 @@ spring:
             card: { elevation: level0, color: $colors.surface-container }
           tokens:
             brand: { accent: '#00E5FF' }
+          styles:
+            code:
+              keyword: '#D1007A'
+              string: '#00838F'
+              number: '#7C4DFF'
+              key: '#C2185B'
+              annotation: '#0097A7'
+              variable: '#7B1FA2'
+              type: '#00695C'

@@ -16,14 +16,26 @@ of its own, `neon-ice`, that `extends: neon` and changes one color.
 ```bash
 flutter pub get
 dart run build_runner build      # writes lib/spring_gen/*.spring.dart (checked in)
-flutter run                      # desktop; -d chrome for the web (port 5090)
+flutter run                      # desktop; -d chrome for the web (port 1010)
 ```
 
 ## The pages
 
+Each page is a screen of `spring_boot_starter_flutter_navigation` with its
+own address: `@ScreenRoute('/components')` on the page's widget. The
+`Shell` (`@RouteShell`) holds the logo, the `NeonChip`s and the theme
+switcher; each page is one of its branches, so a page keeps its state
+while another one is shown. `/` opens `/overview`
+(`spring.flutter.navigation.initial`), an unknown address shows
+`NotFoundPage`, and on the web every page can be opened or reloaded at its
+address (`/states`, `/themes`). A chip calls `ShellState.select`, which
+switches pages at once, without a transition; code anywhere calls
+`context.route.go('/logs')`.
+
 The navigation is built from `NeonChip`s; each page shows a capability, the
-lines of YAML that make it (`NeonCode` boxes) and the result. A test checks
-that every quoted line is in the resources.
+lines of YAML that make it (`NeonCode` boxes: a block of Markdown,
+colored by the `styles.code` of `neon_ui`'s theme) and the result. A test
+checks that every quoted line is in the resources.
 
 1. **Overview**: what the app is, the import of the library's theme.
 2. **Components**: buttons, chips, badges, text fields, code, panel and
@@ -50,19 +62,29 @@ that every quoted line is in the resources.
    expressions.
 8. **Logs**: `NeonLogsPanel` on the app's `LogBuffer`; the pages and the
    theme switches write there through the Spring logger (never `print`).
-9. **Themes**: `neon` and `neon-ice`, switched with `ThemeSelection` and the
+9. **Transitions**: how a screen comes in: none by default, and an app of
+   type `widgets` has no platform transition either; a screen chooses its
+   own (`transition: PageTransition.zoom`), and the theme could turn one on
+   for every screen (`motion.page-transition: { type: fade, duration:
+   $motion.durations.fast, curve: ease-out }`).
+10. **Themes**: `neon` and `neon-ice`, switched with `ThemeSelection` and the
    generated `AppThemes.*` constants.
 
 ## The code
 
-- `lib/main.dart`: `@SpringBootApplication` and `SpringApplicationWidget`.
-- `lib/src/app/`: the shell, the theme switcher, the logging beans.
-- `lib/src/pages/`: the nine pages; they read `context.theme.*` from the
+- `lib/main.dart`: `@SpringBootApplication` and `SpringApplicationWidget`
+  without a `home`: the screens make the app.
+- `lib/src/app/`: the shell (`@RouteShell`), the theme switcher, the
+  logging beans.
+- `lib/src/pages/`: the ten pages (`@ScreenRoute`) and the not-found
+  page; they read `context.theme.*` from the
   generated `lib/spring_gen/theme.spring.dart`. The app's keys include the library's
   theme: the generator follows `spring.config.import: resources:...` into
   the packages the app depends on.
-- `lib/src/widgets/`: the frame of a page, a section, a code box, a swatch,
-  a tile in the app's own style.
+- `lib/src/widgets/`: the frame of a page, a section, a code box
+  (`YamlBox`, on `NeonCode`), a swatch, a tile in the app's own style, and
+  `TileGrid`: tiles in as many columns as the width holds, a row as tall
+  as its tallest tile (the Overview's pieces).
 
 ## Tests
 

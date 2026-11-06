@@ -3,9 +3,12 @@ import 'package:neon_ui/neon_ui.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
 import 'package:theme_showcase_neon/src/widgets/section.dart';
+import 'package:theme_showcase_neon/src/widgets/tile_grid.dart';
 import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 /// What this app is: a design system that is a library and a theme file.
+@ScreenRoute('/overview', title: '#{nav.overview}')
 class OverviewPage extends StatelessWidget {
   const OverviewPage({super.key});
 
@@ -59,10 +62,8 @@ spring:
           note:
               'Each page of this app shows one of them next to the YAML that '
               'makes it.',
-          child: Wrap(
-            spacing: space.m,
-            runSpacing: space.m,
-            children: const [
+          child: const TileGrid(
+            children: [
               _Piece(
                 'Components',
                 'Buttons, chips, badges, fields, code, panels and a '
@@ -110,18 +111,14 @@ class _Piece extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
-    return SizedBox(
-      width: 280,
-      height: 130,
-      child: NeonPanel(
-        title: title,
-        child: Padding(
-          padding: EdgeInsets.all(theme.spacing.m),
-          child: Text(
-            text,
-            style: theme.typography.bodyMedium.copyWith(
-              color: theme.colors.onSurfaceVariant,
-            ),
+    return NeonPanel(
+      title: title,
+      child: Padding(
+        padding: EdgeInsets.all(theme.spacing.m),
+        child: Text(
+          text,
+          style: theme.typography.bodyMedium.copyWith(
+            color: theme.colors.onSurfaceVariant,
           ),
         ),
       ),

@@ -4,24 +4,28 @@
 //   dart run tool/release.dart --bump=patch  # 0.1.6 -> 0.1.7
 //   dart run tool/release.dart --bump=minor  # 0.1.6 -> 0.2.0
 //   dart run tool/release.dart --bump=... --dry-run  # only print
+//   dart run tool/release.dart --check  # CI: every change has its changelog
 //
 // The bump is chosen by hand (the Release button asks for it): `patch` or
 // `minor`; there is no major release before 1.0.0, so none can be made by
-// accident. The commits since the last `v*` tag that change a published
+// accident. When no commit since the last `v*` tag changes a published
 // package (commits touching only extensions/, .github/, tool/, roadmap/ or
-// the repository README are ignored) are listed and go into the changelogs
-// of packages without an `## Unreleased` section; when there are none,
-// nothing is released. Without a tag yet, the current version is released
-// as it is.
+// the repository README are ignored), nothing is released. Without a tag
+// yet, the current version is released as it is.
 //
 // Every package gets the version (tool/version.dart). Changelogs: an
 // `## Unreleased` section (written by hand, only what concerns that
-// package) becomes `## <version>`; a package without one gets the subjects
-// of the commits that changed its own folder, or a line saying it has no
-// changes of its own — never the commits of the other packages. The
-// version is printed and, on
-// GitHub Actions, written to `$GITHUB_OUTPUT` as `version` (empty when
-// there is nothing to release).
+// package) becomes `## <version>`. Commit subjects never go into a
+// changelog (a squash merge's subject is the pull request's title, which
+// says nothing about a package). A package without the section gets a
+// line of its own only when nothing of its own changed: its generated
+// code (`lib/spring_gen/`, `*.spring.dart`) regenerated, or only its tests,
+// examples or README. Hand-written code under `lib/` or the `pubspec.yaml`
+// changed without an `## Unreleased` section fails the release before
+// anything is written, and `--check` (CI, on every push) fails the same
+// way, so a missing changelog shows on the pull request, not at the
+// release. The version is printed and, on GitHub Actions, written to
+// `$GITHUB_OUTPUT` as `version` (empty when there is nothing to release).
 import 'dart:io';
 
 import 'version.dart' as family;
@@ -29,6 +33,15 @@ import 'version.dart' as family;
 void main(List<String> args) {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final dryRun = args.contains('--dry-run');
+  if (args.contains('--check')) {
+    final problems = changelogProblems(_lastTag());
+    if (problems.isNotEmpty) {
+      problems.forEach(stderr.writeln);
+      exit(1);
+    }
+    stdout.writeln('Every changed package has its changelog.');
+    return;
+  }
   final bump = args
       .where((a) => a.startsWith('--bump='))
       .map((a) => a.substring('--bump='.length))
@@ -41,10 +54,7 @@ void main(List<String> args) {
   }
 
   final current = _currentVersion();
-  final lastTag = _git(['tag', '--list', 'v[0-9]*', '--sort=-v:refname'])
-      .split('\n')
-      .where((tag) => tag.trim().isNotEmpty)
-      .firstOrNull;
+  final lastTag = _lastTag();
   final commits = _commitsSince(lastTag);
   if (lastTag != null && commits.isEmpty) {
     stdout.writeln('Nothing to release since $lastTag.');
@@ -56,19 +66,27 @@ void main(List<String> args) {
       ? 'first release'
       : '${commits.length} commits since $lastTag';
   stdout.writeln('Release $next ($since)');
+  // Checked before anything is written: a failed release changes no file.
+  final missing = changelogProblems(lastTag);
+  if (missing.isNotEmpty) {
+    missing.forEach(stderr.writeln);
+    exit(1);
+  }
   if (dryRun) {
     for (final commit in commits) {
       stdout.writeln('  - ${commit.subject}');
     }
     return;
   }
+  // The kinds are read before setVersion, which turns `## Unreleased` into
+  // the version.
+  final changes = {
+    for (final package in family.family)
+      package: packageChange(package, _changedFiles(lastTag, package)),
+  };
   family.setVersion(next);
   for (final package in family.family) {
-    updateChangelog(
-      '$package/CHANGELOG.md',
-      next,
-      _commitsSince(lastTag, paths: [package]),
-    );
+    updateChangelog('$package/CHANGELOG.md', next, changes[package]!);
   }
   final problems = family.check();
   if (problems.isNotEmpty) {
@@ -76,6 +94,77 @@ void main(List<String> args) {
     exit(1);
   }
   _output(next);
+}
+
+/// What changed in a package since the last release, for its changelog
+/// when it has no `## Unreleased` section.
+enum PackageChange {
+  /// Nothing, or only its tests, examples or README.
+  none,
+
+  /// Its generated code (`lib/spring_gen/`, `*.spring.dart`) and nothing of
+  /// its own.
+  generated,
+
+  /// Hand-written code under `lib/` or its `pubspec.yaml`: it needs an
+  /// `## Unreleased` section written by hand.
+  own,
+}
+
+/// The kind of change of [package] from [files], the paths (from the
+/// repository's root) changed since the last release.
+PackageChange packageChange(String package, Iterable<String> files) {
+  var change = PackageChange.none;
+  for (final file in files) {
+    if (!file.startsWith('$package/')) {
+      continue;
+    }
+    final path = file.substring(package.length + 1);
+    if (path == 'pubspec.yaml') {
+      return PackageChange.own;
+    }
+    if (!path.startsWith('lib/')) {
+      continue;
+    }
+    final generated =
+        path.startsWith('lib/spring_gen/') || path.endsWith('.spring.dart');
+    if (!generated) {
+      return PackageChange.own;
+    }
+    change = PackageChange.generated;
+  }
+  return change;
+}
+
+/// One line per package whose own code changed since [tag] without an
+/// `## Unreleased` section in its changelog; empty when there is none (or
+/// no tag yet).
+List<String> changelogProblems(String? tag) {
+  if (tag == null) {
+    return const [];
+  }
+  return [
+    for (final package in family.family)
+      if (!hasUnreleased('$package/CHANGELOG.md') &&
+          packageChange(package, _changedFiles(tag, package)) ==
+              PackageChange.own)
+        _missingChangelog(package, tag),
+  ];
+}
+
+String _missingChangelog(String package, String tag) =>
+    '$package changed since $tag (lib/ or pubspec.yaml) but '
+    '$package/CHANGELOG.md has no "## Unreleased" section: write what '
+    'changed for its users there.';
+
+/// Whether the changelog at [path] starts a `## Unreleased` section.
+bool hasUnreleased(String path) {
+  final file = File(path);
+  return file.existsSync() &&
+      RegExp(
+        r'^## Unreleased\s*$',
+        multiLine: true,
+      ).hasMatch(file.readAsStringSync());
 }
 
 /// A commit: its subject and body.
@@ -109,6 +198,30 @@ List<Commit> _commitsSince(String? tag, {List<String>? paths}) {
   ].where((c) => !c.subject.startsWith('chore(release)')).toList();
 }
 
+// The files of [package] changed between [tag] and HEAD (all of them
+// without a tag).
+List<String> _changedFiles(String? tag, String package) => [
+  for (final line in _git([
+    if (tag != null) ...[
+      'diff',
+      '--name-only',
+      tag,
+      'HEAD',
+    ] else ...[
+      'ls-files',
+    ],
+    '--',
+    package,
+  ]).split('\n'))
+    if (line.trim().isNotEmpty) line.trim(),
+];
+
+String? _lastTag() =>
+    _git(['tag', '--list', 'v[0-9]*', '--sort=-v:refname'])
+        .split('\n')
+        .where((tag) => tag.trim().isNotEmpty)
+        .firstOrNull;
+
 String _bump(String version, String bump) {
   final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(version)!;
   final [major, minor, patch] = [
@@ -122,13 +235,11 @@ String _bump(String version, String bump) {
 
 // After setVersion an `## Unreleased` section is already `## <version>`;
 // a second, older `## <version>` heading (a version that was never
-// published) is merged into it. Without such a section the commit subjects
-// become one.
+// published) is merged into it.
 /// Puts the [version] section into the changelog at [path]: its
-/// `## Unreleased` section if it has one, else the subjects of [commits]
-/// (the commits that changed this package), else a line saying it has no
-/// changes of its own.
-void updateChangelog(String path, String version, List<Commit> commits) {
+/// `## Unreleased` section if it has one, else a line for [change]
+/// ([PackageChange.own] never gets here: the release stops before).
+void updateChangelog(String path, String version, PackageChange change) {
   final file = File(path);
   final heading = '## $version';
   var text = file.existsSync() ? file.readAsStringSync() : '';
@@ -143,10 +254,13 @@ void updateChangelog(String path, String version, List<Commit> commits) {
     file.writeAsStringSync(text);
     return;
   }
-  final entries = commits.isEmpty
-      ? ['- No changes of its own; released with the family version $version.']
-      : [for (final commit in commits) '- ${commit.subject}'];
-  file.writeAsStringSync('$heading\n\n${entries.join('\n')}\n\n$text');
+  final entry = switch (change) {
+    PackageChange.generated =>
+      '- No changes of its own: its generated code (`lib/spring_gen/`) is '
+          'regenerated with spring_core_dart_generator $version.',
+    _ => '- No changes of its own; released with the family version $version.',
+  };
+  file.writeAsStringSync('$heading\n\n$entry\n\n$text');
 }
 
 String _currentVersion() => RegExp(r'^version: (.*)$', multiLine: true)

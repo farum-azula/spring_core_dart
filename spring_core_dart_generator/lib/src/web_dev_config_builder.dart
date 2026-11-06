@@ -96,7 +96,8 @@ import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 ///       target: "http://localhost:8080"
 /// ```
 ///
-/// `spring.flutter.web.content-security-policy` adds the page's Content
+/// `spring.flutter.web.dev-server.content-security-policy` adds the page's
+/// Content
 /// Security Policy to the dev server's answers (the
 /// `Content-Security-Policy` header, or `Content-Security-Policy-Report-Only`
 /// with `content-security-policy-report-only=true`), so development runs
@@ -106,7 +107,8 @@ import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 /// its scripts and Flutter's only, no `eval`, connections to its own
 /// origin, Flutter's CDN, the endpoints its login fetches that are known
 /// at build time and the origins of
-/// `spring.flutter.web.content-security-policy-connect-src`, no framing.
+/// `spring.flutter.web.dev-server.content-security-policy-connect-src`, no
+/// framing.
 ///
 /// The file is not a declared build output: `build_runner` would overwrite
 /// a hand-written file of that name, and delete one it once generated when
@@ -155,8 +157,9 @@ final class WebDevConfigBuilder implements Builder {
   static const header =
       '$marker\n'
       '#\n'
-      '# Written by spring_core_dart_generator from the spring.flutter.web.*\n'
-      '# properties in lib/resources/ (application.yaml, application-web.yaml,\n'
+      '# Written by spring_core_dart_generator from the\n'
+      '# spring.flutter.web.dev-server.* properties in lib/resources/\n'
+      '# (application.yaml, application-web.yaml,\n'
       '# ...). Change those properties instead: this file is rewritten on\n'
       '# every build, and deleted when the properties are removed.\n'
       '# The Flutter tool reads it when it runs the web version\n'
@@ -164,7 +167,7 @@ final class WebDevConfigBuilder implements Builder {
       '# flags still win over it.';
 
   /// The prefix of the properties read.
-  static const prefix = 'spring.flutter.web';
+  static const prefix = 'spring.flutter.web.dev-server';
 
   // No declared outputs (see the class documentation). `build_to: source`
   // makes build_runner run the step on every build whose inputs changed.
@@ -225,6 +228,30 @@ final class WebDevConfigBuilder implements Builder {
       await _files.write(buildStep, package, content);
     }
   }
+}
+
+/// The environment the app reads on the platform of [profiles] (`['ios',
+/// 'mobile']`) from the config files [texts] of `lib/resources/` (and the
+/// [binary] ones an import names with an encoding), read at build time
+/// the way `web_dev_config.yaml` is read for the browser: placeholders only
+/// the running app resolves are left out with a warning, a `file:` import
+/// (the device's disk, not the build machine's) is skipped.
+///
+/// Throws [WebDevConfigException] when the files cannot be read.
+StandardEnvironment readPlatformEnvironment(
+  Map<String, String> texts, {
+  required List<String> profiles,
+  Map<String, Uint8List> binary = const {},
+}) {
+  final reading = _BrowserReading(
+    texts,
+    binary,
+    _StaticConfig(texts, binary),
+    profiles,
+  );
+  final environment = reading.read();
+  reading.warnings.forEach(log.warning);
+  return environment;
 }
 
 // The hash of the page loader's script when the app has a splash, so the
@@ -316,7 +343,8 @@ final class WebDevConfigException implements Exception {
   String toString() => message;
 }
 
-/// One `spring.flutter.web.proxy[n]` rule: requests whose path starts with
+/// One `spring.flutter.web.dev-server.proxy[n]` rule: requests whose path
+/// starts with
 /// `prefix` or matches `regex` go to `target`, the path rewritten by
 /// `replace` when set.
 typedef WebDevProxyRule = ({
@@ -341,7 +369,8 @@ final class WebDevServerSettings {
 
   /// The Content Security Policy of an app whose browser logs in by itself
   /// (`spring.flutter.security.web.mode=spa`) and sets no
-  /// `spring.flutter.web.content-security-policy`: what Flutter's web
+  /// `spring.flutter.web.dev-server.content-security-policy`: what Flutter's
+  /// web
   /// engine needs and nothing more, plus [connectOrigins] for `fetch`.
   ///
   /// The builder passes as [connectOrigins] the origins the login fetches
@@ -353,7 +382,7 @@ final class WebDevServerSettings {
   /// the endpoints Google's and Microsoft's discovery documents name on
   /// other origins (`https://oauth2.googleapis.com`,
   /// `https://graph.microsoft.com`), and the origins listed in
-  /// `spring.flutter.web.content-security-policy-connect-src`. What
+  /// `spring.flutter.web.dev-server.content-security-policy-connect-src`. What
   /// another issuer's discovery document names on another origin is only
   /// known at run time: list it in that property, with the APIs the app
   /// calls.
@@ -432,29 +461,37 @@ final class WebDevServerSettings {
     },
   };
 
-  /// `spring.flutter.web.host`: the address to listen on (`localhost`,
+  /// `spring.flutter.web.dev-server.host`: the address to listen on
+  /// (`localhost`,
   /// `0.0.0.0`).
   final String? host;
 
-  /// `spring.flutter.web.port`, from 0 to 65535 (0 picks a free port).
+  /// `spring.flutter.web.dev-server.port`, from 0 to 65535 (0 picks a free
+  /// port).
   final int? port;
 
-  /// `spring.flutter.web.base-href`: the path the app is served under,
+  /// `spring.flutter.web.dev-server.base-href`: the path the app is served
+  /// under,
   /// starting and ending with `/`.
   final String? baseHref;
 
-  /// `spring.flutter.web.https.cert-path`: the TLS certificate (PEM).
+  /// `spring.flutter.web.dev-server.https.cert-path`: the TLS certificate
+  /// (PEM).
   final String? certPath;
 
-  /// `spring.flutter.web.https.cert-key-path`: its private key (PEM).
+  /// `spring.flutter.web.dev-server.https.cert-key-path`: its private key
+  /// (PEM).
   final String? certKeyPath;
 
-  /// `spring.flutter.web.headers.<Name>=<value>`: headers added to every
+  /// `spring.flutter.web.dev-server.headers.<Name>=<value>`: headers added to
+  /// every
   /// response of the dev server, with the Content Security Policy of
-  /// `spring.flutter.web.content-security-policy` (or the spa mode's).
+  /// `spring.flutter.web.dev-server.content-security-policy` (or the spa
+  /// mode's).
   final Map<String, String> headers;
 
-  /// `spring.flutter.web.proxy[n].*`: requests forwarded to other servers.
+  /// `spring.flutter.web.dev-server.proxy[n].*`: requests forwarded to other
+  /// servers.
   final List<WebDevProxyRule> proxy;
 
   /// The settings of the config [files] of `lib/resources/` (path below
@@ -498,6 +535,15 @@ final class WebDevServerSettings {
     Iterable<String> scriptHashes = const [],
   }) {
     final config = _StaticConfig(files, binary);
+    if (config.moved.isNotEmpty) {
+      final MapEntry(:key, value: file) = config.moved.entries.first;
+      final rest = key.substring('spring.flutter.web.'.length);
+      throw WebDevConfigException(
+        "$key (lib/resources/$file): the dev server's keys moved under "
+        'spring.flutter.web.dev-server; write '
+        'spring.flutter.web.dev-server.$rest.',
+      );
+    }
     if (!config.setsWebKeys && !(generated && config.unparsed.isNotEmpty)) {
       return null;
     }
@@ -768,6 +814,10 @@ final class _StaticConfig {
   // Whether a file sets a key the builder writes.
   bool setsWebKeys = false;
 
+  /// The keys of `spring.flutter.web.*` that are neither `dev-server` nor
+  /// `seo` (the dev server's keys before 0.7.1), with their files.
+  final moved = <String, String>{};
+
   // The files that do not parse.
   final unparsed = <String>[];
 
@@ -781,6 +831,7 @@ final class _StaticConfig {
   ];
 
   static final _web = ConfigurationPropertyName.of(WebDevConfigBuilder.prefix);
+  static final _flutterWeb = ConfigurationPropertyName.of('spring.flutter.web');
   static final _spaMode = ConfigurationPropertyName.of(
     'spring.flutter.security.web.mode',
   );
@@ -853,6 +904,13 @@ final class _StaticConfig {
           in ConfigurationPropertySources.propertyNames(source).entries) {
         if (_web.isAncestorOf(name) || name == _spaMode) {
           setsWebKeys = true;
+        }
+        // A key of the dev server before it moved under dev-server.
+        if (_flutterWeb.isAncestorOf(name) &&
+            !const {'devserver', 'seo'}.contains(
+              name.getElement(3, form: ConfigurationPropertyNameForm.uniform),
+            )) {
+          moved.putIfAbsent(keys.first, () => path);
         }
         for (final key in keys) {
           if (source.getProperty(key) case final value?) {
@@ -949,11 +1007,20 @@ typedef _Hinted = (String, PropertySourceLoader, Encoding?);
 // [_BuildTimeLoader] taking out of each document the placeholders only the
 // running app can resolve.
 final class _BrowserReading {
-  _BrowserReading(this._files, this._binary, this._config);
+  _BrowserReading(
+    this._files,
+    this._binary,
+    this._config, [
+    this._profiles = const ['web'],
+  ]);
 
   final Map<String, String> _files;
   final Map<String, Uint8List> _binary;
   final _StaticConfig _config;
+
+  // The platform profiles the app activates where it runs: `web` in a
+  // browser, `ios` and `mobile` on an iPhone.
+  final List<String> _profiles;
 
   // Placeholders some config file sets, but only in a document that is not
   // read: unknown at build time as well (found when a read fails on
@@ -1070,7 +1137,7 @@ final class _BrowserReading {
           _BuildTimeLoader(loader, this),
       ],
       defaultLocations: const ['optional:memory:/;optional:memory:/config/'],
-      additionalProfiles: const ['web'],
+      additionalProfiles: _profiles,
     ).processAndApplySync();
     environment.propertySources.remove(_ignoreNotFoundSource);
     ConfigurationPropertySources.attach(environment);
@@ -1612,10 +1679,10 @@ final class _Reader {
     final seen = <String>{};
     for (final (source, names) in _sources) {
       for (final MapEntry(key: name, value: key) in names.entries) {
-        if (_field(name) != 'headers' || name.numberOfElements != 5) {
+        if (_field(name) != 'headers' || name.numberOfElements != 6) {
           continue;
         }
-        final header = name.getElement(4);
+        final header = name.getElement(5);
         if (seen.add(header.toLowerCase())) {
           final value = source.getProperty(key);
           if (value != null) {
@@ -1712,7 +1779,8 @@ final class _Reader {
     return {...headers, reportOnlyValue ? reportOnly : enforced: value};
   }
 
-  // spring.flutter.web.content-security-policy-connect-src: a list (YAML,
+  // spring.flutter.web.dev-server.content-security-policy-connect-src: a list
+  // (YAML,
   // or comma-separated) from the first source that has it, as Spring Boot
   // binds lists; `null` when not set.
   List<String>? _connectSrc() {
@@ -1730,13 +1798,13 @@ final class _Reader {
           continue;
         }
         final text = _resolve(key, value, source);
-        if (name.numberOfElements == 4) {
+        if (name.numberOfElements == 5) {
           final parts = text.split(',');
           for (var i = 0; i < parts.length; i++) {
             values[i] = parts[i].trim();
           }
-        } else if (name.numberOfElements == 5 && name.isNumericIndex(4)) {
-          values[int.parse(name.getElement(4))] = text;
+        } else if (name.numberOfElements == 6 && name.isNumericIndex(5)) {
+          values[int.parse(name.getElement(5))] = text;
         }
       }
       if (values.isEmpty) {
@@ -1890,17 +1958,17 @@ final class _Reader {
       final rules = <int, Map<String, String>>{};
       for (final MapEntry(key: name, value: key) in names.entries) {
         if (_field(name) != 'proxy' ||
-            name.numberOfElements != 6 ||
-            !name.isNumericIndex(4)) {
+            name.numberOfElements != 7 ||
+            !name.isNumericIndex(5)) {
           continue;
         }
         final field = name.getElement(
-          5,
+          6,
           form: ConfigurationPropertyNameForm.uniform,
         );
         final value = source.getProperty(key);
         if (_proxyFields.contains(field) && value != null) {
-          (rules[int.parse(name.getElement(4))] ??= {})[field] = _resolve(
+          (rules[int.parse(name.getElement(5))] ??= {})[field] = _resolve(
             key,
             value,
             source,
@@ -1967,10 +2035,10 @@ final class _Reader {
     );
   }
 
-  // The element after spring.flutter.web, uniform (`base-href` gives
+  // The element after spring.flutter.web.dev-server, uniform (`base-href` gives
   // `basehref`).
   static String _field(ConfigurationPropertyName name) =>
-      name.getElement(3, form: ConfigurationPropertyNameForm.uniform);
+      name.getElement(4, form: ConfigurationPropertyNameForm.uniform);
 
   // Unknown names are most likely typos (`spring.flutter.web.prot`):
   // warned about, not failed on, as they change nothing.
@@ -1999,20 +2067,20 @@ final class _Reader {
       'port' ||
       'basehref' ||
       'contentsecuritypolicy' ||
-      'contentsecuritypolicyreportonly' => elements == 4,
+      'contentsecuritypolicyreportonly' => elements == 5,
       'contentsecuritypolicyconnectsrc' =>
-        elements == 4 || elements == 5 && name.isNumericIndex(4),
+        elements == 5 || elements == 6 && name.isNumericIndex(5),
       'https' =>
-        elements == 5 &&
-            const {'certpath', 'certkeypath'}.contains(
-              name.getElement(4, form: ConfigurationPropertyNameForm.uniform),
-            ),
-      'headers' => elements == 5,
-      'proxy' =>
         elements == 6 &&
-            name.isNumericIndex(4) &&
-            _proxyFields.contains(
+            const {'certpath', 'certkeypath'}.contains(
               name.getElement(5, form: ConfigurationPropertyNameForm.uniform),
+            ),
+      'headers' => elements == 6,
+      'proxy' =>
+        elements == 7 &&
+            name.isNumericIndex(5) &&
+            _proxyFields.contains(
+              name.getElement(6, form: ConfigurationPropertyNameForm.uniform),
             ),
       _ => false,
     };

@@ -9,7 +9,7 @@
       "default": "http://localhost:8080",
       "deprecated": null,
       "source": "package:neon_books_app/src/api/api_properties.dart",
-      "line": 20,
+      "line": 21,
       "class": "ApiProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": "localhost:8080",
       "deprecated": null,
       "source": "package:neon_books_app/src/api/api_properties.dart",
-      "line": 16,
+      "line": 17,
       "class": "ApiProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": "ws://localhost:8080",
       "deprecated": null,
       "source": "package:neon_books_app/src/api/api_properties.dart",
-      "line": 24,
+      "line": 25,
       "class": "ApiProperties"
     },
     {
@@ -316,7 +316,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/api/api_properties.dart",
-      "line": 13,
+      "line": 14,
       "injects": [],
       "members": [
         {
@@ -545,7 +545,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/catalog/catalog.dart",
-      "line": 10,
+      "line": 11,
       "injects": [
         {
           "parameter": "_service",
@@ -795,7 +795,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 41,
+      "line": 42,
       "injects": [
         {
           "parameter": "tokens",
@@ -839,7 +839,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 9,
+      "line": 10,
       "injects": [],
       "members": [
         {
@@ -884,7 +884,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 16,
+      "line": 17,
       "injects": [],
       "members": [
         {
@@ -912,7 +912,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 23,
+      "line": 24,
       "injects": [
         {
           "parameter": "manager",
@@ -1358,7 +1358,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/account/server_authentication_provider.dart",
-      "line": 15,
+      "line": 16,
       "injects": [
         {
           "parameter": "_account",
@@ -1402,7 +1402,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/account/session.dart",
-      "line": 45,
+      "line": 46,
       "injects": [
         {
           "parameter": "_authenticationManager",
@@ -1838,5 +1838,104 @@
     "spa",
     "sso",
     "web"
+  ],
+  "routes": [
+    {
+      "path": "/about",
+      "name": "about-page",
+      "class": "AboutPage",
+      "source": "package:neon_books_app/src/about/about_page.dart#AboutPage",
+      "title": "#{about.title}"
+    },
+    {
+      "path": "/admin",
+      "name": "admin-page",
+      "class": "AdminPage",
+      "source": "package:neon_books_app/src/admin/admin_page.dart#AdminPage",
+      "title": "#{admin.title}"
+    },
+    {
+      "path": "/basket",
+      "name": "basket-page",
+      "class": "BasketPage",
+      "source": "package:neon_books_app/src/basket/basket_page.dart#BasketPage",
+      "title": "#{section.basket}"
+    },
+    {
+      "path": "/books/{isbn}",
+      "name": "book-page",
+      "class": "BookPage",
+      "source": "package:neon_books_app/src/catalog/book_page.dart#BookPage",
+      "title": "#{book.title}"
+    },
+    {
+      "path": "/catalog",
+      "name": "catalog-page",
+      "class": "CatalogPage",
+      "source": "package:neon_books_app/src/catalog/catalog_page.dart#CatalogPage",
+      "title": "#{section.catalog}"
+    },
+    {
+      "path": "/login",
+      "name": "login-page",
+      "class": "LoginPage",
+      "source": "package:neon_books_app/src/account/login_page.dart#LoginPage",
+      "title": "#{login.title}"
+    },
+    {
+      "path": "/logs",
+      "name": "logs-page",
+      "class": "LogsPage",
+      "source": "package:neon_books_app/src/logs/logs_page.dart#LogsPage",
+      "title": "#{logs.title}"
+    },
+    {
+      "path": "/more",
+      "name": "more-page",
+      "class": "MorePage",
+      "source": "package:neon_books_app/src/app/more_page.dart#MorePage",
+      "title": "#{section.more}"
+    },
+    {
+      "path": "/orders",
+      "name": "orders-page",
+      "class": "OrdersPage",
+      "source": "package:neon_books_app/src/orders/orders_page.dart#OrdersPage",
+      "title": "#{section.orders}"
+    },
+    {
+      "path": "/settings",
+      "name": "settings-page",
+      "class": "SettingsPage",
+      "source": "package:neon_books_app/src/settings/settings_page.dart#SettingsPage",
+      "title": "#{settings.title}"
+    },
+    {
+      "path": "/stock",
+      "name": "live-stock-page",
+      "class": "LiveStockPage",
+      "source": "package:neon_books_app/src/stock/live_stock_page.dart#LiveStockPage",
+      "title": "#{section.stock}"
+    },
+    {
+      "path": "/support",
+      "name": "support-page",
+      "class": "SupportPage",
+      "source": "package:neon_books_app/src/support/support_page.dart#SupportPage",
+      "title": "#{support.title}"
+    }
+  ],
+  "shells": [
+    {
+      "class": "HomePage",
+      "source": "package:neon_books_app/src/app/home_page.dart#HomePage",
+      "branches": [
+        "/catalog",
+        "/basket",
+        "/orders",
+        "/stock",
+        "/more"
+      ]
+    }
   ]
 }

@@ -233,6 +233,15 @@ void main() {
       await range('bytes=20-30', 416, '', 'bytes */10');
       await range('bytes=0-1,4-5', 200, '0123456789');
       await range('items=0-1', 200, '0123456789');
+      // Positions are decimal digits only: a sign or another base is a
+      // malformed header (the whole content), never a range outside the
+      // content.
+      await range('bytes=--1', 200, '0123456789');
+      await range('bytes=-+3', 200, '0123456789');
+      await range('bytes=+1-+2', 200, '0123456789');
+      await range('bytes=0x1-0x2', 200, '0123456789');
+      await range('bytes=1--2', 200, '0123456789');
+      await range('bytes=99999999999999999999999-', 200, '0123456789');
     });
 
     test('a missing file is a 404', () async {

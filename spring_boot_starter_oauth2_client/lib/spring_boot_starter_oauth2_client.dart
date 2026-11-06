@@ -35,17 +35,20 @@
 /// A server logs browsers in with these registrations through the
 /// security starter's `oauth2Login()`; a Flutter app logs its user in
 /// with `spring_boot_starter_flutter_security`. This import re-exports
-/// `spring_boot_starter_feign`, `spring_security_core` and, through them,
-/// `spring_web_dart`, `spring_boot_dart` and the logging starter: the
-/// starter is the only dependency an application lists. It is the Dart
-/// version of Spring Boot's `spring-boot-starter-oauth2-client` (Spring
-/// Security's `spring-security-oauth2-client` and `-oauth2-core`).
+/// `spring_security_core` and `spring_web_dart` (the clients take an
+/// `HttpTransport`) and, through them, `spring_boot_dart` and the logging
+/// starter. It does not re-export the Feign starter: the access token on
+/// Feign calls (`OAuth2AccessTokenInterceptor`) is for applications that
+/// write Feign clients, and those list `spring_boot_starter_feign`
+/// themselves. It is the Dart version of Spring Boot's
+/// `spring-boot-starter-oauth2-client` (Spring Security's
+/// `spring-security-oauth2-client` and `-oauth2-core`).
 library;
 
-// Feign (and through it the web client and logging) and the security
-// core, so this starter is the only dependency an application needs.
-export 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+// The security core and the web client, whose types the clients take.
+// Not Feign: an application with Feign clients lists it (docs/packages.md).
 export 'package:spring_security_core/spring_security_core.dart';
+export 'package:spring_web_dart/spring_web_dart.dart';
 
 export 'src/client/authorized_client.dart';
 export 'src/client/authorized_client_manager.dart';

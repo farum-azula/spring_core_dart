@@ -1,6 +1,7 @@
 // The starter's beans: what comes with a registration, what backs off for
 // an application's bean, and how another auto-configuration registered
 // before this one replaces a default.
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';

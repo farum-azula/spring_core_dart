@@ -73,22 +73,44 @@ String _body(_Files files) {
   return content.substring(WebDevConfigBuilder.header.length + 1);
 }
 
+// The prefix of the dev server's keys.
+const _p = 'spring.flutter.web.dev-server';
+
+// A YAML file setting the dev server's port.
+String _yamlPort(int port) =>
+    'spring:\n  flutter:\n    web:\n      dev-server:\n        port: $port\n';
+
 void main() {
-  test('no spring.flutter.web.* property: no file', () async {
+  test('no spring.flutter.web.dev-server.* property: no file', () async {
     final files = _Files();
     final logs = await _build(files, {
       'application.properties': 'spring.flutter.app.title=Shop\n',
-      'application-ios.properties': 'spring.flutter.web.port=5050\n',
+      'application-ios.properties': 'spring.flutter.web.dev-server.port=5050\n',
     });
     expect(files.content, isNull);
     expect(files.writes, 0);
     expect(_severe(logs), isEmpty);
   });
 
+  test('a key from before dev-server fails and names its new place', () async {
+    final files = _Files();
+    final logs = await _build(files, {
+      'application-web.properties': 'spring.flutter.web.port=5050\n',
+    });
+    expect(
+      _severe(logs).single,
+      allOf(
+        contains('application-web.properties'),
+        contains('spring.flutter.web.dev-server.port'),
+      ),
+    );
+    expect(files.content, isNull);
+  });
+
   test('the port of application.yaml', () async {
     final files = _Files();
     await _build(files, {
-      'application.yaml': 'spring:\n  flutter:\n    web:\n      port: 5050\n',
+      'application.yaml': _yamlPort(5050),
     });
     expect(_body(files), 'server:\n  port: 5050\n');
   });
@@ -98,12 +120,11 @@ void main() {
     final files = _Files();
     await _build(files, {
       'application.properties':
-          'spring.flutter.web.port=4000\n'
-          'spring.flutter.web.host=0.0.0.0\n',
-      'application-web.yaml':
-          'spring:\n  flutter:\n    web:\n      port: 5050\n'
-          '      baseHref: /shop/\n',
-      'application-android.properties': 'spring.flutter.web.port=1\n',
+          'spring.flutter.web.dev-server.port=4000\n'
+          'spring.flutter.web.dev-server.host=0.0.0.0\n',
+      'application-web.yaml': '${_yamlPort(5050)}        baseHref: /shop/\n',
+      'application-android.properties':
+          'spring.flutter.web.dev-server.port=1\n',
     });
     expect(
       _body(files),
@@ -118,7 +139,7 @@ void main() {
     final files = _Files();
     await _build(files, {
       'application.properties': 'spring.profiles.active=dev\n',
-      'application-dev.properties': 'spring.flutter.web.port=5051\n',
+      'application-dev.properties': 'spring.flutter.web.dev-server.port=5051\n',
     });
     expect(_body(files), 'server:\n  port: 5051\n');
   });
@@ -142,10 +163,11 @@ void main() {
           '    import: proxy.properties\n'
           '  flutter:\n'
           '    web:\n'
-          '      port: 5053\n',
+          '      dev-server:\n'
+          '        port: 5053\n',
       'web/proxy.properties':
-          'spring.flutter.web.proxy[0].prefix=/api/\n'
-          'spring.flutter.web.proxy[0].target=http://localhost:8080\n',
+          'spring.flutter.web.dev-server.proxy[0].prefix=/api/\n'
+          'spring.flutter.web.dev-server.proxy[0].target=http://localhost:8080\n',
     });
     expect(
       _body(files),
@@ -166,26 +188,27 @@ void main() {
             'spring.config.import=resources:dev/web.properties\n',
         'application-ios.properties':
             'spring.config.import=resources:dev/ios.properties\n',
-        'dev/web.properties': 'spring.flutter.web.port=5054\n',
-        'dev/ios.properties': 'spring.flutter.web.host=0.0.0.0\n',
+        'dev/web.properties': 'spring.flutter.web.dev-server.port=5054\n',
+        'dev/ios.properties': 'spring.flutter.web.dev-server.host=0.0.0.0\n',
       });
       expect(_body(files), 'server:\n  port: 5054\n');
     },
   );
 
   // The early check skipped the files when no .properties or .yaml file
-  // set spring.flutter.web.*: a file imported with an extension hint was
+  // set spring.flutter.web.dev-server.*: a file imported with an extension
+  // hint was
   // never read, and a generated web_dev_config.yaml was deleted.
   test('an import with an extension hint is followed', () async {
     for (final resources in [
       {
         'application.yaml': 'spring.config.import: resources:dev.conf[.yaml]\n',
-        'dev.conf': 'spring:\n  flutter:\n    web:\n      port: 5057\n',
+        'dev.conf': _yamlPort(5057),
       },
       {
         'application.properties':
             'spring.config.import[0]=resources:web/dev.conf[.properties]\n',
-        'web/dev.conf': 'spring.flutter.web.port=5057\n',
+        'web/dev.conf': 'spring.flutter.web.dev-server.port=5057\n',
       },
     ]) {
       final files = _Files('${WebDevConfigBuilder.marker}\nold');
@@ -203,12 +226,12 @@ void main() {
       {
         'application.yaml':
             'spring.config.import: resources:dev.conf[.yaml][encoding=utf-8]\n',
-        'dev.conf': 'spring:\n  flutter:\n    web:\n      port: 5057\n',
+        'dev.conf': _yamlPort(5057),
       },
       {
         'application.yaml':
             'spring.config.import: "optional:dev.conf[encoding=UTF8][.yaml]"\n',
-        'dev.conf': 'spring.flutter.web.port: 5057\n',
+        'dev.conf': 'spring.flutter.web.dev-server.port: 5057\n',
       },
       // ISO-8859-1, not UTF-8: read only as the import says.
       {
@@ -216,14 +239,14 @@ void main() {
             'spring.config.import='
             'resources:web/dev.conf[.properties][encoding=iso-8859-1]\n',
         'web/dev.conf': latin1.encode(
-          '# café\nspring.flutter.web.port=5057\n',
+          '# café\nspring.flutter.web.dev-server.port=5057\n',
         ),
       },
       {
         'application.properties':
             'spring.config.import=web.properties[encoding=latin1]\n',
         'web.properties': latin1.encode(
-          'spring.flutter.web.port=5057\nspring.flutter.web.host=café\n',
+          '$_p.port=5057\n$_p.host=café\n',
         ),
       },
     ]) {
@@ -236,7 +259,9 @@ void main() {
     await _build(files, {
       'application.properties':
           'spring.config.import=web.properties[encoding=latin1]\n',
-      'web.properties': latin1.encode('spring.flutter.web.host=café\n'),
+      'web.properties': latin1.encode(
+        'spring.flutter.web.dev-server.host=café\n',
+      ),
     });
     expect(_body(files), 'server:\n  host: "café"\n');
   });
@@ -247,16 +272,16 @@ void main() {
     final quiet = await _build(none, {
       'application.yaml':
           'spring.config.import: resources:dev.conf[.yaml][encoding=utf-16]\n',
-      'dev.conf': 'spring.flutter.web.port: 5057\n',
+      'dev.conf': 'spring.flutter.web.dev-server.port: 5057\n',
     });
     expect(none.content, isNull);
     expect(_problems(quiet), isEmpty);
     // With one, it fails as the app's start does.
     final logs = await _build(_Files(), {
       'application.yaml':
-          'spring.flutter.web.port: 5050\n'
+          'spring.flutter.web.dev-server.port: 5050\n'
           'spring.config.import: resources:dev.conf[.yaml][encoding=utf-16]\n',
-      'dev.conf': 'spring.flutter.web.host: devhost\n',
+      'dev.conf': 'spring.flutter.web.dev-server.host: devhost\n',
     });
     expect(_severe(logs).single, contains("unsupported charset 'utf-16'"));
   });
@@ -271,10 +296,10 @@ void main() {
       addTearDown(() => temp.deleteSync(recursive: true));
       root = temp.path.replaceAll(r'\', '/');
       for (final MapEntry(key: path, value: content) in {
-        'dev.yaml': 'spring.flutter.web.port: 7001\n',
-        'conf/application.yaml': 'spring.flutter.web.port: 7002\n',
-        'tree/spring/flutter/web/port': '7003',
-        'mounts/a/spring/flutter/web/host': '0.0.0.0',
+        'dev.yaml': 'spring.flutter.web.dev-server.port: 7001\n',
+        'conf/application.yaml': 'spring.flutter.web.dev-server.port: 7002\n',
+        'tree/spring/flutter/web/dev-server/port': '7003',
+        'mounts/a/spring/flutter/web/dev-server/host': '0.0.0.0',
       }.entries) {
         File('$root/$path')
           ..createSync(recursive: true)
@@ -309,7 +334,8 @@ void main() {
             '${[for (final l in locations()) '      - "optional:$l"\n'].join()}'
             '  flutter:\n'
             '    web:\n'
-            '      port: 5055\n',
+            '      dev-server:\n'
+            '        port: 5055\n',
       });
       expect(_severe(logs), isEmpty);
       expect(_body(files), 'server:\n  port: 5055\n');
@@ -327,7 +353,7 @@ void main() {
         final logs = await _build(files, {
           'application.yaml':
               'spring.config.import: "$location"\n'
-              'spring.flutter.web.port: 5055\n',
+              'spring.flutter.web.dev-server.port: 5055\n',
         });
         expect(_severe(logs), isEmpty, reason: location);
         expect(
@@ -409,7 +435,7 @@ void main() {
   // extension, a broken imported file... The third High of this kind: the
   // config of an app without a key the builder writes is not loaded at
   // all.
-  group('an app without a spring.flutter.web.* key', () {
+  group('an app without a spring.flutter.web.dev-server.* key', () {
     const extra = 'optional:file:/etc/srv/extra.yaml';
     // A pure Dart server's config: every import kind, every position of a
     // placeholder only the running app resolves, broken imported files,
@@ -592,13 +618,13 @@ void main() {
       for (final resources in [
         {
           'application.yaml': 'spring.profiles.active: \${APP_PROFILE}\n',
-          'web/dev.properties': 'spring.flutter.web.port=5070\n',
+          'web/dev.properties': 'spring.flutter.web.dev-server.port=5070\n',
         },
         {
           'application.yaml':
               'spring.profiles.active: \${APP_PROFILE}\n'
               'spring.config.import: optional:resources:web/dev.conf[.yaml]\n',
-          'web/dev.conf': 'spring.flutter.web.port: 5070\n',
+          'web/dev.conf': 'spring.flutter.web.dev-server.port: 5070\n',
         },
       ]) {
         final logs = await _build(_Files(), resources);
@@ -616,8 +642,8 @@ void main() {
 
   // An app that uses the dev server's file is told what the build cannot
   // know, and gets the file written with what it can.
-  group('an app with a spring.flutter.web.* key', () {
-    const port = 'spring.flutter.web.port: 5050\n';
+  group('an app with a spring.flutter.web.dev-server.* key', () {
+    const port = 'spring.flutter.web.dev-server.port: 5050\n';
 
     test('a placeholder only the running app resolves is warned about and '
         'read as unset, never a build error', () async {
@@ -636,7 +662,8 @@ void main() {
         (
           {
             'application.properties': 'spring.profiles.active=dev,\${EXTRA}\n',
-            'application-dev.properties': 'spring.flutter.web.port=5051\n',
+            'application-dev.properties':
+                'spring.flutter.web.dev-server.port=5051\n',
           },
           ['spring.profiles.active'],
           5051,
@@ -645,7 +672,8 @@ void main() {
           {
             'application.yaml':
                 '${port}spring.profiles.active: ["\${EXTRA}", dev]\n',
-            'application-dev.yaml': 'spring.flutter.web.port: 5051\n',
+            'application-dev.yaml':
+                'spring.flutter.web.dev-server.port: 5051\n',
           },
           ['spring.profiles.active[0]'],
           5051,
@@ -653,7 +681,7 @@ void main() {
         (
           {
             'application.properties':
-                'spring.flutter.web.port=5050\n'
+                'spring.flutter.web.dev-server.port=5050\n'
                 'spring.profiles.include=\${A}\n'
                 'spring.profiles.default=\${B}\n'
                 'spring.profiles.validate=\${C}\n'
@@ -675,9 +703,9 @@ void main() {
           {
             'application.yaml':
                 '$port---\nspring.config.activate.on-profile: \${PROFILE}\n'
-                'spring.flutter.web.port: 1\n'
+                'spring.flutter.web.dev-server.port: 1\n'
                 '---\nspring.config.activate.on-cloud-platform: \${CLOUD}\n'
-                'spring.flutter.web.port: 2\n',
+                'spring.flutter.web.dev-server.port: 2\n',
           },
           [
             'spring.config.activate.on-profile',
@@ -712,7 +740,7 @@ void main() {
           {
             'application.yaml': '${port}spring.profiles.active: \${p}\n',
             'application-ios.properties': 'p=dev\n',
-            'application-dev.yaml': 'spring.flutter.web.port: 1\n',
+            'application-dev.yaml': 'spring.flutter.web.dev-server.port: 1\n',
           },
           ['spring.profiles.active'],
           5050,
@@ -797,7 +825,7 @@ void main() {
             'spring.profiles.active: \${APP_PROFILE:dev}\n'
             'spring.config.import: resources:\${ENV:web}.yaml\n',
         'application-dev.yaml': port,
-        'web.yaml': 'spring.flutter.web.host: 0.0.0.0\n',
+        'web.yaml': 'spring.flutter.web.dev-server.host: 0.0.0.0\n',
       });
       expect(_problems(logs), isEmpty);
       expect(_body(files), 'server:\n  host: "0.0.0.0"\n  port: 5050\n');
@@ -825,7 +853,7 @@ void main() {
         'a generated file', () async {
       final files = _Files();
       final logs = await _build(files, {
-        'application.properties': 'spring.flutter.web.port=5050\n',
+        'application.properties': 'spring.flutter.web.dev-server.port=5050\n',
         'application-web.yml': 'spring:\n  flutter: [\n',
       });
       expect(
@@ -844,7 +872,7 @@ void main() {
     final logs = await _build(files, {
       'application.yaml':
           'spring.config.import: resources:/web/, resources:missing.yaml\n'
-          'spring.flutter.web.port: 5056\n',
+          'spring.flutter.web.dev-server.port: 5056\n',
     });
     expect(_problems(logs), isEmpty);
     expect(_body(files), 'server:\n  port: 5056\n');
@@ -858,7 +886,7 @@ void main() {
           'spring.config.import: asset:config/web.yaml, '
           'optional:https://config.example/web.yaml, '
           'http://127.0.0.1:9/web.yaml\n'
-          'spring.flutter.web.port: 5056\n',
+          'spring.flutter.web.dev-server.port: 5056\n',
     });
     expect(_severe(logs), isEmpty);
     expect(_body(files), 'server:\n  port: 5056\n');
@@ -870,8 +898,8 @@ void main() {
     await _build(files, {
       'application.properties':
           'web.port=5052\n'
-          'spring.flutter.web.port=\${web.port}\n'
-          'spring.flutter.web.host=\${HOME:localhost}\n',
+          'spring.flutter.web.dev-server.port=\${web.port}\n'
+          'spring.flutter.web.dev-server.host=\${HOME:localhost}\n',
     });
     expect(
       _body(files),
@@ -883,26 +911,27 @@ void main() {
     final files = _Files();
     await _build(files, {
       'application.properties':
-          'spring.flutter.web.headers.X-Frame-Options=DENY\n'
-          'spring.flutter.web.headers.Cross-Origin-Opener-Policy=unsafe-none\n'
-          'spring.flutter.web.proxy[0].prefix=/ignored/\n'
-          'spring.flutter.web.proxy[0].target=http://ignored\n',
+          'spring.flutter.web.dev-server.headers.X-Frame-Options=DENY\n'
+          '$_p.headers.Cross-Origin-Opener-Policy=unsafe-none\n'
+          'spring.flutter.web.dev-server.proxy[0].prefix=/ignored/\n'
+          'spring.flutter.web.dev-server.proxy[0].target=http://ignored\n',
       'application-web.yaml': r'''
 spring:
   flutter:
     web:
-      port: 5050
-      https:
-        cert-path: certs/localhost.pem
-        cert-key-path: certs/localhost-key.pem
-      headers:
-        Cross-Origin-Opener-Policy: same-origin
-      proxy:
-        - prefix: /api/
-          target: http://localhost:8080
-        - regex: ^/auth/(.*)
-          target: http://localhost:9000
-          replace: /oauth2/$1
+      dev-server:
+        port: 5050
+        https:
+          cert-path: certs/localhost.pem
+          cert-key-path: certs/localhost-key.pem
+        headers:
+          Cross-Origin-Opener-Policy: same-origin
+        proxy:
+          - prefix: /api/
+            target: http://localhost:8080
+          - regex: ^/auth/(.*)
+            target: http://localhost:9000
+            replace: /oauth2/$1
 ''',
     });
     final body = _body(files);
@@ -934,12 +963,12 @@ spring:
   test('a port the browsers refuse is written, with a warning', () async {
     final files = _Files();
     final logs = await _build(files, {
-      'application.properties': 'spring.flutter.web.port=5060\n',
+      'application.properties': 'spring.flutter.web.dev-server.port=5060\n',
     });
     expect(_body(files), 'server:\n  port: 5060\n');
     expect(
       _warnings(logs).single,
-      contains('spring.flutter.web.port: browsers refuse port 5060'),
+      contains('spring.flutter.web.dev-server.port: browsers refuse port 5060'),
     );
   });
 
@@ -947,7 +976,7 @@ spring:
     final files = _Files();
     await _build(files, {
       'application.properties':
-          'spring.flutter.web.headers.X-Note=a: "b" # c\n',
+          'spring.flutter.web.dev-server.headers.X-Note=a: "b" # c\n',
     });
     final server = (loadYaml(files.content!) as YamlMap)['server'] as YamlMap;
     expect((server['headers'] as YamlList).single, {
@@ -959,57 +988,57 @@ spring:
   group('invalid values fail the build and name the property', () {
     final cases = {
       'port not a number': (
-        'spring.flutter.web.port=abc\n',
-        "spring.flutter.web.port: 'abc' is not a port",
+        'spring.flutter.web.dev-server.port=abc\n',
+        "spring.flutter.web.dev-server.port: 'abc' is not a port",
       ),
       'port out of range': (
-        'spring.flutter.web.port=70000\n',
-        "spring.flutter.web.port: '70000' is not a port",
+        'spring.flutter.web.dev-server.port=70000\n',
+        "spring.flutter.web.dev-server.port: '70000' is not a port",
       ),
       'empty host': (
-        'spring.flutter.web.host=\n',
-        'spring.flutter.web.host is empty',
+        'spring.flutter.web.dev-server.host=\n',
+        'spring.flutter.web.dev-server.host is empty',
       ),
       'base-href without slashes': (
-        'spring.flutter.web.base-href=app\n',
-        "spring.flutter.web.base-href: 'app' must start and end with '/'",
+        'spring.flutter.web.dev-server.base-href=app\n',
+        "spring.flutter.web.dev-server.base-href: 'app' must start and end with '/'",
       ),
       'https without the key': (
-        'spring.flutter.web.https.cert-path=a.pem\n',
-        'spring.flutter.web.https.cert-key-path is not set',
+        'spring.flutter.web.dev-server.https.cert-path=a.pem\n',
+        'spring.flutter.web.dev-server.https.cert-key-path is not set',
       ),
       'proxy without target': (
-        'spring.flutter.web.proxy[0].prefix=/api/\n',
-        'spring.flutter.web.proxy[0].target is not set '
+        'spring.flutter.web.dev-server.proxy[0].prefix=/api/\n',
+        'spring.flutter.web.dev-server.proxy[0].target is not set '
             '(in lib/resources/application.properties)',
       ),
       'proxy target not a URL': (
-        'spring.flutter.web.proxy[0].prefix=/api/\n'
-            'spring.flutter.web.proxy[0].target=localhost\n',
-        'spring.flutter.web.proxy[0].target '
+        'spring.flutter.web.dev-server.proxy[0].prefix=/api/\n'
+            'spring.flutter.web.dev-server.proxy[0].target=localhost\n',
+        'spring.flutter.web.dev-server.proxy[0].target '
             "(in lib/resources/application.properties): 'localhost' is not "
             'an absolute URL',
       ),
       'proxy with prefix and regex': (
-        'spring.flutter.web.proxy[0].target=http://localhost:8080\n'
-            'spring.flutter.web.proxy[0].prefix=/api/\n'
-            'spring.flutter.web.proxy[0].regex=^/api/\n',
-        'set exactly one of spring.flutter.web.proxy[0].prefix',
+        'spring.flutter.web.dev-server.proxy[0].target=http://localhost:8080\n'
+            'spring.flutter.web.dev-server.proxy[0].prefix=/api/\n'
+            'spring.flutter.web.dev-server.proxy[0].regex=^/api/\n',
+        'set exactly one of spring.flutter.web.dev-server.proxy[0].prefix',
       ),
       'proxy with neither prefix nor regex': (
-        'spring.flutter.web.proxy[0].target=http://localhost:8080\n',
-        'set exactly one of spring.flutter.web.proxy[0].prefix',
+        'spring.flutter.web.dev-server.proxy[0].target=http://localhost:8080\n',
+        'set exactly one of spring.flutter.web.dev-server.proxy[0].prefix',
       ),
       'proxy with a broken regex': (
-        'spring.flutter.web.proxy[0].target=http://localhost:8080\n'
-            'spring.flutter.web.proxy[0].regex=(\n',
-        'spring.flutter.web.proxy[0].regex '
+        'spring.flutter.web.dev-server.proxy[0].target=http://localhost:8080\n'
+            'spring.flutter.web.dev-server.proxy[0].regex=(\n',
+        'spring.flutter.web.dev-server.proxy[0].regex '
             "(in lib/resources/application.properties): '(' is not a valid "
             'regular expression',
       ),
       'unresolvable placeholder': (
-        'spring.flutter.web.port=\${WEB_PORT}\n',
-        'spring.flutter.web.port (in lib/resources/application.properties): '
+        'spring.flutter.web.dev-server.port=\${WEB_PORT}\n',
+        'spring.flutter.web.dev-server.port (in lib/resources/application.properties): '
             r"'${WEB_PORT}' cannot be resolved at build time",
       ),
     };
@@ -1042,7 +1071,7 @@ spring:
       final files = _Files();
       final logs = await _build(files, {
         'application-web.properties':
-            "spring.flutter.web.content-security-policy=default-src 'self'\n",
+            "$_p.content-security-policy=default-src 'self'\n",
       });
       expect(logs.where((log) => log.startsWith('WARNING: ')), isEmpty);
       expect(headers(files), {'Content-Security-Policy': "default-src 'self'"});
@@ -1052,8 +1081,8 @@ spring:
       final files = _Files();
       await _build(files, {
         'application-web.properties':
-            "spring.flutter.web.content-security-policy=default-src 'self'\n"
-            'spring.flutter.web.content-security-policy-report-only=true\n',
+            "$_p.content-security-policy=default-src 'self'\n"
+            '$_p.content-security-policy-report-only=true\n',
       });
       expect(headers(files), {
         'Content-Security-Policy-Report-Only': "default-src 'self'",
@@ -1200,14 +1229,14 @@ spring:
         expect(
           await connectSrc({
             'application.yaml': '''
-spring.flutter.web.content-security-policy-connect-src:
+spring.flutter.web.dev-server.content-security-policy-connect-src:
   - https://ignored.example
 ''',
             'application-web.yaml': '''
 spring:
   flutter:
     security.web.mode: spa
-    web.content-security-policy-connect-src:
+    web.dev-server.content-security-policy-connect-src:
       - https://api.neon.books
       - wss://api.neon.books
 ''',
@@ -1218,7 +1247,7 @@ spring:
           await connectSrc({
             'application-web.properties':
                 'spring.flutter.security.web.mode=spa\n'
-                'spring.flutter.web.content-security-policy-connect-src='
+                '$_p.content-security-policy-connect-src='
                 'https://a.example, https://*.b.example:8443/v1/\n',
           }),
           ['https://a.example', 'https://*.b.example:8443/v1/'],
@@ -1231,7 +1260,7 @@ spring:
           final logs = await _build(files, {
             'application-web.yaml':
                 'spring.flutter.security.web.mode: spa\n'
-                'spring.flutter.web.content-security-policy-connect-src:\n'
+                '$_p.content-security-policy-connect-src:\n'
                 '  - "$entry"\n',
           });
           expect(
@@ -1248,8 +1277,8 @@ spring:
         final logs = await _build(files, {
           'application-web.properties':
               'spring.flutter.security.web.mode=spa\n'
-              "spring.flutter.web.content-security-policy=default-src 'self'\n"
-              'spring.flutter.web.content-security-policy-connect-src='
+              "$_p.content-security-policy=default-src 'self'\n"
+              '$_p.content-security-policy-connect-src='
               'https://api.neon.books\n',
         });
         expect(
@@ -1263,8 +1292,8 @@ spring:
         final files = _Files();
         final logs = await _build(files, {
           'application-web.properties':
-              'spring.flutter.web.port=5050\n'
-              'spring.flutter.web.content-security-policy-connect-src='
+              'spring.flutter.web.dev-server.port=5050\n'
+              '$_p.content-security-policy-connect-src='
               'https://api.neon.books\n',
         });
         expect(
@@ -1280,10 +1309,10 @@ spring:
       await _build(files, {
         'application-web.properties':
             'spring.flutter.security.web.mode=spa\n'
-            'spring.flutter.web.port=5050\n'
+            'spring.flutter.web.dev-server.port=5050\n'
             // A property line: kept whole for readability.
             // ignore: lines_longer_than_80_chars
-            "spring.flutter.web.headers.Content-Security-Policy=default-src 'self'\n",
+            "spring.flutter.web.dev-server.headers.Content-Security-Policy=default-src 'self'\n",
       });
       expect(headers(files), {'Content-Security-Policy': "default-src 'self'"});
     });
@@ -1301,10 +1330,10 @@ spring:
       final files = _Files();
       final logs = await _build(files, {
         'application-web.properties':
-            "spring.flutter.web.content-security-policy=default-src 'self'\n"
+            "$_p.content-security-policy=default-src 'self'\n"
             // A property line: kept whole for readability.
             // ignore: lines_longer_than_80_chars
-            "spring.flutter.web.headers.Content-Security-Policy=default-src 'none'\n",
+            "spring.flutter.web.dev-server.headers.Content-Security-Policy=default-src 'none'\n",
       });
       expect(_severe(logs).single, contains('keep one of them'));
       expect(files.content, isNull);
@@ -1314,8 +1343,8 @@ spring:
       final files = _Files();
       final logs = await _build(files, {
         'application-web.properties':
-            "spring.flutter.web.content-security-policy=default-src 'self'\n"
-            'spring.flutter.web.content-security-policy-report-only=yes\n',
+            "$_p.content-security-policy=default-src 'self'\n"
+            '$_p.content-security-policy-report-only=yes\n',
       });
       expect(_severe(logs).single, contains('is not true or false'));
     });
@@ -1324,12 +1353,11 @@ spring:
   test('an unknown property is a warning', () async {
     final files = _Files();
     final logs = await _build(files, {
-      'application.properties':
-          'spring.flutter.web.port=5050\nspring.flutter.web.prot=5050\n',
+      'application.properties': '$_p.port=5050\n$_p.prot=5050\n',
     });
     expect(
       logs.where((log) => log.startsWith('WARNING: ')).single,
-      contains('spring.flutter.web.prot (in lib/resources/'),
+      contains('spring.flutter.web.dev-server.prot (in lib/resources/'),
     );
     expect(_body(files), 'server:\n  port: 5050\n');
   });
@@ -1340,7 +1368,7 @@ spring:
     test('is never changed: with the properties set it is an error', () async {
       final files = _Files(handWritten);
       final logs = await _build(files, {
-        'application.properties': 'spring.flutter.web.port=5050\n',
+        'application.properties': 'spring.flutter.web.dev-server.port=5050\n',
       });
       expect(
         _severe(logs).single,
@@ -1375,8 +1403,8 @@ spring:
       () async {
         for (final broken in {
           'application.yaml':
-              'spring.flutter.web.port: 5061\n'
-              'spring.flutter.web.headers: {X-A: [\n',
+              'spring.flutter.web.dev-server.port: 5061\n'
+              'spring.flutter.web.dev-server.headers: {X-A: [\n',
           'application-web.yml': 'spring:\n  flutter: [\n',
         }.entries) {
           const generated =
@@ -1408,7 +1436,7 @@ spring:
         '${WebDevConfigBuilder.header}\nserver:\n  port: 5050\n',
       );
       await _build(files, {
-        'application.properties': 'spring.flutter.web.port=5050\n',
+        'application.properties': 'spring.flutter.web.dev-server.port=5050\n',
       });
       expect(files.writes, 0);
     });
@@ -1418,7 +1446,7 @@ spring:
         '${WebDevConfigBuilder.header}\nserver:\n  port: 5050\n',
       );
       await _build(files, {
-        'application.properties': 'spring.flutter.web.port=5070\n',
+        'application.properties': 'spring.flutter.web.dev-server.port=5070\n',
       });
       expect(_body(files), 'server:\n  port: 5070\n');
     });
@@ -1426,7 +1454,7 @@ spring:
 
   // The seventh review.
   group('a placeholder only the running app resolves', () {
-    const port = 'spring.flutter.web.port: 5050\n';
+    const port = 'spring.flutter.web.dev-server.port: 5050\n';
 
     // Only the placeholder was cut out, so `${ENV}-eu` was read as `-eu`,
     // an invalid profile name that failed the build ("never a build
@@ -1443,7 +1471,8 @@ spring:
           {
             'application.yaml':
                 '${port}spring.profiles.active: dev,\${ENV}-eu\n',
-            'application-dev.yaml': 'spring.flutter.web.host: devhost\n',
+            'application-dev.yaml':
+                'spring.flutter.web.dev-server.host: devhost\n',
           },
           'server:\n  host: "devhost"\n  port: 5050\n',
           r"the profile '${ENV}-eu' is left out",
@@ -1461,7 +1490,7 @@ spring:
             'application.yaml':
                 '${port}spring.profiles.active: prod\n'
                 'spring.profiles.group.prod: db,\${REGION}_cache\n',
-            'application-db.yaml': 'spring.flutter.web.host: db\n',
+            'application-db.yaml': 'spring.flutter.web.dev-server.host: db\n',
           },
           'server:\n  host: "db"\n  port: 5050\n',
           r"the profile '${REGION}_cache' is left out",
@@ -1483,7 +1512,7 @@ spring:
         (
           {
             'application.yaml': '${port}spring.profiles.active: prod\${X}\n',
-            'application-prod.yaml': 'spring.flutter.web.port: 1\n',
+            'application-prod.yaml': 'spring.flutter.web.dev-server.port: 1\n',
           },
           'server:\n  port: 5050\n',
           r"the profile 'prod${X}' is left out",
@@ -1493,7 +1522,7 @@ spring:
           {
             'application.yaml':
                 '${port}spring.profiles.include: \${A:a,b},\${X}\n',
-            'application-b.yaml': 'spring.flutter.web.host: b\n',
+            'application-b.yaml': 'spring.flutter.web.dev-server.host: b\n',
           },
           'server:\n  host: "b"\n  port: 5050\n',
           r"the profile '${X}' is left out",
@@ -1525,12 +1554,14 @@ spring:
     // seen as a profile key, and its placeholder failed the build with a
     // PlaceholderResolutionException.
     test('in the bracket form of a profile key or group name', () async {
-      const dev = {'application-dev.yaml': 'spring.flutter.web.port: 5051\n'};
+      const dev = {
+        'application-dev.yaml': 'spring.flutter.web.dev-server.port: 5051\n',
+      };
       for (final (resources, key) in [
         (
           {
             'application.properties':
-                'spring.flutter.web.port=5050\n'
+                'spring.flutter.web.dev-server.port=5050\n'
                 'spring.profiles.active=prod\n'
                 'spring.profiles.group[prod]=dev,\${X}\n',
           },
@@ -1567,7 +1598,7 @@ spring:
         (
           {
             'application.properties':
-                'spring.flutter.web.port=5050\n'
+                'spring.flutter.web.dev-server.port=5050\n'
                 'spring[profiles].include=dev,\${X}\n',
           },
           'spring[profiles].include',
@@ -1590,7 +1621,7 @@ spring:
       final logs = await _build(files, {
         'application.yaml':
             '$port---\nspring.config.activate[onprofile]: \${X}\n'
-            'spring.flutter.web.port: 1\n',
+            'spring.flutter.web.dev-server.port: 1\n',
       });
       expect(_severe(logs), isEmpty);
       expect(_body(files), 'server:\n  port: 5050\n');
@@ -1638,7 +1669,7 @@ spring:
           {
             'application.yaml': port,
             'application-web.yaml':
-                'spring.flutter.web.host: w\n---\n'
+                'spring.flutter.web.dev-server.host: w\n---\n'
                 'spring.config.activate.on-profile: \${P}\n'
                 'spring.profiles.active: dev\n',
           },
@@ -1664,9 +1695,9 @@ spring:
       final logs = await _build(files, {
         'application.yaml': port,
         'application-web.yaml':
-            'spring.flutter.web.host: w\n---\n'
+            'spring.flutter.web.dev-server.host: w\n---\n'
             'spring.config.activate.on-profile: \${P}\n'
-            'spring.flutter.web.host: p\n',
+            'spring.flutter.web.dev-server.host: p\n',
       });
       expect(_warnings(logs).single, contains('so the document is skipped'));
       expect(_body(files), 'server:\n  host: "w"\n  port: 5050\n');
@@ -1674,7 +1705,7 @@ spring:
 
     // It was ignored without a word: no file, no warning.
     test('in spring.flutter.security.web.mode fails the build, as in a '
-        'spring.flutter.web.* value', () async {
+        'spring.flutter.web.dev-server.* value', () async {
       for (final resources in [
         {'application.yaml': 'spring.flutter.security.web.mode: \${MODE}\n'},
         {
@@ -1708,7 +1739,7 @@ spring:
             '${port}spring.config.import: '
             r'optional:${DIR}/x.yaml;resources:y.yaml'
             '\n',
-        'y.yaml': 'spring.flutter.web.host: y\n',
+        'y.yaml': 'spring.flutter.web.dev-server.host: y\n',
       });
       expect(
         _warnings(logs).single,
@@ -1730,7 +1761,7 @@ spring:
         (
           {
             'application.yaml':
-                'spring.flutter.web.port: 5050\n---\n'
+                'spring.flutter.web.dev-server.port: 5050\n---\n'
                 "spring.config.activate.on-profile: '(a'\ny: 1\n",
           },
           'Malformed profile expression',
@@ -1738,7 +1769,7 @@ spring:
         (
           {
             'application.yaml':
-                'spring.flutter.web.port: 5050\n---\n'
+                'spring.flutter.web.dev-server.port: 5050\n---\n'
                 "spring.config.activate.on-profile: 'a & | b'\n",
           },
           'Malformed profile expression',
@@ -1746,7 +1777,7 @@ spring:
         (
           {
             'application.yaml':
-                'spring.flutter.web.port: 5050\n'
+                'spring.flutter.web.dev-server.port: 5050\n'
                 'spring.profiles.validate: false\n'
                 "spring.profiles.active: '!x'\n",
           },
@@ -1755,7 +1786,7 @@ spring:
         (
           {
             'application.yaml':
-                'spring.flutter.web.port: 5050\n'
+                'spring.flutter.web.dev-server.port: 5050\n'
                 'a: ${'[' * 20000}${']' * 20000}\n',
           },
           'nested too deeply',
@@ -1819,19 +1850,19 @@ spring:
         'application.yaml':
             r'spring.config.import: resources:${X:web}.conf[.yaml]'
             '\n',
-        'web.conf': 'spring.flutter.web.port: 5050\n',
+        'web.conf': 'spring.flutter.web.dev-server.port: 5050\n',
       },
       {
         'application.yaml':
             'env: web\n'
             r'spring.config.import: resources:${env}.conf[.yaml]'
             '\n',
-        'web.conf': 'spring.flutter.web.port: 5050\n',
+        'web.conf': 'spring.flutter.web.dev-server.port: 5050\n',
       },
       {
         'application.yaml':
             'spring.config.import: optional:resources:web.conf[.YAML]\n',
-        'web.conf': 'spring.flutter.web.port: 5050\n',
+        'web.conf': 'spring.flutter.web.dev-server.port: 5050\n',
       },
     ]) {
       final files = _Files();
@@ -1845,7 +1876,7 @@ spring:
       'application.yaml':
           r'spring.config.import: optional:resources:${ENV}.conf[.yaml]'
           '\n',
-      'web.conf': 'spring.flutter.web.port: 5050\n',
+      'web.conf': 'spring.flutter.web.dev-server.port: 5050\n',
     });
     expect(_problems(logs), isEmpty);
     expect(files.content, isNull);
@@ -1862,7 +1893,7 @@ spring:
       'application.properties': 'spring.config.import=sub[x]/\n',
       'sub[x]/application.properties':
           'spring.config.import=y.conf[.properties]\n',
-      'sub/y.conf': 'spring.flutter.web.port=7400\n',
+      'sub/y.conf': 'spring.flutter.web.dev-server.port=7400\n',
     });
     expect(_problems(logs), isEmpty);
     expect(_body(files), 'server:\n  port: 7400\n');
@@ -1873,7 +1904,7 @@ spring:
   test('a resource too large to embed is not warned about again', () async {
     for (final application in [
       'a: 1\n',
-      'spring.flutter.web.port: 5050\n',
+      'spring.flutter.web.dev-server.port: 5050\n',
     ]) {
       final logs = await _build(_Files(), {
         'application.yaml': application,

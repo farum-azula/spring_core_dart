@@ -1,6 +1,6 @@
 ## 0.7.0
 
-- Perf/generated code (#22)
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.7.0.
 
 ## 0.6.3
 

@@ -414,7 +414,7 @@ spring:
   in memory where IndexedDB is refused). The page: `SpaBrowserPage`
   (base URI, `replaceLocation`, the two storages as `BrowserStorage`),
   all on `dart:js_interop`, no package. The CSP: the generator's
-  `spring.flutter.web.content-security-policy` (and `-report-only`) in
+  `spring.flutter.web.dev-server.content-security-policy` (and `-report-only`) in
   `web_dev_config.yaml`, a ready policy in spa mode with the providers'
   origins; the production host's headers documented. Tests on the VM
   (`test/spa_login_test.dart`: the round trip and its attacks, the

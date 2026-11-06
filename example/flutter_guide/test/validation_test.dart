@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/admin/book_form.dart';
-import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart'
     show SecurityContextHolder;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -67,7 +66,7 @@ void main() {
 
   testWidgets('the Admin form shows them and sends nothing', (tester) async {
     server.answerLogin('root', roles: ['USER', 'ADMIN']);
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     await logIn(tester, 'root', 'root-secret');
     await openMore(tester, 'Admin');
     final sent = server.http.requests.length;

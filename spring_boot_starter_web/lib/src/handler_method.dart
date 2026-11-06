@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
+import 'package:spring_boot_starter_web/src/static_resources.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 /// One controller method that answers requests: which bean it belongs to
@@ -373,7 +374,7 @@ final class InterceptorRegistration {
 }
 
 /// A bean that adds interceptors, CORS rules or argument resolvers to
-/// the controllers.
+/// the controllers, or mappings of static resources.
 ///
 /// The starter sets up the controllers with no interceptors, no global
 /// CORS rules and only its own argument resolvers. To add any of them,
@@ -426,4 +427,11 @@ abstract mixin class WebMvcConfigurer {
   /// Override to add [HandlerMethodArgumentResolver]s to [resolvers];
   /// they are asked in list order, before the built-in ones.
   void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {}
+
+  /// Override to serve static resources under more path patterns, from
+  /// more locations, with their own caching; see
+  /// [ResourceHandlerRegistry]. A pattern added here replaces the default
+  /// mapping of `spring.mvc.static-path-pattern` when it is the same
+  /// pattern, as in Spring Boot.
+  void addResourceHandlers(ResourceHandlerRegistry registry) {}
 }

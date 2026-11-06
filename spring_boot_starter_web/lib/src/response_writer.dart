@@ -359,6 +359,36 @@ final class ResponseWriter {
     return writeProblem(problem, request, response);
   }
 
+  /// Checks the conditional headers of a `GET` or `HEAD` [request]
+  /// (`If-None-Match`, `If-Modified-Since`, `If-Unmodified-Since`) against
+  /// the `ETag` and `Last-Modified` already set on [response]. Returns
+  /// `true` when the answer is complete without a body: a `304 Not
+  /// Modified`, or a `412 Precondition Failed` for an `If-Unmodified-Since`
+  /// before `Last-Modified`; the status is set, and the caller closes the
+  /// response. Returns `false` when the full answer is due; the `ETag` is
+  /// then quoted if it was not.
+  ///
+  /// `If-None-Match` wins over `If-Modified-Since`, tags are compared
+  /// weakly, and dates in whole seconds. The other headers stay
+  /// (`Cache-Control`, `Vary`), as a `304` should carry them. The static
+  /// resources use it; so can a handler that writes its answer itself.
+  ///
+  /// ```dart
+  /// response.headers
+  ///   ..eTag = '"v42"'
+  ///   ..lastModified = report.updatedAt;
+  /// if (writer.checkNotModified(request, response)) {
+  ///   return response.close();
+  /// }
+  /// ```
+  ///
+  /// Spring (Java): `ServletWebRequest.checkNotModified(eTag,
+  /// lastModified)`.
+  bool checkNotModified(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) => _checkNotModified(request, response);
+
   // Spring's ServletWebRequest.checkNotModified for a GET or HEAD with a
   // status of 200, against the ETag and Last-Modified already on
   // [response]; true when the answer is then complete without a body,
@@ -747,13 +777,20 @@ final class ResponseWriter {
   ///   applies the range only when the file has that `Last-Modified`.
   /// - A resource that does not exist or cannot be read is a 404.
   ///
+  /// With [conditional] `false`, the caller has checked the request's
+  /// conditions already (as the static resources do, with an `ETag`):
+  /// no `Last-Modified` is set nor `If-Modified-Since` checked here, and
+  /// `If-Range` is compared with the `Last-Modified` or the strong `ETag`
+  /// the response carries.
+  ///
   /// Spring's counterparts are `ResourceHttpMessageConverter` and
   /// `ResourceRegionHttpMessageConverter`.
   Future<void> writeResource(
     Resource resource,
     ServerHttpRequest request,
-    ServerHttpResponse response,
-  ) async {
+    ServerHttpResponse response, {
+    bool conditional = true,
+  }) async {
     if (!resource.exists() || !resource.isReadable) {
       return await writeProblem(
         ProblemDetail.forStatusAndDetail(
@@ -778,8 +815,10 @@ final class ResponseWriter {
           MediaTypeFactory.getMediaType(resource.filename) ??
           MediaType.applicationOctetStream
       ..set(HttpHeaders.acceptRangesHeader, 'bytes');
-    final modified = file?.lastModified().toUtc();
-    if (modified != null) {
+    final modified = conditional
+        ? file?.lastModified().toUtc()
+        : headers.lastModified;
+    if (modified != null && conditional) {
       headers.lastModified = modified;
       final since =
           switch (request.headers[HttpHeaders.ifModifiedSinceHeader]) {
@@ -803,7 +842,7 @@ final class ResponseWriter {
     final range = request.headers[HttpHeaders.rangeHeader];
     if (range != null &&
         response.statusCode == 200 &&
-        _ifRangeMatches(request, modified)) {
+        _ifRangeMatches(request, modified, conditional ? null : headers.eTag)) {
       final parsed = _parseRange(range, length);
       if (parsed == null) {
         response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
@@ -832,11 +871,24 @@ final class ResponseWriter {
     return await response.close();
   }
 
-  // `If-Range` with a date: the range applies only to that version.
-  static bool _ifRangeMatches(ServerHttpRequest request, DateTime? modified) {
+  // `If-Range` with a date, or with the strong [eTag] of the answer: the
+  // range applies only to that version (a weak tag never matches,
+  // RFC 9110 13.1.5).
+  static bool _ifRangeMatches(
+    ServerHttpRequest request,
+    DateTime? modified, [
+    String? eTag,
+  ]) {
     final ifRange = request.headers['If-Range'];
     if (ifRange == null) {
       return true;
+    }
+    final value = ifRange.trim();
+    if (value.startsWith('"') || value.startsWith('W/')) {
+      return eTag != null &&
+          !eTag.startsWith('W/') &&
+          !value.startsWith('W/') &&
+          value == eTag;
     }
     final date = HttpHeaders.parseDate(ifRange);
     return date != null &&
@@ -866,7 +918,7 @@ final class ResponseWriter {
     final last = spec.substring(dash + 1).trim();
     if (first.isEmpty) {
       // The last N bytes.
-      final suffix = int.tryParse(last);
+      final suffix = _bytePosition(last);
       if (suffix == null) {
         return ();
       }
@@ -875,16 +927,29 @@ final class ResponseWriter {
       }
       return (length - (suffix > length ? length : suffix), length - 1);
     }
-    final from = int.tryParse(first);
-    final to = last.isEmpty ? length - 1 : int.tryParse(last);
-    if (from == null || to == null || to < from) {
+    final from = _bytePosition(first);
+    final to = last.isEmpty ? length - 1 : _bytePosition(last);
+    if (from == null || to == null) {
       return ();
     }
-    if (from >= length) {
+    // `bytes=500-` of 21 bytes: past the end, so unsatisfiable (before the
+    // check below, where the end of the content would come first).
+    if (from >= length && (last.isEmpty || to >= from)) {
       return null;
+    }
+    if (to < from) {
+      return ();
     }
     return (from, to >= length ? length - 1 : to);
   }
+
+  // A byte position of a range: decimal digits only (RFC 9110's 1*DIGIT),
+  // so no sign, no `0x` and no other form `int.tryParse` would take; a
+  // number too large for an int is `null` too.
+  static int? _bytePosition(String text) =>
+      _digits.hasMatch(text) ? int.tryParse(text) : null;
+
+  static final _digits = RegExp(r'^[0-9]+$');
 
   // ---------------------------------------------------------------------
   // Streams

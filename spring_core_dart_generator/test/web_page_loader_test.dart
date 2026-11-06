@@ -5,6 +5,8 @@
 @Timeout(Duration(minutes: 2))
 library;
 
+import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
@@ -512,7 +514,77 @@ spring.flutter.theme:
         page: written,
         yaml: 'spring.flutter.theme: { seed-color: red }',
       );
-      expect(removed, _page);
+      // The loader is gone; the theme's color stays the page's.
+      expect(
+        removed!.replaceFirst(
+          RegExp(r'\s*<meta name="theme-color" content="#[0-9a-f]{6}">'),
+          '',
+        ),
+        _page,
+      );
+    });
+
+    test('the head and the manifest from spring.flutter.app.* and the '
+        'theme', () async {
+      const template = '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="description" content="A new Flutter project.">
+  <meta name="apple-mobile-web-app-title" content="app">
+  <title>app</title>
+</head>
+<body></body>
+</html>
+''';
+      final files = _Files({
+        'web/index.html': template,
+        'web/manifest.json':
+            '{"name": "app", "short_name": "app", "start_url": ".", '
+            '"description": "A new Flutter project.", '
+            '"theme_color": "#0175C2", "background_color": "#0175C2"}',
+      });
+      await testBuilder(
+        WebPageLoaderBuilder(files: files),
+        {
+          'app|pubspec.yaml':
+              'name: app\ndependencies:\n  spring_boot_starter_flutter: any\n',
+          'app|lib/app.dart': 'void main() {}',
+          'app|lib/resources/application.yaml': '''
+spring.flutter.app:
+  title: Books & more
+  description: A shop of "books".
+spring.flutter.theme:
+  colors: { primary: '#336699', surface: '#fafafa' }
+''',
+        },
+        rootPackage: 'app',
+      );
+      final page = files.files['web/index.html']!;
+      expect(page, contains('<title>Books &amp; more</title>'));
+      expect(
+        page,
+        contains(
+          '<meta name="description" content="A shop of &quot;books&quot;.">',
+        ),
+      );
+      expect(
+        page,
+        contains(
+          '<meta name="apple-mobile-web-app-title" content="Books &amp; more">',
+        ),
+      );
+      expect(page, contains('<meta name="theme-color" content="#336699">'));
+      final manifest =
+          jsonDecode(files.files['web/manifest.json']!) as Map<String, Object?>;
+      expect(manifest, {
+        'name': 'Books & more',
+        'short_name': 'Books & more',
+        'start_url': '.',
+        'description': 'A shop of "books".',
+        'theme_color': '#336699',
+        'background_color': '#fafafa',
+      });
     });
 
     test('a package that does not use the starter is left alone', () async {

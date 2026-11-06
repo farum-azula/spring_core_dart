@@ -1,128 +1,100 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
-import 'package:theme_showcase_cupertino/src/app/logs.dart';
 import 'package:theme_showcase_cupertino/src/app/theme_menu.dart';
-import 'package:theme_showcase_cupertino/src/pages/background_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/colors_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/controls_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/images_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/loaders_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/motion_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/styles_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/themes_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/tokens_page.dart';
-import 'package:theme_showcase_cupertino/src/pages/type_page.dart';
 
-/// One page of the showcase: its icon, its name (a typed message) and its
-/// content.
+/// One page of the showcase: its address, icon and name (a typed message).
+/// The page itself is the `@ScreenRoute` of its address
+/// (lib/src/pages/).
 class ShowcasePage {
-  const ShowcasePage(this.id, this.icon, this.label, this.builder);
+  const ShowcasePage(this.id, this.path, this.icon, this.label);
 
-  /// The name of the page in logs and tests.
+  /// The name of the page in tests.
   final String id;
+
+  /// Its address: `/<id>`. A page with no tab opens in the "More" tab
+  /// (`branch: '/more'` on its `@ScreenRoute`).
+  final String path;
   final IconData icon;
   final String Function(AppMessagesNav) label;
-  final WidgetBuilder builder;
 }
 
 /// The ten pages, in the order of the sidebar.
 final pages = <ShowcasePage>[
-  ShowcasePage(
-    'colors',
-    CupertinoIcons.paintbrush,
-    (m) => m.colors,
-    (_) => const ColorsPage(),
-  ),
-  ShowcasePage(
-    'type',
-    CupertinoIcons.textformat,
-    (m) => m.type,
-    (_) => const TypePage(),
-  ),
+  ShowcasePage('colors', '/colors', CupertinoIcons.paintbrush, (m) => m.colors),
+  ShowcasePage('type', '/type', CupertinoIcons.textformat, (m) => m.type),
   ShowcasePage(
     'tokens',
+    '/tokens',
     CupertinoIcons.square_stack_3d_up,
     (m) => m.tokens,
-    (_) => const TokensPage(),
   ),
   ShowcasePage(
     'styles',
+    '/styles',
     CupertinoIcons.hand_point_right,
     (m) => m.styles,
-    (_) => const StylesPage(),
   ),
   ShowcasePage(
     'controls',
+    '/controls',
     CupertinoIcons.slider_horizontal_3,
     (m) => m.controls,
-    (_) => const ControlsPage(),
   ),
   ShowcasePage(
     'motion',
+    '/motion',
     CupertinoIcons.waveform,
     (m) => m.motion,
-    (_) => const MotionPage(),
   ),
   ShowcasePage(
     'loaders',
+    '/loaders',
     CupertinoIcons.time,
     (m) => m.loaders,
-    (_) => const LoadersPage(),
   ),
   ShowcasePage(
     'background',
+    '/background',
     CupertinoIcons.photo,
     (m) => m.background,
-    (_) => const BackgroundPage(),
   ),
   ShowcasePage(
     'images',
+    '/images',
     CupertinoIcons.photo_on_rectangle,
     (m) => m.images,
-    (_) => const ImagesPage(),
+  ),
+  ShowcasePage(
+    'transitions',
+    '/transitions',
+    CupertinoIcons.arrow_right_arrow_left,
+    (m) => m.transitions,
   ),
   ShowcasePage(
     'themes',
+    '/themes',
     CupertinoIcons.circle_lefthalf_fill,
     (m) => m.themes,
-    (_) => const ThemesPage(),
   ),
 ];
 
 /// The pages that have a tab on a narrow screen; the others are in "More".
 const tabIds = ['colors', 'type', 'controls', 'themes'];
 
-/// The window: a sidebar and the page on a wide screen, a tab bar (with a
-/// "More" tab) on a narrow one.
-class Shell extends StatefulWidget {
-  const Shell({super.key, this.initialPage = 0});
+/// The window, the shell of the navigation: a branch per tab (`/colors`,
+/// `/type`, `/controls`, `/themes`, `/more`), each with its own stack, so
+/// switching tabs loses nothing. A sidebar of every page on a wide
+/// screen, a tab bar with a "More" tab on a narrow one.
+@RouteShell(branches: ['/colors', '/type', '/controls', '/themes', '/more'])
+class Shell extends StatelessWidget {
+  const Shell(this.shell, {super.key});
 
-  final int initialPage;
-
-  @override
-  State<Shell> createState() => _ShellState();
-}
-
-class _ShellState extends State<Shell> {
-  late int _index = widget.initialPage;
-  late final _tabs = CupertinoTabController(
-    initialIndex: _tabOf(pages[widget.initialPage].id),
-  );
-
-  // The tab of a page; the last tab ("More") for a page without one.
-  static int _tabOf(String id) =>
-      tabIds.contains(id) ? tabIds.indexOf(id) : tabIds.length;
-
-  @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
-  }
-
-  void _opened(ShowcasePage page) => context.bean<PageLog>().opened(page.id);
+  /// The tab shown and the way to switch.
+  final ShellState shell;
 
   @override
   Widget build(BuildContext context) {
@@ -132,79 +104,90 @@ class _ShellState extends State<Shell> {
 
   Widget _wide(BuildContext context) {
     final theme = context.theme;
-    final page = pages[_index];
-    // The page changes with the theme's own medium duration.
-    final body = AnimatedSwitcher(
-      duration: theme.motion.medium,
-      switchInCurve: theme.motion.curves.out,
-      child: KeyedSubtree(key: ValueKey(page.id), child: page.builder(context)),
-    );
+    final route = context.bean<RouteTemplate>();
     return ColoredBox(
       color: CupertinoTheme.of(context).scaffoldBackgroundColor,
       child: Row(
         children: [
           SizedBox(
             width: theme.tokens.layout.sidebarWidth,
-            child: _Sidebar(
-              selected: _index,
-              onSelected: (index) {
-                setState(() => _index = index);
-                _opened(pages[index]);
-              },
+            // The page on top, as it changes (a page of "More" does not
+            // switch the branch).
+            child: StreamBuilder<RouteState>(
+              stream: route.changes,
+              builder: (context, _) => _Sidebar(
+                selected: route.uri.path,
+                // A menu switches pages at once: no transition.
+                onSelected: (page) => unawaited(
+                  route.go(page.path, transition: PageTransition.none),
+                ),
+              ),
             ),
           ),
           Container(width: 0.5, color: theme.colors.outline),
-          Expanded(child: body),
+          Expanded(child: shell.child),
         ],
       ),
     );
   }
 
+  // The layout of CupertinoTabScaffold, whose tabs would bring their own
+  // navigators: the branch under a translucent tab bar, the content told
+  // how much of it the bar covers.
   Widget _narrow(BuildContext context) {
     final nav = context.messages.nav;
     final tabPages = [
       for (final id in tabIds) pages.firstWhere((p) => p.id == id),
     ];
-    final more = [
-      for (final p in pages)
-        if (!tabIds.contains(p.id)) p,
-    ];
-    return CupertinoTabScaffold(
-      controller: _tabs,
-      tabBar: CupertinoTabBar(
-        onTap: (index) {
-          if (index < tabPages.length) {
-            _opened(tabPages[index]);
-          }
-        },
-        items: [
-          for (final p in tabPages)
-            BottomNavigationBarItem(
-              icon: Icon(p.icon),
-              label: p.label(nav),
+    final bar = CupertinoTabBar(
+      currentIndex: shell.index,
+      onTap: shell.select,
+      items: [
+        for (final p in tabPages)
+          BottomNavigationBarItem(icon: Icon(p.icon), label: p.label(nav)),
+        BottomNavigationBarItem(
+          icon: const Icon(CupertinoIcons.ellipsis_circle),
+          label: nav.more,
+        ),
+      ],
+    );
+    final media = MediaQuery.of(context);
+    final covered = bar.preferredSize.height + media.padding.bottom;
+    final opaque = bar.opaque(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+      ),
+      child: Stack(
+        children: [
+          MediaQuery(
+            data: opaque
+                ? media.removePadding(removeBottom: true)
+                : media.copyWith(
+                    padding: media.padding.copyWith(bottom: covered),
+                  ),
+            child: Padding(
+              padding: EdgeInsets.only(bottom: opaque ? covered : 0),
+              child: shell.child,
             ),
-          BottomNavigationBarItem(
-            icon: const Icon(CupertinoIcons.ellipsis_circle),
-            label: nav.more,
+          ),
+          MediaQuery.withNoTextScaling(
+            child: Align(alignment: Alignment.bottomCenter, child: bar),
           ),
         ],
       ),
-      tabBuilder: (context, index) => CupertinoTabView(
-        builder: (context) => index < tabPages.length
-            ? tabPages[index].builder(context)
-            : _More(
-                pages: more,
-                onOpen: (page) {
-                  _opened(page);
-                  Navigator.of(context).push<void>(
-                    CupertinoPageRoute(
-                      settings: RouteSettings(name: page.id),
-                      builder: page.builder,
-                    ),
-                  );
-                },
-              ),
-      ),
+    );
+  }
+}
+
+/// Logs the page on top each time it changes (Spring's logger, never
+/// print).
+@Component()
+@Log(topic: 'theme_showcase_cupertino.pages')
+class PageLog {
+  PageLog(RouteTemplate route) {
+    route.changes.listen(
+      (state) => log.info('page opened', fields: {'page': state.uri.path}),
     );
   }
 }
@@ -214,8 +197,9 @@ class _ShellState extends State<Shell> {
 class _Sidebar extends StatelessWidget {
   const _Sidebar({required this.selected, required this.onSelected});
 
-  final int selected;
-  final ValueChanged<int> onSelected;
+  /// The address on top.
+  final String selected;
+  final ValueChanged<ShowcasePage> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -260,12 +244,12 @@ class _Sidebar extends StatelessWidget {
                     ),
                   ),
                 ),
-                for (var i = 0; i < pages.length; i++)
+                for (final page in pages)
                   _SidebarItem(
-                    icon: pages[i].icon,
-                    label: pages[i].label(nav),
-                    selected: i == selected,
-                    onTap: () => onSelected(i),
+                    icon: page.icon,
+                    label: page.label(nav),
+                    selected: page.path == selected,
+                    onTap: () => onSelected(page),
                   ),
               ],
             ),
@@ -329,18 +313,20 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-/// The "More" tab: the pages with no tab of their own, as a list that
-/// pushes them.
-class _More extends StatelessWidget {
-  const _More({required this.pages, required this.onOpen});
-
-  final List<ShowcasePage> pages;
-  final ValueChanged<ShowcasePage> onOpen;
+/// The "More" tab: the pages with no tab of their own, as a list; each
+/// opens over it, in the same tab (`/motion`, `branch: '/more'`).
+@ScreenRoute('/more', title: '#{nav.more}')
+class MorePage extends StatelessWidget {
+  const MorePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final nav = context.messages.nav;
+    final more = [
+      for (final p in pages)
+        if (!tabIds.contains(p.id)) p,
+    ];
     return CupertinoPageScaffold(
       child: CustomScrollView(
         slivers: [
@@ -361,13 +347,13 @@ class _More extends StatelessWidget {
                   ),
                 ),
                 children: [
-                  for (final page in pages)
+                  for (final page in more)
                     CupertinoListTile.notched(
                       backgroundColor: CupertinoColors.transparent,
                       leading: Icon(page.icon, color: theme.colors.primary),
                       title: Text(page.label(nav)),
                       trailing: const CupertinoListTileChevron(),
-                      onTap: () => onOpen(page),
+                      onTap: () => context.route.go(page.path),
                     ),
                 ],
               ),
@@ -377,4 +363,27 @@ class _More extends StatelessWidget {
       ),
     );
   }
+}
+
+/// An address with no page: its name and the way to the first page.
+@ScreenRoute.notFound()
+class NotFoundPage extends StatelessWidget {
+  const NotFoundPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => CupertinoPageScaffold(
+    navigationBar: const CupertinoNavigationBar(),
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('No page at ${context.route.uri.path}'),
+          CupertinoButton(
+            onPressed: () => context.route.go('/colors'),
+            child: Text(context.messages.nav.colors),
+          ),
+        ],
+      ),
+    ),
+  );
 }

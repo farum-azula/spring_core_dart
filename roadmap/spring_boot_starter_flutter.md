@@ -956,6 +956,145 @@ A starter of its own, the next release:
 [spring_boot_starter_flutter_navigation.md](spring_boot_starter_flutter_navigation.md).
 This starter only uses a `RouterConfig` bean when there is one.
 
+## Search engines, previews and models: `spring.flutter.web.seo.*`
+
+Done on the release branch after 0.7.0 (November 2026), with the
+navigation starter; the documentation site is its first user. Built as
+below: the generator's `spring_flutter_seo` builder (from the routes of
+`spring_metadata.json`, the `content[n]` folders and `pages[n]`; the keys
+are lists, `pages[n].path`, not a map keyed by path), `MarkdownView` and
+`CodeTokens` in this starter, `RouteContentView` in the navigation
+starter, the head and manifest of the app from `spring.flutter.app.title`
+/ `.description` and the theme, the dev server's keys moved to
+`spring.flutter.web.dev-server.*`. Not built: `_headers` and `404.html`
+(Cloudflare Pages serves `index.html` for unknown paths when a site has
+no `404.html`; `_headers` waits for the deep links' domain files there). A Flutter web page draws on a
+canvas: the HTML the server sends holds a script and no text, so search
+engines, link previews (Telegram, Slack, X) and the bots of models (which
+run no JavaScript) see an empty page under the template's title. Pages
+written by hand next to the app would repeat the interface; instead the
+build writes, for every page, the text it already has (Markdown, titles)
+into the HTML the page loader already lives in.
+
+### Keys
+
+Read by the generator at build time, as `spring.flutter.web.*` is
+(`application.*`, `application-web.*`, the active profiles, imports); nothing
+reads them at run time.
+
+```yaml
+# lib/resources/application-web.yml
+spring:
+  flutter:
+    web:
+      seo:
+        enabled: true                         # default false: nothing written
+        site-url: https://spring-dart.dev     # required when enabled
+        from-routes: true                     # pages from the navigation starter's routes
+        title: '{title} · Spring Dart'        # <title>; {title} from the page
+        description: Spring for Dart and Flutter.   # when a page has none
+        image: resources:images/og.png        # the preview picture by default
+        content:                              # Markdown, a page per file
+          - location: resources:content/docs/
+            path: /docs                       # core/configuration.md → /docs/core/configuration
+            exclude: ['**/_*.md']             # drafts
+          - location: resources:content/blog/
+            path: /blog
+        pages:                                # pages by hand: no Markdown, no route
+          '/':
+            title: Spring Dart
+            description: Spring Boot for Dart servers and Flutter apps.
+          '/pricing':
+            index: false                      # noindex, not in the sitemap
+        sitemap: true                         # sitemap.xml, robots.txt
+        llms: true                            # llms.txt, llms-full.txt
+        markdown: true                        # <path>.md next to every Markdown page
+```
+
+| Key | What | Unset |
+|---|---|---|
+| `enabled` | turns the rest on | `false` |
+| `site-url` | absolute URLs: `canonical`, `og:url`, the sitemap | the build fails when `enabled` |
+| `from-routes` | every route of the navigation starter is a page (below) | `false`; `true` without the navigation starter fails the build |
+| `title`, `description`, `image` | defaults of `<head>`; a page's own values win | `title`: `spring.flutter.app.title` |
+| `content[n].location`, `.path`, `.exclude` | a folder of Markdown files and the URL it is served under | no Markdown pages |
+| `pages` | `title`, `description`, `image`, `index` per path, for pages of no route or to override one | none |
+| `sitemap`, `llms`, `markdown` | one output off | all on |
+
+### Pages from three sources
+
+The page list is the union of:
+
+1. **Routes** (`from-routes: true`): `@Route(title:)`, `@Seo(...)` and
+   `@Route(content:)` of the navigation starter
+   ([spring_boot_starter_flutter_navigation.md](spring_boot_starter_flutter_navigation.md#search-engines-seo-and-title)).
+   A route with path variables and no `content:` has no list of values at
+   build time (the app does not run in the build): it is left out of the
+   sitemap with a warning, unless `@Seo(paths: [...])` lists them; in the
+   app its `<title>` and description are set when it opens.
+2. **`content`**: every Markdown file of each location, at `path` + its
+   path without `.md` (`index.md` is the folder's URL). The front matter
+   gives `title` and `description` (else the first `#` heading, with a
+   warning, and the default).
+3. **`pages`**: by hand, for an app without the navigation starter or for a
+   page whose route says nothing.
+
+Merging, field by field: `pages` over the route's annotations over the
+defaults, so a description changes without touching code. The build
+fails when one Markdown file gets two URLs (a `content` folder and a
+route's `content:` disagree), when two files get one URL
+(`configuration.md` and `configuration/index.md`), when a location does
+not exist, or when a Markdown link points to a file that does not exist
+(links between files become the site's URLs: `configuration.md#profiles`
+→ `/docs/core/configuration#profiles`). With `from-routes`, a `content` or
+`pages` URL no route opens is a warning.
+
+### What the build writes
+
+For every page, `<path>/index.html`: a copy of `web/index.html` with
+
+- `<head>`: `<title>`, `description`, `canonical`, `og:title`,
+  `og:description`, `og:image`, `og:url`, `robots` (`noindex` when
+  `index: false`), `<link rel="alternate" type="text/markdown">` for a
+  Markdown page, `hreflang` per language;
+- `<body>`: the page loader as today, then `<main>` with the page's text in
+  plain HTML (headings, paragraphs, lists, tables, links, `<pre><code
+  class="language-yaml">`) from the same Markdown the app renders, then the
+  Flutter bootstrap.
+
+The text is not shown to people: it lies under the loader and then under
+Flutter's view. It is never removed (Google indexes the page after running
+its JavaScript, so a removed text is lost), not `display:none` (weighed
+less), and it is exactly what the screen shows, since both come from one
+file; that keeps it clear of Google's hidden-text and cloaking rules. It
+is also what a screen reader can read on the web, where Flutter's own
+semantics are weak.
+
+Next to the pages: `sitemap.xml` (every page with `index: true`),
+`robots.txt` (with the sitemap's URL), `<path>.md` (the Markdown as written,
+for models), `llms.txt` (a map of the `.md` pages with their descriptions),
+`llms-full.txt` (all of them in one file).
+
+Code in the HTML has no colors (only robots read it). The colors of code in
+the app come from the theme (`styles.markdown.*`, `styles.code.tokens.*`:
+`keyword`, `string`, `comment`, `key`, `number`, ...), with a small
+tokenizer of our own for the languages of the docs (Dart, YAML,
+properties, shell); no package of the Dart team does it.
+
+### Decided (the owner, November 2026)
+
+- The dev server's keys (`host`, `port`, `https`, `headers`, `proxy`, the
+  CSP) move to `spring.flutter.web.dev-server.*` (breaking, allowed before
+  1.0), so `spring.flutter.web.*` holds `dev-server` and `seo`.
+- The pages go to `web/` (`flutter build web` copies them, nothing else is
+  run); the app ignores them in git, one line.
+- Languages from the start: `content/ja/...` and the `messages_ja` titles at
+  `/ja/...` with `hreflang`.
+- The `<head>` and `manifest.json` of the app itself (title, description,
+  `theme_color`, `background_color`, names) from `spring.flutter.app.*` and
+  the theme, so `web/index.html` and the manifest repeat nothing by hand;
+  useful without `seo`.
+
 ## Texts
 
 The existing `MessageSource` with

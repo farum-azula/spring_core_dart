@@ -43,7 +43,7 @@ compares the class with the reader.
     { "name": "logging.level.*",
       "values": [{ "value": "info", "description": "…" }] },
     { "name": "spring.profiles.active", "provider": "profiles" },
-    { "name": "spring.flutter.web.port", "range": [0, 65535],
+    { "name": "spring.flutter.web.dev-server.port", "range": [0, 65535],
       "warn": [{ "values": [5060, 5061], "message": "browsers refuse it" }] }
   ],
   "beans": [

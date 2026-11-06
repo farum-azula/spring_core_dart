@@ -69,6 +69,7 @@ export 'package:spring_boot_starter_security/src/web/arguments.dart';
 export 'package:spring_boot_starter_security/src/web/authentication.dart';
 export 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
 export 'package:spring_boot_starter_security/src/web/csrf.dart';
+export 'package:spring_boot_starter_security/src/web/endpoint_request.dart';
 export 'package:spring_boot_starter_security/src/web/entry_points.dart';
 export 'package:spring_boot_starter_security/src/web/filter_chain.dart';
 export 'package:spring_boot_starter_security/src/web/firewall.dart';

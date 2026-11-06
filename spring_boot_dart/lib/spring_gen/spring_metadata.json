@@ -464,6 +464,67 @@
   ],
   "beans": [
     {
+      "name": "applicationAvailability",
+      "type": "ApplicationAvailabilityBean",
+      "types": [
+        "ApplicationAvailabilityBean",
+        "ApplicationAvailability",
+        "GenericApplicationListener"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(ApplicationAvailability)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/availability_auto_configuration.dart",
+      "line": 18,
+      "injects": [],
+      "members": [
+        {
+          "name": "getLastChangeEvent",
+          "kind": "method",
+          "type": "AvailabilityChangeEvent<S>?",
+          "parameters": []
+        },
+        {
+          "name": "getState",
+          "kind": "method",
+          "type": "S",
+          "parameters": [
+            "S defaultState"
+          ]
+        },
+        {
+          "name": "livenessState",
+          "kind": "getter",
+          "type": "LivenessState"
+        },
+        {
+          "name": "onApplicationEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object event"
+          ]
+        },
+        {
+          "name": "readinessState",
+          "kind": "getter",
+          "type": "ReadinessState"
+        },
+        {
+          "name": "supportsEvent",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object event"
+          ]
+        }
+      ]
+    },
+    {
       "name": "applicationProperties",
       "type": "ApplicationProperties",
       "types": [

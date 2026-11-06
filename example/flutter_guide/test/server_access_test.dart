@@ -13,18 +13,10 @@ import 'package:neon_books_app/src/admin/admin_service.dart';
 import 'package:neon_books_app/src/api/catalog_client.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
 import 'package:neon_books_app/src/api/models.dart';
-import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/catalog/book_page.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show
-        FeignNotFound,
-        HttpHeaders,
-        HttpMethod,
-        HttpResponse,
-        HttpTransportException,
-        ServerSentEvent;
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart'
     show LogBuffer, SecurityContextHolder;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -207,7 +199,7 @@ void main() {
         ServerSentEvent({'isbn': '9780345539434', 'available': 0}, id: '2'),
       ],
     );
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
 
     await tester.tap(find.text('Live stock'));
     await tester.pumpAndSettle();
@@ -227,7 +219,7 @@ void main() {
     server.http
       ..when(HttpMethod.get, '/api/books/0').respond(404)
       ..when(HttpMethod.get, '/api/books/0/cover').respond(404);
-    await showPage(tester, app.context, const BookPage('0'));
+    await showPage(tester, app.context, const BookPage(isbn: '0'));
     expect(find.text('There is no book 0'), findsOneWidget);
   });
 
@@ -235,7 +227,7 @@ void main() {
     tester,
   ) async {
     server.answerLogin('ada');
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     await logIn(tester, 'ada', 'ada-secret');
     await openMore(tester, 'Support');
 
@@ -293,7 +285,7 @@ void main() {
             ),
           ),
         );
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     await logIn(tester, 'root', 'root-secret');
     await openMore(tester, 'Admin');
 

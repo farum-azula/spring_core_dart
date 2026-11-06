@@ -63,6 +63,7 @@ library;
 export 'package:spring_core_dart/core.dart' show Principal;
 
 export 'package:spring_web_dart/src/annotations.dart';
+export 'package:spring_web_dart/src/cache_control.dart';
 export 'package:spring_web_dart/src/client/http_request.dart';
 export 'package:spring_web_dart/src/client/http_response.dart';
 export 'package:spring_web_dart/src/client/http_transport.dart';
@@ -71,6 +72,7 @@ export 'package:spring_web_dart/src/controller_annotations.dart';
 export 'package:spring_web_dart/src/http_headers.dart';
 export 'package:spring_web_dart/src/http_method.dart';
 export 'package:spring_web_dart/src/http_status.dart';
+export 'package:spring_web_dart/src/mapping_descriptions.dart';
 export 'package:spring_web_dart/src/media_type.dart';
 export 'package:spring_web_dart/src/multipart/multipart.dart';
 export 'package:spring_web_dart/src/path_pattern.dart';

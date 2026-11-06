@@ -5,6 +5,7 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 /// The Live stock screen: the stock changes as the server sends them.
 /// The stream is open while the screen is (`start` in `initState`, `stop`
 /// in `dispose`).
+@ScreenRoute('/stock', title: '#{section.stock}')
 class LiveStockPage extends SpringStatefulWidget<(LiveStock,)> {
   const LiveStockPage({super.key});
 

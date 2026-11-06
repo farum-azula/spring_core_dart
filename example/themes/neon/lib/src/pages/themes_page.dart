@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/app/theme_switcher.dart';
 import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
@@ -12,6 +12,7 @@ import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
 typedef ThemesBeans = (ThemeSelection, SpringThemes);
 
 /// Two themes: the library's `neon` and our `neon-ice`, which extends it.
+@ScreenRoute('/themes', title: '#{nav.themes}')
 class ThemesPage extends SpringStatelessWidget<ThemesBeans> {
   const ThemesPage({super.key});
 

@@ -1,0 +1,6 @@
+# The deployment: the executable (dart compile exe bin/main.dart) with the
+# build copied next to it as web/ (--spring.profiles.active=prod).
+spring:
+  web:
+    resources:
+      static-locations: file:web/

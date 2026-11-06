@@ -5,7 +5,7 @@
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/shop/clock.dart';
 import 'package:neon_books_server/src/shop/shop_properties.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// A parent context with shared beans (a clock) and a child context whose
 /// beans use them; events published in the child reach the parent's

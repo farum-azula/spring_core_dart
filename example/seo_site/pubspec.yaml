@@ -1,0 +1,33 @@
+name: seo_site_app
+description: "A Flutter web site whose every page has real HTML for search engines, link previews and language models: spring.flutter.web.seo.*."
+publish_to: none
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The pages (@ScreenRoute, @RouteInfo), the Markdown screens
+  # (RouteContentView), the browser's addresses. It brings and exports the
+  # Flutter starter (the app widget and theme from properties,
+  # MarkdownView).
+  spring_boot_starter_flutter_navigation: ^0.7.0
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  spring_boot_starter_test: ^0.7.0
+  spring_core_dart_generator: ^0.7.0
+
+flutter:
+  uses-material-design: true
+  # The preview pictures (og:image): the pages point at them as
+  # <site-url>/assets/lib/resources/images/..., the address flutter build
+  # web gives these assets.
+  assets:
+    - lib/resources/images/

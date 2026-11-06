@@ -15,19 +15,16 @@
       "qualifiers": [],
       "profiles": [],
       "conditions": [],
-      "source": "package:theme_showcase_cupertino/src/app/logs.dart",
-      "line": 7,
-      "injects": [],
-      "members": [
+      "source": "package:theme_showcase_cupertino/src/app/shell.dart",
+      "line": 187,
+      "injects": [
         {
-          "name": "opened",
-          "kind": "method",
-          "type": "void",
-          "parameters": [
-            "String page"
-          ]
+          "parameter": "route",
+          "type": "RouteTemplate",
+          "qualifier": null
         }
-      ]
+      ],
+      "members": []
     },
     {
       "name": "themeLog",
@@ -41,7 +38,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:theme_showcase_cupertino/src/app/logs.dart",
-      "line": 14,
+      "line": 7,
       "injects": [
         {
           "parameter": "_selection",
@@ -55,5 +52,142 @@
   "profiles": [
     "desktop",
     "network"
+  ],
+  "routes": [
+    {
+      "path": "",
+      "name": "not-found-page",
+      "class": "NotFoundPage",
+      "source": "package:theme_showcase_cupertino/src/app/shell.dart#NotFoundPage",
+      "notFound": true
+    },
+    {
+      "path": "/background",
+      "name": "background-page",
+      "class": "BackgroundPage",
+      "source": "package:theme_showcase_cupertino/src/pages/background_page.dart#BackgroundPage",
+      "title": "#{nav.background}",
+      "branch": "/more"
+    },
+    {
+      "path": "/colors",
+      "name": "colors-page",
+      "class": "ColorsPage",
+      "source": "package:theme_showcase_cupertino/src/pages/colors_page.dart#ColorsPage",
+      "title": "#{nav.colors}"
+    },
+    {
+      "path": "/controls",
+      "name": "controls-page",
+      "class": "ControlsPage",
+      "source": "package:theme_showcase_cupertino/src/pages/controls_page.dart#ControlsPage",
+      "title": "#{nav.controls}"
+    },
+    {
+      "path": "/images",
+      "name": "images-page",
+      "class": "ImagesPage",
+      "source": "package:theme_showcase_cupertino/src/pages/images_page.dart#ImagesPage",
+      "title": "#{nav.images}",
+      "branch": "/more"
+    },
+    {
+      "path": "/loaders",
+      "name": "loaders-page",
+      "class": "LoadersPage",
+      "source": "package:theme_showcase_cupertino/src/pages/loaders_page.dart#LoadersPage",
+      "title": "#{nav.loaders}",
+      "branch": "/more"
+    },
+    {
+      "path": "/more",
+      "name": "more-page",
+      "class": "MorePage",
+      "source": "package:theme_showcase_cupertino/src/app/shell.dart#MorePage",
+      "title": "#{nav.more}"
+    },
+    {
+      "path": "/motion",
+      "name": "motion-page",
+      "class": "MotionPage",
+      "source": "package:theme_showcase_cupertino/src/pages/motion_page.dart#MotionPage",
+      "title": "#{nav.motion}",
+      "branch": "/more"
+    },
+    {
+      "path": "/styles",
+      "name": "styles-page",
+      "class": "StylesPage",
+      "source": "package:theme_showcase_cupertino/src/pages/styles_page.dart#StylesPage",
+      "title": "#{nav.styles}",
+      "branch": "/more"
+    },
+    {
+      "path": "/themes",
+      "name": "themes-page",
+      "class": "ThemesPage",
+      "source": "package:theme_showcase_cupertino/src/pages/themes_page.dart#ThemesPage",
+      "title": "#{nav.themes}"
+    },
+    {
+      "path": "/tokens",
+      "name": "tokens-page",
+      "class": "TokensPage",
+      "source": "package:theme_showcase_cupertino/src/pages/tokens_page.dart#TokensPage",
+      "title": "#{nav.tokens}",
+      "branch": "/more"
+    },
+    {
+      "path": "/transitions",
+      "name": "transitions-page",
+      "class": "TransitionsPage",
+      "source": "package:theme_showcase_cupertino/src/pages/transitions_page.dart#TransitionsPage",
+      "title": "#{nav.transitions}",
+      "branch": "/more"
+    },
+    {
+      "path": "/transitions/default",
+      "name": "transition-theme-page",
+      "class": "TransitionThemePage",
+      "source": "package:theme_showcase_cupertino/src/pages/transitions_page.dart#TransitionThemePage",
+      "title": "With the default",
+      "branch": "/more"
+    },
+    {
+      "path": "/transitions/fade",
+      "name": "transition-fade-page",
+      "class": "TransitionFadePage",
+      "source": "package:theme_showcase_cupertino/src/pages/transitions_page.dart#TransitionFadePage",
+      "title": "With a fade",
+      "branch": "/more"
+    },
+    {
+      "path": "/transitions/platform",
+      "name": "transition-platform-page",
+      "class": "TransitionPlatformPage",
+      "source": "package:theme_showcase_cupertino/src/pages/transitions_page.dart#TransitionPlatformPage",
+      "title": "With the platform's",
+      "branch": "/more"
+    },
+    {
+      "path": "/type",
+      "name": "type-page",
+      "class": "TypePage",
+      "source": "package:theme_showcase_cupertino/src/pages/type_page.dart#TypePage",
+      "title": "#{nav.type}"
+    }
+  ],
+  "shells": [
+    {
+      "class": "Shell",
+      "source": "package:theme_showcase_cupertino/src/app/shell.dart#Shell",
+      "branches": [
+        "/colors",
+        "/type",
+        "/controls",
+        "/themes",
+        "/more"
+      ]
+    }
   ]
 }

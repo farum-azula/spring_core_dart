@@ -2,7 +2,7 @@
 // pointcut expression with a MethodInterceptor written by hand. It counts
 // the calls of every controller method (the handlers are called through
 // the controllers' proxies, so advice applies to them).
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// Calls per handler, `BookController.search` → 12.
 @Component()

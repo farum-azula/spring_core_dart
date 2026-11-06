@@ -2,7 +2,7 @@
 // in support/bot.properties (a @PropertySource), its texts in
 // messages*.properties (English, Japanese).
 import 'package:neon_books_server/src/shop/shop_properties.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 @Component()
 @ConditionalOnProperty('neon.support.bot.enabled', havingValue: 'true')

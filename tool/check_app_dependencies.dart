@@ -13,6 +13,16 @@
 //   dart run tool/check_app_dependencies.dart            # every starter
 //   dart run tool/check_app_dependencies.dart feign cache  # some of them
 //   dart run tool/check_app_dependencies.dart --keep     # keep the apps
+//   dart run tool/check_app_dependencies.dart --flutter  # the Flutter starters
+//
+// With --flutter it writes a Flutter app per Flutter starter instead (it
+// needs the Flutter SDK: CI runs it in the `flutter` job): the starter
+// alone in `dependencies`, the same core, Boot and @Log code, the
+// starter's feature (the HTTP client of spring_web_dart with the Flutter
+// starter, a screen with the navigation starter, method security and
+// `withMockUser` from `testing.dart` with the Flutter security starter),
+// then `flutter pub get`, the generator, `flutter analyze --fatal-infos`
+// and `flutter test`.
 //
 // The packages of this repository come by path (dependency_overrides), so
 // the check is of the code as it is, before publishing.
@@ -236,6 +246,25 @@ class Partner {
 ''',
   ),
   _Starter(
+    'spring_boot_starter_actuator',
+    feature: '''
+@Component()
+class InboxHealthIndicator extends HealthIndicator {
+  @override
+  Future<Health> health() async =>
+      Health.up().withDetail('pending', 3).build();
+}
+''',
+    featureTest: '''
+  test('/actuator/health through the web starter, with an indicator', () async {
+    await app.mockMvc
+        .get('/actuator/health')
+        .andExpect(status: 200, json: {'status': 'UP'});
+    expect(app, hasSingleBean<InboxHealthIndicator>());
+  });
+''',
+  ),
+  _Starter(
     'spring_boot_starter_security',
     testImports: ['package:spring_boot_starter_security/testing.dart'],
     feature: '''
@@ -290,12 +319,94 @@ class SecurityConfig {
   ),
 ];
 
+/// The Flutter starters, checked with `--flutter`.
+const _flutterStarters = [
+  _Starter(
+    'spring_boot_starter_flutter',
+    feature: '''
+// spring_web_dart comes with the starter: an app sending its own requests
+// declares its transport without another dependency.
+@Configuration()
+class Network {
+  @Bean()
+  HttpTransport httpTransport() => platformHttpTransport();
+}
+
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Text('home');
+}
+''',
+    featureTest: '''
+  test('spring_web_dart comes with the starter', () {
+    expect(app, hasSingleBean<Network>());
+    expect(app.getBean<HttpTransport>(), isA<HttpTransport>());
+  });
+''',
+  ),
+  _Starter(
+    'spring_boot_starter_flutter_navigation',
+    feature: '''
+@ScreenRoute('/', title: 'Home')
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) => Text(context.route.uri.path);
+}
+''',
+    featureTest: '''
+  test('the screens come with the starter', () {
+    expect(app.getBean<RouteTemplate>(), isA<RouteTemplate>());
+    expect(const Home().key, isNull);
+  });
+''',
+  ),
+  _Starter(
+    'spring_boot_starter_flutter_security',
+    testImports: ['package:spring_boot_starter_flutter_security/testing.dart'],
+    feature: '''
+@Service()
+class Reports {
+  @PreAuthorize("hasRole('ADMIN')")
+  Future<String> monthly() async => 'report';
+}
+
+@ScreenRoute('/', title: 'Home')
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Text('home');
+}
+''',
+    featureTest: '''
+  test('method security and withMockUser from testing.dart', () async {
+    await expectLater(
+      withMockUser(() => app.getBean<Reports>().monthly()),
+      throwsA(isA<AccessDeniedException>()),
+    );
+    expect(
+      await withMockUser(
+        () => app.getBean<Reports>().monthly(),
+        roles: ['ADMIN'],
+      ),
+      'report',
+    );
+  });
+''',
+  ),
+];
+
 Future<void> main(List<String> args) async {
   final repository = File.fromUri(Platform.script).parent.parent.absolute.path;
   final keep = args.contains('--keep');
+  final flutter = args.contains('--flutter');
   final wanted = args.where((a) => !a.startsWith('--')).toSet();
   final starters = [
-    for (final starter in _starters)
+    for (final starter in flutter ? _flutterStarters : _starters)
       if (wanted.isEmpty || wanted.contains(starter.short)) starter,
   ];
   final failures = <String>[];
@@ -303,14 +414,21 @@ Future<void> main(List<String> args) async {
     final directory = Directory.systemTemp.createTempSync(
       'app_${starter.short}_',
     );
-    _write(directory.path, repository, starter);
+    (flutter ? _writeFlutter : _write)(directory.path, repository, starter);
     stdout.writeln('== ${starter.package}: ${directory.path}');
-    final steps = [
-      ['dart', 'pub', 'get'],
-      ['dart', 'run', 'build_runner', 'build'],
-      ['dart', 'analyze', '--fatal-infos', '--fatal-warnings'],
-      ['dart', 'test'],
-    ];
+    final steps = flutter
+        ? [
+            ['flutter', 'pub', 'get'],
+            ['dart', 'run', 'build_runner', 'build'],
+            ['flutter', 'analyze', '--fatal-infos', '--fatal-warnings'],
+            ['flutter', 'test'],
+          ]
+        : [
+            ['dart', 'pub', 'get'],
+            ['dart', 'run', 'build_runner', 'build'],
+            ['dart', 'analyze', '--fatal-infos', '--fatal-warnings'],
+            ['dart', 'test'],
+          ];
     for (final step in steps) {
       final result = Process.runSync(
         step.first,
@@ -466,5 +584,109 @@ class GreeterTest {
 }
 
 void main() => runSpringTests();
+''');
+}
+
+/// A Flutter app on [starter] alone, in [directory].
+void _writeFlutter(String directory, String repository, _Starter starter) {
+  void file(String path, String text) => File('$directory/$path')
+    ..createSync(recursive: true)
+    ..writeAsStringSync(text);
+
+  final overrides = [
+    for (final package in family.family)
+      '  $package:\n    path: $repository/$package',
+  ].join('\n');
+  file('pubspec.yaml', '''
+name: app
+publish_to: none
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ${starter.package}: any
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  flutter_test:
+    sdk: flutter
+  spring_boot_starter_test: any
+  spring_core_dart_generator: any
+
+dependency_overrides:
+$overrides
+''');
+  file('analysis_options.yaml', '''
+linter:
+  rules:
+    - depend_on_referenced_packages
+''');
+  file('lib/resources/application.properties', 'greeting.name=World\n');
+  final router = starter.package != 'spring_boot_starter_flutter';
+  file('lib/main.dart', '''
+import 'package:flutter/widgets.dart';
+import '${starter.library}';
+
+${router ? '' : "import 'package:app/src/feature.dart';\n"}import 'spring_gen/main.spring.dart';
+
+@SpringBootApplication()
+void main() => runApp(
+  SpringApplicationWidget(
+    application: () => springApplication,${router ? '' : '\n    home: const Home(),'}
+  ),
+);
+''');
+  file(
+    'lib/src/greeter.dart',
+    r'''
+import 'package:STARTER';
+
+import 'package:app/spring_gen/main.spring.dart';
+
+/// spring_core_dart's annotations, the logger of @Log.
+@Service()
+@Log(topic: 'app.greeter')
+class Greeter {
+  Greeter(@Value(r'${greeting.name}') this.name);
+
+  final String name;
+
+  String greet() {
+    log.info('greeting $name');
+    return 'Hello, $name';
+  }
+}
+'''
+        .replaceFirst('package:STARTER', starter.library),
+  );
+  file(
+    'lib/src/feature.dart',
+    "import 'package:flutter/widgets.dart';\n"
+        "import '${starter.library}';\n\n${starter.feature}",
+  );
+  file('test/app_test.dart', '''
+import 'package:app/spring_gen/main.spring.dart';
+import 'package:app/src/feature.dart';
+import 'package:app/src/greeter.dart';
+import 'package:flutter_test/flutter_test.dart';
+import '${starter.library}';
+${starter.testImports.map((library) => "import '$library';").join('\n')}
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
+    hide Size;
+
+void main() {
+  final app = springBootTest(
+    springApplication,
+    properties: {'greeting.name': 'Ada'},
+  );
+
+  test('core, Boot and @Log come with the starter', () {
+    expect(app.getBean<Greeter>().greet(), 'Hello, Ada');
+    expect(app, hasSingleBean<LogBuffer>());
+  });
+
+${starter.featureTest}}
 ''');
 }

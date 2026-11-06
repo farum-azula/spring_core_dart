@@ -9,6 +9,7 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 ///
 /// Like a notes app: [ChatMessages] reads the messages and rebuilds on
 /// each one, [ChatInput] only sends and keeps its text field's state.
+@ScreenRoute('/support', title: '#{support.title}')
 class SupportPage extends SpringStatelessWidget<(Session,)> {
   const SupportPage({super.key});
 

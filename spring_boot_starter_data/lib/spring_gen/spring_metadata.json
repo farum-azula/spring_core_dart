@@ -1244,7 +1244,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 375,
+      "line": 383,
       "injects": [],
       "members": [
         {
@@ -1307,7 +1307,7 @@
         "@ConditionalOnMissingBean(DataSource)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 392,
+      "line": 400,
       "injects": [],
       "members": [
         {
@@ -1455,7 +1455,7 @@
         "@ConditionalOnMissingBean(DataSourceInitialization)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 411,
+      "line": 419,
       "injects": [],
       "members": [
         {
@@ -1491,7 +1491,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 439,
+      "line": 447,
       "injects": [],
       "members": [
         {
@@ -1556,6 +1556,25 @@
           ]
         }
       ]
+    },
+    {
+      "name": "dbHealthContributor",
+      "type": "HealthContributor",
+      "types": [
+        "HealthContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledHealthIndicator('db')",
+        "@ConditionalOnMissingBean.named('dbHealthContributor')"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 508,
+      "injects": [],
+      "members": []
     },
     {
       "name": "entityConverter",
@@ -1951,7 +1970,7 @@
         "@ConditionalOnMissingBean(JdbcClient)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 486,
+      "line": 494,
       "injects": [],
       "members": [
         {
@@ -1988,7 +2007,7 @@
         "@ConditionalOnMissingBean(JdbcLogSettings)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 381,
+      "line": 389,
       "injects": [],
       "members": [
         {
@@ -2050,7 +2069,7 @@
         "@ConditionalOnMissingBean(JdbcTemplate)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 462,
+      "line": 470,
       "injects": [],
       "members": [
         {
@@ -2268,7 +2287,7 @@
         "@ConditionalOnMissingBean(NamedParameterJdbcTemplate)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 474,
+      "line": 482,
       "injects": [],
       "members": [
         {
@@ -2873,7 +2892,7 @@
         "@ConditionalOnMissingBean(PlatformTransactionManager)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 449,
+      "line": 457,
       "injects": [],
       "members": [
         {

@@ -12,6 +12,7 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 import 'spring_gen/example.spring.dart';

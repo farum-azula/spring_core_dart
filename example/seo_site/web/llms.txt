@@ -1,0 +1,16 @@
+# Lumen, a small library
+
+> Lumen, a small library, and its documentation.
+
+## Blog
+
+- [Hello, Lumen](https://lumen.example/blog/hello.md): Why Lumen exists, in three paragraphs.
+## Docs
+
+- [Documentation](https://lumen.example/docs.md): Everything about Lumen, from the first install to the routes.
+- [Getting started](https://lumen.example/docs/getting-started.md): Install Lumen and show the first page in five minutes.
+- [Routing](https://lumen.example/docs/guides/routing.md)
+## Legal
+
+- [Privacy](https://lumen.example/legal/privacy.md): What the site keeps about its visitors, which is nothing.
+- [Terms](https://lumen.example/legal/terms.md): The terms of use of the site.

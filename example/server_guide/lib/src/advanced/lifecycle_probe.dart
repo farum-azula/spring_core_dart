@@ -4,7 +4,7 @@
 // DestructionAwareBeanPostProcessor, @PreDestroy, DisposableBean, the
 // destroy method.
 import 'package:neon_books_server/src/advanced/advanced_tour.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// What the probe saw, in order.
 final lifecycleEvents = <String>[];

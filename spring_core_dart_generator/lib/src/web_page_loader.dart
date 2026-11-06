@@ -227,6 +227,30 @@ abstract final class WebPageLoader {
     return '${html.substring(0, at)}$block\n${html.substring(at)}';
   }
 
+  /// The colors of the app's page and manifest: the active theme's
+  /// `primary` (the browser's `theme-color`) and `surface` (the manifest's
+  /// background), as `#rrggbb`.
+  static ({String primary, String surface}) pageColors(
+    ThemeSet set,
+    KeysDiagnostics diagnostics,
+  ) {
+    final (:light, dark: _) = _active(set);
+    final scope = set.scope(light);
+    final look = _Look(
+      scope,
+      ThemeValueResolver(scope, dark: _isDark(scope, light)),
+      diagnostics,
+    );
+    String opaque(String role, int fallback) => cssColor(
+      0xFF000000 |
+          ((look.resolver.color(look._roleNode(role)) ?? fallback) & 0xFFFFFF),
+    );
+    return (
+      primary: opaque('primary', 0xFF6750A4),
+      surface: opaque('surface', 0xFFFFFFFF),
+    );
+  }
+
   /// Whether the properties of [set] give a splash to the active theme.
   static bool hasSplash(ThemeSet set) {
     final (:light, :dark) = _active(set);

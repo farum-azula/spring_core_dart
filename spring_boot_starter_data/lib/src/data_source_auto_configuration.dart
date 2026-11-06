@@ -1,6 +1,9 @@
+import 'package:spring_boot_actuator/spring_boot_actuator.dart'
+    show ConditionalOnEnabledHealthIndicator, HealthContributor;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/data_failure_analyzer.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
+import 'package:spring_boot_starter_data/src/jdbc/data_source_health_indicator.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_properties.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_client.dart';
@@ -359,7 +362,11 @@ JdbcTemplate _jdbcTemplate(DependencyResolver r, DataSource dataSource) =>
 /// - `jdbcTemplate`, `namedParameterJdbcTemplate`, `jdbcClient` — over the
 ///   single `DataSource`, with `spring.jdbc.template.query-timeout`;
 /// - `dataSourceInitialization` — the schema setup of a `DataSource` the
-///   application declared itself.
+///   application declared itself;
+/// - `dbHealthContributor` — the actuator's `db` health: a
+///   [DataSourceHealthIndicator] per data source, unless
+///   `management.health.db.enabled=false` (it is only read when the
+///   actuator starter is there).
 ///
 /// Every bean is skipped when the application declares one of its type
 /// (`@ConditionalOnMissingBean`), so an application replaces any of them.
@@ -368,9 +375,10 @@ JdbcTemplate _jdbcTemplate(DependencyResolver r, DataSource dataSource) =>
 /// `DataSourceTransactionManagerAutoConfiguration`,
 /// `JdbcTemplateAutoConfiguration`,
 /// `NamedParameterJdbcTemplateAutoConfiguration`,
-/// `JdbcClientAutoConfiguration`, `SqlInitializationAutoConfiguration` and
+/// `JdbcClientAutoConfiguration`, `SqlInitializationAutoConfiguration`,
 /// `FlywayAutoConfiguration` (here the migrations are the starter's own,
-/// `spring.sql.migration.*`).
+/// `spring.sql.migration.*`) and
+/// `DataSourceHealthContributorAutoConfiguration`.
 final dataSourceAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<DataFailureAnalyzer>(
     name: 'dataFailureAnalyzer',
@@ -495,4 +503,25 @@ final dataSourceAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) => JdbcClient.fromTemplate(r.dependency<JdbcTemplate>()),
   ),
+  // The actuator's `db`: every data source by bean name, read when the
+  // singletons are created (the registrar's named data sources too).
+  BeanDefinition<HealthContributor>(
+    name: 'dbHealthContributor',
+    factoryMethodName: 'dbHealthContributor',
+    types: const [HealthContributor],
+    source: _healthSource,
+    conditions: const [
+      ConditionGroup('$_healthSource.dbHealthContributor', [
+        ConditionalOnEnabledHealthIndicator('db'),
+        ConditionalOnMissingBean.named('dbHealthContributor'),
+      ]),
+    ],
+    create: (r) => dataSourceHealthContributor(
+      r.dependency<ListableBeanFactory>().getBeansOfType<DataSource>(),
+    ),
+  ),
 ];
+
+const _healthSource =
+    'package:spring_boot_starter_data'
+    '#DataSourceHealthContributorAutoConfiguration';

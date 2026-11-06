@@ -16,6 +16,7 @@ typedef OrdersPageBeans = (
 
 /// The Orders screen: the user's orders (an admin's: everyone's, the
 /// server filters them with `@PostFilter`).
+@ScreenRoute('/orders', title: '#{section.orders}')
 class OrdersPage extends SpringStatefulWidget<OrdersPageBeans> {
   const OrdersPage({super.key});
 

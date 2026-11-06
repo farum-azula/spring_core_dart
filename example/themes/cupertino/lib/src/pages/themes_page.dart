@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/ios_widgets.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
@@ -13,6 +13,7 @@ typedef ThemesPageBeans = (
 
 /// Every theme of the app, side by side. Picking one is
 /// `ThemeSelection.select(AppThemes.graphite)`.
+@ScreenRoute('/themes', title: '#{nav.themes}')
 class ThemesPage extends SpringStatelessWidget<ThemesPageBeans> {
   const ThemesPage({super.key});
 

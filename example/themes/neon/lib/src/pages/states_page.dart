@@ -5,8 +5,10 @@ import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
 import 'package:theme_showcase_neon/src/widgets/section.dart';
 import 'package:theme_showcase_neon/src/widgets/state_tile.dart';
 import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 /// The states of ThemeStates: switch some on, and try the others by hand.
+@ScreenRoute('/states', title: '#{nav.states}')
 class StatesPage extends StatefulWidget {
   const StatesPage({super.key});
 

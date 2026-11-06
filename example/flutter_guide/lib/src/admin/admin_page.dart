@@ -5,6 +5,7 @@ import 'package:neon_books_app/src/admin/book_form.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/api/problems.dart';
 import 'package:neon_books_app/src/app/messages.dart';
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The beans of [AdminPage].
@@ -18,6 +19,7 @@ typedef AdminPageBeans = (
 /// server's log. The form is checked in the app first (`BookForm`), then
 /// by the server, whose field errors (a 400 ProblemDetail) show under the
 /// same fields.
+@ScreenRoute('/admin', title: '#{admin.title}')
 class AdminPage extends SpringStatefulWidget<AdminPageBeans> {
   const AdminPage({super.key});
 

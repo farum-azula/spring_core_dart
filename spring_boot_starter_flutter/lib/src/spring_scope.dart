@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/bean_lookup_scope.dart';
 
 /// The inherited widget that holds the application context for the
 /// widgets below it: every way a widget gets a bean
@@ -85,11 +86,16 @@ class SpringScope extends InheritedWidget {
   /// The bean of type [T] (with [qualifier], the bean of that name, alias
   /// or qualifier) from the context of the nearest [SpringScope]; what
   /// `context.bean<T>()` and the generated getters call. The widget is
-  /// rebuilt when the context is replaced, not when the bean changes.
+  /// rebuilt when the context is replaced, not when the bean changes. A
+  /// [BeanLookupScope] above [context] gives the lookup its zone (the
+  /// navigation's `route` and `branch` beans of the widget's screen).
   static T beanOf<T extends Object>(
     BuildContext context, {
     String? qualifier,
-  }) => of(context).getBean<T>(qualifier: qualifier);
+  }) => BeanLookupScope.run(
+    context,
+    () => of(context).getBean<T>(qualifier: qualifier),
+  );
 
   @override
   bool updateShouldNotify(SpringScope oldWidget) =>

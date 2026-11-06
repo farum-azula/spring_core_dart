@@ -6,6 +6,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/form_parameters.dart';
 import 'package:spring_boot_starter_web/src/handler_exception_resolver.dart';
+import 'package:spring_boot_starter_web/src/handler_mapping_descriptions.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
@@ -42,7 +43,11 @@ const _log = SpringLog('spring.web.mvc');
 /// work between `RequestMappingHandlerMapping` and
 /// `RequestMappingHandlerAdapter`.
 final class RequestMappingHandlerMapping
-    implements HandlerMapping, Ordered, SmartInitializingSingleton {
+    implements
+        HandlerMapping,
+        Ordered,
+        SmartInitializingSingleton,
+        DescribableHandlerMapping {
   /// The router of the controller beans of [beanFactory]. Without a
   /// [multipartResolver], one with the default limits is used.
   RequestMappingHandlerMapping({
@@ -121,6 +126,55 @@ final class RequestMappingHandlerMapping
   List<String> get mappings => [
     for (final mapping in _mappings) mapping.toString(),
   ];
+
+  /// Every mapping for the actuator's `mappings` endpoint, in matching
+  /// order: the predicate (`{GET [/api/books/{isbn}]}`), the handler
+  /// (`BookController#find(String)`) and the method with its conditions,
+  /// in Spring WebFlux's shape ([describeRequestMapping]).
+  @override
+  List<Map<String, Object?>> describeHandlers() {
+    if (!_initialized) {
+      initialize();
+    }
+    return [
+      for (final mapping in _mappings)
+        describeRequestMapping(
+          handler: _handlerText(mapping.handler),
+          className: mapping.handler.beanTypeName,
+          methodName: mapping.handler.method.name,
+          descriptor: _descriptor(mapping.handler.method),
+          methods: [mapping.method.value],
+          patterns: [mapping.pattern.pattern],
+          consumes: [for (final type in mapping.consumes) '$type'],
+          produces: [for (final type in mapping.produces) '$type'],
+          headers: [
+            for (final condition in mapping.headerConditions) '$condition',
+          ],
+        ),
+    ];
+  }
+
+  // Spring's HandlerMethod.toString: `BookController#find(String)`.
+  static String _handlerText(HandlerMethod handler) =>
+      '${handler.beanTypeName}#${handler.method.name}('
+      '${handler.method.parameters.map((p) => _typeText(p.type)).join(', ')})';
+
+  // The Dart signature: `(String isbn) -> Future<Book>`.
+  static String _descriptor(BeanMethod<Object> method) {
+    final parameters = [
+      for (final p in method.parameters) '${_typeText(p.type)} ${p.name}',
+    ].join(', ');
+    final value = method.isVoid
+        ? 'void'
+        : switch (method.returnTypeInfo) {
+            final type? => _typeText(type),
+            null => '${method.returnType ?? 'void'}',
+          };
+    return '($parameters) -> ${method.isFuture ? 'Future<$value>' : value}';
+  }
+
+  static String _typeText(TypeInfo<Object?> type) =>
+      '${type.type}${type.nullable ? '?' : ''}';
 
   /// Calls [initialize] once every singleton exists, so an invalid
   /// controller stops the startup instead of the first request.

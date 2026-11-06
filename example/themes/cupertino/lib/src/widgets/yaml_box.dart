@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 
-/// A few lines of the YAML that make what is shown. A test checks that every
-/// line is really in lib/resources/, so the boxes cannot drift from the files.
+/// A few lines of the YAML that make what is shown, as a block of Markdown
+/// colored by the theme's `styles.code`. A test checks that every line is
+/// really in lib/resources/, so the boxes cannot drift from the files.
 class YamlBox extends StatelessWidget {
   const YamlBox(this.text, {super.key, this.label});
 
@@ -12,33 +14,21 @@ class YamlBox extends StatelessWidget {
   final String? label;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.theme.colors;
-    final code = context.theme.typography.code;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(context.theme.spacing.m),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(context.theme.tokens.corner.tiny),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (label != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: context.theme.spacing.s),
-              child: Text(
-                label!,
-                style: code.copyWith(
-                  fontSize: 11,
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (label != null)
+        Padding(
+          padding: EdgeInsets.only(bottom: context.theme.spacing.xs),
+          child: Text(
+            label!,
+            style: context.theme.typography.code.copyWith(
+              fontSize: 11,
+              color: context.theme.colors.onSurfaceVariant,
             ),
-          Text(text, style: code.copyWith(color: colors.onSurface)),
-        ],
-      ),
-    );
-  }
+          ),
+        ),
+      MarkdownView.code(text, language: 'yaml'),
+    ],
+  );
 }

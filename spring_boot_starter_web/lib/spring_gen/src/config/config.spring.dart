@@ -32,226 +32,322 @@ const _$target2 = _i1.AopTarget(
   annotationTypes: [r'ConfigurationProperties'],
 );
 const _$target3 = _i1.AopTarget(
+  r'WebResourcesSettings',
+  types: [r'WebResourcesSettings'],
+  annotations: [_i1.ConfigurationProperties(r'spring.web.resources')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target4 = _i1.AopTarget(
   r'WebMainSettings',
   types: [r'WebMainSettings'],
   annotations: [_i1.ConfigurationProperties(r'spring.main')],
   annotationTypes: [r'ConfigurationProperties'],
 );
-const _$target4 = _i1.AopTarget(
+const _$target5 = _i1.AopTarget(
   r'WebTestSettings',
   types: [r'WebTestSettings'],
   annotations: [_i1.ConfigurationProperties(r'spring.test')],
   annotationTypes: [r'ConfigurationProperties'],
 );
-const _$target5 = _i1.AopTarget(
+const _$target6 = _i1.AopTarget(
   r'LocalServerSettings',
   types: [r'LocalServerSettings'],
   annotations: [_i1.ConfigurationProperties(r'local.server')],
   annotationTypes: [r'ConfigurationProperties'],
 );
-Object? _$get6(_i2.ServerSettings bean) => bean.port;
-void _$set7(_i2.ServerSettings bean, Object? value) =>
+Object? _$get7(_i2.ServerSettings bean) => bean.port;
+void _$set8(_i2.ServerSettings bean, Object? value) =>
     bean.port = (value as int);
-Object? _$get8(_i2.ServerSettings bean) => bean.address;
-void _$set9(_i2.ServerSettings bean, Object? value) =>
+Object? _$get9(_i2.ServerSettings bean) => bean.address;
+void _$set10(_i2.ServerSettings bean, Object? value) =>
     bean.address = (value as String?);
-Object? _$get10(_i2.ServerSettings bean) => bean.shutdown;
-void _$set11(_i2.ServerSettings bean, Object? value) =>
+Object? _$get11(_i2.ServerSettings bean) => bean.shutdown;
+void _$set12(_i2.ServerSettings bean, Object? value) =>
     bean.shutdown = (value as _i3.Shutdown);
-Object? _$get12(_i2.ServerSettings bean) => bean.contextPath;
-void _$set13(_i2.ServerSettings bean, Object? value) =>
+Object? _$get13(_i2.ServerSettings bean) => bean.contextPath;
+void _$set14(_i2.ServerSettings bean, Object? value) =>
     bean.contextPath = (value as String?);
-Object? _$get14(_i2.ServerSettings bean) => bean.maxHttpRequestBodySize;
-void _$set15(_i2.ServerSettings bean, Object? value) =>
+Object? _$get15(_i2.ServerSettings bean) => bean.maxHttpRequestBodySize;
+void _$set16(_i2.ServerSettings bean, Object? value) =>
     bean.maxHttpRequestBodySize = (value as _i1.DataSize);
-Object? _$get16(_i2.ServerSettings bean) => bean.connectionTimeout;
-void _$set17(_i2.ServerSettings bean, Object? value) =>
+Object? _$get17(_i2.ServerSettings bean) => bean.connectionTimeout;
+void _$set18(_i2.ServerSettings bean, Object? value) =>
     bean.connectionTimeout = (value as Duration);
-Object? _$get18(_i2.ServerSettings bean) => bean.requestTimeout;
-void _$set19(_i2.ServerSettings bean, Object? value) =>
+Object? _$get19(_i2.ServerSettings bean) => bean.requestTimeout;
+void _$set20(_i2.ServerSettings bean, Object? value) =>
     bean.requestTimeout = (value as Duration?);
-Object? _$get20(_i2.ServerSettings bean) => bean.forwardHeadersStrategy;
-void _$set21(_i2.ServerSettings bean, Object? value) =>
+Object? _$get21(_i2.ServerSettings bean) => bean.forwardHeadersStrategy;
+void _$set22(_i2.ServerSettings bean, Object? value) =>
     bean.forwardHeadersStrategy = (value as _i4.ForwardHeadersStrategy);
-Object? _$get22(_i2.ServerSettings bean) => bean.forwardHeaders;
-void _$set23(_i2.ServerSettings bean, Object? value) =>
+Object? _$get23(_i2.ServerSettings bean) => bean.forwardHeaders;
+void _$set24(_i2.ServerSettings bean, Object? value) =>
     bean.forwardHeaders = (value as _i2.ForwardHeadersSettings);
-Object? _$get24(_i2.ServerSettings bean) => bean.ssl;
-void _$set25(_i2.ServerSettings bean, Object? value) =>
+Object? _$get25(_i2.ServerSettings bean) => bean.ssl;
+void _$set26(_i2.ServerSettings bean, Object? value) =>
     bean.ssl = (value as _i2.ServerSslSettings);
-Object? _$get26(_i2.ServerSettings bean) => bean.compression;
-void _$set27(_i2.ServerSettings bean, Object? value) =>
+Object? _$get27(_i2.ServerSettings bean) => bean.compression;
+void _$set28(_i2.ServerSettings bean, Object? value) =>
     bean.compression = (value as _i2.ServerCompressionSettings);
-Object? _$get28(_i2.ServerSettings bean) => bean.websocket;
-void _$set29(_i2.ServerSettings bean, Object? value) =>
+Object? _$get29(_i2.ServerSettings bean) => bean.websocket;
+void _$set30(_i2.ServerSettings bean, Object? value) =>
     bean.websocket = (value as _i2.ServerWebSocketSettings);
-Object? _$get30(_i2.ServerSettings bean) => bean.session;
-void _$set31(_i2.ServerSettings bean, Object? value) =>
+Object? _$get31(_i2.ServerSettings bean) => bean.session;
+void _$set32(_i2.ServerSettings bean, Object? value) =>
     bean.session = (value as _i2.ServerSessionSettings);
-_i2.ServerSettings _$create32(
+Object? _$get33(_i2.ServerSettings bean) => bean.mimeMappings;
+void _$set34(_i2.ServerSettings bean, Object? value) =>
+    bean.mimeMappings = (value as Map<String, String>);
+_i2.ServerSettings _$create35(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ServerSettings();
-Object? _$get33(_i2.ForwardHeadersSettings bean) => bean.trustedProxies;
-void _$set34(_i2.ForwardHeadersSettings bean, Object? value) =>
+Object? _$get36(_i2.ForwardHeadersSettings bean) => bean.trustedProxies;
+void _$set37(_i2.ForwardHeadersSettings bean, Object? value) =>
     bean.trustedProxies = (value as List<String>?);
-_i2.ForwardHeadersSettings _$create35(
+_i2.ForwardHeadersSettings _$create38(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ForwardHeadersSettings();
-Object? _$get36(_i2.ServerSslSettings bean) => bean.enabled;
-void _$set37(_i2.ServerSslSettings bean, Object? value) =>
+Object? _$get39(_i2.ServerSslSettings bean) => bean.enabled;
+void _$set40(_i2.ServerSslSettings bean, Object? value) =>
     bean.enabled = (value as bool);
-Object? _$get38(_i2.ServerSslSettings bean) => bean.certificate;
-void _$set39(_i2.ServerSslSettings bean, Object? value) =>
+Object? _$get41(_i2.ServerSslSettings bean) => bean.certificate;
+void _$set42(_i2.ServerSslSettings bean, Object? value) =>
     bean.certificate = (value as String?);
-Object? _$get40(_i2.ServerSslSettings bean) => bean.certificatePrivateKey;
-void _$set41(_i2.ServerSslSettings bean, Object? value) =>
+Object? _$get43(_i2.ServerSslSettings bean) => bean.certificatePrivateKey;
+void _$set44(_i2.ServerSslSettings bean, Object? value) =>
     bean.certificatePrivateKey = (value as String?);
-Object? _$get42(_i2.ServerSslSettings bean) => bean.keyPassword;
-void _$set43(_i2.ServerSslSettings bean, Object? value) =>
+Object? _$get45(_i2.ServerSslSettings bean) => bean.keyPassword;
+void _$set46(_i2.ServerSslSettings bean, Object? value) =>
     bean.keyPassword = (value as String?);
-Object? _$get44(_i2.ServerSslSettings bean) => bean.trustCertificate;
-void _$set45(_i2.ServerSslSettings bean, Object? value) =>
+Object? _$get47(_i2.ServerSslSettings bean) => bean.trustCertificate;
+void _$set48(_i2.ServerSslSettings bean, Object? value) =>
     bean.trustCertificate = (value as String?);
-Object? _$get46(_i2.ServerSslSettings bean) => bean.clientAuth;
-void _$set47(_i2.ServerSslSettings bean, Object? value) =>
+Object? _$get49(_i2.ServerSslSettings bean) => bean.clientAuth;
+void _$set50(_i2.ServerSslSettings bean, Object? value) =>
     bean.clientAuth = (value as _i3.ClientAuth);
-_i2.ServerSslSettings _$create48(
+_i2.ServerSslSettings _$create51(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ServerSslSettings();
-Object? _$get49(_i2.ServerCompressionSettings bean) => bean.enabled;
-void _$set50(_i2.ServerCompressionSettings bean, Object? value) =>
+Object? _$get52(_i2.ServerCompressionSettings bean) => bean.enabled;
+void _$set53(_i2.ServerCompressionSettings bean, Object? value) =>
     bean.enabled = (value as bool);
-Object? _$get51(_i2.ServerCompressionSettings bean) => bean.mimeTypes;
-void _$set52(_i2.ServerCompressionSettings bean, Object? value) =>
+Object? _$get54(_i2.ServerCompressionSettings bean) => bean.mimeTypes;
+void _$set55(_i2.ServerCompressionSettings bean, Object? value) =>
     bean.mimeTypes = (value as List<String>);
-Object? _$get53(_i2.ServerCompressionSettings bean) => bean.minResponseSize;
-void _$set54(_i2.ServerCompressionSettings bean, Object? value) =>
+Object? _$get56(_i2.ServerCompressionSettings bean) => bean.minResponseSize;
+void _$set57(_i2.ServerCompressionSettings bean, Object? value) =>
     bean.minResponseSize = (value as _i1.DataSize);
-_i2.ServerCompressionSettings _$create55(
+_i2.ServerCompressionSettings _$create58(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ServerCompressionSettings();
-Object? _$get56(_i2.ServerWebSocketSettings bean) => bean.maxTextMessageSize;
-void _$set57(_i2.ServerWebSocketSettings bean, Object? value) =>
+Object? _$get59(_i2.ServerWebSocketSettings bean) => bean.maxTextMessageSize;
+void _$set60(_i2.ServerWebSocketSettings bean, Object? value) =>
     bean.maxTextMessageSize = (value as _i1.DataSize);
-Object? _$get58(_i2.ServerWebSocketSettings bean) => bean.maxBinaryMessageSize;
-void _$set59(_i2.ServerWebSocketSettings bean, Object? value) =>
+Object? _$get61(_i2.ServerWebSocketSettings bean) => bean.maxBinaryMessageSize;
+void _$set62(_i2.ServerWebSocketSettings bean, Object? value) =>
     bean.maxBinaryMessageSize = (value as _i1.DataSize);
-Object? _$get60(_i2.ServerWebSocketSettings bean) => bean.sendBufferSizeLimit;
-void _$set61(_i2.ServerWebSocketSettings bean, Object? value) =>
+Object? _$get63(_i2.ServerWebSocketSettings bean) => bean.sendBufferSizeLimit;
+void _$set64(_i2.ServerWebSocketSettings bean, Object? value) =>
     bean.sendBufferSizeLimit = (value as _i1.DataSize);
-Object? _$get62(_i2.ServerWebSocketSettings bean) => bean.sendTimeLimit;
-void _$set63(_i2.ServerWebSocketSettings bean, Object? value) =>
+Object? _$get65(_i2.ServerWebSocketSettings bean) => bean.sendTimeLimit;
+void _$set66(_i2.ServerWebSocketSettings bean, Object? value) =>
     bean.sendTimeLimit = (value as Duration);
-_i2.ServerWebSocketSettings _$create64(
+_i2.ServerWebSocketSettings _$create67(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ServerWebSocketSettings();
-Object? _$get65(_i2.ServerSessionSettings bean) => bean.timeout;
-void _$set66(_i2.ServerSessionSettings bean, Object? value) =>
+Object? _$get68(_i2.ServerSessionSettings bean) => bean.timeout;
+void _$set69(_i2.ServerSessionSettings bean, Object? value) =>
     bean.timeout = (value as Duration);
-Object? _$get67(_i2.ServerSessionSettings bean) => bean.maxSessions;
-void _$set68(_i2.ServerSessionSettings bean, Object? value) =>
+Object? _$get70(_i2.ServerSessionSettings bean) => bean.maxSessions;
+void _$set71(_i2.ServerSessionSettings bean, Object? value) =>
     bean.maxSessions = (value as int);
-Object? _$get69(_i2.ServerSessionSettings bean) => bean.cookie;
-void _$set70(_i2.ServerSessionSettings bean, Object? value) =>
+Object? _$get72(_i2.ServerSessionSettings bean) => bean.cookie;
+void _$set73(_i2.ServerSessionSettings bean, Object? value) =>
     bean.cookie = (value as _i2.ServerSessionCookieSettings);
-_i2.ServerSessionSettings _$create71(
+_i2.ServerSessionSettings _$create74(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ServerSessionSettings();
-Object? _$get72(_i2.ServerSessionCookieSettings bean) => bean.name;
-void _$set73(_i2.ServerSessionCookieSettings bean, Object? value) =>
+Object? _$get75(_i2.ServerSessionCookieSettings bean) => bean.name;
+void _$set76(_i2.ServerSessionCookieSettings bean, Object? value) =>
     bean.name = (value as String);
-Object? _$get74(_i2.ServerSessionCookieSettings bean) => bean.domain;
-void _$set75(_i2.ServerSessionCookieSettings bean, Object? value) =>
+Object? _$get77(_i2.ServerSessionCookieSettings bean) => bean.domain;
+void _$set78(_i2.ServerSessionCookieSettings bean, Object? value) =>
     bean.domain = (value as String?);
-Object? _$get76(_i2.ServerSessionCookieSettings bean) => bean.path;
-void _$set77(_i2.ServerSessionCookieSettings bean, Object? value) =>
+Object? _$get79(_i2.ServerSessionCookieSettings bean) => bean.path;
+void _$set80(_i2.ServerSessionCookieSettings bean, Object? value) =>
     bean.path = (value as String?);
-Object? _$get78(_i2.ServerSessionCookieSettings bean) => bean.httpOnly;
-void _$set79(_i2.ServerSessionCookieSettings bean, Object? value) =>
+Object? _$get81(_i2.ServerSessionCookieSettings bean) => bean.httpOnly;
+void _$set82(_i2.ServerSessionCookieSettings bean, Object? value) =>
     bean.httpOnly = (value as bool);
-Object? _$get80(_i2.ServerSessionCookieSettings bean) => bean.secure;
-void _$set81(_i2.ServerSessionCookieSettings bean, Object? value) =>
+Object? _$get83(_i2.ServerSessionCookieSettings bean) => bean.secure;
+void _$set84(_i2.ServerSessionCookieSettings bean, Object? value) =>
     bean.secure = (value as bool?);
-Object? _$get82(_i2.ServerSessionCookieSettings bean) => bean.sameSite;
-void _$set83(_i2.ServerSessionCookieSettings bean, Object? value) =>
+Object? _$get85(_i2.ServerSessionCookieSettings bean) => bean.sameSite;
+void _$set86(_i2.ServerSessionCookieSettings bean, Object? value) =>
     bean.sameSite = (value as _i2.SessionSameSite);
-_i2.ServerSessionCookieSettings _$create84(
+_i2.ServerSessionCookieSettings _$create87(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ServerSessionCookieSettings();
-Object? _$get85(_i2.MultipartSettings bean) => bean.enabled;
-void _$set86(_i2.MultipartSettings bean, Object? value) =>
+Object? _$get88(_i2.MultipartSettings bean) => bean.enabled;
+void _$set89(_i2.MultipartSettings bean, Object? value) =>
     bean.enabled = (value as bool);
-Object? _$get87(_i2.MultipartSettings bean) => bean.maxFileSize;
-void _$set88(_i2.MultipartSettings bean, Object? value) =>
+Object? _$get90(_i2.MultipartSettings bean) => bean.maxFileSize;
+void _$set91(_i2.MultipartSettings bean, Object? value) =>
     bean.maxFileSize = (value as _i1.DataSize);
-Object? _$get89(_i2.MultipartSettings bean) => bean.maxRequestSize;
-void _$set90(_i2.MultipartSettings bean, Object? value) =>
+Object? _$get92(_i2.MultipartSettings bean) => bean.maxRequestSize;
+void _$set93(_i2.MultipartSettings bean, Object? value) =>
     bean.maxRequestSize = (value as _i1.DataSize);
-Object? _$get91(_i2.MultipartSettings bean) => bean.maxPartCount;
-void _$set92(_i2.MultipartSettings bean, Object? value) =>
+Object? _$get94(_i2.MultipartSettings bean) => bean.maxPartCount;
+void _$set95(_i2.MultipartSettings bean, Object? value) =>
     bean.maxPartCount = (value as int);
-Object? _$get93(_i2.MultipartSettings bean) => bean.fileSizeThreshold;
-void _$set94(_i2.MultipartSettings bean, Object? value) =>
+Object? _$get96(_i2.MultipartSettings bean) => bean.fileSizeThreshold;
+void _$set97(_i2.MultipartSettings bean, Object? value) =>
     bean.fileSizeThreshold = (value as _i1.DataSize);
-Object? _$get95(_i2.MultipartSettings bean) => bean.location;
-void _$set96(_i2.MultipartSettings bean, Object? value) =>
+Object? _$get98(_i2.MultipartSettings bean) => bean.location;
+void _$set99(_i2.MultipartSettings bean, Object? value) =>
     bean.location = (value as String?);
-_i2.MultipartSettings _$create97(
+_i2.MultipartSettings _$create100(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.MultipartSettings();
-Object? _$get98(_i2.MvcSettings bean) => bean.logRequestDetails;
-void _$set99(_i2.MvcSettings bean, Object? value) =>
+Object? _$get101(_i2.MvcSettings bean) => bean.logRequestDetails;
+void _$set102(_i2.MvcSettings bean, Object? value) =>
     bean.logRequestDetails = (value as bool);
-Object? _$get100(_i2.MvcSettings bean) => bean.async;
-void _$set101(_i2.MvcSettings bean, Object? value) =>
+Object? _$get103(_i2.MvcSettings bean) => bean.staticPathPattern;
+void _$set104(_i2.MvcSettings bean, Object? value) =>
+    bean.staticPathPattern = (value as String);
+Object? _$get105(_i2.MvcSettings bean) => bean.async;
+void _$set106(_i2.MvcSettings bean, Object? value) =>
     bean.async = (value as _i2.MvcAsyncSettings);
-Object? _$get102(_i2.MvcSettings bean) => bean.sse;
-void _$set103(_i2.MvcSettings bean, Object? value) =>
+Object? _$get107(_i2.MvcSettings bean) => bean.sse;
+void _$set108(_i2.MvcSettings bean, Object? value) =>
     bean.sse = (value as _i2.MvcSseSettings);
-_i2.MvcSettings _$create104(
+_i2.MvcSettings _$create109(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.MvcSettings();
-Object? _$get105(_i2.MvcAsyncSettings bean) => bean.requestTimeout;
-void _$set106(_i2.MvcAsyncSettings bean, Object? value) =>
+Object? _$get110(_i2.MvcAsyncSettings bean) => bean.requestTimeout;
+void _$set111(_i2.MvcAsyncSettings bean, Object? value) =>
     bean.requestTimeout = (value as Duration?);
-_i2.MvcAsyncSettings _$create107(
+_i2.MvcAsyncSettings _$create112(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.MvcAsyncSettings();
-Object? _$get108(_i2.MvcSseSettings bean) => bean.heartbeatInterval;
-void _$set109(_i2.MvcSseSettings bean, Object? value) =>
+Object? _$get113(_i2.MvcSseSettings bean) => bean.heartbeatInterval;
+void _$set114(_i2.MvcSseSettings bean, Object? value) =>
     bean.heartbeatInterval = (value as Duration?);
-_i2.MvcSseSettings _$create110(
+_i2.MvcSseSettings _$create115(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.MvcSseSettings();
-Object? _$get111(_i2.WebMainSettings bean) => bean.webApplicationType;
-void _$set112(_i2.WebMainSettings bean, Object? value) =>
+Object? _$get116(_i2.WebResourcesSettings bean) => bean.staticLocations;
+void _$set117(_i2.WebResourcesSettings bean, Object? value) =>
+    bean.staticLocations = (value as List<String>);
+Object? _$get118(_i2.WebResourcesSettings bean) => bean.addMappings;
+void _$set119(_i2.WebResourcesSettings bean, Object? value) =>
+    bean.addMappings = (value as bool);
+Object? _$get120(_i2.WebResourcesSettings bean) => bean.spaFallback;
+void _$set121(_i2.WebResourcesSettings bean, Object? value) =>
+    bean.spaFallback = (value as bool);
+Object? _$get122(_i2.WebResourcesSettings bean) => bean.directoryIndex;
+void _$set123(_i2.WebResourcesSettings bean, Object? value) =>
+    bean.directoryIndex = (value as bool);
+Object? _$get124(_i2.WebResourcesSettings bean) => bean.cache;
+void _$set125(_i2.WebResourcesSettings bean, Object? value) =>
+    bean.cache = (value as _i2.WebResourcesCacheSettings);
+Object? _$get126(_i2.WebResourcesSettings bean) => bean.chain;
+void _$set127(_i2.WebResourcesSettings bean, Object? value) =>
+    bean.chain = (value as _i2.WebResourcesChainSettings);
+_i2.WebResourcesSettings _$create128(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebResourcesSettings();
+Object? _$get129(_i2.WebResourcesCacheSettings bean) => bean.period;
+void _$set130(_i2.WebResourcesCacheSettings bean, Object? value) =>
+    bean.period = (value as Duration?);
+Object? _$get131(_i2.WebResourcesCacheSettings bean) => bean.useLastModified;
+void _$set132(_i2.WebResourcesCacheSettings bean, Object? value) =>
+    bean.useLastModified = (value as bool);
+Object? _$get133(_i2.WebResourcesCacheSettings bean) => bean.cachecontrol;
+void _$set134(_i2.WebResourcesCacheSettings bean, Object? value) =>
+    bean.cachecontrol = (value as _i2.WebResourcesCacheControlSettings);
+_i2.WebResourcesCacheSettings _$create135(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebResourcesCacheSettings();
+Object? _$get136(_i2.WebResourcesCacheControlSettings bean) => bean.maxAge;
+void _$set137(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.maxAge = (value as Duration?);
+Object? _$get138(_i2.WebResourcesCacheControlSettings bean) => bean.noCache;
+void _$set139(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.noCache = (value as bool?);
+Object? _$get140(_i2.WebResourcesCacheControlSettings bean) => bean.noStore;
+void _$set141(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.noStore = (value as bool?);
+Object? _$get142(_i2.WebResourcesCacheControlSettings bean) =>
+    bean.mustRevalidate;
+void _$set143(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.mustRevalidate = (value as bool?);
+Object? _$get144(_i2.WebResourcesCacheControlSettings bean) => bean.noTransform;
+void _$set145(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.noTransform = (value as bool?);
+Object? _$get146(_i2.WebResourcesCacheControlSettings bean) => bean.cachePublic;
+void _$set147(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.cachePublic = (value as bool?);
+Object? _$get148(_i2.WebResourcesCacheControlSettings bean) =>
+    bean.cachePrivate;
+void _$set149(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.cachePrivate = (value as bool?);
+Object? _$get150(_i2.WebResourcesCacheControlSettings bean) =>
+    bean.proxyRevalidate;
+void _$set151(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.proxyRevalidate = (value as bool?);
+Object? _$get152(_i2.WebResourcesCacheControlSettings bean) =>
+    bean.staleWhileRevalidate;
+void _$set153(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.staleWhileRevalidate = (value as Duration?);
+Object? _$get154(_i2.WebResourcesCacheControlSettings bean) =>
+    bean.staleIfError;
+void _$set155(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.staleIfError = (value as Duration?);
+Object? _$get156(_i2.WebResourcesCacheControlSettings bean) => bean.sMaxAge;
+void _$set157(_i2.WebResourcesCacheControlSettings bean, Object? value) =>
+    bean.sMaxAge = (value as Duration?);
+_i2.WebResourcesCacheControlSettings _$create158(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebResourcesCacheControlSettings();
+Object? _$get159(_i2.WebResourcesChainSettings bean) => bean.compressed;
+void _$set160(_i2.WebResourcesChainSettings bean, Object? value) =>
+    bean.compressed = (value as bool);
+_i2.WebResourcesChainSettings _$create161(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebResourcesChainSettings();
+Object? _$get162(_i2.WebMainSettings bean) => bean.webApplicationType;
+void _$set163(_i2.WebMainSettings bean, Object? value) =>
     bean.webApplicationType = (value as String?);
-_i2.WebMainSettings _$create113(
+_i2.WebMainSettings _$create164(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.WebMainSettings();
-Object? _$get114(_i2.WebTestSettings bean) => bean.webEnvironment;
-void _$set115(_i2.WebTestSettings bean, Object? value) =>
+Object? _$get165(_i2.WebTestSettings bean) => bean.webEnvironment;
+void _$set166(_i2.WebTestSettings bean, Object? value) =>
     bean.webEnvironment = (value as String?);
-_i2.WebTestSettings _$create116(
+_i2.WebTestSettings _$create167(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.WebTestSettings();
-Object? _$get117(_i2.LocalServerSettings bean) => bean.port;
-void _$set118(_i2.LocalServerSettings bean, Object? value) =>
+Object? _$get168(_i2.LocalServerSettings bean) => bean.port;
+void _$set169(_i2.LocalServerSettings bean, Object? value) =>
     bean.port = (value as int?);
-_i2.LocalServerSettings _$create119(
+_i2.LocalServerSettings _$create170(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.LocalServerSettings();
@@ -346,6 +442,12 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             returnType: r'ServerSessionSettings',
           ),
           _i1.MethodSignature.of(
+            r'mimeMappings',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'Map',
+          ),
+          _i1.MethodSignature.of(
             r'port',
             _$target0,
             kind: _i1.MemberKind.setter,
@@ -422,6 +524,12 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             _$target0,
             kind: _i1.MemberKind.setter,
             returnType: r'ServerSessionSettings',
+          ),
+          _i1.MethodSignature.of(
+            r'mimeMappings',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'Map',
           ),
         ],
       ),
@@ -522,6 +630,12 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             returnType: r'bool',
           ),
           _i1.MethodSignature.of(
+            r'staticPathPattern',
+            _$target2,
+            kind: _i1.MemberKind.getter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
             r'async',
             _$target2,
             kind: _i1.MemberKind.getter,
@@ -540,6 +654,12 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             returnType: r'bool',
           ),
           _i1.MethodSignature.of(
+            r'staticPathPattern',
+            _$target2,
+            kind: _i1.MemberKind.setter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
             r'async',
             _$target2,
             kind: _i1.MemberKind.setter,
@@ -554,6 +674,88 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
         ],
       ),
     ),
+    _i1.BeanDefinition<_i2.WebResourcesSettings>(
+      name: r'webResourcesSettings',
+      source: r'package:spring_boot_starter_web/src/config/web_properties.dart#WebResourcesSettings',
+      create: (r) => _i2.WebResourcesSettings(),
+      annotations: const [_i1.ConfigurationProperties(r'spring.web.resources')],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'staticLocations',
+            _$target3,
+            kind: _i1.MemberKind.getter,
+            returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'addMappings',
+            _$target3,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'spaFallback',
+            _$target3,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'directoryIndex',
+            _$target3,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'cache',
+            _$target3,
+            kind: _i1.MemberKind.getter,
+            returnType: r'WebResourcesCacheSettings',
+          ),
+          _i1.MethodSignature.of(
+            r'chain',
+            _$target3,
+            kind: _i1.MemberKind.getter,
+            returnType: r'WebResourcesChainSettings',
+          ),
+          _i1.MethodSignature.of(
+            r'staticLocations',
+            _$target3,
+            kind: _i1.MemberKind.setter,
+            returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'addMappings',
+            _$target3,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'spaFallback',
+            _$target3,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'directoryIndex',
+            _$target3,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'cache',
+            _$target3,
+            kind: _i1.MemberKind.setter,
+            returnType: r'WebResourcesCacheSettings',
+          ),
+          _i1.MethodSignature.of(
+            r'chain',
+            _$target3,
+            kind: _i1.MemberKind.setter,
+            returnType: r'WebResourcesChainSettings',
+          ),
+        ],
+      ),
+    ),
     _i1.BeanDefinition<_i2.WebMainSettings>(
       name: r'webMainSettings',
       source: r'package:spring_boot_starter_web/src/config/web_properties.dart#WebMainSettings',
@@ -563,7 +765,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
         signatures: [
           _i1.MethodSignature.of(
             r'webApplicationType',
-            _$target3,
+            _$target4,
             kind: _i1.MemberKind.getter,
             returnType: r'String',
             annotations: [
@@ -573,7 +775,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'webApplicationType',
-            _$target3,
+            _$target4,
             kind: _i1.MemberKind.setter,
             returnType: r'String',
             annotations: [
@@ -593,7 +795,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
         signatures: [
           _i1.MethodSignature.of(
             r'webEnvironment',
-            _$target4,
+            _$target5,
             kind: _i1.MemberKind.getter,
             returnType: r'String',
             annotations: [
@@ -608,7 +810,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           ),
           _i1.MethodSignature.of(
             r'webEnvironment',
-            _$target4,
+            _$target5,
             kind: _i1.MemberKind.setter,
             returnType: r'String',
             annotations: [
@@ -633,13 +835,13 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
         signatures: [
           _i1.MethodSignature.of(
             r'port',
-            _$target5,
+            _$target6,
             kind: _i1.MemberKind.getter,
             returnType: r'int',
           ),
           _i1.MethodSignature.of(
             r'port',
-            _$target5,
+            _$target6,
             kind: _i1.MemberKind.setter,
             returnType: r'int',
           ),
@@ -656,49 +858,49 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 8080,
-          get: _$get6,
-          set: _$set7,
+          get: _$get7,
+          set: _$set8,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'address',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get8,
-          set: _$set9,
+          get: _$get9,
+          set: _$set10,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'shutdown',
           typeInfo: _i1.EnumType<_i3.Shutdown>(_i3.Shutdown.values),
           hasInitialValue: true,
           initialValue: _i3.Shutdown.graceful,
-          get: _$get10,
-          set: _$set11,
+          get: _$get11,
+          set: _$set12,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'contextPath',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get12,
-          set: _$set13,
+          get: _$get13,
+          set: _$set14,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'maxHttpRequestBodySize',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get14,
-          set: _$set15,
+          get: _$get15,
+          set: _$set16,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'connectionTimeout',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get16,
-          set: _$set17,
+          get: _$get17,
+          set: _$set18,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'requestTimeout',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get18,
-          set: _$set19,
+          get: _$get19,
+          set: _$set20,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'forwardHeadersStrategy',
@@ -707,38 +909,47 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           ),
           hasInitialValue: true,
           initialValue: _i4.ForwardHeadersStrategy.none,
-          get: _$get20,
-          set: _$set21,
+          get: _$get21,
+          set: _$set22,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'forwardHeaders',
           typeInfo: _i1.ClassType<_i2.ForwardHeadersSettings>(),
-          get: _$get22,
-          set: _$set23,
+          get: _$get23,
+          set: _$set24,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'ssl',
           typeInfo: _i1.ClassType<_i2.ServerSslSettings>(),
-          get: _$get24,
-          set: _$set25,
+          get: _$get25,
+          set: _$set26,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'compression',
           typeInfo: _i1.ClassType<_i2.ServerCompressionSettings>(),
-          get: _$get26,
-          set: _$set27,
+          get: _$get27,
+          set: _$set28,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'websocket',
           typeInfo: _i1.ClassType<_i2.ServerWebSocketSettings>(),
-          get: _$get28,
-          set: _$set29,
+          get: _$get29,
+          set: _$set30,
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'session',
           typeInfo: _i1.ClassType<_i2.ServerSessionSettings>(),
-          get: _$get30,
-          set: _$set31,
+          get: _$get31,
+          set: _$set32,
+        ),
+        _i1.BeanProperty<_i2.ServerSettings>(
+          r'mimeMappings',
+          typeInfo: _i1.MapType<String, String>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<String>(),
+          ),
+          get: _$get33,
+          set: _$set34,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'server')],
@@ -746,7 +957,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       instantiate: _i2.ServerSettings.new,
       constructor: _i1.BeanConstructor<_i2.ServerSettings>(
         parameters: [],
-        create: _$create32,
+        create: _$create35,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ForwardHeadersSettings>(
@@ -759,14 +970,14 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: _$get33,
-          set: _$set34,
+          get: _$get36,
+          set: _$set37,
         ),
       ],
       instantiate: _i2.ForwardHeadersSettings.new,
       constructor: _i1.BeanConstructor<_i2.ForwardHeadersSettings>(
         parameters: [],
-        create: _$create35,
+        create: _$create38,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ServerSslSettings>(
@@ -777,50 +988,50 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get36,
-          set: _$set37,
+          get: _$get39,
+          set: _$set40,
         ),
         _i1.BeanProperty<_i2.ServerSslSettings>(
           r'certificate',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get38,
-          set: _$set39,
+          get: _$get41,
+          set: _$set42,
         ),
         _i1.BeanProperty<_i2.ServerSslSettings>(
           r'certificatePrivateKey',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get40,
-          set: _$set41,
+          get: _$get43,
+          set: _$set44,
         ),
         _i1.BeanProperty<_i2.ServerSslSettings>(
           r'keyPassword',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get42,
-          set: _$set43,
+          get: _$get45,
+          set: _$set46,
         ),
         _i1.BeanProperty<_i2.ServerSslSettings>(
           r'trustCertificate',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get44,
-          set: _$set45,
+          get: _$get47,
+          set: _$set48,
         ),
         _i1.BeanProperty<_i2.ServerSslSettings>(
           r'clientAuth',
           typeInfo: _i1.EnumType<_i3.ClientAuth>(_i3.ClientAuth.values),
           hasInitialValue: true,
           initialValue: _i3.ClientAuth.none,
-          get: _$get46,
-          set: _$set47,
+          get: _$get49,
+          set: _$set50,
         ),
       ],
       instantiate: _i2.ServerSslSettings.new,
       constructor: _i1.BeanConstructor<_i2.ServerSslSettings>(
         parameters: [],
-        create: _$create48,
+        create: _$create51,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ServerCompressionSettings>(
@@ -831,26 +1042,26 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get49,
-          set: _$set50,
+          get: _$get52,
+          set: _$set53,
         ),
         _i1.BeanProperty<_i2.ServerCompressionSettings>(
           r'mimeTypes',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get51,
-          set: _$set52,
+          get: _$get54,
+          set: _$set55,
         ),
         _i1.BeanProperty<_i2.ServerCompressionSettings>(
           r'minResponseSize',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get53,
-          set: _$set54,
+          get: _$get56,
+          set: _$set57,
         ),
       ],
       instantiate: _i2.ServerCompressionSettings.new,
       constructor: _i1.BeanConstructor<_i2.ServerCompressionSettings>(
         parameters: [],
-        create: _$create55,
+        create: _$create58,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ServerWebSocketSettings>(
@@ -859,32 +1070,32 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'maxTextMessageSize',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get56,
-          set: _$set57,
+          get: _$get59,
+          set: _$set60,
         ),
         _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'maxBinaryMessageSize',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get58,
-          set: _$set59,
+          get: _$get61,
+          set: _$set62,
         ),
         _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'sendBufferSizeLimit',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get60,
-          set: _$set61,
+          get: _$get63,
+          set: _$set64,
         ),
         _i1.BeanProperty<_i2.ServerWebSocketSettings>(
           r'sendTimeLimit',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get62,
-          set: _$set63,
+          get: _$get65,
+          set: _$set66,
         ),
       ],
       instantiate: _i2.ServerWebSocketSettings.new,
       constructor: _i1.BeanConstructor<_i2.ServerWebSocketSettings>(
         parameters: [],
-        create: _$create64,
+        create: _$create67,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ServerSessionSettings>(
@@ -893,8 +1104,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.ServerSessionSettings>(
           r'timeout',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get65,
-          set: _$set66,
+          get: _$get68,
+          set: _$set69,
           annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
         ),
         _i1.BeanProperty<_i2.ServerSessionSettings>(
@@ -902,20 +1113,20 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 10000,
-          get: _$get67,
-          set: _$set68,
+          get: _$get70,
+          set: _$set71,
         ),
         _i1.BeanProperty<_i2.ServerSessionSettings>(
           r'cookie',
           typeInfo: _i1.ClassType<_i2.ServerSessionCookieSettings>(),
-          get: _$get69,
-          set: _$set70,
+          get: _$get72,
+          set: _$set73,
         ),
       ],
       instantiate: _i2.ServerSessionSettings.new,
       constructor: _i1.BeanConstructor<_i2.ServerSessionSettings>(
         parameters: [],
-        create: _$create71,
+        create: _$create74,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ServerSessionCookieSettings>(
@@ -926,37 +1137,37 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'JSESSIONID',
-          get: _$get72,
-          set: _$set73,
+          get: _$get75,
+          set: _$set76,
         ),
         _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'domain',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get74,
-          set: _$set75,
+          get: _$get77,
+          set: _$set78,
         ),
         _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'path',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get76,
-          set: _$set77,
+          get: _$get79,
+          set: _$set80,
         ),
         _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'httpOnly',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get78,
-          set: _$set79,
+          get: _$get81,
+          set: _$set82,
         ),
         _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'secure',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get80,
-          set: _$set81,
+          get: _$get83,
+          set: _$set84,
         ),
         _i1.BeanProperty<_i2.ServerSessionCookieSettings>(
           r'sameSite',
@@ -965,14 +1176,14 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           ),
           hasInitialValue: true,
           initialValue: _i2.SessionSameSite.lax,
-          get: _$get82,
-          set: _$set83,
+          get: _$get85,
+          set: _$set86,
         ),
       ],
       instantiate: _i2.ServerSessionCookieSettings.new,
       constructor: _i1.BeanConstructor<_i2.ServerSessionCookieSettings>(
         parameters: [],
-        create: _$create84,
+        create: _$create87,
       ),
     ),
     const _i1.BeanIntrospection<_i2.MultipartSettings>(
@@ -983,41 +1194,41 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get85,
-          set: _$set86,
+          get: _$get88,
+          set: _$set89,
         ),
         _i1.BeanProperty<_i2.MultipartSettings>(
           r'maxFileSize',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get87,
-          set: _$set88,
+          get: _$get90,
+          set: _$set91,
         ),
         _i1.BeanProperty<_i2.MultipartSettings>(
           r'maxRequestSize',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get89,
-          set: _$set90,
+          get: _$get92,
+          set: _$set93,
         ),
         _i1.BeanProperty<_i2.MultipartSettings>(
           r'maxPartCount',
           typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 50,
-          get: _$get91,
-          set: _$set92,
+          get: _$get94,
+          set: _$set95,
         ),
         _i1.BeanProperty<_i2.MultipartSettings>(
           r'fileSizeThreshold',
           typeInfo: _i1.ClassType<_i1.DataSize>(),
-          get: _$get93,
-          set: _$set94,
+          get: _$get96,
+          set: _$set97,
         ),
         _i1.BeanProperty<_i2.MultipartSettings>(
           r'location',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get95,
-          set: _$set96,
+          get: _$get98,
+          set: _$set99,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.web.multipart')],
@@ -1025,7 +1236,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       instantiate: _i2.MultipartSettings.new,
       constructor: _i1.BeanConstructor<_i2.MultipartSettings>(
         parameters: [],
-        create: _$create97,
+        create: _$create100,
       ),
     ),
     const _i1.BeanIntrospection<_i2.MvcSettings>(
@@ -1036,20 +1247,28 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get98,
-          set: _$set99,
+          get: _$get101,
+          set: _$set102,
+        ),
+        _i1.BeanProperty<_i2.MvcSettings>(
+          r'staticPathPattern',
+          typeInfo: _i1.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'/**',
+          get: _$get103,
+          set: _$set104,
         ),
         _i1.BeanProperty<_i2.MvcSettings>(
           r'async',
           typeInfo: _i1.ClassType<_i2.MvcAsyncSettings>(),
-          get: _$get100,
-          set: _$set101,
+          get: _$get105,
+          set: _$set106,
         ),
         _i1.BeanProperty<_i2.MvcSettings>(
           r'sse',
           typeInfo: _i1.ClassType<_i2.MvcSseSettings>(),
-          get: _$get102,
-          set: _$set103,
+          get: _$get107,
+          set: _$set108,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.mvc')],
@@ -1057,7 +1276,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       instantiate: _i2.MvcSettings.new,
       constructor: _i1.BeanConstructor<_i2.MvcSettings>(
         parameters: [],
-        create: _$create104,
+        create: _$create109,
       ),
     ),
     const _i1.BeanIntrospection<_i2.MvcAsyncSettings>(
@@ -1067,14 +1286,14 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           r'requestTimeout',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get105,
-          set: _$set106,
+          get: _$get110,
+          set: _$set111,
         ),
       ],
       instantiate: _i2.MvcAsyncSettings.new,
       constructor: _i1.BeanConstructor<_i2.MvcAsyncSettings>(
         parameters: [],
-        create: _$create107,
+        create: _$create112,
       ),
     ),
     const _i1.BeanIntrospection<_i2.MvcSseSettings>(
@@ -1084,14 +1303,209 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           r'heartbeatInterval',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get108,
-          set: _$set109,
+          get: _$get113,
+          set: _$set114,
         ),
       ],
       instantiate: _i2.MvcSseSettings.new,
       constructor: _i1.BeanConstructor<_i2.MvcSseSettings>(
         parameters: [],
-        create: _$create110,
+        create: _$create115,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.WebResourcesSettings>(
+      className: r'WebResourcesSettings',
+      properties: [
+        _i1.BeanProperty<_i2.WebResourcesSettings>(
+          r'staticLocations',
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get116,
+          set: _$set117,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesSettings>(
+          r'addMappings',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: true,
+          get: _$get118,
+          set: _$set119,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesSettings>(
+          r'spaFallback',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: false,
+          get: _$get120,
+          set: _$set121,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesSettings>(
+          r'directoryIndex',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: false,
+          get: _$get122,
+          set: _$set123,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesSettings>(
+          r'cache',
+          typeInfo: _i1.ClassType<_i2.WebResourcesCacheSettings>(),
+          get: _$get124,
+          set: _$set125,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesSettings>(
+          r'chain',
+          typeInfo: _i1.ClassType<_i2.WebResourcesChainSettings>(),
+          get: _$get126,
+          set: _$set127,
+        ),
+      ],
+      annotations: [_i1.ConfigurationProperties(r'spring.web.resources')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.WebResourcesSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebResourcesSettings>(
+        parameters: [],
+        create: _$create128,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.WebResourcesCacheSettings>(
+      className: r'WebResourcesCacheSettings',
+      properties: [
+        _i1.BeanProperty<_i2.WebResourcesCacheSettings>(
+          r'period',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get129,
+          set: _$set130,
+          annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheSettings>(
+          r'useLastModified',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: true,
+          get: _$get131,
+          set: _$set132,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheSettings>(
+          r'cachecontrol',
+          typeInfo: _i1.ClassType<_i2.WebResourcesCacheControlSettings>(),
+          get: _$get133,
+          set: _$set134,
+        ),
+      ],
+      instantiate: _i2.WebResourcesCacheSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebResourcesCacheSettings>(
+        parameters: [],
+        create: _$create135,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.WebResourcesCacheControlSettings>(
+      className: r'WebResourcesCacheControlSettings',
+      properties: [
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'maxAge',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get136,
+          set: _$set137,
+          annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'noCache',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get138,
+          set: _$set139,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'noStore',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get140,
+          set: _$set141,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'mustRevalidate',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get142,
+          set: _$set143,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'noTransform',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get144,
+          set: _$set145,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'cachePublic',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get146,
+          set: _$set147,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'cachePrivate',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get148,
+          set: _$set149,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'proxyRevalidate',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get150,
+          set: _$set151,
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'staleWhileRevalidate',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get152,
+          set: _$set153,
+          annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'staleIfError',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get154,
+          set: _$set155,
+          annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
+        ),
+        _i1.BeanProperty<_i2.WebResourcesCacheControlSettings>(
+          r'sMaxAge',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get156,
+          set: _$set157,
+          annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
+        ),
+      ],
+      instantiate: _i2.WebResourcesCacheControlSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebResourcesCacheControlSettings>(
+        parameters: [],
+        create: _$create158,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.WebResourcesChainSettings>(
+      className: r'WebResourcesChainSettings',
+      properties: [
+        _i1.BeanProperty<_i2.WebResourcesChainSettings>(
+          r'compressed',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: false,
+          get: _$get159,
+          set: _$set160,
+        ),
+      ],
+      instantiate: _i2.WebResourcesChainSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebResourcesChainSettings>(
+        parameters: [],
+        create: _$create161,
       ),
     ),
     const _i1.BeanIntrospection<_i2.WebMainSettings>(
@@ -1101,8 +1515,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           r'webApplicationType',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get111,
-          set: _$set112,
+          get: _$get162,
+          set: _$set163,
           annotations: [
             _i1.PropertyValues([r'none']),
           ],
@@ -1113,7 +1527,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       instantiate: _i2.WebMainSettings.new,
       constructor: _i1.BeanConstructor<_i2.WebMainSettings>(
         parameters: [],
-        create: _$create113,
+        create: _$create164,
       ),
     ),
     const _i1.BeanIntrospection<_i2.WebTestSettings>(
@@ -1123,8 +1537,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           r'webEnvironment',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get114,
-          set: _$set115,
+          get: _$get165,
+          set: _$set166,
           annotations: [
             _i1.PropertyValues([
               r'mock',
@@ -1140,7 +1554,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       instantiate: _i2.WebTestSettings.new,
       constructor: _i1.BeanConstructor<_i2.WebTestSettings>(
         parameters: [],
-        create: _$create116,
+        create: _$create167,
       ),
     ),
     const _i1.BeanIntrospection<_i2.LocalServerSettings>(
@@ -1150,8 +1564,8 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
           r'port',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get117,
-          set: _$set118,
+          get: _$get168,
+          set: _$set169,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'local.server')],
@@ -1159,7 +1573,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
       instantiate: _i2.LocalServerSettings.new,
       constructor: _i1.BeanConstructor<_i2.LocalServerSettings>(
         parameters: [],
-        create: _$create119,
+        create: _$create170,
       ),
     ),
   ],

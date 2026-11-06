@@ -80,6 +80,11 @@ class ServerSettings {
 
   /// Sessions and their cookie (`session.*`).
   ServerSessionSettings session = ServerSessionSettings();
+
+  /// More media types of the static resources by file extension, on top
+  /// of the built-in ones (`server.mime-mappings.wasm=application/wasm`);
+  /// an extension listed here wins. The extension is matched in any case.
+  Map<String, String> mimeMappings = {};
 }
 
 /// The `server.forward-headers.*` properties.
@@ -243,6 +248,13 @@ class MvcSettings {
   /// stay `masked`). Off by default, as they may hold secrets.
   bool logRequestDetails = false;
 
+  /// The path pattern the static resources of
+  /// `spring.web.resources.static-locations` are served under: `/**`
+  /// serves `static/app.css` as `/app.css`, `/assets/**` as
+  /// `/assets/app.css`. The welcome page (`index.html` at `/`) is served
+  /// only with `/**`, as in Spring Boot.
+  String staticPathPattern = '/**';
+
   /// Asynchronous responses (`async.*`).
   MvcAsyncSettings async = MvcAsyncSettings();
 
@@ -265,6 +277,127 @@ class MvcSseSettings {
   /// Sends a comment line in every open event stream at this interval, so
   /// proxies keep idle streams open. Default: none.
   Duration? heartbeatInterval;
+}
+
+/// The `spring.web.resources.*` properties: the static resources (files
+/// and a built web app served as they are).
+///
+/// Spring Boot (Java): `WebProperties.Resources`.
+@ConfigurationProperties('spring.web.resources')
+class WebResourcesSettings {
+  /// Where the static resources are read from, in order (the first
+  /// location with the file wins): `resources:` folders of `lib/resources/`
+  /// (embedded by the generator) and `file:` directories read at run time
+  /// (`file:web/`, `file:/srv/shop/build/web/`). Spring Boot's defaults
+  /// with `classpath:` written `resources:`; `META-INF/resources/` and
+  /// `resources/` are left out, as Dart has no jars.
+  List<String> staticLocations = ['resources:static/', 'resources:public/'];
+
+  /// `false` turns off the default mapping of `static-locations` under
+  /// `spring.mvc.static-path-pattern` and the welcome page; mappings a
+  /// `WebMvcConfigurer` adds stay.
+  bool addMappings = true;
+
+  /// For a single-page app (a `flutter build web` output, a JavaScript
+  /// router): a browser's `GET` or `HEAD` of a path that is no file and no
+  /// handler, whose last segment has no extension and that asks for
+  /// `text/html` by name, gets the `index.html` of `static-locations`
+  /// instead of a 404, so deep links work. Not in Spring Boot: this
+  /// starter's own key.
+  bool spaFallback = false;
+
+  /// A path with no file, whose folder holds an `index.html`, gets that
+  /// `index.html`: `/guide` and `/guide/` are answered with
+  /// `guide/index.html`, as static hosts (Cloudflare Pages, Netlify)
+  /// answer. The pages the build writes for search engines
+  /// (`spring.flutter.web.seo.*`) are such files. Asked before
+  /// [spaFallback]; the file is found as any other (inside the location,
+  /// the same checks). Not in Spring Boot, whose welcome page covers `/`
+  /// only: this starter's own key.
+  bool directoryIndex = false;
+
+  /// Caching of the static resources (`cache.*`).
+  WebResourcesCacheSettings cache = WebResourcesCacheSettings();
+
+  /// The resource chain (`chain.*`).
+  WebResourcesChainSettings chain = WebResourcesChainSettings();
+}
+
+/// The `spring.web.resources.cache.*` properties.
+@Introspected()
+class WebResourcesCacheSettings {
+  /// How long browsers may keep a static resource (`Cache-Control:
+  /// max-age=` and the seconds); `0` sends `no-store`. A number without a
+  /// unit is seconds. Default: no `Cache-Control`. The `cachecontrol.*`
+  /// keys win over it.
+  @DurationUnit(ChronoUnit.seconds)
+  Duration? period;
+
+  /// Whether the files' modification time is sent as `Last-Modified` and
+  /// checked against `If-Modified-Since` (`304`).
+  bool useLastModified = true;
+
+  /// The `Cache-Control` header of the static resources, directive by
+  /// directive (`cachecontrol.*`).
+  WebResourcesCacheControlSettings cachecontrol =
+      WebResourcesCacheControlSettings();
+}
+
+/// The `spring.web.resources.cache.cachecontrol.*` properties: the
+/// `Cache-Control` header of the static resources. When any of them is
+/// set, they replace `spring.web.resources.cache.period`.
+@Introspected()
+class WebResourcesCacheControlSettings {
+  /// `max-age`: how long the answer may be reused without asking the
+  /// server. A number without a unit is seconds.
+  @DurationUnit(ChronoUnit.seconds)
+  Duration? maxAge;
+
+  /// `no-cache`: reused only after the server confirmed it.
+  bool? noCache;
+
+  /// `no-store`: never stored. Wins over `no-cache` and `max-age`.
+  bool? noStore;
+
+  /// `must-revalidate`: once stale, not used without asking the server.
+  bool? mustRevalidate;
+
+  /// `no-transform`: proxies must not change the content.
+  bool? noTransform;
+
+  /// `public`: shared caches may store the answer too.
+  bool? cachePublic;
+
+  /// `private`: only the user's own cache may store the answer.
+  bool? cachePrivate;
+
+  /// `proxy-revalidate`: `must-revalidate` for shared caches only.
+  bool? proxyRevalidate;
+
+  /// `stale-while-revalidate`: how long a stale answer may be used while a
+  /// fresh one is fetched. A number without a unit is seconds.
+  @DurationUnit(ChronoUnit.seconds)
+  Duration? staleWhileRevalidate;
+
+  /// `stale-if-error`: how long a stale answer may be used when the server
+  /// fails. A number without a unit is seconds.
+  @DurationUnit(ChronoUnit.seconds)
+  Duration? staleIfError;
+
+  /// `s-maxage`: how long shared caches may keep the answer. A number
+  /// without a unit is seconds.
+  @DurationUnit(ChronoUnit.seconds)
+  Duration? sMaxAge;
+}
+
+/// The `spring.web.resources.chain.*` properties.
+@Introspected()
+class WebResourcesChainSettings {
+  /// Serves a precompressed file next to the one asked for
+  /// (`app.js.br`, `app.js.gz`) to a client whose `Accept-Encoding`
+  /// takes it (Brotli first), with `Content-Encoding` and `Vary:
+  /// Accept-Encoding`.
+  bool compressed = false;
 }
 
 /// The `spring.main.*` properties of the web starter.

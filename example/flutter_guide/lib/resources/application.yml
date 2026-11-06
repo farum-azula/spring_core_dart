@@ -66,6 +66,11 @@ spring:
             hovered: { color: $brand.accent, alpha: 28% }
             selected: $brand.accent
           transition: $motion.durations.fast ease-out
+        # Code in MarkdownView (the theme preview in Settings): a color
+        # not written follows the color scheme, as in the `dark` theme.
+        code:
+          background: $colors.surface-container-high
+          comment: $colors.on-surface-variant
       # Played by ThemeAnimation (the tags rise into place).
       animations:
         rise: { duration: $motion.durations.medium, curve: ease-out }

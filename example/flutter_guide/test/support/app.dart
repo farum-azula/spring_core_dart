@@ -47,7 +47,6 @@ Future<ConfigurableApplicationContext> startApp(
     SpringApplicationWidget(
       application: server.application,
       args: args,
-      home: const HomePage(),
     ),
   );
   // Fonts and assets are read for real before the first frame.
@@ -98,6 +97,15 @@ Future<void> showPage(
       applicationContext: context,
       child: SpringApp(home: page),
     ),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// The whole app of [context] on its router (the HomePage shell and the
+/// screens), as `SpringApplicationWidget` shows it, at its first screen.
+Future<void> showApp(WidgetTester tester, ApplicationContext context) async {
+  await tester.pumpWidget(
+    SpringScope(applicationContext: context, child: const SpringApp()),
   );
   await tester.pumpAndSettle();
 }

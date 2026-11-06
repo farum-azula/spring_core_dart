@@ -16,6 +16,10 @@ environment:
 resolution: workspace
 
 dependencies:
+  # The actuator's `db` health indicator (HealthIndicator and its
+  # condition): the actuator's model only, no endpoint and no
+  # auto-configuration; the endpoints come with spring_boot_starter_actuator.
+  spring_boot_actuator: ^0.7.0
   spring_boot_dart: ^0.7.0
   # Like every Spring Boot starter: logging comes with it.
   spring_boot_starter_logging: ^0.7.0

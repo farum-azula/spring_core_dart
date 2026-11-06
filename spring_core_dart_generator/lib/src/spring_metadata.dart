@@ -76,6 +76,8 @@ abstract final class SpringMetadata {
     List<Map<String, Object?>> entities = const [],
     List<Map<String, Object?>> repositories = const [],
     List<Map<String, Object?>> loaderKinds = const [],
+    List<Map<String, Object?>> routes = const [],
+    List<Map<String, Object?>> shells = const [],
     Map<String, Object?>? theme,
   }) {
     // The first entry of a name wins (a class beats a read key).
@@ -117,6 +119,17 @@ abstract final class SpringMetadata {
           for (final kind in _byName(loaderKinds, 'name'))
             _ordered(kind, _loaderKindKeys, nullable: true),
         ],
+      // The screens and shells of spring_boot_starter_flutter_navigation:
+      // the editor completes paths with them, the site's build makes its
+      // pages of them.
+      if (routes.isNotEmpty)
+        'routes': [
+          for (final route
+              in routes.toList()
+                ..sort((a, b) => '${a['path']}'.compareTo('${b['path']}')))
+            route,
+        ],
+      if (shells.isNotEmpty) 'shells': _byName(shells, 'class'),
       'theme': ?theme,
     };
   }
