@@ -138,5 +138,131 @@
   "profiles": [
     "desktop",
     "network"
+  ],
+  "routes": [
+    {
+      "path": "",
+      "name": "not-found-page",
+      "class": "NotFoundPage",
+      "source": "package:theme_showcase_material/src/app/shell.dart#NotFoundPage",
+      "notFound": true
+    },
+    {
+      "path": "/background",
+      "name": "background-page",
+      "class": "BackgroundPage",
+      "source": "package:theme_showcase_material/src/pages/background_page.dart#BackgroundPage",
+      "title": "#{nav.background}"
+    },
+    {
+      "path": "/colors",
+      "name": "colors-page",
+      "class": "ColorsPage",
+      "source": "package:theme_showcase_material/src/pages/colors_page.dart#ColorsPage",
+      "title": "#{nav.colors}"
+    },
+    {
+      "path": "/components",
+      "name": "components-page",
+      "class": "ComponentsPage",
+      "source": "package:theme_showcase_material/src/pages/components_page.dart#ComponentsPage",
+      "title": "#{nav.components}"
+    },
+    {
+      "path": "/images",
+      "name": "images-page",
+      "class": "ImagesPage",
+      "source": "package:theme_showcase_material/src/pages/images_page.dart#ImagesPage",
+      "title": "#{nav.images}"
+    },
+    {
+      "path": "/loaders",
+      "name": "loaders-page",
+      "class": "LoadersPage",
+      "source": "package:theme_showcase_material/src/pages/loaders_page.dart#LoadersPage",
+      "title": "#{nav.loaders}"
+    },
+    {
+      "path": "/motion",
+      "name": "motion-page",
+      "class": "MotionPage",
+      "source": "package:theme_showcase_material/src/pages/motion_page.dart#MotionPage",
+      "title": "#{nav.motion}"
+    },
+    {
+      "path": "/states",
+      "name": "states-page",
+      "class": "StatesPage",
+      "source": "package:theme_showcase_material/src/pages/states_page.dart#StatesPage",
+      "title": "#{nav.states}"
+    },
+    {
+      "path": "/themes",
+      "name": "themes-page",
+      "class": "ThemesPage",
+      "source": "package:theme_showcase_material/src/pages/themes_page.dart#ThemesPage",
+      "title": "#{nav.themes}"
+    },
+    {
+      "path": "/tokens",
+      "name": "tokens-page",
+      "class": "TokensPage",
+      "source": "package:theme_showcase_material/src/pages/tokens_page.dart#TokensPage",
+      "title": "#{nav.tokens}"
+    },
+    {
+      "path": "/transitions",
+      "name": "transitions-page",
+      "class": "TransitionsPage",
+      "source": "package:theme_showcase_material/src/pages/transitions_page.dart#TransitionsPage",
+      "title": "#{nav.transitions}"
+    },
+    {
+      "path": "/transitions/default",
+      "name": "transition-theme-page",
+      "class": "TransitionThemePage",
+      "source": "package:theme_showcase_material/src/pages/transitions_page.dart#TransitionThemePage",
+      "title": "With the default"
+    },
+    {
+      "path": "/transitions/fade",
+      "name": "transition-fade-page",
+      "class": "TransitionFadePage",
+      "source": "package:theme_showcase_material/src/pages/transitions_page.dart#TransitionFadePage",
+      "title": "With a fade"
+    },
+    {
+      "path": "/transitions/platform",
+      "name": "transition-platform-page",
+      "class": "TransitionPlatformPage",
+      "source": "package:theme_showcase_material/src/pages/transitions_page.dart#TransitionPlatformPage",
+      "title": "With the platform's"
+    },
+    {
+      "path": "/type",
+      "name": "type-page",
+      "class": "TypePage",
+      "source": "package:theme_showcase_material/src/pages/type_page.dart#TypePage",
+      "title": "#{nav.type}"
+    }
+  ],
+  "shells": [
+    {
+      "class": "Shell",
+      "source": "package:theme_showcase_material/src/app/shell.dart#Shell",
+      "branches": [
+        "/colors",
+        "/type",
+        "/tokens",
+        "/components",
+        "/states",
+        "/motion",
+        "/loaders",
+        "/background",
+        "/images",
+        "/transitions",
+        "/themes"
+      ]
+    }
   ]
 }

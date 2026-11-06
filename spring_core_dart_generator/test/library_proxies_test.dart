@@ -62,6 +62,7 @@ Future<(Map<String, String>, String)> _build({
   String app = _app,
   String main = _main,
   Map<String, String> starter = const {},
+  Map<String, String> library = const {},
 }) async {
   final sources = {'lib/app.dart': app, 'bin/main.dart': main};
   final readerWriter = TestReaderWriter(
@@ -71,6 +72,9 @@ Future<(Map<String, String>, String)> _build({
   await readerWriter.testing.loadIsolateSources();
   for (final MapEntry(:key, :value) in starter.entries) {
     readerWriter.testing.writeString(AssetId('starter', key), value);
+  }
+  for (final MapEntry(:key, :value) in library.entries) {
+    readerWriter.testing.writeString(AssetId('library', key), value);
   }
   final workspace = await loadPackageConfigUri((await Isolate.packageConfig)!);
   final result = await testBuilder(
@@ -85,6 +89,8 @@ Future<(Map<String, String>, String)> _build({
             ...workspace.packages,
             Package('pkg', Uri.parse('file:///pkg/')),
             Package('starter', Uri.parse('file:///starter/')),
+            if (library.isNotEmpty)
+              Package('library', Uri.parse('file:///library/')),
           ]),
   );
   expect(result.errors, isEmpty);
@@ -201,6 +207,129 @@ class TaskAudit {
     );
     expect(output, isNot(contains(r'_$TaskProxy')));
   });
+
+  test(
+    'a deferred bean of a library without an auto-configuration is found '
+    "through a starter's auto-configuration and the library's exports",
+    () async {
+      // spring_boot_actuator's shape: the library's main library exports the
+      // module; the starter's auto-configuration imports the main library.
+      const library = {
+        'lib/library.dart': "export 'src/settings.dart';",
+        'lib/src/settings.dart': r'''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:library/spring_gen/src/settings.spring.dart';
+
+@ComponentScan()
+final BeanModule librarySettings = $librarySettings;
+
+class Settings {
+  void load() {}
+}
+''',
+        'lib/spring_gen/src/settings.spring.dart': r'''
+import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:library/src/settings.dart';
+
+BeanModule get $librarySettings => BeanModule(r'librarySettings', [
+  BeanDefinition<Settings>(
+    name: r'settings',
+    source: r'package:library/src/settings.dart#Settings',
+    create: (r) => Settings(),
+    aopProxy: const AopProxyFactory.deferred(signatures: []),
+  ),
+]);
+''',
+      };
+      const starter = {
+        'lib/spring_auto_configuration.dart': '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:library/library.dart';
+
+@AutoConfigurationModule()
+final BeanModule starterAutoConfiguration = BeanModule(
+  'starterAutoConfiguration',
+  const [],
+  imports: [librarySettings],
+);
+''',
+      };
+      const main = '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:pkg/app.dart';
+
+import 'spring_gen/main.spring.dart';
+
+@SpringBootApplication()
+void main() => runApplication();
+''';
+      const app = '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+
+@Aspect()
+@Component()
+class SettingsAudit {
+  @Before('bean(settings)')
+  void audit(JoinPoint joinPoint) {}
+}
+''';
+      final (_, output) = await _build(
+        app: app,
+        main: main,
+        starter: starter,
+        library: library,
+      );
+      expect(output, contains(r'class _$SettingsProxy'));
+      expect(
+        output.replaceAll(RegExp(r'\s'), ''),
+        contains("r'package:library/src/settings.dart#Settings':_i"),
+      );
+    },
+  );
+
+  // A library without an auto-configuration: with `aop_defer` (a starter
+  // imports its modules) it defers like a starter; without, it keeps every
+  // proxy, since any module may import it.
+  for (final defer in [true, false]) {
+    test(
+      'a library without an auto-configuration, aop_defer: $defer',
+      () async {
+        final readerWriter = TestReaderWriter(
+          rootPackage: 'pkg',
+          flattenOutput: true,
+        );
+        await readerWriter.testing.loadIsolateSources();
+        final result = await testBuilder(
+          SpringBuilder(deferProxies: defer),
+          {
+            'pkg|lib/src/settings.dart': r'''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:pkg/spring_gen/src/settings.spring.dart';
+
+@ComponentScan()
+final BeanModule settingsBeans = $settingsBeans;
+
+@Component()
+class Settings {
+  String get name => 'settings';
+}
+''',
+          },
+          rootPackage: 'pkg',
+          readerWriter: readerWriter,
+          flattenOutput: true,
+        );
+        expect(result.errors, isEmpty);
+        final output = readerWriter.testing.readString(
+          result.outputs.singleWhere(
+            (o) => o.path == 'lib/spring_gen/src/settings.spring.dart',
+          ),
+        );
+        expect(output.contains('AopProxyFactory.deferred('), defer);
+        expect(output.contains(r'class _$SettingsProxy'), !defer);
+      },
+    );
+  }
 
   test('an annotation an advisor of the application names keeps the members '
       'of a library bean', () async {

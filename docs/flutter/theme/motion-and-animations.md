@@ -41,7 +41,8 @@ spring:
 
 | Property | Type | Values | Default | What it does |
 |---|---|---|---|---|
-| `motion.page-transition` | enum | `platform`, `fade-upwards`, `zoom`, `cupertino`, `none` | `platform` | The page transition used on every platform |
+| `motion.page-transition` | enum, or a map | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `none` | `none` | The page transition of every screen |
+| `motion.page-transition.type` / `.duration` / `.curve` | enum / duration / curve | as above, `200ms`, a curve name | the kind's own | The map form: the kind with its duration and curve |
 | `motion.durations.<name>` | duration | `120ms`, `1.5s`, `2m`, `1h` | `short` 100ms, `medium` 250ms, `long` 450ms | A named duration |
 | `motion.curves.<name>` | curve | a curve name, or four numbers | `standard` | A named curve |
 | `animations.<name>.duration` | duration | `4s`, `250ms` | required | How long one run takes |
@@ -54,31 +55,54 @@ stops the start and names the closest one.
 
 ## Page transitions
 
-`motion.page-transition` sets the transition for every platform at once.
+`motion.page-transition` sets how screens come in and go out, for the whole
+app. The router of
+[`spring_boot_starter_flutter_navigation`](../../../spring_boot_starter_flutter_navigation/README.md#transitions)
+follows it in every app type (Material, Cupertino and `widgets`), and
+Material's own page routes follow it too.
 
 | Value | What it does |
 |---|---|
-| `platform` | Flutter's own transition for each platform (the default) |
+| `none` | No transition: the new page appears at once (the default) |
+| `platform` | The app type's own: Material's per platform, the iOS slide in a `CupertinoApp`, none in an app of type `widgets` |
 | `fade-upwards` | The new page slides up a little and fades in |
 | `zoom` | The new page grows from the centre while it fades in (Android 10 style) |
-| `cupertino` | The iOS slide from the right, with the swipe-back gesture |
-| `none` | No transition: the new page appears at once |
+| `cupertino` | The iOS slide from the right, with the swipe-back gesture, in any app type |
+| `fade` | The new page fades in |
+
+Screens show at once by default, in every app type. Turn the platform's
+transition on for every screen:
 
 ```yaml
 spring:
   flutter:
     theme:
       motion:
-        page-transition: none
+        page-transition: platform
+```
+
+Or choose and tune one: the map form gives the kind its duration and curve, which may
+refer to the theme's own (`$motion.durations.fast`):
+
+```yaml
+spring:
+  flutter:
+    theme:
+      motion:
+        durations: { fast: 150ms }
+        page-transition: { type: fade, duration: $motion.durations.fast, curve: ease-out }
       themes:
         cinema:
           motion:
             page-transition: zoom
 ```
 
-The page transition is part of Material's theme. A `CupertinoApp` uses
-Cupertino's own page routes and ignores `motion.page-transition`. See
-[Cupertino](cupertino.md).
+A theme of `themes.<name>` may choose its own; switching themes applies to
+the next navigation. With reduced motion on the device every transition is
+instant. One screen can still choose its own
+(`@ScreenRoute(transition: PageTransition.none)`), and one navigation too
+(`context.route.go(path, transition: PageTransition.none)`): see the
+navigation starter.
 
 ## Durations
 

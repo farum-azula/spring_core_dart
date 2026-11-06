@@ -1,6 +1,6 @@
 // Typed configuration: `neon.shop.*` bound to a class and validated at
 // startup (chapter 2 and 10).
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// A class-level constraint: the shop must close after it opens. A
 /// constraint is a const class with `isValid`; its `name` is the message

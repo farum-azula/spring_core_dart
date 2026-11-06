@@ -83,9 +83,24 @@ Future<void> main(List<String> args) async {
     );
     // Flutter packages need the Flutter SDK's pub (FLUTTER_ROOT).
     final flutter = _usesFlutter(package);
+    final executable = flutter ? 'flutter' : Platform.resolvedExecutable;
+    if (dryRun) {
+      final result = await Process.run(executable, [
+        'pub',
+        'publish',
+        '--dry-run',
+      ], workingDirectory: package);
+      final output = '${result.stdout}${result.stderr}';
+      stdout.write(output);
+      if (result.exitCode != 0 && !acceptedDryRun(output, package)) {
+        stderr.writeln('Publishing $package failed.');
+        exit(1);
+      }
+      continue;
+    }
     final process = await Process.start(
-      flutter ? 'flutter' : Platform.resolvedExecutable,
-      ['pub', 'publish', if (dryRun) '--dry-run' else '--force'],
+      executable,
+      ['pub', 'publish', '--force'],
       workingDirectory: package,
       mode: ProcessStartMode.inheritStdio,
     );
@@ -94,6 +109,24 @@ Future<void> main(List<String> args) async {
       exit(1);
     }
   }
+}
+
+/// Whether a failed dry run of [package] (its [output]) still passes: its
+/// only warning is that the changelog does not mention the current version
+/// while it has an `## Unreleased` section, which the release turns into
+/// the next version (a package new since the last release has no section
+/// of the current one).
+bool acceptedDryRun(String output, String package) {
+  final changelog = File('$package/CHANGELOG.md');
+  final unreleased =
+      changelog.existsSync() &&
+      RegExp(
+        r'^## Unreleased\s*$',
+        multiLine: true,
+      ).hasMatch(changelog.readAsStringSync());
+  return unreleased &&
+      RegExp('Package has 1 warning').hasMatch(output) &&
+      output.contains("CHANGELOG.md doesn't mention current version");
 }
 
 Future<bool> _isPublished(String package, String version) async {

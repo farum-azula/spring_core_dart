@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/ios_widgets.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
@@ -7,6 +8,7 @@ import 'package:theme_showcase_cupertino/src/widgets/yaml_box.dart';
 
 /// `styles.*` and ThemeStates: a look per state for the app's own widgets,
 /// built from Cupertino and basic widgets.
+@ScreenRoute('/styles', title: '#{nav.styles}', branch: '/more')
 class StylesPage extends StatefulWidget {
   const StylesPage({super.key});
 

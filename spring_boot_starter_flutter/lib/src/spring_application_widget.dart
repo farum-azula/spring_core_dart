@@ -39,8 +39,10 @@ const _log = SpringLog('spring_boot_starter_flutter.SpringApplicationWidget');
 /// With [home] it also builds the app widget from the configuration: a
 /// [SpringApp], which is a `WidgetsApp`, `MaterialApp` or `CupertinoApp`
 /// depending on `spring.flutter.app.type`, with the title, debug banner,
-/// locales and themes of the properties. With [child] the app writes its
-/// own `MaterialApp` (or other app widget) instead.
+/// locales and themes of the properties. With neither [home] nor [child]
+/// the [SpringApp] is built on the application's router (the screens of
+/// `spring_boot_starter_flutter_navigation`). With [child] the app writes
+/// its own `MaterialApp` (or other app widget) instead.
 ///
 /// ```dart
 /// import 'spring_gen/main.spring.dart';
@@ -95,8 +97,8 @@ const _log = SpringLog('spring_boot_starter_flutter.SpringApplicationWidget');
 /// Spring Boot app, `SpringApplication.run(App.class, args)`.
 class SpringApplicationWidget extends StatefulWidget {
   /// Runs the application [application] returns, then shows [home] in a
-  /// [SpringApp] or shows [child]. Exactly one of [home] and [child] must
-  /// be given.
+  /// [SpringApp], or shows [child], or, with neither, a [SpringApp] on the
+  /// application's router. [home] and [child] are not given together.
   const SpringApplicationWidget({
     required this.application,
     this.child,
@@ -108,8 +110,8 @@ class SpringApplicationWidget extends StatefulWidget {
     this.desktopWindowSetup,
     super.key,
   }) : assert(
-         (child == null) != (home == null),
-         'SpringApplicationWidget needs a home or a child, not both',
+         child == null || home == null,
+         'SpringApplicationWidget takes a home or a child, not both',
        );
 
   /// Returns the application to run: `() => springApplication`, the
@@ -124,7 +126,8 @@ class SpringApplicationWidget extends StatefulWidget {
   final Widget? child;
 
   /// The first page of a [SpringApp] built from the configuration, shown
-  /// once the application has started. Not together with [child].
+  /// once the application has started. Not together with [child]; without
+  /// both, the [SpringApp] uses the application's router.
   final Widget? home;
 
   /// Builds what is shown while the application starts, such as a logo.
@@ -341,9 +344,12 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
 
   // An invalid `spring.flutter.app.*` value fails the start.
   void _checkApp(ApplicationContext context) {
-    if (widget.home != null) {
+    if (widget.child == null) {
       FlutterAppSettings.of(context);
       ThemeSelection.of(context); // reads and checks every theme
+      if (widget.home == null) {
+        SpringApp.routerOf(context); // the router the app widget needs
+      }
     }
   }
 
@@ -515,7 +521,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         data: _window,
         child: KeyedSubtree(
           key: ObjectKey(running),
-          child: widget.child ?? SpringApp(home: widget.home!),
+          child: widget.child ?? SpringApp(home: widget.home),
         ),
       ),
     );

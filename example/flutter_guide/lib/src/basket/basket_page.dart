@@ -5,6 +5,7 @@ import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The beans of [BasketPage].
@@ -17,6 +18,7 @@ typedef BasketPageBeans = (
 /// The Basket screen: the lines with their quantities, the total, and
 /// "Order" (after a login). Reads the `Basket` and the `Session`, so it
 /// rebuilds when either changes.
+@ScreenRoute('/basket', title: '#{section.basket}')
 class BasketPage extends SpringStatelessWidget<BasketPageBeans> {
   const BasketPage({super.key});
 

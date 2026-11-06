@@ -1,41 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:neon_books_app/src/account/account_button.dart';
 import 'package:neon_books_app/src/app/app_properties.dart';
-import 'package:neon_books_app/src/app/more_page.dart';
 import 'package:neon_books_app/src/basket/basket_badge.dart';
-import 'package:neon_books_app/src/basket/basket_page.dart';
-import 'package:neon_books_app/src/catalog/catalog_page.dart';
-import 'package:neon_books_app/src/orders/orders_page.dart';
-import 'package:neon_books_app/src/stock/live_stock_page.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
-/// The app's sections.
+/// The app's sections, in the order of the shell's branches.
 enum Section { catalog, basket, orders, stock, more }
 
 /// The home of the app: an app bar and the sections, in a bottom bar on
 /// phones and a rail on wide screens (`app.navigation`, set per platform
-/// profile). Its state is only the section shown; everything else is in
-/// beans, so switching sections loses nothing.
-class HomePage extends SpringStatefulWidget<(AppProperties,)> {
-  const HomePage({super.key});
+/// profile). It is the shell of the navigation: each section is a branch
+/// (`/catalog`, `/basket`, ...) with its own stack, so switching sections
+/// loses nothing; the screens over it (a book, the settings) open over
+/// everything.
+@RouteShell(branches: ['/catalog', '/basket', '/orders', '/stock', '/more'])
+class HomePage extends SpringStatelessWidget<(AppProperties,)> {
+  const HomePage(this.shell, {super.key});
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends SpringState<HomePage, (AppProperties,)> {
-  var _section = Section.catalog;
+  /// The section shown and the way to switch.
+  final ShellState shell;
 
   @override
   Widget build(BuildContext context) {
     final (app,) = beans;
-    final body = switch (_section) {
-      Section.catalog => const CatalogPage(),
-      Section.basket => const BasketPage(),
-      Section.orders => const OrdersPage(),
-      Section.stock => const LiveStockPage(),
-      Section.more => const MorePage(),
-    };
+    final body = shell.child;
+    final section = Section.values[shell.index];
     final destinations = [
       (Section.catalog, const Icon(Icons.menu_book_outlined)),
       (Section.basket, const BasketBadge()),
@@ -44,7 +33,7 @@ class _HomePageState extends SpringState<HomePage, (AppProperties,)> {
       (Section.more, const Icon(Icons.more_horiz)),
     ];
     String label(Section section) => context.message('section.${section.name}');
-    void select(int index) => setState(() => _section = Section.values[index]);
+    void select(int index) => shell.select(index);
 
     // The desktop window has a transparent title bar
     // (application-desktop.properties): the window buttons are over the
@@ -76,7 +65,7 @@ class _HomePageState extends SpringState<HomePage, (AppProperties,)> {
         body: Row(
           children: [
             NavigationRail(
-              selectedIndex: _section.index,
+              selectedIndex: section.index,
               onDestinationSelected: select,
               labelType: NavigationRailLabelType.all,
               destinations: [
@@ -97,7 +86,7 @@ class _HomePageState extends SpringState<HomePage, (AppProperties,)> {
       appBar: appBar,
       body: body,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _section.index,
+        selectedIndex: section.index,
         onDestinationSelected: select,
         destinations: [
           for (final (section, icon) in destinations)

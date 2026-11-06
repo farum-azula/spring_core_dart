@@ -1,3 +1,4 @@
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Where the server is: `api.*` of `lib/resources/application*.properties`,

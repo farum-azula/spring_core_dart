@@ -82,6 +82,7 @@
 library;
 
 export 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+export 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 export 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     hide Banner, Size;
 
@@ -93,8 +94,10 @@ export 'src/login/native_oauth2_login_service.dart';
 export 'src/login/oauth2_login_service.dart';
 export 'src/login/oauth2_token_revocation_client.dart';
 export 'src/login/secret_store_oauth2_authorized_client_service.dart';
+export 'src/navigation/route_security.dart';
 export 'src/principal/principal_notifier.dart';
 export 'src/principal/principal_widgets.dart';
+export 'src/properties/flutter_security_properties.dart';
 export 'src/screens/brand_buttons.dart' hide BrandButton;
 export 'src/screens/login_design.dart' show LoginDesign;
 export 'src/screens/login_form.dart' hide PlainLoginButton;
@@ -104,7 +107,6 @@ export 'src/secret_store/secret_store.dart';
 export 'src/secret_store/secret_template.dart';
 export 'src/web/browser_page.dart' show BrowserPage;
 export 'src/web/csrf_cookie_http_transport.dart';
-export 'src/properties/flutter_security_properties.dart';
 export 'src/web/server_credentials_http_transport.dart';
 export 'src/web/server_oauth2_login_service.dart';
 export 'src/web/spa_browser_page.dart';

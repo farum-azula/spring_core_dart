@@ -134,6 +134,24 @@ spring:
           # What the widgets look like per state (ThemeStates). Precedence:
           # disabled > error > pressed > hovered > focused > selected.
           styles:
+            # Code (NeonCode, MarkdownView): the dark panel, the palette's
+            # colors for the pieces of code.
+            code:
+              background: $neon.code
+              border: $colors.outline-variant
+              border-width: $neon.border-width
+              radius: $neon.radius
+              padding: 16
+              text: $colors.on-surface
+              keyword: $neon.pink
+              string: $neon.green
+              comment: $colors.on-surface-variant
+              number: $neon.lavender
+              key: $neon.cyan
+              annotation: $neon.red
+              variable: $neon.yellow
+              type: $neon.cyan
+              punctuation: $colors.on-surface-variant
             # A filled button: lighter on hover and focus.
             neon-button:
               height: 42

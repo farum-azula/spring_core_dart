@@ -6,6 +6,16 @@ spring:
         neon-night:
           extends: neon
           brightness: dark
+          # The code of `neon`, brighter on the dark surface.
+          styles:
+            code:
+              keyword: '#FF40A0'
+              string: '#00E5FF'
+              number: '#B388FF'
+              key: '#FF80C0'
+              annotation: '#18FFFF'
+              variable: '#EA80FC'
+              type: '#64FFDA'
           # A color under every screen with a tint of the accent at the bottom. An
           # image would go next to them, from an asset or from the network:
           #   image: { source: https://cdn.example.com/neon/night.jpg, refresh: 1d }

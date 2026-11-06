@@ -2,6 +2,7 @@
 // the realm's roles as Spring Security roles, the user's access token on
 // the server calls.
 import 'package:neon_books_app/src/account/sso_properties.dart';
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 @Configuration()

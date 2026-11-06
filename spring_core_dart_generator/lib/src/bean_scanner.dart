@@ -41,6 +41,7 @@ import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/metadata_locations.dart'
     show lineOf, sourceOf;
+import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
 import 'package:spring_core_dart_generator/src/part_tree.dart';
 import 'package:spring_core_dart_generator/src/part_tree_parser.dart';
 import 'package:spring_core_dart_generator/src/query_expressions.dart';
@@ -683,6 +684,8 @@ class BeanScanner {
       // fills.
       collectErrors(() => scanSpringWidget(element, module));
       collectErrors(() => scanThemeLoaderKind(element, module));
+      // spring_boot_starter_flutter_navigation: screens and shells.
+      collectErrors(() => scanNavigation(element, module));
       collectErrors(() => checkChangeNotifierComponent(element));
       collectErrors(() => scanLog(element, module));
     }

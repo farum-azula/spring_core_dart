@@ -20,6 +20,9 @@ dependencies:
   # Bouncy Castle's Dart port, RSA and ECDSA signatures of JWTs. Used only
   # by lib/src/jwt/signature_primitives.dart.
   pointycastle: ^4.0.0
+  # EndpointRequest and the roles of the actuator's `when-authorized`: the
+  # actuator's model only (no endpoint, no auto-configuration).
+  spring_boot_actuator: ^0.7.0
   spring_boot_dart: ^0.7.0
   # oauth2Login(): the registrations, the token endpoint, the users and
   # the authorized clients (re-exported, with the Feign starter it brings).

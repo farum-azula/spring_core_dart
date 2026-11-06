@@ -2138,10 +2138,42 @@
         "fade-upwards",
         "zoom",
         "cupertino",
+        "fade",
         "none"
       ],
-      "description": "The page transition used on every platform.",
-      "default": "platform"
+      "description": "The page transition of every screen: none by default; the router of spring_boot_starter_flutter_navigation follows it in every app type, and Material's page routes too. A kind alone, or a map of type, duration and curve.",
+      "default": "none"
+    },
+    {
+      "name": "motion.page-transition.type",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "platform",
+        "fade-upwards",
+        "zoom",
+        "cupertino",
+        "fade",
+        "none"
+      ],
+      "description": "The kind of the page transition, in the map form.",
+      "default": "none"
+    },
+    {
+      "name": "motion.page-transition.duration",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "How long the page transition takes; the kind's own when not set.",
+      "default": null
+    },
+    {
+      "name": "motion.page-transition.curve",
+      "type": "curve",
+      "states": false,
+      "values": [],
+      "description": "The curve of the page transition; the kind's own when not set.",
+      "default": null
     },
     {
       "name": "motion.durations.*",

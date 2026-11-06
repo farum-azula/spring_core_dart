@@ -232,11 +232,32 @@ final class FlutterAppSettings {
 /// spring.flutter.theme.seed-color=deepPurple
 /// ```
 class SpringApp extends StatefulWidget {
-  /// The app widget with [home] as its first page.
-  const SpringApp({required this.home, super.key});
+  /// The app widget with [home] as its first page, or, without one, with
+  /// the application's router: the `RouterConfig<Object>` bean the
+  /// navigation starter (`spring_boot_starter_flutter_navigation`) adds, or
+  /// one of the app's own.
+  const SpringApp({this.home, super.key});
 
-  /// The first page, shown at the app's start.
-  final Widget home;
+  /// The first page, shown at the app's start; `null` to use the router.
+  final Widget? home;
+
+  /// The router of [context]'s application: its `RouterConfig<Object>`
+  /// bean. Throws a `FlutterError` when there is none, saying what to add.
+  static RouterConfig<Object> routerOf(ApplicationContext context) {
+    final names = context.getBeanNamesForType(RouterConfig<Object>);
+    if (names.isEmpty) {
+      throw FlutterError.fromParts([
+        ErrorSummary('SpringApp has no home and the application no router.'),
+        ErrorHint(
+          'Pass a home (SpringApplicationWidget(home: ...)), or add '
+          'spring_boot_starter_flutter_navigation, whose screens '
+          '(@ScreenRoute) make the router, or declare a '
+          'RouterConfig<Object> bean.',
+        ),
+      ]);
+    }
+    return context.getBean<RouterConfig<Object>>();
+  }
 
   @override
   State<SpringApp> createState() => _SpringAppState();
@@ -294,6 +315,9 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
     SpringThemeData shown,
   ) {
     final home = widget.home;
+    if (home == null) {
+      return _routerApp(app, themes, selection, shown);
+    }
     return switch (app.type) {
       AppType.material => MaterialApp(
         title: app.title,
@@ -344,6 +368,59 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
           pageBuilder: (context, _, _) => builder(context),
         ),
         home: home,
+      ),
+    };
+  }
+
+  // The app widget on the router bean, the same settings as with a home.
+  Widget _routerApp(
+    FlutterAppSettings app,
+    SpringThemes themes,
+    ThemeSelection selection,
+    SpringThemeData shown,
+  ) {
+    final router = SpringApp.routerOf(SpringScope.of(context));
+    return switch (app.type) {
+      AppType.material => MaterialApp.router(
+        routerConfig: router,
+        title: app.title,
+        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
+        theme: themes.material(
+          selection.followsSystem ? selection.systemLight : shown.name,
+        ),
+        darkTheme: selection.followsSystem
+            ? themes.material(selection.systemDark)
+            : null,
+        themeMode: selection.followsSystem ? ThemeMode.system : ThemeMode.light,
+        color: shown.appColor,
+        supportedLocales: app.supportedLocales,
+        localizationsDelegates: app.localizationsDelegates,
+        builder: _builder(app),
+        scrollBehavior: app.scrollBehavior,
+        shortcuts: app.shortcuts,
+      ),
+      AppType.cupertino => CupertinoApp.router(
+        routerConfig: router,
+        title: app.title,
+        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
+        theme: themes.cupertino(shown.name),
+        color: shown.appColor,
+        supportedLocales: app.supportedLocales,
+        localizationsDelegates: app.localizationsDelegates,
+        builder: _builder(app),
+        scrollBehavior: app.scrollBehavior,
+        shortcuts: app.shortcuts,
+      ),
+      AppType.widgets => WidgetsApp.router(
+        routerConfig: router,
+        title: app.title,
+        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
+        color: shown.appColor,
+        textStyle: shown.widgetsTextStyle,
+        supportedLocales: app.supportedLocales,
+        localizationsDelegates: app.localizationsDelegates,
+        builder: _builder(app),
+        shortcuts: app.shortcuts,
       ),
     };
   }

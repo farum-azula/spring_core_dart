@@ -2,6 +2,7 @@
 // builds without an error (a layout overflow is one) and has its title.
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/src/app/shell.dart';
 
 import 'support/app.dart';
@@ -16,10 +17,13 @@ const _titles = {
   'loaders': 'Loaders',
   'background': 'Background',
   'images': 'Images',
+  'transitions': 'Transitions',
   'themes': 'Themes',
 };
 
 void main() {
+  _addresses();
+
   test('the pages of the navigation and their titles', () {
     expect([for (final page in pages) page.id], _titles.keys);
   });
@@ -93,6 +97,92 @@ void main() {
     await startApp(tester);
     expect(find.byType(CupertinoTabBar), findsNothing);
     expect(find.byKey(const Key('sidebar')), findsOneWidget);
+    await stopApp(tester);
+  });
+}
+
+// The pages are routes: an address opens its page in its tab, with the
+// pages of its path below it.
+void _addresses() {
+  testWidgets('an address of "More" opens in the More tab, over its list', (
+    tester,
+  ) async {
+    final context = await startApp(
+      tester,
+      size: phoneSize,
+      page: pages.indexWhere((p) => p.id == 'motion'),
+    );
+    final route = context.getBean<RouteTemplate>();
+    // A flat address, in the More tab (`branch: '/more'`).
+    expect(route.uri.path, '/motion');
+    expect(route.stack.map((s) => s.uri.path), ['/more', '/motion']);
+    expect(find.byType(CupertinoNavigationBarBackButton), findsOneWidget);
+    await tester.tap(find.byType(CupertinoNavigationBarBackButton));
+    await settle(tester);
+    expect(route.uri.path, '/more');
+    await stopApp(tester);
+  });
+
+  testWidgets('the sidebar opens a page at once, without a transition', (
+    tester,
+  ) async {
+    await startApp(tester);
+    await openPage(tester, 'Motion');
+    final title = find.descendant(
+      of: find.byType(CustomScrollView),
+      matching: find.text('Motion'),
+    );
+    final route = ModalRoute.of(tester.element(title.first))! as PageRoute;
+    expect(route.transitionDuration, Duration.zero);
+    await stopApp(tester);
+  });
+
+  testWidgets("the Transitions page: none by default, the platform's, a fade", (
+    tester,
+  ) async {
+    await startApp(tester, size: phoneSize);
+    await openPage(tester, 'Transitions');
+    Future<PageRoute<Object?>> open(String button, String title) async {
+      await tester.ensureVisible(find.text(button));
+      await settle(tester);
+      await tester.tap(find.text(button));
+      await settle(tester);
+      final route =
+          ModalRoute.of(
+                tester.element(
+                  find
+                      .descendant(
+                        of: find.byType(CustomScrollView),
+                        matching: find.text(title),
+                      )
+                      .first,
+                ),
+              )!
+              as PageRoute<Object?>;
+      await tester.tap(find.text('Back'));
+      await settle(tester);
+      return route;
+    }
+
+    // The default: none (the theme sets no transition).
+    final theme = await open('Open with the default', 'With the default');
+    expect(theme.transitionDuration, Duration.zero);
+    final platform = await open(
+      "Open with the platform's",
+      "With the platform's",
+    );
+    expect(platform, isA<CupertinoRouteTransitionMixin<Object?>>());
+    final fade = await open('Open with a fade', 'With a fade');
+    expect(fade.transitionDuration, const Duration(milliseconds: 250));
+    expect(tester.takeException(), isNull);
+    await stopApp(tester);
+  });
+
+  testWidgets('an unknown address shows the not-found screen', (tester) async {
+    final context = await startApp(tester);
+    await context.getBean<RouteTemplate>().go('/nowhere');
+    await settle(tester);
+    expect(find.text('No page at /nowhere'), findsOneWidget);
     await stopApp(tester);
   });
 }

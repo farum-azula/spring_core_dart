@@ -41,6 +41,13 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-client</artifactId>
     </dependency>
+    <!-- The endpoints of the actuator profile (ActuatorReference), for
+         spring_boot_starter_actuator/test/actuator_differential_test.dart;
+         off in the other profiles (application.properties). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
     <!-- Argon2 and scrypt of Spring Security's encoders. -->
     <dependency>
       <groupId>org.bouncycastle</groupId>

@@ -1,0 +1,19 @@
+# The generator writes, with `spring_properties`, the binding of the typed
+# properties (lib/src/properties/); the rest of the package is written by
+# hand. The example builds its endpoints by hand: it needs no generated
+# application.
+targets:
+  $default:
+    builders:
+      spring_core_dart_generator:spring_core_dart:
+        enabled: false
+      spring_core_dart_generator:spring_properties:
+        enabled: true
+        generate_for: [lib/src/properties/**]
+        options:
+          # The actuator starter's auto-configuration imports these
+          # modules: the application writes the proxy classes its aspects
+          # need, as for a starter's own modules.
+          aop_defer: true
+      spring_core_dart_generator:spring_test:
+        enabled: false

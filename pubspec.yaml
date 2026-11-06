@@ -17,11 +17,14 @@ workspace:
   - spring_web_dart
   - spring_boot_starter_feign
   - spring_boot_starter_websocket
+  - spring_boot_actuator
   - spring_boot_starter_web
+  - spring_boot_starter_actuator
   - spring_security_core
   - spring_boot_starter_oauth2_client
   - spring_boot_starter_security
   - example/server_guide
+  - example/static_site/server
   - extensions/language_server
 
 dev_dependencies:

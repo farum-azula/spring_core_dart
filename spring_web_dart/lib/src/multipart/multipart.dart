@@ -741,6 +741,7 @@ abstract final class MediaTypeFactory {
     'mjs': 'text/javascript',
     'json': 'application/json',
     'map': 'application/json',
+    'webmanifest': 'application/manifest+json',
     'wasm': 'application/wasm',
     'pdf': 'application/pdf',
     'zip': 'application/zip',

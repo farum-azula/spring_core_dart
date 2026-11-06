@@ -1,4 +1,4 @@
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// A line of the support chat: `{"from": "ada", "text": "Hi", "at":
 /// "2026-10-27T10:00:00.000Z"}`. Clients may send only `text`: the server

@@ -1,0 +1,25 @@
+# The site: the app widget, its theme and the dev server of `flutter run`.
+spring:
+  application:
+    name: static-site
+  flutter:
+    app:
+      type: material
+      title: Static site
+      description: A Flutter web site served by its Spring server.
+      debug-banner: false
+    theme:
+      seed-color: '#2E7D6B'
+      styles:
+        code:
+          background: $colors.surface-container-high
+          radius: 8
+    web:
+      # `flutter run -d chrome`: the app on 5090, the API of the running
+      # server (../server, port 8081) through the dev server, so /api/info
+      # is on the page's origin there too.
+      dev-server:
+        port: 5090
+        proxy:
+          - prefix: /api/
+            target: http://localhost:8081

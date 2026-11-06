@@ -1,7 +1,7 @@
 // The catalog's model: what the API reads and writes as JSON. One
 // @Introspected() per model is enough; the classes they use (BookFormat)
 // are introspected with them, so there is no fromJson / toJson.
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// How a book is sold. JSON uses the upper-case names Spring writes for
 /// Java enums (`"PAPERBACK"`), through `@JsonValue`.

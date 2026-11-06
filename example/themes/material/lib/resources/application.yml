@@ -20,13 +20,17 @@ spring:
 
   flutter:
     web:
-      # `flutter run -d chrome` serves the app on http://localhost:5070/.
-      port: 5070
+      dev-server:
+        # `flutter run -d chrome` serves the app on http://localhost:5070/.
+        port: 5070
     app:
       # A MaterialApp: Scaffold, AppBar and the other Material widgets.
       type: material
       title: Theme Showcase Material
       debug-banner: false
+    # The pages are screens of the navigation starter; `/` opens the first.
+    navigation:
+      initial: /colors
 
     theme:
       # The theme shown at the start. `system` follows the device and picks
@@ -213,6 +217,23 @@ spring:
       # Looks for our own widgets (ThemeStates): one value, or a value per
       # state; `transition` animates between them.
       styles:
+        # Code (YamlBox, MarkdownView): a tinted panel in the outline's
+        # color; the pieces of code in the scheme's roles.
+        code:
+          background: { color: $colors.surface-container-highest, alpha: 55% }
+          border: $colors.outline-variant
+          radius: $spacing.s
+          padding: $spacing.m
+          text: $colors.on-surface-variant
+          keyword: $colors.primary
+          string: $colors.tertiary
+          comment: $colors.outline
+          number: $colors.secondary
+          key: $colors.primary
+          annotation: $colors.tertiary
+          variable: { color: $colors.primary, mix: { with: $colors.tertiary, amount: 50% } }
+          type: $colors.secondary
+          punctuation: $colors.outline
         pill:
           padding: [12, 6]
           radius: 999
@@ -251,8 +272,10 @@ spring:
 
       # ---------------------------------------------------------------- 7
       motion:
-        # What a new page does: platform | fade-upwards | zoom | cupertino | none
-        page-transition: fade-upwards
+        # What a new page does: none by default (not written here). The
+        # themes neon (zoom) and high-contrast (none) set their own; the
+        # Transitions page shows the kinds: platform | fade-upwards | zoom |
+        # cupertino | fade | none, or { type, duration, curve }.
         durations:
           fast: 120ms
           medium: 250ms

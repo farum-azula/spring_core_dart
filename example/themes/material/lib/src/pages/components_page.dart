@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
@@ -8,6 +8,7 @@ import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 /// Flutter's own widgets, looking as `components.*` says. No widget below has
 /// a style of its own: delete the YAML and they are plain Material.
+@ScreenRoute('/components', title: '#{nav.components}')
 class ComponentsPage extends StatefulWidget {
   const ComponentsPage({super.key});
 

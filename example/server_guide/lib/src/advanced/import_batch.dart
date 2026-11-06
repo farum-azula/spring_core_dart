@@ -4,7 +4,7 @@
 import 'package:neon_books_server/src/advanced/advanced_tour.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/catalog/book_repository.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// Runs before any bean is created, with the bean factory itself.
 @Component()

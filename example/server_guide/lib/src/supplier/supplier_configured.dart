@@ -1,4 +1,4 @@
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// A condition of our own (`@Conditional([SupplierConfigured])`): the
 /// supplier has an address and an API key. In prod without

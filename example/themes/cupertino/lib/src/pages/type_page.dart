@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
 import 'package:theme_showcase_cupertino/src/widgets/section.dart';
@@ -6,6 +7,7 @@ import 'package:theme_showcase_cupertino/src/widgets/yaml_box.dart';
 
 /// Typography: the text styles of the CupertinoThemeData, made from
 /// `typography.*` and `cupertino.text-theme.*`; then spacing and shapes.
+@ScreenRoute('/type', title: '#{nav.type}')
 class TypePage extends StatelessWidget {
   const TypePage({super.key});
 

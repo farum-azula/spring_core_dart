@@ -16,6 +16,7 @@ import 'package:pointycastle/export.dart'
         ECSignature,
         PublicKeyParameter,
         SHA256Digest;
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';

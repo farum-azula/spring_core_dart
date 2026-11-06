@@ -13,6 +13,8 @@ The documentation links to their chapters.
 | [`themes/neon/`](themes/neon/README.md) | An app of type `widgets` (no Material, no Cupertino) built from `neon_ui`: states, the glow modal, the background, tokens, logs, a theme that `extends` the library's | `flutter run` |
 | [`themes/material/`](themes/material/README.md) | A Material theme showcase: every part of the theme in YAML, on a `MaterialApp` | `flutter run` |
 | [`themes/cupertino/`](themes/cupertino/README.md) | A Cupertino theme showcase: a `CupertinoApp` themed from YAML, Cupertino widgets only | `flutter run` |
+| [`static_site/`](static_site/README.md) | A Flutter web site served by its own Spring server: the files of `flutter build web` and an API on one port, the app's addresses answered with `index.html` | `flutter build web`, then `dart run bin/main.dart` |
+| [`seo_site/`](seo_site/README.md) | A Flutter web site that search engines, link previews and language models can read: a page per route and Markdown file, `sitemap.xml`, `robots.txt`, `llms.txt` (`spring.flutter.web.seo.*`, `@RouteInfo`) | `dart run build_runner build`, then `flutter build web` |
 
 The three designs together are explained in [`themes/`](themes/README.md).
 

@@ -10,7 +10,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter/src/files/sha256.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _url = 'https://cdn.example.com/neon/background.jpg';
 

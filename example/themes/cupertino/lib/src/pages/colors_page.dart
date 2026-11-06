@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
 import 'package:theme_showcase_cupertino/src/widgets/section.dart';
@@ -7,6 +8,7 @@ import 'package:theme_showcase_cupertino/src/widgets/yaml_box.dart';
 
 /// Colors: the CupertinoThemeData palette from `cupertino.*`, the colors we
 /// declare, references and expressions, and iOS's own dynamic colors.
+@ScreenRoute('/colors', title: '#{nav.colors}')
 class ColorsPage extends StatelessWidget {
   const ColorsPage({super.key});
 

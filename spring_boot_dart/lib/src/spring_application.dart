@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:spring_boot_dart/src/annotations.dart';
 import 'package:spring_boot_dart/src/async_startup.dart';
 import 'package:spring_boot_dart/src/auto_configuration_sorter.dart';
+import 'package:spring_boot_dart/src/availability.dart';
 import 'package:spring_boot_dart/src/banner.dart';
 import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_boot_dart/src/condition_evaluation_report.dart';
@@ -1833,15 +1834,21 @@ final class _RunListeners {
     );
   }
 
-  void started(ConfigurableApplicationContext context, Duration timeTaken) =>
-      context.publishEvent(
-        ApplicationStartedEvent(application, args, context, timeTaken),
-      );
+  // Like Boot's EventPublishingRunListener: the started and ready events,
+  // each followed by the availability state it means.
+  void started(ConfigurableApplicationContext context, Duration timeTaken) {
+    context.publishEvent(
+      ApplicationStartedEvent(application, args, context, timeTaken),
+    );
+    AvailabilityChangeEvent.publish(context, LivenessState.correct);
+  }
 
-  void ready(ConfigurableApplicationContext context, Duration timeTaken) =>
-      context.publishEvent(
-        ApplicationReadyEvent(application, args, context, timeTaken),
-      );
+  void ready(ConfigurableApplicationContext context, Duration timeTaken) {
+    context.publishEvent(
+      ApplicationReadyEvent(application, args, context, timeTaken),
+    );
+    AvailabilityChangeEvent.publish(context, ReadinessState.acceptingTraffic);
+  }
 
   // Through the context when it runs (the application's listeners are
   // among its listeners by then), else to the application's listeners; a

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
 import 'package:theme_showcase_cupertino/src/widgets/section.dart';
@@ -9,6 +9,7 @@ import 'package:theme_showcase_cupertino/src/widgets/yaml_box.dart';
 
 /// Motion: durations, curves, animations that repeat, reduce motion, and
 /// the page transition of a CupertinoApp.
+@ScreenRoute('/motion', title: '#{nav.motion}', branch: '/more')
 class MotionPage extends StatefulWidget {
   const MotionPage({super.key});
 

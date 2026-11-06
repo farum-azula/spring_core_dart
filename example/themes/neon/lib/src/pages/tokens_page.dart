@@ -5,8 +5,10 @@ import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
 import 'package:theme_showcase_neon/src/widgets/section.dart';
 import 'package:theme_showcase_neon/src/widgets/swatch.dart';
 import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 /// Tokens: nested groups, a list of colors, references and expressions.
+@ScreenRoute('/tokens', title: '#{nav.tokens}')
 class TokensPage extends StatelessWidget {
   const TokensPage({super.key});
 

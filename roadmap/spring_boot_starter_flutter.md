@@ -958,8 +958,17 @@ This starter only uses a `RouterConfig` bean when there is one.
 
 ## Search engines, previews and models: `spring.flutter.web.seo.*`
 
-Planned (the owner, November 2026), with the navigation starter; the
-documentation site is its first user. A Flutter web page draws on a
+Done on the release branch after 0.7.0 (November 2026), with the
+navigation starter; the documentation site is its first user. Built as
+below: the generator's `spring_flutter_seo` builder (from the routes of
+`spring_metadata.json`, the `content[n]` folders and `pages[n]`; the keys
+are lists, `pages[n].path`, not a map keyed by path), `MarkdownView` and
+`CodeTokens` in this starter, `RouteContentView` in the navigation
+starter, the head and manifest of the app from `spring.flutter.app.title`
+/ `.description` and the theme, the dev server's keys moved to
+`spring.flutter.web.dev-server.*`. Not built: `_headers` and `404.html`
+(Cloudflare Pages serves `index.html` for unknown paths when a site has
+no `404.html`; `_headers` waits for the deep links' domain files there). A Flutter web page draws on a
 canvas: the HTML the server sends holds a script and no text, so search
 engines, link previews (Telegram, Slack, X) and the bots of models (which
 run no JavaScript) see an empty page under the template's title. Pages

@@ -6,14 +6,12 @@
 // spring.flutter.* in lib/resources/, the pages read the theme through
 // `context.theme` (generated in lib/spring_gen/theme.spring.dart).
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
-import 'package:theme_showcase_material/src/app/shell.dart';
 
+// No home: the screens of the navigation make the app (the pages, in the
+// branches of the Shell); `/` opens the colors
+// (spring.flutter.navigation.initial).
 @SpringBootApplication()
-void main() => runApp(
-  SpringApplicationWidget(
-    application: () => springApplication,
-    home: const Shell(),
-  ),
-);
+void main() =>
+    runApp(SpringApplicationWidget(application: () => springApplication));

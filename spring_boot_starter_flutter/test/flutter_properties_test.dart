@@ -172,14 +172,18 @@ void main() {
         'spring.devtools.restart.enabled',
         'spring.datasource.url',
         'spring.datasource.sqlite.location',
-        'spring.flutter.web.port',
-        'spring.flutter.web.proxy[*].target',
+        'spring.flutter.web.dev-server.port',
+        'spring.flutter.web.dev-server.proxy[*].target',
+        'spring.flutter.web.seo.enabled',
+        'spring.flutter.web.seo.site-url',
+        'spring.flutter.web.seo.content[*].location',
+        'spring.flutter.web.seo.pages[*].path',
       ]),
     );
     final hints = {
       for (final h in json['hints']! as List) (h as Map)['name']! as String: h,
     };
-    final port = hints['spring.flutter.web.port']!;
+    final port = hints['spring.flutter.web.dev-server.port']!;
     expect(port['range'], [0, 65535]);
     expect(
       ((port['warn']! as List).single as Map)['values'],

@@ -44,10 +44,15 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as boot;
 
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart'
     hide Banner, Size;
+// The HTTP model and clients: the starter's API takes an `HttpTransport`
+// (`RemoteCache`, the theme's network images), and an app sending its own
+// requests needs no other dependency.
+export 'package:spring_web_dart/spring_web_dart.dart';
 
 export 'src/annotations.dart';
 export 'src/app_lifecycle.dart';
 export 'src/asset_resource.dart';
+export 'src/bean_lookup_scope.dart';
 export 'src/bean_reads.dart' show BeanReadsPointcut, BeanReadsInterceptor;
 export 'src/context_extensions.dart';
 export 'src/desktop_window/desktop_window.dart';
@@ -55,6 +60,8 @@ export 'src/desktop_window/desktop_window_settings.dart';
 export 'src/files/file_store.dart';
 export 'src/files/file_template.dart' show FileArea, FileTemplate;
 export 'src/files/memory_file_store.dart' show InMemoryFileStore;
+export 'src/markdown/code_tokens.dart';
+export 'src/markdown/markdown_view.dart';
 export 'src/properties/flutter_properties.dart';
 export 'src/notify_listeners.dart';
 export 'src/platform_profiles.dart';

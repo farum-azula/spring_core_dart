@@ -3,8 +3,7 @@
 // ShopConfig declares it with a @Bean method (lazy, an alias, an init
 // method and an inferred destroy method `close`).
 import 'package:neon_books_server/src/catalog/directories.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 class CoverStore {
   CoverStore(this.directory, this._resources);

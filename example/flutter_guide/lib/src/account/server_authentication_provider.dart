@@ -2,6 +2,7 @@ import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/api/account_client.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
 import 'package:neon_books_app/src/api/models.dart';
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Checks a user name and password with the server, like a Spring

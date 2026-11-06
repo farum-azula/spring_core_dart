@@ -15,6 +15,7 @@ import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
 import 'package:spring_core_dart_generator/src/part_tree.dart';
 import 'package:spring_core_dart_generator/src/query_expressions.dart';
 import 'package:spring_core_dart_generator/src/spel_compiler.dart';
@@ -22,6 +23,7 @@ import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
     show LoaderKinds;
 
 part 'configuration_emitter.dart';
+part 'navigation_emitter.dart';
 part 'entity_emitter.dart';
 part 'lookup_emitter.dart';
 part 'repository_emitter.dart';
@@ -264,6 +266,8 @@ class ModuleEmitter {
     final definitions = literalList([
       for (final bean in module.beans) _definition(bean),
       if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
+      if (module.screens.isNotEmpty || module.shells.isNotEmpty)
+        screenRoutesDefinition(moduleName),
       if (module.entities.isNotEmpty) entityIntrospectionsBean(moduleName),
       ...extraDefinitions,
     ]);
@@ -415,6 +419,10 @@ class ModuleEmitter {
         )
         ..body.addAll(extra)
         ..body.addAll([?buildContextAccess])
+        ..body.addAll([
+          for (final screen in module.screens)
+            if (!screen.notFound) routeExtension(screen),
+        ])
         ..body.addAll([
           for (final (log, name) in _logExtensionNames(module.loggers))
             _logExtension(log, name),
@@ -3806,12 +3814,12 @@ class ModuleEmitter {
                 {},
                 [_type(field.type, element)],
               );
+    // `BeanDefinition<SpringWidgetBindings>`: its type is the only one.
     return _spring('BeanDefinition').newInstance(
       [],
       {
         'name': _str('flutterSpringWidgetBindings#$moduleName'),
         'source': _str('$_flutterSpringUrl#SpringWidgetBindings'),
-        'types': literalConstList([bindings]),
         'autowireCandidate': literalFalse,
         'create': _closure(
           ['r'],

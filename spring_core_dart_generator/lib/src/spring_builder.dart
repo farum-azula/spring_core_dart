@@ -155,6 +155,7 @@ class SpringBuilder implements Builder {
   SpringBuilder({
     this.proxyMode = ProxyMode.all,
     this.pruneProxies = true,
+    this.deferProxies = false,
     this.dartDefinesExclude = const [],
     Future<String?> Function(AssetId output)? readExistingOutput,
     PackageDirectories? packageDirectories,
@@ -174,6 +175,15 @@ class SpringBuilder implements Builder {
   /// Only that output prunes: it knows every module of the application.
   /// `@ComponentScan` outputs keep every proxy.
   final bool pruneProxies;
+
+  /// Whether the `lib/` modules of this library package leave to the
+  /// application the proxy classes only its aspects can match, as a
+  /// starter's do (build option `aop_defer`, `false` by default). For a
+  /// library without `lib/spring_auto_configuration.dart` whose modules a
+  /// starter's auto-configuration imports (`spring_boot_actuator`'s
+  /// properties): the application's build finds them through that import.
+  /// Any other library keeps every proxy, since any module may import it.
+  final bool deferProxies;
 
   /// The property name prefixes not offered to `--dart-define` (build
   /// option `dart_defines_exclude`, empty by default): neither the names
@@ -377,15 +387,18 @@ class SpringBuilder implements Builder {
     final glue = await driverGlueFor(buildStep, dependencies);
     final application = await _isApplication(buildStep);
     final prune = pruneProxies && application;
-    // Only a starter's (a package with an auto-configuration library): the
-    // application's build finds its modules.
+    // A starter's `lib/` modules (a package with an auto-configuration
+    // library), and those of a library that says a starter imports them
+    // ([deferProxies]): the application's build finds them through the
+    // auto-configurations and its own imports ([_deferredProxies]).
     final defer =
         pruneProxies &&
         !application &&
         output.path.startsWith('lib/') &&
-        await buildStep.canRead(
-          AssetId(output.package, autoConfigurationLibrary),
-        );
+        (deferProxies ||
+            await buildStep.canRead(
+              AssetId(output.package, autoConfigurationLibrary),
+            ));
     return ModuleEmitter(
       output,
       dependencies: dependencies,
@@ -561,6 +574,48 @@ class SpringBuilder implements Builder {
       ..body = springApplication.code,
   ).closure;
 
+  // `build-info.properties` (Spring Boot's `META-INF/build-info.properties`)
+  // for an application with the actuator, which its `info` endpoint shows:
+  // the name and version of `pubspec.yaml`. Only for an application
+  // (`publish_to: none`): the example of a published package would change
+  // with every release of the family. No build time, so the generated code
+  // stays the same from one build to the next; an app that wants it writes
+  // the file itself (`lib/resources/build-info.properties`).
+  static Future<String?> _buildInfo(BuildStep buildStep) async {
+    final id = AssetId(buildStep.inputId.package, 'pubspec.yaml');
+    if (!await buildStep.canRead(id)) {
+      return null;
+    }
+    final Object? pubspec;
+    try {
+      pubspec = loadYaml(await buildStep.readAsString(id));
+    } on YamlException {
+      return null;
+    }
+    if (pubspec is! YamlMap || '${pubspec['publish_to']}' != 'none') {
+      return null;
+    }
+    final dependencies = pubspec['dependencies'];
+    final actuator =
+        dependencies is YamlMap &&
+        dependencies.keys.any(
+          (name) =>
+              name == 'spring_boot_actuator' ||
+              name == 'spring_boot_starter_actuator',
+        );
+    if (!actuator) {
+      return null;
+    }
+    final name = '${pubspec['name'] ?? ''}';
+    final version = pubspec['version'];
+    return [
+      'build.artifact=$name',
+      'build.name=$name',
+      if (version != null) 'build.version=$version',
+      '',
+    ].join('\n');
+  }
+
   // `@SpringBootApplication` on `main`: like Spring Boot's component scan
   // from the application class, the whole package is scanned — `lib/` and
   // the directory of `main` (e.g. `bin/`) — and the output also declares
@@ -603,6 +658,10 @@ class SpringBuilder implements Builder {
       buildStep,
       entryDirectory: directory,
     );
+    if (await _buildInfo(buildStep) case final info?
+        when !resources.containsKey('build-info.properties')) {
+      resources['build-info.properties'] = (text: info, base64: null);
+    }
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
@@ -1071,11 +1130,12 @@ class SpringBuilder implements Builder {
   }
 
   // The beans whose module left their proxy class to the application
-  // (`AopProxyFactory.deferred`), in the generated modules of the packages
-  // with an auto-configuration library (the only ones that defer): those
-  // the auto-configuration library reaches and those the application's
-  // [assets] import, through the libraries of the same package they
-  // import.
+  // (`AopProxyFactory.deferred`), in the generated modules of the library
+  // packages: those the auto-configuration libraries reach and those the
+  // application's [assets] import, through the libraries they import or
+  // export, in their own package or another one (a starter's
+  // auto-configuration importing a library without one, such as
+  // spring_boot_actuator, whose main library exports its module).
   static Future<List<_DeferredProxy>> _deferredProxies(
     BuildStep buildStep,
     List<AssetId> assets, {
@@ -1085,69 +1145,66 @@ class SpringBuilder implements Builder {
     final resolver = buildStep.resolver;
     final config = await buildStep.packageConfig;
     final reachable = await _reachablePackages(buildStep);
-    final found = <_DeferredProxy>[];
-    final sources = <String>{};
-    // The libraries of other packages the application imports.
-    final imported = <String, List<LibraryElement>>{};
-    for (final asset in assets) {
-      if (!await resolver.isLibrary(asset)) {
-        continue;
+    bool searched(LibraryElement library) {
+      final uri = library.uri;
+      if (uri.scheme != 'package') {
+        return false;
       }
-      final library = await resolver.libraryFor(asset);
-      for (final fragment in library.fragments) {
-        for (final other in fragment.importedLibraries) {
-          if (other.uri.scheme == 'package') {
-            (imported[other.uri.pathSegments.first] ??= []).add(other);
-          }
-        }
+      final package = uri.pathSegments.first;
+      return (package != root || includeOwn) &&
+          (reachable == null || reachable.contains(package));
+    }
+
+    Iterable<LibraryElement> next(LibraryElement library) => [
+      for (final fragment in library.fragments)
+        ...fragment.importedLibraries.where(searched),
+      ...library.exportedLibraries.where(searched),
+    ];
+
+    final pending = <LibraryElement>[];
+    // The libraries the application imports.
+    for (final asset in assets) {
+      if (await resolver.isLibrary(asset)) {
+        pending.addAll(next(await resolver.libraryFor(asset)));
       }
     }
+    // Every auto-configuration library.
     for (final package in config.packages) {
       if ((package.name == root && !includeOwn) ||
           (reachable != null && !reachable.contains(package.name))) {
         continue;
       }
       final id = AssetId(package.name, autoConfigurationLibrary);
-      if (!await buildStep.canRead(id) || !await resolver.isLibrary(id)) {
+      if (await buildStep.canRead(id) && await resolver.isLibrary(id)) {
+        pending.add(await resolver.libraryFor(id));
+      }
+    }
+    final found = <_DeferredProxy>[];
+    final sources = <String>{};
+    final seen = <Uri>{};
+    while (pending.isNotEmpty) {
+      final library = pending.removeLast();
+      if (!seen.add(library.uri)) {
         continue;
       }
-      final pending = [
-        await resolver.libraryFor(id),
-        ...?imported[package.name],
-      ];
-      final seen = <Uri>{};
-      while (pending.isNotEmpty) {
-        final library = pending.removeLast();
-        if (!seen.add(library.uri)) {
-          continue;
-        }
-        for (final fragment in library.fragments) {
-          for (final imported in fragment.importedLibraries) {
-            final uri = imported.uri;
-            if (uri.scheme == 'package' &&
-                uri.pathSegments.first == package.name) {
-              pending.add(imported);
-            }
-          }
-        }
-        if (!library.uri.path.endsWith('.spring.dart')) {
-          continue;
-        }
-        final text = await buildStep.readAsString(AssetId.resolve(library.uri));
-        if (!text.contains('AopProxyFactory.deferred')) {
-          continue;
-        }
-        final visitor = _DeferredProxies();
-        for (final getter in library.getters) {
-          (await resolver.astNodeFor(
-            getter.firstFragment,
-            resolve: true,
-          ))?.accept(visitor);
-        }
-        for (final entry in visitor.found) {
-          if (sources.add(entry.source)) {
-            found.add(entry);
-          }
+      pending.addAll(next(library));
+      if (!library.uri.path.endsWith('.spring.dart')) {
+        continue;
+      }
+      final text = await buildStep.readAsString(AssetId.resolve(library.uri));
+      if (!text.contains('AopProxyFactory.deferred')) {
+        continue;
+      }
+      final visitor = _DeferredProxies();
+      for (final getter in library.getters) {
+        (await resolver.astNodeFor(
+          getter.firstFragment,
+          resolve: true,
+        ))?.accept(visitor);
+      }
+      for (final entry in visitor.found) {
+        if (sources.add(entry.source)) {
+          found.add(entry);
         }
       }
     }
@@ -1784,6 +1841,7 @@ class SpringPropertiesBuilder extends SpringBuilder {
   SpringPropertiesBuilder({
     super.proxyMode,
     super.pruneProxies,
+    super.deferProxies,
     super.dartDefinesExclude,
   });
 

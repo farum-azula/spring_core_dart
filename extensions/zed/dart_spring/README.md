@@ -40,6 +40,8 @@ added to those of the Dart language server:
 | `pricing()`, `AuditAspect.pricing()` in a pointcut | the `@Pointcut` method |
 | `#isbn` in a cache key or condition: `@Cacheable('books', key: '#isbn')` | the method parameter |
 | `bean(order*)`, the method of `execution(* OrderService.place*(..))` | the matching beans, methods |
+| a path of a screen: `context.route.go('/catalog/books/978-0')`, `push`, `RouteLocation.parse`/`expand`, a branch of `@RouteShell(branches: [...])` or of `@ScreenRoute(branch: '/more')` (a branch no shell has is underlined), `@RouteInfo(paths: [...])`, `spring.flutter.navigation.initial` / `login` / `redirects` in a config file | the `@ScreenRoute` class (or `ScreenRoutes` screen) whose pattern matches it, variables and `{*rest}` included |
+| `#{nav.catalog}` in `@ScreenRoute(title:)`, `@RouteInfo(description:)` or `ScreenRoutes...screen(title:)` | the key in `messages*.properties` (hover shows the message; keys are completed after `#{`; an unknown key is a warning) |
 
 Navigation puts the cursor at the target without selecting it.
 

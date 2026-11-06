@@ -13,6 +13,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neon_books_app/src/settings/theme_preview.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 import 'support/app.dart';
@@ -283,6 +284,22 @@ void main() {
       );
       await openMore(tester, 'Settings');
       await matchesScreen(tester, 'settings_$theme');
+    });
+
+    // The screen scrolled to the Markdown: its background, as in the app.
+    goldenTest('Markdown and code in the $theme theme', (tester) async {
+      await startApp(
+        tester,
+        FakeServer(),
+        args: ['--spring.flutter.theme.active=$theme'],
+      );
+      await openMore(tester, 'Settings');
+      await tester.scrollUntilVisible(find.byType(ThemeMarkdown), 400);
+      await tester.ensureVisible(find.text('Markdown and code'));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(ThemeMarkdown), const Offset(0, 200));
+      await tester.pumpAndSettle();
+      await matchesScreen(tester, 'markdown_$theme');
     });
   }
 }

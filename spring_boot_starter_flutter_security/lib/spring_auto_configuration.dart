@@ -7,21 +7,30 @@
 library;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
+    show FeignClientConfig, FeignProperties;
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
+    show
+        NavigationProperties,
+        RouteAuthorizationFilter,
+        RouteFilter,
+        RouteTemplate;
 import 'package:spring_boot_starter_flutter_security/src/dpop/platform_dpop_key.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/apple_id_sign_in.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/native_oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_token_revocation_client.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/secret_store_oauth2_authorized_client_service.dart';
+import 'package:spring_boot_starter_flutter_security/src/navigation/route_security.dart';
 import 'package:spring_boot_starter_flutter_security/src/principal/principal_notifier.dart';
 import 'package:spring_boot_starter_flutter_security/src/properties/bound_properties.dart';
+import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart';
 import 'package:spring_boot_starter_flutter_security/src/properties/properties_beans.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/platform_secret_store.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/browser_page.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/csrf_cookie_http_transport.dart';
-import 'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/server_credentials_http_transport.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/server_oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/spa_browser_page.dart';
@@ -38,7 +47,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 // the OAuth2 client's and, through them, logging, Feign, the security
 // core and spring_boot_dart's), so a test of an application that lists
 // only this package can name them.
-export 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
+export 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart';
 export 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart';
 
 const _source =
@@ -246,6 +255,8 @@ final class _OnClientRegistrations implements Condition {
     'springBootStarterOauth2ClientAutoConfiguration',
     'springBootStarterFeignAutoConfiguration',
   ],
+  // The navigation's beans are known when the guards' conditions run.
+  after: ['springBootStarterFlutterNavigationAutoConfiguration'],
 )
 final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
   'springBootStarterFlutterSecurityAutoConfiguration',
@@ -331,6 +342,41 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
         ]),
       ],
       create: (_) => LoopbackAuthorizationWindow(),
+    ),
+    BeanDefinition<RouteRequestCache>(
+      name: 'routeRequestCache',
+      source: _source,
+      conditions: const [
+        ConditionGroup('$_source.routeRequestCache', [
+          ConditionalOnMissingBean(RouteRequestCache),
+        ]),
+      ],
+      create: (_) => RouteRequestCache(),
+    ),
+    BeanDefinition<RouteSecurity>(
+      name: 'routeSecurity',
+      types: const [RouteSecurity, RouteAuthorizationFilter, RouteFilter],
+      source: _source,
+      create: (r) => RouteSecurity(
+        requests: r.dependency<RouteRequestCache>(),
+        handler: r.optionalDependency<MethodSecurityExpressionHandler>(),
+        login: r.optionalDependency<NavigationProperties>()?.login,
+      ),
+    ),
+    BeanDefinition<RouteSecurityNavigator>(
+      name: 'routeSecurityNavigator',
+      source: _source,
+      conditions: const [
+        ConditionGroup('$_source.routeSecurityNavigator', [
+          ConditionalOnBean(RouteTemplate),
+        ]),
+      ],
+      create: (r) => RouteSecurityNavigator(
+        r.dependency<PrincipalNotifier>(),
+        r.dependency<RouteTemplate>(),
+        r.dependency<RouteRequestCache>(),
+      ),
+      preDestroy: (navigator) => navigator.dispose(),
     ),
     BeanDefinition<PrincipalNotifier>(
       name: 'principalNotifier',

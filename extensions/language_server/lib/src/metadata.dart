@@ -425,6 +425,60 @@ final class MetaThemeProperty {
 }
 
 /// The metadata file of one package, parsed.
+/// A screen of `spring_boot_starter_flutter_navigation` (`routes` of a
+/// metadata file): its path pattern, name and class.
+final class MetaRoute {
+  /// The screen at [path].
+  const MetaRoute({
+    required this.path,
+    this.name,
+    this.className,
+    this.source,
+    this.title,
+  });
+
+  /// The route of [json].
+  factory MetaRoute.fromJson(Map<String, Object?> json) => MetaRoute(
+    path: (json['path'] as String?) ?? '',
+    name: json['name'] as String?,
+    className: json['class'] as String?,
+    source: json['source'] as String?,
+    title: json['title'] as String?,
+  );
+
+  /// The path pattern (`/catalog/books/{isbn}`).
+  final String path;
+
+  /// The route's name.
+  final String? name;
+
+  /// The screen's class.
+  final String? className;
+
+  /// Where it is declared (`package:app/book_page.dart#BookPage`).
+  final String? source;
+
+  /// Its title.
+  final String? title;
+
+  /// Whether [address] (a path without query) is this route's: variables
+  /// match one segment, `{*rest}` the rest.
+  bool matches(String address) {
+    final buffer = StringBuffer('^');
+    var last = 0;
+    for (final match in RegExp(r'\{(\*?)[^}]*\}').allMatches(path)) {
+      buffer
+        ..write(RegExp.escape(path.substring(last, match.start)))
+        ..write(match.group(1)!.isEmpty ? '[^/]+' : '.*');
+      last = match.end;
+    }
+    buffer
+      ..write(RegExp.escape(path.substring(last)))
+      ..write(r'$');
+    return RegExp(buffer.toString()).hasMatch(address);
+  }
+}
+
 final class SpringMetadata {
   SpringMetadata._({
     required this.package,
@@ -438,6 +492,8 @@ final class SpringMetadata {
     required this.themeTypes,
     required this.themeProperties,
     required this.loaderKinds,
+    this.routes = const [],
+    this.shellBranches = const [],
   });
 
   /// Parses [json] read from the package at [root]. Throws on a document
@@ -477,6 +533,16 @@ final class SpringMetadata {
           if (k is Map)
             MetaLoaderKind.fromJson(k.cast<String, Object?>(), package),
       ],
+      routes: [
+        for (final r in (json['routes'] as List?) ?? const [])
+          if (r is Map) MetaRoute.fromJson(r.cast<String, Object?>()),
+      ],
+      shellBranches: [
+        for (final shell in (json['shells'] as List?) ?? const [])
+          if (shell is Map)
+            for (final branch in (shell['branches'] as List?) ?? const [])
+              if (branch is String) branch,
+      ],
       themeTypes:
           (theme?['types'] as Map?)?.cast<String, Object?>() ?? const {},
       themeProperties: [
@@ -507,6 +573,12 @@ final class SpringMetadata {
 
   /// The `@ThemeLoaderKind` classes of the package.
   final List<MetaLoaderKind> loaderKinds;
+
+  /// The screens of the package (`spring_boot_starter_flutter_navigation`).
+  final List<MetaRoute> routes;
+
+  /// The branches of the package's `@RouteShell`s (`/catalog`, `/more`).
+  final List<String> shellBranches;
 }
 
 /// The metadata that applies to one package: its own and that of all its
@@ -581,6 +653,14 @@ final class MetadataView {
 
   /// The profile names the metadata lists.
   Set<String> get profiles => {for (final m in metadata) ...m.profiles};
+
+  /// The screens of the package and its dependencies.
+  List<MetaRoute> get routes => [for (final m in metadata) ...m.routes];
+
+  /// The branches of the shells of the package and its dependencies.
+  Set<String> get shellBranches => {
+    for (final m in metadata) ...m.shellBranches,
+  };
 
   List<MetaThemeProperty> get themeProperties => [
     for (final m in metadata) ...m.themeProperties,

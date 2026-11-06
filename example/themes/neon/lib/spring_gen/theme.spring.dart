@@ -389,6 +389,9 @@ final class AppThemeStyles {
   const AppThemeStyles._(this._values);
   final ThemeKeyReader _values;
 
+  /// `styles.code`
+  AppStyleCode get code => AppStyleCode._(_values.style('code'));
+
   /// `styles.neon-button`
   AppStyleNeonButton get neonButton =>
       AppStyleNeonButton._(_values.style('neon-button'));
@@ -412,6 +415,66 @@ final class AppThemeStyles {
   /// `styles.showcase-tile`
   AppStyleShowcaseTile get showcaseTile =>
       AppStyleShowcaseTile._(_values.style('showcase-tile'));
+}
+
+/// `styles.code`: the states and typed values.
+final class AppStyleCode implements ThemeStyle<AppStyleCodeValues> {
+  const AppStyleCode._(this.style);
+  @override
+  final StateStyle style;
+  @override
+  AppStyleCodeValues view(StyleValues values) => AppStyleCodeValues._(values);
+}
+
+/// The values of `styles.code` for one state.
+final class AppStyleCodeValues {
+  const AppStyleCodeValues._(this._values);
+  final StyleValues _values;
+
+  /// `styles.code.annotation`
+  Color get annotation => _values.color('annotation');
+
+  /// `styles.code.background`
+  Color get background => _values.color('background');
+
+  /// `styles.code.border`
+  Color get border => _values.color('border');
+
+  /// `styles.code.border-width`
+  double get borderWidth => _values.number('border-width');
+
+  /// `styles.code.comment`
+  Color get comment => _values.color('comment');
+
+  /// `styles.code.key`
+  Color get key => _values.color('key');
+
+  /// `styles.code.keyword`
+  Color get keyword => _values.color('keyword');
+
+  /// `styles.code.number`
+  Color get number => _values.color('number');
+
+  /// `styles.code.padding`
+  double get padding => _values.number('padding');
+
+  /// `styles.code.punctuation`
+  Color get punctuation => _values.color('punctuation');
+
+  /// `styles.code.radius`
+  double get radius => _values.number('radius');
+
+  /// `styles.code.string`
+  Color get string => _values.color('string');
+
+  /// `styles.code.text`
+  Color get text => _values.color('text');
+
+  /// `styles.code.type`
+  Color get type => _values.color('type');
+
+  /// `styles.code.variable`
+  Color get variable => _values.color('variable');
 }
 
 /// `styles.neon-button`: the states and typed values.

@@ -8,14 +8,18 @@ name: 'Release: publish to pub.dev'
 #           spring_web_dart
 #         → spring_boot_starter_logging, spring_boot_starter_scheduling,
 #           spring_boot_starter_cache, spring_boot_starter_feign,
-#           spring_boot_starter_websocket, spring_boot_starter_web,
-#           spring_boot_starter_test
-#         → spring_boot_starter_data (after the logging starter)
+#           spring_boot_starter_websocket, spring_boot_actuator,
+#           spring_boot_starter_web, spring_boot_starter_test
+#         → spring_boot_starter_actuator (after the web starter and
+#           spring_boot_actuator)
+#         → spring_boot_starter_data (after spring_boot_actuator)
 #         → spring_security_core → spring_boot_starter_oauth2_client
 #         → spring_boot_starter_security
 #         → spring_boot_starter_flutter (with the Flutter SDK)
+#         → spring_boot_starter_flutter_navigation (after the Flutter
+#           starter)
 #         → spring_boot_starter_flutter_security (after the security
-#           packages and the Flutter starter)
+#           packages, the Flutter starter and the navigation)
 #
 # (tests: not run again when the "Release" workflow tested the tagged
 # commit.)
@@ -146,6 +150,7 @@ jobs:
           - spring_boot_starter_cache
           - spring_boot_starter_feign
           - spring_boot_starter_websocket
+          - spring_boot_actuator
           - spring_boot_starter_web
           - spring_boot_starter_test
     steps:
@@ -156,10 +161,27 @@ jobs:
       - run: dart pub get
       - run: dart run tool/publish.dart --package ${{ matrix.package }}
 
-  # spring_boot_starter_data needs Boot and the logging starter (its dev
-  # dependencies, the generator, the test and cache starters, only matter
-  # for its tests, which ran above): after the starters, next to the
-  # security packages.
+  # spring_boot_starter_actuator needs spring_boot_actuator and the web
+  # starter (its dev dependencies, the security and test starters, only matter
+  # for its tests, which ran above): after the starters.
+  actuator:
+    name: Publish spring_boot_starter_actuator
+    needs: starters
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart run tool/publish.dart --package spring_boot_starter_actuator
+
+  # spring_boot_starter_data needs Boot, the logging starter and
+  # spring_boot_actuator (its dev dependencies, the generator, the test and
+  # cache starters, only matter for its tests, which ran above): after the
+  # starters, next to the security packages.
   data:
     name: Publish spring_boot_starter_data
     needs: starters
@@ -176,8 +198,8 @@ jobs:
 
   # spring_security_core needs the logging starter,
   # spring_boot_starter_oauth2_client Feign and spring_security_core,
-  # spring_boot_starter_security the web starter, spring_security_core and the
-  # OAuth2 client: one after the other.
+  # spring_boot_starter_security the web starter, spring_boot_actuator,
+  # spring_security_core and the OAuth2 client: one after the other.
   security:
     name: Publish the security packages
     needs: starters
@@ -230,11 +252,12 @@ jobs:
       - run: dart run tool/publish.dart --package spring_boot_starter_flutter
 
   # spring_boot_starter_flutter_security needs the Flutter starter, the
-  # OAuth2 client and spring_security_core: after both jobs above. Like the
+  # navigation, the OAuth2 client and spring_security_core: after the jobs
+  # above. Like the
   # Flutter starter, it is tested against the versions just published.
   flutter_security:
     name: Publish spring_boot_starter_flutter_security
-    needs: [security, flutter]
+    needs: [security, flutter, flutter_navigation]
     runs-on: ubuntu-26.04
     permissions:
       id-token: write
@@ -261,3 +284,36 @@ jobs:
           done
           flutter test
       - run: dart run tool/publish.dart --package spring_boot_starter_flutter_security
+
+  # spring_boot_starter_flutter_navigation needs the Flutter starter (and,
+  # through it, spring_web_dart): after the Flutter job, tested against the
+  # versions just published.
+  flutter_navigation:
+    name: Publish spring_boot_starter_flutter_navigation
+    needs: [flutter]
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      # Sets up pub.dev's OpenID Connect token, which `flutter pub` uses too.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Flutter SDK (stable)
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: dart pub get
+      - name: Tests against the published family
+        working-directory: spring_boot_starter_flutter_navigation
+        run: |
+          rm pubspec_overrides.yaml
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            flutter pub get && break
+            if [ "$attempt" = 10 ]; then exit 1; fi
+            echo "The new versions are not on pub.dev yet; retrying in 30 s ($attempt/10)"
+            sleep 30
+          done
+          flutter test
+      - run: dart run tool/publish.dart --package spring_boot_starter_flutter_navigation

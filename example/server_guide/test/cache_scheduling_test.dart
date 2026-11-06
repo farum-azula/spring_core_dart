@@ -12,8 +12,8 @@ import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart'
     show CacheManager;
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
     show ScheduledAnnotationBeanPostProcessor;
+import 'package:spring_boot_starter_security/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_security_core/testing.dart';
 import 'package:test/test.dart';
 
 import 'support/app.dart';

@@ -11,7 +11,12 @@ spring:
 
    flutter:
       web:
-         port: 1010
+         dev-server:
+            port: 1010
+      # The pages are screens with their own addresses (/components,
+      # /themes, ...): `/` opens the overview.
+      navigation:
+         initial: /overview
       app:
          # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino
          # widgets. Everything on screen is a neon_ui widget or our own.

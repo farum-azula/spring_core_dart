@@ -40,6 +40,11 @@ security when it needs it.
   `AuthenticationManager`), `OAuth2LoginButton` for any registration,
   and the Google, Apple, Microsoft and GitHub buttons as their branding
   rules draw them.
+- **Guarded screens**: `@PreAuthorize("hasRole('ADMIN')")` on a screen of
+  [`spring_boot_starter_flutter_navigation`](https://pub.dev/packages/spring_boot_starter_flutter_navigation)
+  (brought along); nobody logged in goes to
+  `spring.flutter.navigation.login` and back after the login. Display
+  only, like the widgets: the server checks access.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -559,7 +564,7 @@ with user HTML, `javascript:` URLs, other content on the same origin, and
 browser extensions. Keep those out, and send a Content Security Policy.
 
 **The Content Security Policy.** In spa mode the generator gives
-`flutter run` a ready policy (`spring.flutter.web.content-security-policy`
+`flutter run` a ready policy (`spring.flutter.web.dev-server.content-security-policy`
 sets your own; see the
 [configuration reference](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-content-security-policy)):
 
@@ -583,7 +588,7 @@ knows: those of the `provider.*` URIs, the built-in endpoints of Google,
 GitHub, Facebook and Apple, and the hosts Google's and Microsoft's
 discovery documents name. List the APIs the app calls, and the endpoints
 another provider's discovery names on other hosts, in
-`spring.flutter.web.content-security-policy-connect-src` (`ws:`/`wss:`
+`spring.flutter.web.dev-server.content-security-policy-connect-src` (`ws:`/`wss:`
 origins for sockets). Build for production with `flutter build web --csp` (no
 dynamically generated code) and send the same policy from the web server
 or CDN as the `Content-Security-Policy` header of `index.html`
@@ -593,7 +598,7 @@ for Firebase Hosting, Netlify or a CDN). Where headers cannot be set, a
 `web/index.html` is the fallback; browsers ignore `frame-ancestors`
 there (send `X-Frame-Options: DENY` from the host if you can). In debug
 runs, hot reload evaluates code, which the policy forbids: set
-`spring.flutter.web.content-security-policy-report-only=true` in a
+`spring.flutter.web.dev-server.content-security-policy-report-only=true` in a
 development profile to see violations without blocking.
 
 Spring has no browser side of a login: Spring Security's own answer for

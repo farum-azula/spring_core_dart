@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- Application availability, as Spring Boot's: `LivenessState` (`correct`, `broken`), `ReadinessState` (`acceptingTraffic`, `refusingTraffic`), `AvailabilityChangeEvent` and `ApplicationAvailability`, kept by the `applicationAvailability` bean (`ApplicationAvailabilityBean`, `ApplicationAvailabilityAutoConfiguration`). `SpringApplication` publishes `LivenessState.correct` after `ApplicationStartedEvent` and `ReadinessState.acceptingTraffic` after `ApplicationReadyEvent`; a listener of every event now also receives these two.
+
 ## 0.7.0
 
 ### Fixes

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
 import 'package:theme_showcase_cupertino/src/widgets/section.dart';
@@ -10,6 +10,7 @@ import 'package:theme_showcase_cupertino/src/widgets/yaml_box.dart';
 /// Loaders in the iOS look: a pulse and dots while something is fetched, a
 /// thin bar with the progress of a fake upload, a skeleton of a list, and
 /// the splash of the app.
+@ScreenRoute('/loaders', title: '#{nav.loaders}', branch: '/more')
 class LoadersPage extends StatelessWidget {
   const LoadersPage({super.key});
 
@@ -78,14 +79,12 @@ splash:
         ),
         Section(
           title: 'In Dart',
-          child: Text(
+          child: MarkdownView.code(
             'ThemeLoader(context.theme.loaders.pulse)\n'
             'ThemeLoader(context.theme.loaders.bar, progress: sent)\n'
             'ThemeSkeleton(context.theme.loaders.card, loading: !loaded, '
             'child: list)',
-            style: context.theme.typography.code.copyWith(
-              color: context.theme.colors.onSurface,
-            ),
+            language: 'dart',
           ),
         ),
       ],

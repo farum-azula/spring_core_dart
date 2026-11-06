@@ -54,6 +54,7 @@ void main() {
       'Loaders',
       'Background',
       'Images',
+      'Transitions',
       'Themes',
     ]) {
       await openPage(tester, title);

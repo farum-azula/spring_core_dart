@@ -5,7 +5,7 @@ import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/catalog/catalog_service.dart';
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:neon_books_server/src/stock/stock_changed.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 @Service()
 @Log()

@@ -80,7 +80,6 @@ _i3.BeanModule get $application => _i3.BeanModule(r'application', [
   _i3.BeanDefinition<_i5.SpringWidgetBindings>(
     name: r'flutterSpringWidgetBindings#application',
     source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
-    types: const [_i5.SpringWidgetBindings],
     autowireCandidate: false,
     create: (r) => _i5.SpringWidgetBindings([
       _i5.SpringWidgetBinding(
@@ -152,7 +151,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'ea7ddc73',
+  fingerprint: '71d8658d',
 );
 
 /// Starts the application: config files, environment, context, runners

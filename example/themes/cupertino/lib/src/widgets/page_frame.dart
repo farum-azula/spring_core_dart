@@ -25,6 +25,9 @@ class PageFrame extends StatelessWidget {
         slivers: [
           CupertinoSliverNavigationBar(
             largeTitle: Text(title),
+            // A page of "More" has a back button on a phone; next to the
+            // sidebar of a wide window it is a page like the others.
+            automaticallyImplyLeading: MediaQuery.sizeOf(context).width < 840,
             trailing: const ThemeMenu(),
           ),
           SliverSafeArea(

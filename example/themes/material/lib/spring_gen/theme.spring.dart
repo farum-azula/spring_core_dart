@@ -257,6 +257,9 @@ final class AppThemeStyles {
   /// `styles.action`
   AppStyleAction get action => AppStyleAction._(_values.style('action'));
 
+  /// `styles.code`
+  AppStyleCode get code => AppStyleCode._(_values.style('code'));
+
   /// `styles.field`
   AppStyleField get field => AppStyleField._(_values.style('field'));
 
@@ -299,6 +302,63 @@ final class AppStyleActionValues {
 
   /// `styles.action.text`
   Color get text => _values.color('text');
+}
+
+/// `styles.code`: the states and typed values.
+final class AppStyleCode implements ThemeStyle<AppStyleCodeValues> {
+  const AppStyleCode._(this.style);
+  @override
+  final StateStyle style;
+  @override
+  AppStyleCodeValues view(StyleValues values) => AppStyleCodeValues._(values);
+}
+
+/// The values of `styles.code` for one state.
+final class AppStyleCodeValues {
+  const AppStyleCodeValues._(this._values);
+  final StyleValues _values;
+
+  /// `styles.code.annotation`
+  Color get annotation => _values.color('annotation');
+
+  /// `styles.code.background`
+  Color get background => _values.color('background');
+
+  /// `styles.code.border`
+  Color get border => _values.color('border');
+
+  /// `styles.code.comment`
+  Color get comment => _values.color('comment');
+
+  /// `styles.code.key`
+  Color get key => _values.color('key');
+
+  /// `styles.code.keyword`
+  Color get keyword => _values.color('keyword');
+
+  /// `styles.code.number`
+  Color get number => _values.color('number');
+
+  /// `styles.code.padding`
+  double get padding => _values.number('padding');
+
+  /// `styles.code.punctuation`
+  Color get punctuation => _values.color('punctuation');
+
+  /// `styles.code.radius`
+  double get radius => _values.number('radius');
+
+  /// `styles.code.string`
+  Color get string => _values.color('string');
+
+  /// `styles.code.text`
+  Color get text => _values.color('text');
+
+  /// `styles.code.type`
+  Color get type => _values.color('type');
+
+  /// `styles.code.variable`
+  Color get variable => _values.color('variable');
 }
 
 /// `styles.field`: the states and typed values.

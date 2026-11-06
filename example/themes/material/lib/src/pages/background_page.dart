@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
@@ -7,6 +7,7 @@ import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 /// The theme's background: a color, an image, a gradient over them, and a
 /// slow effect. SpringApp puts it under every screen by itself.
+@ScreenRoute('/background', title: '#{nav.background}')
 class BackgroundPage extends StatelessWidget {
   const BackgroundPage({super.key});
 

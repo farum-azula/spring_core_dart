@@ -19,8 +19,13 @@ spring:
 
   flutter:
     web:
-      # `flutter run -d chrome` serves the app on http://localhost:5080/.
-      port: 5080
+      dev-server:
+        # `flutter run -d chrome` serves the app on http://localhost:5080/.
+        port: 5080
+    navigation:
+      # The first page: the first tab (the pages are the @ScreenRoute
+      # screens of lib/src/pages/; `/` has none).
+      initial: /colors
     app:
       # A CupertinoApp: CupertinoPageScaffold, CupertinoTabScaffold and the
       # other iOS widgets. Its theme is the `cupertino` block below.
@@ -146,6 +151,21 @@ spring:
       # state; `transition` animates between them. iOS shows a press by
       # fading, so these have an `opacity` that drops when pressed.
       styles:
+        # Code (YamlBox, MarkdownView): Xcode's colors on a grouped panel.
+        code:
+          background: $colors.surface-container-high
+          radius: $corner.tiny
+          padding: $spacing.m
+          text: $colors.on-surface
+          keyword: '#AD3DA4'
+          string: '#D12F1B'
+          comment: '#707F8C'
+          number: '#272AD8'
+          key: '#3E8087'
+          annotation: '#643820'
+          variable: '#804FB8'
+          type: '#0B4F79'
+          punctuation: $colors.on-surface-variant
         ios-button:
           padding: [20, 12]
           radius: $shape.large
@@ -244,6 +264,17 @@ spring:
             surface-container-lowest: '#1C1C1E'
             surface-container-high: '#2C2C2E'
             outline: '#38383A'
+          # Xcode's dark colors.
+          styles:
+            code:
+              keyword: '#FF7AB2'
+              string: '#FF8170'
+              comment: '#7F8C98'
+              number: '#D9C97C'
+              key: '#78C2B3'
+              annotation: '#FFA14F'
+              variable: '#B281EB'
+              type: '#5DD8FF'
           tokens:
             brand:
               name: Dark

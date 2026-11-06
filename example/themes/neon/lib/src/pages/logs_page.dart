@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/app/logs.dart';
 import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
@@ -10,6 +10,7 @@ import 'package:theme_showcase_neon/src/widgets/section.dart';
 /// NeonLogsPanel on the LogBuffer bean.
 typedef LogsBeans = (LogBuffer, DemoLog);
 
+@ScreenRoute('/logs', title: '#{nav.logs}')
 class LogsPage extends SpringStatefulWidget<LogsBeans> {
   const LogsPage({super.key});
 

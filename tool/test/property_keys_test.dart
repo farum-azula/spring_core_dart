@@ -55,6 +55,8 @@ const _notProperties = <String, String>{
   'spring_core_dart:spring.profiles': 'the pre-2.4 key, rejected on purpose',
   'spring_boot_starter_data:spring.jdbc.sqlite': 'a logger name',
   'spring_boot_starter_web:spring.web.session': 'a request attribute name',
+  'spring_boot_actuator:spring.boot.actuate.endpoint.target':
+      'a request attribute name',
   'spring_boot_starter_web:server.ports': 'the name of a property source',
   'spring_boot_starter_flutter_security:'
           'spring.security.oauth2.authorization-request':

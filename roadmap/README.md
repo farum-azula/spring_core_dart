@@ -145,6 +145,12 @@ What comes next, in order:
    `info`, `mappings`; [spring_boot_actuator.md](spring_boot_actuator.md#first-part-with-the-navigation-patch)).
    Three new packages: `spring_boot_starter_flutter_navigation`,
    `spring_boot_actuator`, `spring_boot_starter_actuator`.
+   Built on the branch `feat/0.7.1` (November 2026): all of it, with
+   tests; the static resources compared with Spring Boot (differential),
+   their Docker fuzzing and ZAP run still to do; the actuator compared
+   with Boot 4.1.2's (differential). Left in the files: the navigation's
+   restored stack and constants per Markdown file, the deep links of
+   Windows and Linux (later, the owner), embedding big static files.
    Then **the site** (the owner, November 2026): the documentation site
    built on Spring itself (a Flutter web app on the starters and the
    navigation starter); the guides, the examples and the docs move there.

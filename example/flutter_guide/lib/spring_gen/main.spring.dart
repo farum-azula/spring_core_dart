@@ -12,104 +12,97 @@ import 'dart:async' as _i4;
 import 'dart:typed_data' as _i8;
 
 import 'package:flutter/foundation.dart' as _i2;
-import 'package:flutter/src/foundation/change_notifier.dart' as _i58;
-import 'package:flutter/src/widgets/navigator.dart' as _i55;
+import 'package:flutter/src/foundation/change_notifier.dart' as _i47;
+import 'package:flutter/src/widgets/navigator.dart' as _i44;
 import 'package:flutter/widgets.dart';
-import 'package:flutter/widgets.dart' as _i79;
-import 'package:neon_books_app/src/about/app_assets.dart' as _i40;
-import 'package:neon_books_app/src/account/keycloak.dart' as _i25;
+import 'package:flutter/widgets.dart' as _i75;
+import 'package:neon_books_app/src/about/about_page.dart' as _i57;
+import 'package:neon_books_app/src/about/app_assets.dart' as _i34;
+import 'package:neon_books_app/src/account/keycloak.dart' as _i24;
+import 'package:neon_books_app/src/account/login_page.dart' as _i58;
 import 'package:neon_books_app/src/account/server_authentication_provider.dart'
-    as _i43;
+    as _i36;
 import 'package:neon_books_app/src/account/session.dart' as _i1;
-import 'package:neon_books_app/src/account/sso_properties.dart' as _i29;
-import 'package:neon_books_app/src/admin/admin_page.dart' as _i60;
+import 'package:neon_books_app/src/account/sso_properties.dart' as _i26;
+import 'package:neon_books_app/src/admin/admin_page.dart' as _i49;
 import 'package:neon_books_app/src/admin/admin_service.dart' as _i6;
-import 'package:neon_books_app/src/admin/book_form.dart' as _i47;
+import 'package:neon_books_app/src/admin/book_form.dart' as _i38;
 import 'package:neon_books_app/src/api/account_client.dart' as _i16;
-import 'package:neon_books_app/src/api/admin_client.dart' as _i19;
-import 'package:neon_books_app/src/api/api_config.dart' as _i32;
-import 'package:neon_books_app/src/api/api_properties.dart' as _i34;
-import 'package:neon_books_app/src/api/catalog_client.dart' as _i20;
-import 'package:neon_books_app/src/api/cookie_jar.dart' as _i33;
+import 'package:neon_books_app/src/api/admin_client.dart' as _i18;
+import 'package:neon_books_app/src/api/api_config.dart' as _i28;
+import 'package:neon_books_app/src/api/api_properties.dart' as _i30;
+import 'package:neon_books_app/src/api/catalog_client.dart' as _i19;
+import 'package:neon_books_app/src/api/cookie_jar.dart' as _i29;
 import 'package:neon_books_app/src/api/models.dart' as _i7;
-import 'package:neon_books_app/src/api/session_transport.dart' as _i48;
-import 'package:neon_books_app/src/api/shop_client.dart' as _i21;
-import 'package:neon_books_app/src/api/stock_client.dart' as _i22;
-import 'package:neon_books_app/src/api/support_handshake.dart' as _i49;
-import 'package:neon_books_app/src/api/support_socket.dart' as _i23;
-import 'package:neon_books_app/src/app/app_properties.dart' as _i39;
+import 'package:neon_books_app/src/api/session_transport.dart' as _i39;
+import 'package:neon_books_app/src/api/shop_client.dart' as _i20;
+import 'package:neon_books_app/src/api/stock_client.dart' as _i21;
+import 'package:neon_books_app/src/api/support_handshake.dart' as _i40;
+import 'package:neon_books_app/src/api/support_socket.dart' as _i22;
+import 'package:neon_books_app/src/app/app_properties.dart' as _i33;
+import 'package:neon_books_app/src/app/home_page.dart' as _i56;
 import 'package:neon_books_app/src/app/language.dart' as _i9;
-import 'package:neon_books_app/src/app/lifecycle_log.dart' as _i52;
-import 'package:neon_books_app/src/app/route_log.dart' as _i54;
+import 'package:neon_books_app/src/app/lifecycle_log.dart' as _i42;
+import 'package:neon_books_app/src/app/more_page.dart' as _i59;
+import 'package:neon_books_app/src/app/route_log.dart' as _i43;
 import 'package:neon_books_app/src/basket/basket.dart' as _i10;
-import 'package:neon_books_app/src/basket/basket_page.dart' as _i61;
-import 'package:neon_books_app/src/catalog/book_page.dart' as _i62;
+import 'package:neon_books_app/src/basket/basket_page.dart' as _i50;
+import 'package:neon_books_app/src/catalog/book_page.dart' as _i51;
 import 'package:neon_books_app/src/catalog/catalog.dart' as _i11;
-import 'package:neon_books_app/src/catalog/catalog_refresh.dart' as _i38;
+import 'package:neon_books_app/src/catalog/catalog_page.dart' as _i60;
+import 'package:neon_books_app/src/catalog/catalog_refresh.dart' as _i32;
 import 'package:neon_books_app/src/catalog/catalog_service.dart' as _i12;
+import 'package:neon_books_app/src/logs/logs_page.dart' as _i61;
 import 'package:neon_books_app/src/orders/order_service.dart' as _i13;
-import 'package:neon_books_app/src/orders/orders_page.dart' as _i64;
-import 'package:neon_books_app/src/settings/settings_page.dart' as _i65;
+import 'package:neon_books_app/src/orders/orders_page.dart' as _i52;
+import 'package:neon_books_app/src/settings/settings_page.dart' as _i53;
 import 'package:neon_books_app/src/stock/live_stock.dart' as _i14;
+import 'package:neon_books_app/src/stock/live_stock_page.dart' as _i62;
 import 'package:neon_books_app/src/support/support_chat.dart' as _i15;
-import 'package:neon_books_app/src/support/support_page.dart' as _i67;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i69;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i68;
-import 'package:spring_boot_dart/src/events.dart' as _i5;
+import 'package:neon_books_app/src/support/support_page.dart' as _i54;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i64;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i63;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i70;
-import 'package:spring_boot_starter_cache/src/annotations.dart' as _i57;
+    as _i65;
+import 'package:spring_boot_starter_cache/src/annotations.dart' as _i46;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i71;
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    as _i18;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i17;
-import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i31;
-import 'package:spring_boot_starter_feign/src/request_template.dart' as _i41;
-import 'package:spring_boot_starter_feign/src/retryer.dart' as _i35;
-import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i72;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i59;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_flutter/src/annotations.dart' as _i37;
-import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart' as _i53;
-import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i36;
-import 'package:spring_boot_starter_flutter/src/spring_app.dart' as _i51;
-import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart'
     as _i66;
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
+    as _i5;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i17;
+import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i27;
+import 'package:spring_boot_starter_feign/src/request_template.dart' as _i35;
+import 'package:spring_boot_starter_feign/src/retryer.dart' as _i31;
+import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
+    as _i67;
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
+    as _i48;
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i68;
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
+    as _i55;
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
-    as _i73;
+    as _i69;
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart'
+    as _i25;
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart'
-    as _i45;
+    as _i37;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i74;
-import 'package:spring_boot_starter_logging/src/log_buffer.dart' as _i63;
+    as _i70;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i75;
-import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client.dart'
-    as _i28;
-import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart'
-    as _i27;
-import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart'
-    as _i30;
-import 'package:spring_boot_starter_oauth2_client/src/feign/oauth2_access_token_interceptor.dart'
-    as _i42;
+    as _i71;
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart'
-    as _i76;
-import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i56;
+    as _i72;
+import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i45;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i77;
+    as _i73;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i24;
+    as _i23;
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart'
-    as _i50;
+    as _i41;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i78;
-import 'package:spring_security_core/src/authentication/authentication_manager.dart'
-    as _i44;
-import 'package:spring_security_core/src/core/authority.dart' as _i26;
-import 'package:spring_security_core/src/method/annotations.dart' as _i46;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i74;
 
 part 'messages.spring.dart';
 part 'theme.spring.dart';
@@ -810,15 +803,15 @@ class _$AccountClientImpl implements _i16.AccountClient {
                 _i3.ClassType<String>(),
               ),
               isRequired: true,
-              annotations: const [_i18.RequestBody()],
+              annotations: const [_i5.RequestBody()],
             ),
           ],
-          returnType: const _i3.GenericType<_i18.ResponseEntity<void>>([
+          returnType: const _i3.GenericType<_i5.ResponseEntity<void>>([
             _i3.DynamicType.forVoid(),
           ]),
           isFuture: true,
           annotations: const [
-            _i18.PostMapping.of(
+            _i5.PostMapping.of(
               path: r'/login',
               consumes: r'application/x-www-form-urlencoded',
             ),
@@ -829,18 +822,18 @@ class _$AccountClientImpl implements _i16.AccountClient {
         ),
         _i3.ProxyMethod(
           r'logout',
-          returnType: const _i3.GenericType<_i18.ResponseEntity<void>>([
+          returnType: const _i3.GenericType<_i5.ResponseEntity<void>>([
             _i3.DynamicType.forVoid(),
           ]),
           isFuture: true,
-          annotations: const [_i18.PostMapping(r'/logout')],
+          annotations: const [_i5.PostMapping(r'/logout')],
           call: (target, arguments) => (target as _i16.AccountClient).logout(),
         ),
         _i3.ProxyMethod(
           r'me',
           returnType: const _i3.ClassType<_i7.Me>(),
           isFuture: true,
-          annotations: const [_i18.GetMapping(r'/me')],
+          annotations: const [_i5.GetMapping(r'/me')],
           call: (target, arguments) => (target as _i16.AccountClient).me(),
         ),
       ],
@@ -852,14 +845,14 @@ class _$AccountClientImpl implements _i16.AccountClient {
   }
 
   @override
-  _i4.Future<_i18.ResponseEntity<void>> login(Map<String, String> form) =>
-      _i3.retypeFuture<_i18.ResponseEntity<void>>(
+  _i4.Future<_i5.ResponseEntity<void>> login(Map<String, String> form) =>
+      _i3.retypeFuture<_i5.ResponseEntity<void>>(
         this._handler.invoke(this._metadata.methods[0], [form]),
       );
 
   @override
-  _i4.Future<_i18.ResponseEntity<void>> logout() =>
-      _i3.retypeFuture<_i18.ResponseEntity<void>>(
+  _i4.Future<_i5.ResponseEntity<void>> logout() =>
+      _i3.retypeFuture<_i5.ResponseEntity<void>>(
         this._handler.invoke(this._metadata.methods[1], const []),
       );
 
@@ -870,15 +863,15 @@ class _$AccountClientImpl implements _i16.AccountClient {
 }
 
 /// Implements `AdminClient` through an `InvocationHandler`.
-class _$AdminClientImpl implements _i19.AdminClient {
+class _$AdminClientImpl implements _i18.AdminClient {
   _$AdminClientImpl(this._handler, this._metadata);
 
   final _i3.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i19.AdminClient> _metadata;
+  final _i3.InterfaceMetadata<_i18.AdminClient> _metadata;
 
   static _$AdminClientImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i19.AdminClient>(
+    final metadata = _i3.InterfaceMetadata<_i18.AdminClient>(
       typeName: r'AdminClient',
       annotations: const [
         _i17.FeignClient(r'admin', url: r'${api.base-url}', path: r'/api'),
@@ -891,15 +884,15 @@ class _$AdminClientImpl implements _i19.AdminClient {
               r'book',
               type: const _i3.ClassType<_i7.NewBook>(),
               isRequired: true,
-              annotations: const [_i18.RequestBody()],
+              annotations: const [_i5.RequestBody()],
             ),
           ],
-          returnType: const _i3.GenericType<_i18.ResponseEntity<_i7.Book>>([
+          returnType: const _i3.GenericType<_i5.ResponseEntity<_i7.Book>>([
             _i3.ClassType<_i7.Book>(),
           ]),
           isFuture: true,
-          annotations: const [_i18.PostMapping(r'/books')],
-          call: (target, arguments) => (target as _i19.AdminClient).addBook(
+          annotations: const [_i5.PostMapping(r'/books')],
+          call: (target, arguments) => (target as _i18.AdminClient).addBook(
             (arguments[0] as _i7.NewBook),
           ),
         ),
@@ -910,22 +903,22 @@ class _$AdminClientImpl implements _i19.AdminClient {
               r'isbn',
               type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i18.PathVariable()],
+              annotations: const [_i5.PathVariable()],
             ),
             _i3.BeanParameter(
               r'file',
-              type: const _i3.ClassType<_i18.MultipartFile>(),
+              type: const _i3.ClassType<_i5.MultipartFile>(),
               isRequired: true,
-              annotations: const [_i18.RequestPart(r'file')],
+              annotations: const [_i5.RequestPart(r'file')],
             ),
           ],
           returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i18.PutMapping(r'/books/{isbn}/cover')],
-          call: (target, arguments) => (target as _i19.AdminClient).uploadCover(
+          annotations: const [_i5.PutMapping(r'/books/{isbn}/cover')],
+          call: (target, arguments) => (target as _i18.AdminClient).uploadCover(
             (arguments[0] as String),
-            (arguments[1] as _i18.MultipartFile),
+            (arguments[1] as _i5.MultipartFile),
           ),
         ),
         _i3.ProxyMethod(
@@ -935,23 +928,23 @@ class _$AdminClientImpl implements _i19.AdminClient {
               r'isbn',
               type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i18.PathVariable()],
+              annotations: const [_i5.PathVariable()],
             ),
           ],
           returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i18.DeleteMapping(r'/books/{isbn}')],
+          annotations: const [_i5.DeleteMapping(r'/books/{isbn}')],
           call: (target, arguments) =>
-              (target as _i19.AdminClient).deleteBook((arguments[0] as String)),
+              (target as _i18.AdminClient).deleteBook((arguments[0] as String)),
         ),
         _i3.ProxyMethod(
           r'serverLogs',
           returnType: const _i3.ListType<dynamic>(_i3.DynamicType()),
           isFuture: true,
-          annotations: const [_i18.GetMapping(r'/admin/logs')],
+          annotations: const [_i5.GetMapping(r'/admin/logs')],
           call: (target, arguments) =>
-              (target as _i19.AdminClient).serverLogs(),
+              (target as _i18.AdminClient).serverLogs(),
         ),
       ],
     );
@@ -962,13 +955,13 @@ class _$AdminClientImpl implements _i19.AdminClient {
   }
 
   @override
-  _i4.Future<_i18.ResponseEntity<_i7.Book>> addBook(_i7.NewBook book) =>
-      _i3.retypeFuture<_i18.ResponseEntity<_i7.Book>>(
+  _i4.Future<_i5.ResponseEntity<_i7.Book>> addBook(_i7.NewBook book) =>
+      _i3.retypeFuture<_i5.ResponseEntity<_i7.Book>>(
         this._handler.invoke(this._metadata.methods[0], [book]),
       );
 
   @override
-  _i4.Future<void> uploadCover(String isbn, _i18.MultipartFile file) =>
+  _i4.Future<void> uploadCover(String isbn, _i5.MultipartFile file) =>
       _i3.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[1], [isbn, file]),
       );
@@ -985,15 +978,15 @@ class _$AdminClientImpl implements _i19.AdminClient {
 }
 
 /// Implements `CatalogClient` through an `InvocationHandler`.
-class _$CatalogClientImpl implements _i20.CatalogClient {
+class _$CatalogClientImpl implements _i19.CatalogClient {
   _$CatalogClientImpl(this._handler, this._metadata);
 
   final _i3.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i20.CatalogClient> _metadata;
+  final _i3.InterfaceMetadata<_i19.CatalogClient> _metadata;
 
   static _$CatalogClientImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i20.CatalogClient>(
+    final metadata = _i3.InterfaceMetadata<_i19.CatalogClient>(
       typeName: r'CatalogClient',
       annotations: const [
         _i17.FeignClient(
@@ -1010,19 +1003,19 @@ class _$CatalogClientImpl implements _i20.CatalogClient {
               r'query',
               type: const _i3.ClassType<String>(nullable: true),
               symbol: #query,
-              annotations: const [_i18.RequestParam(r'q')],
+              annotations: const [_i5.RequestParam(r'q')],
             ),
             _i3.BeanParameter(
               r'page',
               type: const _i3.ClassType<int>(nullable: true),
               symbol: #page,
-              annotations: const [_i18.RequestParam(r'page')],
+              annotations: const [_i5.RequestParam(r'page')],
             ),
           ],
           returnType: const _i3.ClassType<_i7.PageOfBooks>(),
           isFuture: true,
-          annotations: const [_i18.GetMapping()],
-          call: (target, arguments) => (target as _i20.CatalogClient).page(
+          annotations: const [_i5.GetMapping()],
+          call: (target, arguments) => (target as _i19.CatalogClient).page(
             query: (arguments[0] as String?),
             page: (arguments[1] as int?),
           ),
@@ -1034,14 +1027,14 @@ class _$CatalogClientImpl implements _i20.CatalogClient {
               r'isbn',
               type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i18.PathVariable()],
+              annotations: const [_i5.PathVariable()],
             ),
           ],
           returnType: const _i3.ClassType<_i7.Book>(),
           isFuture: true,
-          annotations: const [_i18.GetMapping(r'/{isbn}')],
+          annotations: const [_i5.GetMapping(r'/{isbn}')],
           call: (target, arguments) =>
-              (target as _i20.CatalogClient).find((arguments[0] as String)),
+              (target as _i19.CatalogClient).find((arguments[0] as String)),
         ),
         _i3.ProxyMethod(
           r'cover',
@@ -1050,16 +1043,16 @@ class _$CatalogClientImpl implements _i20.CatalogClient {
               r'isbn',
               type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i18.PathVariable()],
+              annotations: const [_i5.PathVariable()],
             ),
           ],
           returnType: const _i3.ClassType<_i8.Uint8List>(),
           isFuture: true,
           annotations: const [
-            _i18.GetMapping.of(path: r'/{isbn}/cover', produces: r'image/*'),
+            _i5.GetMapping.of(path: r'/{isbn}/cover', produces: r'image/*'),
           ],
           call: (target, arguments) =>
-              (target as _i20.CatalogClient).cover((arguments[0] as String)),
+              (target as _i19.CatalogClient).cover((arguments[0] as String)),
         ),
       ],
     );
@@ -1088,15 +1081,15 @@ class _$CatalogClientImpl implements _i20.CatalogClient {
 }
 
 /// Implements `ShopClient` through an `InvocationHandler`.
-class _$ShopClientImpl implements _i21.ShopClient {
+class _$ShopClientImpl implements _i20.ShopClient {
   _$ShopClientImpl(this._handler, this._metadata);
 
   final _i3.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i21.ShopClient> _metadata;
+  final _i3.InterfaceMetadata<_i20.ShopClient> _metadata;
 
   static _$ShopClientImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i21.ShopClient>(
+    final metadata = _i3.InterfaceMetadata<_i20.ShopClient>(
       typeName: r'ShopClient',
       annotations: const [
         _i17.FeignClient(r'shop', url: r'${api.base-url}', path: r'/api'),
@@ -1106,8 +1099,8 @@ class _$ShopClientImpl implements _i21.ShopClient {
           r'basket',
           returnType: const _i3.ClassType<_i7.ServerBasket>(),
           isFuture: true,
-          annotations: const [_i18.GetMapping(r'/basket')],
-          call: (target, arguments) => (target as _i21.ShopClient).basket(),
+          annotations: const [_i5.GetMapping(r'/basket')],
+          call: (target, arguments) => (target as _i20.ShopClient).basket(),
         ),
         _i3.ProxyMethod(
           r'setQuantity',
@@ -1116,32 +1109,32 @@ class _$ShopClientImpl implements _i21.ShopClient {
               r'isbn',
               type: const _i3.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i18.PathVariable()],
+              annotations: const [_i5.PathVariable()],
             ),
             _i3.BeanParameter(
               r'quantity',
               type: const _i3.ClassType<_i7.Quantity>(),
               isRequired: true,
-              annotations: const [_i18.RequestBody()],
+              annotations: const [_i5.RequestBody()],
             ),
           ],
           returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i18.PutMapping(r'/basket/items/{isbn}')],
-          call: (target, arguments) => (target as _i21.ShopClient).setQuantity(
+          annotations: const [_i5.PutMapping(r'/basket/items/{isbn}')],
+          call: (target, arguments) => (target as _i20.ShopClient).setQuantity(
             (arguments[0] as String),
             (arguments[1] as _i7.Quantity),
           ),
         ),
         _i3.ProxyMethod(
           r'placeOrder',
-          returnType: const _i3.GenericType<_i18.ResponseEntity<_i7.ShopOrder>>(
-            [_i3.ClassType<_i7.ShopOrder>()],
-          ),
+          returnType: const _i3.GenericType<_i5.ResponseEntity<_i7.ShopOrder>>([
+            _i3.ClassType<_i7.ShopOrder>(),
+          ]),
           isFuture: true,
-          annotations: const [_i18.PostMapping(r'/orders')],
-          call: (target, arguments) => (target as _i21.ShopClient).placeOrder(),
+          annotations: const [_i5.PostMapping(r'/orders')],
+          call: (target, arguments) => (target as _i20.ShopClient).placeOrder(),
         ),
         _i3.ProxyMethod(
           r'orders',
@@ -1149,8 +1142,8 @@ class _$ShopClientImpl implements _i21.ShopClient {
             _i3.ClassType<_i7.ShopOrder>(),
           ),
           isFuture: true,
-          annotations: const [_i18.GetMapping(r'/orders')],
-          call: (target, arguments) => (target as _i21.ShopClient).orders(),
+          annotations: const [_i5.GetMapping(r'/orders')],
+          call: (target, arguments) => (target as _i20.ShopClient).orders(),
         ),
       ],
     );
@@ -1172,8 +1165,8 @@ class _$ShopClientImpl implements _i21.ShopClient {
       );
 
   @override
-  _i4.Future<_i18.ResponseEntity<_i7.ShopOrder>> placeOrder() =>
-      _i3.retypeFuture<_i18.ResponseEntity<_i7.ShopOrder>>(
+  _i4.Future<_i5.ResponseEntity<_i7.ShopOrder>> placeOrder() =>
+      _i3.retypeFuture<_i5.ResponseEntity<_i7.ShopOrder>>(
         this._handler.invoke(this._metadata.methods[2], const []),
       );
 
@@ -1185,15 +1178,15 @@ class _$ShopClientImpl implements _i21.ShopClient {
 }
 
 /// Implements `StockClient` through an `InvocationHandler`.
-class _$StockClientImpl implements _i22.StockClient {
+class _$StockClientImpl implements _i21.StockClient {
   _$StockClientImpl(this._handler, this._metadata);
 
   final _i3.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i22.StockClient> _metadata;
+  final _i3.InterfaceMetadata<_i21.StockClient> _metadata;
 
   static _$StockClientImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i22.StockClient>(
+    final metadata = _i3.InterfaceMetadata<_i21.StockClient>(
       typeName: r'StockClient',
       annotations: const [
         _i17.FeignClient(
@@ -1205,11 +1198,11 @@ class _$StockClientImpl implements _i22.StockClient {
       methods: [
         _i3.ProxyMethod(
           r'events',
-          returnType: const _i3.GenericType<_i18.EventStream<_i7.StockChanged>>(
-            [_i3.ClassType<_i7.StockChanged>()],
-          ),
-          annotations: const [_i18.GetMapping(r'/events')],
-          call: (target, arguments) => (target as _i22.StockClient).events(),
+          returnType: const _i3.GenericType<_i5.EventStream<_i7.StockChanged>>([
+            _i3.ClassType<_i7.StockChanged>(),
+          ]),
+          annotations: const [_i5.GetMapping(r'/events')],
+          call: (target, arguments) => (target as _i21.StockClient).events(),
         ),
       ],
     );
@@ -1220,24 +1213,24 @@ class _$StockClientImpl implements _i22.StockClient {
   }
 
   @override
-  _i18.EventStream<_i7.StockChanged> events() =>
+  _i5.EventStream<_i7.StockChanged> events() =>
       (this._handler.invoke(this._metadata.methods[0], const [])
-          as _i18.EventStream<_i7.StockChanged>);
+          as _i5.EventStream<_i7.StockChanged>);
 }
 
 /// Implements `SupportSocket` through an `InvocationHandler`.
-class _$SupportSocketImpl implements _i23.SupportSocket {
+class _$SupportSocketImpl implements _i22.SupportSocket {
   _$SupportSocketImpl(this._handler, this._metadata);
 
   final _i3.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i23.SupportSocket> _metadata;
+  final _i3.InterfaceMetadata<_i22.SupportSocket> _metadata;
 
   static _$SupportSocketImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i23.SupportSocket>(
+    final metadata = _i3.InterfaceMetadata<_i22.SupportSocket>(
       typeName: r'SupportSocket',
       annotations: const [
-        _i24.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
+        _i23.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
       ],
       methods: [
         _i3.ProxyMethod(
@@ -1245,9 +1238,9 @@ class _$SupportSocketImpl implements _i23.SupportSocket {
           returnType: const _i3.GenericType<_i4.Stream<_i7.ChatMessage>>([
             _i3.ClassType<_i7.ChatMessage>(),
           ]),
-          annotations: const [_i24.OnMessage()],
+          annotations: const [_i23.OnMessage()],
           call: (target, arguments) =>
-              (target as _i23.SupportSocket).messages(),
+              (target as _i22.SupportSocket).messages(),
         ),
         _i3.ProxyMethod(
           r'send',
@@ -1261,8 +1254,8 @@ class _$SupportSocketImpl implements _i23.SupportSocket {
           returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i24.SendMessage()],
-          call: (target, arguments) => (target as _i23.SupportSocket).send(
+          annotations: const [_i23.SendMessage()],
+          call: (target, arguments) => (target as _i22.SupportSocket).send(
             (arguments[0] as _i7.ChatMessage),
           ),
         ),
@@ -1271,7 +1264,7 @@ class _$SupportSocketImpl implements _i23.SupportSocket {
           returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i23.SupportSocket).close(),
+          call: (target, arguments) => (target as _i22.SupportSocket).close(),
         ),
       ],
     );
@@ -1299,7 +1292,7 @@ class _$SupportSocketImpl implements _i23.SupportSocket {
 
 /// `KeycloakConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$KeycloakConfigConfiguration extends _i25.KeycloakConfig {
+class _$KeycloakConfigConfiguration extends _i24.KeycloakConfig {
   _$KeycloakConfigConfiguration(this._$beanFactory);
 
   final _i3.BeanFactory _$beanFactory;
@@ -1307,19 +1300,19 @@ class _$KeycloakConfigConfiguration extends _i25.KeycloakConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i26.GrantedAuthoritiesMapper keycloakRoles() =>
+  _i25.GrantedAuthoritiesMapper keycloakRoles() =>
       (this._$beanFactory.getBeanByName(r'keycloakRoles')
-          as _i26.GrantedAuthoritiesMapper);
+          as _i25.GrantedAuthoritiesMapper);
 
-  _i26.GrantedAuthoritiesMapper _$keycloakRoles(_i3.DependencyResolver r) =>
+  _i25.GrantedAuthoritiesMapper _$keycloakRoles(_i3.DependencyResolver r) =>
       super.keycloakRoles();
 
   @override
-  _i25.KeycloakTokenInterceptor keycloakTokens(
-    _i27.OAuth2AuthorizedClientManager manager,
-    _i28.OAuth2AuthorizedClientService clients,
-    _i29.SsoProperties sso,
-    _i30.DPoPKey? dPoPKey,
+  _i24.KeycloakTokenInterceptor keycloakTokens(
+    _i25.OAuth2AuthorizedClientManager manager,
+    _i25.OAuth2AuthorizedClientService clients,
+    _i26.SsoProperties sso,
+    _i25.DPoPKey? dPoPKey,
   ) {
     final _$args = <Object?>[manager, clients, sso, dPoPKey];
     if (!_$args.contains(null)) {
@@ -1327,56 +1320,56 @@ class _$KeycloakConfigConfiguration extends _i25.KeycloakConfig {
     }
     try {
       return (this._$beanFactory.getBeanByName(r'keycloakTokens')
-          as _i25.KeycloakTokenInterceptor);
+          as _i24.KeycloakTokenInterceptor);
     } finally {
       this._$arguments.remove(r'keycloakTokens');
     }
   }
 
-  _i25.KeycloakTokenInterceptor _$keycloakTokens(_i3.DependencyResolver r) {
+  _i24.KeycloakTokenInterceptor _$keycloakTokens(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'keycloakTokens');
     if (_$args != null) {
       return super.keycloakTokens(
-        (_$args[0] as _i27.OAuth2AuthorizedClientManager),
-        (_$args[1] as _i28.OAuth2AuthorizedClientService),
-        (_$args[2] as _i29.SsoProperties),
-        (_$args[3] as _i30.DPoPKey?),
+        (_$args[0] as _i25.OAuth2AuthorizedClientManager),
+        (_$args[1] as _i25.OAuth2AuthorizedClientService),
+        (_$args[2] as _i26.SsoProperties),
+        (_$args[3] as _i25.DPoPKey?),
       );
     }
     return super.keycloakTokens(
-      r.dependency<_i27.OAuth2AuthorizedClientManager>(name: r'manager'),
-      r.dependency<_i28.OAuth2AuthorizedClientService>(name: r'clients'),
-      r.dependency<_i29.SsoProperties>(name: r'sso'),
-      r.optionalDependency<_i30.DPoPKey>(name: r'dPoPKey'),
+      r.dependency<_i25.OAuth2AuthorizedClientManager>(name: r'manager'),
+      r.dependency<_i25.OAuth2AuthorizedClientService>(name: r'clients'),
+      r.dependency<_i26.SsoProperties>(name: r'sso'),
+      r.optionalDependency<_i25.DPoPKey>(name: r'dPoPKey'),
     );
   }
 
   @override
-  _i31.ErrorDecoder errorDecoder(_i25.KeycloakTokenInterceptor tokens) {
+  _i27.ErrorDecoder errorDecoder(_i24.KeycloakTokenInterceptor tokens) {
     final _$args = <Object?>[tokens];
     this._$arguments[r'errorDecoder'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'errorDecoder')
-          as _i31.ErrorDecoder);
+          as _i27.ErrorDecoder);
     } finally {
       this._$arguments.remove(r'errorDecoder');
     }
   }
 
-  _i31.ErrorDecoder _$errorDecoder(_i3.DependencyResolver r) {
+  _i27.ErrorDecoder _$errorDecoder(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'errorDecoder');
     if (_$args != null) {
-      return super.errorDecoder((_$args[0] as _i25.KeycloakTokenInterceptor));
+      return super.errorDecoder((_$args[0] as _i24.KeycloakTokenInterceptor));
     }
     return super.errorDecoder(
-      r.dependency<_i25.KeycloakTokenInterceptor>(name: r'tokens'),
+      r.dependency<_i24.KeycloakTokenInterceptor>(name: r'tokens'),
     );
   }
 }
 
 /// `ApiConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$ApiConfigConfiguration extends _i32.ApiConfig {
+class _$ApiConfigConfiguration extends _i28.ApiConfig {
   _$ApiConfigConfiguration(this._$beanFactory);
 
   final _i3.BeanFactory _$beanFactory;
@@ -1384,18 +1377,18 @@ class _$ApiConfigConfiguration extends _i32.ApiConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i18.HttpTransport networkTransport(Duration connectTimeout) {
+  _i5.HttpTransport networkTransport(Duration connectTimeout) {
     final _$args = <Object?>[connectTimeout];
     this._$arguments[r'networkTransport'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'networkTransport')
-          as _i18.HttpTransport);
+          as _i5.HttpTransport);
     } finally {
       this._$arguments.remove(r'networkTransport');
     }
   }
 
-  _i18.HttpTransport _$networkTransport(_i3.DependencyResolver r) {
+  _i5.HttpTransport _$networkTransport(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'networkTransport');
     if (_$args != null) {
       return super.networkTransport((_$args[0] as Duration));
@@ -1406,45 +1399,45 @@ class _$ApiConfigConfiguration extends _i32.ApiConfig {
   }
 
   @override
-  _i18.HttpTransport sessionTransport(
-    _i18.HttpTransport network,
-    _i33.CookieJar cookies,
-    _i34.ApiProperties api,
+  _i5.HttpTransport sessionTransport(
+    _i5.HttpTransport network,
+    _i29.CookieJar cookies,
+    _i30.ApiProperties api,
   ) {
     final _$args = <Object?>[network, cookies, api];
     this._$arguments[r'sessionTransport'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'sessionTransport')
-          as _i18.HttpTransport);
+          as _i5.HttpTransport);
     } finally {
       this._$arguments.remove(r'sessionTransport');
     }
   }
 
-  _i18.HttpTransport _$sessionTransport(_i3.DependencyResolver r) {
+  _i5.HttpTransport _$sessionTransport(_i3.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'sessionTransport');
     if (_$args != null) {
       return super.sessionTransport(
-        (_$args[0] as _i18.HttpTransport),
-        (_$args[1] as _i33.CookieJar),
-        (_$args[2] as _i34.ApiProperties),
+        (_$args[0] as _i5.HttpTransport),
+        (_$args[1] as _i29.CookieJar),
+        (_$args[2] as _i30.ApiProperties),
       );
     }
     return super.sessionTransport(
-      r.dependency<_i18.HttpTransport>(
+      r.dependency<_i5.HttpTransport>(
         qualifier: r'networkTransport',
         name: r'network',
       ),
-      r.dependency<_i33.CookieJar>(name: r'cookies'),
-      r.dependency<_i34.ApiProperties>(name: r'api'),
+      r.dependency<_i29.CookieJar>(name: r'cookies'),
+      r.dependency<_i30.ApiProperties>(name: r'api'),
     );
   }
 
   @override
-  _i35.Retryer retryer() =>
-      (this._$beanFactory.getBeanByName(r'retryer') as _i35.Retryer);
+  _i31.Retryer retryer() =>
+      (this._$beanFactory.getBeanByName(r'retryer') as _i31.Retryer);
 
-  _i35.Retryer _$retryer(_i3.DependencyResolver r) => super.retryer();
+  _i31.Retryer _$retryer(_i3.DependencyResolver r) => super.retryer();
 }
 
 const _$knownAdvisors0 = {
@@ -1452,6 +1445,7 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_starter_cache',
   r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_flutter_navigation',
   r'package:spring_boot_starter_flutter_security',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
@@ -1463,8 +1457,8 @@ const _$target1 = _i3.AopTarget(
   r'Session',
   types: [r'Session'],
   annotations: [
-    _i36.ChangeNotifierComponent(),
-    _i37.BuildContextAccess(name: r'session'),
+    _i25.ChangeNotifierComponent(),
+    _i25.BuildContextAccess(name: r'session'),
     _i3.Log(topic: r'neon.account'),
   ],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess', r'Log'],
@@ -1489,15 +1483,15 @@ const _$target6 = _i3.AopTarget(
 const _$target7 = _i3.AopTarget(
   r'LanguageSelection',
   types: [r'LanguageSelection'],
-  annotations: [_i36.ChangeNotifierComponent(), _i37.BuildContextAccess()],
+  annotations: [_i25.ChangeNotifierComponent(), _i25.BuildContextAccess()],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess'],
 );
 const _$target8 = _i3.AopTarget(
   r'Basket',
   types: [r'Basket'],
   annotations: [
-    _i36.ChangeNotifierComponent(),
-    _i37.BuildContextAccess(),
+    _i25.ChangeNotifierComponent(),
+    _i25.BuildContextAccess(),
     _i3.Log(topic: r'neon.basket'),
   ],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess', r'Log'],
@@ -1505,10 +1499,10 @@ const _$target8 = _i3.AopTarget(
 const _$target9 = _i3.AopTarget(
   r'Catalog',
   types: [r'Catalog'],
-  annotations: [_i36.ChangeNotifierComponent(), _i37.BuildContextAccess()],
+  annotations: [_i25.ChangeNotifierComponent(), _i25.BuildContextAccess()],
   annotationTypes: [r'ChangeNotifierComponent', r'BuildContextAccess'],
 );
-Object? _$invoke10(_i38.CatalogRefresh bean, List<Object?> arguments) =>
+Object? _$invoke10(_i32.CatalogRefresh bean, List<Object?> arguments) =>
     bean.refresh();
 const _$target11 = _i3.AopTarget(
   r'CatalogService',
@@ -1537,7 +1531,7 @@ const _$target15 = _i3.AopTarget(
   types: [r'LiveStock', r'ChangeNotifier', r'Listenable'],
   annotations: [
     _i3.Component(),
-    _i36.NotifyListeners(exclude: [r'stop']),
+    _i25.NotifyListeners(exclude: [r'stop']),
     _i3.Log(topic: r'neon.stock'),
   ],
   annotationTypes: [r'Component', r'NotifyListeners', r'Log'],
@@ -1547,24 +1541,24 @@ const _$target16 = _i3.AopTarget(
   types: [r'SupportChat', r'ChangeNotifier', r'Listenable'],
   annotations: [
     _i3.Component(),
-    _i36.NotifyListeners(exclude: [r'join']),
+    _i25.NotifyListeners(exclude: [r'join']),
     _i3.Log(topic: r'neon.support'),
   ],
   annotationTypes: [r'Component', r'NotifyListeners', r'Log'],
 );
-Object? _$get17(_i29.SsoProperties bean) => bean.enabled;
-void _$set18(_i29.SsoProperties bean, Object? value) =>
+Object? _$get17(_i26.SsoProperties bean) => bean.enabled;
+void _$set18(_i26.SsoProperties bean, Object? value) =>
     bean.enabled = (value as bool);
-Object? _$get19(_i29.SsoProperties bean) => bean.registrationId;
-void _$set20(_i29.SsoProperties bean, Object? value) =>
+Object? _$get19(_i26.SsoProperties bean) => bean.registrationId;
+void _$set20(_i26.SsoProperties bean, Object? value) =>
     bean.registrationId = (value as String);
-Object? _$get21(_i29.SsoProperties bean) => bean.postLogoutRedirectUri;
-void _$set22(_i29.SsoProperties bean, Object? value) =>
+Object? _$get21(_i26.SsoProperties bean) => bean.postLogoutRedirectUri;
+void _$set22(_i26.SsoProperties bean, Object? value) =>
     bean.postLogoutRedirectUri = (value as String?);
-_i29.SsoProperties _$create23(
+_i26.SsoProperties _$create23(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i29.SsoProperties();
+) => _i26.SsoProperties();
 Object? _$get24(_i7.Me bean) => bean.name;
 Object? _$get25(_i7.Me bean) => bean.roles;
 _i7.Me _$create26(List<Object?> positional, Map<Symbol, Object?> named) =>
@@ -1596,19 +1590,19 @@ Object? _$get39(_i7.NewBook bean) => bean.price;
 void _$set40(_i7.NewBook bean, Object? value) => bean.price = (value as double);
 _i7.NewBook _$create41(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i7.NewBook();
-Object? _$get42(_i34.ApiProperties bean) => bean.host;
-void _$set43(_i34.ApiProperties bean, Object? value) =>
+Object? _$get42(_i30.ApiProperties bean) => bean.host;
+void _$set43(_i30.ApiProperties bean, Object? value) =>
     bean.host = (value as String);
-Object? _$get44(_i34.ApiProperties bean) => bean.baseUrl;
-void _$set45(_i34.ApiProperties bean, Object? value) =>
+Object? _$get44(_i30.ApiProperties bean) => bean.baseUrl;
+void _$set45(_i30.ApiProperties bean, Object? value) =>
     bean.baseUrl = (value as String);
-Object? _$get46(_i34.ApiProperties bean) => bean.wsUrl;
-void _$set47(_i34.ApiProperties bean, Object? value) =>
+Object? _$get46(_i30.ApiProperties bean) => bean.wsUrl;
+void _$set47(_i30.ApiProperties bean, Object? value) =>
     bean.wsUrl = (value as String);
-_i34.ApiProperties _$create48(
+_i30.ApiProperties _$create48(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i34.ApiProperties();
+) => _i30.ApiProperties();
 Object? _$get49(_i7.PageOfBooks bean) => bean.items;
 Object? _$get50(_i7.PageOfBooks bean) => bean.page;
 Object? _$get51(_i7.PageOfBooks bean) => bean.size;
@@ -1678,16 +1672,16 @@ _i7.ChatMessage _$create75(
   text: (named[#text] as String),
   at: named.argumentOr(#at, null),
 );
-Object? _$get76(_i39.AppProperties bean) => bean.title;
-void _$set77(_i39.AppProperties bean, Object? value) =>
+Object? _$get76(_i33.AppProperties bean) => bean.title;
+void _$set77(_i33.AppProperties bean, Object? value) =>
     bean.title = (value as String);
-Object? _$get78(_i39.AppProperties bean) => bean.navigation;
-void _$set79(_i39.AppProperties bean, Object? value) =>
-    bean.navigation = (value as _i39.NavigationStyle);
-_i39.AppProperties _$create80(
+Object? _$get78(_i33.AppProperties bean) => bean.navigation;
+void _$set79(_i33.AppProperties bean, Object? value) =>
+    bean.navigation = (value as _i33.NavigationStyle);
+_i33.AppProperties _$create80(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i39.AppProperties();
+) => _i33.AppProperties();
 
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
@@ -1696,7 +1690,7 @@ Type _$typeOf<T>() => T;
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i3.BeanDefinition<_i40.AppAssets>(
+    _i3.BeanDefinition<_i34.AppAssets>(
       name: r'appAssets',
       source: r'package:neon_books_app/src/about/app_assets.dart#AppAssets',
       dependencies: const [
@@ -1705,7 +1699,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Dependency.value(r'asset:assets/images/sample_cover.png'),
         _i3.Dependency.value(r'asset:assets/remote/winter.yml'),
       ],
-      create: (r) => _i40.AppAssets(
+      create: (r) => _i34.AppAssets(
         r.value<_i3.Resource>(r'asset:assets/images/leaf.png'),
         r.value<_i3.Resource>(r'asset:assets/texts/about.txt'),
         r.value<_i3.Resource>(r'asset:assets/images/sample_cover.png'),
@@ -1716,7 +1710,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i25.KeycloakConfig>(
+    _i3.BeanDefinition<_i24.KeycloakConfig>(
       name: r'keycloakConfig',
       source:
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
@@ -1734,10 +1728,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Profile([r'sso & !web']),
       ],
     ),
-    _i3.BeanDefinition<_i25.KeycloakRolesMapper>(
+    _i3.BeanDefinition<_i24.KeycloakRolesMapper>(
       name: r'keycloakRoles',
       source: r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig.keycloakRoles',
-      types: const [_i25.KeycloakRolesMapper, _i26.GrantedAuthoritiesMapper],
+      types: const [_i24.KeycloakRolesMapper, _i25.GrantedAuthoritiesMapper],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'keycloakRoles',
       conditions: [
@@ -1749,22 +1743,22 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ],
       dependencies: const [
-        _i3.Dependency(_i25.KeycloakConfig, qualifier: r'keycloakConfig'),
+        _i3.Dependency(_i24.KeycloakConfig, qualifier: r'keycloakConfig'),
       ],
       create: (r) =>
-          ((r.dependency<_i25.KeycloakConfig>(
+          ((r.dependency<_i24.KeycloakConfig>(
                 qualifier: r'keycloakConfig',
               ) as _$KeycloakConfigConfiguration)._$keycloakRoles(r)
-              as _i25.KeycloakRolesMapper),
+              as _i24.KeycloakRolesMapper),
       annotations: const [_i3.Bean()],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i25.KeycloakTokenInterceptor>(
+    _i3.BeanDefinition<_i24.KeycloakTokenInterceptor>(
       name: r'keycloakTokens',
       source: r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig.keycloakTokens',
-      types: const [_i25.KeycloakTokenInterceptor, _i41.RequestInterceptor],
+      types: const [_i24.KeycloakTokenInterceptor, _i35.RequestInterceptor],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'keycloakTokens',
       conditions: [
@@ -1776,13 +1770,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ],
       dependencies: const [
-        _i3.Dependency(_i25.KeycloakConfig, qualifier: r'keycloakConfig'),
-        _i3.Dependency(_i27.OAuth2AuthorizedClientManager, name: r'manager'),
-        _i3.Dependency(_i28.OAuth2AuthorizedClientService, name: r'clients'),
-        _i3.Dependency(_i29.SsoProperties, name: r'sso'),
-        _i3.Dependency(_i30.DPoPKey, optional: true, name: r'dPoPKey'),
+        _i3.Dependency(_i24.KeycloakConfig, qualifier: r'keycloakConfig'),
+        _i3.Dependency(_i25.OAuth2AuthorizedClientManager, name: r'manager'),
+        _i3.Dependency(_i25.OAuth2AuthorizedClientService, name: r'clients'),
+        _i3.Dependency(_i26.SsoProperties, name: r'sso'),
+        _i3.Dependency(_i25.DPoPKey, optional: true, name: r'dPoPKey'),
       ],
-      create: (r) => (r.dependency<_i25.KeycloakConfig>(
+      create: (r) => (r.dependency<_i24.KeycloakConfig>(
         qualifier: r'keycloakConfig',
       ) as _$KeycloakConfigConfiguration)._$keycloakTokens(r),
       annotations: const [_i3.Bean()],
@@ -1790,10 +1784,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i42.OAuth2AccessTokenErrorDecoder>(
+    _i3.BeanDefinition<_i25.OAuth2AccessTokenErrorDecoder>(
       name: r'errorDecoder',
       source: r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig.errorDecoder',
-      types: const [_i42.OAuth2AccessTokenErrorDecoder, _i31.ErrorDecoder],
+      types: const [_i25.OAuth2AccessTokenErrorDecoder, _i27.ErrorDecoder],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'errorDecoder',
       conditions: [
@@ -1805,33 +1799,33 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ],
       dependencies: const [
-        _i3.Dependency(_i25.KeycloakConfig, qualifier: r'keycloakConfig'),
-        _i3.Dependency(_i25.KeycloakTokenInterceptor, name: r'tokens'),
+        _i3.Dependency(_i24.KeycloakConfig, qualifier: r'keycloakConfig'),
+        _i3.Dependency(_i24.KeycloakTokenInterceptor, name: r'tokens'),
       ],
       create: (r) =>
-          ((r.dependency<_i25.KeycloakConfig>(
+          ((r.dependency<_i24.KeycloakConfig>(
                 qualifier: r'keycloakConfig',
               ) as _$KeycloakConfigConfiguration)._$errorDecoder(r)
-              as _i42.OAuth2AccessTokenErrorDecoder),
+              as _i25.OAuth2AccessTokenErrorDecoder),
       annotations: const [_i3.Bean()],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i43.ServerAuthenticationProvider>(
+    _i3.BeanDefinition<_i36.ServerAuthenticationProvider>(
       name: r'serverAuthenticationProvider',
       source: r'package:neon_books_app/src/account/server_authentication_provider.dart#ServerAuthenticationProvider',
       types: const [
-        _i43.ServerAuthenticationProvider,
-        _i44.AuthenticationProvider,
+        _i36.ServerAuthenticationProvider,
+        _i25.AuthenticationProvider,
       ],
       dependencies: const [
         _i3.Dependency(_i16.AccountClient, name: r'_account'),
-        _i3.Dependency(_i33.CookieJar, name: r'_cookies'),
+        _i3.Dependency(_i29.CookieJar, name: r'_cookies'),
       ],
-      create: (r) => _i43.ServerAuthenticationProvider(
+      create: (r) => _i36.ServerAuthenticationProvider(
         r.dependency<_i16.AccountClient>(name: r'_account'),
-        r.dependency<_i33.CookieJar>(name: r'_cookies'),
+        r.dependency<_i29.CookieJar>(name: r'_cookies'),
       ),
       annotations: const [
         _i3.Component(),
@@ -1846,28 +1840,28 @@ _i3.BeanModule get $application => _i3.BeanModule(
       source: r'package:neon_books_app/src/account/session.dart#Session',
       dependencies: const [
         _i3.Dependency(
-          _i44.AuthenticationManager,
+          _i25.AuthenticationManager,
           name: r'_authenticationManager',
         ),
         _i3.Dependency(_i16.AccountClient, name: r'_account'),
-        _i3.Dependency(_i33.CookieJar, name: r'_cookies'),
+        _i3.Dependency(_i29.CookieJar, name: r'_cookies'),
         _i3.Dependency(_i3.ApplicationEventPublisher, name: r'_events'),
-        _i3.Dependency(_i29.SsoProperties, name: r'_sso'),
+        _i3.Dependency(_i26.SsoProperties, name: r'_sso'),
         _i3.Dependency(
-          _i45.OAuth2LoginService,
+          _i37.OAuth2LoginService,
           optional: true,
           name: r'_login',
         ),
       ],
       create: (r) => _$SessionProxy(
-        r.dependency<_i44.AuthenticationManager>(
+        r.dependency<_i25.AuthenticationManager>(
           name: r'_authenticationManager',
         ),
         r.dependency<_i16.AccountClient>(name: r'_account'),
-        r.dependency<_i33.CookieJar>(name: r'_cookies'),
+        r.dependency<_i29.CookieJar>(name: r'_cookies'),
         r.dependency<_i3.ApplicationEventPublisher>(name: r'_events'),
-        r.dependency<_i29.SsoProperties>(name: r'_sso'),
-        r.optionalDependency<_i45.OAuth2LoginService>(name: r'_login'),
+        r.dependency<_i26.SsoProperties>(name: r'_sso'),
+        r.optionalDependency<_i37.OAuth2LoginService>(name: r'_login'),
       ),
       eventListeners: [
         _i3.EventListenerMethod.of<_i1.Session, _i5.ApplicationReadyEvent>(
@@ -1879,8 +1873,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ],
       annotations: const [
-        _i36.ChangeNotifierComponent(),
-        _i37.BuildContextAccess(name: r'session'),
+        _i25.ChangeNotifierComponent(),
+        _i25.BuildContextAccess(name: r'session'),
         _i3.Log(topic: r'neon.account'),
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
@@ -1946,10 +1940,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             bean is _$SessionProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i3.BeanDefinition<_i29.SsoProperties>(
+    _i3.BeanDefinition<_i26.SsoProperties>(
       name: r'ssoProperties',
       source: r'package:neon_books_app/src/account/sso_properties.dart#SsoProperties',
-      create: (r) => _i29.SsoProperties(),
+      create: (r) => _i26.SsoProperties(),
       annotations: const [_i3.ConfigurationProperties(r'neon.sso')],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
@@ -1960,11 +1954,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
       source:
           r'package:neon_books_app/src/admin/admin_service.dart#AdminService',
       dependencies: const [
-        _i3.Dependency(_i19.AdminClient, name: r'_admin'),
+        _i3.Dependency(_i18.AdminClient, name: r'_admin'),
         _i3.Dependency(_i12.CatalogService, name: r'_catalog'),
       ],
       create: (r) => _$AdminServiceProxy(
-        r.dependency<_i19.AdminClient>(name: r'_admin'),
+        r.dependency<_i18.AdminClient>(name: r'_admin'),
         r.dependency<_i12.CatalogService>(name: r'_catalog'),
       ),
       annotatedMethods: [
@@ -1981,7 +1975,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           returnTypeInfo: _i3.ClassType<_i7.Book>(),
           isFuture: true,
           invoke: _$invoke2,
-          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+          annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
         ),
         const _i3.BeanMethod<_i6.AdminService>(
           r'uploadCover',
@@ -2001,7 +1995,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           isFuture: true,
           isVoid: true,
           invoke: _$invoke3,
-          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+          annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
         ),
         const _i3.BeanMethod<_i6.AdminService>(
           r'deleteBook',
@@ -2016,14 +2010,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
           isFuture: true,
           isVoid: true,
           invoke: _$invoke4,
-          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+          annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
         ),
         const _i3.BeanMethod<_i6.AdminService>(
           r'serverLogs',
           returnTypeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
           isFuture: true,
           invoke: _$invoke5,
-          annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+          annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
         ),
       ],
       annotations: const [
@@ -2038,7 +2032,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
-            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i3.MethodSignature.of(
@@ -2047,7 +2041,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'Uint8List'],
             parameterNames: [r'isbn', r'png'],
-            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i3.MethodSignature.of(
@@ -2056,14 +2050,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i3.MethodSignature.of(
             r'serverLogs',
             _$target6,
             returnType: r'Future',
-            annotations: [_i46.PreAuthorize("hasRole('ADMIN')")],
+            annotations: [_i25.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
           ),
         ],
@@ -2071,14 +2065,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
             bean is _$AdminServiceProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i3.BeanDefinition<_i47.BookForm>(
+    _i3.BeanDefinition<_i38.BookForm>(
       name: r'bookForm',
       source: r'package:neon_books_app/src/admin/book_form.dart#BookForm',
       dependencies: const [
         _i3.Dependency(_i3.BeanValidator, name: r'_validator'),
         _i3.Dependency(_i3.BeanIntrospector, name: r'_introspector'),
       ],
-      create: (r) => _i47.BookForm(
+      create: (r) => _i38.BookForm(
         r.dependency<_i3.BeanValidator>(name: r'_validator'),
         r.dependency<_i3.BeanIntrospector>(name: r'_introspector'),
       ),
@@ -2100,7 +2094,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i19.AdminClient>(
+    _i3.BeanDefinition<_i18.AdminClient>(
       name: r'adminClient',
       source: r'package:neon_books_app/src/api/admin_client.dart#AdminClient',
       primary: true,
@@ -2112,13 +2106,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i32.ApiConfig>(
+    _i3.BeanDefinition<_i28.ApiConfig>(
       name: r'apiConfig',
       source: r'package:neon_books_app/src/api/api_config.dart#ApiConfig',
       create: (r) => _$ApiConfigConfiguration(r),
       annotations: const [_i3.Configuration()],
     ),
-    _i3.BeanDefinition<_i18.HttpTransport>(
+    _i3.BeanDefinition<_i5.HttpTransport>(
       name: r'networkTransport',
       source: r'package:neon_books_app/src/api/api_config.dart#ApiConfig.networkTransport',
       factoryBeanName: r'apiConfig',
@@ -2127,10 +2121,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         const _i3.ProfileCondition([r'!web']),
       ],
       dependencies: const [
-        _i3.Dependency(_i32.ApiConfig, qualifier: r'apiConfig'),
+        _i3.Dependency(_i28.ApiConfig, qualifier: r'apiConfig'),
         _i3.Dependency.value(r'${api.connect-timeout:5s}'),
       ],
-      create: (r) => (r.dependency<_i32.ApiConfig>(
+      create: (r) => (r.dependency<_i28.ApiConfig>(
         qualifier: r'apiConfig',
       ) as _$ApiConfigConfiguration)._$networkTransport(r),
       destroyMethod: (bean) {
@@ -2145,10 +2139,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i48.SessionTransport>(
+    _i3.BeanDefinition<_i39.SessionTransport>(
       name: r'sessionTransport',
       source: r'package:neon_books_app/src/api/api_config.dart#ApiConfig.sessionTransport',
-      types: const [_i48.SessionTransport, _i18.HttpTransport],
+      types: const [_i39.SessionTransport, _i5.HttpTransport],
       primary: true,
       factoryBeanName: r'apiConfig',
       factoryMethodName: r'sessionTransport',
@@ -2156,20 +2150,20 @@ _i3.BeanModule get $application => _i3.BeanModule(
         const _i3.ProfileCondition([r'!web']),
       ],
       dependencies: const [
-        _i3.Dependency(_i32.ApiConfig, qualifier: r'apiConfig'),
+        _i3.Dependency(_i28.ApiConfig, qualifier: r'apiConfig'),
         _i3.Dependency(
-          _i18.HttpTransport,
+          _i5.HttpTransport,
           qualifier: r'networkTransport',
           name: r'network',
         ),
-        _i3.Dependency(_i33.CookieJar, name: r'cookies'),
-        _i3.Dependency(_i34.ApiProperties, name: r'api'),
+        _i3.Dependency(_i29.CookieJar, name: r'cookies'),
+        _i3.Dependency(_i30.ApiProperties, name: r'api'),
       ],
       create: (r) =>
-          ((r.dependency<_i32.ApiConfig>(
+          ((r.dependency<_i28.ApiConfig>(
                 qualifier: r'apiConfig',
               ) as _$ApiConfigConfiguration)._$sessionTransport(r)
-              as _i48.SessionTransport),
+              as _i39.SessionTransport),
       destroyMethod: (bean) {
         bean.close();
       },
@@ -2183,35 +2177,35 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i35.DefaultRetryer>(
+    _i3.BeanDefinition<_i31.DefaultRetryer>(
       name: r'retryer',
       source:
           r'package:neon_books_app/src/api/api_config.dart#ApiConfig.retryer',
-      types: const [_i35.DefaultRetryer, _i35.Retryer],
+      types: const [_i31.DefaultRetryer, _i31.Retryer],
       factoryBeanName: r'apiConfig',
       factoryMethodName: r'retryer',
       dependencies: const [
-        _i3.Dependency(_i32.ApiConfig, qualifier: r'apiConfig'),
+        _i3.Dependency(_i28.ApiConfig, qualifier: r'apiConfig'),
       ],
-      create: (r) => ((r.dependency<_i32.ApiConfig>(
+      create: (r) => ((r.dependency<_i28.ApiConfig>(
         qualifier: r'apiConfig',
-      ) as _$ApiConfigConfiguration)._$retryer(r) as _i35.DefaultRetryer),
+      ) as _$ApiConfigConfiguration)._$retryer(r) as _i31.DefaultRetryer),
       annotations: const [_i3.Bean()],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i34.ApiProperties>(
+    _i3.BeanDefinition<_i30.ApiProperties>(
       name: r'apiProperties',
       source:
           r'package:neon_books_app/src/api/api_properties.dart#ApiProperties',
-      create: (r) => _i34.ApiProperties(),
+      create: (r) => _i30.ApiProperties(),
       annotations: const [_i3.ConfigurationProperties(r'api'), _i3.Validated()],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i20.CatalogClient>(
+    _i3.BeanDefinition<_i19.CatalogClient>(
       name: r'catalogClient',
       source:
           r'package:neon_books_app/src/api/catalog_client.dart#CatalogClient',
@@ -2228,10 +2222,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i33.CookieJar>(
+    _i3.BeanDefinition<_i29.CookieJar>(
       name: r'cookieJar',
       source: r'package:neon_books_app/src/api/cookie_jar.dart#CookieJar',
-      create: (r) => _i33.CookieJar(),
+      create: (r) => _i29.CookieJar(),
       annotations: const [
         _i3.Component(),
         _i3.Log(topic: r'neon.api.cookies'),
@@ -2240,7 +2234,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i21.ShopClient>(
+    _i3.BeanDefinition<_i20.ShopClient>(
       name: r'shopClient',
       source: r'package:neon_books_app/src/api/shop_client.dart#ShopClient',
       primary: true,
@@ -2252,7 +2246,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i22.StockClient>(
+    _i3.BeanDefinition<_i21.StockClient>(
       name: r'stockClient',
       source: r'package:neon_books_app/src/api/stock_client.dart#StockClient',
       primary: true,
@@ -2268,10 +2262,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i49.SupportHandshake>(
+    _i3.BeanDefinition<_i40.SupportHandshake>(
       name: r'supportHandshake',
       source: r'package:neon_books_app/src/api/support_handshake.dart#SupportHandshake',
-      types: const [_i49.SupportHandshake, _i50.WebSocketHandshakeInterceptor],
+      types: const [_i40.SupportHandshake, _i41.WebSocketHandshakeInterceptor],
       conditions: [
         _i3.ConditionGroup(
           r'package:neon_books_app/src/api/support_handshake.dart#SupportHandshake',
@@ -2281,22 +2275,22 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ],
       dependencies: const [
-        _i3.Dependency(_i33.CookieJar, name: r'_cookies'),
-        _i3.Dependency(_i29.SsoProperties, name: r'_sso'),
+        _i3.Dependency(_i29.CookieJar, name: r'_cookies'),
+        _i3.Dependency(_i26.SsoProperties, name: r'_sso'),
         _i3.Dependency(
-          _i27.OAuth2AuthorizedClientManager,
+          _i25.OAuth2AuthorizedClientManager,
           optional: true,
           name: r'_tokens',
         ),
-        _i3.Dependency(_i30.DPoPKey, optional: true, name: r'_dPoPKey'),
+        _i3.Dependency(_i25.DPoPKey, optional: true, name: r'_dPoPKey'),
       ],
-      create: (r) => _i49.SupportHandshake(
-        r.dependency<_i33.CookieJar>(name: r'_cookies'),
-        r.dependency<_i29.SsoProperties>(name: r'_sso'),
-        r.optionalDependency<_i27.OAuth2AuthorizedClientManager>(
+      create: (r) => _i40.SupportHandshake(
+        r.dependency<_i29.CookieJar>(name: r'_cookies'),
+        r.dependency<_i26.SsoProperties>(name: r'_sso'),
+        r.optionalDependency<_i25.OAuth2AuthorizedClientManager>(
           name: r'_tokens',
         ),
-        r.optionalDependency<_i30.DPoPKey>(name: r'_dPoPKey'),
+        r.optionalDependency<_i25.DPoPKey>(name: r'_dPoPKey'),
       ),
       annotations: const [
         _i3.Component(),
@@ -2306,24 +2300,24 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i23.SupportSocket>(
+    _i3.BeanDefinition<_i22.SupportSocket>(
       name: r'supportSocket',
       source:
           r'package:neon_books_app/src/api/support_socket.dart#SupportSocket',
       primary: true,
       create: (r) => _$SupportSocketImpl.$create(r),
       annotations: const [
-        _i24.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
+        _i23.WebSocketClient(r'support', url: r'${api.ws-url}/ws/support'),
       ],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i39.AppProperties>(
+    _i3.BeanDefinition<_i33.AppProperties>(
       name: r'appProperties',
       source:
           r'package:neon_books_app/src/app/app_properties.dart#AppProperties',
-      create: (r) => _i39.AppProperties(),
+      create: (r) => _i33.AppProperties(),
       annotations: const [_i3.ConfigurationProperties(r'app'), _i3.Validated()],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
@@ -2334,8 +2328,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       source: r'package:neon_books_app/src/app/language.dart#LanguageSelection',
       create: (r) => _$LanguageSelectionProxy(),
       annotations: const [
-        _i36.ChangeNotifierComponent(),
-        _i37.BuildContextAccess(),
+        _i25.ChangeNotifierComponent(),
+        _i25.BuildContextAccess(),
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
@@ -2362,7 +2356,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       name: r'languageCustomizer',
       source:
           r'package:neon_books_app/src/app/language.dart#LanguageCustomizer',
-      types: const [_i9.LanguageCustomizer, _i51.FlutterAppCustomizer],
+      types: const [_i9.LanguageCustomizer, _i25.FlutterAppCustomizer],
       dependencies: const [
         _i3.Dependency(_i9.LanguageSelection, name: r'_selection'),
       ],
@@ -2374,19 +2368,19 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i52.LifecycleLog>(
+    _i3.BeanDefinition<_i42.LifecycleLog>(
       name: r'lifecycleLog',
       source: r'package:neon_books_app/src/app/lifecycle_log.dart#LifecycleLog',
-      create: (r) => _i52.LifecycleLog(),
+      create: (r) => _i42.LifecycleLog(),
       eventListeners: [
         _i3.EventListenerMethod.of<
-          _i52.LifecycleLog,
-          _i53.AppLifecycleStateEvent
+          _i42.LifecycleLog,
+          _i25.AppLifecycleStateEvent
         >(r'LifecycleLog.onState', (bean, event) {
           bean.onState(event);
           return null;
         }),
-        _i3.EventListenerMethod.of<_i52.LifecycleLog, _i3.ContextPausedEvent>(
+        _i3.EventListenerMethod.of<_i42.LifecycleLog, _i3.ContextPausedEvent>(
           r'LifecycleLog.onPaused',
           (bean, event) {
             bean.onPaused(event);
@@ -2394,7 +2388,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           },
         ),
         _i3.EventListenerMethod.of<
-          _i52.LifecycleLog,
+          _i42.LifecycleLog,
           _i3.ContextRestartedEvent
         >(r'LifecycleLog.onRestarted', (bean, event) {
           bean.onRestarted(event);
@@ -2409,11 +2403,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i54.RouteLog>(
+    _i3.BeanDefinition<_i43.RouteLog>(
       name: r'routeLog',
       source: r'package:neon_books_app/src/app/route_log.dart#RouteLog',
-      types: const [_i54.RouteLog, _i55.NavigatorObserver],
-      create: (r) => _i54.RouteLog(),
+      types: const [_i43.RouteLog, _i44.NavigatorObserver],
+      create: (r) => _i43.RouteLog(),
       annotations: const [
         _i3.Component(),
         _i3.Log(topic: r'neon.navigation'),
@@ -2425,9 +2419,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
     _i3.BeanDefinition<_i10.Basket>(
       name: r'basket',
       source: r'package:neon_books_app/src/basket/basket.dart#Basket',
-      dependencies: const [_i3.Dependency(_i21.ShopClient, name: r'_shop')],
+      dependencies: const [_i3.Dependency(_i20.ShopClient, name: r'_shop')],
       create: (r) =>
-          _$BasketProxy(r.dependency<_i21.ShopClient>(name: r'_shop')),
+          _$BasketProxy(r.dependency<_i20.ShopClient>(name: r'_shop')),
       eventListeners: [
         _i3.EventListenerMethod.of<_i10.Basket, _i1.LoggedIn>(
           r'Basket.onLogin',
@@ -2445,8 +2439,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ],
       annotations: const [
-        _i36.ChangeNotifierComponent(),
-        _i37.BuildContextAccess(),
+        _i25.ChangeNotifierComponent(),
+        _i25.BuildContextAccess(),
         _i3.Log(topic: r'neon.basket'),
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
@@ -2512,8 +2506,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       create: (r) =>
           _$CatalogProxy(r.dependency<_i12.CatalogService>(name: r'_service')),
       annotations: const [
-        _i36.ChangeNotifierComponent(),
-        _i37.BuildContextAccess(),
+        _i25.ChangeNotifierComponent(),
+        _i25.BuildContextAccess(),
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
         signatures: const [
@@ -2561,25 +2555,25 @@ _i3.BeanModule get $application => _i3.BeanModule(
             bean is _$CatalogProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i3.BeanDefinition<_i38.CatalogRefresh>(
+    _i3.BeanDefinition<_i32.CatalogRefresh>(
       name: r'catalogRefresh',
       source: r'package:neon_books_app/src/catalog/catalog_refresh.dart#CatalogRefresh',
       dependencies: const [
         _i3.Dependency(_i12.CatalogService, name: r'_service'),
         _i3.Dependency(_i11.Catalog, name: r'_catalog'),
       ],
-      create: (r) => _i38.CatalogRefresh(
+      create: (r) => _i32.CatalogRefresh(
         r.dependency<_i12.CatalogService>(name: r'_service'),
         r.dependency<_i11.Catalog>(name: r'_catalog'),
       ),
       annotatedMethods: [
-        const _i3.BeanMethod<_i38.CatalogRefresh>(
+        const _i3.BeanMethod<_i32.CatalogRefresh>(
           r'refresh',
           isFuture: true,
           isVoid: true,
           invoke: _$invoke10,
           annotations: [
-            _i56.Scheduled(
+            _i45.Scheduled(
               fixedDelayString: r'${catalog.refresh-interval:5m}',
               initialDelayString: r'${catalog.refresh-interval:5m}',
             ),
@@ -2598,10 +2592,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
       name: r'catalogService',
       source: r'package:neon_books_app/src/catalog/catalog_service.dart#CatalogService',
       dependencies: const [
-        _i3.Dependency(_i20.CatalogClient, name: r'_client'),
+        _i3.Dependency(_i19.CatalogClient, name: r'_client'),
       ],
       create: (r) => _$CatalogServiceProxy(
-        r.dependency<_i20.CatalogClient>(name: r'_client'),
+        r.dependency<_i19.CatalogClient>(name: r'_client'),
       ),
       annotations: const [
         _i3.Service(),
@@ -2615,7 +2609,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'query', r'page'],
-            annotations: [_i57.Cacheable(r'catalog')],
+            annotations: [_i46.Cacheable(r'catalog')],
             annotationTypes: [r'Cacheable'],
           ),
           _i3.MethodSignature.of(
@@ -2624,7 +2618,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            annotations: [_i57.Cacheable(r'books', unless: r'#result == null')],
+            annotations: [_i46.Cacheable(r'books', unless: r'#result == null')],
             annotationTypes: [r'Cacheable'],
           ),
           _i3.MethodSignature.of(
@@ -2634,7 +2628,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             annotations: [
-              _i57.Cacheable(r'covers', unless: r'#result == null'),
+              _i46.Cacheable(r'covers', unless: r'#result == null'),
             ],
             annotationTypes: [r'Cacheable'],
           ),
@@ -2643,7 +2637,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             _$target11,
             returnType: r'void',
             annotations: [
-              _i57.CacheEvict.of(
+              _i46.CacheEvict.of(
                 cacheNames: [r'catalog', r'books'],
                 allEntries: true,
               ),
@@ -2656,7 +2650,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'void',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
-            annotations: [_i57.CacheEvict(r'covers', key: r'#isbn')],
+            annotations: [_i46.CacheEvict(r'covers', key: r'#isbn')],
             annotationTypes: [r'CacheEvict'],
           ),
         ],
@@ -2669,11 +2663,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
       source:
           r'package:neon_books_app/src/orders/order_service.dart#OrderService',
       dependencies: const [
-        _i3.Dependency(_i21.ShopClient, name: r'_shop'),
+        _i3.Dependency(_i20.ShopClient, name: r'_shop'),
         _i3.Dependency(_i10.Basket, name: r'_basket'),
       ],
       create: (r) => _$OrderServiceProxy(
-        r.dependency<_i21.ShopClient>(name: r'_shop'),
+        r.dependency<_i20.ShopClient>(name: r'_shop'),
         r.dependency<_i10.Basket>(name: r'_basket'),
       ),
       annotatedMethods: [
@@ -2682,7 +2676,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           returnTypeInfo: _i3.ClassType<_i7.ShopOrder>(),
           isFuture: true,
           invoke: _$invoke12,
-          annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
+          annotations: [_i25.PreAuthorize(r'isAuthenticated()')],
         ),
         const _i3.BeanMethod<_i13.OrderService>(
           r'orders',
@@ -2691,7 +2685,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           isFuture: true,
           invoke: _$invoke13,
-          annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
+          annotations: [_i25.PreAuthorize(r'isAuthenticated()')],
         ),
       ],
       annotations: const [
@@ -2704,14 +2698,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
             r'placeOrder',
             _$target14,
             returnType: r'Future',
-            annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
+            annotations: [_i25.PreAuthorize(r'isAuthenticated()')],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i3.MethodSignature.of(
             r'orders',
             _$target14,
             returnType: r'Future',
-            annotations: [_i46.PreAuthorize(r'isAuthenticated()')],
+            annotations: [_i25.PreAuthorize(r'isAuthenticated()')],
             annotationTypes: [r'PreAuthorize'],
           ),
         ],
@@ -2722,13 +2716,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
     _i3.BeanDefinition<_i14.LiveStock>(
       name: r'liveStock',
       source: r'package:neon_books_app/src/stock/live_stock.dart#LiveStock',
-      types: const [_i14.LiveStock, _i58.ChangeNotifier, _i58.Listenable],
-      dependencies: const [_i3.Dependency(_i22.StockClient, name: r'_client')],
+      types: const [_i14.LiveStock, _i47.ChangeNotifier, _i47.Listenable],
+      dependencies: const [_i3.Dependency(_i21.StockClient, name: r'_client')],
       create: (r) =>
-          _$LiveStockProxy(r.dependency<_i22.StockClient>(name: r'_client')),
+          _$LiveStockProxy(r.dependency<_i21.StockClient>(name: r'_client')),
       annotations: const [
         _i3.Component(),
-        _i36.NotifyListeners(exclude: [r'stop']),
+        _i25.NotifyListeners(exclude: [r'stop']),
         _i3.Log(topic: r'neon.stock'),
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
@@ -2816,12 +2810,12 @@ _i3.BeanModule get $application => _i3.BeanModule(
       name: r'supportChat',
       source:
           r'package:neon_books_app/src/support/support_chat.dart#SupportChat',
-      types: const [_i15.SupportChat, _i58.ChangeNotifier, _i58.Listenable],
+      types: const [_i15.SupportChat, _i47.ChangeNotifier, _i47.Listenable],
       dependencies: const [
-        _i3.Dependency(_i23.SupportSocket, name: r'_socket'),
+        _i3.Dependency(_i22.SupportSocket, name: r'_socket'),
       ],
       create: (r) => _$SupportChatProxy(
-        r.dependency<_i23.SupportSocket>(name: r'_socket'),
+        r.dependency<_i22.SupportSocket>(name: r'_socket'),
       ),
       eventListeners: [
         _i3.EventListenerMethod.of<_i15.SupportChat, _i1.LoggedIn>(
@@ -2841,7 +2835,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       annotations: const [
         _i3.Component(),
-        _i36.NotifyListeners(exclude: [r'join']),
+        _i25.NotifyListeners(exclude: [r'join']),
         _i3.Log(topic: r'neon.support'),
       ],
       aopProxy: _i3.AopProxyFactory.subclass(
@@ -2933,191 +2927,294 @@ _i3.BeanModule get $application => _i3.BeanModule(
             bean is _$SupportChatProxy ? (bean..aopInvoker = invoker) : null,
       ),
     ),
-    _i3.BeanDefinition<_i59.SpringWidgetBindings>(
+    _i3.BeanDefinition<_i48.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
-      types: const [_i59.SpringWidgetBindings],
       autowireCandidate: false,
-      create: (r) => _i59.SpringWidgetBindings([
-        _i59.SpringWidgetBinding(
+      create: (r) => _i48.SpringWidgetBindings([
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/about/about_page.dart#AboutPage',
-          beans: _$typeOf<(_i40.AppAssets,)>(),
-          types: const [_i40.AppAssets],
-          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i40.AppAssets>(f),),
+          beans: _$typeOf<(_i34.AppAssets,)>(),
+          types: const [_i34.AppAssets],
+          resolve: (f) => (_i48.SpringWidgetBinding.bean<_i34.AppAssets>(f),),
           values: (r) {
-            final v = (r as (_i40.AppAssets,));
+            final v = (r as (_i34.AppAssets,));
             return [v.$1];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/account/login_page.dart#_LoginPageState',
           beans: _$typeOf<(_i1.Session,)>(),
           types: const [_i1.Session],
-          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i1.Session>(f),),
+          resolve: (f) => (_i48.SpringWidgetBinding.bean<_i1.Session>(f),),
           values: (r) {
             final v = (r as (_i1.Session,));
             return [v.$1];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/admin/admin_page.dart#_AdminPageState',
-          beans: _i60.AdminPageBeans,
-          types: const [_i6.AdminService, _i47.BookForm, _i40.AppAssets],
+          beans: _i49.AdminPageBeans,
+          types: const [_i6.AdminService, _i38.BookForm, _i34.AppAssets],
           resolve: (f) => (
-            _i59.SpringWidgetBinding.bean<_i6.AdminService>(f),
-            _i59.SpringWidgetBinding.bean<_i47.BookForm>(f),
-            _i59.SpringWidgetBinding.bean<_i40.AppAssets>(f),
+            _i48.SpringWidgetBinding.bean<_i6.AdminService>(f),
+            _i48.SpringWidgetBinding.bean<_i38.BookForm>(f),
+            _i48.SpringWidgetBinding.bean<_i34.AppAssets>(f),
           ),
           values: (r) {
-            final v = (r as (_i6.AdminService, _i47.BookForm, _i40.AppAssets));
+            final v = (r as (_i6.AdminService, _i38.BookForm, _i34.AppAssets));
             return [v.$1, v.$2, v.$3];
           },
         ),
-        _i59.SpringWidgetBinding(
-          widget:
-              r'package:neon_books_app/src/app/home_page.dart#_HomePageState',
-          beans: _$typeOf<(_i39.AppProperties,)>(),
-          types: const [_i39.AppProperties],
+        _i48.SpringWidgetBinding(
+          widget: r'package:neon_books_app/src/app/home_page.dart#HomePage',
+          beans: _$typeOf<(_i33.AppProperties,)>(),
+          types: const [_i33.AppProperties],
           resolve: (f) =>
-              (_i59.SpringWidgetBinding.bean<_i39.AppProperties>(f),),
+              (_i48.SpringWidgetBinding.bean<_i33.AppProperties>(f),),
           values: (r) {
-            final v = (r as (_i39.AppProperties,));
+            final v = (r as (_i33.AppProperties,));
             return [v.$1];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/basket/basket_badge.dart#BasketBadge',
           beans: _$typeOf<(_i10.Basket,)>(),
           types: const [_i10.Basket],
-          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i10.Basket>(f),),
+          resolve: (f) => (_i48.SpringWidgetBinding.bean<_i10.Basket>(f),),
           values: (r) {
             final v = (r as (_i10.Basket,));
             return [v.$1];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget:
               r'package:neon_books_app/src/basket/basket_page.dart#BasketPage',
-          beans: _i61.BasketPageBeans,
+          beans: _i50.BasketPageBeans,
           types: const [_i10.Basket, _i1.Session, _i13.OrderService],
           resolve: (f) => (
-            _i59.SpringWidgetBinding.bean<_i10.Basket>(f),
-            _i59.SpringWidgetBinding.bean<_i1.Session>(f),
-            _i59.SpringWidgetBinding.bean<_i13.OrderService>(f),
+            _i48.SpringWidgetBinding.bean<_i10.Basket>(f),
+            _i48.SpringWidgetBinding.bean<_i1.Session>(f),
+            _i48.SpringWidgetBinding.bean<_i13.OrderService>(f),
           ),
           values: (r) {
             final v = (r as (_i10.Basket, _i1.Session, _i13.OrderService));
             return [v.$1, v.$2, v.$3];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/catalog/book_page.dart#_BookPageState',
-          beans: _i62.BookPageBeans,
+          beans: _i51.BookPageBeans,
           types: const [_i12.CatalogService, _i10.Basket],
           resolve: (f) => (
-            _i59.SpringWidgetBinding.bean<_i12.CatalogService>(f),
-            _i59.SpringWidgetBinding.bean<_i10.Basket>(f),
+            _i48.SpringWidgetBinding.bean<_i12.CatalogService>(f),
+            _i48.SpringWidgetBinding.bean<_i10.Basket>(f),
           ),
           values: (r) {
             final v = (r as (_i12.CatalogService, _i10.Basket));
             return [v.$1, v.$2];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/catalog/book_page.dart#_Stock',
           beans: _$typeOf<(_i14.LiveStock,)>(),
           types: const [_i14.LiveStock],
-          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i14.LiveStock>(f),),
+          resolve: (f) => (_i48.SpringWidgetBinding.bean<_i14.LiveStock>(f),),
           values: (r) {
             final v = (r as (_i14.LiveStock,));
             return [v.$1];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/catalog/catalog_page.dart#_CatalogPageState',
           beans: _$typeOf<(_i11.Catalog,)>(),
           types: const [_i11.Catalog],
-          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i11.Catalog>(f),),
+          resolve: (f) => (_i48.SpringWidgetBinding.bean<_i11.Catalog>(f),),
           values: (r) {
             final v = (r as (_i11.Catalog,));
             return [v.$1];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget:
               r'package:neon_books_app/src/logs/logs_page.dart#_LogsPageState',
-          beans: _$typeOf<(_i63.LogBuffer,)>(),
-          types: const [_i63.LogBuffer],
-          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i63.LogBuffer>(f),),
+          beans: _$typeOf<(_i25.LogBuffer,)>(),
+          types: const [_i25.LogBuffer],
+          resolve: (f) => (_i48.SpringWidgetBinding.bean<_i25.LogBuffer>(f),),
           values: (r) {
-            final v = (r as (_i63.LogBuffer,));
+            final v = (r as (_i25.LogBuffer,));
             return [v.$1];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/orders/orders_page.dart#_OrdersPageState',
-          beans: _i64.OrdersPageBeans,
+          beans: _i52.OrdersPageBeans,
           types: const [_i13.OrderService, _i1.Session],
           resolve: (f) => (
-            _i59.SpringWidgetBinding.bean<_i13.OrderService>(f),
-            _i59.SpringWidgetBinding.bean<_i1.Session>(f),
+            _i48.SpringWidgetBinding.bean<_i13.OrderService>(f),
+            _i48.SpringWidgetBinding.bean<_i1.Session>(f),
           ),
           values: (r) {
             final v = (r as (_i13.OrderService, _i1.Session));
             return [v.$1, v.$2];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/settings/settings_page.dart#SettingsPage',
-          beans: _i65.SettingsPageBeans,
+          beans: _i53.SettingsPageBeans,
           types: const [
-            _i66.ThemeSelection,
-            _i66.SpringThemes,
+            _i25.ThemeSelection,
+            _i25.SpringThemes,
             _i9.LanguageSelection,
-            _i40.AppAssets,
+            _i34.AppAssets,
           ],
           resolve: (f) => (
-            _i59.SpringWidgetBinding.bean<_i66.ThemeSelection>(f),
-            _i59.SpringWidgetBinding.bean<_i66.SpringThemes>(f),
-            _i59.SpringWidgetBinding.bean<_i9.LanguageSelection>(f),
-            _i59.SpringWidgetBinding.bean<_i40.AppAssets>(f),
+            _i48.SpringWidgetBinding.bean<_i25.ThemeSelection>(f),
+            _i48.SpringWidgetBinding.bean<_i25.SpringThemes>(f),
+            _i48.SpringWidgetBinding.bean<_i9.LanguageSelection>(f),
+            _i48.SpringWidgetBinding.bean<_i34.AppAssets>(f),
           ),
           values: (r) {
             final v =
                 (r
                     as (
-                      _i66.ThemeSelection,
-                      _i66.SpringThemes,
+                      _i25.ThemeSelection,
+                      _i25.SpringThemes,
                       _i9.LanguageSelection,
-                      _i40.AppAssets,
+                      _i34.AppAssets,
                     ));
             return [v.$1, v.$2, v.$3, v.$4];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/support/support_page.dart#_ChatMessagesState',
-          beans: _i67.ChatMessagesBeans,
+          beans: _i54.ChatMessagesBeans,
           types: const [_i15.SupportChat, _i1.Session],
           resolve: (f) => (
-            _i59.SpringWidgetBinding.bean<_i15.SupportChat>(f),
-            _i59.SpringWidgetBinding.bean<_i1.Session>(f),
+            _i48.SpringWidgetBinding.bean<_i15.SupportChat>(f),
+            _i48.SpringWidgetBinding.bean<_i1.Session>(f),
           ),
           values: (r) {
             final v = (r as (_i15.SupportChat, _i1.Session));
             return [v.$1, v.$2];
           },
         ),
-        _i59.SpringWidgetBinding(
+        _i48.SpringWidgetBinding(
           widget: r'package:neon_books_app/src/support/support_page.dart#_ChatInputState',
           beans: _$typeOf<(_i15.SupportChat,)>(),
           types: const [_i15.SupportChat],
-          resolve: (f) => (_i59.SpringWidgetBinding.bean<_i15.SupportChat>(f),),
+          resolve: (f) => (_i48.SpringWidgetBinding.bean<_i15.SupportChat>(f),),
           values: (r) {
             final v = (r as (_i15.SupportChat,));
             return [v.$1];
           },
         ),
       ]),
+    ),
+    _i3.BeanDefinition<_i55.ScreenRoutes>(
+      name: r'screenRoutes#application',
+      source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
+      create: (r) => _i55.ScreenRoutes.route(source: r'application')
+          .shell(
+            (s) => _i56.HomePage(s),
+            (t) => t
+                .branch(r'/catalog', (b) => b)
+                .branch(r'/basket', (b) => b)
+                .branch(r'/orders', (b) => b)
+                .branch(r'/stock', (b) => b)
+                .branch(r'/more', (b) => b),
+            key: _i56.HomePage,
+            source: r'package:neon_books_app/src/app/home_page.dart#HomePage',
+          )
+          .screen(
+            r'/about',
+            (r) => const _i57.AboutPage(),
+            name: r'about-page',
+            title: r'#{about.title}',
+            source:
+                r'package:neon_books_app/src/about/about_page.dart#AboutPage',
+          )
+          .screen(
+            r'/login',
+            (r) => const _i58.LoginPage(),
+            name: r'login-page',
+            title: r'#{login.title}',
+            source:
+                r'package:neon_books_app/src/account/login_page.dart#LoginPage',
+          )
+          .screen(
+            r'/admin',
+            (r) => const _i49.AdminPage(),
+            name: r'admin-page',
+            title: r'#{admin.title}',
+            source:
+                r'package:neon_books_app/src/admin/admin_page.dart#AdminPage',
+          )
+          .screen(
+            r'/more',
+            (r) => const _i59.MorePage(),
+            name: r'more-page',
+            title: r'#{section.more}',
+            source: r'package:neon_books_app/src/app/more_page.dart#MorePage',
+          )
+          .screen(
+            r'/basket',
+            (r) => const _i50.BasketPage(),
+            name: r'basket-page',
+            title: r'#{section.basket}',
+            source: r'package:neon_books_app/src/basket/basket_page.dart#BasketPage',
+          )
+          .screen(
+            r'/books/{isbn}',
+            (r) => const _i51.BookPage(),
+            name: r'book-page',
+            title: r'#{book.title}',
+            source:
+                r'package:neon_books_app/src/catalog/book_page.dart#BookPage',
+          )
+          .screen(
+            r'/catalog',
+            (r) => const _i60.CatalogPage(),
+            name: r'catalog-page',
+            title: r'#{section.catalog}',
+            source: r'package:neon_books_app/src/catalog/catalog_page.dart#CatalogPage',
+          )
+          .screen(
+            r'/logs',
+            (r) => const _i61.LogsPage(),
+            name: r'logs-page',
+            title: r'#{logs.title}',
+            source: r'package:neon_books_app/src/logs/logs_page.dart#LogsPage',
+          )
+          .screen(
+            r'/orders',
+            (r) => const _i52.OrdersPage(),
+            name: r'orders-page',
+            title: r'#{section.orders}',
+            source: r'package:neon_books_app/src/orders/orders_page.dart#OrdersPage',
+          )
+          .screen(
+            r'/settings',
+            (r) => const _i53.SettingsPage(),
+            name: r'settings-page',
+            title: r'#{settings.title}',
+            source: r'package:neon_books_app/src/settings/settings_page.dart#SettingsPage',
+          )
+          .screen(
+            r'/stock',
+            (r) => const _i62.LiveStockPage(),
+            name: r'live-stock-page',
+            title: r'#{section.stock}',
+            source: r'package:neon_books_app/src/stock/live_stock_page.dart#LiveStockPage',
+          )
+          .screen(
+            r'/support',
+            (r) => const _i54.SupportPage(),
+            name: r'support-page',
+            title: r'#{support.title}',
+            source: r'package:neon_books_app/src/support/support_page.dart#SupportPage',
+          )
+          .build(),
     ),
   ],
   resources: const {
@@ -3131,44 +3228,47 @@ _i3.BeanModule get $application => _i3.BeanModule(
       '# Phones: the sections in a bottom navigation bar.\napp.navigation=bar\n',
     ),
     r'application-spa.properties': _i3.EmbeddedResource.text(
-      '# The spa profile, optional and for the web app only: the browser logs in\n# at Keycloak by itself (spring_boot_starter_flutter_security, spa mode)\n# instead of through the server guide (server mode, the default). Keycloak\n# (example/keycloak) with the public browser client neon-web:\n#   flutter run -d chrome --dart-define=SPRING_PROFILES_ACTIVE=sso,spa\n# The page logs in, shows the user, survives a reload (a silent prompt=none\n# trip to Keycloak) and logs out at Keycloak. The calls to the server\n# guide stay anonymous: see the README, "The web app without a server\n# login (spa mode)".\nspring.flutter.security.web.mode=spa\n\n# The registration of the browser: a public client (no secret), PKCE, the\n# app\'s own page as the redirect URI ({baseUrl} is the page\'s origin and\n# base href: http://localhost:5050). Keycloak allows the page\'s origin on\n# its token, user info and revocation endpoints (the client\'s web\n# origins).\nspring.security.oauth2.client.registration.keycloak.client-id=neon-web\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\nspring.security.oauth2.client.registration.keycloak.redirect-uri={baseUrl}/\n# DPoP when Keycloak\'s discovery offers ES256 (it does): the tokens are\n# bound to a WebCrypto key the page cannot export.\nspring.security.oauth2.client.registration.keycloak.dpop=auto\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n# Back to the app after Keycloak\'s logout (allowed by neon-web).\nneon.sso.post-logout-redirect-uri=http://localhost:5050/\n\n# The page\'s Content Security Policy, for the production host\'s headers\n# (and for `flutter run` when this profile is named in a config file: the\n# dev server reads only the files the build sees). The spa mode\'s default\n# plus the server guide, which the Feign clients and the support chat\n# call.\nspring.flutter.web.content-security-policy=default-src \'self\'; \\\n  script-src \'self\' \'wasm-unsafe-eval\' https://www.gstatic.com; \\\n  style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob:; \\\n  font-src \'self\' https://fonts.gstatic.com; \\\n  connect-src \'self\' https://www.gstatic.com https://fonts.gstatic.com \\\n  http://localhost:8180 http://localhost:8080 ws://localhost:8080; \\\n  worker-src \'self\' blob:; object-src \'none\'; base-uri \'self\'; \\\n  form-action \'self\'; frame-ancestors \'none\'\n',
+      '# The spa profile, optional and for the web app only: the browser logs in\n# at Keycloak by itself (spring_boot_starter_flutter_security, spa mode)\n# instead of through the server guide (server mode, the default). Keycloak\n# (example/keycloak) with the public browser client neon-web:\n#   flutter run -d chrome --dart-define=SPRING_PROFILES_ACTIVE=sso,spa\n# The page logs in, shows the user, survives a reload (a silent prompt=none\n# trip to Keycloak) and logs out at Keycloak. The calls to the server\n# guide stay anonymous: see the README, "The web app without a server\n# login (spa mode)".\nspring.flutter.security.web.mode=spa\n\n# The registration of the browser: a public client (no secret), PKCE, the\n# app\'s own page as the redirect URI ({baseUrl} is the page\'s origin and\n# base href: http://localhost:5050). Keycloak allows the page\'s origin on\n# its token, user info and revocation endpoints (the client\'s web\n# origins).\nspring.security.oauth2.client.registration.keycloak.client-id=neon-web\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\nspring.security.oauth2.client.registration.keycloak.redirect-uri={baseUrl}/\n# DPoP when Keycloak\'s discovery offers ES256 (it does): the tokens are\n# bound to a WebCrypto key the page cannot export.\nspring.security.oauth2.client.registration.keycloak.dpop=auto\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n# Back to the app after Keycloak\'s logout (allowed by neon-web).\nneon.sso.post-logout-redirect-uri=http://localhost:5050/\n\n# The page\'s Content Security Policy, for the production host\'s headers\n# (and for `flutter run` when this profile is named in a config file: the\n# dev server reads only the files the build sees). The spa mode\'s default\n# plus the server guide, which the Feign clients and the support chat\n# call.\nspring.flutter.web.dev-server.content-security-policy=default-src \'self\'; \\\n  script-src \'self\' \'wasm-unsafe-eval\' https://www.gstatic.com; \\\n  style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob:; \\\n  font-src \'self\' https://fonts.gstatic.com; \\\n  connect-src \'self\' https://www.gstatic.com https://fonts.gstatic.com \\\n  http://localhost:8180 http://localhost:8080 ws://localhost:8080; \\\n  worker-src \'self\' blob:; object-src \'none\'; base-uri \'self\'; \\\n  form-action \'self\'; frame-ancestors \'none\'\n',
     ),
     r'application-sso.properties': _i3.EmbeddedResource.text(
       '# The sso profile: log in with Keycloak (example/keycloak) instead of a\n# name and password. The server must run with it too:\n#   (cd ../server_guide && dart run bin/main.dart --spring.profiles.active=dev,sso)\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\n#   flutter run -d chrome --web-port 5050 --dart-define=SPRING_PROFILES_ACTIVE=sso\n# The Login screen shows "Sign in with Keycloak". Native apps log in\n# themselves (the registration at the end of application.properties); the\n# web app goes to the server\'s /oauth2/authorization/keycloak and comes\n# back with a session cookie (the server\'s neon.app.web-url must be the\n# page\'s address).\nneon.sso.enabled=true\n',
     ),
     r'application-web.properties': _i3.EmbeddedResource.text(
-      '# Browsers: a wide window. The page\'s origin must be allowed by the\n# server\'s CORS settings (the server guide allows localhost).\napp.navigation=rail\n\n# `flutter run -d chrome` (or -d web-server) serves the app on\n# http://localhost:5050/, the origin the server\'s CORS and SSO settings\n# expect. spring_core_dart_generator writes it into web_dev_config.yaml,\n# which the Flutter tool reads; a --web-port flag still wins.\nspring.flutter.web.port=5050\n\n# The login of the web app (spring_boot_starter_flutter_security, server\n# mode): the server guide logs the user in and keeps the session, the\n# page holds only its HttpOnly cookie. The server is another origin\n# (localhost:8080), so the starter\'s transport sends the cookies there\n# and the CSRF token of its XSRF-TOKEN cookie; "who is logged in" and the\n# logout are the server guide\'s /api/me and /api/logout, the form login\'s\n# as well as Keycloak\'s.\nspring.flutter.security.web.server-url=\${api.base-url}\nspring.flutter.security.web.user-endpoint=/api/me\nspring.flutter.security.web.logout-url=/api/logout\n',
+      '# Browsers: a wide window. The page\'s origin must be allowed by the\n# server\'s CORS settings (the server guide allows localhost).\napp.navigation=rail\n\n# `flutter run -d chrome` (or -d web-server) serves the app on\n# http://localhost:5050/, the origin the server\'s CORS and SSO settings\n# expect. spring_core_dart_generator writes it into web_dev_config.yaml,\n# which the Flutter tool reads; a --web-port flag still wins.\nspring.flutter.web.dev-server.port=5050\n\n# The login of the web app (spring_boot_starter_flutter_security, server\n# mode): the server guide logs the user in and keeps the session, the\n# page holds only its HttpOnly cookie. The server is another origin\n# (localhost:8080), so the starter\'s transport sends the cookies there\n# and the CSRF token of its XSRF-TOKEN cookie; "who is logged in" and the\n# logout are the server guide\'s /api/me and /api/logout, the form login\'s\n# as well as Keycloak\'s.\nspring.flutter.security.web.server-url=\${api.base-url}\nspring.flutter.security.web.user-endpoint=/api/me\nspring.flutter.security.web.logout-url=/api/logout\n',
     ),
     r'application.properties': _i3.EmbeddedResource.text(
-      '# NEON Books, the app. The platform profiles (mobile, android, ios,\n# desktop, macos, windows, linux, web) add their own files:\n# application-<profile>.properties. The theme is in application.yml.\n\napp.title=NEON Books\n\n# The server guide (example/server_guide): `dart run bin/main.dart` there.\n# The Feign clients use api.base-url, the support chat api.ws-url.\n# `flutter run --dart-define=API_HOST=192.168.1.20:8080` for a phone on\n# the LAN.\napi.host=localhost:8080\napi.base-url=http://\${api.host}\napi.ws-url=ws://\${api.host}\napi.connect-timeout=5s\n\n# The Feign clients: a short read timeout (the default is 60s), the calls\n# logged at debug level (the Logs screen shows them).\nspring.feign.client.config.default.read-timeout=10s\nspring.feign.client.config.default.logger-level=basic\n# The stock events reconnect after 2s and give up after 10 silent tries.\nspring.feign.client.config.stock.event-stream.reconnect-delay=2s\nspring.feign.client.config.stock.event-stream.max-attempts=10\n\n# The support chat\'s socket reconnects, waiting 1s, 2s, 4s, ... up to 30s.\nspring.websocket.client.config.support.reconnect.delay=1s\nspring.websocket.client.config.support.reconnect.max-delay=30s\n\n# The catalog refresh (lib/src/catalog/catalog_refresh.dart).\ncatalog.refresh-interval=5m\n\n# The caches of lib/src/catalog/catalog_service.dart, in memory.\nspring.cache.cache-names=catalog,books,covers\n\n# Logging: the console in Boot\'s format, and the in-memory LogBuffer the\n# Logs screen shows (debug and up, the last 500 lines).\nlogging.level.root=info\nlogging.level.neon=debug\nlogging.level.feign=debug\nlogging.buffer.capacity=500\nlogging.threshold.buffer=debug\n\n# The app widget: a MaterialApp (Scaffold and AppBar need it) without the\n# debug banner. The locales come from messages.properties and\n# messages_ja.properties.\nspring.flutter.app.type=material\nspring.flutter.app.title=\${app.title}\nspring.flutter.app.debug-banner=false\nspring.cache.simple.caches.covers.max-size=50\n\n# Single sign-on with Keycloak (chapter 7): off, the app logs in with a\n# name and password (the server\'s form login). The `sso` profile turns it\n# on (application-sso.properties):\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\nneon.sso.enabled=false\n\n#---\nspring.config.activate.on-profile=sso & !web\n# With `sso`, the native apps log in themselves at Keycloak: a public\n# client (no secret in an app), PKCE, the system\'s login window. A\n# document guarded by profiles, here and not in application-sso.properties,\n# because only the native apps have it (a profile file cannot be guarded,\n# as in Spring Boot): a web page never holds tokens, its server logs it in.\nspring.security.oauth2.client.registration.keycloak.client-id=neon-app\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# iOS, Android, macOS: the app\'s own scheme; the system\'s login window\n# hands the redirect to the app (Android: RedirectReceiverActivity in the manifest).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=books.neon.app:/oauth2/callback\nneon.sso.post-logout-redirect-uri=books.neon.app:/oauth2/logout\n# Discovery: the endpoints come from the realm\'s metadata at the first\n# login, not at startup (the app starts offline too). The Android\n# emulator reaches it through `adb reverse tcp:8180 tcp:8180`: the issuer\n# must be the same address everywhere, or the server refuses the tokens.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# `ada` or `root`, the names the server knows, not Keycloak\'s ids.\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n#---\nspring.config.activate.on-profile=sso & (windows | linux)\n# Windows and Linux have no app schemes to catch: the redirect goes to a\n# server of the app on 127.0.0.1, any free port (RFC 8252 §7.3).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=http://127.0.0.1/oauth2/callback\nneon.sso.post-logout-redirect-uri=http://127.0.0.1/oauth2/logout\n',
+      '# NEON Books, the app. The platform profiles (mobile, android, ios,\n# desktop, macos, windows, linux, web) add their own files:\n# application-<profile>.properties. The theme is in application.yml.\n\napp.title=NEON Books\n\n# The server guide (example/server_guide): `dart run bin/main.dart` there.\n# The Feign clients use api.base-url, the support chat api.ws-url.\n# `flutter run --dart-define=API_HOST=192.168.1.20:8080` for a phone on\n# the LAN.\napi.host=localhost:8080\napi.base-url=http://\${api.host}\napi.ws-url=ws://\${api.host}\napi.connect-timeout=5s\n\n# The Feign clients: a short read timeout (the default is 60s), the calls\n# logged at debug level (the Logs screen shows them).\nspring.feign.client.config.default.read-timeout=10s\nspring.feign.client.config.default.logger-level=basic\n# The stock events reconnect after 2s and give up after 10 silent tries.\nspring.feign.client.config.stock.event-stream.reconnect-delay=2s\nspring.feign.client.config.stock.event-stream.max-attempts=10\n\n# The support chat\'s socket reconnects, waiting 1s, 2s, 4s, ... up to 30s.\nspring.websocket.client.config.support.reconnect.delay=1s\nspring.websocket.client.config.support.reconnect.max-delay=30s\n\n# The catalog refresh (lib/src/catalog/catalog_refresh.dart).\ncatalog.refresh-interval=5m\n\n# The caches of lib/src/catalog/catalog_service.dart, in memory.\nspring.cache.cache-names=catalog,books,covers\n\n# Logging: the console in Boot\'s format, and the in-memory LogBuffer the\n# Logs screen shows (debug and up, the last 500 lines).\nlogging.level.root=info\nlogging.level.neon=debug\nlogging.level.feign=debug\nlogging.buffer.capacity=500\nlogging.threshold.buffer=debug\n\n# The app widget: a MaterialApp (Scaffold and AppBar need it) without the\n# debug banner. The locales come from messages.properties and\n# messages_ja.properties.\nspring.flutter.app.type=material\nspring.flutter.app.title=\${app.title}\nspring.flutter.app.debug-banner=false\nspring.cache.simple.caches.covers.max-size=50\n\n# Single sign-on with Keycloak (chapter 7): off, the app logs in with a\n# name and password (the server\'s form login). The `sso` profile turns it\n# on (application-sso.properties):\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso\nneon.sso.enabled=false\n\n# The navigation (spring_boot_starter_flutter_navigation, which the\n# security starter brings): `/` opens the catalog, the sections are the\n# branches of the HomePage shell, the other screens open over them.\n# neonbooks://books/978-0441013593 opens a book from a link outside the\n# app (the generator writes the scheme into Info.plist and the Android\n# manifest; the login keeps books.neon.app, its own).\nspring.flutter.navigation.initial=/catalog\nspring.flutter.navigation.login=/login\nspring.flutter.navigation.deep-links.scheme=neonbooks\n\n#---\nspring.config.activate.on-profile=sso & !web\n# With `sso`, the native apps log in themselves at Keycloak: a public\n# client (no secret in an app), PKCE, the system\'s login window. A\n# document guarded by profiles, here and not in application-sso.properties,\n# because only the native apps have it (a profile file cannot be guarded,\n# as in Spring Boot): a web page never holds tokens, its server logs it in.\nspring.security.oauth2.client.registration.keycloak.client-id=neon-app\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# iOS, Android, macOS: the app\'s own scheme; the system\'s login window\n# hands the redirect to the app (Android: RedirectReceiverActivity in the manifest).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=books.neon.app:/oauth2/callback\nneon.sso.post-logout-redirect-uri=books.neon.app:/oauth2/logout\n# Discovery: the endpoints come from the realm\'s metadata at the first\n# login, not at startup (the app starts offline too). The Android\n# emulator reaches it through `adb reverse tcp:8180 tcp:8180`: the issuer\n# must be the same address everywhere, or the server refuses the tokens.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# `ada` or `root`, the names the server knows, not Keycloak\'s ids.\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n#---\nspring.config.activate.on-profile=sso & (windows | linux)\n# Windows and Linux have no app schemes to catch: the redirect goes to a\n# server of the app on 127.0.0.1, any free port (RFC 8252 §7.3).\nspring.security.oauth2.client.registration.keycloak.redirect-uri=http://127.0.0.1/oauth2/callback\nneon.sso.post-logout-redirect-uri=http://127.0.0.1/oauth2/logout\n\n',
     ),
     r'application.yml': _i3.EmbeddedResource.text(
-      '# The look of the app: the shared part of every theme and the standard\n# `dark` theme\'s differences. Each custom theme has a file of its own in\n# themes/. No ThemeData in the code.\nspring:\n  config:\n    import: >-\n      resources:themes/neon.yml, resources:themes/neon-night.yml,\n      resources:themes/sepia.yml, resources:themes/high-contrast.yml\n\n  flutter:\n    theme:\n      # system | light | dark | neon | neon-night | sepia | high-contrast\n      # (and `winter` once loaded at run time, see Settings)\n      active: system\n      system-dark: dark\n\n      seed-color: deepPurple\n      typography:\n        font-family: Roboto\n        # Japanese glyphs: the system\'s fonts on devices, in tests the\n        # cut-down font of test/fonts/.\n        font-family-fallback: [Noto Sans JP]\n        display: { font-family: Roboto Condensed, weight: bold }\n        headline: { font-family: Roboto Condensed }\n        title-large: { weight: 500 }\n        # A monospaced font file would go into res/fonts/ like the others;\n        # Roboto Condensed stands in (the Logs screen).\n        code: { font-family: Roboto Condensed, size: 12 }\n      shape:\n        medium: 16\n      components:\n        app-bar:\n          scrolled-under-elevation: level2\n        card:\n          shape: large\n          color: \$colors.surface-container-low\n        input:\n          style: outline\n          shape: small\n        snack-bar:\n          behavior: floating\n      spacing:\n        s: 8\n        m: 16\n        l: 24\n      tokens:\n        brand:\n          accent: \'#FF40A0\'\n          # A reference with a color object: follows a theme that\n          # changes brand.accent.\n          accent-soft: { color: \$brand.accent, alpha: 16% }\n          banner-height: 96\n          # A nested group with a list: context.theme.tokens.brand.tag.\n          tag:\n            radius: 14\n            labels: [New, Staff pick, Sale]\n      motion:\n        durations: { fast: 120ms, medium: 300ms }\n      # A look per widget state for the app\'s own widgets (ThemeTag).\n      styles:\n        tag:\n          padding: [12, 6]\n          radius: \$brand.tag.radius\n          fill:\n            default: \$brand.accent-soft\n            hovered: { color: \$brand.accent, alpha: 28% }\n            selected: \$brand.accent\n          transition: \$motion.durations.fast ease-out\n      # Played by ThemeAnimation (the tags rise into place).\n      animations:\n        rise: { duration: \$motion.durations.medium, curve: ease-out }\n\n      # Loaders (ThemeLoader, ThemeSkeleton): a skeleton of the lists that\n      # come from the server, and a bar for the work that takes a while.\n      loaders:\n        card:\n          kind: skeleton\n          base: \$colors.surface-container-high\n          highlight: \$colors.surface-container-highest\n          radius: \$shape.medium\n          shimmer: { duration: 1.2s, angle: 20 }\n        bar: { kind: bar, color: \$colors.primary, track: { color: \$colors.primary, alpha: 20% }, height: 4, width: 220 }\n      # The splash: what shows while the app starts, and on the web before\n      # Flutter runs (the generator writes it into web/index.html).\n      splash:\n        background: { color: \$colors.surface }\n        logo: { source: assets/images/leaf.png, size: 96 }\n        title: NEON Books\n        loader: bar\n        min-duration: 1s\n        exit: { transition: 400ms ease-out }\n\n      themes:\n        dark:\n          seed-color: deepPurple.shade200\n          components:\n            card: { color: \$colors.surface-container }\n',
+      '# The look of the app: the shared part of every theme and the standard\n# `dark` theme\'s differences. Each custom theme has a file of its own in\n# themes/. No ThemeData in the code.\nspring:\n  config:\n    import: >-\n      resources:themes/neon.yml, resources:themes/neon-night.yml,\n      resources:themes/sepia.yml, resources:themes/high-contrast.yml\n\n  flutter:\n    theme:\n      # system | light | dark | neon | neon-night | sepia | high-contrast\n      # (and `winter` once loaded at run time, see Settings)\n      active: system\n      system-dark: dark\n\n      seed-color: deepPurple\n      typography:\n        font-family: Roboto\n        # Japanese glyphs: the system\'s fonts on devices, in tests the\n        # cut-down font of test/fonts/.\n        font-family-fallback: [Noto Sans JP]\n        display: { font-family: Roboto Condensed, weight: bold }\n        headline: { font-family: Roboto Condensed }\n        title-large: { weight: 500 }\n        # A monospaced font file would go into res/fonts/ like the others;\n        # Roboto Condensed stands in (the Logs screen).\n        code: { font-family: Roboto Condensed, size: 12 }\n      shape:\n        medium: 16\n      components:\n        app-bar:\n          scrolled-under-elevation: level2\n        card:\n          shape: large\n          color: \$colors.surface-container-low\n        input:\n          style: outline\n          shape: small\n        snack-bar:\n          behavior: floating\n      spacing:\n        s: 8\n        m: 16\n        l: 24\n      tokens:\n        brand:\n          accent: \'#FF40A0\'\n          # A reference with a color object: follows a theme that\n          # changes brand.accent.\n          accent-soft: { color: \$brand.accent, alpha: 16% }\n          banner-height: 96\n          # A nested group with a list: context.theme.tokens.brand.tag.\n          tag:\n            radius: 14\n            labels: [New, Staff pick, Sale]\n      motion:\n        durations: { fast: 120ms, medium: 300ms }\n      # A look per widget state for the app\'s own widgets (ThemeTag).\n      styles:\n        tag:\n          padding: [12, 6]\n          radius: \$brand.tag.radius\n          fill:\n            default: \$brand.accent-soft\n            hovered: { color: \$brand.accent, alpha: 28% }\n            selected: \$brand.accent\n          transition: \$motion.durations.fast ease-out\n        # Code in MarkdownView (the theme preview in Settings): a color\n        # not written follows the color scheme, as in the `dark` theme.\n        code:\n          background: \$colors.surface-container-high\n          comment: \$colors.on-surface-variant\n      # Played by ThemeAnimation (the tags rise into place).\n      animations:\n        rise: { duration: \$motion.durations.medium, curve: ease-out }\n\n      # Loaders (ThemeLoader, ThemeSkeleton): a skeleton of the lists that\n      # come from the server, and a bar for the work that takes a while.\n      loaders:\n        card:\n          kind: skeleton\n          base: \$colors.surface-container-high\n          highlight: \$colors.surface-container-highest\n          radius: \$shape.medium\n          shimmer: { duration: 1.2s, angle: 20 }\n        bar: { kind: bar, color: \$colors.primary, track: { color: \$colors.primary, alpha: 20% }, height: 4, width: 220 }\n      # The splash: what shows while the app starts, and on the web before\n      # Flutter runs (the generator writes it into web/index.html).\n      splash:\n        background: { color: \$colors.surface }\n        logo: { source: assets/images/leaf.png, size: 96 }\n        title: NEON Books\n        loader: bar\n        min-duration: 1s\n        exit: { transition: 400ms ease-out }\n\n      themes:\n        dark:\n          seed-color: deepPurple.shade200\n          components:\n            card: { color: \$colors.surface-container }\n',
+    ),
+    r'content/theme-preview.md': _i3.EmbeddedResource.text(
+      "### The basket, a bean\n\n`Basket` is a **bean**: one per app, shared by every screen\n([beans](https://github.com/farum-azula/spring_core_dart)).\n\n```dart\n@Service()\nfinal class Basket {\n  final titles = <String>['Spring in Action'];\n  int get count => titles.length; // 1\n}\n```\n\n```yaml\nspring:\n  flutter:\n    theme:\n      active: neon   # neon-night, sepia, high-contrast\n      motion: { durations: { fast: 120ms } }\n```\n",
     ),
     r'messages.properties': _i3.EmbeddedResource.text(
-      "# The app's texts in English; messages_ja.properties has the Japanese ones.\n# context.message('key', args: [...]) reads them in the app's language.\n\nsection.catalog=Catalog\nsection.basket=Basket\nsection.orders=Orders\nsection.stock=Live stock\nsection.more=More\n\ncatalog.search=Search the catalog\ncatalog.empty=No books found\ncatalog.retry=Try again\ncatalog.previous=Previous page\ncatalog.next=Next page\ncatalog.page=Page {0} of {1}\n\nbook.title=Book\nbook.notFound=There is no book {0}\nbook.inStock={0} in stock\nbook.soldOut=Sold out\n\nbasket.add=Add to basket\nbasket.added={0} is in the basket\nbasket.empty=The basket is empty\nbasket.less=One less\nbasket.more=One more\nbasket.total=Total\nbasket.order=Order\nbasket.loginToOrder=Log in to order\nbasket.ordered=Order {0} placed\n\norders.login=Log in to see your orders\norders.none=No orders yet\norders.order=Order {0}\n\nstock.live=Live: changes appear as they happen\nstock.offline=Not connected\nstock.waiting=Waiting for stock changes\nstock.available={0} left\n\nsupport.title=Support\nsupport.login=Log in to chat with us\nsupport.empty=Ask us anything\nsupport.hint=Your message\nsupport.send=Send\n\nlogin.open=Log in\nlogin.title=Log in\nlogin.hint=Log in to order and chat (ada / ada-secret, or root / root-secret for the admin).\nlogin.username=User name\nlogin.password=Password\nlogin.submit=Log in\nlogin.failed=Wrong user name or password\nlogin.keycloak=Sign in with Keycloak\nlogin.keycloakHint=Log in at Keycloak, the bookstore's single sign-on (ada / ada-secret, or root / root-secret for the admin).\naccount.menu=Account\naccount.logout=Log out\n\nadmin.title=Admin\nadmin.newBook=New book\nadmin.field.isbn=ISBN\nadmin.field.title=Title\nadmin.field.author=Author\nadmin.field.price=Price\nadmin.add=Add the book\nadmin.added={0} added\nadmin.uploadCover=Upload the sample cover\nadmin.coverUploaded=Cover uploaded\nadmin.delete=Delete the book\nadmin.deleted={0} deleted\nadmin.serverLog=The server's log\nadmin.loadServerLog=Load the server's log\n\nsettings.title=Settings\nsettings.theme=Theme\nsettings.loadTheme=Load a theme from the server\nsettings.themeLoaded=Theme {0} loaded\nsettings.language=Language\nsettings.preview=Preview\nsettings.loaders=Loaders\n\ntheme.system=As on the device\ntheme.light=Light\ntheme.dark=Dark\ntheme.neon=Neon\ntheme.neon-night=Neon at night\ntheme.sepia=Sepia\ntheme.high-contrast=High contrast\ntheme.winter=Winter\n\nlanguage.system=As on the device\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=Logs\nlogs.clear=Clear\nlogs.empty=Nothing logged at this level\nlogs.debug=Debug\nlogs.info=Info\nlogs.warning=Warning\nlogs.error=Error\n\nabout.title=About\nabout.source=Loaded from {0} and {1}\n\nerror.offline=The server cannot be reached\nerror.denied=Not allowed\nerror.login=The login failed\nerror.status=The server answered {0}\n\n# Validation of the Admin form (BookForm): Spring's error codes, the most\n# specific first (NotBlank.newBook.title, NotBlank.title, NotBlank).\nNotBlank=must not be blank\nPattern.newBook.isbn=must be 10 or 13 digits\nSize=must be at most {1} characters\nPositive=must be more than 0\nMax=must be at most {1}\ntypeMismatch.newBook.price=must be a number\n",
+      "# The app's texts in English; messages_ja.properties has the Japanese ones.\n# context.message('key', args: [...]) reads them in the app's language.\n\nsection.catalog=Catalog\nsection.basket=Basket\nsection.orders=Orders\nsection.stock=Live stock\nsection.more=More\n\ncatalog.search=Search the catalog\ncatalog.empty=No books found\ncatalog.retry=Try again\ncatalog.previous=Previous page\ncatalog.next=Next page\ncatalog.page=Page {0} of {1}\n\nbook.title=Book\nbook.notFound=There is no book {0}\nbook.inStock={0} in stock\nbook.soldOut=Sold out\n\nbasket.add=Add to basket\nbasket.added={0} is in the basket\nbasket.empty=The basket is empty\nbasket.less=One less\nbasket.more=One more\nbasket.total=Total\nbasket.order=Order\nbasket.loginToOrder=Log in to order\nbasket.ordered=Order {0} placed\n\norders.login=Log in to see your orders\norders.none=No orders yet\norders.order=Order {0}\n\nstock.live=Live: changes appear as they happen\nstock.offline=Not connected\nstock.waiting=Waiting for stock changes\nstock.available={0} left\n\nsupport.title=Support\nsupport.login=Log in to chat with us\nsupport.empty=Ask us anything\nsupport.hint=Your message\nsupport.send=Send\n\nlogin.open=Log in\nlogin.title=Log in\nlogin.hint=Log in to order and chat (ada / ada-secret, or root / root-secret for the admin).\nlogin.username=User name\nlogin.password=Password\nlogin.submit=Log in\nlogin.failed=Wrong user name or password\nlogin.keycloak=Sign in with Keycloak\nlogin.keycloakHint=Log in at Keycloak, the bookstore's single sign-on (ada / ada-secret, or root / root-secret for the admin).\naccount.menu=Account\naccount.logout=Log out\n\nadmin.title=Admin\nadmin.newBook=New book\nadmin.field.isbn=ISBN\nadmin.field.title=Title\nadmin.field.author=Author\nadmin.field.price=Price\nadmin.add=Add the book\nadmin.added={0} added\nadmin.uploadCover=Upload the sample cover\nadmin.coverUploaded=Cover uploaded\nadmin.delete=Delete the book\nadmin.deleted={0} deleted\nadmin.serverLog=The server's log\nadmin.loadServerLog=Load the server's log\n\nsettings.title=Settings\nsettings.theme=Theme\nsettings.loadTheme=Load a theme from the server\nsettings.themeLoaded=Theme {0} loaded\nsettings.language=Language\nsettings.preview=Preview\nsettings.markdown=Markdown and code\nsettings.loaders=Loaders\n\ntheme.system=As on the device\ntheme.light=Light\ntheme.dark=Dark\ntheme.neon=Neon\ntheme.neon-night=Neon at night\ntheme.sepia=Sepia\ntheme.high-contrast=High contrast\ntheme.winter=Winter\n\nlanguage.system=As on the device\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=Logs\nlogs.clear=Clear\nlogs.empty=Nothing logged at this level\nlogs.debug=Debug\nlogs.info=Info\nlogs.warning=Warning\nlogs.error=Error\n\nabout.title=About\nabout.source=Loaded from {0} and {1}\n\nerror.offline=The server cannot be reached\nerror.denied=Not allowed\nerror.login=The login failed\nerror.status=The server answered {0}\n\n# Validation of the Admin form (BookForm): Spring's error codes, the most\n# specific first (NotBlank.newBook.title, NotBlank.title, NotBlank).\nNotBlank=must not be blank\nPattern.newBook.isbn=must be 10 or 13 digits\nSize=must be at most {1} characters\nPositive=must be more than 0\nMax=must be at most {1}\ntypeMismatch.newBook.price=must be a number\n",
     ),
     r'messages_ja.properties': _i3.EmbeddedResource.text(
-      'section.catalog=カタログ\nsection.basket=かご\nsection.orders=注文\nsection.stock=在庫\nsection.more=その他\n\ncatalog.search=カタログを検索\ncatalog.empty=本が見つかりません\ncatalog.retry=再試行\ncatalog.previous=前のページ\ncatalog.next=次のページ\ncatalog.page={0} / {1} ページ\n\nbook.title=本\nbook.notFound=本 {0} はありません\nbook.inStock=在庫 {0} 冊\nbook.soldOut=売り切れ\n\nbasket.add=かごに入れる\nbasket.added={0} をかごに入れました\nbasket.empty=かごは空です\nbasket.less=一冊減らす\nbasket.more=一冊増やす\nbasket.total=合計\nbasket.order=注文する\nbasket.loginToOrder=ログインして注文\nbasket.ordered=注文 {0} を受け付けました\n\norders.login=ログインして注文を表示\norders.none=注文はまだありません\norders.order=注文 {0}\n\nstock.live=ライブ：変更がすぐに表示されます\nstock.offline=未接続\nstock.waiting=在庫の変更を待っています\nstock.available=残り {0} 冊\n\nsupport.title=サポート\nsupport.login=ログインしてチャット\nsupport.empty=何でも聞いてください\nsupport.hint=メッセージ\nsupport.send=送信\n\nlogin.open=ログイン\nlogin.title=ログイン\nlogin.hint=ログインすると注文とチャットができます（ada / ada-secret、管理者は root / root-secret）。\nlogin.username=ユーザー名\nlogin.password=パスワード\nlogin.submit=ログイン\nlogin.failed=ユーザー名またはパスワードが違います\nlogin.keycloak=Keycloakでサインイン\nlogin.keycloakHint=書店のSSO、Keycloakでログインします（ada / ada-secret、管理者は root / root-secret）。\naccount.menu=アカウント\naccount.logout=ログアウト\n\nadmin.title=管理\nadmin.newBook=新しい本\nadmin.field.isbn=ISBN\nadmin.field.title=タイトル\nadmin.field.author=著者\nadmin.field.price=価格\nadmin.add=本を追加\nadmin.added={0} を追加しました\nadmin.uploadCover=サンプルの表紙をアップロード\nadmin.coverUploaded=表紙をアップロードしました\nadmin.delete=本を削除\nadmin.deleted={0} を削除しました\nadmin.serverLog=サーバーのログ\nadmin.loadServerLog=サーバーのログを読み込む\n\nsettings.title=設定\nsettings.theme=テーマ\nsettings.loadTheme=サーバーからテーマを読み込む\nsettings.themeLoaded=テーマ {0} を読み込みました\nsettings.language=言語\nsettings.preview=プレビュー\nsettings.loaders=ローダー\n\ntheme.system=端末の設定に合わせる\ntheme.light=ライト\ntheme.dark=ダーク\ntheme.neon=ネオン\ntheme.neon-night=夜のネオン\ntheme.sepia=セピア\ntheme.high-contrast=ハイコントラスト\ntheme.winter=冬\n\nlanguage.system=端末の設定に合わせる\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=ログ\nlogs.clear=消去\nlogs.empty=このレベルのログはありません\nlogs.debug=デバッグ\nlogs.info=情報\nlogs.warning=警告\nlogs.error=エラー\n\nabout.title=このアプリについて\nabout.source={0} と {1} から読み込み\n\nerror.offline=サーバーに接続できません\nerror.denied=許可されていません\nerror.login=ログインに失敗しました\nerror.status=サーバーの応答：{0}\n\nNotBlank=入力してください\nPattern.newBook.isbn=10桁または13桁の数字にしてください\nSize={1} 文字以内にしてください\nPositive=0 より大きくしてください\nMax={1} 以下にしてください\ntypeMismatch.newBook.price=数字を入力してください\n',
+      'section.catalog=カタログ\nsection.basket=かご\nsection.orders=注文\nsection.stock=在庫\nsection.more=その他\n\ncatalog.search=カタログを検索\ncatalog.empty=本が見つかりません\ncatalog.retry=再試行\ncatalog.previous=前のページ\ncatalog.next=次のページ\ncatalog.page={0} / {1} ページ\n\nbook.title=本\nbook.notFound=本 {0} はありません\nbook.inStock=在庫 {0} 冊\nbook.soldOut=売り切れ\n\nbasket.add=かごに入れる\nbasket.added={0} をかごに入れました\nbasket.empty=かごは空です\nbasket.less=一冊減らす\nbasket.more=一冊増やす\nbasket.total=合計\nbasket.order=注文する\nbasket.loginToOrder=ログインして注文\nbasket.ordered=注文 {0} を受け付けました\n\norders.login=ログインして注文を表示\norders.none=注文はまだありません\norders.order=注文 {0}\n\nstock.live=ライブ：変更がすぐに表示されます\nstock.offline=未接続\nstock.waiting=在庫の変更を待っています\nstock.available=残り {0} 冊\n\nsupport.title=サポート\nsupport.login=ログインしてチャット\nsupport.empty=何でも聞いてください\nsupport.hint=メッセージ\nsupport.send=送信\n\nlogin.open=ログイン\nlogin.title=ログイン\nlogin.hint=ログインすると注文とチャットができます（ada / ada-secret、管理者は root / root-secret）。\nlogin.username=ユーザー名\nlogin.password=パスワード\nlogin.submit=ログイン\nlogin.failed=ユーザー名またはパスワードが違います\nlogin.keycloak=Keycloakでサインイン\nlogin.keycloakHint=書店のSSO、Keycloakでログインします（ada / ada-secret、管理者は root / root-secret）。\naccount.menu=アカウント\naccount.logout=ログアウト\n\nadmin.title=管理\nadmin.newBook=新しい本\nadmin.field.isbn=ISBN\nadmin.field.title=タイトル\nadmin.field.author=著者\nadmin.field.price=価格\nadmin.add=本を追加\nadmin.added={0} を追加しました\nadmin.uploadCover=サンプルの表紙をアップロード\nadmin.coverUploaded=表紙をアップロードしました\nadmin.delete=本を削除\nadmin.deleted={0} を削除しました\nadmin.serverLog=サーバーのログ\nadmin.loadServerLog=サーバーのログを読み込む\n\nsettings.title=設定\nsettings.theme=テーマ\nsettings.loadTheme=サーバーからテーマを読み込む\nsettings.themeLoaded=テーマ {0} を読み込みました\nsettings.language=言語\nsettings.preview=プレビュー\nsettings.markdown=Markdown とコード\nsettings.loaders=ローダー\n\ntheme.system=端末の設定に合わせる\ntheme.light=ライト\ntheme.dark=ダーク\ntheme.neon=ネオン\ntheme.neon-night=夜のネオン\ntheme.sepia=セピア\ntheme.high-contrast=ハイコントラスト\ntheme.winter=冬\n\nlanguage.system=端末の設定に合わせる\nlanguage.en=English\nlanguage.ja=日本語\n\nlogs.title=ログ\nlogs.clear=消去\nlogs.empty=このレベルのログはありません\nlogs.debug=デバッグ\nlogs.info=情報\nlogs.warning=警告\nlogs.error=エラー\n\nabout.title=このアプリについて\nabout.source={0} と {1} から読み込み\n\nerror.offline=サーバーに接続できません\nerror.denied=許可されていません\nerror.login=ログインに失敗しました\nerror.status=サーバーの応答：{0}\n\nNotBlank=入力してください\nPattern.newBook.isbn=10桁または13桁の数字にしてください\nSize={1} 文字以内にしてください\nPositive=0 より大きくしてください\nMax={1} 以下にしてください\ntypeMismatch.newBook.price=数字を入力してください\n',
     ),
     r'themes/high-contrast.yml': _i3.EmbeddedResource.text(
-      'spring:\n  flutter:\n    theme:\n      themes:\n        high-contrast:\n          extends: light\n          contrast: 1.0\n          typography:\n            defaults: { weight: 500 }\n          components:\n            divider: { thickness: 2, color: \$colors.outline }\n            outlined-button: { border-color: \$colors.on-surface }\n',
+      'spring:\n  flutter:\n    theme:\n      themes:\n        high-contrast:\n          extends: light\n          contrast: 1.0\n          typography:\n            defaults: { weight: 500 }\n          components:\n            divider: { thickness: 2, color: \$colors.outline }\n            outlined-button: { border-color: \$colors.on-surface }\n          # Code on the strongest fill, the plain text as dark as the text.\n          styles:\n            code:\n              background: \$colors.surface-container-highest\n              text: \$colors.on-surface\n',
     ),
     r'themes/neon-night.yml': _i3.EmbeddedResource.text(
-      '# The neon theme at night: everything of `neon`, dark.\nspring:\n  flutter:\n    theme:\n      themes:\n        neon-night:\n          extends: neon\n          brightness: dark\n          # A color under every screen with a tint of the accent at the bottom. An\n          # image would go next to them, from an asset or from the network:\n          #   image: { source: https://cdn.example.com/neon/night.jpg, refresh: 1d }\n          background:\n            color: \'#1A1024\'\n            overlay:\n              gradient:\n                type: linear\n                begin: top\n                end: bottom\n                colors: [transparent, { color: \$brand.accent, alpha: 18% }]\n',
+      '# The neon theme at night: everything of `neon`, dark.\nspring:\n  flutter:\n    theme:\n      themes:\n        neon-night:\n          extends: neon\n          brightness: dark\n          # The code of `neon`, brighter on the dark surface.\n          styles:\n            code:\n              keyword: \'#FF40A0\'\n              string: \'#00E5FF\'\n              number: \'#B388FF\'\n              key: \'#FF80C0\'\n              annotation: \'#18FFFF\'\n              variable: \'#EA80FC\'\n              type: \'#64FFDA\'\n          # A color under every screen with a tint of the accent at the bottom. An\n          # image would go next to them, from an asset or from the network:\n          #   image: { source: https://cdn.example.com/neon/night.jpg, refresh: 1d }\n          background:\n            color: \'#1A1024\'\n            overlay:\n              gradient:\n                type: linear\n                begin: top\n                end: bottom\n                colors: [transparent, { color: \$brand.accent, alpha: 18% }]\n',
     ),
     r'themes/neon.yml': _i3.EmbeddedResource.text(
-      '# The bookstore\'s own look: pink and cyan on deep violet.\nspring:\n  flutter:\n    theme:\n      themes:\n        neon:\n          seed-color: \'#FF40A0\'\n          scheme-variant: vibrant\n          colors:\n            secondary: \'#00B8D4\'\n          shape: { medium: 20, large: 28 }\n          components:\n            button: { shape: full }\n            card: { elevation: level0, color: \$colors.surface-container }\n          tokens:\n            brand: { accent: \'#00E5FF\' }\n',
+      '# The bookstore\'s own look: pink and cyan on deep violet.\nspring:\n  flutter:\n    theme:\n      themes:\n        neon:\n          seed-color: \'#FF40A0\'\n          scheme-variant: vibrant\n          colors:\n            secondary: \'#00B8D4\'\n          shape: { medium: 20, large: 28 }\n          components:\n            button: { shape: full }\n            card: { elevation: level0, color: \$colors.surface-container }\n          tokens:\n            brand: { accent: \'#00E5FF\' }\n          styles:\n            code:\n              keyword: \'#D1007A\'\n              string: \'#00838F\'\n              number: \'#7C4DFF\'\n              key: \'#C2185B\'\n              annotation: \'#0097A7\'\n              variable: \'#7B1FA2\'\n              type: \'#00695C\'\n',
     ),
     r'themes/sepia.yml': _i3.EmbeddedResource.text(
-      "spring:\n  flutter:\n    theme:\n      themes:\n        sepia:\n          seed-color: '#8B5E3C'\n          scheme-variant: neutral\n          colors:\n            surface: '#F4ECD8'\n            on-surface: '#5B4636'\n            surface-container-low: '#EFE4CC'\n          typography:\n            body-large: { height: 1.6 }\n            body-medium: { height: 1.6 }\n          splash: none\n          shape: { medium: 4, large: 6, small: 2 }\n          components:\n            button: { shape: small }\n          tokens:\n            brand: { accent: '#8B4513' }\n",
+      "spring:\n  flutter:\n    theme:\n      themes:\n        sepia:\n          seed-color: '#8B5E3C'\n          scheme-variant: neutral\n          colors:\n            surface: '#F4ECD8'\n            on-surface: '#5B4636'\n            surface-container-low: '#EFE4CC'\n          typography:\n            body-large: { height: 1.6 }\n            body-medium: { height: 1.6 }\n          splash: none\n          shape: { medium: 4, large: 6, small: 2 }\n          components:\n            button: { shape: small }\n          tokens:\n            brand: { accent: '#8B4513' }\n          styles:\n            code:\n              background: '#EADCC0'\n              keyword: '#8B4513'\n              string: '#5E7A1F'\n              comment: '#9C8468'\n              number: '#B0561A'\n              key: '#7A4E2D'\n              annotation: '#8B5E3C'\n              variable: '#8E3B5E'\n              type: '#3E6B6B'\n",
     ),
   },
   introspections: [
-    const _i3.BeanIntrospection<_i29.SsoProperties>(
+    const _i3.BeanIntrospection<_i26.SsoProperties>(
       className: r'SsoProperties',
       properties: [
-        _i3.BeanProperty<_i29.SsoProperties>(
+        _i3.BeanProperty<_i26.SsoProperties>(
           r'enabled',
           typeInfo: _i3.ClassType<bool>(),
           hasInitialValue: true,
@@ -3176,7 +3276,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           get: _$get17,
           set: _$set18,
         ),
-        _i3.BeanProperty<_i29.SsoProperties>(
+        _i3.BeanProperty<_i26.SsoProperties>(
           r'registrationId',
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
@@ -3184,7 +3284,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           get: _$get19,
           set: _$set20,
         ),
-        _i3.BeanProperty<_i29.SsoProperties>(
+        _i3.BeanProperty<_i26.SsoProperties>(
           r'postLogoutRedirectUri',
           nullable: true,
           typeInfo: _i3.ClassType<String>(nullable: true),
@@ -3194,8 +3294,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       annotations: [_i3.ConfigurationProperties(r'neon.sso')],
       parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
-      instantiate: _i29.SsoProperties.new,
-      constructor: _i3.BeanConstructor<_i29.SsoProperties>(
+      instantiate: _i26.SsoProperties.new,
+      constructor: _i3.BeanConstructor<_i26.SsoProperties>(
         parameters: [],
         create: _$create23,
       ),
@@ -3339,10 +3439,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         create: _$create41,
       ),
     ),
-    const _i3.BeanIntrospection<_i34.ApiProperties>(
+    const _i3.BeanIntrospection<_i30.ApiProperties>(
       className: r'ApiProperties',
       properties: [
-        _i3.BeanProperty<_i34.ApiProperties>(
+        _i3.BeanProperty<_i30.ApiProperties>(
           r'host',
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
@@ -3351,7 +3451,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           set: _$set43,
           annotations: [_i3.NotBlank()],
         ),
-        _i3.BeanProperty<_i34.ApiProperties>(
+        _i3.BeanProperty<_i30.ApiProperties>(
           r'baseUrl',
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
@@ -3360,7 +3460,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           set: _$set45,
           annotations: [_i3.Matches(r'https?://.+')],
         ),
-        _i3.BeanProperty<_i34.ApiProperties>(
+        _i3.BeanProperty<_i30.ApiProperties>(
           r'wsUrl',
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
@@ -3372,8 +3472,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       annotations: [_i3.ConfigurationProperties(r'api'), _i3.Validated()],
       parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
-      instantiate: _i34.ApiProperties.new,
-      constructor: _i3.BeanConstructor<_i34.ApiProperties>(
+      instantiate: _i30.ApiProperties.new,
+      constructor: _i3.BeanConstructor<_i30.ApiProperties>(
         parameters: [],
         create: _$create48,
       ),
@@ -3678,10 +3778,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         create: _$create75,
       ),
     ),
-    const _i3.BeanIntrospection<_i39.AppProperties>(
+    const _i3.BeanIntrospection<_i33.AppProperties>(
       className: r'AppProperties',
       properties: [
-        _i3.BeanProperty<_i39.AppProperties>(
+        _i3.BeanProperty<_i33.AppProperties>(
           r'title',
           typeInfo: _i3.ClassType<String>(),
           hasInitialValue: true,
@@ -3690,21 +3790,21 @@ _i3.BeanModule get $application => _i3.BeanModule(
           set: _$set77,
           annotations: [_i3.Size(min: 1, max: 40)],
         ),
-        _i3.BeanProperty<_i39.AppProperties>(
+        _i3.BeanProperty<_i33.AppProperties>(
           r'navigation',
-          typeInfo: _i3.EnumType<_i39.NavigationStyle>(
-            _i39.NavigationStyle.values,
+          typeInfo: _i3.EnumType<_i33.NavigationStyle>(
+            _i33.NavigationStyle.values,
           ),
           hasInitialValue: true,
-          initialValue: _i39.NavigationStyle.bar,
+          initialValue: _i33.NavigationStyle.bar,
           get: _$get78,
           set: _$set79,
         ),
       ],
       annotations: [_i3.ConfigurationProperties(r'app'), _i3.Validated()],
       parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
-      instantiate: _i39.AppProperties.new,
-      constructor: _i3.BeanConstructor<_i39.AppProperties>(
+      instantiate: _i33.AppProperties.new,
+      constructor: _i3.BeanConstructor<_i33.AppProperties>(
         parameters: [],
         create: _$create80,
       ),
@@ -3714,27 +3814,29 @@ _i3.BeanModule get $application => _i3.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i68.SpringApplication get springApplication => _i68.SpringApplication(
+_i63.SpringApplication get springApplication => _i63.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i69.springBootAutoConfiguration,
-    _i70.springBootStarterCacheAutoConfiguration,
-    _i71.springBootStarterFeignAutoConfiguration,
-    _i72.springBootStarterFlutterAutoConfiguration,
-    _i73.springBootStarterFlutterSecurityAutoConfiguration,
-    _i74.springBootStarterLoggingAutoConfiguration,
-    _i75.springBootStarterOauth2ClientAutoConfiguration,
-    _i76.springBootStarterSchedulingAutoConfiguration,
-    _i77.springBootStarterWebsocketAutoConfiguration,
-    _i78.springSecurityCoreAutoConfiguration,
+    _i64.springBootAutoConfiguration,
+    _i65.springBootStarterCacheAutoConfiguration,
+    _i66.springBootStarterFeignAutoConfiguration,
+    _i67.springBootStarterFlutterAutoConfiguration,
+    _i68.springBootStarterFlutterNavigationAutoConfiguration,
+    _i69.springBootStarterFlutterSecurityAutoConfiguration,
+    _i70.springBootStarterLoggingAutoConfiguration,
+    _i71.springBootStarterOauth2ClientAutoConfiguration,
+    _i72.springBootStarterSchedulingAutoConfiguration,
+    _i73.springBootStarterWebsocketAutoConfiguration,
+    _i74.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i73.springBootStarterFlutterSecurityAutoConfiguration:
-        const _i68.AutoConfigurationModule(
+    _i69.springBootStarterFlutterSecurityAutoConfiguration:
+        const _i63.AutoConfigurationModule(
           before: [
             'springBootStarterOauth2ClientAutoConfiguration',
             'springBootStarterFeignAutoConfiguration',
           ],
+          after: ['springBootStarterFlutterNavigationAutoConfiguration'],
         ),
   },
   dartDefines: {
@@ -3849,6 +3951,19 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
     if (const bool.hasEnvironment('SPRING_FLUTTER_DESKTOP_WINDOW_TITLEBAR'))
       'SPRING_FLUTTER_DESKTOP_WINDOW_TITLEBAR': const String.fromEnvironment(
         'SPRING_FLUTTER_DESKTOP_WINDOW_TITLEBAR',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_NAVIGATION_DEEPLINKS_SCHEME'))
+      'SPRING_FLUTTER_NAVIGATION_DEEPLINKS_SCHEME':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_NAVIGATION_DEEPLINKS_SCHEME',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_NAVIGATION_INITIAL'))
+      'SPRING_FLUTTER_NAVIGATION_INITIAL': const String.fromEnvironment(
+        'SPRING_FLUTTER_NAVIGATION_INITIAL',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_NAVIGATION_LOGIN'))
+      'SPRING_FLUTTER_NAVIGATION_LOGIN': const String.fromEnvironment(
+        'SPRING_FLUTTER_NAVIGATION_LOGIN',
       ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
@@ -4054,6 +4169,17 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
         'SPRING_FLUTTER_THEME_SPLASH_TITLE',
       ),
     if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_THEME_STYLES_CODE_BACKGROUND',
+    ))
+      'SPRING_FLUTTER_THEME_STYLES_CODE_BACKGROUND':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_THEME_STYLES_CODE_BACKGROUND',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_THEME_STYLES_CODE_COMMENT'))
+      'SPRING_FLUTTER_THEME_STYLES_CODE_COMMENT': const String.fromEnvironment(
+        'SPRING_FLUTTER_THEME_STYLES_CODE_COMMENT',
+      ),
+    if (const bool.hasEnvironment(
       'SPRING_FLUTTER_THEME_STYLES_TAG_FILL_DEFAULT',
     ))
       'SPRING_FLUTTER_THEME_STYLES_TAG_FILL_DEFAULT':
@@ -4218,13 +4344,16 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
           const String.fromEnvironment(
             'SPRING_FLUTTER_THEME_TYPOGRAPHY_TITLELARGE_WEIGHT',
           ),
-    if (const bool.hasEnvironment('SPRING_FLUTTER_WEB_CONTENTSECURITYPOLICY'))
-      'SPRING_FLUTTER_WEB_CONTENTSECURITYPOLICY': const String.fromEnvironment(
-        'SPRING_FLUTTER_WEB_CONTENTSECURITYPOLICY',
-      ),
-    if (const bool.hasEnvironment('SPRING_FLUTTER_WEB_PORT'))
-      'SPRING_FLUTTER_WEB_PORT': const String.fromEnvironment(
-        'SPRING_FLUTTER_WEB_PORT',
+    if (const bool.hasEnvironment(
+      'SPRING_FLUTTER_WEB_DEVSERVER_CONTENTSECURITYPOLICY',
+    ))
+      'SPRING_FLUTTER_WEB_DEVSERVER_CONTENTSECURITYPOLICY':
+          const String.fromEnvironment(
+            'SPRING_FLUTTER_WEB_DEVSERVER_CONTENTSECURITYPOLICY',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_WEB_DEVSERVER_PORT'))
+      'SPRING_FLUTTER_WEB_DEVSERVER_PORT': const String.fromEnvironment(
+        'SPRING_FLUTTER_WEB_DEVSERVER_PORT',
       ),
     if (const bool.hasEnvironment('SPRING_MAIN_BANNERMODE'))
       'SPRING_MAIN_BANNERMODE': const String.fromEnvironment(
@@ -4418,6 +4547,21 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
     if (const bool.hasEnvironment('spring.flutter.desktop.window.title-bar'))
       'spring.flutter.desktop.window.title-bar': const String.fromEnvironment(
         'spring.flutter.desktop.window.title-bar',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.flutter.navigation.deep-links.scheme',
+    ))
+      'spring.flutter.navigation.deep-links.scheme':
+          const String.fromEnvironment(
+            'spring.flutter.navigation.deep-links.scheme',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.navigation.initial'))
+      'spring.flutter.navigation.initial': const String.fromEnvironment(
+        'spring.flutter.navigation.initial',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.navigation.login'))
+      'spring.flutter.navigation.login': const String.fromEnvironment(
+        'spring.flutter.navigation.login',
       ),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
@@ -4623,6 +4767,17 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
         'spring.flutter.theme.splash.title',
       ),
     if (const bool.hasEnvironment(
+      'spring.flutter.theme.styles.code.background',
+    ))
+      'spring.flutter.theme.styles.code.background':
+          const String.fromEnvironment(
+            'spring.flutter.theme.styles.code.background',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.theme.styles.code.comment'))
+      'spring.flutter.theme.styles.code.comment': const String.fromEnvironment(
+        'spring.flutter.theme.styles.code.comment',
+      ),
+    if (const bool.hasEnvironment(
       'spring.flutter.theme.styles.tag.fill.default',
     ))
       'spring.flutter.theme.styles.tag.fill.default':
@@ -4793,14 +4948,16 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
           const String.fromEnvironment(
             'spring.flutter.theme.typography.title-large.weight',
           ),
-    if (const bool.hasEnvironment('spring.flutter.web.content-security-policy'))
-      'spring.flutter.web.content-security-policy':
+    if (const bool.hasEnvironment(
+      'spring.flutter.web.dev-server.content-security-policy',
+    ))
+      'spring.flutter.web.dev-server.content-security-policy':
           const String.fromEnvironment(
-            'spring.flutter.web.content-security-policy',
+            'spring.flutter.web.dev-server.content-security-policy',
           ),
-    if (const bool.hasEnvironment('spring.flutter.web.port'))
-      'spring.flutter.web.port': const String.fromEnvironment(
-        'spring.flutter.web.port',
+    if (const bool.hasEnvironment('spring.flutter.web.dev-server.port'))
+      'spring.flutter.web.dev-server.port': const String.fromEnvironment(
+        'spring.flutter.web.dev-server.port',
       ),
     if (const bool.hasEnvironment('spring.main.banner-mode'))
       'spring.main.banner-mode': const String.fromEnvironment(
@@ -4880,60 +5037,208 @@ _i68.SpringApplication get springApplication => _i68.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '79bff6ad',
+  fingerprint: '34c53c85',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i68.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i63.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i68.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i63.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i68.ConfigurableApplicationContext reloadApplication(
-  _i68.ConfigurableApplicationContext running, {
+_i63.ConfigurableApplicationContext reloadApplication(
+  _i63.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i68.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i68.ConfigurableApplicationContext running, {
+Future<_i63.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i63.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// Getters for the `@BuildContextAccess` beans, for widgets below `SpringApplicationWidget`.
-extension SpringBeans on _i79.BuildContext {
+extension SpringBeans on _i75.BuildContext {
   /// The bean 'session'.
   _i1.Session get session =>
-      _i59.SpringScope.beanOf<_i1.Session>(this, qualifier: r'session');
+      _i48.SpringScope.beanOf<_i1.Session>(this, qualifier: r'session');
 
   /// The bean 'languageSelection'.
   _i9.LanguageSelection get languageSelection =>
-      _i59.SpringScope.beanOf<_i9.LanguageSelection>(
+      _i48.SpringScope.beanOf<_i9.LanguageSelection>(
         this,
         qualifier: r'languageSelection',
       );
 
   /// The bean 'basket'.
   _i10.Basket get basket =>
-      _i59.SpringScope.beanOf<_i10.Basket>(this, qualifier: r'basket');
+      _i48.SpringScope.beanOf<_i10.Basket>(this, qualifier: r'basket');
 
   /// The bean 'catalog'.
   _i11.Catalog get catalog =>
-      _i59.SpringScope.beanOf<_i11.Catalog>(this, qualifier: r'catalog');
+      _i48.SpringScope.beanOf<_i11.Catalog>(this, qualifier: r'catalog');
+}
+
+/// The route of [AboutPage]: its path, name, values and `to`.
+extension AboutPageRoute on _i57.AboutPage {
+  /// The path pattern.
+  static const pattern = r'/about';
+
+  /// The route's name.
+  static const routeName = r'about-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [LoginPage]: its path, name, values and `to`.
+extension LoginPageRoute on _i58.LoginPage {
+  /// The path pattern.
+  static const pattern = r'/login';
+
+  /// The route's name.
+  static const routeName = r'login-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [AdminPage]: its path, name, values and `to`.
+extension AdminPageRoute on _i49.AdminPage {
+  /// The path pattern.
+  static const pattern = r'/admin';
+
+  /// The route's name.
+  static const routeName = r'admin-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [MorePage]: its path, name, values and `to`.
+extension MorePageRoute on _i59.MorePage {
+  /// The path pattern.
+  static const pattern = r'/more';
+
+  /// The route's name.
+  static const routeName = r'more-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [BasketPage]: its path, name, values and `to`.
+extension BasketPageRoute on _i50.BasketPage {
+  /// The path pattern.
+  static const pattern = r'/basket';
+
+  /// The route's name.
+  static const routeName = r'basket-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [BookPage]: its path, name, values and `to`.
+extension BookPageRoute on _i51.BookPage {
+  /// The path pattern.
+  static const pattern = r'/books/{isbn}';
+
+  /// The route's name.
+  static const routeName = r'book-page';
+
+  /// The path variable `isbn`.
+  static const isbn = _i55.RouteVar<String>(r'isbn');
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to({required String isbn}) =>
+      _i55.RouteLocation.expand(pattern, pathVariables: {r'isbn': isbn});
+}
+
+/// The route of [CatalogPage]: its path, name, values and `to`.
+extension CatalogPageRoute on _i60.CatalogPage {
+  /// The path pattern.
+  static const pattern = r'/catalog';
+
+  /// The route's name.
+  static const routeName = r'catalog-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [LogsPage]: its path, name, values and `to`.
+extension LogsPageRoute on _i61.LogsPage {
+  /// The path pattern.
+  static const pattern = r'/logs';
+
+  /// The route's name.
+  static const routeName = r'logs-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [OrdersPage]: its path, name, values and `to`.
+extension OrdersPageRoute on _i52.OrdersPage {
+  /// The path pattern.
+  static const pattern = r'/orders';
+
+  /// The route's name.
+  static const routeName = r'orders-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [SettingsPage]: its path, name, values and `to`.
+extension SettingsPageRoute on _i53.SettingsPage {
+  /// The path pattern.
+  static const pattern = r'/settings';
+
+  /// The route's name.
+  static const routeName = r'settings-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [LiveStockPage]: its path, name, values and `to`.
+extension LiveStockPageRoute on _i62.LiveStockPage {
+  /// The path pattern.
+  static const pattern = r'/stock';
+
+  /// The route's name.
+  static const routeName = r'live-stock-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
+}
+
+/// The route of [SupportPage]: its path, name, values and `to`.
+extension SupportPageRoute on _i54.SupportPage {
+  /// The path pattern.
+  static const pattern = r'/support';
+
+  /// The route's name.
+  static const routeName = r'support-page';
+
+  /// The location of this screen with these values.
+  static _i55.RouteLocation to() => _i55.RouteLocation.expand(pattern);
 }
 
 /// `@Log` of [ServerAuthenticationProvider]: the logger 'neon.account'.
 extension $ServerAuthenticationProviderLog
-    on _i43.ServerAuthenticationProvider {
+    on _i36.ServerAuthenticationProvider {
   _i3.SpringLog get log => const _i3.SpringLog(r'neon.account');
 }
 
@@ -4948,17 +5253,17 @@ extension $AdminServiceLog on _i6.AdminService {
 }
 
 /// `@Log` of [CookieJar]: the logger 'neon.api.cookies'.
-extension $CookieJarLog on _i33.CookieJar {
+extension $CookieJarLog on _i29.CookieJar {
   _i3.SpringLog get log => const _i3.SpringLog(r'neon.api.cookies');
 }
 
 /// `@Log` of [LifecycleLog]: the logger 'neon.lifecycle'.
-extension $LifecycleLogLog on _i52.LifecycleLog {
+extension $LifecycleLogLog on _i42.LifecycleLog {
   _i3.SpringLog get log => const _i3.SpringLog(r'neon.lifecycle');
 }
 
 /// `@Log` of [RouteLog]: the logger 'neon.navigation'.
-extension $RouteLogLog on _i54.RouteLog {
+extension $RouteLogLog on _i43.RouteLog {
   _i3.SpringLog get log => const _i3.SpringLog(r'neon.navigation');
 }
 
@@ -4968,7 +5273,7 @@ extension $BasketLog on _i10.Basket {
 }
 
 /// `@Log` of [CatalogRefresh]: the logger 'neon.catalog'.
-extension $CatalogRefreshLog on _i38.CatalogRefresh {
+extension $CatalogRefreshLog on _i32.CatalogRefresh {
   _i3.SpringLog get log => const _i3.SpringLog(r'neon.catalog');
 }
 

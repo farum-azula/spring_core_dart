@@ -29,13 +29,17 @@ jobs:
       core: ${{ steps.affected.outputs.core }}
       server_guide: ${{ steps.affected.outputs.server_guide }}
       security: ${{ steps.affected.outputs.security }}
+      actuator: ${{ steps.affected.outputs.actuator }}
       flutter: ${{ steps.affected.outputs.flutter }}
       flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
       flutter_security: ${{ steps.affected.outputs.flutter_security }}
+      flutter_navigation: ${{ steps.affected.outputs.flutter_navigation }}
       flutter_guide: ${{ steps.affected.outputs.flutter_guide }}
       theme_showcase_neon: ${{ steps.affected.outputs.theme_showcase_neon }}
       theme_showcase_material: ${{ steps.affected.outputs.theme_showcase_material }}
       theme_showcase_cupertino: ${{ steps.affected.outputs.theme_showcase_cupertino }}
+      static_site: ${{ steps.affected.outputs.static_site }}
+      seo_site: ${{ steps.affected.outputs.seo_site }}
       family: ${{ steps.affected.outputs.family }}
     steps:
       - uses: actions/checkout@v7
@@ -82,12 +86,19 @@ jobs:
       # after `flutter pub get`; unresolved, the formatter drops the whole
       # file (trailing_commas: preserve too) and joins the bean columns.
       - name: Format
-        run: dart format --output=none --set-exit-if-changed $(git ls-files '*.dart' ':!:example/flutter_guide/**' ':!:example/themes/**')
+        # Generated code is left out: the generator formats it with its own
+        # dart_style, which may differ from the SDK's by a version; the
+        # `generated` job checks it is up to date instead.
+        run: |
+          git ls-files '*.dart' \
+            | grep -v -e '^example/flutter_guide/' -e '^example/themes/' -e '^example/static_site/app/' -e '^example/seo_site/' \
+                      -e '/spring_gen/' -e '\.spring\.dart$' \
+            | xargs dart format --output=none --set-exit-if-changed
 
       # The workspace packages (the Flutter ones resolve outside it and are
       # analyzed by the `flutter` job).
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test example/server_guide extensions/language_server tool
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_actuator spring_boot_starter_web spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test example/server_guide example/static_site/server extensions/language_server tool
 
       # coverage:test_with_coverage in each published Dart package, the
       # lcov files merged into coverage/lcov.info.
@@ -198,9 +209,9 @@ jobs:
       matrix:
         include:
           - part: server guide and core
-            directories: example/server_guide spring_core_dart spring_boot_dart
+            directories: example/server_guide example/static_site/server spring_core_dart spring_boot_dart
           - part: starters
-            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security
+            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_boot_starter_feign spring_boot_starter_websocket spring_boot_actuator spring_boot_starter_web spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security
     steps:
       - uses: actions/checkout@v7
 
@@ -431,7 +442,7 @@ jobs:
   differential:
     name: Security compared with Spring Security
     needs: changes
-    if: needs.changes.outputs.security == 'true'
+    if: needs.changes.outputs.security == 'true' || needs.changes.outputs.actuator == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -465,6 +476,14 @@ jobs:
 
       - name: The same requests to both
         working-directory: spring_boot_starter_security
+        env:
+          SECURITY_REFERENCE_REQUIRED: 'true' # no skipping without the jar
+        run: dart test --tags differential --reporter expanded
+
+      # The actuator's endpoints and Spring Boot Actuator's (the profile
+      # actuator of the same application).
+      - name: The actuator compared with Spring Boot Actuator
+        working-directory: spring_boot_starter_actuator
         env:
           SECURITY_REFERENCE_REQUIRED: 'true' # no skipping without the jar
         run: dart test --tags differential --reporter expanded
@@ -619,10 +638,11 @@ jobs:
           # dart2js code expects the browser's `self` (timers of @Scheduled).
           node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
 
-  # spring_boot_starter_flutter, spring_boot_starter_flutter_security and
-  # the Flutter guide: outside the pub workspace (flutter_test pins versions
-  # that package:test of the workspace cannot use), so they get the Flutter
-  # SDK and their own resolution. Only when one of them, or the server guide
+  # spring_boot_starter_flutter, spring_boot_starter_flutter_security,
+  # spring_boot_starter_flutter_navigation and the Flutter guide: outside
+  # the pub workspace (flutter_test pins versions that package:test of the
+  # workspace cannot use), so they get the Flutter SDK and their own
+  # resolution. Only when one of them, or the server guide
   # the Flutter guide talks to, is affected.
   flutter:
     needs: changes
@@ -642,14 +662,24 @@ jobs:
           dart pub get
           (cd spring_boot_starter_flutter && flutter pub get)
           (cd spring_boot_starter_flutter_security && flutter pub get)
+          (cd spring_boot_starter_flutter_navigation && flutter pub get)
           (cd example/flutter_guide && flutter pub get)
           (cd example/themes/neon_ui && flutter pub get)
           (cd example/themes/neon && flutter pub get)
           (cd example/themes/material && flutter pub get)
           (cd example/themes/cupertino && flutter pub get)
+          (cd example/static_site/app && flutter pub get)
+          (cd example/seo_site && flutter pub get)
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
+
+      # A Flutter app per Flutter starter, listing that starter alone
+      # (tool/check_app_dependencies.dart --flutter; the Dart starters'
+      # apps run in the `app-dependencies` job).
+      - name: Each Flutter starter is an application's only dependency
+        if: needs.changes.outputs.flutter_starter == 'true' || needs.changes.outputs.flutter_navigation == 'true' || needs.changes.outputs.flutter_security == 'true'
+        run: dart run tool/check_app_dependencies.dart --flutter
 
       - name: No known vulnerabilities in the dependencies (Flutter packages)
         run: dart run tool/check_vulnerabilities.dart --flutter
@@ -672,24 +702,32 @@ jobs:
 
       - name: Generated code is up to date (Flutter guide, theme examples and packages)
         run: |
-          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino spring_boot_starter_flutter spring_boot_starter_flutter_security; do
+          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site spring_boot_starter_flutter spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
           done
 
       - name: Format (Flutter apps; the rest in the `quality` job)
-        run: dart format --output=none --set-exit-if-changed example/flutter_guide example/themes
+        # Generated code is checked by the step above, not formatted here
+        # (the generator's dart_style may differ from the SDK's).
+        run: |
+          git ls-files example/flutter_guide example/themes example/static_site/app example/seo_site \
+            | grep '\.dart$' | grep -v -e '/spring_gen/' -e '\.spring\.dart$' \
+            | xargs dart format --output=none --set-exit-if-changed
 
       - name: Analyze
         run: |
           (cd spring_boot_starter_flutter && flutter analyze --fatal-infos)
           (cd spring_boot_starter_flutter_security && flutter analyze --fatal-infos)
+          (cd spring_boot_starter_flutter_navigation && flutter analyze --fatal-infos)
           (cd example/flutter_guide && flutter analyze --fatal-infos)
           (cd example/themes/neon_ui && flutter analyze --fatal-infos)
           (cd example/themes/neon && flutter analyze --fatal-infos)
           (cd example/themes/material && flutter analyze --fatal-infos)
           (cd example/themes/cupertino && flutter analyze --fatal-infos)
+          (cd example/static_site/app && flutter analyze --fatal-infos)
+          (cd example/seo_site && flutter analyze --fatal-infos)
 
       # The component pages and the table in docs/configuration.md are made
       # from tool/theme_metadata.json: regenerate them and fail on a change.
@@ -720,6 +758,13 @@ jobs:
       - name: Tests of spring_boot_starter_flutter_security
         if: needs.changes.outputs.flutter_security == 'true'
         working-directory: spring_boot_starter_flutter_security
+        run: flutter test
+
+      # The router, the shells, the scopes and the example's generated
+      # routes, on widgets.
+      - name: Tests of spring_boot_starter_flutter_navigation
+        if: needs.changes.outputs.flutter_navigation == 'true'
+        working-directory: spring_boot_starter_flutter_navigation
         run: flutter test
 
       # The editor against the Flutter apps with their real metadata: the
@@ -785,6 +830,33 @@ jobs:
         if: needs.changes.outputs.theme_showcase_cupertino == 'true'
         working-directory: example/themes/cupertino
         run: flutter build web --release
+
+      # The static site example (example/static_site/): the app's tests, its
+      # web build, then the server's tests against that build (the files,
+      # the app's addresses, the API next to them).
+      - name: Tests of the static site app
+        if: needs.changes.outputs.static_site == 'true'
+        working-directory: example/static_site/app
+        run: flutter test
+
+      # The SEO example (example/seo_site): its screens and the pages the
+      # build wrote into web/ (the generated-code step above checks they
+      # are up to date), then its web build.
+      - name: Tests of the SEO site
+        if: needs.changes.outputs.seo_site == 'true'
+        working-directory: example/seo_site
+        run: |
+          flutter test
+          flutter build web --release
+
+      - name: The static site, built, served by its server
+        if: needs.changes.outputs.static_site == 'true'
+        env:
+          STATIC_SITE_BUILD_REQUIRED: 'true'
+        run: |
+          (cd example/static_site/app && flutter build web --release)
+          cd example/static_site/server
+          dart test --tags built-site
 
   # The secret stores of Windows (DPAPI) and Linux (libsecret) against the
   # real systems (spring_boot_starter_flutter_security's
@@ -967,4 +1039,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_actuator spring_boot_starter_web spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test

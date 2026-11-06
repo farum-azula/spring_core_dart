@@ -27,6 +27,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- spring:deep-links:start sha=ca8d07a285bd (generated from spring.flutter.navigation.deep-links.*; do not edit) -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="neonbooks" />
+            </intent-filter>
+            <!-- spring:deep-links:end -->
         </activity>
         <!-- The Keycloak login (spring_boot_starter_flutter_security, the sso
              profile): Keycloak redirects the Custom Tab to

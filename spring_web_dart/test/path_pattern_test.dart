@@ -91,4 +91,44 @@ void main() {
     expect(file.match('/files/%C0%AF')?.variables, {'name': '%C0%AF'});
     expect(file.match('/files/%G1')?.variables, {'name': '%G1'});
   });
+
+  test('extractPathWithinPattern: the part the pattern does not fix', () {
+    String within(String pattern, String path) =>
+        PathPattern.parse(pattern).extractPathWithinPattern(path);
+    expect(within('/assets/**', '/assets/css/app.css'), 'css/app.css');
+    expect(within('/**', '/index.html'), 'index.html');
+    expect(within('/**', '/'), '');
+    expect(within('/assets/**', '/assets'), '');
+    expect(within('/assets/**', '/assets/'), '');
+    expect(within('/docs/*', '/docs/a'), 'a');
+    expect(within('/docs', '/docs'), '');
+    // As written: still encoded, matrix parameters kept, empty segments
+    // dropped, a trailing slash kept.
+    expect(within('/**', '/a%20b/c;v=1'), 'a%20b/c;v=1');
+    expect(within('/**', '//a//b'), 'a/b');
+    expect(within('/**', '/docs/'), 'docs/');
+  });
+
+  test("CacheControl: the directives in Spring's order", () {
+    expect(CacheControl.empty().headerValue, isNull);
+    expect(CacheControl.noStore().headerValue, 'no-store');
+    expect(
+      CacheControl.noCache().mustRevalidate().headerValue,
+      'no-cache, must-revalidate',
+    );
+    expect(
+      CacheControl.maxAge(const Duration(hours: 1))
+          .immutable()
+          .cachePublic()
+          .sMaxAge(const Duration(minutes: 1))
+          .staleWhileRevalidate(const Duration(seconds: 30))
+          .staleIfError(const Duration(seconds: 5))
+          .noTransform()
+          .proxyRevalidate()
+          .cachePrivate()
+          .headerValue,
+      'max-age=3600, no-transform, public, private, proxy-revalidate, '
+      's-maxage=60, stale-if-error=5, stale-while-revalidate=30, immutable',
+    );
+  });
 }

@@ -591,6 +591,9 @@ class Badge extends SpringStatelessWidget<(Basket,)> {
       ),
     );
     expect(output, _has("name: r'flutterSpringWidgetBindings#application'"));
+    // Its type is the definition's type argument, no `types:` (0.7.0).
+    expect(output, _has('BeanDefinition<SpringWidgetBindings>('));
+    expect(output, isNot(_has('types: const [SpringWidgetBindings]')));
     expect(
       output.indexOf('extensionSpringBeansonBuildContext'),
       greaterThan(output.indexOf('reloadApplicationAsync(')),
@@ -660,7 +663,6 @@ Widget unused() => const _Header();
           'BeanDefinition<SpringWidgetBindings>('
           "  name: r'flutterSpringWidgetBindings#pkgBeans',"
           "  source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',"
-          '  types: const [SpringWidgetBindings],'
           '  autowireCandidate: false,'
           '  create: (r) => SpringWidgetBindings([',
         ),

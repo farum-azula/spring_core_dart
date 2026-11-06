@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/app/shell.dart';
 
@@ -47,8 +47,12 @@ Future<ConfigurableApplicationContext> startApp(
   await tester.pumpWidget(
     SpringApplicationWidget(
       application: () => springApplication,
-      args: ['--spring.flutter.theme.active=$theme', ...args],
-      home: Shell(initialPage: page),
+      args: [
+        '--spring.flutter.theme.active=$theme',
+        // The app starts at `/`, which opens this page.
+        '--spring.flutter.navigation.initial=${pages[page].path}',
+        ...args,
+      ],
     ),
   );
   // Fonts and assets are read for real before the first frame.

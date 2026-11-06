@@ -12,7 +12,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 
 import 'support/app.dart';
@@ -58,7 +58,7 @@ void main() {
 
   // The page that is all about themes, in a theme of a file.
   goldenTest('themes in ocean', (tester) async {
-    await startApp(tester, theme: AppThemes.ocean, page: 9);
+    await startApp(tester, theme: AppThemes.ocean, page: 10);
     await loadImages(tester);
     await matchesScreen(tester, 'themes_ocean');
   });

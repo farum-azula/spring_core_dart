@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// A failure as a sentence for the screen, from the messages files.

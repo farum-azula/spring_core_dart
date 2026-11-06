@@ -121,6 +121,24 @@ class _ThemeTagsState extends State<ThemeTags> {
   }
 }
 
+/// Markdown in the theme (`resources:content/theme-preview.md`): the
+/// headings and text in its text styles, the code in `typography.code`,
+/// colored by `styles.code` (application.yml, themes/*.yml).
+class ThemeMarkdown extends StatelessWidget {
+  const ThemeMarkdown({super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(
+      context.theme.spacing.m,
+      context.theme.spacing.s,
+      context.theme.spacing.m,
+      0,
+    ),
+    child: const MarkdownView.resource('resources:content/theme-preview.md'),
+  );
+}
+
 /// Every part of the theme in a few lines: the palette, the text styles
 /// and the components the theme adjusts. Nothing here sets a color, font
 /// or shape; all of it comes from the properties.

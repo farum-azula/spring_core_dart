@@ -14,7 +14,7 @@ import 'package:neon_books_server/src/supplier/supplier_models.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
     show FeignNotFound, HttpTransport, HttpTransportException;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:test/test.dart';
 
 import 'support/app.dart';

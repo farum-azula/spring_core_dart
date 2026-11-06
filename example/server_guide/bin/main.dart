@@ -7,7 +7,7 @@
 //   dart run bin/main.dart                            # dev: sample data, port 8080
 //   dart run bin/main.dart --spring.profiles.active=prod
 //   dart run bin/main.dart --server.port=9090 --neon.shop.name="Night Books"
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 import 'spring_gen/main.spring.dart';
 

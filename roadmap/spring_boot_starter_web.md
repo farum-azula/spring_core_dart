@@ -103,11 +103,11 @@ exists.
   for resources, streamed uploads in Feign, `@RequestPart` with
   `multipart/mixed` — see *Files* below.
 - `ResponseBodyEmitter`, `@ModelAttribute` (form binding to objects),
-  `HttpSession`; views and static resources (*MVC* below, to
-  investigate).
+  `HttpSession`; views (*MVC* below, to investigate; static resources
+  are done).
 - Filters with URL patterns (`FilterRegistrationBean`-like),
   `spring.web.cors.*`.
-- Static files, forwarded headers, `server.max-http-request-header-size`,
+- Forwarded headers, `server.max-http-request-header-size`,
   timeouts, `server.compression.*` beyond `enabled`.
 - Flutter: blocking warnings, JSON offload, `server.isolate: background`,
   platform checks at startup, hot restart and the port.
@@ -248,8 +248,7 @@ gzip (`server.compression.enabled`). Left:
 - **Filter registration** with URL patterns and an order outside
   `@Order` (`FilterRegistrationBean`).
 - **`spring.web.cors.*`** properties.
-- **Static files**: in the navigation patch (the owner, November 2026), see
-  *Static resources* below.
+- **Static files**: done, see *Static resources* below.
 - **Proxies:** `server.forward-headers-strategy` (`X-Forwarded-*`,
   `Forwarded`) for the scheme, host and client address behind a proxy.
 - **Limits:** `server.max-http-request-header-size`, timeouts,
@@ -257,46 +256,64 @@ gzip (`server.compression.enabled`). Left:
 
 ## Static resources (the navigation patch; the owner, November 2026)
 
-In the release after 0.7.0, `file:` locations first;
-embedding the files in the executable later. Spring Boot's static resources
-(`ResourceHttpRequestHandler`), so a server can hand out files and a built
-Flutter web app. The documentation site itself is on Cloudflare Pages
-(static hosting), so this is for the applications, not for the site.
-`.well-known/` (the deep links' domain files) is served though hidden
-files are not.
+Spring Boot's static resources (`ResourceHttpRequestHandler`), so a
+server can hand out files and a built Flutter web app. The documentation
+site itself is on Cloudflare Pages (static hosting), so this is for the
+applications, not for the site. How to use it: the starter's
+[Static resources](../spring_boot_starter_web/README.md#static-resources)
+section.
+
+Done (after 0.7.0):
 
 - **Where from:** `resources:static/`, `resources:public/` (Boot's
-  locations, `classpath:` renamed), embedded by the generator like the
-  config files (the 1 MB limit per file lifted or moved to a streamed
-  asset), and `file:` directories read at run time, for AOT executables
-  shipped next to their files and for `flutter build web` output.
-  `spring.web.resources.static-locations`, `spring.mvc.static-path-pattern`
-  (`/**`), `spring.web.resources.add-mappings`.
-- **Answers:** `Content-Type` by extension (`spring.mime-types`, never
-  sniffed: `X-Content-Type-Options: nosniff`), `ETag` and `Last-Modified`
-  with `304`, `Cache-Control` from `spring.web.resources.cache.*`
-  (`period`, `cachecontrol.*`), `Range` (as for `Resource` responses now),
-  `HEAD`, precompressed `.gz` / `.br` next to a file
-  (`spring.web.resources.chain.compressed`), `index.html` as the welcome
-  page, a single-page-app fallback to `index.html` for paths that are no
-  file and no handler (opt-in), `ResourceHandlerRegistry` in a
-  `WebMvcConfigurer` for more mappings, handlers before static files.
-- **Security, fail closed:** a request never reads outside its location —
-  the path is decoded once and normalized before it is resolved, in every
-  encoding and separator, on every OS (case-insensitive file systems,
-  Windows' names and separators), symbolic links that leave the location
-  refused; no directory listings; hidden files (dot files) and the
-  build's own files not served; only `GET` and `HEAD`; the security
-  filter chain runs before static files like before any handler.
+  locations, `classpath:` renamed; embedded by the generator like the
+  config files, up to 1 MB per file, or read from `lib/resources/` and
+  the test resource directories on disk) and `file:` directories read at
+  run time, for AOT executables shipped next to their files and for
+  `flutter build web` output. `spring.web.resources.static-locations`,
+  `spring.mvc.static-path-pattern` (`/**`),
+  `spring.web.resources.add-mappings`.
+- **Answers:** `Content-Type` by extension (`server.mime-mappings`, Boot
+  3.3's key; never sniffed: `X-Content-Type-Options: nosniff`), a weak
+  `ETag` and `Last-Modified` with `304`, `Cache-Control` from
+  `spring.web.resources.cache.*` (`period`, `use-last-modified`,
+  `cachecontrol.*`), `Range`, `HEAD`, precompressed `.br` / `.gz`
+  (`spring.web.resources.chain.compressed`, `Vary: Accept-Encoding`),
+  `index.html` as the welcome page at `/`, the opt-in single-page-app
+  fallback (`spring.web.resources.spa-fallback`, our own key),
+  `ResourceHandlerRegistry` in a `WebMvcConfigurer`, handlers before
+  static files, the global CORS rules, only `GET` and `HEAD` (405,
+  `OPTIONS` with `Allow`).
+- **Security, fail closed:** the path is decoded once and checked before
+  it is resolved, in every encoding and separator, for every OS (Windows'
+  names, streams and separators; case-insensitive file systems), dot
+  files (except `.well-known/`) and `WEB-INF` / `META-INF` refused,
+  symbolic links that leave the location refused, regular files only, no
+  directory listings; the security filter chain runs before static files
+  like before any handler.
+- **Verified:** the attack catalog as tests
+  (`static_resources_attack_test.dart`: the path checks, a real directory
+  with a secret next to it, the dispatcher, and the `dart:io` server over
+  a socket); a differential test against Spring Boot's
+  `ResourceHttpRequestHandler` serving the same files
+  (`static_resources_differential_test.dart`, the reference's profile
+  `static`), status and headers compared request by request, the known
+  differences listed with their reason.
+
+Left:
+
+- **Embedding big files** in the executable (the 1 MB limit per file
+  lifted or moved to a streamed asset).
 - **Verified hard, locally in Docker by the rules of
   [security_verification.md](security_verification.md#7-a-hard-security-run-on-a-docker-network-before-the-050-release):**
-  a differential run against Spring Boot's `ResourceHttpRequestHandler`
-  serving the same files (the reference of `tool/security_reference` gets
-  a profile for it) — status, headers and body compared request by
-  request; fuzzing of paths and headers; the active ZAP scan; the attack
-  catalog as tests (categories only in the docs, no payloads). Findings
-  as in that section: confirmed, fixed with a regression test, listed in
-  `fix_plan.md` without details until the fix is out.
+  fuzzing of paths and headers and the active ZAP scan against a server
+  with static files. Findings as in that section: confirmed, fixed with a
+  regression test, listed in `fix_plan.md` without details until the fix
+  is out.
+- The resource chain beyond precompressed files
+  (`spring.web.resources.chain.enabled`, `cache`, the version
+  strategies), webjars, several byte ranges, `MappingDescriptions` of the
+  static mappings for the actuator.
 
 ## Server and properties
 

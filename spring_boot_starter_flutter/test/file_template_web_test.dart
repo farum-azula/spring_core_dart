@@ -14,7 +14,6 @@ import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter/src/files/indexed_db_file_store.dart';
 import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_source.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
 
 @JS('indexedDB.deleteDatabase')
 external JSObject _deleteDatabase(String name);

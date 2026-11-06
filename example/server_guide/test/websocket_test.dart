@@ -10,7 +10,7 @@ import 'dart:convert';
 import 'package:neon_books_server/src/orders/order_service.dart';
 import 'package:spring_boot_starter_security/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:test/test.dart';
 
 import 'support/app.dart';

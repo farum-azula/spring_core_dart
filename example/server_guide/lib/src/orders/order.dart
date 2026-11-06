@@ -1,7 +1,7 @@
 // Orders and the events around them (chapter 6). The JSON classes are
 // immutable: the ObjectMapper writes their fields and reads them back
 // through the constructor.
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 enum OrderStatus {
   placed('PLACED'),

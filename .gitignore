@@ -25,3 +25,6 @@ coverage/
 .project
 .classpath
 .settings/
+
+# Golden test failure images (flutter test --tags golden writes them).
+**/test/failures/

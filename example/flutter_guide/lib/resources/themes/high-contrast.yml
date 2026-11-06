@@ -10,3 +10,8 @@ spring:
           components:
             divider: { thickness: 2, color: $colors.outline }
             outlined-button: { border-color: $colors.on-surface }
+          # Code on the strongest fill, the plain text as dark as the text.
+          styles:
+            code:
+              background: $colors.surface-container-highest
+              text: $colors.on-surface

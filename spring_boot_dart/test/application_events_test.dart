@@ -109,8 +109,11 @@ void main() {
       'ApplicationPreparedEvent',
       'ContextRefreshedEvent', // the listeners are the context's now
       'ApplicationStartedEvent',
+      // Boot's EventPublishingRunListener: each followed by its state.
+      'AvailabilityChangeEvent<LivenessState>',
       'runner',
       'ApplicationReadyEvent',
+      'AvailabilityChangeEvent<ReadinessState>',
     ]);
     // @EventListener beans see the events published after the refresh.
     expect(audit.seen, ['ApplicationStartedEvent', 'ApplicationReadyEvent']);
@@ -177,8 +180,9 @@ void main() {
           .runAsync(const [], systemEnvironment: const {}),
       throwsA(isA<StateError>()),
     );
-    expect(events.sublist(events.length - 5), [
+    expect(events.sublist(events.length - 6), [
       'ApplicationStartedEvent',
+      'AvailabilityChangeEvent<LivenessState>',
       'runner',
       'ApplicationFailedEvent',
       'report',
@@ -193,10 +197,12 @@ void main() {
       final context = await app([runner(Runner(events, wait: true))])
           .runAsync(const [], systemEnvironment: const {});
       addTearDown(context.close);
-      expect(events.sublist(events.length - 3), [
+      expect(events.sublist(events.length - 5), [
         'ApplicationStartedEvent',
+        'AvailabilityChangeEvent<LivenessState>',
         'runner',
         'ApplicationReadyEvent',
+        'AvailabilityChangeEvent<ReadinessState>',
       ]);
     },
   );
@@ -207,11 +213,15 @@ void main() {
       final context = app([runner(Runner(events, wait: true))])
           .run(const [], systemEnvironment: const {});
       addTearDown(context.close);
-      expect(events.last, 'ApplicationStartedEvent'); // run() returned
+      expect(
+        events.last,
+        'AvailabilityChangeEvent<LivenessState>',
+      ); // run() returned
       await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(events.sublist(events.length - 2), [
+      expect(events.sublist(events.length - 3), [
         'runner',
         'ApplicationReadyEvent',
+        'AvailabilityChangeEvent<ReadinessState>',
       ]);
     },
   );
@@ -231,8 +241,10 @@ void main() {
           'ContextRefreshedEvent',
           'started late',
           'ApplicationStartedEvent',
+          'AvailabilityChangeEvent<LivenessState>',
           'runner',
           'ApplicationReadyEvent',
+          'AvailabilityChangeEvent<ReadinessState>',
         ]);
       },
     );
@@ -266,10 +278,12 @@ void main() {
       addTearDown(ok.close);
       expect(events, isNot(contains('runner')));
       await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(events.sublist(events.length - 3), [
+      expect(events.sublist(events.length - 5), [
         'ApplicationStartedEvent',
+        'AvailabilityChangeEvent<LivenessState>',
         'runner',
         'ApplicationReadyEvent',
+        'AvailabilityChangeEvent<ReadinessState>',
       ]);
 
       events.clear();

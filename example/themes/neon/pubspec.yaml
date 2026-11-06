@@ -16,14 +16,11 @@ dependencies:
   # themes/neon.yml, which the app imports.
   neon_ui:
     path: ../neon_ui
-  # SpringApplicationWidget, the theme (spring.flutter.theme.*), the typed
-  # keys, ThemeStates, ThemeAnimation, ThemeBackground.
-  spring_boot_starter_flutter: ^0.7.0
-
-  # Imported by the generated code (lib/spring_gen/).
-  spring_boot_dart: ^0.7.0
-  spring_boot_starter_logging: ^0.7.0
-  spring_core_dart: ^0.7.0
+  # The pages as screens with addresses (@ScreenRoute, @RouteShell). It
+  # brings and exports the Flutter starter: SpringApplicationWidget, the
+  # theme (spring.flutter.theme.*), the typed keys, ThemeStates,
+  # ThemeAnimation, ThemeBackground.
+  spring_boot_starter_flutter_navigation: ^0.7.0
 dev_dependencies:
   build_runner: ^2.17.0
   flutter_lints: ^6.0.0

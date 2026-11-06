@@ -155,6 +155,15 @@ point. The generator scans `lib/` and `bin/`, finds the starters in
 `lib/src/app.dart` is the `@ComponentScan` of `lib/src/`, so its
 generated file can hold the `log` getters of the `@Log` classes.
 
+`pubspec.yaml` lists the starters the server uses (web, security, Feign,
+WebSocket, cache, scheduling) and nothing they bring. The code imports
+them, never the packages under them: `spring_core_dart`'s annotations,
+`spring_boot_dart` and `spring_web_dart` come through
+`package:spring_boot_starter_web/spring_boot_starter_web.dart`,
+`spring_security_core` through the security starter, its test helpers
+through `package:spring_boot_starter_security/testing.dart`. See
+[the packages an application lists](../../docs/packages.md).
+
 | Feature | Where |
 |---|---|
 | `@SpringBootApplication`, `runApplication(args)` | `bin/main.dart` |
@@ -328,7 +337,7 @@ dart run bin/main.dart --spring.profiles.active=dev,sso
 # as root / root-secret, and Keycloak sends you to http://localhost:5050/
 # (the Flutter web app: example/flutter_guide, `flutter run -d chrome
 # --dart-define=SPRING_PROFILES_ACTIVE=sso`, port 5050 from its
-# spring.flutter.web.port).
+# spring.flutter.web.dev-server.port).
 curl -i localhost:8080/api/me                    # 401: no form login, no token
 curl -i localhost:8080/api/me -H 'Authorization: Bearer x'  # 401: not Keycloak's
 ```

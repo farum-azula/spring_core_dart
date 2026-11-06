@@ -1,3 +1,9 @@
+## Unreleased
+
+- **Breaking:** the Feign starter no longer comes through this import (the OAuth2 client stopped re-exporting it): an app with Feign clients lists `spring_boot_starter_feign` and imports it. The package itself now depends on it directly (the web app's transport reads the Feign clients' connect timeout).
+- `package:spring_boot_starter_flutter_security/testing.dart`: re-exports `spring_security_core`'s test helpers (`withMockUser`, `withAuthentication`, `withAnonymousUser`), so an app's tests need no other dependency.
+- Guards of the routes of `spring_boot_starter_flutter_navigation`, which this package now brings and re-exports: `@PreAuthorize` on a screen and `RouteSecurity.preAuthorize(...)` among the filters of routes in Dart configuration, evaluated by the application's `MethodSecurityExpressionHandler` (the `routeSecurity` bean, a `RouteAuthorizationFilter`). Nobody logged in goes to `spring.flutter.navigation.login` and, after the next login however it happens, back to the address kept in `RouteRequestCache` (Spring's `RequestCache`); a logged-in user the expression is `false` for gets the route's error screen (`AccessDeniedException`); a logout opens the screen on top again through the guards (`RouteSecurityNavigator`). On the device this hides screens; the server still checks every request.
+
 ## 0.7.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.7.0.

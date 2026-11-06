@@ -10,7 +10,7 @@ import 'package:neon_books_server/src/shop/clock.dart';
 import 'package:neon_books_server/src/shop/shop_properties.dart';
 import 'package:spring_boot_starter_security/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_web_dart/spring_web_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:test/test.dart';
 
 import 'spring_gen/shop_class.test.spring.dart';

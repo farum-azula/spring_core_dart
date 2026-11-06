@@ -1,0 +1,721 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_flutter_navigation",
+  "properties": [
+    {
+      "name": "spring.flutter.navigation.deep-links.app-id",
+      "type": "String?",
+      "description": "The iOS app id, Team ID and bundle ID (`ABCDE12345.com.example.app`); by default from the Xcode project.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 87,
+      "class": "NavigationDeepLinkProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.deep-links.domains",
+      "type": "List<String>?",
+      "description": "The domains whose `https` links open the app (Universal Links on iOS, App Links on Android): host names, no scheme or path.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 78,
+      "class": "NavigationDeepLinkProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.deep-links.enabled",
+      "type": "bool",
+      "description": "Whether the deep links are written; `false` in a platform's profile turns them off there.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 69,
+      "class": "NavigationDeepLinkProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.deep-links.exclude",
+      "type": "List<String>?",
+      "description": "Path patterns (Spring's syntax) whose links do not open their screen; the app opens its first screen instead, as for a screen with `@RouteInfo(link: false)`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 83,
+      "class": "NavigationDeepLinkProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.deep-links.package",
+      "type": "String?",
+      "description": "The Android package; by default the `applicationId` of the Gradle file.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 91,
+      "class": "NavigationDeepLinkProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.deep-links.scheme",
+      "type": "String?",
+      "description": "The app's own URL scheme (`neonbooks` for `neonbooks://catalog/books/1`). Not verified: another app may claim it, so links people share go through [domains].",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 74,
+      "class": "NavigationDeepLinkProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.deep-links.sha256-cert-fingerprints",
+      "type": "List<String>?",
+      "description": "The SHA-256 fingerprints of the keys the Android app is signed with (the upload key's and Google Play's), for `assetlinks.json`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 95,
+      "class": "NavigationDeepLinkProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.initial",
+      "type": "String?",
+      "description": "Where the app starts when the platform gives no address of its own (`/`), such as `/catalog`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 23,
+      "class": "NavigationProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.languages",
+      "type": "List<String>?",
+      "description": "The languages with their own addresses, as language tags (`en, ja`): the first is the default, its addresses have no prefix; the others put theirs under `/<language>` (`/ja/catalog`). An address of a language sets the app's locale; the build's pages for search engines (`spring.flutter.web.seo.*`) are written in each of them.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 37,
+      "class": "NavigationProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.login",
+      "type": "String?",
+      "description": "Where a route that needs a logged-in user sends the others, such as `/login`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 27,
+      "class": "NavigationProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.redirects.*",
+      "type": "String",
+      "description": "Addresses that lead elsewhere, from path to path (`\"[/]\": /catalog`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 30,
+      "class": "NavigationProperties"
+    },
+    {
+      "name": "spring.flutter.navigation.web.url-strategy",
+      "type": "NavigationUrlStrategy",
+      "description": "How the address bar shows the route: `path` (`/catalog/books/1`, the server must answer every path with the app) or `hash` (`/#/catalog/books/1`, Flutter's default).",
+      "default": "path",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 108,
+      "class": "NavigationWebProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.flutter.navigation.web.url-strategy",
+      "values": [
+        {
+          "value": "path",
+          "description": "`/catalog/books/1`; the default. A static host must answer every path with `index.html` (or the build writes a page per path)."
+        },
+        {
+          "value": "hash",
+          "description": "`/#/catalog/books/1`, Flutter's own default."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "navigation",
+      "type": "Navigation",
+      "types": [
+        "Navigation",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ScreenRoutes)"
+      ],
+      "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
+      "line": 75,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "canPop",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "changes",
+          "kind": "getter",
+          "type": "Stream<RouteState>"
+        },
+        {
+          "name": "conversion",
+          "kind": "field",
+          "type": "ConversionService"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "filters",
+          "kind": "field",
+          "type": "List<RouteFilter>"
+        },
+        {
+          "name": "go",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "RouteLocation address",
+            "{PageTransition? transition}"
+          ]
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "initial",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "language",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "languageListenable",
+          "kind": "getter",
+          "type": "ValueListenable<String?>"
+        },
+        {
+          "name": "languages",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "linkExclude",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "messages",
+          "kind": "field",
+          "type": "MessageSource?"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "openLink",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "RouteLocation link"
+          ]
+        },
+        {
+          "name": "pop",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "[Object? result]"
+          ]
+        },
+        {
+          "name": "push",
+          "kind": "method",
+          "type": "Future<T?>",
+          "parameters": [
+            "RouteLocation location",
+            "{PageTransition? transition}"
+          ]
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "removed",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ScreenEntry entry"
+          ]
+        },
+        {
+          "name": "replaceParams",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ScreenEntry entry",
+            "Map<String, Object?> params"
+          ]
+        },
+        {
+          "name": "root",
+          "kind": "field",
+          "type": "List<NavigationEntry>"
+        },
+        {
+          "name": "scopes",
+          "kind": "field",
+          "type": "RouteScopes"
+        },
+        {
+          "name": "select",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ShellEntry shell",
+            "int branch"
+          ]
+        },
+        {
+          "name": "startLocation",
+          "kind": "method",
+          "type": "RouteLocation",
+          "parameters": [
+            "RouteLocation location"
+          ]
+        },
+        {
+          "name": "switchLanguage",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String language"
+          ]
+        },
+        {
+          "name": "table",
+          "kind": "field",
+          "type": "RouteTable"
+        },
+        {
+          "name": "top",
+          "kind": "getter",
+          "type": "ScreenEntry?"
+        },
+        {
+          "name": "visibleStack",
+          "kind": "getter",
+          "type": "List<ScreenEntry>"
+        },
+        {
+          "name": "withLanguage",
+          "kind": "method",
+          "type": "RouteLocation",
+          "parameters": [
+            "RouteLocation location"
+          ]
+        },
+        {
+          "name": "withoutLanguage",
+          "kind": "method",
+          "type": "RouteLocation",
+          "parameters": [
+            "RouteLocation location",
+            "{bool platform}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "navigationProperties",
+      "type": "NavigationProperties",
+      "types": [
+        "NavigationProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "deepLinks",
+          "kind": "field",
+          "type": "NavigationDeepLinkProperties"
+        },
+        {
+          "name": "initial",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "languages",
+          "kind": "field",
+          "type": "List<String>?"
+        },
+        {
+          "name": "login",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "redirects",
+          "kind": "field",
+          "type": "Map<String, String>?"
+        },
+        {
+          "name": "web",
+          "kind": "field",
+          "type": "NavigationWebProperties"
+        }
+      ]
+    },
+    {
+      "name": "navigationScopesRegistrar",
+      "type": "NavigationScopesRegistrar",
+      "types": [
+        "NavigationScopesRegistrar",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
+      "line": 69,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "routeLanguageCustomizer",
+      "type": "RouteLanguageCustomizer",
+      "types": [
+        "RouteLanguageCustomizer",
+        "FlutterAppCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ScreenRoutes)"
+      ],
+      "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
+      "line": 108,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "FlutterAppSettings app"
+          ]
+        },
+        {
+          "name": "navigation",
+          "kind": "field",
+          "type": "Navigation"
+        }
+      ]
+    },
+    {
+      "name": "routeTemplate",
+      "type": "RouteTemplate",
+      "types": [
+        "RouteTemplate"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ScreenRoutes)"
+      ],
+      "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
+      "line": 119,
+      "injects": [],
+      "members": [
+        {
+          "name": "attributes",
+          "kind": "getter",
+          "type": "Map<String, Object?>"
+        },
+        {
+          "name": "branch",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "canPop",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "changes",
+          "kind": "getter",
+          "type": "Stream<RouteState>"
+        },
+        {
+          "name": "content",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "extra",
+          "kind": "method",
+          "type": "T?",
+          "parameters": []
+        },
+        {
+          "name": "get",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "RouteKey<T> key"
+          ]
+        },
+        {
+          "name": "go",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Object location",
+            "{Map<String, Object?> pathVariables}",
+            "{Map<String, Object?> params}",
+            "{Object? extra}",
+            "{PageTransition? transition}"
+          ]
+        },
+        {
+          "name": "language",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String pattern"
+          ]
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "param",
+          "kind": "method",
+          "type": "T?",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "params",
+          "kind": "method",
+          "type": "List<T>",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "pathVariable",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "pattern",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "pop",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "[Object? result]"
+          ]
+        },
+        {
+          "name": "push",
+          "kind": "method",
+          "type": "Future<T?>",
+          "parameters": [
+            "Object location",
+            "{Map<String, Object?> pathVariables}",
+            "{Map<String, Object?> params}",
+            "{Object? extra}",
+            "{PageTransition? transition}"
+          ]
+        },
+        {
+          "name": "replaceParams",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Map<String, Object?> params"
+          ]
+        },
+        {
+          "name": "stack",
+          "kind": "getter",
+          "type": "List<RouteState>"
+        },
+        {
+          "name": "state",
+          "kind": "getter",
+          "type": "RouteState"
+        },
+        {
+          "name": "switchLanguage",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String language"
+          ]
+        },
+        {
+          "name": "uri",
+          "kind": "getter",
+          "type": "Uri"
+        }
+      ]
+    },
+    {
+      "name": "screenMappings",
+      "type": "ScreenMappings",
+      "types": [
+        "ScreenMappings",
+        "MappingDescriptions"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ScreenRoutes)"
+      ],
+      "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
+      "line": 129,
+      "injects": [],
+      "members": [
+        {
+          "name": "describeMappings",
+          "kind": "method",
+          "type": "List<Map<String, Object?>>",
+          "parameters": []
+        },
+        {
+          "name": "mappingsName",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "navigation",
+          "kind": "field",
+          "type": "Navigation"
+        }
+      ]
+    },
+    {
+      "name": "springRouterConfig",
+      "type": "SpringRouterConfig",
+      "types": [
+        "SpringRouterConfig",
+        "RouterConfig<RouteLocation>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(ScreenRoutes)"
+      ],
+      "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
+      "line": 143,
+      "injects": [],
+      "members": [
+        {
+          "name": "backButtonDispatcher",
+          "kind": "field",
+          "type": "BackButtonDispatcher?"
+        },
+        {
+          "name": "navigation",
+          "kind": "field",
+          "type": "Navigation"
+        },
+        {
+          "name": "routeInformationParser",
+          "kind": "field",
+          "type": "RouteInformationParser<T>?"
+        },
+        {
+          "name": "routeInformationProvider",
+          "kind": "field",
+          "type": "RouteInformationProvider?"
+        },
+        {
+          "name": "routerDelegate",
+          "kind": "field",
+          "type": "RouterDelegate<T>"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

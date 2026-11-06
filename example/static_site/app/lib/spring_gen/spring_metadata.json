@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "package": "static_site_app",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "httpTransport",
+      "type": "HttpTransport",
+      "types": [
+        "HttpTransport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:static_site_app/src/server_info.dart",
+      "line": 10,
+      "injects": [],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<HttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        },
+        {
+          "name": "stream",
+          "kind": "method",
+          "type": "Future<StreamedHttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "networkConfig",
+      "type": "NetworkConfig",
+      "types": [
+        "NetworkConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:static_site_app/src/server_info.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "httpTransport",
+          "kind": "method",
+          "type": "HttpTransport",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "serverInfoClient",
+      "type": "ServerInfoClient",
+      "types": [
+        "ServerInfoClient"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:static_site_app/src/server_info.dart",
+      "line": 29,
+      "injects": [
+        {
+          "parameter": "_transport",
+          "type": "HttpTransport",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "fetch",
+          "kind": "method",
+          "type": "Future<ServerInfo>",
+          "parameters": []
+        }
+      ]
+    }
+  ],
+  "profiles": [],
+  "routes": [
+    {
+      "path": "",
+      "name": "not-found-page",
+      "class": "NotFoundPage",
+      "source": "package:static_site_app/src/pages.dart#NotFoundPage",
+      "notFound": true
+    },
+    {
+      "path": "/",
+      "name": "home-page",
+      "class": "HomePage",
+      "source": "package:static_site_app/src/pages.dart#HomePage",
+      "title": "Home",
+      "content": "resources:content/home.md"
+    },
+    {
+      "path": "/guide",
+      "name": "guide-page",
+      "class": "GuidePage",
+      "source": "package:static_site_app/src/pages.dart#GuidePage",
+      "title": "Guide",
+      "content": "resources:content/guide.md"
+    },
+    {
+      "path": "/server",
+      "name": "server-page",
+      "class": "ServerPage",
+      "source": "package:static_site_app/src/pages.dart#ServerPage",
+      "title": "Server"
+    }
+  ]
+}

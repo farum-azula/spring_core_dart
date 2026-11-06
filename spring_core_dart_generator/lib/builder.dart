@@ -66,7 +66,9 @@ library;
 
 import 'package:build/build.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/deep_links_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
+import 'package:spring_core_dart_generator/src/seo_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_metadata_builder.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
@@ -90,6 +92,12 @@ import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
 ///   proxy classes of beans that no pointcut of the application can match.
 ///   `@ComponentScan` modules are never pruned, because any other module
 ///   may import them and bring aspects the build cannot see.
+/// - `aop_defer` (`false` by default; anything but a `bool` throws an
+///   [ArgumentError]): the `lib/` modules of a library package leave to
+///   the application the proxy classes only its aspects can match, as a
+///   starter's (a package with `lib/spring_auto_configuration.dart`) always
+///   do. For a library whose modules a starter's auto-configuration imports
+///   (`spring_boot_actuator`); the application finds them through it.
 /// - `dart_defines_exclude` (a list of property name prefixes, empty by
 ///   default; anything but a list of strings, a blank entry or a `*`
 ///   wildcard throws an [ArgumentError]): the properties under them, in
@@ -126,8 +134,13 @@ Builder springCoreDartBuilder(BuilderOptions options) {
   if (prune is! bool) {
     throw ArgumentError.value(prune, 'aop_prune', 'Expected true or false');
   }
+  final defer = options.config['aop_defer'] ?? false;
+  if (defer is! bool) {
+    throw ArgumentError.value(defer, 'aop_defer', 'Expected true or false');
+  }
   return SpringBuilder(
     pruneProxies: prune,
+    deferProxies: defer,
     dartDefinesExclude: _dartDefinesExclude(
       options.config['dart_defines_exclude'],
     ),
@@ -211,6 +224,7 @@ Builder springPropertiesBuilder(BuilderOptions options) {
   return SpringPropertiesBuilder(
     proxyMode: builder.proxyMode,
     pruneProxies: builder.pruneProxies,
+    deferProxies: builder.deferProxies,
     dartDefinesExclude: builder.dartDefinesExclude,
   );
 }
@@ -243,6 +257,35 @@ Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();
 /// ```
 Builder springFlutterWebBuilder(BuilderOptions options) =>
     WebDevConfigBuilder();
+
+/// Creates the builder of the site's pages ([SeoBuilder]), registered in
+/// `build.yaml` as `spring_flutter_seo`.
+///
+/// For a Flutter web app with `spring.flutter.web.seo.enabled: true` it
+/// writes, into `web/`, a page per route and Markdown file with its
+/// `<head>` and its text for search engines, link previews and models,
+/// plus `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`. It
+/// takes no options.
+Builder springFlutterSeoBuilder(BuilderOptions options) => SeoBuilder();
+
+/// Creates the builder of the deep links ([DeepLinksBuilder]), registered
+/// in `build.yaml` as `spring_flutter_deep_links`.
+///
+/// For an app with `spring.flutter.navigation.deep-links.*`
+/// (`spring_boot_starter_flutter_navigation`) it writes the scheme and the
+/// domains into `Info.plist`, `Runner.entitlements` and
+/// `AndroidManifest.xml` between `spring:deep-links` markers, and the
+/// files the domains serve (`apple-app-site-association`,
+/// `assetlinks.json`). It takes no options.
+///
+/// ```yaml
+/// # lib/resources/application.yaml
+/// spring.flutter.navigation.deep-links:
+///   scheme: neonbooks
+///   domains: [books.example.com]
+/// ```
+Builder springFlutterDeepLinksBuilder(BuilderOptions options) =>
+    DeepLinksBuilder();
 
 /// Creates the builder of the page loader ([WebPageLoaderBuilder]),
 /// registered in `build.yaml` as `spring_flutter_page_loader`.

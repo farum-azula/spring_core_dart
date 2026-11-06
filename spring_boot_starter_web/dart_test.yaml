@@ -5,3 +5,7 @@ tags:
   # and the rest with --exclude-tags integration.
   integration:
     timeout: 2x
+  # Against Spring Boot itself (tool/security_reference, a built jar):
+  # CI's `differential` job.
+  differential:
+    timeout: 4x

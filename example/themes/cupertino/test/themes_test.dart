@@ -4,9 +4,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_web_dart/spring_web_dart.dart' show HttpTransport;
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/app/shell.dart';
 import 'package:theme_showcase_cupertino/src/widgets/ios_widgets.dart';

@@ -24,8 +24,15 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   spring_boot_dart: ^0.7.0
+  # The connect timeout of the web app's transport comes from the Feign
+  # clients' settings (spring.feign.client.*). Not re-exported: an app with
+  # Feign clients lists the Feign starter.
+  spring_boot_starter_feign: ^0.7.0
   # Re-exported: an app lists only this package.
   spring_boot_starter_flutter: ^0.7.0
+  # The guards of the routes (@PreAuthorize on a screen) and the way back
+  # after the login. Re-exported.
+  spring_boot_starter_flutter_navigation: ^0.7.0
   # The registrations, token endpoint clients, users and authorized
   # clients the app login builds on. Re-exported.
   spring_boot_starter_oauth2_client: ^0.7.0

@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "package": "seo_site_app",
+  "properties": [],
+  "hints": [],
+  "beans": [],
+  "profiles": [
+    "web"
+  ],
+  "routes": [
+    {
+      "path": "",
+      "name": "not-found-page",
+      "class": "NotFoundPage",
+      "source": "package:seo_site_app/src/pages.dart#NotFoundPage",
+      "notFound": true
+    },
+    {
+      "path": "/",
+      "name": "home-page",
+      "class": "HomePage",
+      "source": "package:seo_site_app/src/pages.dart#HomePage",
+      "title": "Home",
+      "description": "Lumen, a small library, and its documentation."
+    },
+    {
+      "path": "/about",
+      "name": "about-page",
+      "class": "AboutPage",
+      "source": "package:seo_site_app/src/pages.dart#AboutPage",
+      "title": "#{about.title}",
+      "description": "#{about.description}"
+    },
+    {
+      "path": "/account",
+      "name": "account-page",
+      "class": "AccountPage",
+      "source": "package:seo_site_app/src/pages.dart#AccountPage",
+      "title": "Account",
+      "index": false
+    },
+    {
+      "path": "/blog/{*path}",
+      "name": "blog-page",
+      "class": "BlogPage",
+      "source": "package:seo_site_app/src/pages.dart#BlogPage",
+      "title": "Blog",
+      "content": "resources:content/blog/"
+    },
+    {
+      "path": "/books/{id}",
+      "name": "book-page",
+      "class": "BookPage",
+      "source": "package:seo_site_app/src/pages.dart#BookPage",
+      "title": "Book",
+      "description": "A book about Lumen.",
+      "image": "resources:images/book.png",
+      "paths": [
+        "/books/1",
+        "/books/2"
+      ]
+    },
+    {
+      "path": "/docs/{*path}",
+      "name": "docs-page",
+      "class": "DocsPage",
+      "source": "package:seo_site_app/src/pages.dart#DocsPage",
+      "title": "Docs",
+      "content": "resources:content/docs/"
+    },
+    {
+      "path": "/legal/{*path}",
+      "name": "legal-page",
+      "class": "LegalPage",
+      "source": "package:seo_site_app/src/pages.dart#LegalPage",
+      "title": "Legal"
+    }
+  ]
+}

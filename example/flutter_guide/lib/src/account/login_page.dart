@@ -11,16 +11,14 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 /// `OAuth2LoginButton` "Sign in with Keycloak"
 /// (`Session.signInWithKeycloak`): the password is typed into Keycloak's
 /// page, never into the app.
+@ScreenRoute('/login', title: '#{login.title}')
 class LoginPage extends SpringStatefulWidget<(Session,)> {
   const LoginPage({super.key});
 
-  /// Opens the screen.
-  static Future<void> open(BuildContext context) => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      settings: const RouteSettings(name: 'login'),
-      builder: (_) => const LoginPage(),
-    ),
-  );
+  /// Opens the screen over everything (`/login`); from any widget, also
+  /// the shell's app bar, through the `RouteTemplate` bean.
+  static Future<void> open(BuildContext context) =>
+      context.bean<RouteTemplate>().push<void>('/login');
 
   @override
   State<LoginPage> createState() => _LoginPageState();

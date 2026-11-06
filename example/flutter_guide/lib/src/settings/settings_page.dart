@@ -17,6 +17,7 @@ typedef SettingsPageBeans = (
 /// loaded at run time) and the language. Both are beans
 /// (`ThemeSelection` of the starter, `LanguageSelection` of the app);
 /// picking one changes the whole app at once.
+@ScreenRoute('/settings', title: '#{settings.title}')
 class SettingsPage extends SpringStatelessWidget<SettingsPageBeans> {
   const SettingsPage({super.key});
 
@@ -76,6 +77,8 @@ class SettingsPage extends SpringStatelessWidget<SettingsPageBeans> {
             ),
           heading('settings.preview'),
           const ThemePreview(),
+          heading('settings.markdown'),
+          const ThemeMarkdown(),
           heading('settings.loaders'),
           const LoadersPreview(),
         ],

@@ -8,8 +8,8 @@ import 'package:neon_books_server/src/catalog/catalog_service.dart';
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:neon_books_server/src/orders/order_service.dart';
 import 'package:neon_books_server/src/stock/stock_changed.dart';
+import 'package:spring_boot_starter_security/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_security_core/testing.dart';
 import 'package:test/test.dart';
 
 import 'support/app.dart';

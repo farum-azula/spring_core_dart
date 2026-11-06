@@ -5,6 +5,7 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 
 /// The About screen: the logo and a text, both assets injected into the
 /// `AppAssets` bean; the text in the app's language (`about_ja.txt`).
+@ScreenRoute('/about', title: '#{about.title}')
 class AboutPage extends SpringStatelessWidget<(AppAssets,)> {
   const AboutPage({super.key});
 

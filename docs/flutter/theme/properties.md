@@ -88,13 +88,14 @@ These keys exist at the root (shared by every theme) and in each
 | `visual-density` | enum | `adaptive`, `standard`, `comfortable`, `compact` | Flutter's | How tightly components are packed. See [below](#visual-density) |
 | `tap-target-size` | enum | `padded`, `shrink-wrap` | Flutter's | The minimum size of a tap target. See [below](#tap-target-size) |
 | `splash` | enum | `ripple`, `sparkle`, `none` | Flutter's | The ink effect when something is tapped. See [below](#splash) |
-| `motion.page-transition` | enum | `platform`, `fade-upwards`, `zoom`, `cupertino`, `none` | `platform` | The page transition. See [motion](motion-and-animations.md#page-transitions) |
+| `motion.page-transition` | enum, or a map of `type`, `duration`, `curve` | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `none` | `none` | The page transition of every screen, in every app type. See [motion](motion-and-animations.md#page-transitions) |
 | `motion.durations.<name>` | duration | `250ms`, `1.5s` | `short` 100ms, `medium` 250ms, `long` 450ms | Named durations. See [motion](motion-and-animations.md#durations) |
 | `motion.curves.<name>` | curve | a curve name or four numbers | Material's standard easing | Named curves. See [motion](motion-and-animations.md#curves) |
 | `components.<component>.*` | map | | Material 3's | Adjusts one Material component. See [components](components/index.md) |
 | `tokens.*` | any | | none | Your own values, at any depth. See [tokens and references](tokens-and-references.md) |
 | `cupertino.*` | map | | iOS's | The `CupertinoThemeData`. See [Cupertino](cupertino.md) |
 | `styles.<name>.*` | map | | none | A look per state for your own widgets. See [styles and states](styles-and-states.md) |
+| `styles.code.*` | map | `background`, `text`, `keyword`, `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`, `punctuation`, `padding`, `radius`, `border`, `border-width` | the color scheme | The colors of code in `MarkdownView`. See [Markdown and code](styles-and-states.md#markdown-and-code-stylescode) |
 | `animations.<name>.*` | map | | none | Named animations: `duration`, `curve`, `repeat`. See [motion](motion-and-animations.md#animations) |
 | `background.*` | map | | none | A color, image, overlay and animation behind every screen. See [background](background.md) |
 

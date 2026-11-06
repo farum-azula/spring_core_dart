@@ -7,7 +7,7 @@ import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/catalog/book_repository.dart';
 import 'package:neon_books_server/src/stock/stock_changed.dart';
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
 /// What the controllers and other services see of the catalog.
 abstract interface class Catalog {

@@ -15,6 +15,7 @@ final class FlutterAppProperties {
   const FlutterAppProperties({
     this.type = AppType.widgets,
     this.title,
+    this.description,
     this.debugBanner = true,
     this.locales,
   });
@@ -22,8 +23,14 @@ final class FlutterAppProperties {
   /// The kind of app widget SpringApplicationWidget builds.
   final AppType type;
 
-  /// The title of the app (task switcher, browser tab).
+  /// The title of the app (task switcher, browser tab; the build writes it
+  /// into web/index.html and the web manifest).
   final String? title;
+
+  /// What the app is, in a sentence: the build writes it into
+  /// web/index.html (the description search engines show) and the web
+  /// manifest.
+  final String? description;
 
   /// Whether the debug banner shows in debug builds.
   final bool debugBanner;
@@ -104,12 +111,15 @@ final class DesktopWindowProperties {
   final String? maxSize;
 }
 
-/// The dev server of `flutter run` on the web, `spring.flutter.web.*`.
+/// The dev server of `flutter run` on the web,
+/// `spring.flutter.web.dev-server.*`.
 ///
 /// Nothing reads it at run time: the generator reads these keys from the
 /// configuration files at build time and writes `web_dev_config.yaml`. The
-/// class describes them for editors.
-@ConfigurationProperties('spring.flutter.web')
+/// class describes them for editors. Before 0.7.1 the keys were directly
+/// under `spring.flutter.web`; such a key now fails the build with its new
+/// name.
+@ConfigurationProperties('spring.flutter.web.dev-server')
 final class FlutterWebProperties {
   /// Settings with these values; all unset by default.
   const FlutterWebProperties({
@@ -166,7 +176,7 @@ final class FlutterWebProperties {
   final List<FlutterWebProxyRule>? proxy;
 }
 
-/// TLS of the web dev server, `spring.flutter.web.https.*`.
+/// TLS of the web dev server, `spring.flutter.web.dev-server.https.*`.
 final class FlutterWebHttps {
   /// Settings with these values.
   const FlutterWebHttps({this.certPath, this.certKeyPath});
@@ -178,7 +188,8 @@ final class FlutterWebHttps {
   final String? certKeyPath;
 }
 
-/// One forwarding rule of the web dev server, `spring.flutter.web.proxy[n]`.
+/// One forwarding rule of the web dev server,
+/// `spring.flutter.web.dev-server.proxy[n]`.
 final class FlutterWebProxyRule {
   /// A rule with these values; each sets exactly one of prefix and regex.
   const FlutterWebProxyRule({
@@ -202,6 +213,123 @@ final class FlutterWebProxyRule {
   /// Where requests matching rule `n` are forwarded
   /// (`http://localhost:8080`). Default: none.
   final String? target;
+}
+
+/// The pages the build writes for search engines, link previews and
+/// models, `spring.flutter.web.seo.*`.
+///
+/// A Flutter web page draws on a canvas: its HTML holds no text. With
+/// [enabled], the generator writes into `web/` a page per route and
+/// Markdown file (its title, description, preview and text in plain HTML,
+/// never shown), `sitemap.xml`, `robots.txt`, `llms.txt` and
+/// `llms-full.txt`; `flutter build web` copies them. Nothing reads these
+/// keys at run time; the class describes them for editors.
+///
+/// ```yaml
+/// # lib/resources/application-web.yml
+/// spring.flutter.web.seo:
+///   enabled: true
+///   site-url: https://spring-dart.dev
+///   from-routes: true
+///   title: '{title} · Spring Dart'
+/// ```
+@ConfigurationProperties('spring.flutter.web.seo')
+final class FlutterWebSeoProperties {
+  /// Settings with these values; off by default.
+  const FlutterWebSeoProperties({
+    this.enabled = false,
+    this.siteUrl,
+    this.fromRoutes = false,
+    this.title = '{title}',
+    this.description,
+    this.image,
+    this.content,
+    this.pages,
+    this.sitemap = true,
+    this.llms = true,
+    this.markdown = true,
+  });
+
+  /// Whether the build writes the pages.
+  final bool enabled;
+
+  /// The site's address (`https://spring-dart.dev`), for the absolute
+  /// addresses of `canonical`, `og:url` and the sitemap; required when
+  /// [enabled]. Its path is where the app is served.
+  final String? siteUrl;
+
+  /// Whether every screen of `spring_boot_starter_flutter_navigation` is a
+  /// page (its title, `@RouteInfo`, its Markdown).
+  final bool fromRoutes;
+
+  /// The page's `<title>`; `{title}` is the page's own.
+  final String title;
+
+  /// The description of a page that has none.
+  final String? description;
+
+  /// The preview image of a page that has none
+  /// (`resources:images/og.png`).
+  final String? image;
+
+  /// Folders of Markdown files, a page per file.
+  final List<FlutterWebSeoContent>? content;
+
+  /// Pages by hand, or what a route says overridden.
+  final List<FlutterWebSeoPage>? pages;
+
+  /// Whether `sitemap.xml` and `robots.txt` are written.
+  final bool sitemap;
+
+  /// Whether `llms.txt` and `llms-full.txt` are written.
+  final bool llms;
+
+  /// Whether the Markdown of a page is written next to it (`<path>.md`).
+  final bool markdown;
+}
+
+/// A folder of Markdown files, `spring.flutter.web.seo.content[n]`.
+final class FlutterWebSeoContent {
+  /// A folder with these values.
+  const FlutterWebSeoContent({this.location, this.path = '/', this.exclude});
+
+  /// The folder (`resources:content/blog/`).
+  final String? location;
+
+  /// The address of the folder (`/blog`): `first.md` is `/blog/first`,
+  /// `index.md` is `/blog`.
+  final String path;
+
+  /// Files left out, globs below the folder (`_*.md`).
+  final List<String>? exclude;
+}
+
+/// A page by hand, `spring.flutter.web.seo.pages[n]`.
+final class FlutterWebSeoPage {
+  /// A page with these values.
+  const FlutterWebSeoPage({
+    this.path,
+    this.title,
+    this.description,
+    this.image,
+    this.index,
+  });
+
+  /// The page's address (`/`).
+  final String? path;
+
+  /// Its title.
+  final String? title;
+
+  /// Its description.
+  final String? description;
+
+  /// Its preview image.
+  final String? image;
+
+  /// `false`: search engines may not list it (`noindex`, not in the
+  /// sitemap).
+  final bool? index;
 }
 
 /// The development switches under `spring.devtools.restart`.

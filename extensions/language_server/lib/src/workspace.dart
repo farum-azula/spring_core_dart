@@ -1344,6 +1344,127 @@ final class SpringWorkspace {
     );
   }
 
+  // The navigation's calls that take an address or a pattern as their
+  // first argument: `route.go('/catalog')`, `push`, `redirect`,
+  // `RouteLocation.parse` / `.expand`.
+  static const _routeMethods = {'go', 'push', 'redirect', 'parse', 'expand'};
+
+  static bool _isRouteArgument(_StringRef ref) {
+    final arguments = ref.literal.parent;
+    return ref.annotation == null &&
+        _routeMethods.contains(ref.method) &&
+        arguments is ArgumentList &&
+        arguments.arguments.isNotEmpty &&
+        arguments.arguments.first == ref.literal;
+  }
+
+  // A path of a screen: the address of `go('/x')`, `push`, `redirect`,
+  // `parse` / `expand`, a branch of `@RouteShell(branches: [...])` or of
+  // `@ScreenRoute(branch: '/x')`, a path of `@RouteInfo(paths: [...])`.
+  static bool _isRoutePath(_StringRef ref) {
+    if (!ref.literal.value.startsWith('/')) {
+      return false;
+    }
+    if (_isRouteArgument(ref) || _isScreenBranch(ref)) {
+      return true;
+    }
+    final list = ref.literal.parent;
+    final named = list is ListLiteral ? list.parent : null;
+    return named is NamedArgument &&
+        (ref.annotation == 'RouteShell' && named.name.lexeme == 'branches' ||
+            ref.annotation == 'RouteInfo' && named.name.lexeme == 'paths');
+  }
+
+  // The branch a screen opens in: `@ScreenRoute('/motion', branch: '/more')`.
+  static bool _isScreenBranch(_StringRef ref) {
+    final named = ref.literal.parent;
+    return ref.annotation == 'ScreenRoute' &&
+        named is NamedArgument &&
+        named.name.lexeme == 'branch';
+  }
+
+  /// The screens of the package of [path]: its `@ScreenRoute` classes, and
+  /// the routes of its metadata (`ScreenRoutes` in Dart configuration)
+  /// whose class is in the workspace.
+  List<(MetaRoute, ClassInfo)> screens(String path) {
+    final package = _packageRoot(path);
+    final result = <(MetaRoute, ClassInfo)>[];
+    final seen = <String>{};
+    for (final info in allClasses) {
+      if (_packageRoot(info.path) != package) {
+        continue;
+      }
+      for (final annotation in info.declaration.metadata) {
+        final first = annotation.arguments?.arguments.firstOrNull;
+        if (annotationName(annotation) == 'ScreenRoute' &&
+            annotation.constructorName == null &&
+            first is SimpleStringLiteral &&
+            seen.add('${first.value} ${info.name}')) {
+          result.add((
+            MetaRoute(path: first.value, className: info.name),
+            info,
+          ));
+        }
+      }
+    }
+    for (final route in metadataFor(path).routes) {
+      if (route.className case final name?
+          when !seen.contains('${route.path} $name')) {
+        for (final info in _classIndex[name] ?? const <ClassInfo>[]) {
+          if (_packageRoot(info.path) == package &&
+              seen.add('${route.path} $name')) {
+            result.add((route, info));
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  // The screens whose pattern is [value] or matches the address [value]
+  // (its query and fragment left out).
+  _Target _routeTarget(String from, String value) {
+    final pattern = value.split('?').first.split('#').first;
+    return _DeclarationTarget("Screen of '$pattern'", [
+      for (final (route, info) in screens(from))
+        if (route.path == pattern ||
+            !pattern.contains('{') && route.matches(pattern))
+          _Declaration(
+            info.path,
+            info.nameOffset,
+            info.name.length,
+            'class `${info.name}` (`${route.path}`)',
+          ),
+    ]);
+  }
+
+  /// Where the screen of [value] (an address or a pattern) is declared,
+  /// for a path in a config file (`spring.flutter.navigation.initial`).
+  List<SourceRange> routeDefinition(String from, String value) {
+    final target = _routeTarget(from, value) as _DeclarationTarget;
+    return [
+      for (final declaration in target.declarations)
+        if (file(declaration.path) case final file?)
+          rangeOf(
+            file,
+            declaration.offset,
+            declaration.offset + declaration.length,
+          ),
+    ];
+  }
+
+  /// The message codes of the bundles of the package of [path].
+  Set<String> messageCodes(String path) {
+    final package = _packageRoot(path);
+    return {
+      for (final MapEntry(key: bundle, value: bundlePackage)
+          in _messageBundlePackages().entries)
+        if (bundlePackage == package)
+          for (final entry in _properties[bundle] ?? const <PropertyEntry>[])
+            entry.key,
+    };
+  }
+
   _StringRef _stringRef(SimpleStringLiteral literal) {
     final annotation = literal.thisOrAncestorOfType<Annotation>();
     final invocation = literal.thisOrAncestorOfType<MethodInvocation>();
@@ -1359,6 +1480,16 @@ final class SpringWorkspace {
     final annotation = ref.annotation;
     if (_resourceTarget(file.path, value) case final target?) {
       return target;
+    }
+    if (_isRoutePath(ref)) {
+      return _routeTarget(file.path, value);
+    }
+    if (_routeMessageKey(ref.literal) case final key?) {
+      return _PropertyTarget(
+        key,
+        messages(key, from: file.path),
+        message: true,
+      );
     }
     if (annotation != null && pointcutAnnotations.contains(annotation)) {
       return _pointcutTarget(file, ref, offset);
@@ -2161,6 +2292,22 @@ final class SpringWorkspace {
         ],
       );
     }
+    final messageKey = RegExp(r'#\{([\w.\-]*)$').firstMatch(before);
+    if (messageKey != null && _isRouteMessageArgument(node)) {
+      return CompletionResult(
+        rangeFrom(offset - messageKey.group(1)!.length),
+        [
+          for (final code in messageCodes(path).toList()..sort())
+            Completion(code, detail: 'message'),
+        ],
+      );
+    }
+    if (_isMessageCode(node)) {
+      return CompletionResult(rangeFrom(ref.contentStart), [
+        for (final code in messageCodes(path).toList()..sort())
+          Completion(code, detail: 'message'),
+      ]);
+    }
     final spel = RegExp(r'#\{([^}]*)$').firstMatch(before);
     if (spel != null && ref.annotation != null) {
       final result = spelComplete(path, spel.group(1)!);
@@ -2170,6 +2317,19 @@ final class SpringWorkspace {
               rangeFrom(ref.contentStart + spel.start + 2 + result.$1),
               result.$2,
             );
+    }
+    if (_isRouteArgument(ref) && before.startsWith('/')) {
+      final routes = metadataFor(path).routes;
+      if (routes.isNotEmpty) {
+        return CompletionResult(rangeFrom(ref.contentStart), [
+          for (final route in routes)
+            Completion(
+              route.path,
+              kind: 18,
+              detail: [?route.className, ?route.title].join(' · '),
+            ),
+        ]);
+      }
     }
     final word = RegExp(r'[\w.\-]*$').firstMatch(before)!;
     final from = rangeFrom(offset - word.group(0)!.length);
@@ -2191,6 +2351,46 @@ final class SpringWorkspace {
         ]);
     }
     return null;
+  }
+
+  // An address no screen has, in `go('/...')` and `push('/...')` of an app
+  // with screens (a pattern with variables is not checked).
+  List<Problem> _routeProblems(DartFile file) {
+    final view = metadataFor(file.path);
+    final routes = view.routes;
+    if (routes.isEmpty) {
+      return const [];
+    }
+    final branches = view.shellBranches;
+    final strings = <SimpleStringLiteral>[];
+    file.unit.accept(_StringCollector(strings));
+    return [
+      // `@ScreenRoute(branch: '/x')`: a branch of a `@RouteShell`.
+      for (final literal in strings)
+        if (_stringRef(literal) case final ref
+            when _isScreenBranch(ref) &&
+                branches.isNotEmpty &&
+                !branches.contains(literal.value))
+          Problem(
+            rangeOf(file, literal.contentsOffset, literal.contentsEnd),
+            "No @RouteShell has the branch '${literal.value}' "
+            '(branches: ${(branches.toList()..sort()).join(', ')})',
+          ),
+      for (final literal in strings)
+        if (_stringRef(literal) case final ref
+            when (_isRouteArgument(ref) &&
+                        (ref.method == 'go' || ref.method == 'push') ||
+                    ref.annotation == 'RouteShell' && _isRoutePath(ref)) &&
+                literal.value.startsWith('/') &&
+                !literal.value.contains('{'))
+          if (Uri.tryParse(literal.value)?.path case final address?
+              when !routes.any((route) => route.matches(address)))
+            Problem(
+              rangeOf(file, literal.contentsOffset, literal.contentsEnd),
+              "No screen has the address '$address' "
+              '(@ScreenRoute or ScreenRoutes)',
+            ),
+    ];
   }
 
   /// Notes about Spring metadata that is missing for the package of [path]
@@ -2432,6 +2632,9 @@ final class SpringWorkspace {
       }
       final ref = _stringRef(literal);
       final value = literal.value;
+      if (_routeMessageKey(literal) != null) {
+        continue;
+      }
       if (ref.annotation != null &&
               templateAnnotations.contains(ref.annotation) ||
           ref.annotation != null &&
@@ -2829,7 +3032,24 @@ final class SpringWorkspace {
           );
         }
       }
+      // `#{key}` titles and descriptions of the navigation.
+      final strings = <SimpleStringLiteral>[];
+      file.unit.accept(_StringCollector(strings));
+      for (final literal in strings) {
+        if (_routeMessageKey(literal) case final key?
+            when !added.contains(key) &&
+                messages(key, from: file.path).isEmpty) {
+          problems.add(
+            Problem(
+              rangeOf(file, literal.contentsOffset, literal.contentsEnd),
+              "No message '$key' in the message bundles "
+              '(messages*.properties)',
+            ),
+          );
+        }
+      }
     }
+    problems.addAll(_routeProblems(file));
     for (final ref in _templateStrings(file)) {
       final base = ref.contentStart;
       final source = file.text.substring(ref.contentStart, ref.contentEnd);
@@ -3143,6 +3363,34 @@ final class _PropertyTarget extends _Target {
   /// Whether [key] is a message code (`context.message('key')`) rather than
   /// a property.
   final bool message;
+}
+
+// A title or description of the navigation, where `#{key}` is a message
+// key (the navigation and the SEO build translate it):
+// `@ScreenRoute(title:)`, `@RouteInfo(description:)`,
+// `ScreenRoutes.route()...screen(title:)`.
+bool _isRouteMessageArgument(SimpleStringLiteral literal) {
+  final argument = literal.parent;
+  if (argument is! NamedArgument) {
+    return false;
+  }
+  final name = argument.name.lexeme;
+  final annotation = literal.thisOrAncestorOfType<Annotation>();
+  if (annotation != null) {
+    final annotationType = annotationName(annotation);
+    return annotationType == 'ScreenRoute' && name == 'title' ||
+        annotationType == 'RouteInfo' && name == 'description';
+  }
+  final invocation = literal.thisOrAncestorOfType<MethodInvocation>();
+  return invocation?.methodName.name == 'screen' && name == 'title';
+}
+
+// The message key of a navigation title or description that is `#{key}`.
+String? _routeMessageKey(SimpleStringLiteral literal) {
+  if (!_isRouteMessageArgument(literal)) {
+    return null;
+  }
+  return RegExp(r'^#\{\s*([^{}\s]+)\s*\}$').firstMatch(literal.value)?.group(1);
 }
 
 /// Methods whose first positional argument is a message code:

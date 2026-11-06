@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/app/shell.dart';
 
@@ -10,8 +10,9 @@ export 'package:theme_showcase_neon/src/app/theme_switcher.dart'
     show showcaseThemes;
 
 /// Starts the app with `SpringApplicationWidget`, as `flutter run` does, on a
-/// [size] screen (a wide window by default) with [theme] active. Close it
-/// with [stopApp] at the end.
+/// [size] screen (a wide window by default) with [theme] active, on the
+/// [page]-th page of [pages] (its address, as the browser would open it).
+/// Close it with [stopApp] at the end.
 Future<ConfigurableApplicationContext> startApp(
   WidgetTester tester, {
   String theme = AppThemes.neon,
@@ -41,8 +42,11 @@ Future<ConfigurableApplicationContext> startApp(
   await tester.pumpWidget(
     SpringApplicationWidget(
       application: () => springApplication,
-      args: ['--spring.flutter.theme.active=$theme', ...args],
-      home: Shell(initialPage: page),
+      args: [
+        '--spring.flutter.theme.active=$theme',
+        '--spring.flutter.navigation.initial=${pages[page].path}',
+        ...args,
+      ],
     ),
   );
   // Fonts and assets are read for real before the first frame.
@@ -109,5 +113,6 @@ const pageTitles = {
   'background': ('Background', 'Background'),
   'tokens': ('Tokens', 'Tokens and references'),
   'logs': ('Logs', 'Logs'),
+  'transitions': ('Transitions', 'Transitions'),
   'themes': ('Themes', 'Themes'),
 };

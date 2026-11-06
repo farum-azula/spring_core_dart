@@ -8,7 +8,7 @@ import 'package:neon_books_server/src/shop/receipt.dart';
 import 'package:neon_books_server/src/shop/shop_properties.dart';
 import 'package:neon_books_server/src/support/chat_message.dart';
 import 'package:neon_books_server/src/support/support_sessions.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// The condition of [VipDesk.onVipOrder]: a top-level function (Dart has
 /// no reflection to evaluate a SpEL `condition` string on the event).

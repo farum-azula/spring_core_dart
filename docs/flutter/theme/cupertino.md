@@ -144,9 +144,10 @@ class SurfaceBars implements CupertinoThemeCustomizer {
 
 ## Differences from Material
 
-- **Page transitions.** `CupertinoApp` always uses Cupertino's own page
-  routes (the slide from the right with the swipe-back gesture). It ignores
-  `motion.page-transition`, which is part of Material's theme.
+- **Page transitions.** A `CupertinoApp` routed by the navigation starter
+  follows `motion.page-transition` like any app: none by default,
+  `platform` for the iOS slide with the swipe-back gesture. Without the router, `Navigator.push` with a `CupertinoPageRoute`
+  keeps Cupertino's own slide.
 - **Components.** `components.*` configure Material's `ThemeData`. A
   `CupertinoApp` shows Cupertino widgets, which read only `cupertino.*`
   (and `components.app-bar.background-color`, used as the default bar color).

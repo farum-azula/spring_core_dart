@@ -1,12 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:neon_ui/neon_ui.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
 import 'package:theme_showcase_neon/src/widgets/section.dart';
 import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
 
 /// The theme's background, a screen's own, and none.
+@ScreenRoute('/background', title: '#{nav.background}')
 class BackgroundPage extends StatelessWidget {
   const BackgroundPage({super.key});
 

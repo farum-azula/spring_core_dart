@@ -1,0 +1,34 @@
+# The site and its API on one port. The files come from the Flutter web
+# build, read at run time: Flutter's main.dart.js and canvaskit.wasm are
+# larger than what the generator embeds into the executable (1 MB a file),
+# so the build stays a folder, as Spring Boot's `file:` locations.
+spring:
+  application:
+    name: static-site
+  web:
+    resources:
+      # `flutter build web` in ../app; the prod profile reads web/.
+      static-locations: file:../app/build/web/
+      # A browser's GET of /guide (no file, no controller) gets index.html:
+      # the app's router opens the page. A fetch() of a missing path and a
+      # missing main.dart.js still get a 404.
+      spa-fallback: true
+      # /guide gets guide/index.html when the build has one: the pages
+      # spring.flutter.web.seo.* writes (example/seo_site). Before the
+      # fallback above.
+      directory-index: true
+      chain:
+        # main.dart.js.br or .gz next to main.dart.js, when the browser
+        # takes it (a build step can write them; Flutter does not).
+        compressed: true
+      cache:
+        cachecontrol:
+          # Flutter's files keep their names from build to build: ask the
+          # server each time, which answers 304 while the ETag matches.
+          no-cache: true
+
+server:
+  port: 8081
+  shutdown: graceful
+  compression:
+    enabled: true

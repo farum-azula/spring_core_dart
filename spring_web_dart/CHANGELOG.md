@@ -1,3 +1,10 @@
+## Unreleased
+
+- `MappingDescriptions`: a bean that describes the addresses a part of the application answers (the web server's handlers, an app's screens), for the actuator's `mappings` endpoint and the editor.
+- `CacheControl`, Spring's builder of `Cache-Control` values (`maxAge`, `noCache`, `noStore`, `mustRevalidate`, `noTransform`, `cachePublic`, `cachePrivate`, `proxyRevalidate`, `sMaxAge`, `staleIfError`, `staleWhileRevalidate`, `immutable`, `headerValue`).
+- `PathPattern.extractPathWithinPattern`: the part of a path a pattern does not fix (`css/app.css` of `/assets/css/app.css` under `/assets/**`).
+- `MediaTypeFactory` knows `.webmanifest` (`application/manifest+json`).
+
 ## 0.7.0
 
 - No changes of its own; released with the family version 0.7.0.

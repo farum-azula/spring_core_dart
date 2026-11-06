@@ -13,7 +13,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/api/shop_client.dart';
-import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -253,7 +252,7 @@ void main() {
     });
 
     testWidgets('the Login screen has one button: Keycloak', (tester) async {
-      await showPage(tester, app.context, const HomePage());
+      await showApp(tester, app.context);
       await openLogin(tester);
 
       expect(find.byKey(const Key('login-keycloak')), findsOneWidget);
@@ -264,7 +263,7 @@ void main() {
     testWidgets('root signs in: ADMIN from the realm roles, a Bearer token', (
       tester,
     ) async {
-      await showPage(tester, app.context, const HomePage());
+      await showApp(tester, app.context);
       await openLogin(tester);
       await tester.tap(find.byKey(const Key('login-keycloak')));
       // The login's requests (discovery, token, user info) take a few

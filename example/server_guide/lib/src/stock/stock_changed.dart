@@ -1,4 +1,4 @@
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// The copies in stock of a book changed: published as an event (a plain
 /// object: Spring wraps it in a `PayloadApplicationEvent`), streamed to

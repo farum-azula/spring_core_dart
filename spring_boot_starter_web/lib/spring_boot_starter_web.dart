@@ -8,9 +8,10 @@
 /// parameters, validates `@Valid()` bodies, writes results as JSON, and
 /// answers errors as `ProblemDetail`s (customized with
 /// `@ExceptionHandler`). It also covers server-sent events (`EventStream`,
-/// `SseEmitter`), file uploads and downloads, sessions, filters,
-/// interceptors and CORS. The server is `dart:io`'s `HttpServer`, set up
-/// from `server.*`, and it starts and stops with the application.
+/// `SseEmitter`), file uploads and downloads, static resources (files
+/// and a built web app), sessions, filters, interceptors and CORS. The
+/// server is `dart:io`'s `HttpServer`, set up from `server.*`, and it
+/// starts and stops with the application.
 ///
 /// This one import is enough: it re-exports `spring_boot_dart`,
 /// `spring_web_dart` (the annotations, `ResponseEntity`, `ProblemDetail`)
@@ -51,12 +52,14 @@ export 'src/dispatcher.dart';
 export 'src/form_parameters.dart';
 export 'src/forwarded_headers.dart';
 export 'src/handler_exception_resolver.dart';
+export 'src/handler_mapping_descriptions.dart';
 export 'src/handler_method.dart';
 export 'src/http_session.dart';
 export 'src/multipart_resolver.dart';
 export 'src/request_mapping.dart' hide absent, dispatcherCorsConfiguration;
 export 'src/response_writer.dart';
 export 'src/sse_emitter.dart';
+export 'src/static_resources.dart';
 export 'src/web_exceptions.dart';
 export 'src/web_server.dart';
 export 'src/web_server_lifecycle.dart';

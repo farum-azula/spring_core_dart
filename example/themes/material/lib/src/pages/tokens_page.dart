@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
@@ -7,6 +8,7 @@ import 'package:theme_showcase_material/src/widgets/theme_picture.dart';
 import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 /// Tokens: values of our own, in groups, with lists, durations and images.
+@ScreenRoute('/tokens', title: '#{nav.tokens}')
 class TokensPage extends StatefulWidget {
   const TokensPage({super.key});
 

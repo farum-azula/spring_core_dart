@@ -256,7 +256,9 @@ one, or `package:spring_core_dart/spring_core_dart.dart` for all of them:
 
 An application on Spring Boot starts from the snippet of the
 [quick start](#quick-start), or from the starter it needs (each package
-README has its own snippet). For the core alone:
+README has its own snippet). It lists the starters it uses and nothing they
+bring: [the packages an application lists](docs/packages.md) says what each
+one re-exports. For the core alone:
 
 ```yaml
 dependencies:

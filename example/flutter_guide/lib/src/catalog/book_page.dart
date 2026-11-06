@@ -18,18 +18,16 @@ typedef BookPageBeans = (
 /// The Book screen: the cover, the details, the stock and "Add to basket".
 /// Both reads go through `CatalogService`, so they are cached: opening the
 /// book again shows it without a request.
+@ScreenRoute('/books/{isbn}', title: '#{book.title}')
 class BookPage extends SpringStatefulWidget<BookPageBeans> {
-  const BookPage(this.isbn, {super.key});
+  const BookPage({this.isbn, super.key});
 
-  final String isbn;
+  /// The book shown; `null` (the screen of the route): the route's `isbn`.
+  final String? isbn;
 
+  /// Opens the book [isbn] over everything (`/books/{isbn}`).
   static Future<void> open(BuildContext context, String isbn) =>
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          settings: RouteSettings(name: 'book/$isbn'),
-          builder: (_) => BookPage(isbn),
-        ),
-      );
+      RouteTemplate.read(context).push<void>(BookPageRoute.to(isbn: isbn));
 
   @override
   State<BookPage> createState() => _BookPageState();
@@ -46,8 +44,10 @@ class _BookPageState extends SpringState<BookPage, BookPageBeans> {
       catalog,
       _,
     ) = beans;
-    _book = catalog.find(widget.isbn);
-    _cover = catalog.cover(widget.isbn);
+    final String isbn =
+        widget.isbn ?? RouteTemplate.read(context).get(BookPageRoute.isbn);
+    _book = catalog.find(isbn);
+    _cover = catalog.cover(isbn);
   }
 
   Future<void> _add(Book book) async {

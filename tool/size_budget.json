@@ -1,15 +1,15 @@
 {
    "sources": {
-      "generatedLines": 58024
+      "generatedLines": 66364
    },
    "apps": {
       "server_guide": {
-         "generatedInstructions": 127536,
-         "snapshotBytes": 9763312
+         "generatedInstructions": 131336,
+         "snapshotBytes": 9865216
       },
       "data_example": {
-         "generatedInstructions": 49356,
-         "snapshotBytes": 6720640
+         "generatedInstructions": 49520,
+         "snapshotBytes": 6757536
       }
    }
 }

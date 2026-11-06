@@ -89,5 +89,123 @@
   ],
   "profiles": [
     "desktop"
+  ],
+  "routes": [
+    {
+      "path": "",
+      "name": "not-found-page",
+      "class": "NotFoundPage",
+      "source": "package:theme_showcase_neon/src/pages/not_found_page.dart#NotFoundPage",
+      "notFound": true
+    },
+    {
+      "path": "/background",
+      "name": "background-page",
+      "class": "BackgroundPage",
+      "source": "package:theme_showcase_neon/src/pages/background_page.dart#BackgroundPage",
+      "title": "#{nav.background}"
+    },
+    {
+      "path": "/components",
+      "name": "components-page",
+      "class": "ComponentsPage",
+      "source": "package:theme_showcase_neon/src/pages/components_page.dart#ComponentsPage",
+      "title": "#{nav.components}"
+    },
+    {
+      "path": "/loaders",
+      "name": "loaders-page",
+      "class": "LoadersPage",
+      "source": "package:theme_showcase_neon/src/pages/loaders_page.dart#LoadersPage",
+      "title": "#{nav.loaders}"
+    },
+    {
+      "path": "/logs",
+      "name": "logs-page",
+      "class": "LogsPage",
+      "source": "package:theme_showcase_neon/src/pages/logs_page.dart#LogsPage",
+      "title": "#{nav.logs}"
+    },
+    {
+      "path": "/motion",
+      "name": "motion-page",
+      "class": "MotionPage",
+      "source": "package:theme_showcase_neon/src/pages/motion_page.dart#MotionPage",
+      "title": "#{nav.motion}"
+    },
+    {
+      "path": "/overview",
+      "name": "overview-page",
+      "class": "OverviewPage",
+      "source": "package:theme_showcase_neon/src/pages/overview_page.dart#OverviewPage",
+      "title": "#{nav.overview}"
+    },
+    {
+      "path": "/states",
+      "name": "states-page",
+      "class": "StatesPage",
+      "source": "package:theme_showcase_neon/src/pages/states_page.dart#StatesPage",
+      "title": "#{nav.states}"
+    },
+    {
+      "path": "/themes",
+      "name": "themes-page",
+      "class": "ThemesPage",
+      "source": "package:theme_showcase_neon/src/pages/themes_page.dart#ThemesPage",
+      "title": "#{nav.themes}"
+    },
+    {
+      "path": "/tokens",
+      "name": "tokens-page",
+      "class": "TokensPage",
+      "source": "package:theme_showcase_neon/src/pages/tokens_page.dart#TokensPage",
+      "title": "#{nav.tokens}"
+    },
+    {
+      "path": "/transitions",
+      "name": "transitions-page",
+      "class": "TransitionsPage",
+      "source": "package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionsPage",
+      "title": "#{nav.transitions}"
+    },
+    {
+      "path": "/transitions/default",
+      "name": "transition-theme-page",
+      "class": "TransitionThemePage",
+      "source": "package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionThemePage",
+      "title": "With the default"
+    },
+    {
+      "path": "/transitions/platform",
+      "name": "transition-platform-page",
+      "class": "TransitionPlatformPage",
+      "source": "package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionPlatformPage",
+      "title": "With the platform's"
+    },
+    {
+      "path": "/transitions/zoom",
+      "name": "transition-zoom-page",
+      "class": "TransitionZoomPage",
+      "source": "package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionZoomPage",
+      "title": "With a zoom"
+    }
+  ],
+  "shells": [
+    {
+      "class": "Shell",
+      "source": "package:theme_showcase_neon/src/app/shell.dart#Shell",
+      "branches": [
+        "/overview",
+        "/components",
+        "/states",
+        "/motion",
+        "/loaders",
+        "/background",
+        "/tokens",
+        "/logs",
+        "/transitions",
+        "/themes"
+      ]
+    }
   ]
 }

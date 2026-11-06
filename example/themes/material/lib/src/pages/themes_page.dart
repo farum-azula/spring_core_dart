@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
-import 'package:theme_showcase_material/src/widgets/styled_widgets.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
+import 'package:theme_showcase_material/src/widgets/styled_widgets.dart';
 import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 typedef ThemesPageBeans = (
@@ -13,6 +13,7 @@ typedef ThemesPageBeans = (
 
 /// Every theme of the app, side by side. Picking one is
 /// `ThemeSelection.select(AppThemes.neon)`.
+@ScreenRoute('/themes', title: '#{nav.themes}')
 class ThemesPage extends SpringStatelessWidget<ThemesPageBeans> {
   const ThemesPage({super.key});
 

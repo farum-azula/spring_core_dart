@@ -1,0 +1,25 @@
+# The site: the app widget, its theme, the dev server of `flutter run`.
+# The pages for search engines are in application-web.yml (the web build
+# reads them).
+spring:
+  application:
+    name: seo-site
+  flutter:
+    app:
+      type: material
+      title: Lumen Docs
+      description: Lumen, a small library documented with a Flutter web site.
+      debug-banner: false
+    theme:
+      seed-color: '#3F6FB5'
+      styles:
+        code:
+          background: $colors.surface-container-high
+          radius: 8
+    # English without a prefix, Japanese under /ja: the router sets the
+    # app's language from the address, the build writes the pages of both.
+    navigation:
+      languages: [en, ja]
+    web:
+      dev-server:
+        port: 5095

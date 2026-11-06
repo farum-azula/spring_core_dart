@@ -7,11 +7,10 @@ import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/admin/admin_service.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
 import 'package:neon_books_app/src/api/models.dart';
-import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_flutter_security/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_security_core/testing.dart';
 
 import 'support/app.dart';
 import 'support/fake_server.dart';
@@ -34,7 +33,7 @@ void main() {
     server.http
       ..when(HttpMethod.get, '/api/me').respond(401)
       ..when(HttpMethod.post, '/api/login').respond(401);
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
 
     await logIn(tester, 'ada', 'wrong');
 
@@ -46,7 +45,7 @@ void main() {
     tester,
   ) async {
     server.answerLogin('ada');
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
 
     await logIn(tester, 'ada', 'ada-secret');
 
@@ -61,7 +60,7 @@ void main() {
 
   testWidgets('an ADMIN gets the Admin screen', (tester) async {
     server.answerLogin('root', roles: ['USER', 'ADMIN']);
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
 
     await logIn(tester, 'root', 'root-secret');
     await tester.tap(find.text('More'));
@@ -96,7 +95,7 @@ void main() {
     tester,
   ) async {
     server.answerLogin('ada');
-    await showPage(tester, app.context, const HomePage());
+    await showApp(tester, app.context);
     await logIn(tester, 'ada', 'ada-secret');
 
     await tester.tap(find.byTooltip('Account'));

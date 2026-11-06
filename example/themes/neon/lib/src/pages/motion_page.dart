@@ -4,8 +4,10 @@ import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
 import 'package:theme_showcase_neon/src/widgets/section.dart';
 import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 /// The glow modal, the turning border and "reduce motion".
+@ScreenRoute('/motion', title: '#{nav.motion}')
 class MotionPage extends StatefulWidget {
   const MotionPage({super.key});
 

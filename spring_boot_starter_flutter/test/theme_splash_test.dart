@@ -343,6 +343,77 @@ void main() {
       expect(LoaderHandOff.pageElapsed(), const Duration(seconds: 2));
     });
   });
+
+  group('the hand-over to the web page loader', () {
+    // The splash with a logo whose asset is not in the test bundle: its
+    // image never paints, as a logo still on its way.
+    SpringThemeData theme() => SpringThemes({
+      'splash.logo.source': 'assets/missing_logo.png',
+      'splash.logo.size': '96',
+      'splash.title': 'NEON',
+      'splash.loader': 'bar',
+      'loaders.bar.kind': 'bar',
+    }).data('light');
+
+    Widget splash(SpringThemeData theme, {VoidCallback? onShown}) =>
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: ThemeSplash(
+            theme: theme,
+            progress: ValueNotifier(0.5),
+            ready: false,
+            onShown: onShown,
+          ),
+        );
+
+    testWidgets('the logo has its box from the first frame: nothing moves', (
+      tester,
+    ) async {
+      await tester.pumpWidget(splash(theme()));
+      final box = find.byWidgetPredicate(
+        (w) => w is SizedBox && w.width == 96 && w.height == 96,
+      );
+      expect(box, findsOneWidget);
+      final title = tester.getTopLeft(find.text('NEON'));
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.getTopLeft(find.text('NEON')), title);
+      // The page loader's gap: 20 between the logo, the title and the
+      // loader.
+      expect(
+        tester.getTopLeft(find.text('NEON')).dy - tester.getBottomLeft(box).dy,
+        20,
+      );
+    });
+
+    testWidgets('onShown waits for the logo, never past logoWait', (
+      tester,
+    ) async {
+      var shown = 0;
+      await tester.pumpWidget(splash(theme(), onShown: () => shown++));
+      await tester.pump();
+      // The asset's load fails or times out: the hand-over still comes,
+      // once, after a frame and within logoWait.
+      await tester.pump(ThemeSplash.logoWait);
+      await tester.pump();
+      expect(shown, 1);
+      await tester.pump(const Duration(seconds: 3));
+      expect(shown, 1);
+    });
+
+    testWidgets('without a logo: onShown after the first frame', (
+      tester,
+    ) async {
+      var shown = 0;
+      await tester.pumpWidget(
+        splash(
+          SpringThemes({'splash.title': 'NEON'}).data('light'),
+          onShown: () => shown++,
+        ),
+      );
+      await tester.pump();
+      expect(shown, 1);
+    });
+  });
 }
 
 class _Paint extends ThemeLoaderPainter<LoaderValues> {

@@ -9,7 +9,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 297,
+      "line": 430,
       "class": "LocalServerSettings"
     },
     {
@@ -29,7 +29,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 125,
+      "line": 130,
       "class": "ServerCompressionSettings"
     },
     {
@@ -48,7 +48,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 129,
+      "line": 134,
       "class": "ServerCompressionSettings"
     },
     {
@@ -58,7 +58,7 @@
       "default": "2KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 141,
+      "line": 146,
       "class": "ServerCompressionSettings"
     },
     {
@@ -98,7 +98,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 92,
+      "line": 97,
       "class": "ForwardHeadersSettings"
     },
     {
@@ -109,6 +109,16 @@
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
       "line": 51,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.mime-mappings.*",
+      "type": "String",
+      "description": "More media types of the static resources by file extension, on top of the built-in ones (`server.mime-mappings.wasm=application/wasm`); an extension listed here wins. The extension is matched in any case.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 87,
       "class": "ServerSettings"
     },
     {
@@ -138,7 +148,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 189,
+      "line": 194,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -148,7 +158,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 195,
+      "line": 200,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -158,7 +168,7 @@
       "default": "JSESSIONID",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 185,
+      "line": 190,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -168,7 +178,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 192,
+      "line": 197,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -178,7 +188,7 @@
       "default": "lax",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 202,
+      "line": 207,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -188,7 +198,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 199,
+      "line": 204,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -198,7 +208,7 @@
       "default": 10000,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 175,
+      "line": 180,
       "class": "ServerSessionSettings"
     },
     {
@@ -208,7 +218,7 @@
       "default": "30m",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 172,
+      "line": 177,
       "class": "ServerSessionSettings"
     },
     {
@@ -228,7 +238,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 102,
+      "line": 107,
       "class": "ServerSslSettings"
     },
     {
@@ -238,7 +248,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 105,
+      "line": 110,
       "class": "ServerSslSettings"
     },
     {
@@ -248,7 +258,7 @@
       "default": "none",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 115,
+      "line": 120,
       "class": "ServerSslSettings"
     },
     {
@@ -258,7 +268,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 99,
+      "line": 104,
       "class": "ServerSslSettings"
     },
     {
@@ -268,7 +278,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 108,
+      "line": 113,
       "class": "ServerSslSettings"
     },
     {
@@ -278,7 +288,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 111,
+      "line": 116,
       "class": "ServerSslSettings"
     },
     {
@@ -288,7 +298,7 @@
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 153,
+      "line": 158,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -298,7 +308,7 @@
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 150,
+      "line": 155,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -308,7 +318,7 @@
       "default": "512KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 159,
+      "line": 164,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -318,7 +328,7 @@
       "default": "10s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 163,
+      "line": 168,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -328,7 +338,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 276,
+      "line": 409,
       "class": "WebMainSettings"
     },
     {
@@ -338,7 +348,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 259,
+      "line": 271,
       "class": "MvcAsyncSettings"
     },
     {
@@ -348,7 +358,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 244,
+      "line": 249,
       "class": "MvcSettings"
     },
     {
@@ -358,8 +368,18 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 267,
+      "line": 279,
       "class": "MvcSseSettings"
+    },
+    {
+      "name": "spring.mvc.static-path-pattern",
+      "type": "String",
+      "description": "The path pattern the static resources of `spring.web.resources.static-locations` are served under: `/**` serves `static/app.css` as `/app.css`, `/assets/**` as `/assets/app.css`. The welcome page (`index.html` at `/`) is served only with `/**`, as in Spring Boot.",
+      "default": "/**",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 256,
+      "class": "MvcSettings"
     },
     {
       "name": "spring.test.web-environment",
@@ -368,7 +388,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 288,
+      "line": 421,
       "class": "WebTestSettings"
     },
     {
@@ -378,7 +398,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 212,
+      "line": 217,
       "class": "MultipartSettings"
     },
     {
@@ -388,7 +408,7 @@
       "default": "0B",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 229,
+      "line": 234,
       "class": "MultipartSettings"
     },
     {
@@ -398,7 +418,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 234,
+      "line": 239,
       "class": "MultipartSettings"
     },
     {
@@ -408,7 +428,7 @@
       "default": "1MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 216,
+      "line": 221,
       "class": "MultipartSettings"
     },
     {
@@ -418,7 +438,7 @@
       "default": 50,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 225,
+      "line": 230,
       "class": "MultipartSettings"
     },
     {
@@ -428,8 +448,191 @@
       "default": "10MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 220,
+      "line": 225,
       "class": "MultipartSettings"
+    },
+    {
+      "name": "spring.web.resources.add-mappings",
+      "type": "bool",
+      "description": "`false` turns off the default mapping of `static-locations` under `spring.mvc.static-path-pattern` and the welcome page; mappings a `WebMvcConfigurer` adds stay.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 299,
+      "class": "WebResourcesSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.cache-private",
+      "type": "bool?",
+      "description": "`private`: only the user's own cache may store the answer.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 372,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.cache-public",
+      "type": "bool?",
+      "description": "`public`: shared caches may store the answer too.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 369,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.max-age",
+      "type": "Duration?",
+      "description": "`max-age`: how long the answer may be reused without asking the server. A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 354,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.must-revalidate",
+      "type": "bool?",
+      "description": "`must-revalidate`: once stale, not used without asking the server.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 363,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.no-cache",
+      "type": "bool?",
+      "description": "`no-cache`: reused only after the server confirmed it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 357,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.no-store",
+      "type": "bool?",
+      "description": "`no-store`: never stored. Wins over `no-cache` and `max-age`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 360,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.no-transform",
+      "type": "bool?",
+      "description": "`no-transform`: proxies must not change the content.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 366,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.proxy-revalidate",
+      "type": "bool?",
+      "description": "`proxy-revalidate`: `must-revalidate` for shared caches only.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 375,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.s-max-age",
+      "type": "Duration?",
+      "description": "`s-maxage`: how long shared caches may keep the answer. A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 390,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.stale-if-error",
+      "type": "Duration?",
+      "description": "`stale-if-error`: how long a stale answer may be used when the server fails. A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 385,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.stale-while-revalidate",
+      "type": "Duration?",
+      "description": "`stale-while-revalidate`: how long a stale answer may be used while a fresh one is fetched. A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 380,
+      "class": "WebResourcesCacheControlSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.period",
+      "type": "Duration?",
+      "description": "How long browsers may keep a static resource (`Cache-Control: max-age=` and the seconds); `0` sends `no-store`. A number without a unit is seconds. Default: no `Cache-Control`. The `cachecontrol.*` keys win over it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 334,
+      "class": "WebResourcesCacheSettings"
+    },
+    {
+      "name": "spring.web.resources.cache.use-last-modified",
+      "type": "bool",
+      "description": "Whether the files' modification time is sent as `Last-Modified` and checked against `If-Modified-Since` (`304`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 338,
+      "class": "WebResourcesCacheSettings"
+    },
+    {
+      "name": "spring.web.resources.chain.compressed",
+      "type": "bool",
+      "description": "Serves a precompressed file next to the one asked for (`app.js.br`, `app.js.gz`) to a client whose `Accept-Encoding` takes it (Brotli first), with `Content-Encoding` and `Vary: Accept-Encoding`.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 400,
+      "class": "WebResourcesChainSettings"
+    },
+    {
+      "name": "spring.web.resources.directory-index",
+      "type": "bool",
+      "description": "A path with no file, whose folder holds an `index.html`, gets that `index.html`: `/guide` and `/guide/` are answered with `guide/index.html`, as static hosts (Cloudflare Pages, Netlify) answer. The pages the build writes for search engines (`spring.flutter.web.seo.*`) are such files. Asked before [spaFallback]; the file is found as any other (inside the location, the same checks). Not in Spring Boot, whose welcome page covers `/` only: this starter's own key.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 317,
+      "class": "WebResourcesSettings"
+    },
+    {
+      "name": "spring.web.resources.spa-fallback",
+      "type": "bool",
+      "description": "For a single-page app (a `flutter build web` output, a JavaScript router): a browser's `GET` or `HEAD` of a path that is no file and no handler, whose last segment has no extension and that asks for `text/html` by name, gets the `index.html` of `static-locations` instead of a 404, so deep links work. Not in Spring Boot: this starter's own key.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 307,
+      "class": "WebResourcesSettings"
+    },
+    {
+      "name": "spring.web.resources.static-locations",
+      "type": "List<String>",
+      "description": "Where the static resources are read from, in order (the first location with the file wins): `resources:` folders of `lib/resources/` (embedded by the generator) and `file:` directories read at run time (`file:web/`, `file:/srv/shop/build/web/`). Spring Boot's defaults with `classpath:` written `resources:`; `META-INF/resources/` and `resources/` are left out, as Dart has no jars.",
+      "default": [
+        "resources:static/",
+        "resources:public/"
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 294,
+      "class": "WebResourcesSettings"
     }
   ],
   "hints": [
@@ -546,7 +749,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 243,
+      "line": 302,
       "injects": [],
       "members": [
         {
@@ -604,6 +807,40 @@
       ]
     },
     {
+      "name": "dispatcherHandlersMappingDescriptions",
+      "type": "DispatcherHandlersMappingDescriptions",
+      "types": [
+        "DispatcherHandlersMappingDescriptions",
+        "MappingDescriptions"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 351,
+      "injects": [],
+      "members": [
+        {
+          "name": "describeMappings",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": []
+        },
+        {
+          "name": "dispatcher",
+          "kind": "field",
+          "type": "DispatcherHandler? Function()"
+        },
+        {
+          "name": "mappingsName",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
       "name": "forwardedHeaderFilter",
       "type": "ForwardedHeaderFilter",
       "types": [
@@ -619,7 +856,7 @@
         "@_OnForwardHeaders()"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 218,
+      "line": 277,
       "injects": [],
       "members": [
         {
@@ -661,7 +898,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 237,
+      "line": 296,
       "injects": [],
       "members": [
         {
@@ -698,7 +935,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 207,
+      "line": 266,
       "injects": [],
       "members": [
         {
@@ -736,7 +973,7 @@
         "@ConditionalOnMissingBean(HttpSessionRepository)"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 188,
+      "line": 247,
       "injects": [],
       "members": [
         {
@@ -783,7 +1020,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 293,
+      "line": 426,
       "injects": [],
       "members": [
         {
@@ -807,7 +1044,7 @@
         "@ConditionalOnMissingBean(MultipartResolver)"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 136,
+      "line": 146,
       "injects": [],
       "members": [
         {
@@ -853,7 +1090,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 209,
+      "line": 214,
       "injects": [],
       "members": [
         {
@@ -900,7 +1137,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 241,
+      "line": 246,
       "injects": [],
       "members": [
         {
@@ -917,6 +1154,11 @@
           "name": "sse",
           "kind": "field",
           "type": "MvcSseSettings"
+        },
+        {
+          "name": "staticPathPattern",
+          "kind": "field",
+          "type": "String"
         }
       ]
     },
@@ -933,7 +1175,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 286,
+      "line": 345,
       "injects": [],
       "members": [
         {
@@ -953,7 +1195,8 @@
         "RequestMappingHandlerMapping",
         "HandlerMapping",
         "Ordered",
-        "SmartInitializingSingleton"
+        "SmartInitializingSingleton",
+        "DescribableHandlerMapping"
       ],
       "scope": "singleton",
       "primary": false,
@@ -961,7 +1204,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 150,
+      "line": 160,
       "injects": [],
       "members": [
         {
@@ -997,6 +1240,12 @@
           "name": "corsSource",
           "kind": "field",
           "type": "CorsConfigurationSource?"
+        },
+        {
+          "name": "describeHandlers",
+          "kind": "method",
+          "type": "List<Map<String, Object?>>",
+          "parameters": []
         },
         {
           "name": "environment",
@@ -1075,6 +1324,80 @@
       ]
     },
     {
+      "name": "resourceHandlerMapping",
+      "type": "ResourceHandlerMapping",
+      "types": [
+        "ResourceHandlerMapping",
+        "HandlerMapping",
+        "Ordered",
+        "DescribableHandlerMapping"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 198,
+      "injects": [],
+      "members": [
+        {
+          "name": "corsConfigurationFor",
+          "kind": "field",
+          "type": "CorsConfiguration? Function(ServerHttpRequest)?"
+        },
+        {
+          "name": "describeHandlers",
+          "kind": "method",
+          "type": "List<Map<String, Object?>>",
+          "parameters": []
+        },
+        {
+          "name": "directoryIndex",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "getHandler",
+          "kind": "method",
+          "type": "HttpHandler?",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "handlers",
+          "kind": "field",
+          "type": "List<(PathPattern, ResourceHttpRequestHandler)>"
+        },
+        {
+          "name": "mappings",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "spaFallback",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "welcomePage",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "writer",
+          "kind": "field",
+          "type": "ResponseWriter"
+        }
+      ]
+    },
+    {
       "name": "responseWriter",
       "type": "ResponseWriter",
       "types": [
@@ -1086,13 +1409,22 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 121,
+      "line": 131,
       "injects": [],
       "members": [
         {
           "name": "asyncTimeout",
           "kind": "field",
           "type": "Duration?"
+        },
+        {
+          "name": "checkNotModified",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response"
+          ]
         },
         {
           "name": "clock",
@@ -1152,7 +1484,8 @@
           "parameters": [
             "Resource resource",
             "ServerHttpRequest request",
-            "ServerHttpResponse response"
+            "ServerHttpResponse response",
+            "{bool conditional}"
           ]
         },
         {
@@ -1220,6 +1553,11 @@
           "type": "DataSize"
         },
         {
+          "name": "mimeMappings",
+          "kind": "field",
+          "type": "Map<String, String>"
+        },
+        {
           "name": "port",
           "kind": "field",
           "type": "int"
@@ -1263,13 +1601,60 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 272,
+      "line": 405,
       "injects": [],
       "members": [
         {
           "name": "webApplicationType",
           "kind": "field",
           "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "webResourcesSettings",
+      "type": "WebResourcesSettings",
+      "types": [
+        "WebResourcesSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 287,
+      "injects": [],
+      "members": [
+        {
+          "name": "addMappings",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "cache",
+          "kind": "field",
+          "type": "WebResourcesCacheSettings"
+        },
+        {
+          "name": "chain",
+          "kind": "field",
+          "type": "WebResourcesChainSettings"
+        },
+        {
+          "name": "directoryIndex",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "spaFallback",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "staticLocations",
+          "kind": "field",
+          "type": "List<String>"
         }
       ]
     },
@@ -1287,7 +1672,7 @@
         "@ConditionalOnMissingBean(WebServerFactory)"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 99,
+      "line": 109,
       "injects": [],
       "members": [
         {
@@ -1317,7 +1702,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 264,
+      "line": 323,
       "injects": [],
       "members": [
         {
@@ -1438,7 +1823,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 281,
+      "line": 414,
       "injects": [],
       "members": [
         {

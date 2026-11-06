@@ -1,0 +1,1449 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_actuator",
+  "properties": [
+    {
+      "name": "management.endpoints.web.base-path",
+      "type": "String",
+      "description": "The path under which the endpoints are (`/actuator/health`); `/` puts them at the root (`/health`), without the discovery page.",
+      "default": "/actuator",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart",
+      "line": 11,
+      "class": "WebEndpointProperties"
+    },
+    {
+      "name": "management.endpoints.web.discovery.enabled",
+      "type": "bool",
+      "description": "Whether the base path answers the links to the exposed endpoints.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart",
+      "line": 51,
+      "class": "WebEndpointDiscovery"
+    },
+    {
+      "name": "management.endpoints.web.exposure.exclude",
+      "type": "List<String>",
+      "description": "The ids of the endpoints not exposed (wins over [include]), or `*`.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart",
+      "line": 44,
+      "class": "WebEndpointExposure"
+    },
+    {
+      "name": "management.endpoints.web.exposure.include",
+      "type": "List<String>",
+      "description": "The ids of the exposed endpoints, or `*` for all. Default: `health`.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart",
+      "line": 41,
+      "class": "WebEndpointExposure"
+    },
+    {
+      "name": "management.endpoints.web.path-mapping.*",
+      "type": "String",
+      "description": "Another path for an endpoint, by id (`path-mapping.health=healthcheck`).",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart",
+      "line": 21,
+      "class": "WebEndpointProperties"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "buildInfoContributor",
+      "type": "BuildInfoContributor",
+      "types": [
+        "BuildInfoContributor",
+        "InfoContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledInfoContributor('build')",
+        "@ConditionalOnBean(BuildProperties)",
+        "@ConditionalOnMissingBean(BuildInfoContributor)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 332,
+      "injects": [],
+      "members": [
+        {
+          "name": "contribute",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InfoBuilder builder"
+          ]
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "BuildProperties"
+        }
+      ]
+    },
+    {
+      "name": "buildProperties",
+      "type": "BuildProperties",
+      "types": [
+        "BuildProperties",
+        "InfoProperties",
+        "Iterable<MapEntry<String, String>>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnResource([_buildLocation])",
+        "@ConditionalOnMissingBean(BuildProperties)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 264,
+      "injects": [],
+      "members": [
+        {
+          "name": "any",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "artifact",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "cast",
+          "kind": "method",
+          "type": "Iterable<R>",
+          "parameters": []
+        },
+        {
+          "name": "contains",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object? element"
+          ]
+        },
+        {
+          "name": "elementAt",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "int index"
+          ]
+        },
+        {
+          "name": "every",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "expand",
+          "kind": "method",
+          "type": "Iterable<T>",
+          "parameters": [
+            "Iterable<T> Function(MapEntry<String, String>) toElements"
+          ]
+        },
+        {
+          "name": "first",
+          "kind": "getter",
+          "type": "MapEntry<String, String>"
+        },
+        {
+          "name": "firstWhere",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test",
+            "{MapEntry<String, String> Function()? orElse}"
+          ]
+        },
+        {
+          "name": "fold",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "T initialValue",
+            "T Function(T, MapEntry<String, String>) combine"
+          ]
+        },
+        {
+          "name": "followedBy",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "Iterable<MapEntry<String, String>> other"
+          ]
+        },
+        {
+          "name": "forEach",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function(MapEntry<String, String>) action"
+          ]
+        },
+        {
+          "name": "get",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "getInstant",
+          "kind": "method",
+          "type": "DateTime?",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "group",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "isEmpty",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isNotEmpty",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "iterator",
+          "kind": "getter",
+          "type": "Iterator<MapEntry<String, String>>"
+        },
+        {
+          "name": "join",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "[String separator]"
+          ]
+        },
+        {
+          "name": "last",
+          "kind": "getter",
+          "type": "MapEntry<String, String>"
+        },
+        {
+          "name": "lastWhere",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test",
+            "{MapEntry<String, String> Function()? orElse}"
+          ]
+        },
+        {
+          "name": "length",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "map",
+          "kind": "method",
+          "type": "Iterable<T>",
+          "parameters": [
+            "T Function(MapEntry<String, String>) toElement"
+          ]
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "reduce",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "MapEntry<String, String> Function(MapEntry<String, String>, MapEntry<String, String>) combine"
+          ]
+        },
+        {
+          "name": "single",
+          "kind": "getter",
+          "type": "MapEntry<String, String>"
+        },
+        {
+          "name": "singleWhere",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test",
+            "{MapEntry<String, String> Function()? orElse}"
+          ]
+        },
+        {
+          "name": "skip",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "int count"
+          ]
+        },
+        {
+          "name": "skipWhile",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "take",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "int count"
+          ]
+        },
+        {
+          "name": "takeWhile",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "time",
+          "kind": "getter",
+          "type": "DateTime?"
+        },
+        {
+          "name": "toList",
+          "kind": "method",
+          "type": "List<MapEntry<String, String>>",
+          "parameters": [
+            "{bool growable}"
+          ]
+        },
+        {
+          "name": "toSet",
+          "kind": "method",
+          "type": "Set<MapEntry<String, String>>",
+          "parameters": []
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "version",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "where",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "whereType",
+          "kind": "method",
+          "type": "Iterable<T>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "dartInfoContributor",
+      "type": "DartInfoContributor",
+      "types": [
+        "DartInfoContributor",
+        "InfoContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledInfoContributor('dart', enabledByDefault: false)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 360,
+      "injects": [],
+      "members": [
+        {
+          "name": "contribute",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InfoBuilder builder"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "diskSpaceHealthIndicator",
+      "type": "DiskSpaceHealthIndicator",
+      "types": [
+        "DiskSpaceHealthIndicator",
+        "AbstractHealthIndicator",
+        "HealthIndicator",
+        "HealthContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledHealthIndicator('diskspace')",
+        "@ConditionalOnMissingBean.named('diskSpaceHealthIndicator')"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 81,
+      "injects": [],
+      "members": [
+        {
+          "name": "doHealthCheck",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "HealthBuilder builder"
+          ]
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Future<Health>",
+          "parameters": []
+        },
+        {
+          "name": "healthCheckFailedMessage",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "path",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "reader",
+          "kind": "field",
+          "type": "Future<DiskSpace?> Function(String)"
+        },
+        {
+          "name": "threshold",
+          "kind": "field",
+          "type": "DataSize"
+        }
+      ]
+    },
+    {
+      "name": "envInfoContributor",
+      "type": "EnvironmentInfoContributor",
+      "types": [
+        "EnvironmentInfoContributor",
+        "InfoContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledInfoContributor('env', enabledByDefault: false)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 300,
+      "injects": [],
+      "members": [
+        {
+          "name": "contribute",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InfoBuilder builder"
+          ]
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "ConfigurableEnvironment"
+        }
+      ]
+    },
+    {
+      "name": "gitInfoContributor",
+      "type": "GitInfoContributor",
+      "types": [
+        "GitInfoContributor",
+        "InfoContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledInfoContributor('git')",
+        "@ConditionalOnBean(GitProperties)",
+        "@ConditionalOnMissingBean(GitInfoContributor)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 314,
+      "injects": [],
+      "members": [
+        {
+          "name": "contribute",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InfoBuilder builder"
+          ]
+        },
+        {
+          "name": "mode",
+          "kind": "field",
+          "type": "InfoPropertiesMode"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "GitProperties"
+        }
+      ]
+    },
+    {
+      "name": "gitProperties",
+      "type": "GitProperties",
+      "types": [
+        "GitProperties",
+        "InfoProperties",
+        "Iterable<MapEntry<String, String>>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnResource([_gitLocation])",
+        "@ConditionalOnMissingBean(GitProperties)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 282,
+      "injects": [],
+      "members": [
+        {
+          "name": "any",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "branch",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "cast",
+          "kind": "method",
+          "type": "Iterable<R>",
+          "parameters": []
+        },
+        {
+          "name": "commitId",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "commitTime",
+          "kind": "getter",
+          "type": "DateTime?"
+        },
+        {
+          "name": "contains",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object? element"
+          ]
+        },
+        {
+          "name": "elementAt",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "int index"
+          ]
+        },
+        {
+          "name": "every",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "expand",
+          "kind": "method",
+          "type": "Iterable<T>",
+          "parameters": [
+            "Iterable<T> Function(MapEntry<String, String>) toElements"
+          ]
+        },
+        {
+          "name": "first",
+          "kind": "getter",
+          "type": "MapEntry<String, String>"
+        },
+        {
+          "name": "firstWhere",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test",
+            "{MapEntry<String, String> Function()? orElse}"
+          ]
+        },
+        {
+          "name": "fold",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "T initialValue",
+            "T Function(T, MapEntry<String, String>) combine"
+          ]
+        },
+        {
+          "name": "followedBy",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "Iterable<MapEntry<String, String>> other"
+          ]
+        },
+        {
+          "name": "forEach",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function(MapEntry<String, String>) action"
+          ]
+        },
+        {
+          "name": "get",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "getInstant",
+          "kind": "method",
+          "type": "DateTime?",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "isEmpty",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isNotEmpty",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "iterator",
+          "kind": "getter",
+          "type": "Iterator<MapEntry<String, String>>"
+        },
+        {
+          "name": "join",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "[String separator]"
+          ]
+        },
+        {
+          "name": "last",
+          "kind": "getter",
+          "type": "MapEntry<String, String>"
+        },
+        {
+          "name": "lastWhere",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test",
+            "{MapEntry<String, String> Function()? orElse}"
+          ]
+        },
+        {
+          "name": "length",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "map",
+          "kind": "method",
+          "type": "Iterable<T>",
+          "parameters": [
+            "T Function(MapEntry<String, String>) toElement"
+          ]
+        },
+        {
+          "name": "reduce",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "MapEntry<String, String> Function(MapEntry<String, String>, MapEntry<String, String>) combine"
+          ]
+        },
+        {
+          "name": "shortCommitId",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "single",
+          "kind": "getter",
+          "type": "MapEntry<String, String>"
+        },
+        {
+          "name": "singleWhere",
+          "kind": "method",
+          "type": "MapEntry<String, String>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test",
+            "{MapEntry<String, String> Function()? orElse}"
+          ]
+        },
+        {
+          "name": "skip",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "int count"
+          ]
+        },
+        {
+          "name": "skipWhile",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "take",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "int count"
+          ]
+        },
+        {
+          "name": "takeWhile",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "toList",
+          "kind": "method",
+          "type": "List<MapEntry<String, String>>",
+          "parameters": [
+            "{bool growable}"
+          ]
+        },
+        {
+          "name": "toSet",
+          "kind": "method",
+          "type": "Set<MapEntry<String, String>>",
+          "parameters": []
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "where",
+          "kind": "method",
+          "type": "Iterable<MapEntry<String, String>>",
+          "parameters": [
+            "bool Function(MapEntry<String, String>) test"
+          ]
+        },
+        {
+          "name": "whereType",
+          "kind": "method",
+          "type": "Iterable<T>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "healthContributorRegistry",
+      "type": "HealthContributorRegistry",
+      "types": [
+        "HealthContributorRegistry",
+        "CompositeHealthContributor",
+        "HealthContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(HealthContributorRegistry)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 142,
+      "injects": [],
+      "members": [
+        {
+          "name": "getContributor",
+          "kind": "method",
+          "type": "HealthContributor?",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "names",
+          "kind": "getter",
+          "type": "Iterable<String>"
+        },
+        {
+          "name": "registerContributor",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String name",
+            "HealthContributor contributor"
+          ]
+        },
+        {
+          "name": "unregisterContributor",
+          "kind": "method",
+          "type": "HealthContributor?",
+          "parameters": [
+            "String name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "healthEndpoint",
+      "type": "HealthEndpoint",
+      "types": [
+        "HealthEndpoint",
+        "HealthEndpointSupport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(HealthEndpoint)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 181,
+      "injects": [],
+      "members": [
+        {
+          "name": "getHealth",
+          "kind": "method",
+          "type": "Future<(HealthDescriptor, HealthEndpointGroup)?>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext",
+            "List<String> path",
+            "{bool showAll}"
+          ]
+        },
+        {
+          "name": "groups",
+          "kind": "field",
+          "type": "HealthEndpointGroups"
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Future<HealthDescriptor?>",
+          "parameters": []
+        },
+        {
+          "name": "healthForPath",
+          "kind": "method",
+          "type": "Future<HealthDescriptor?>",
+          "parameters": [
+            "List<String> path"
+          ]
+        },
+        {
+          "name": "registry",
+          "kind": "field",
+          "type": "HealthContributorRegistry"
+        },
+        {
+          "name": "slowIndicatorLoggingThreshold",
+          "kind": "field",
+          "type": "Duration?"
+        }
+      ]
+    },
+    {
+      "name": "healthEndpointGroups",
+      "type": "HealthEndpointGroups",
+      "types": [
+        "HealthEndpointGroups"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(HealthEndpointGroups)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 166,
+      "injects": [],
+      "members": [
+        {
+          "name": "get",
+          "kind": "method",
+          "type": "HealthEndpointGroup?",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "names",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "primary",
+          "kind": "getter",
+          "type": "HealthEndpointGroup"
+        }
+      ]
+    },
+    {
+      "name": "healthEndpointWebExtension",
+      "type": "HealthEndpointWebExtension",
+      "types": [
+        "HealthEndpointWebExtension",
+        "HealthEndpointSupport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBean(HealthEndpoint)",
+        "@ConditionalOnMissingBean(HealthEndpointWebExtension)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 216,
+      "injects": [],
+      "members": [
+        {
+          "name": "getHealth",
+          "kind": "method",
+          "type": "Future<(HealthDescriptor, HealthEndpointGroup)?>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext",
+            "List<String> path",
+            "{bool showAll}"
+          ]
+        },
+        {
+          "name": "groups",
+          "kind": "field",
+          "type": "HealthEndpointGroups"
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Future<WebEndpointResponse<HealthDescriptor>>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext"
+          ]
+        },
+        {
+          "name": "healthForPath",
+          "kind": "method",
+          "type": "Future<WebEndpointResponse<HealthDescriptor>>",
+          "parameters": [
+            "ApiVersion apiVersion",
+            "SecurityContext securityContext",
+            "List<String> path"
+          ]
+        },
+        {
+          "name": "registry",
+          "kind": "field",
+          "type": "HealthContributorRegistry"
+        },
+        {
+          "name": "slowIndicatorLoggingThreshold",
+          "kind": "field",
+          "type": "Duration?"
+        }
+      ]
+    },
+    {
+      "name": "infoEndpoint",
+      "type": "InfoEndpoint",
+      "types": [
+        "InfoEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(InfoEndpoint)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 373,
+      "injects": [],
+      "members": [
+        {
+          "name": "contributors",
+          "kind": "field",
+          "type": "List<InfoContributor>"
+        },
+        {
+          "name": "info",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "livenessStateHealthIndicator",
+      "type": "LivenessStateHealthIndicator",
+      "types": [
+        "LivenessStateHealthIndicator",
+        "AvailabilityStateHealthIndicator<LivenessState>",
+        "HealthIndicator",
+        "HealthContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnAvailabilityState('livenessstate')",
+        "@ConditionalOnMissingBean(LivenessStateHealthIndicator)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 105,
+      "injects": [],
+      "members": [
+        {
+          "name": "availability",
+          "kind": "field",
+          "type": "ApplicationAvailability"
+        },
+        {
+          "name": "defaultState",
+          "kind": "field",
+          "type": "S"
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Health",
+          "parameters": []
+        },
+        {
+          "name": "mappings",
+          "kind": "field",
+          "type": "Map<S, Status>"
+        }
+      ]
+    },
+    {
+      "name": "mappingsEndpoint",
+      "type": "MappingsEndpoint",
+      "types": [
+        "MappingsEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(MappingsEndpoint)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 396,
+      "injects": [],
+      "members": [
+        {
+          "name": "contextId",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "descriptions",
+          "kind": "field",
+          "type": "List<MappingDescriptions>"
+        },
+        {
+          "name": "mappings",
+          "kind": "method",
+          "type": "ApplicationMappingsDescriptor",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "osInfoContributor",
+      "type": "OsInfoContributor",
+      "types": [
+        "OsInfoContributor",
+        "InfoContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledInfoContributor('os', enabledByDefault: false)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 347,
+      "injects": [],
+      "members": [
+        {
+          "name": "contribute",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InfoBuilder builder"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pingHealthContributor",
+      "type": "PingHealthIndicator",
+      "types": [
+        "PingHealthIndicator",
+        "HealthIndicator",
+        "HealthContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnEnabledHealthIndicator('ping')"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 69,
+      "injects": [],
+      "members": [
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Health",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "readinessStateHealthIndicator",
+      "type": "ReadinessStateHealthIndicator",
+      "types": [
+        "ReadinessStateHealthIndicator",
+        "AvailabilityStateHealthIndicator<ReadinessState>",
+        "HealthIndicator",
+        "HealthContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnAvailabilityState('readinessstate')",
+        "@ConditionalOnMissingBean(ReadinessStateHealthIndicator)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 123,
+      "injects": [],
+      "members": [
+        {
+          "name": "availability",
+          "kind": "field",
+          "type": "ApplicationAvailability"
+        },
+        {
+          "name": "defaultState",
+          "kind": "field",
+          "type": "S"
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Health",
+          "parameters": []
+        },
+        {
+          "name": "mappings",
+          "kind": "field",
+          "type": "Map<S, Status>"
+        }
+      ]
+    },
+    {
+      "name": "webEndpointDiscoverer",
+      "type": "EndpointDiscoverer",
+      "types": [
+        "EndpointDiscoverer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 424,
+      "injects": [],
+      "members": [
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "ListableBeanFactory"
+        },
+        {
+          "name": "conversionService",
+          "kind": "field",
+          "type": "ConversionService"
+        },
+        {
+          "name": "getEndpoints",
+          "kind": "method",
+          "type": "List<ExposableEndpoint>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "webEndpointHandlerMapping",
+      "type": "WebEndpointHandlerMapping",
+      "types": [
+        "WebEndpointHandlerMapping",
+        "HandlerMapping",
+        "Ordered",
+        "DescribableHandlerMapping"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 434,
+      "injects": [],
+      "members": [
+        {
+          "name": "basePath",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "describeHandlers",
+          "kind": "method",
+          "type": "List<Map<String, Object?>>",
+          "parameters": []
+        },
+        {
+          "name": "endpoints",
+          "kind": "field",
+          "type": "List<ExposableEndpoint>"
+        },
+        {
+          "name": "getHandler",
+          "kind": "method",
+          "type": "HttpHandler?",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "linksEnabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "linksOf",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "Uri requestUri"
+          ]
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "pathMappings",
+          "kind": "field",
+          "type": "Map<String, String>"
+        },
+        {
+          "name": "roleChecker",
+          "kind": "field",
+          "type": "PrincipalRoleChecker?"
+        },
+        {
+          "name": "rootPathOf",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "EndpointId id"
+          ]
+        },
+        {
+          "name": "targetOf",
+          "kind": "method",
+          "type": "EndpointRequestTarget?",
+          "parameters": [
+            "String path"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webEndpointProperties",
+      "type": "WebEndpointProperties",
+      "types": [
+        "WebEndpointProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "basePath",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "cleanBasePath",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "discovery",
+          "kind": "field",
+          "type": "WebEndpointDiscovery"
+        },
+        {
+          "name": "exposure",
+          "kind": "field",
+          "type": "WebEndpointExposure"
+        },
+        {
+          "name": "pathMapping",
+          "kind": "field",
+          "type": "Map<String, String>"
+        }
+      ]
+    },
+    {
+      "name": "webEndpointRequestFilter",
+      "type": "WebEndpointRequestFilter",
+      "types": [
+        "WebEndpointRequestFilter",
+        "WebFilter",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 445,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "mapping",
+          "kind": "field",
+          "type": "WebEndpointHandlerMapping"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

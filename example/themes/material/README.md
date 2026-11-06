@@ -6,8 +6,9 @@ Every look in it, colors, text, components, states, motion, backgrounds, is
 a line of YAML. There is no `ThemeData` in the Dart code.
 
 Open the app and the YAML side by side. Each page shows a capability, the
-lines of YAML that make it (grey boxes) and the result. A test checks that
-every line in a box is really in `lib/resources/`.
+lines of YAML that make it (boxes of Markdown, `MarkdownView.code`, colored
+by the theme's `styles.code`) and the result. A test checks that every line
+in a box is really in `lib/resources/`.
 
 ## Run
 
@@ -37,6 +38,16 @@ flutter run --dart-define=SPRING_PROFILES_ACTIVE=network
 
 ## The pages
 
+Each page is a screen of
+[`spring_boot_starter_flutter_navigation`](../../../spring_boot_starter_flutter_navigation/README.md)
+with its own address: `/colors`, `/type`, `/tokens`, `/components`,
+`/states`, `/motion`, `/loaders`, `/background`, `/images`,
+`/transitions`, `/themes`. Each page is a branch of the shell, so the rail
+and the drawer switch pages at once, without a transition. On
+the web the browser shows it, and a link or a reload opens that page; `/`
+opens the colors (`spring.flutter.navigation.initial`), any other address
+the not-found page.
+
 1. **Colors**: the Material roles made from `seed-color`, declared colors,
    references (`$colors.primary`), roles nobody declared
    (`$colors.outline`), color objects (`{ color, alpha, mix }`) and chains.
@@ -65,16 +76,25 @@ flutter run --dart-define=SPRING_PROFILES_ACTIVE=network
    effect), `ThemeBackground.screen('showcase')` and `ThemeBackground.none`.
 9. **Images**: `ThemeImage` from an asset, and the same from https with a
    cache and an asset `fallback` (profile `network`).
-10. **Themes**: six themes (`light`, `dark`, `ocean`, `ocean-night` which
+10. **Transitions**: how a screen comes in: none by default, a theme's own
+   (`motion.page-transition: zoom` in neon), the platform's
+   (`transition: PageTransition.platform`), a custom fade, and one
+   navigation's (`go(path, transition: ...)`).
+11. **Themes**: six themes (`light`, `dark`, `ocean`, `ocean-night` which
    `extends` ocean, `neon`, `high-contrast`), switched with `ThemeSelection`
    and the generated `AppThemes.*` constants.
 
 ## The code
 
-- `lib/main.dart`: `@SpringBootApplication` and `SpringApplicationWidget`.
-- `lib/src/app/`: the shell (navigation rail, or a drawer when narrow), the
-  theme menu, and the Spring logger (`@Log`, never `print`).
-- `lib/src/pages/`: the ten pages; they read `context.theme.*` from the
+- `lib/main.dart`: `@SpringBootApplication` and `SpringApplicationWidget`,
+  without a `home`: the screens of the navigation make the app.
+- `lib/src/app/shell.dart`: the `@RouteShell` with a branch per page (a
+  navigation rail, or a drawer when narrow), so each page keeps its state
+  while another is shown, and the not-found screen.
+- `lib/src/app/`: also the theme menu and the Spring logger (`@Log`, never
+  `print`).
+- `lib/src/pages/`: the eleven pages, each a `@ScreenRoute('/<page>')`
+  screen; they read `context.theme.*` from the
   generated `lib/spring_gen/theme.spring.dart` (import `spring_gen/main.spring.dart`).
 - `lib/src/widgets/styled_widgets.dart`: the widgets of our own, built with
   `ThemeStates` and `ThemeAnimation`.

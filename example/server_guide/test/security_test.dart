@@ -7,11 +7,11 @@ library;
 import 'package:neon_books_server/src/admin/log_service.dart';
 import 'package:neon_books_server/src/orders/order_service.dart';
 import 'package:neon_books_server/src/security/login_audit.dart';
+import 'package:spring_boot_starter_security/spring_boot_starter_security.dart'
+    show AccessDeniedException;
 import 'package:spring_boot_starter_security/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_security_core/spring_security_core.dart'
-    show AccessDeniedException;
-import 'package:spring_web_dart/spring_web_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:test/test.dart';
 
 import 'support/app.dart';

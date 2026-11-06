@@ -2,7 +2,7 @@
 // a Flutter State) gets its @Autowired / @Value members from the context
 // through `autowireBean`.
 import 'package:neon_books_server/src/stock/stock_service.dart';
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 @Configurable()
 class StockReportPrinter {

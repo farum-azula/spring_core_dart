@@ -4,8 +4,10 @@ import 'package:theme_showcase_neon/spring_gen/main.spring.dart';
 import 'package:theme_showcase_neon/src/widgets/page_frame.dart';
 import 'package:theme_showcase_neon/src/widgets/section.dart';
 import 'package:theme_showcase_neon/src/widgets/yaml_box.dart';
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 /// Every widget of neon_ui, with its looks per state.
+@ScreenRoute('/components', title: '#{nav.components}')
 class ComponentsPage extends StatefulWidget {
   const ComponentsPage({super.key});
 
@@ -166,7 +168,10 @@ neon-button:
         ),
         const Section(
           title: 'Code',
-          child: NeonCode('final theme = context.theme;\ntheme.colors.primary'),
+          child: NeonCode(
+            'final theme = context.theme;\ntheme.colors.primary',
+            language: 'dart',
+          ),
         ),
         Section(
           title: 'Panel and resize handle',
