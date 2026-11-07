@@ -109,58 +109,36 @@ into the application's `.github/workflows/`):
   checked and documented before building; the cold start (a context
   started per instance) measured.
 
-## Open: what the other starters do there (to design separately first)
+## What the other starters do there: a warning list (decided)
 
-Some starters cannot work fully in a function: timers (`@Scheduled`
-with `fixedRate` / `fixedDelay`) die with the instance, an in-memory
-cache or session store is per short-lived instance, there is no file
-system for log files or multipart uploads, no isolates for `@Async`, no
-listening socket for a WebSocket server. An application must not start
-half-working: what cannot work fails the build or the start with the
-reason; what works differently says so once.
+The owner, November 2026: the application gets every starter as it is;
+what cannot work fully in a function is the application's choice, not
+blocked. No facts about the runtime in `spring_boot_dart`, no checks in
+the other starters, no starter knowing a platform.
 
-The direction discussed (not decided): starters never name platforms.
-`spring_boot_dart` holds a few facts about the runtime (does the process
-live long, is memory shared between requests for long, is there a file
-system, are there isolates, can it listen on a port); each starter
-checks the facts it needs (the scheduler: "does the process live long");
-only the edge starter knows the platforms and sets the facts for them.
-The same facts would serve Flutter web (no file system, no isolates)
-and the server's several isolates (no memory shared between them).
+- What cannot compile is stopped by the compiler: `dart compile js`
+  refuses `dart:io` and `dart:isolate` (log files, multipart on disk,
+  isolates for `@Async`, a WebSocket server), with its own message.
+- What compiles but works differently is listed by the edge starter
+  alone, once at start, as one warning with a line per item found in
+  the context:
 
-Two shapes to choose between (names readable, saying what they mean):
+  ```
+  WARN  Running on an edge function; these work differently here:
+    - @Scheduled BooksJobs.refresh (fixedRate): timers do not outlive a request; use the platform's cron
+    - in-memory cache 'books': kept per short-lived instance
+    - in-memory session store: per instance; use JWT
+  ```
 
-1. Facts named after what a starter needs, read like a sentence:
+  The list is a set of contributors (one per kind of item: scheduled
+  methods, in-memory caches, in-memory sessions, ...), each reading the
+  context for what it covers; a new kind is a new contributor, no branch
+  over kinds. Nothing found, nothing logged.
+- The starter's documentation has a section "What does not work in a
+  function" with the same items and what to use instead.
 
-   ```dart
-   runtime.canRunTimers               // timers outlive a request
-   runtime.keepsMemoryBetweenRequests
-   runtime.hasFileSystem
-   runtime.canStartIsolates
-   runtime.canListenOnPort
-   ```
-
-   The scheduler: `if (!runtime.canRunTimers) ...`. Precise, one fact per
-   need.
-
-2. The kind of runtime, no flags:
-
-   ```dart
-   enum RuntimeKind { server, app, browser, function }
-   ```
-
-   The scheduler: `if (runtime.kind == RuntimeKind.function) ...`.
-   Simplest to read, still no platform names (Supabase and Cloudflare are
-   both `function`), but coarser: a starter must know what each kind
-   lacks (a browser has no file system).
-
-It touches `spring_boot_dart` and every starter, so it is designed on
-its own, before the edge starter: the list of facts, how a starter
-declares what it needs (an annotation the generator can check at build
-time, a condition, both), what fails the build, what fails the start,
-what only warns, and Spring's counterparts (`@ConditionalOnCloudPlatform`,
-`@ConditionalOnWebApplication`, `@ConditionalOnThreading`, the GraalVM
-native image's unsupported features).
+Spring's counterpart: Spring Cloud Function on AWS Lambda does not block
+`@Scheduled` either; the limits are documented.
 
 ## When and the name
 

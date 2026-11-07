@@ -100,10 +100,10 @@ What comes next, in order:
    fetch handler, first on Supabase Edge Functions (Supabase's
    environment and Auth JWTs, deploys from GitHub Actions on every
    push), then Deno Deploy, Cloudflare Workers, Vercel and Netlify Edge.
-   Designed first, on its own: what the other starters do where they
-   cannot work fully (timers, in-memory caches and sessions, files,
-   isolates) without starters knowing any platform (the open section of
-   [serverless.md](serverless.md)).
+   What the other starters cannot do fully there (timers, in-memory
+   caches and sessions) is not blocked: the edge starter logs one
+   warning list at start (the owner, November 2026; what cannot compile
+   the compiler stops).
 10. **0.6.2: the theme** (the owner, November 2026; branch `theme`), in
    the Flutter starter ([spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#typed-keys-from-the-configuration-generated)):
    - typed keys from the configuration: the generator writes getters for
