@@ -699,6 +699,14 @@ List<ThemeProp> _background() {
       defaultValue: '0',
     ),
     _p(
+      '$root.image.repeat',
+      'choice',
+      'Tiles the picture over the screen, at its own size with `fit: none`: '
+          'a small texture such as grain.',
+      values: const ['no-repeat', 'repeat', 'repeat-x', 'repeat-y'],
+      defaultValue: 'no-repeat',
+    ),
+    _p(
       '$root.overlay.color',
       'color',
       'A flat color painted over the whole image; use some transparency.',

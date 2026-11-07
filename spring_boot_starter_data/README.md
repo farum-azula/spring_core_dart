@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-data](https://farum-azula.org/components/spring-boot-starter-data)
 
 > **First release.** Repositories run in memory (with transactions and
 > locks) or on SQLite and PostgreSQL from properties. What is planned next
@@ -239,6 +239,34 @@ class Author {
   `@Version` check and no auditing on the rows it changes (Hibernate's
   `@OnDelete` has the same limit). A reference must point to an aggregate
   root.
+
+## Auditing
+
+`@EnableDataAuditing()` on a `@Configuration` class (Spring Data JDBC's
+`@EnableJdbcAuditing`) sets the properties marked `@CreatedDate`,
+`@LastModifiedDate`, `@CreatedBy` and `@LastModifiedBy` on each save. The
+time comes from a `DateTimeProvider` bean (the system clock when there is
+none). The auditor comes from an `AuditorAware` bean that the application
+declares: no starter provides one, the security starter included, so
+without it the `@CreatedBy` and `@LastModifiedBy` properties stay as they
+are. With several, `auditorAwareRef` / `dateTimeProviderRef` name the
+bean.
+
+```dart
+@Configuration()
+@EnableDataAuditing()
+class AuditConfig {
+  // The logged-in user's name, from the security context.
+  @Bean()
+  AuditorAware<String> auditor() => CurrentUserAuditor();
+}
+
+final class CurrentUserAuditor implements AuditorAware<String> {
+  @override
+  String? getCurrentAuditor() =>
+      SecurityContextHolder.getContext().authentication?.name;
+}
+```
 
 ## Transactions
 

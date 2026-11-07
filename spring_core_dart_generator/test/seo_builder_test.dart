@@ -153,6 +153,53 @@ Map<String, String> _site() => {
 
 void main() {
   test(
+    'exclude: the files of every Markdown folder that make no page',
+    () async {
+      final files = _Memory({'web/index.html': _index});
+      final logs = await _build(files, {
+        ..._site(),
+        'application.yml': _config.replaceFirst(
+          '        from-routes: true\n',
+          "        from-routes: true\n        exclude: ['**/contents*.md']\n",
+        ),
+        'content/docs/contents.md': '# Contents\n\n- [Beans](core/beans.md)\n',
+        'content/docs/core/contents.md': '# Core\n',
+      }, metadata: _routes);
+      expect(logs.where((l) => l.startsWith('SEVERE')), isEmpty);
+      expect(files.files.keys.where((f) => f.contains('contents')), isEmpty);
+      expect(files.files['web/sitemap.xml'], isNot(contains('contents')));
+      expect(files.files['web/docs/core/beans/index.html'], isNotNull);
+    },
+  );
+
+  test('the root page with Markdown: its copy is /index.md', () async {
+    final files = _Memory({'web/index.html': _index});
+    final routes = _routes.replaceFirst(
+      '"title":"Home"}',
+      '"title":"Home","content":"resources:content/home.md"}',
+    );
+    expect(routes, isNot(_routes));
+    final logs = await _build(files, {
+      ..._site(),
+      'content/home.md': '# Home\n\nThe start page.\n',
+    }, metadata: routes);
+    expect(logs.where((l) => l.startsWith('SEVERE')), isEmpty);
+    expect(files.files['web/index.md'], contains('The start page.'));
+    expect(files.files, isNot(contains('web/.md')));
+    expect(
+      files.files['web/index.html'],
+      contains(
+        '<link rel="alternate" type="text/markdown" '
+        'href="https://spring-dart.dev/index.md">',
+      ),
+    );
+    expect(
+      files.files['web/llms.txt'],
+      contains('(https://spring-dart.dev/index.md)'),
+    );
+  });
+
+  test(
     'page-files: html writes <path>.html, its addresses without a /',
     () async {
       final files = _Memory({'web/index.html': _index});

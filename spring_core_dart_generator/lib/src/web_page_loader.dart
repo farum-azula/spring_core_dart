@@ -4,11 +4,11 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:crypto/crypto.dart';
 import 'package:spring_core_dart/core.dart' show RemoteAddresses;
 import 'package:spring_core_dart_generator/src/theme_palette.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/web_page_head.dart';
 
 /// The page loader: what the browser shows from the first byte of the page
 /// until the Flutter splash paints, made from the `splash` of the active
@@ -176,8 +176,7 @@ abstract final class WebPageLoader {
 
   /// The hash of [script] for a Content-Security-Policy `script-src`
   /// (`'sha256-...'`).
-  static String get scriptHash =>
-      "'sha256-${base64.encode(sha256.convert(utf8.encode(script)).bytes)}'";
+  static String get scriptHash => WebPageHead.hashOf(script);
 
   static const _style = '''
 #spring-loader{position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--spring-progress:0}
@@ -422,9 +421,9 @@ abstract final class WebPageLoader {
     out
       ..write('<div class="sl-kind">$kindHtml</div>')
       ..writeln('</div></div>')
-      ..writeln('<script>')
-      ..writeln(script)
-      ..writeln('</script>')
+      // Nothing between the tags but the script: a policy allows it by
+      // the hash of exactly that text ([scriptHash]).
+      ..writeln('<script>$script</script>')
       ..write(endMarker);
     return out.toString();
   }

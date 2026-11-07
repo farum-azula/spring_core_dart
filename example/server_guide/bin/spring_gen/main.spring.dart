@@ -169,9 +169,15 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'NEON_KEYCLOAK_SECRET': const String.fromEnvironment(
         'NEON_KEYCLOAK_SECRET',
       ),
+    if (const bool.hasEnvironment('NEON_MAIL_HOST'))
+      'NEON_MAIL_HOST': const String.fromEnvironment('NEON_MAIL_HOST'),
     if (const bool.hasEnvironment('NEON_ORDERS_SHIPPINGDELAY'))
       'NEON_ORDERS_SHIPPINGDELAY': const String.fromEnvironment(
         'NEON_ORDERS_SHIPPINGDELAY',
+      ),
+    if (const bool.hasEnvironment('NEON_SECURITY_USERS'))
+      'NEON_SECURITY_USERS': const String.fromEnvironment(
+        'NEON_SECURITY_USERS',
       ),
     if (const bool.hasEnvironment('NEON_SECURITY_USERS_ADA_PASSWORD'))
       'NEON_SECURITY_USERS_ADA_PASSWORD': const String.fromEnvironment(
@@ -227,6 +233,12 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'NEON_STOCK_RESTOCKINTERVAL': const String.fromEnvironment(
         'NEON_STOCK_RESTOCKINTERVAL',
       ),
+    if (const bool.hasEnvironment('NEON_SUPPLIER_APIKEY'))
+      'NEON_SUPPLIER_APIKEY': const String.fromEnvironment(
+        'NEON_SUPPLIER_APIKEY',
+      ),
+    if (const bool.hasEnvironment('NEON_SUPPLIER_URL'))
+      'NEON_SUPPLIER_URL': const String.fromEnvironment('NEON_SUPPLIER_URL'),
     if (const bool.hasEnvironment('NEON_SUPPORT_BOT_ENABLED'))
       'NEON_SUPPORT_BOT_ENABLED': const String.fromEnvironment(
         'NEON_SUPPORT_BOT_ENABLED',
@@ -498,9 +510,15 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'neon.covers.directory': const String.fromEnvironment(
         'neon.covers.directory',
       ),
+    if (const bool.hasEnvironment('neon.mail.host'))
+      'neon.mail.host': const String.fromEnvironment('neon.mail.host'),
     if (const bool.hasEnvironment('neon.orders.shipping-delay'))
       'neon.orders.shipping-delay': const String.fromEnvironment(
         'neon.orders.shipping-delay',
+      ),
+    if (const bool.hasEnvironment('neon.security.users'))
+      'neon.security.users': const String.fromEnvironment(
+        'neon.security.users',
       ),
     if (const bool.hasEnvironment('neon.security.users.ada.password'))
       'neon.security.users.ada.password': const String.fromEnvironment(
@@ -558,6 +576,12 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'neon.stock.restock-interval': const String.fromEnvironment(
         'neon.stock.restock-interval',
       ),
+    if (const bool.hasEnvironment('neon.supplier.api-key'))
+      'neon.supplier.api-key': const String.fromEnvironment(
+        'neon.supplier.api-key',
+      ),
+    if (const bool.hasEnvironment('neon.supplier.url'))
+      'neon.supplier.url': const String.fromEnvironment('neon.supplier.url'),
     if (const bool.hasEnvironment('neon.support.bot.enabled'))
       'neon.support.bot.enabled': const String.fromEnvironment(
         'neon.support.bot.enabled',
@@ -781,7 +805,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '833b5b21',
+  fingerprint: '5b0f8002',
 );
 
 /// Starts the application: config files, environment, context, runners

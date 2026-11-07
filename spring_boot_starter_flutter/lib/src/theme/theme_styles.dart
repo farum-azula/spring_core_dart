@@ -264,6 +264,14 @@ final class StyleValues {
   /// The duration property [prop] (`250ms`).
   Duration duration(String prop) => _get<Duration>(prop, 'a duration');
 
+  /// The true-or-false property [prop] (`fill: false`).
+  bool flag(String prop) => switch (_get<Object>(prop, 'true or false')) {
+    final bool value => value,
+    'true' => true,
+    'false' => false,
+    _ => _wrong(prop, 'true or false'),
+  };
+
   T _get<T extends Object>(String prop, String kind) {
     final value = _values[ThemeValues.canonical(prop)];
     if (value is T) {

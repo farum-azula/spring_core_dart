@@ -9,6 +9,7 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 
 /// Writes the Flutter web dev server's `web_dev_config.yaml` from the
@@ -79,10 +80,11 @@ import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 /// spring:
 ///   flutter:
 ///     web:
-///       port: 5050
-///       proxy:
-///         - prefix: /api/
-///           target: http://localhost:8080
+///       dev-server:
+///         port: 5050
+///         proxy:
+///           - prefix: /api/
+///             target: http://localhost:8080
 /// ```
 ///
 /// gives
@@ -254,8 +256,10 @@ StandardEnvironment readPlatformEnvironment(
   return environment;
 }
 
-// The hash of the page loader's script when the app has a splash, so the
-// policy of spa mode lets the inline script run.
+// The hashes of the scripts the build writes into web/index.html, so the
+// policy of spa mode lets them run: the page loader's when the app has a
+// splash, the swipe block's with `spring.flutter.web.page.swipe-to-close:
+// false`, the pixel ratio block's with `max-pixel-ratio`.
 Future<List<String>> _pageLoaderHashes(
   BuildStep buildStep,
   Map<String, String> texts,
@@ -271,9 +275,26 @@ Future<List<String>> _pageLoaderHashes(
     ),
     diagnostics,
   );
-  return set != null && WebPageLoader.hasSplash(set)
-      ? [WebPageLoader.scriptHash]
-      : const [];
+  String? page(String key) {
+    try {
+      final value = readPlatformEnvironment(
+        texts,
+        profiles: const ['web'],
+      ).getProperty('spring.flutter.web.page.$key')?.trim();
+      return value == null || value.isEmpty ? null : value.toLowerCase();
+    } on Exception {
+      return null; // the config's own reading reports it
+    }
+  }
+
+  final max = double.tryParse(page('max-pixel-ratio') ?? '');
+  return [
+    if (set != null && WebPageLoader.hasSplash(set)) WebPageLoader.scriptHash,
+    if (page('swipe-to-close') == 'false')
+      WebPageHead.hashOf(WebPageHead.swipeScript),
+    if (max != null && max >= 1)
+      WebPageHead.hashOf(WebPageHead.pixelRatioScript(max)),
+  ];
 }
 
 /// Reads, writes and deletes the `web_dev_config.yaml` of a package for

@@ -9,7 +9,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 467,
+      "line": 484,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 451,
+      "line": 468,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 467,
+      "line": 484,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 451,
+      "line": 468,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 432,
+      "line": 449,
       "class": "FlutterRestartProperties"
     },
     {
@@ -119,7 +119,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 182,
+      "line": 189,
       "class": "DesktopWindowProperties"
     },
     {
@@ -129,7 +129,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 188,
+      "line": 195,
       "class": "DesktopWindowProperties"
     },
     {
@@ -139,7 +139,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 185,
+      "line": 192,
       "class": "DesktopWindowProperties"
     },
     {
@@ -149,7 +149,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 172,
+      "line": 179,
       "class": "DesktopWindowProperties"
     },
     {
@@ -159,7 +159,7 @@
       "default": "default",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 178,
+      "line": 185,
       "class": "DesktopWindowProperties"
     },
     {
@@ -169,7 +169,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 149,
+      "line": 156,
       "class": "FlutterFontsProperties"
     },
     {
@@ -179,7 +179,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 152,
+      "line": 159,
       "class": "FlutterFontsProperties"
     },
     {
@@ -219,7 +219,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 139,
+      "line": 146,
       "class": "FlutterLifecycleProperties"
     },
     {
@@ -361,7 +361,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 234,
+      "line": 241,
       "class": "FlutterWebProperties"
     },
     {
@@ -371,7 +371,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 243,
+      "line": 250,
       "class": "FlutterWebProperties"
     },
     {
@@ -381,17 +381,17 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 250,
+      "line": 260,
       "class": "FlutterWebProperties"
     },
     {
       "name": "spring.flutter.web.dev-server.content-security-policy-report-only",
-      "type": "String?",
-      "description": "The report-only Content-Security-Policy header.",
+      "type": "bool?",
+      "description": "Whether `content-security-policy` is sent as `Content-Security-Policy-Report-Only`: the browser reports what the policy would block and blocks nothing. `false` (the default) enforces it.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 246,
+      "line": 256,
       "class": "FlutterWebProperties"
     },
     {
@@ -401,7 +401,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 240,
+      "line": 247,
       "class": "FlutterWebProperties"
     },
     {
@@ -411,7 +411,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 216,
+      "line": 223,
       "class": "FlutterWebProperties"
     },
     {
@@ -421,7 +421,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 265,
+      "line": 275,
       "class": "FlutterWebHttps"
     },
     {
@@ -431,7 +431,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 262,
+      "line": 272,
       "class": "FlutterWebHttps"
     },
     {
@@ -441,7 +441,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 231,
+      "line": 238,
       "class": "FlutterWebProperties"
     },
     {
@@ -451,7 +451,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 280,
+      "line": 290,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -461,7 +461,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 284,
+      "line": 294,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -471,7 +471,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 288,
+      "line": 298,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -481,7 +481,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 292,
+      "line": 302,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -491,7 +491,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 129,
+      "line": 130,
       "class": "FlutterWebPageProperties"
     },
     {
@@ -501,7 +501,17 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 122,
+      "line": 123,
+      "class": "FlutterWebPageProperties"
+    },
+    {
+      "name": "spring.flutter.web.page.translate",
+      "type": "bool",
+      "description": "Whether browsers and Google may offer to translate the page. Flutter draws its text on a canvas, so a translator finds none: `false` writes `translate=\"no\"` and `<meta name=\"google\" content=\"notranslate\">` into `web/index.html`, and the offer is gone.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 136,
       "class": "FlutterWebPageProperties"
     },
     {
@@ -511,7 +521,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 393,
+      "line": 410,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -521,7 +531,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 386,
+      "line": 403,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -531,7 +541,7 @@
       "default": "/",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 390,
+      "line": 407,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -541,7 +551,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 348,
+      "line": 365,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -551,7 +561,17 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 333,
+      "line": 344,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.exclude",
+      "type": "List<String>?",
+      "description": "Files of every Markdown folder, the routes' and `content[n]`'s, that make no page: globs from the folder (`**/contents*.md`, a table of contents the site reads for its menu). `*` matches within a folder, `**` across folders, and `**/` no folder too.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 359,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -561,7 +581,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 342,
+      "line": 353,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -571,7 +591,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 353,
+      "line": 370,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -581,7 +601,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 368,
+      "line": 385,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -591,7 +611,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 371,
+      "line": 388,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -601,7 +621,7 @@
       "default": "directory",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 377,
+      "line": 394,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -611,7 +631,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 414,
+      "line": 431,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -621,7 +641,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 417,
+      "line": 434,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -631,7 +651,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 421,
+      "line": 438,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -641,7 +661,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 408,
+      "line": 425,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -651,7 +671,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 411,
+      "line": 428,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -661,7 +681,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 356,
+      "line": 373,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -671,7 +691,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 338,
+      "line": 349,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -681,7 +701,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 365,
+      "line": 382,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -691,7 +711,7 @@
       "default": "{title}",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 345,
+      "line": 362,
       "class": "FlutterWebSeoProperties"
     }
   ],
@@ -1386,7 +1406,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 158,
+      "line": 165,
       "injects": [],
       "members": [
         {
@@ -1635,7 +1655,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 439,
+      "line": 456,
       "injects": [],
       "members": [
         {
@@ -1662,7 +1682,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 472,
+      "line": 489,
       "injects": [],
       "members": [
         {
@@ -1706,7 +1726,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 144,
+      "line": 151,
       "injects": [],
       "members": [
         {
@@ -1765,7 +1785,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 134,
+      "line": 141,
       "injects": [],
       "members": [
         {
@@ -1814,7 +1834,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 426,
+      "line": 443,
       "injects": [],
       "members": [
         {
@@ -1848,6 +1868,11 @@
           "name": "swipeToClose",
           "kind": "field",
           "type": "bool"
+        },
+        {
+          "name": "translate",
+          "kind": "field",
+          "type": "bool"
         }
       ]
     },
@@ -1863,7 +1888,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 200,
+      "line": 207,
       "injects": [],
       "members": [
         {
@@ -1884,7 +1909,7 @@
         {
           "name": "contentSecurityPolicyReportOnly",
           "kind": "field",
-          "type": "String?"
+          "type": "bool?"
         },
         {
           "name": "headers",
@@ -1925,7 +1950,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 314,
+      "line": 324,
       "injects": [],
       "members": [
         {
@@ -1942,6 +1967,11 @@
           "name": "enabled",
           "kind": "field",
           "type": "bool"
+        },
+        {
+          "name": "exclude",
+          "kind": "field",
+          "type": "List<String>?"
         },
         {
           "name": "fromRoutes",

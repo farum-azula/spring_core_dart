@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 /// The app's own `web/index.html` head and `web/manifest.json` from its
 /// configuration, so they repeat nothing by hand: the title and
 /// description of `spring.flutter.app.*`, the colors of the active theme.
@@ -33,8 +35,28 @@ abstract final class WebPageHead {
       '''
   $swipeStart
   <style>@media (pointer: coarse){html{scrollbar-width:none}html::-webkit-scrollbar{display:none}body{height:1000vh!important;position:static!important;overscroll-behavior:none}flutter-view{position:fixed!important;inset:0!important;width:auto!important;height:auto!important}}</style>
-  <script>(function(){if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function end(){window.scrollTo(0,document.body.scrollHeight);}addEventListener('DOMContentLoaded',end);addEventListener('load',end);addEventListener('resize',end);document.addEventListener('touchmove',function(e){e.preventDefault();},{passive:false});})();</script>
+  <script>$swipeScript</script>
   $swipeEnd''';
+
+  /// The script of the [swipeBlock].
+  static const swipeScript =
+      // The script as the page has it, in one piece: a policy hashes the
+      // exact text.
+      // ignore: lines_longer_than_80_chars
+      "(function(){if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function end(){window.scrollTo(0,document.body.scrollHeight);}addEventListener('DOMContentLoaded',end);addEventListener('load',end);addEventListener('resize',end);document.addEventListener('touchmove',function(e){e.preventDefault();},{passive:false});})();";
+
+  /// The script of the [pixelRatio] block for [max].
+  static String pixelRatioScript(double max) {
+    final value = max == max.roundToDouble() ? '${max.round()}' : '$max';
+    // One piece, as the page has it: a policy hashes the exact text.
+    // ignore: lines_longer_than_80_chars
+    return '(function(){var m=$value;if(window.devicePixelRatio>m){try{window.devicePixelRatio=m;}catch(e){}}})();';
+  }
+
+  /// The `'sha256-...'` source of [script] for a Content-Security-Policy
+  /// `script-src`: the hash of exactly the text between the tags.
+  static String hashOf(String script) =>
+      "'sha256-${base64.encode(sha256.convert(utf8.encode(script)).bytes)}'";
 
   /// Where the block that caps the drawing's pixel ratio starts.
   static const pixelRatioStart = '<!-- spring:page:pixel-ratio:start -->';
@@ -62,11 +84,57 @@ abstract final class WebPageHead {
     if (max == null) {
       return without;
     }
-    final value = max == max.roundToDouble() ? '${max.round()}' : '$max';
     return without.replaceFirst('</head>', '''
   $pixelRatioStart
-  <script>(function(){var m=$value;if(window.devicePixelRatio>m){try{window.devicePixelRatio=m;}catch(e){}}})();</script>
+  <script>${pixelRatioScript(max)}</script>
   $pixelRatioEnd
+</head>''');
+  }
+
+  /// Where the block that keeps browsers from offering a translation
+  /// starts.
+  static const translateStart = '<!-- spring:page:translate:start -->';
+
+  /// Where it ends.
+  static const translateEnd = '<!-- spring:page:translate:end -->';
+
+  /// [html] that browsers and Google do not offer to translate when
+  /// [translate] is `false` (`spring.flutter.web.page.translate`):
+  /// `translate="no"` on `<html>` and `<meta name="google"
+  /// content="notranslate">`. Flutter draws its text on a canvas, so a
+  /// translator finds none to translate; it would only change the hidden
+  /// text of the page for search engines. With `true` both are removed,
+  /// the attribute only when the block says the build wrote it.
+  static String translate(String html, {required bool translate}) {
+    final block = RegExp(
+      r'\n?[ \t]*' +
+          RegExp.escape(translateStart) +
+          r'[\s\S]*?' +
+          RegExp.escape(translateEnd),
+    );
+    final ours = block.hasMatch(html);
+    var result = html.replaceAll(block, '');
+    final tag = RegExp(r'<html\b([^>]*)>');
+    if (translate) {
+      if (!ours) {
+        return result;
+      }
+      final attribute = RegExp(r'\s+translate="no"');
+      return result.replaceFirstMapped(
+        tag,
+        (match) => '<html${match[1]!.replaceAll(attribute, '')}>',
+      );
+    }
+    result = result.replaceFirstMapped(
+      tag,
+      (match) => match[1]!.contains('translate=')
+          ? match[0]!
+          : '<html${match[1]} translate="no">',
+    );
+    return result.replaceFirst('</head>', '''
+  $translateStart
+  <meta name="google" content="notranslate">
+  $translateEnd
 </head>''');
   }
 

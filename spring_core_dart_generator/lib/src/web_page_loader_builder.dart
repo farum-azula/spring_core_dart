@@ -127,12 +127,16 @@ final class WebPageLoaderBuilder implements Builder {
     Map<String, String> texts,
     KeysDiagnostics diagnostics,
   ) {
-    for (final property in SpringKeyFiles.readProperties(texts, diagnostics)) {
-      if (property.name == RemoteAddressPolicy.property) {
-        return property.value.trim().toLowerCase() == 'true';
-      }
-    }
-    return false;
+    // The last value wins, a profile's over the file without one.
+    final value =
+        SpringKeyFiles.readProperties(
+              texts,
+              diagnostics,
+              profilesLast: true,
+            )
+            .where((property) => property.name == RemoteAddressPolicy.property)
+            .lastOrNull;
+    return value?.value.trim().toLowerCase() == 'true';
   }
 
   // The copies of downloaded loaders, in the package's .dart_tool/.
@@ -166,7 +170,7 @@ final class WebPageLoaderBuilder implements Builder {
     });
     final diagnostics = KeysDiagnostics();
     final set = ThemeSet.read(
-      SpringKeyFiles.readProperties(texts, diagnostics),
+      SpringKeyFiles.readProperties(texts, diagnostics, profilesLast: true),
       diagnostics,
     );
     // Files the loaders name, read before the (synchronous) generation.
@@ -224,18 +228,21 @@ final class WebPageLoaderBuilder implements Builder {
         : WebPageLoader.pageColors(set, diagnostics);
     final updated = loaded == null
         ? null
-        : WebPageHead.pixelRatio(
-            WebPageHead.swipe(
-              WebPageHead.html(
-                loaded,
-                title: app.title,
-                description: app.description,
-                themeColor: colors?.primary,
-                backgroundColor: colors?.surface,
+        : WebPageHead.translate(
+            WebPageHead.pixelRatio(
+              WebPageHead.swipe(
+                WebPageHead.html(
+                  loaded,
+                  title: app.title,
+                  description: app.description,
+                  themeColor: colors?.primary,
+                  backgroundColor: colors?.surface,
+                ),
+                swipeToClose: app.swipeToClose,
               ),
-              swipeToClose: app.swipeToClose,
+              max: app.maxPixelRatio,
             ),
-            max: app.maxPixelRatio,
+            translate: app.translate,
           );
     await _manifest(buildStep, package, app, colors);
     // Theme errors are the typed keys' to report.
@@ -260,6 +267,7 @@ final class WebPageLoaderBuilder implements Builder {
     String? description,
     bool swipeToClose,
     double? maxPixelRatio,
+    bool translate,
   })
   _appText(
     Map<String, String> texts,
@@ -286,6 +294,9 @@ final class WebPageLoaderBuilder implements Builder {
           final max? when max >= 1 => max,
           _ => null,
         },
+        translate:
+            value('spring.flutter.web.page.translate')?.toLowerCase() !=
+            'false',
       );
     } on Exception {
       return (
@@ -293,6 +304,7 @@ final class WebPageLoaderBuilder implements Builder {
         description: null,
         swipeToClose: true,
         maxPixelRatio: null,
+        translate: true,
       );
     }
   }
@@ -305,6 +317,7 @@ final class WebPageLoaderBuilder implements Builder {
       String? description,
       bool swipeToClose,
       double? maxPixelRatio,
+      bool translate,
     })
     app,
     ({String primary, String surface})? colors,

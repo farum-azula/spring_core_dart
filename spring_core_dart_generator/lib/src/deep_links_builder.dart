@@ -16,9 +16,9 @@ import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
 /// domain (`https://books.example.com/catalog/books/1`, Universal Links on
 /// iOS, App Links on Android) opens the app at that route. The platforms
 /// learn it from their own files; this builder writes them from the
-/// configuration, read as the app reads it on each platform (the `ios`
-/// and `mobile` profiles for iOS, `android` and `mobile` for Android,
-/// `macos` and `desktop` for macOS):
+/// configuration, read as the app reads it on each platform (the `mobile`
+/// then `ios` profiles for iOS, `mobile` then `android` for Android,
+/// `desktop` then `macos` for macOS; the later one wins, as in the app):
 ///
 /// - `ios/Runner/Info.plist`: `FlutterDeepLinkingEnabled` and the scheme
 ///   (`CFBundleURLTypes`); `ios/Runner/Runner.entitlements`: the domains
@@ -549,9 +549,9 @@ final class _Target {
 }
 
 enum _Platform {
-  ios(['ios', 'mobile']),
-  android(['android', 'mobile']),
-  macos(['macos', 'desktop']);
+  ios(['mobile', 'ios']),
+  android(['mobile', 'android']),
+  macos(['desktop', 'macos']);
 
   _Platform(this.profiles);
 

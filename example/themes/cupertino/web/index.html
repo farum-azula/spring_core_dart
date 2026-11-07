@@ -56,8 +56,7 @@
 #spring-loader .sl-dots{display:flex;gap:calc(calc(var(--size,10) * 1px) * .6)}#spring-loader .sl-dots span{display:block;width:calc(var(--size,10) * 1px);height:calc(var(--size,10) * 1px);border-radius:50%;background:var(--color,#007aff);animation:sl-bounce var(--animation-duration,900ms) var(--animation-curve,ease-in-out) infinite both}#spring-loader .sl-dots span:nth-child(2){animation-delay:calc(var(--animation-duration,900ms) * 0.3333333333333333)}#spring-loader .sl-dots span:nth-child(3){animation-delay:calc(var(--animation-duration,900ms) * 0.6666666666666666)}#spring-loader .sl-logo{width:var(--spring-logo-size);height:var(--spring-logo-size)}
 </style>
 <div id="spring-loader" role="status" aria-busy="true" aria-label="Loading" data-kind="dots" data-stage="start"><div class="sl-body"><img class="sl-logo" src="assets/assets/images/badge.png" alt="" decoding="async"><div class="sl-title">Theme Showcase</div><div class="sl-kind"><div class="sl-dots"><span></span><span></span><span></span></div></div></div></div>
-<script>
-(function () {
+<script>(function () {
   var root = document.getElementById('spring-loader');
   if (!root) return;
   var done = false, progress = 0, shown = 0, floor = 0, cap = 0.4, timer;
@@ -176,8 +175,7 @@
   }
   show('load');
   requestAnimationFrame(paint);
-})();
-</script>
+})();</script>
 <!-- spring:loader:end -->
   <!--
     You can customize the "flutter_bootstrap.js" script.

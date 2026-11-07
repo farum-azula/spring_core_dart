@@ -213,6 +213,7 @@ final class SeoSettings {
     required this.sitemap,
     required this.llms,
     required this.markdown,
+    this.exclude = const [],
     this.pageFiles = SeoPageFiles.directory,
     this.languages = const [],
   });
@@ -294,6 +295,7 @@ final class SeoSettings {
     return SeoSettings._(
       siteUrl: uri,
       fromRoutes: flag('from-routes', false),
+      exclude: list('exclude'),
       title: string('title') ?? '{title}',
       description: string('description'),
       image: string('image'),
@@ -303,7 +305,10 @@ final class SeoSettings {
           (
             location: string('content[$i].location')!,
             path: string('content[$i].path') ?? '/',
-            exclude: list('content[$i].exclude'),
+            exclude: [
+              ...list('content[$i].exclude'),
+              ...list('exclude'),
+            ],
           ),
       ],
       pages: [
@@ -333,6 +338,11 @@ final class SeoSettings {
 
   /// Whether the screens of the navigation make pages.
   final bool fromRoutes;
+
+  /// Files of every Markdown folder, the routes' and `content[n]`'s, that
+  /// make no page (`exclude`: globs from the folder, `**/contents*.md`):
+  /// a table of contents a site reads for its menu.
+  final List<String> exclude;
 
   /// The `<title>` pattern, `{title}` the page's.
   final String title;
@@ -567,6 +577,9 @@ final class SeoPages {
           language: settings.defaultLanguage,
           alternates: links,
         );
+        if (settings.markdown && page.markdown != null) {
+          files['web${_markdownAt('/')}'] = page.markdown!;
+        }
         continue;
       }
       files[settings.fileOf(page.path)] = _page(
@@ -577,7 +590,7 @@ final class SeoPages {
         alternates: links,
       );
       if (settings.markdown && page.markdown != null) {
-        files['web${page.path}.md'] = page.markdown!;
+        files['web${_markdownAt(page.path)}'] = page.markdown!;
       }
     }
     for (final MapEntry(key: language, value: byPath) in translated.entries) {
@@ -596,7 +609,7 @@ final class SeoPages {
           canonical: page.fallback ? settings.pageUrl(page.path) : null,
         );
         if (settings.markdown && page.markdown != null && !page.fallback) {
-          files['web$address.md'] = page.markdown!;
+          files['web${_markdownAt(address)}'] = page.markdown!;
         }
       }
     }
@@ -649,7 +662,7 @@ final class SeoPages {
       }
       final prefix = path.substring(0, rest.start);
       return [
-        for (final page in _folder(content, prefix, const []))
+        for (final page in _folder(content, prefix, settings.exclude))
           page
             ..title ??= _text(route['title'] as String?)
             ..description ??= _text(route['description'] as String?)
@@ -859,12 +872,15 @@ final class SeoPages {
     return path.startsWith('/') ? path.substring(1) : path;
   }
 
+  // `*` within a folder, `**` across folders; `**/` also matches no
+  // folder at all (`**/contents.md` is a folder's `contents.md` at any
+  // depth, its own included).
   static RegExp _glob(String pattern) {
-    final parts = [
-      for (final part in pattern.split('**'))
-        part.split('*').map(RegExp.escape).join('[^/]*'),
-    ];
-    return RegExp('^${parts.join('.*')}\$');
+    String part(String text) => [
+      for (final piece in text.split('**'))
+        piece.split('*').map(RegExp.escape).join('[^/]*'),
+    ].join('.*');
+    return RegExp('^${pattern.split('**/').map(part).join('(?:.*/)?')}\$');
   }
 
   // The page's Markdown as HTML, links to the site's files made addresses
@@ -976,7 +992,7 @@ final class SeoPages {
       if (image != null)
         '<meta name="twitter:image" content="${_attr(_imageUrl(image))}">',
       if (settings.markdown && page.markdown != null && !page.fallback)
-        _alternate(settings.url('$at.md')),
+        _alternate(settings.url(_markdownAt(at))),
       _headEnd,
     ].join('\n  ');
     var result = html;
@@ -1108,10 +1124,8 @@ final class SeoPages {
       final description = page.description == null
           ? ''
           : ': ${page.description}';
-      lines.add(
-        '- [${page.title ?? page.path}](${settings.url('${page.path}.md')})'
-        '$description',
-      );
+      final markdown = settings.url(_markdownAt(page.path));
+      lines.add('- [${page.title ?? page.path}]($markdown)$description');
     }
     return '${lines.join('\n')}\n';
   }
@@ -1223,3 +1237,8 @@ final class _Disk implements SeoFiles {
     }
   }
 }
+
+// The Markdown copy of the page at [address]: `<path>.md`, and
+// `/index.md` for the root page, which has no path to add `.md` to.
+String _markdownAt(String address) =>
+    address == '/' ? '/index.md' : '$address.md';

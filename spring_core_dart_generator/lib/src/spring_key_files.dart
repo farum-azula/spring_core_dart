@@ -390,10 +390,24 @@ extension SpringMessageKeys on BuildContext {
   /// profile. A file that does not parse is a warning and is skipped.
   static List<ConfigProperty> readProperties(
     Map<String, String> texts,
-    KeysDiagnostics diagnostics,
-  ) {
+    KeysDiagnostics diagnostics, {
+    bool profilesLast = false,
+  }) {
     final result = <ConfigProperty>[];
-    for (final path in texts.keys.toList()..sort()) {
+    // With [profilesLast], a profile's file (`application-web.yml`) comes
+    // after the files without one, so its value is the later one, as in
+    // the app; else by path.
+    int rank(String path) =>
+        profilesLast &&
+            RegExp(r'(^|/)application-[^./]+\.[^./]+$').hasMatch(path)
+        ? 1
+        : 0;
+    final paths = texts.keys.toList()
+      ..sort((a, b) {
+        final byRank = rank(a) - rank(b);
+        return byRank != 0 ? byRank : a.compareTo(b);
+      });
+    for (final path in paths) {
       final dot = path.lastIndexOf('.');
       final extension = dot == -1 ? '' : path.substring(dot + 1);
       final loader = _loaders

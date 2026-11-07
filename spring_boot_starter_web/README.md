@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-web](https://farum-azula.org/components/spring-boot-starter-web)
 
 A web server for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications. You write controller classes whose methods carry
@@ -1670,11 +1670,11 @@ the bean as the context holds it, so AOP advice on a controller
 - `ResponseBodyEmitter` (a `Stream<T>` result covers SSE and NDJSON).
 - Several byte ranges as `multipart/byteranges`, `ETag` for resources,
   `@RequestPart` with `multipart/mixed`.
-- Static files (`lib/resources/static/`), forwarded headers
-  (`server.forward-headers-strategy`), `spring.web.cors.*`,
-  `server.max-http-request-header-size`.
+- `spring.web.cors.*`, `server.max-http-request-header-size`.
 - Flutter: a warning when a handler blocks the main isolate, decoding
   big JSON bodies in another isolate, the whole server in a background
   isolate (`server.isolate: background`).
-- Other servers (`shelf`, Rust over FFI), STOMP, the actuator over HTTP.
+- Other servers (`shelf`, Rust over FFI), STOMP. (The actuator's
+  endpoints over HTTP are
+  [`spring_boot_starter_actuator`](../spring_boot_starter_actuator/README.md).)
   See the [roadmap](../roadmap/spring_boot_starter_web.md).

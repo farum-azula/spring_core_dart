@@ -83,6 +83,20 @@ Future<(Map<String, String>, String)> _build() async {
         'cache:\n  ttl: 5m\n'
         'hosts:\n  - a\n  - \${HOST_B:b}\n',
     'lib/resources/other.properties': 'not.read=1',
+    // A nested scan: its placeholders are the application's too.
+    'lib/src/mail/mail.dart': r'''
+import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:pkg/spring_gen/src/mail/mail.spring.dart';
+
+@ComponentScan()
+final BeanModule mailBeans = $mailBeans;
+
+@Service()
+class Mailer {
+  Mailer(@Value(r'${mail.host:localhost}') this.host);
+  final String host;
+}
+''',
   };
   final readerWriter = TestReaderWriter(
     rootPackage: 'pkg',
@@ -102,7 +116,17 @@ Future<(Map<String, String>, String)> _build() async {
       (o) => o.path == 'bin/spring_gen/main.spring.dart',
     ),
   );
-  return (sources, output);
+  // The other generated files (the nested scan's module) go with the
+  // sources, for a test that runs the application.
+  return (
+    {
+      ...sources,
+      for (final o in result.outputs)
+        if (o.path != 'bin/spring_gen/main.spring.dart')
+          o.path: readerWriter.testing.readString(o),
+    },
+    output,
+  );
 }
 
 void main() {
@@ -362,6 +386,8 @@ void main() {
       'hosts[1]',
       'HOST_B',
       'SPRING_PROFILES_ACTIVE',
+      'mail.host', // @Value of a nested @ComponentScan
+      'MAIL_HOST',
     ]) {
       expect(flat, contains(entry(key)), reason: key);
     }

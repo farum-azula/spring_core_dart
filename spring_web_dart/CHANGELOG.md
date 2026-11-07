@@ -1,5 +1,6 @@
 ## Unreleased
 
+- README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - `platformHttpTransport(allowBadCertificates:)` accepts a certificate that is expired, self-signed or for another host (`dart:io` only), for the configuration's downloads with `spring.remote.allow-insecure`.
 
 ## 0.7.1

@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-flutter-security](https://farum-azula.org/components/spring-boot-starter-flutter-security)
 
 Security for Flutter apps built on
 [`spring_boot_starter_flutter`](https://pub.dev/packages/spring_boot_starter_flutter):
@@ -113,13 +113,18 @@ dev_dependencies:
 
 **One package, one import.** It depends on and re-exports
 `spring_boot_starter_flutter` (with `spring_boot_dart` and logging),
+`spring_boot_starter_flutter_navigation` (the routes and their guards),
 `spring_boot_starter_oauth2_client` (the registrations, the authorized
-clients, Feign) and `spring_security_core`
+clients) and `spring_security_core`
 (`SecurityContextHolder`, `@PreAuthorize`): list this package instead of
 the Flutter starter, and
 `import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';`
-gives all of them. Everything else (the generator, `SpringApplicationWidget`,
-themes) is as in the Flutter starter's README.
+gives all of them. Feign is not re-exported: an app with Feign clients
+lists `spring_boot_starter_feign` and imports it. Tests import
+`package:spring_boot_starter_flutter_security/testing.dart` for
+`withMockUser`, `withAuthentication` and `withAnonymousUser`. Everything
+else (the generator, `SpringApplicationWidget`, themes) is as in the
+Flutter starter's README.
 
 ## The app login
 

@@ -1465,6 +1465,7 @@ debug=false
 | `spring.main.cloud-platform` | platform name or `none` | detected | Forces the [cloud platform](#documents-for-some-profiles-or-platforms) |
 | `spring.autoconfigure.exclude` | list | — | Auto-configurations not to apply, by class or module name |
 | `debug` | any | — | Any value but `false` (for example `--debug`) logs the condition evaluation report: which auto-configured beans were created, and why the others were not |
+| `trace` | any | — | Any value but `false` (`--trace`) turns the framework's loggers (`spring_core_dart`, `spring_boot_dart`, `spring.web.server`) to `trace`; `debug` sets them to `debug`. Levels in `logging.level.*` win |
 | `spring.application.json` | JSON | — | Properties as one JSON object (see [`SPRING_APPLICATION_JSON`](#spring_application_json)) |
 
 ### Messages
@@ -1649,7 +1650,7 @@ The levels are `trace`, `debug`, `info`, `warn` (or `warning`), `error`
 | `logging.enabled` | bool | `true` | `false`: the starter sets up nothing, no outputs and no buffer |
 | `logging.level.root` | level | `info` | The level of every logger without one of its own; a plain `logging.level` works too |
 | `logging.level.<logger>` | level | inherited | The level of a logger and the loggers below it (`LOGGING_LEVEL_SHOP=debug` as a variable) |
-| `logging.group.<group>` | list | — | Logger names; `logging.level.<group>` then sets them all. There are no predefined `web` or `sql` groups |
+| `logging.group.<group>` | list | — | Logger names; `logging.level.<group>` then sets them all. Predefined: `web` (`spring.web`, `spring.websocket`) and `sql` (`spring.jdbc.core.JdbcTemplate`, `spring.jdbc.core.StatementCreatorUtils`); setting one replaces its list |
 | `logging.pattern.console` | pattern | Spring Boot's | The console line format; an empty pattern turns the console off |
 | `logging.pattern.file` | pattern | Spring Boot's | The file line format; an empty pattern means no file |
 | `logging.pattern.dateformat` | date pattern | `yyyy-MM-dd'T'HH:mm:ss.SSSXXX` | The format of `%d` in the default patterns (times are UTC) |
@@ -1659,6 +1660,7 @@ The levels are `trace`, `debug`, `info`, `warn` (or `warning`), `error`
 | `logging.include-application-name` | bool | `true` | Puts `[spring.application.name]` into the default patterns |
 | `logging.include-application-group` | bool | `true` | Puts `[spring.application.group]` into the default patterns |
 | `logging.console.enabled` | bool | `true` | The console output |
+| `logging.console.target` | `stdout` / `stderr` | `stdout` | Where the console lines go |
 | `logging.buffer.enabled` | bool | `true` | The in-memory `LogBuffer` |
 | `logging.buffer.capacity` | int | `1000` | How many records the buffer keeps |
 | `logging.threshold.console` / `.file` / `.buffer` | level | `trace` | The lowest level each output takes |
@@ -2000,9 +2002,11 @@ this section is the full reference.
 ### The app widget
 
 `SpringApplicationWidget(home: ...)` builds the app widget
-(`MaterialApp`, `CupertinoApp` or `WidgetsApp`) from these keys. An app
-that passes `child:` instead builds its own app widget, and the keys are
-not used.
+(`MaterialApp`, `CupertinoApp` or `WidgetsApp`) from these keys; without
+`home` (and `child`) it builds the `.router` form on the application's
+`RouterConfig<Object>` bean (the navigation starter's). An app that
+passes `child:` instead builds its own app widget, and the keys are not
+used.
 
 <table>
 <tr><th>YAML</th><th>.properties</th></tr>
@@ -2844,7 +2848,10 @@ theme starts from the root, or from the theme it `extends`:
 | `components.<component>.<property>` | see the next table | Material 3's | Adjusts one component |
 | `tokens.<group>.<key>` | any value | — | The app's own values, read with `tokenColor('brand.accent')`, `tokenNumber(...)` or `token(...)` |
 | `cupertino.<property>` | see the reference below | iOS's | The `CupertinoThemeData`: `primary-color` (default `colors.primary`, else the seed, else iOS blue), `primary-contrasting-color`, `scaffold-background-color`, `bar-background-color`, `selection-handle-color`, `apply-theme-to-all`, and `text-theme.*` (the text styles) |
-| `styles.code.<property>` | color, number or insets | the color scheme | The code blocks of `MarkdownView`: the colors `background`, `text`, `keyword`, `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`, `punctuation`, and the block's `padding`, `radius`, `border`, `border-width`. See [Markdown and code](flutter/theme/styles-and-states.md#markdown-and-code-stylescode) |
+| `styles.code.<property>` | color, number or insets | the color scheme | The code blocks of `MarkdownView`: the colors `background`, `text`, `keyword`, `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`, `punctuation`, and the block's `padding`, `radius`, `border`, `border-width`; also `inline-text`, `inline-background`, `header`, `title`, and `copy` (`true`: a copy button on every block). See [Markdown and code](flutter/theme/styles-and-states.md#markdown-and-code-stylescode) |
+| `styles.heading.<property>` | color | the text's color | `MarkdownView`'s headings: `color` for every level, `h1` ... `h6` for one |
+| `styles.table.<property>` | number, `true` / `false` | `cell-width` 280, `fill` `true` | `MarkdownView`'s tables: `cell-width`, the widest a column grows before its text wraps (a wider table scrolls sideways); `fill`, a narrower table widened to the view |
+| `styles.link.color`, `styles.callout.<kind>` | color | `primary`; callouts `primary`, `tertiary`, `secondary`, `error`, `error` | `MarkdownView`'s links, and its callouts `note`, `tip`, `important`, `warning`, `caution` |
 
 **Components.** `components.<component>.<property>` adjusts Flutter's own
 component themes (`ThemeData` and its 48 component themes, plus
@@ -3309,6 +3316,14 @@ styles:
 
 `MarkdownView.code(text, language: 'yaml')` shows one block of code the
 same way, for the code samples of an app.
+
+Every block has a copy button (`copy: false` for none). Headings take
+`styles.heading` (`color`, `h1` ... `h6`); a table's columns grow to
+`styles.table.cell-width` (280) and wrap there, a wider table scrolls
+sideways and a narrower one fills the view (`styles.table.fill: false`
+keeps it as wide as its text). In a `WidgetsApp` or `CupertinoApp` the
+text styles are the theme's, with Material's sizes for the script of the
+app's language.
 
 Every color is optional and falls back on the color scheme, so code reads
 well in every theme without `styles.code`. The full list, with the
@@ -3870,7 +3885,7 @@ spring.flutter.web.dev-server.proxy[0].target=http://localhost:8080
 | `spring.flutter.web.dev-server.proxy[n].regex` | regular expression | none | Or the paths matching it; each rule sets exactly one of `prefix` and `regex` |
 | `spring.flutter.web.dev-server.proxy[n].replace` | string | the path unchanged | The forwarded path: the matched part replaced, `$1` for the first group |
 | `spring.flutter.web.dev-server.content-security-policy` | string, not empty | none; in spa mode a ready policy (below) | The page's Content Security Policy, sent as the `Content-Security-Policy` header. Setting it and `headers.Content-Security-Policy` both fails the build |
-| `spring.flutter.web.dev-server.content-security-policy-report-only` | `true` / `false` | `false` | Send the policy as `Content-Security-Policy-Report-Only`: violations are reported in the console, nothing is blocked (for development) |
+| `spring.flutter.web.dev-server.content-security-policy-report-only` | `true` / `false` | `false` | Send the policy as `Content-Security-Policy-Report-Only`: violations are reported in the console, nothing is blocked (for development). Any other value fails the build; `FlutterWebProperties` declares the field as text (`String?`), so an editor accepts anything there, but only `true` or `false` works |
 | `spring.flutter.web.dev-server.content-security-policy-connect-src` | list of origins (`https://api.neon.books`, `wss://...`) | none | Origins added to the `connect-src` of spa mode's ready policy (below): the APIs the app calls, a provider's endpoints on other hosts. Setting it with an own policy fails the build; without spa mode it is ignored (a warning) |
 
 The proxy list comes whole from the most specific file that has one, as
@@ -3982,6 +3997,7 @@ spring:
 |---|---|---|---|
 | `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. In a Telegram Mini App it tells Telegram to keep the vertical swipes for the page and to open at full height (`web_app_setup_swipe_behavior`, `web_app_expand`), sent the way Telegram's own script sends them, so no script of Telegram's is needed; in other apps' browsers, on a touch screen, it makes the page a thousand screens tall, scrolls it to its end with Flutter's view fixed on the screen, and stops the browser's own scrolling of the page, so the page is never at its top and a swipe down is Flutter's |
 | `spring.flutter.web.page.max-pixel-ratio` | number, 1 or more | the screen's own | The most pixels for each point Flutter draws at. A phone's screen has 3, so every frame is 9 times the pixels of the page and its graphics chip drops frames on a full-screen scroll; `2` draws 2.25 times fewer and the text stays sharp. The generator writes a script into `web/index.html` that runs before the engine starts; a screen at or under the value is left as it is |
+| `spring.flutter.web.page.translate` | `true`, `false` | `true` | Whether browsers and Google may offer to translate the page. Flutter draws its text on a canvas, so a translator finds none to translate; `false` writes `translate="no"` on `<html>` and `<meta name="google" content="notranslate">` into `web/index.html` (and so into the SEO pages), and the offer is gone |
 
 ### The page loader
 
@@ -4265,6 +4281,7 @@ Then build as usual: `dart run build_runner build` writes the pages into
 | `spring.flutter.web.seo.enabled` | `true` / `false` | `false` | Whether the pages are written |
 | `spring.flutter.web.seo.site-url` | absolute URL | none (required) | The site's address: `canonical`, `og:url` and the sitemap. Its path is where the app is served (`https://example.com/docs/` for an app under `/docs/`) |
 | `spring.flutter.web.seo.from-routes` | `true` / `false` | `false` | Every screen of the navigation is a page (see below) |
+| `spring.flutter.web.seo.exclude` | globs | none | Files of every Markdown folder, the routes' and `content[n]`'s, that make no page: `['**/contents*.md']` for a table of contents the site reads for its menu. `*` matches within a folder, `**` across folders, and `**/` no folder too |
 | `spring.flutter.web.seo.title` | text with `{title}` | `{title}` | The `<title>` of every page; `{title}` is the page's own title |
 | `spring.flutter.web.seo.description` | string | none | The description of a page that has none of its own |
 | `spring.flutter.web.seo.image` | `resources:` location or URL | none | The preview image (`og:image`, `twitter:image`) of a page that has none of its own; with one, link previews (Telegram, X, Slack) show a large card (`twitter:card: summary_large_image`). About 1200×630 |
@@ -4687,14 +4704,12 @@ written as `{"content": [...], "page": {"size", "number", "totalElements",
 Not supported:
 
 - `server.http2.*`: `dart:io` speaks HTTP/1.1;
-- `server.forward-headers-strategy` and
-  `server.max-http-request-header-size`;
+- `server.max-http-request-header-size`;
 - key stores and SSL bundles (`server.ssl.key-store`, `server.ssl.bundle`);
 - `server.error.*` and `spring.mvc.problemdetails.enabled`: errors are
   `ProblemDetail`s (except the plain-text answers Spring gives too: a
   refused CORS request or WebSocket handshake);
 - `spring.web.cors.*`;
-- `spring.web.resources.*`: there are no static files yet;
 - the `server.tomcat.*`, `jetty`, `undertow` and `netty` keys; there is
   no connection limit (Tomcat's `max-connections`).
 
@@ -4798,6 +4813,42 @@ management.info.git.mode=full
 Not supported yet: `management.server.*` (a port of the endpoints' own),
 `management.endpoints.web.cors.*`, `management.endpoints.jmx.*`, and the
 endpoints other than `health`, `info` and `mappings`.
+
+### Security: `spring.security.*`
+
+The keys of `spring_boot_starter_security` and of `spring_security_core`, which it brings (the OAuth2 clients' are in
+[section 19](#19-reference-oauth2-clients)). The rules themselves are
+code: a `SecurityFilterChain` bean (see the starter's README).
+
+```properties
+spring.security.user.name=admin
+spring.security.user.password=change-me
+spring.security.user.roles=ADMIN
+spring.security.cookie.secret=${COOKIE_SECRET}
+spring.security.session.maximum-sessions=3
+spring.security.oauth2.resourceserver.jwt.issuer-uri=https://login.example.com
+spring.security.oauth2.resourceserver.jwt.audiences=my-api
+```
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.security.user.name` | string | `user` | The default user, while the application has no users of its own |
+| `spring.security.user.password` | string | random, logged at startup | Its password (`{noop}` unless it starts with an `{id}`) |
+| `spring.security.user.roles` | list | none | Its roles |
+| `spring.security.filter.order` | int | `-100` | The place of the security filter among the web filters |
+| `spring.security.cookie.secret` | string, 32 characters or more | a random key per process | Signs the cookies kept before a login (the page to come back to, the OAuth 2.0 authorization request); the same value on every instance behind a proxy. Not in Spring Boot |
+| `spring.security.session.maximum-sessions` | int | `10` | The most sessions per user in every chain with sessions; `-1` for none (Spring's default). Not in Spring Boot |
+| `spring.security.session.max-sessions-prevents-login` | bool | `false` | At the limit, refuse the new login instead of ending the user's least recently used session. Not in Spring Boot |
+| `spring.security.password-checks.max-concurrent` | int | half the processors | Password hashes computed at once. Not in Spring Boot |
+| `spring.security.password-checks.max-queued` | int | eight times `max-concurrent` | Logins waiting for a hash; beyond that a `503` with `Retry-After: 1`. Not in Spring Boot |
+| `spring.security.oauth2.resourceserver.jwt.issuer-uri` | URL | none | The provider; its keys come from its metadata |
+| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | URL | none | The provider's public keys |
+| `spring.security.oauth2.resourceserver.jwt.jws-algorithms` | list | `RS256` | With `jwk-set-uri` only |
+| `spring.security.oauth2.resourceserver.jwt.audiences` | list | none | The audiences a token must name; none: no check |
+| `spring.security.oauth2.resourceserver.jwt.authority-prefix` | string | `SCOPE_` | The prefix of the authorities read from the token |
+| `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | string | `scope`, else `scp` | The claim of the authorities |
+| `spring.security.oauth2.resourceserver.jwt.authorities-claim-delimiter` | string | a space | Between authorities in that claim |
+| `spring.security.oauth2.resourceserver.jwt.principal-claim-name` | string | `sub` | The claim that names the user |
 
 ---
 
@@ -5431,10 +5482,12 @@ generator's build-time readers.
 - `spring.main.web-application-type` knows only `none` (no server).
 - Not read: `allow-circular-references`, `keep-alive`,
   `spring.task.execution.*`, `spring.task.scheduling.pool.*`,
-  `spring.aop.*`, `management.*`, `info.*`, `logging.config`,
+  `spring.aop.*`, `logging.config`,
   `logging.structured.*`, `spring.json.*` keys other than those listed
   (they are warned about and ignored), and cache stores other than
-  `simple`.
+  `simple`. `management.*` and `info.*` are read by
+  `spring_boot_starter_actuator` (see
+  [Actuator](#actuator-management)); without it they mean nothing.
 - Jackson time zones and `@Scheduled` zones: only UTC and fixed offsets
   (`@Scheduled`: UTC or local time), as Dart has no time zone database.
 - Log dates are UTC.

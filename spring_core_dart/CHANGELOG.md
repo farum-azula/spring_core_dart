@@ -1,5 +1,6 @@
 ## Unreleased
 
+- README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - `ContextResource` (`pathWithinContext`): a `resources:` file knows its path below `lib/resources/`, embedded or read from disk (`ClasspathFileResource`), so a feature that lists files by a pattern can name them.
 - `ApplicationStartup` and `StartupStep` (Spring's startup metrics; `ApplicationStartup.none` by default) and `BufferingApplicationStartup`, which keeps the ended steps (`RecordedStartupStep`). The bean factory records each eager bean as `spring.beans.instantiate` with its `beanName`.
 - `StartupPacer` (`DefaultListableBeanFactory.startupPacer`): asked between eager beans, it may make the start wait (for a frame of a splash, say).

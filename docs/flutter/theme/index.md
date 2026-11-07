@@ -108,8 +108,14 @@ selection.select('ocean');    // a theme
 selection.select('system');   // follow the device again
 ```
 
-The choice is not stored. An app that wants to remember it saves
-`selection.active` itself. Themes can also arrive at run time:
+The choice is kept between runs (`remember`, `true` by default): the
+`ThemeChoiceStore` bean writes it at each choice (`FileThemeChoiceStore`,
+the app's files, IndexedDB in a browser; declare your own bean to keep it
+elsewhere), and `ThemeChoiceRestore`, a splash task, shows it again while
+the splash shows, so a reload does not flash `active` first. A kept theme
+that no longer exists is ignored; `remember: false` keeps nothing.
+
+Themes can also arrive at run time:
 `themes.loadYaml(yaml)` adds YAML from a server, and a theme can be
 downloaded from a URL by itself (see [properties](properties.md#a-theme-from-a-url)).
 
@@ -169,7 +175,7 @@ keys that give the same Dart name fail the build.
 | [Typography](typography.md) | The 15 text roles and `code`, every style key, fonts from assets |
 | [Shape, spacing and elevation](shape-spacing-elevation.md) | The corner scale, spacing names, elevation levels and how components use them |
 | [Tokens and references](tokens-and-references.md) | Your own values, how a value is typed, `$` references and `$$` |
-| [Styles and states](styles-and-states.md) | A look per state for your own widgets, state precedence, `ThemeStates`, per-state values of components |
+| [Styles and states](styles-and-states.md) | A look per state for your own widgets, state precedence, `ThemeStates`, per-state values of components, and `MarkdownView`'s look (`styles.code`, `heading`, `table`, `callout`, `link`) and code languages (`syntax`) |
 | [Motion and animations](motion-and-animations.md) | Durations, curves, page transitions, `animations.*`, reduced motion |
 | [Background](background.md) | A color, an image, an overlay and a slow animation behind every screen |
 | [Loaders and the splash](loaders.md) | Spinners, dots, bars, skeletons, loaders of your own and the splash shown while the app starts |

@@ -1,5 +1,13 @@
 ## Unreleased
 
+- README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
+- `background.image.repeat` (`no-repeat`, `repeat`, `repeat-x`, `repeat-y`): tiles the background picture, so a small texture covers the screen at its own size (`ThemeBackgroundImage.repeat`).
+- `MarkdownView`: a code block with `themes="a b"` after its language shows a button per palette above it and switches its colors; a palette is the theme's style `code-<name>` (the properties of `styles.code`, and a `label`).
+- `spring.flutter.web.dev-server.content-security-policy-report-only` is a `bool` in `FlutterWebProperties` and the metadata, as the generator reads it (it was typed `String`, so an editor accepted any text the build then refused).
+- `MarkdownView`: a heading's long identifier (`spring_boot_starter_flutter`) breaks after an underscore on a narrow screen, not in the middle of a word.
+- `MarkdownView`: every code block has a copy button, in the corner of a block without a title (`styles.code.copy`, `true` by default; `false` for none). It was only in the header of a titled block.
+- `MarkdownView`: a table narrower than the view widens its columns to the view's width, so it lines up with the text (`styles.table.fill`, `true` by default; `false` keeps it as wide as its text). `StyleValues.flag` reads a true-or-false property of a style.
+- `spring.flutter.web.page.translate` (`true` by default): `false` keeps browsers and Google from offering to translate the page, whose text Flutter draws on a canvas.
 - A `MarkdownView` table wider than the view scrolls sideways; a column grows to `styles.table.cell-width` (default 280) and wraps there, not squeezed to a word a line on a phone.
 - `styles.heading` (`color`, `h1` ... `h6`): the color of `MarkdownView`'s headings, to set them apart from the text.
 - Fixed: `MarkdownView` in a `WidgetsApp` (no Material `Theme`) took Material's light fallback: black text and small headings on a dark theme. It takes the theme's text styles with Material's sizes for the locale's script. The router's task-switcher color likewise comes from the theme shown.

@@ -1,5 +1,7 @@
 ## Unreleased
 
+- README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
+- Docs: the default CSRF repository is described as it is, the `XSRF-TOKEN` cookie (HttpOnly, SameSite=Lax, not signed) read from `X-XSRF-TOKEN`; the session repository is the alternative. `maximumSessions` and the session registry are no longer listed as missing.
 - The package's page on pub.dev links its documentation, [farum-azula.org](https://farum-azula.org) (`documentation` in `pubspec.yaml`).
 
 ## 0.7.1

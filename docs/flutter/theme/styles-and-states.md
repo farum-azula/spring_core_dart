@@ -250,8 +250,12 @@ spring:
 `MarkdownView` (and the navigation's `RouteContentView`, which shows a
 route's Markdown) takes its look from the theme: the headings from
 `headline-*` and `title-*`, the text from `body-large`, links from
-`colors.primary`. Code, inline and in fenced blocks, uses the `code` text
-style (`typography.code`) and the colors of the style `styles.code`:
+`colors.primary`. In a `WidgetsApp` or a `CupertinoApp`, which have no
+Material `Theme`, it takes the same text styles from the theme shown, with
+Material's sizes for the script of the app's language, so a dark theme
+does not get Material's black fallback text. Code, inline and in fenced
+blocks, uses the `code` text style (`typography.code`) and the colors of
+the style `styles.code`:
 
 ```yaml
 spring:
@@ -300,6 +304,22 @@ The block itself takes four more properties:
 | `radius` | `6` | Corner radius |
 | `border` | none | Border color |
 | `border-width` | `1` | Border width, when `border` is set |
+| `copy` | `true` | A button that copies the block's text: in the header of a block with a `title=`, in the corner of the others; `false` for none |
+
+A block can be shown in several palettes, with a button for each above it:
+name them after the language, `themes="dark light"`, and give each a style
+`code-<name>` with the same properties as `styles.code` (colors of the
+pieces, `background`, `text`, `border`) and a `label` for its button. A name
+the theme has no style for is left out.
+
+```yaml
+styles:
+  code-night:
+    label: Night
+    background: '#212121'
+    keyword: '#6388d4'
+    string: '#ce9178'
+```
 
 Every property is optional; without `styles.code` the code follows the
 color scheme, so it fits every theme already. A theme of `themes.<name>`
@@ -402,11 +422,15 @@ styles:
 A table's column is as wide as its text, up to `styles.table.cell-width`
 (280 by default), where the text wraps. A table wider than the view
 scrolls sideways instead of squeezing its columns, so it reads on a phone.
+A table narrower than the view widens its columns to the view's width, so
+it lines up with the text around it; `fill: false` keeps it as wide as its
+text.
 
 ```yaml
 styles:
   table:
     cell-width: 240
+    fill: true        # the default
 ```
 
 ### Callouts

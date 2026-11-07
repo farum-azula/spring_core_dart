@@ -1,6 +1,6 @@
 # spring_boot_starter_security
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-security](https://farum-azula.org/components/spring-boot-starter-security)
 
 Security for web applications built with
 [`spring_boot_starter_web`](../spring_boot_starter_web/README.md): a filter
@@ -177,11 +177,16 @@ protection makes every state-changing request carry a token that such a
 page cannot know.
 
 What is checked: every method except GET, HEAD, TRACE and OPTIONS needs
-the token, in the header `X-CSRF-TOKEN` or the form field `_csrf` (by
-default the token is kept in the session). What happens on failure:
+the token, in the header `X-XSRF-TOKEN` or the form field `_csrf`. By
+default the token is kept in a cookie, `XSRF-TOKEN`
+(`CookieCsrfTokenRepository`: `HttpOnly`, `SameSite=Lax`, `Secure` over
+HTTPS; the cookie is not signed, the check compares it with the token the
+request sends). `HttpSessionCsrfTokenRepository` keeps it in the session
+instead (header `X-CSRF-TOKEN`), as Spring does by default. What happens
+on failure:
 
-- no token stored for the client yet (a first request, an expired
-  session): `403`, and a new token is created for the next try;
+- no token stored for the client yet (a first request, a cleared
+  cookie): `403`, and a new token is created for the next try;
 - a token missing from the request, or not equal to the stored one
   (compared in constant time): `403`.
 
@@ -206,11 +211,12 @@ twice and cannot be guessed from the size of compressed responses
 (BREACH).
 
 **Single-page and Flutter web apps** render no forms: they read the token
-from a cookie, `XSRF-TOKEN`, and send it back in the `X-XSRF-TOKEN`
-header. That needs two settings together: a cookie that scripts can read,
-and a handler that accepts the raw cookie value. With the cookie alone,
-the default handler expects a masked token, and the raw value the script
-sends is refused with `403`.
+from the `XSRF-TOKEN` cookie and send it back in the `X-XSRF-TOKEN`
+header. The default cookie is `HttpOnly`, so that needs two settings
+together: a cookie that scripts can read, and a handler that accepts the
+raw cookie value. With the readable cookie alone, the default handler
+expects a masked token, and the raw value the script sends is refused
+with `403`.
 
 ```dart
 .csrf((c) => c
@@ -822,13 +828,14 @@ So that one request cannot make the server do unbounded work:
   the form with the web starter's 1 MiB limit, and the login filter uses
   those fields;
 - only a login makes a session. Before it, what the chain must
-  remember is in cookies signed by the server: the CSRF token
-  (`XSRF-TOKEN`), the page to come back to (`REDIRECT_URI`,
+  remember is in cookies: the CSRF token (`XSRF-TOKEN`, a random value
+  compared with the one the request sends, not signed), and, signed by
+  the server, the page to come back to (`REDIRECT_URI`,
   `CookieRequestCache`) and the OAuth 2.0 authorization request
   (`OAUTH2_AUTHORIZATION_REQUEST`,
-  `CookieOAuth2AuthorizationRequestRepository`). A cookie is read only
-  when its signature, name and expiry are right, and the page to come
-  back to only when it is a path of this site. Clients that are not
+  `CookieOAuth2AuthorizationRequestRepository`). A signed cookie is read
+  only when its signature, name and expiry are right, and the page to
+  come back to only when it is a path of this site. Clients that are not
   logged in therefore fill no memory. Set
   `spring.security.cookie.secret` (32 characters or more) to the same
   value on every instance behind a proxy; without it, a random key of
@@ -904,8 +911,8 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   actual request is in both.
 - **Sessions:** only a login makes one; Spring Security keeps the CSRF
   token, the saved request and the OAuth 2.0 authorization request in
-  the session, here they are signed cookies (see the size limits
-  above). The session cookie is `SameSite=Lax` by default
+  the session, here they are cookies (the last two signed; see the size
+  limits above). The session cookie is `SameSite=Lax` by default
   (`server.session.cookie.same-site`), and sessions are limited
   (`server.session.max-sessions`, 10 000; at the limit a new
   login is refused with 503, as WebFlux's `InMemoryWebSessionStore`).
@@ -993,8 +1000,8 @@ planned in [roadmap/spring_boot_starter_security.md](../roadmap/spring_boot_star
 - **Logins:** `rememberMe()`, `oneTimeTokenLogin()`, passkeys
   (`webAuthn()`), `x509()`, pre-authentication by a proxy's header,
   switch user, multi-factor authentication.
-- **Sessions:** `maximumSessions` and the session registry,
-  `invalidSessionUrl`.
+- **Sessions:** `invalidSessionUrl` (`maximumSessions` and the session
+  registry are there, see the size limits above).
 - **OAuth 2.0:** `oauth2Client()` and `@RegisteredOAuth2AuthorizedClient`,
   OIDC back-channel logout (`oidcLogout()`), opaque tokens
   (`opaqueToken()`), several issuers in one chain

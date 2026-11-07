@@ -108,7 +108,7 @@ plain `250` is a number, not a duration. The same form is used by
 ### Images
 
 A token that is a map with a `source`, and whose other keys are only
-`refresh`, `source-sha256`, `headers`, `timeout`, `fallback` and `allow-http`,
+`refresh`, `source-sha256`, `headers`, `timeout` and `fallback`,
 is an **image**: it is downloaded, cached and refreshed like the
 [background image](images.md). A map with any other key next to `source` is a
 group of tokens, not an image. The image must be at least two groups deep:

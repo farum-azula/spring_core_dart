@@ -324,8 +324,11 @@ spring:
   `SpringStatelessWidget<SettingsPageBeans>` (`ThemeSelection`,
   `SpringThemes`, `LanguageSelection`, `AppAssets`). A tap on a theme
   calls `selection.select(name)`, and the whole app changes at once.
-  "Load a theme from the server" passes `assets/remote/winter.yml` to
-  `SpringThemes.loadYaml` and selects `winter`.
+  The choice is kept between runs (`spring.flutter.theme.remember`, on by
+  default) and shown again while the splash shows. "Load a theme from
+  the server" passes `assets/remote/winter.yml` to `SpringThemes.loadYaml`
+  and selects `winter`; a kept `winter` is ignored at the next start,
+  since nothing loads it then.
 - **Checked at the start.** A misspelled key or value fails the start,
   naming the property.
 
@@ -344,12 +347,16 @@ spring:
   `lib/resources/content/theme-preview.md` with `MarkdownView.resource`
   (`ThemeMarkdown` in `lib/src/settings/theme_preview.dart`). The headings
   and text follow the theme's text styles; the Dart and YAML blocks are
-  colored by `styles.code`: a background and a comment color shared in
-  `application.yml`, and each theme's own colors in `themes/*.yml`
-  (`dark` sets none and uses its color scheme).
+  split by the languages of `themes/code.yml` (`syntax.<language>`, a
+  copy of farum-azula/themes: the starter knows no language by itself)
+  and colored by `styles.code`: a background and a comment color shared
+  in `application.yml`, and each theme's own colors in `themes/*.yml`
+  (`dark` sets none and uses its color scheme). Every block has a copy
+  button (`styles.code.copy`).
 
-Try: More → Settings and pick each theme. `flutter run
---dart-define=SPRING_FLUTTER_THEME_ACTIVE=neon` starts in one.
+Try: More → Settings and pick each theme, then restart: the app opens in
+it. `flutter run --dart-define=SPRING_FLUTTER_THEME_ACTIVE=neon` starts in
+one when no choice is kept.
 
 Test: `test/themes_test.dart` (the themes and their order, `extends`,
 the fonts, switching, `loadYaml`, a broken property, the code colors of
@@ -782,6 +789,12 @@ screen shows the server's own log (`GET /api/admin/logs`).
 
 Try: More → Logs, Debug: the Feign calls (`---> GET ...`), the screens
 opened, the cookies stored.
+
+The starter's debug panel is in the debug and profile builds (no
+`spring.flutter.debug.enabled` is set, so a release build has none of
+it): ⌘⇧D / Ctrl+Shift+D, or four quick taps and a fifth held three
+seconds on a phone, opens the logs, the frame meter, the configuration,
+the beans, the themes and the start of the running app.
 
 Test: `test/logging_test.dart` (the levels, fields, the screen and its
 filter).

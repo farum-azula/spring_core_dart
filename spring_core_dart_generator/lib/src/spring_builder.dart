@@ -732,7 +732,9 @@ class SpringBuilder implements Builder {
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
     final defines = DartDefineKeys.without(
-      await _dartDefineKeys(buildStep, assets, resources),
+      // The nested @ComponentScan modules are the application's too: a
+      // placeholder of theirs is read as much as one of the scan's own.
+      await _dartDefineKeys(buildStep, [...assets, ...nested], resources),
       dartDefinesExclude,
     );
     final keyParts = await _keyParts(buildStep);

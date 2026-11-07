@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-logging](https://farum-azula.org/components/spring-boot-starter-logging)
 
 Logging for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications: formatted console lines, log files that roll over, an
@@ -12,8 +12,8 @@ in-memory list of recent records for an in-app log screen, and logger
 levels you set in properties or change while the application runs.
 
 `SpringLog`, the logger of `spring_core_dart`, alone prints plain lines
-and shows only warnings and errors. Add this starter and its lines come
-out in Spring Boot's format, at Spring Boot's default level (`info`),
+at `info` and above. Add this starter and its lines come out in Spring
+Boot's format, at Spring Boot's default level (`info`),
 configured by the same `logging.*` properties a Spring Boot application
 uses. No code is needed: the generator finds the starter, and a
 `LoggingSystem` is installed behind `SpringLog` when the application
@@ -85,6 +85,7 @@ logging.include-application-group=true   # [spring.application.group]
 spring.output.ansi.enabled=always        # console colours: always (default), detect, never
 logging.threshold.console=warn           # console: warnings and errors only
 logging.console.enabled=true
+logging.console.target=stderr            # stdout (default), stderr
 
 # The in-memory buffer (see "A log screen").
 logging.buffer.enabled=true
@@ -388,5 +389,8 @@ per-logger levels (`logging.level.*`, `logging.group.*`) are applied by
   format.
 - A failed start keeps the logging system installed until the failure
   report is logged, so the report reaches the file, then uninstalls it.
-- No structured logging (`logging.structured.*`), no `logging.config`,
-  no predefined `web` / `sql` logger groups.
+- No structured logging (`logging.structured.*`), no `logging.config`.
+  The predefined logger groups are Boot's names with this family's
+  loggers: `web` (`spring.web`, `spring.websocket`) and `sql`
+  (`spring.jdbc.core.JdbcTemplate`, `spring.jdbc.core.StatementCreatorUtils`);
+  a `logging.group.web` of the application replaces the list.

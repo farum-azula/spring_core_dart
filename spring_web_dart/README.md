@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-web-dart](https://farum-azula.org/components/spring-web-dart)
 
 The shared web vocabulary of the Spring for Dart packages: the
 annotations that describe an HTTP call, the types of HTTP itself
@@ -326,6 +326,13 @@ the whole exchange. When either runs out, the request is aborted with an
 `HttpTransportException` whose `isTimeout` is true. With
 `followRedirects: false`, a `3xx` response is returned instead of
 followed.
+
+`platformHttpTransport` takes `connectTimeout`, `credentials` (whether
+`fetch` sends the browser's cookies, `FetchCredentials.sameOrigin` by
+default; browser only) and `allowBadCertificates` (`dart:io` only: accept
+an expired, self-signed or wrong-host certificate, for the
+configuration's downloads with `spring.remote.allow-insecure`; never for
+an API).
 
 | Transport | Platforms | Import |
 |---|---|---|

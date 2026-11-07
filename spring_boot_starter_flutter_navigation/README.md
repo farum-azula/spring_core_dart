@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-flutter-navigation](https://farum-azula.org/components/spring-boot-starter-flutter-navigation)
 
 Navigation for Flutter apps built on
 [`spring_boot_starter_flutter`](https://pub.dev/packages/spring_boot_starter_flutter):
@@ -168,6 +168,10 @@ context.route.replaceParams({'page': 3});
 `go` and `push` also take a string: an address (`'/catalog?page=2'`), or
 a pattern with `pathVariables:`; `params:` and `extra:` add values, and
 `transition:` replaces the screen's transition for this navigation.
+
+A `go` to another address of the route on screen (`/books/1` to
+`/books/2`) keeps the screen: its `State`, its scroll and the shell stay,
+and it rebuilds with the new values.
 
 ## Transitions
 
@@ -385,7 +389,18 @@ class DocPage extends StatelessWidget {
 ```
 
 `/docs/core/beans` shows `lib/resources/content/docs/core/beans.md`;
-`index.md` is the folder's own address.
+`index.md` is the folder's own address (`content/docs/guides/index.md` at
+`/docs/guides`), and an address with a `/` at its end (`/docs/beans/`, as
+static hosts send it) is the page without it. `RouteContentView.fileOf`
+says which file an address shows.
+
+Another address of the same route keeps the screen: its state, its
+scroll and the shell around it stay, and `RouteContentView` changes the
+page the theme's way (`motion.content-change`), opening it at the top
+(`scrollToTop: true`, the default, the theme's `motion.scroll-to-top`).
+`RouteContentView(outline: MarkdownOutline())` hands the page's headings
+to an "On this page" list, and an address's `#anchor`
+(`/docs/core/beans#scopes`) scrolls to its heading.
 
 ## Languages
 
@@ -410,7 +425,8 @@ spring:
   is the default language's.
 - `context.route.language` is the current language;
   `context.route.switchLanguage('en')` shows the same screen in another
-  language.
+  language. Each switch publishes a `LanguageChangedEvent` (`from`, `to`)
+  for `@EventListener` methods.
 - A Markdown screen (`content:`) shows `<file>.ja.md` next to the file under
   `/ja`, the default file when there is no translation.
 

@@ -56,8 +56,7 @@
 #spring-loader .sl-bar{width:calc(var(--width,220) * 1px);max-width:60vw;height:calc(var(--height,3) * 1px);border-radius:calc(var(--radius,999) * 1px);overflow:hidden;background:var(--track,rgba(81, 91, 146, 0.2))}#spring-loader .sl-bar span{display:block;height:100%;background:var(--color,#515b92);transform-origin:0 50%;transform:scaleX(var(--spring-progress));transition:transform .3s ease-out}#spring-loader .sl-logo{width:var(--spring-logo-size);height:var(--spring-logo-size)}
 </style>
 <div id="spring-loader" role="status" aria-busy="true" aria-label="Loading" data-kind="bar" data-stage="start"><div class="sl-body"><img class="sl-logo" src="assets/assets/images/badge.png" alt="" decoding="async"><div class="sl-title">Theme Showcase</div><div class="sl-kind"><div class="sl-bar"><span></span></div></div></div></div>
-<script>
-(function () {
+<script>(function () {
   var root = document.getElementById('spring-loader');
   if (!root) return;
   var done = false, progress = 0, shown = 0, floor = 0, cap = 0.4, timer;
@@ -176,8 +175,7 @@
   }
   show('load');
   requestAnimationFrame(paint);
-})();
-</script>
+})();</script>
 <!-- spring:loader:end -->
   <!--
     You can customize the "flutter_bootstrap.js" script.

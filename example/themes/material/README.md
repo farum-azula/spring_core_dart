@@ -6,8 +6,9 @@ Every look in it, colors, text, components, states, motion, backgrounds, is
 a line of YAML. There is no `ThemeData` in the Dart code.
 
 Open the app and the YAML side by side. Each page shows a capability, the
-lines of YAML that make it (boxes of Markdown, `MarkdownView.code`, colored
-by the theme's `styles.code`) and the result. A test checks that every line
+lines of YAML that make it (boxes of Markdown, `MarkdownView.code`, split by
+the languages of `themes/code.yml` and colored by the theme's `styles.code`,
+each with a copy button) and the result. A test checks that every line
 in a box is really in `lib/resources/`.
 
 ## Run
@@ -33,6 +34,7 @@ flutter run --dart-define=SPRING_PROFILES_ACTIVE=network
 | [`lib/resources/themes/ocean.yml`](lib/resources/themes/ocean.yml) | `ocean` and `ocean-night`: `extends`, a gradient background |
 | [`lib/resources/themes/neon.yml`](lib/resources/themes/neon.yml) | `neon`: dark, yellow, cyan and pink, an image background that drifts, a screen background |
 | [`lib/resources/themes/high-contrast.yml`](lib/resources/themes/high-contrast.yml) | `high-contrast`: `contrast: 1`, thick borders, no page transition |
+| [`lib/resources/themes/code.yml`](lib/resources/themes/code.yml) | `syntax.*`: the languages of the code boxes (Dart, YAML, ...), a copy of farum-azula/themes' `code.yml`; the starter knows no language by itself |
 | [`lib/resources/application-network.yml`](lib/resources/application-network.yml) | The `network` profile: https images with a fallback asset, and a theme from a URL (commented) |
 | [`lib/resources/messages.properties`](lib/resources/messages.properties) | The texts, read as `context.messages.*` |
 
@@ -82,7 +84,9 @@ the not-found page.
    navigation's (`go(path, transition: ...)`).
 11. **Themes**: six themes (`light`, `dark`, `ocean`, `ocean-night` which
    `extends` ocean, `neon`, `high-contrast`), switched with `ThemeSelection`
-   and the generated `AppThemes.*` constants.
+   and the generated `AppThemes.*` constants. The theme chosen is kept
+   between runs (`spring.flutter.theme.remember`, on by default) and shown
+   again while the splash shows.
 
 ## The code
 

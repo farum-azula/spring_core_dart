@@ -114,6 +114,7 @@ final class FlutterWebPageProperties {
   const FlutterWebPageProperties({
     this.swipeToClose = true,
     this.maxPixelRatio,
+    this.translate = true,
   });
 
   /// Whether a swipe down may close the page where the browser does so:
@@ -127,6 +128,12 @@ final class FlutterWebPageProperties {
   /// a full-screen scroll. 2 draws 2.25 times fewer, the text still sharp.
   /// `null`: the screen's own.
   final double? maxPixelRatio;
+
+  /// Whether browsers and Google may offer to translate the page. Flutter
+  /// draws its text on a canvas, so a translator finds none: `false`
+  /// writes `translate="no"` and `<meta name="google"
+  /// content="notranslate">` into `web/index.html`, and the offer is gone.
+  final bool translate;
 }
 
 /// The lifecycle of the app, `spring.flutter.lifecycle.*`.
@@ -242,8 +249,11 @@ final class FlutterWebProperties {
   /// The Content-Security-Policy header of the web dev server.
   final String? contentSecurityPolicy;
 
-  /// The report-only Content-Security-Policy header.
-  final String? contentSecurityPolicyReportOnly;
+  /// Whether `content-security-policy` is sent as
+  /// `Content-Security-Policy-Report-Only`: the browser reports what the
+  /// policy would block and blocks nothing. `false` (the default) enforces
+  /// it.
+  final bool? contentSecurityPolicyReportOnly;
 
   /// Origins added to the `connect-src` of spa mode's ready policy: the APIs
   /// the app calls, a provider's endpoints on other hosts. Default: none.
@@ -317,6 +327,7 @@ final class FlutterWebSeoProperties {
     this.enabled = false,
     this.siteUrl,
     this.fromRoutes = false,
+    this.exclude,
     this.title = '{title}',
     this.description,
     this.image,
@@ -340,6 +351,12 @@ final class FlutterWebSeoProperties {
   /// Whether every screen of `spring_boot_starter_flutter_navigation` is a
   /// page (its title, `@RouteInfo`, its Markdown).
   final bool fromRoutes;
+
+  /// Files of every Markdown folder, the routes' and `content[n]`'s, that
+  /// make no page: globs from the folder (`**/contents*.md`, a table of
+  /// contents the site reads for its menu). `*` matches within a folder,
+  /// `**` across folders, and `**/` no folder too.
+  final List<String>? exclude;
 
   /// The page's `<title>`; `{title}` is the page's own.
   final String title;

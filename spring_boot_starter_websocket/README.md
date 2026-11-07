@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-websocket](https://farum-azula.org/components/spring-boot-starter-websocket)
 
 WebSocket connections for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)

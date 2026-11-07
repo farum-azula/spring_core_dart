@@ -1,5 +1,7 @@
 ## Unreleased
 
+- README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
+- Docs: without the starter `SpringLog` shows INFO and above; the predefined `web` and `sql` groups are documented.
 - The package's page on pub.dev links its documentation, [farum-azula.org](https://farum-azula.org) (`documentation` in `pubspec.yaml`).
 
 ## 0.7.1

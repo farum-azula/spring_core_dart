@@ -60,9 +60,16 @@ A real host (below) serves `/docs` from `docs/index.html` itself.
 
 ## Host it
 
-The pages are files named `<path>/index.html`, so the server must answer
-`/docs/getting-started` with `docs/getting-started/index.html`, and the
-app's other addresses with the root `index.html`:
+The pages are files named `<path>/index.html`
+(`spring.flutter.web.seo.page-files: directory`, the default), so the
+server must answer `/docs/getting-started` with
+`docs/getting-started/index.html`, and the app's other addresses with the
+root `index.html`. A static host does that after a redirect to
+`/docs/getting-started/`, so the canonical addresses, `og:url` and the
+sitemap end with `/`. `page-files: html` writes
+`docs/getting-started.html` instead, which Cloudflare Pages, GitHub Pages
+and Netlify serve at `/docs/getting-started` with no redirect (the
+addresses then have no `/` at the end).
 
 - **A static host** (Cloudflare Pages, GitHub Pages, Netlify, Firebase
   Hosting): upload `build/web/`.

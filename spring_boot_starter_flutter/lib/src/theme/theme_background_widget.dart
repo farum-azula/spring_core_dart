@@ -257,6 +257,7 @@ class _Layers extends StatelessWidget {
         image: provider,
         fit: image.fitOrDefault,
         alignment: image.alignmentOrDefault,
+        repeat: image.repeatOrDefault,
         gaplessPlayback: true,
         excludeFromSemantics: true,
       );

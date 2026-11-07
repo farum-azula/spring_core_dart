@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-oauth2-client](https://farum-azula.org/components/spring-boot-starter-oauth2-client)
 
 OAuth 2.0 and OpenID Connect clients for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
@@ -106,13 +106,14 @@ Boot's:
 | `provider` | the provider id, when it is not the registration id |
 | `dpop` | `auto` (default), `true`, `false`: tokens bound to the app's key ([DPoP](#dpop-tokens-bound-to-the-apps-key); not in Spring Boot) |
 | `response-mode` | `query` (default), `form_post`: the provider posts the response to the redirect URI, which only a server receives ([below](#apple-the-response-as-a-form-post-and-a-jwt-client-secret); not in Spring Boot) |
+| `native-sign-in` | `none`, `apple` (default for the `apple` provider): apps (`spring_boot_starter_flutter_security`) sign in with Sign in with Apple's sheet on iOS and macOS instead of the browser (not in Spring Boot) |
 | `client-secret-jwt.*` | a client secret that is a JWT signed with the client's own key (`issuer`, `key-id`, `private-key-location` or `private-key`, `audience`, `lifetime`; [below](#apple-the-response-as-a-form-post-and-a-jwt-client-secret); not in Spring Boot) |
 
 | `spring.security.oauth2.client.provider.<id>.` | |
 |---|---|
 | `issuer-uri` | everything else is discovered (`/.well-known/openid-configuration`, then RFC 8414) |
 | `authorization-uri`, `token-uri`, `user-info-uri`, `jwk-set-uri` | or each endpoint by hand |
-| `user-info-authentication-method` | `header` (default), `form` |
+| `user-info-authentication-method` | `header` (default), `form`, `query` |
 | `user-name-attribute` | the attribute that names the user (`sub`, `login`, `email`) |
 
 Google, GitHub, Facebook and Okta need only the client: a registration

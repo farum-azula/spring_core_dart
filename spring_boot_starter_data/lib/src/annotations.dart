@@ -109,9 +109,9 @@ class LastModifiedDate {
   const LastModifiedDate();
 }
 
-/// Marks a property set at insert to the current auditor (the
-/// `AuditorAware` bean's answer; with the security starter, the logged-in
-/// user's name).
+/// Marks a property set at insert to the current auditor (the answer of
+/// the application's `AuditorAware` bean; nothing provides one by itself,
+/// so declare one, for example returning the logged-in user's name).
 ///
 /// Spring (Java): `org.springframework.data.annotation.CreatedBy`.
 class CreatedBy {

@@ -76,9 +76,10 @@ class InvalidCsrfTokenException extends CsrfException {
 /// Where the token a client is expected to send back is kept between
 /// requests.
 ///
-/// The default, [HttpSessionCsrfTokenRepository], keeps it in the
-/// session. [CookieCsrfTokenRepository] keeps it in a cookie, for
-/// single-page apps. Set one with `csrf((c) => c.csrfTokenRepository(...))`.
+/// The default, [CookieCsrfTokenRepository], keeps it in the `XSRF-TOKEN`
+/// cookie (`HttpOnly`, `SameSite=Lax`). [HttpSessionCsrfTokenRepository]
+/// keeps it in the session, Spring's default. Set one with
+/// `csrf((c) => c.csrfTokenRepository(...))`.
 ///
 /// Spring (Java): `CsrfTokenRepository`.
 abstract interface class CsrfTokenRepository {
@@ -103,13 +104,14 @@ String _randomToken() {
   return base64Url.encode(bytes).replaceAll('=', '');
 }
 
-/// The default [CsrfTokenRepository]: the token is kept in the HTTP
-/// session, so the server remembers what each session must send.
+/// A [CsrfTokenRepository] that keeps the token in the HTTP session, so
+/// the server remembers what each session must send.
 ///
-/// Pages that render forms on the server use it as is. A session is
-/// created when a token is first needed.
+/// A session is created when a token is first needed. The starter's
+/// default is [CookieCsrfTokenRepository], which needs no session before
+/// a login.
 ///
-/// Spring (Java): `HttpSessionCsrfTokenRepository`, also the default
+/// Spring (Java): `HttpSessionCsrfTokenRepository`, the default
 /// there.
 final class HttpSessionCsrfTokenRepository implements CsrfTokenRepository {
   /// A repository naming [headerName] and [parameterName] in its tokens.

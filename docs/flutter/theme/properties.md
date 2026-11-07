@@ -52,9 +52,10 @@ These keys exist at the root only. Inside `themes.<name>` they are an error.
 
 | Property | Type | Values | Default | What it does |
 |---|---|---|---|---|
-| `active` | text | `system` or a theme name | `system` | The theme shown at start. `ThemeSelection.select(...)` changes it at run time. A name that is no theme stops the start and lists the themes |
+| `active` | text | `system` or a theme name | `system` | The theme shown at start, unless a choice is kept (`remember`). `ThemeSelection.select(...)` changes it at run time. A name that is no theme stops the start and lists the themes |
 | `system-light` | theme name | any theme | `light` | The theme `system` shows when the device is in light mode |
 | `system-dark` | theme name | any theme | `dark` | The theme `system` shows when the device is in dark mode |
+| `remember` | boolean | `true`, `false` | `true` | Keeps the theme chosen with `ThemeSelection.select` between runs (the `ThemeChoiceStore` bean: the app's files, IndexedDB in a browser) and shows it again while the splash shows, before `active`. A kept name that is no theme any more is ignored |
 | `themes.<name>` | map | any theme name | none | A theme of your own, or the changes of `light` or `dark`. It holds the keys of the next two tables |
 
 ## Where a theme comes from

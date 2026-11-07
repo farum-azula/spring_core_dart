@@ -45,8 +45,9 @@ address in the browser, and an unknown one shows the not-found screen.
 ## The pages
 
 Each page shows a capability, the lines of YAML that make it (a box of
-Markdown, `MarkdownView.code`, in Xcode's colors from `styles.code`) and the
-result. A test checks that every quoted line is in `lib/resources/`.
+Markdown, `MarkdownView.code`, split by the languages of
+[`themes/code.yml`](lib/resources/themes/code.yml) and in Xcode's colors from
+`styles.code`, each with a copy button) and the result. A test checks that every quoted line is in `lib/resources/`.
 
 1. **Colors**: the Cupertino palette (`cupertino.*`), declared colors, color
    objects (`alpha`, `mix`) and `$` references.
@@ -66,7 +67,8 @@ result. A test checks that every quoted line is in `lib/resources/`.
     no `motion.page-transition`), the platform's iOS slide
     (`transition: PageTransition.platform`), a custom fade, and one
     navigation's (the sidebar's, `PageTransition.none`).
-11. **Themes**: switching with `ThemeSelection`, a theme from a URL.
+11. **Themes**: switching with `ThemeSelection` (the choice is kept between
+    runs, `spring.flutter.theme.remember`), a theme from a URL.
 
 `application-network.yml` (profile `network`, off by default) points the
 images at https with the assets as fallback.

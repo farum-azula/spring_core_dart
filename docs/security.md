@@ -181,10 +181,11 @@ describes how the tests show it.
      filter uses those fields;
    - the number of sessions: `server.session.max-sessions`
      (10 000 by default). Only a login makes a session: before it, the
-     CSRF token, the page to come back to and the OAuth 2.0
-     authorization request are cookies signed by the server
-     (`CookieSigner`), read only when the signature, the cookie's name
-     and the expiry are right. When the store is full, expired sessions
+     CSRF token is a cookie (`XSRF-TOKEN`, a random value compared with
+     the one the request sends, not signed), and the page to come back to
+     and the OAuth 2.0 authorization request are cookies signed by the
+     server (`CookieSigner`), read only when the signature, the cookie's
+     name and the expiry are right. When the store is full, expired sessions
      are removed; if none is, the login is refused (503), and no live
      session is ever removed, as WebFlux's `InMemoryWebSessionStore`;
    - the password checks: at most half the processors hash at once,

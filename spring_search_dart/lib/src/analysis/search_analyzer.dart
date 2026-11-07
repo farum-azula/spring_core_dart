@@ -12,7 +12,11 @@ import 'package:spring_search_dart/src/analysis/search_tokenizer.dart';
 /// @Bean()
 /// SearchAnalyzer german() => const SearchAnalyzer(
 ///   'german',
-///   filters: [LowerCaseFilter(), GermanStemFilter()],
+///   filters: [
+///     LowerCaseFilter(),
+///     AsciiFoldingFilter(),
+///     StopWordFilter({'der', 'die', 'das', 'und'}),
+///   ],
 /// );
 /// ```
 ///

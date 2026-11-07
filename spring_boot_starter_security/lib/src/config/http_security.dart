@@ -1574,7 +1574,8 @@ final class CsrfConfigurer {
   /// also lets `GET /logout` log out.
   void disable() => _enabled = false;
 
-  /// Keeps the tokens in [repository] instead of the session.
+  /// Keeps the tokens in [repository] instead of the default
+  /// `XSRF-TOKEN` cookie ([CookieCsrfTokenRepository], `HttpOnly`).
   ///
   /// For single-page apps, use
   /// `CookieCsrfTokenRepository.withHttpOnlyFalse()` together with

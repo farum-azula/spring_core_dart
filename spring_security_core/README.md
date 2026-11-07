@@ -1,6 +1,6 @@
 # spring_security_core
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-security-core](https://farum-azula.org/components/spring-security-core)
 
 The part of security that does not depend on HTTP: who is logged in,
 users and their password hashes, and access rules on bean methods

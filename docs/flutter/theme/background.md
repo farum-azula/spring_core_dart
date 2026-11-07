@@ -74,16 +74,17 @@ Any other key stops the start and lists the valid ones.
 ### The image
 
 `background.image` takes every key of an [image](images.md) (`source`,
-`refresh`, `source-sha256`, `headers`, `timeout`, `fallback`, `allow-http`)
+`refresh`, `source-sha256`, `headers`, `timeout`, `fallback`)
 and four keys about how the picture fills the screen.
 
 | Property | Type | Values | Default | What it does |
 |---|---|---|---|---|
-| `source` | text | an asset path, an `https` URL, an `http` URL with `allow-http` | required | The picture. See [images](images.md) for the download, cache and refresh keys |
+| `source` | text | an asset path, an `https://` URL, a `github:owner/repo/path@ref` address (`http://` only with `spring.remote.allow-insecure`) | required | The picture. See [images](images.md) for the download, cache and refresh keys |
 | `fit` | enum | `cover`, `contain`, `fill`, `fit-width`, `fit-height`, `none`, `scale-down` | `cover` | How the picture fills the screen |
 | `alignment` | alignment | see below | `center` | Which part of the picture stays in view |
 | `opacity` | number | `0` to `1` | `1` | How opaque the picture is. The color shows through the rest |
 | `blur` | number | `0` or more | `0` | How much the picture is blurred (a Gaussian blur of that radius in logical pixels). `0` is sharp |
+| `repeat` | enum | `no-repeat`, `repeat`, `repeat-x`, `repeat-y` | `no-repeat` | Tiles the picture over the screen. With `fit: none` a small texture (grain, paper, a pattern) repeats at its own size instead of being stretched |
 
 Values of `fit`:
 

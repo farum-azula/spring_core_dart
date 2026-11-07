@@ -212,6 +212,9 @@ void main() {
       expect(text, contains('setTimeout(remove, 60000)'));
       expect(text, contains(WebPageLoader.script));
       expect(WebPageLoader.scriptHash, startsWith("'sha256-"));
+      // Nothing between the tags but the script: the browser hashes
+      // exactly that text, and a policy allows it by scriptHash.
+      expect(text, contains('<script>${WebPageLoader.script}</script>'));
     });
 
     test(
@@ -657,6 +660,30 @@ spring.flutter.theme:
         'theme_color': '#336699',
         'background_color': '#fafafa',
       });
+    });
+
+    test("the web profile's theme wins over the file without one, as in "
+        'the browser', () async {
+      final files = _Files({
+        'web/index.html': '<!DOCTYPE html>\n<html>\n<head>\n</head>\n<body></body>\n</html>\n',
+      });
+      await testBuilder(
+        WebPageLoaderBuilder(files: files),
+        {
+          'app|pubspec.yaml':
+              'name: app\ndependencies:\n  spring_boot_starter_flutter: any\n',
+          'app|lib/app.dart': 'void main() {}',
+          'app|lib/resources/application.yaml':
+              "spring.flutter.theme.colors.primary: '#111111'\n",
+          'app|lib/resources/application-web.yaml':
+              "spring.flutter.theme.colors.primary: '#222222'\n",
+        },
+        rootPackage: 'app',
+      );
+      expect(
+        files.files['web/index.html'],
+        contains('<meta name="theme-color" content="#222222">'),
+      );
     });
 
     test('a package that does not use the starter is left alone', () async {

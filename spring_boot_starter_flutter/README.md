@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-starter-flutter](https://farum-azula.org/components/spring-boot-starter-flutter)
 
 Spring Boot for Flutter apps. It gives a Flutter app one place for its
 state and services, and a way to hand them to widgets without passing
@@ -121,6 +121,7 @@ system (an app of type `widgets`) built from the library
 - [Files of the app](#files-of-the-app)
 - [SQLite databases](#sqlite-databases)
 - [Desktop window](#desktop-window)
+- [The splash, shortcuts and the debug panel](#the-splash-shortcuts-and-the-debug-panel)
 - [Configuration at build time](#configuration-at-build-time)
 - [The web version's port](#the-web-versions-port)
 - [Search engines and link previews](#search-engines-and-link-previews)
@@ -238,8 +239,8 @@ SpringApplicationWidget(
 |---|---|---|
 | `application` | required | Returns the application to run, `() => springApplication` |
 | `home` | — | The first page. The widget builds the app widget around it from the configuration (next section) |
-| `child` | — | Your own app widget (`MaterialApp`, ...) instead. Give `home` or `child`, not both |
-| `splash` | an empty box | What is shown while the application starts |
+| `child` | — | Your own app widget (`MaterialApp`, ...) instead. Give `home` or `child`, not both; with neither, the `SpringApp` runs on the application's router (`RouterConfig<Object>` bean, from `spring_boot_starter_flutter_navigation` or your own) |
+| `splash` | the active theme's `splash`, else an empty box | What is shown while the application starts |
 | `failure` | a plain screen with the error (a short note in release builds) | What is shown when the start fails |
 | `args` | none | Command-line arguments (`--name=value`), read as properties; for desktop apps started with some |
 | `rerunRunnersOnReload` | `false` | Whether `ApplicationRunner` and `CommandLineRunner` beans run again after a hot reload restarts the context |
@@ -332,9 +333,14 @@ spring.flutter.app.type=cupertino
 - **With `child:`** you write your own app widget, and these keys are not
   used.
 
-There are no route properties yet (`routes`, `onGenerateRoute`,
-`routerConfig`): `home` is the first page, and the app navigates with
-`Navigator`.
+There are no route properties (`routes`, `onGenerateRoute`): `home` is
+the first page, and the app navigates with `Navigator`. Without `home`
+(and `child`), `SpringApp` builds `MaterialApp.router` (or the Cupertino
+or widgets one) on the application's `RouterConfig<Object>` bean
+(`SpringApp.routerOf`): the one
+[`spring_boot_starter_flutter_navigation`](https://pub.dev/packages/spring_boot_starter_flutter_navigation)
+adds, or the app's own. A start with neither a `home` nor a router fails
+with a message saying what to add.
 
 ## Beans in widgets
 
@@ -729,8 +735,12 @@ spring:
 - **Switching at run time.** The `ThemeSelection` bean holds the choice:
   `select('ocean')`, or `select('system')` to follow the device's light
   or dark mode. The app follows at once, with Flutter's animation. The
-  choice is not stored; an app that wants to remember it saves
-  `selection.active` itself.
+  choice is kept between runs (`spring.flutter.theme.remember`, `true` by
+  default): the `ThemeChoiceStore` bean writes it at each choice (the
+  app's files, IndexedDB in a browser; a bean of your own keeps it
+  elsewhere, an account's settings say), and it is shown again while the
+  splash shows, so a reload does not flash the default theme. A kept
+  theme that no longer exists is ignored; `remember: false` keeps nothing.
 
   ```dart
   /// The beans of [ThemeMenu].
@@ -777,7 +787,7 @@ spring:
 - **The app's own widgets** read the theme shown, whatever the app type,
   with `SpringTheme.of(context)`. It has what Material's `Theme` has no
   place for: `colorScheme`, `textStyle('code')`, `shape('large')`,
-  `space('m')`, `duration('medium')`, `curve('standard')`,
+  `space('m')`, `durations['medium']`, `curve('standard')`,
   `tokenColor('brand.accent')`, `tokenNumber('brand.hero-height')`.
 
   ```dart
@@ -976,8 +986,10 @@ ThemeBackground.screen('login', child: const LoginForm()); // or ThemeBackground
 - **`background`** goes under every screen, and the scaffolds become
   transparent. Opt out of it with `ThemeBackground.none`.
 - **Images from the network** (`source`, `refresh`, `source-sha256`,
-  `headers`, `timeout`, `fallback`, `allow-http`) are cached in the app's
-  files. The start never waits for the network. On the web the server needs
+  `headers`, `timeout`, `fallback`) are cached in the app's files. Every
+  address must be `https://` (or `github:owner/repo/path@ref`): `http://`
+  stops the start naming the property, unless
+  `spring.remote.allow-insecure=true`, which logs a warning. The start never waits for the network. On the web the server needs
   CORS headers. Reduced motion on the device stops animations and sets
   durations to zero.
 
@@ -992,9 +1004,29 @@ style, colored by `styles.code` (`background`, `text`, `keyword`,
 `string`, `comment`, `number`, `key`, `annotation`, `variable`, `type`,
 `punctuation`; each falls back on the
 color scheme) and the block's `padding`, `radius`, `border` and
-`border-width`. Fenced blocks of `dart`, `yaml`, `properties`, `json` and
-`shell` are colored. HTML written in the Markdown is shown as text, and a
-front matter is left out.
+`border-width`. The starter knows no language of code by itself: a
+fenced block is colored by the theme's `syntax.<language>` (rules of
+regular expressions; Dart, Java, YAML, properties, shell and JSON are in
+[farum-azula/themes](https://github.com/farum-azula/themes),
+`source: github:farum-azula/themes/themes/code.yml@<tag>`), and a block in
+a language no theme has is plain text. HTML written in the Markdown is
+shown as text, and a front matter is left out.
+
+- Every code block has a copy button (in the header of a block with
+  `title="..."`, in the corner of the others; `styles.code.copy: false`
+  for none).
+- Headings take `styles.heading` (`color`, or `h1` ... `h6`); links
+  `styles.link.color`; GitHub's callouts (`> [!NOTE]`, ...)
+  `styles.callout.<kind>`.
+- A table's column grows to `styles.table.cell-width` (280) and wraps
+  there; a table wider than the view scrolls sideways, a narrower one
+  widens to the view (`styles.table.fill`, `true` by default).
+- `MarkdownView(outline: MarkdownOutline())` gives the page's headings for
+  an "On this page" list; `MarkdownView.resource` shows `beans.ja.md` when
+  the app's language is Japanese.
+- In a `WidgetsApp` or `CupertinoApp` (no Material `Theme`) it takes the
+  theme's text styles with Material's sizes, not Material's light
+  fallback.
 
 ```yaml
 styles:
@@ -1002,6 +1034,10 @@ styles:
     background: $colors.surface-container-low
     keyword: '#C678DD'
     string: '#98C379'
+  heading:
+    color: $colors.primary
+  table:
+    cell-width: 240
 ```
 
 ```dart
@@ -1363,8 +1399,83 @@ these properties pays nothing but that frame waiting for the environment.
 The platform code is this package's own (a Flutter plugin, no
 `window_manager` or similar): Swift on macOS, C++ on Windows (the window
 procedure must answer `WM_GETMINMAXINFO` at once), C on Linux (in a `.cc`
-file). Not done yet: `max-size`, the position, a title, restoring the size
-and position the user left.
+file). Not done yet: the position, and restoring the size and position the
+user left.
+
+## The splash, shortcuts and the debug panel
+
+**The splash.** While the application starts, `SpringApplicationWidget`
+shows its `splash`, or else the active theme's `splash` (logo, title and
+a loader, see
+[Loaders and the splash](https://github.com/farum-azula/spring_core_dart/blob/main/docs/flutter/theme/loaders.md)).
+`SplashTask` beans run behind it once the beans exist, before the app
+shows; their progress is the loader's last share
+(`spring.flutter.splash.tasks.enabled`, `timeout` 5s, `share` 0.2). A task
+that fails or hangs does not stop the start. The starter's own tasks:
+the theme chosen in an earlier run (`themeChoiceRestore`), and, when
+`spring.flutter.splash.warm-up.text.enabled=true`, `textWarmUp`, which
+lays out the characters of the messages (and of `TextWarmUpSource`
+beans) `chunk` (200) a frame, so on the web the Noto fonts for Japanese,
+Chinese or emoji download then, not at the first change of language.
+
+```dart
+// Loads the latest articles before the first screen shows.
+@Component()
+class WarmCache extends SplashTask {
+  WarmCache(this.articles);
+  final ArticleRepository articles;
+
+  @override
+  Future<void> run(SplashTaskContext task) async {
+    final ids = await articles.latest();
+    for (final (i, id) in ids.indexed) {
+      await articles.load(id);
+      task.progress((i + 1) / ids.length);
+    }
+  }
+}
+```
+
+**Shortcuts.** An action's keys are configuration, its handler a bean
+method; keys and taps are written the same way, on every platform:
+
+```yaml
+spring:
+  flutter:
+    shortcuts:
+      search.open: primary+k            # ⌘K on Apple's platforms, Ctrl+K elsewhere
+      help.show: char:?
+      debug.open: [primary+shift+d, taps:4+hold:3s]   # four quick taps, a fifth held 3 s
+```
+
+```dart
+@Component()
+class SearchActions {
+  @Shortcut('search.open', keys: ['primary+k']) // when the configuration has none
+  void open(BuildContext context) => SearchDialog.show(context);
+}
+```
+
+`ShortcutHandler` and `KeyedShortcutHandler` beans, a screen's own
+`ShortcutHandlers`, `ShortcutLabel` (`⌘K`, `Ctrl+K`) and notations of your
+own (`ShortcutNotation` beans): see
+[Configuration, keyboard shortcuts](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#keyboard-shortcuts).
+
+**The debug panel.** Logs, frames, configuration (secrets masked), beans,
+themes and the start of the running app, a tab each, opened by the
+action `debug.open` (⌘⇧D / Ctrl+Shift+D, or `taps:4+hold:3s` on a
+phone). A `DebugPanelSection` bean adds a tab.
+`spring.flutter.debug.enabled` is read by the generator: `true` puts the
+panel in every build, `false` in none (no code of it in the app), not set
+in debug and profile builds only.
+
+**The frame meter.** `spring.flutter.frame-meter.enabled=true` (with
+`position`, `target-rate` 60) shows a panel over the app with the frames
+a second it really draws, the build and raster times, the worst frame
+and a bar per frame, from Flutter's own timings, so a phone shows whether
+it keeps up. It is not shown or counted while the splash shows; its look
+is the theme's `frame-meter`. Every key:
+[Configuration, the app widget](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-app-widget).
 
 ## Configuration at build time
 
@@ -1408,7 +1519,8 @@ browser back to. Set the port in the app's config, and every
 spring:
   flutter:
     web:
-      port: 5050
+      dev-server:
+        port: 5050
 ```
 
 Since Flutter 3.38, `flutter run` on the web reads its dev server's
@@ -1438,6 +1550,9 @@ default) leaves out the profile name it is in (`dev,${ENV}-eu` is read as
 | `spring.flutter.web.dev-server.proxy[n].prefix` | none | The rule matches paths starting with it (`/api/`) |
 | `spring.flutter.web.dev-server.proxy[n].regex` | none | Or the paths matching this pattern; set exactly one of `prefix` and `regex` |
 | `spring.flutter.web.dev-server.proxy[n].replace` | the path unchanged | The forwarded path: the matched part replaced, `$1` for a group |
+| `spring.flutter.web.dev-server.content-security-policy` | none (a ready policy in the security starter's spa mode) | The page's `Content-Security-Policy` header |
+| `spring.flutter.web.dev-server.content-security-policy-report-only` | `false` | `true` sends the policy as `Content-Security-Policy-Report-Only` (reported, not blocked). Only `true` or `false`, though the class types it as text |
+| `spring.flutter.web.dev-server.content-security-policy-connect-src` | none | Origins added to the `connect-src` of spa mode's ready policy |
 
 The proxy is the simplest way to talk to your own server during
 development. With `/api/` forwarded to the server, the page and the API
@@ -1495,9 +1610,23 @@ spring:
         from-routes: true
 ```
 
+`seo.page-files` names the pages' files: `directory` (the default,
+`<path>/index.html`, addresses ending in `/`) or `html` (`<path>.html`,
+which Cloudflare Pages, GitHub Pages and Netlify serve at `<path>`).
+`seo.exclude` lists globs of Markdown files that make no page
+(`['**/contents*.md']`).
+
 The build also fills `web/index.html` and `web/manifest.json` from
 `spring.flutter.app.title`, `spring.flutter.app.description` and the
-theme's colors. Every key, what is written where, and how to serve the
+theme's colors, and writes the page settings of
+`spring.flutter.web.page.*` into `web/index.html`:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `spring.flutter.web.page.translate` | `true` | `false`: browsers and Google no longer offer to translate the page (Flutter's text is on a canvas) |
+| `spring.flutter.web.page.max-pixel-ratio` | the screen's | The most pixels per point Flutter draws at: `2` on a 3x phone draws 2.25 times fewer pixels |
+| `spring.flutter.web.page.swipe-to-close` | `true` | `false` keeps an app's own browser (Telegram, Instagram) or a Telegram Mini App from closing the page on a swipe down |
+ Every key, what is written where, and how to serve the
 pages: [Configuration, the site's pages](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-sites-pages-springflutterwebseo).
 
 ## Hot reload
@@ -1642,7 +1771,9 @@ More, and the planned Flutter test starter:
   generator writes one binding per record type, and widgets find it by
   that type. When a bean is missing, the start fails naming one of the
   widgets that use the record, not each of them.
-- **No route properties**: the app navigates with `Navigator`
+- **No route properties**: with `home` the app navigates with
+  `Navigator`; for routes, leave `home` out and add a router
+  (`spring_boot_starter_flutter_navigation`)
   ([The app widget from configuration](#the-app-widget-from-configuration)).
 - **`SpringApplicationWidget` takes no bean overrides** for tests: a
   test that replaces beans and starts the whole app adds the overrides

@@ -1,5 +1,13 @@
 ## Unreleased
 
+- README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
+- `spring.flutter.web.seo.exclude`: globs of the files of every Markdown folder, the routes' and `content[n]`'s, that make no page (`['**/contents*.md']`, a table of contents). In every exclude, `**/` now matches no folder too, so `**/contents.md` covers the folder's own.
+- Fixed: the page loader's script is written with nothing else between its tags, so spa mode's policy, which allows it by `WebPageLoader.scriptHash`, lets it run (the two line breaks around it changed the hash the browser computes). The policy also allows the scripts of `spring.flutter.web.page.swipe-to-close: false` and `max-pixel-ratio` (`WebPageHead.hashOf`).
+- Fixed: the root page's Markdown copy is `web/index.md`, which its `text/markdown` link and `llms.txt` name (they named `/.md`, which was never written).
+- Fixed: `--dart-define` keys are read from the nested `@ComponentScan` modules too, not only from the application's own scan (a `@Value` placeholder in `lib/src/` with its own scan had no key).
+- Fixed: the deep links read the platform profile after `mobile` / `desktop`, so `application-ios.yml` wins over `application-mobile.yml`, as in the app.
+- Fixed: the page loader and the page's head read a profile's file after the files without one, so `application-web.yml` wins over `application.yml`, as in the browser.
+- `spring.flutter.web.page.translate: false` writes `translate="no"` on `<html>` and `<meta name="google" content="notranslate">` into `web/index.html` (and so into the SEO pages): browsers and Google no longer offer a translation that cannot work, as Flutter draws its text on a canvas.
 - `AutoConfigurationModule.build`: the generator reads the property from the application's configuration and writes the module always, never, or under `if (!bool.fromEnvironment('dart.vm.product'))`, which a release build compiles away with everything only the module reaches.
 - Fixed: the proxies the application writes for library beans (`AopProxyFactory.deferred`) follow the build of their module: a bean only in modules left out (`false`) gets no proxy class, no registration and no import; a bean only in modules left out of a release is registered under `!dart.vm.product`, so a release compiles its proxy away. A bean also in a module always built keeps its proxy. The modules are walked only when one is decided by its property.
 - The modules and proxies left out of a release are written under `if (!const bool.fromEnvironment('dart.vm.product'))`: the SDK promises the value only to a `const` read.

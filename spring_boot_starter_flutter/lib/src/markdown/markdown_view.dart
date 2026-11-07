@@ -24,6 +24,7 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/markdown_outline.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
@@ -145,6 +146,74 @@ class MarkdownView extends StatefulWidget {
 
   @override
   State<MarkdownView> createState() => _MarkdownViewState();
+}
+
+// A code block shown in one of several palettes, with a button per
+// palette above it (`themes="dark light"`).
+class _CodePalettes extends StatefulWidget {
+  const _CodePalettes(this.blocks, {required this.look});
+
+  final List<(String, Widget)> blocks;
+  final _Look look;
+
+  @override
+  State<_CodePalettes> createState() => _CodePalettesState();
+}
+
+class _CodePalettesState extends State<_CodePalettes> {
+  var _shown = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final look = widget.look;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final (index, (label, _)) in widget.blocks.indexed)
+              Semantics(
+                button: true,
+                selected: index == _shown,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _shown = index),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: index == _shown
+                            ? look.link.withValues(alpha: 0.14)
+                            : null,
+                        border: Border.all(
+                          color: index == _shown ? look.link : look.rule,
+                        ),
+                        borderRadius: BorderRadius.circular(look.codeRadius),
+                      ),
+                      child: Text(
+                        label,
+                        // The page's text colour: the code's may be
+                        // made for a dark block.
+                        style: look.code.copyWith(
+                          color: index == _shown ? look.link : look.body.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        widget.blocks[_shown].$2,
+      ],
+    );
+  }
 }
 
 class _CopyButton extends StatefulWidget {
@@ -434,7 +503,12 @@ class _MarkdownViewState extends State<MarkdownView> {
         return [
           Text.rich(
             key: _outline.keyOf(heading.id, page: _builtFor),
-            TextSpan(children: _inline(children, look)),
+            TextSpan(
+              children: [
+                for (final span in _inline(children, look))
+                  _breakAfterUnderscores(span),
+              ],
+            ),
             style: look.heading(level),
           ),
         ];
@@ -449,17 +523,31 @@ class _MarkdownViewState extends State<MarkdownView> {
         final text = _unescape(
           code?.textContent ?? node.textContent,
         ).replaceFirst(RegExp(r'\n$'), '');
-        final title = _title.firstMatch(
-          _unescape(node.attributes['data-metadata'] ?? ''),
-        );
-        return [
-          _codeBlock(
-            text,
-            language,
-            look,
-            title: title == null ? null : title[1] ?? title[2] ?? title[3],
-          ),
+        final metadata = _unescape(node.attributes['data-metadata'] ?? '');
+        final title = _title.firstMatch(metadata);
+        final themes = _themes.firstMatch(metadata);
+        final titleText = title == null
+            ? null
+            : title[1] ?? title[2] ?? title[3];
+        final palettes = [
+          for (final name
+              in (themes == null ? '' : themes[1] ?? themes[2] ?? themes[3]!)
+                  .split(RegExp(r'[\s,]+'))
+                  .where((name) => name.isNotEmpty))
+            ?look.palette(name),
         ];
+        if (palettes.isNotEmpty) {
+          return [
+            _CodePalettes([
+              for (final (label, palette) in palettes)
+                (
+                  label,
+                  _codeBlock(text, language, palette, title: titleText),
+                ),
+            ], look: look),
+          ];
+        }
+        return [_codeBlock(text, language, look, title: titleText)];
       case 'ul' || 'ol':
         final start = int.tryParse(node.attributes['start'] ?? '') ?? 1;
         var number = start;
@@ -548,6 +636,7 @@ class _MarkdownViewState extends State<MarkdownView> {
 
   // `title="lib/main.dart"` (or 'x', or a word) after a fence's language.
   static final _title = RegExp(r'''title=(?:"([^"]*)"|'([^']*)'|(\S+))''');
+  static final _themes = RegExp(r'''themes=(?:"([^"]*)"|'([^']*)'|(\S+))''');
 
   // A callout of GitHub's Markdown (`> [!NOTE]`): a box in the kind's
   // color, with the kind's name (the message `markdown.alert.<kind>`).
@@ -606,7 +695,23 @@ class _MarkdownViewState extends State<MarkdownView> {
   }) {
     final block = _code(text, language, look);
     if (title == null) {
-      return block;
+      if (!look.codeCopy) {
+        return block;
+      }
+      // The copy button in the block's corner, as a titled block has it in
+      // its header.
+      return Stack(
+        // The block keeps the width it has without the button.
+        fit: StackFit.passthrough,
+        children: [
+          block,
+          PositionedDirectional(
+            top: 6,
+            end: 6,
+            child: _CopyButton(text, color: look.codeTitle),
+          ),
+        ],
+      );
     }
     final border = look.codeBorder;
     return DecoratedBox(
@@ -639,7 +744,7 @@ class _MarkdownViewState extends State<MarkdownView> {
                     style: look.code.copyWith(color: look.codeTitle),
                   ),
                 ),
-                _CopyButton(text, color: look.codeTitle),
+                if (look.codeCopy) _CopyButton(text, color: look.codeTitle),
               ],
             ),
           ),
@@ -702,10 +807,11 @@ class _MarkdownViewState extends State<MarkdownView> {
     );
     // Each column as wide as its text up to `cellWidth`, the text wrapping
     // beyond; a table wider than the view scrolls sideways instead of
-    // squeezing its columns.
+    // squeezing its columns. With `tableFill`, a narrower table widens its
+    // columns to the view's width, so it lines up with the text.
     final grid = Table(
       border: TableBorder.all(color: look.rule),
-      defaultColumnWidth: const IntrinsicColumnWidth(),
+      defaultColumnWidth: IntrinsicColumnWidth(flex: look.tableFill ? 1 : null),
       children: [
         for (final row in rows)
           TableRow(
@@ -728,15 +834,37 @@ class _MarkdownViewState extends State<MarkdownView> {
           ),
       ],
     );
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: grid,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: look.tableFill && constraints.hasBoundedWidth
+                ? constraints.maxWidth
+                : 0,
+          ),
+          child: grid,
+        ),
+      ),
     );
   }
 
   List<InlineSpan> _inline(List<md.Node> nodes, _Look look) => [
     for (final node in nodes) _span(node, look),
   ];
+
+  // A heading's long identifier (`spring_boot_starter_flutter`) may break
+  // after an underscore, not in the middle of a word, on a narrow screen.
+  static InlineSpan _breakAfterUnderscores(InlineSpan span) => switch (span) {
+    TextSpan(:final text, :final children, :final style) => TextSpan(
+      text: text?.replaceAll('_', '_\u200B'),
+      style: style,
+      recognizer: span.recognizer,
+      mouseCursor: span.mouseCursor,
+      children: children?.map(_breakAfterUnderscores).toList(),
+    ),
+    _ => span,
+  };
 
   InlineSpan _span(md.Node node, _Look look) {
     if (node is md.Text) {
@@ -849,7 +977,64 @@ final class _Look {
     this.codeTitle,
     this.callouts = const {},
     this.cellWidth = 280,
+    this.tableFill = true,
+    this.codeCopy = true,
+    this.codeStyle = _noStyle,
   });
+
+  static StyleValues? _noStyle(String name) => null;
+
+  /// A style of the theme by name (`code-dark` for the palette `dark`).
+  final StyleValues? Function(String name) codeStyle;
+
+  /// The look of a code block in the palette [name], the theme's style
+  /// `code-<name>` (`themes="dark light"` after a block's language), with
+  /// its label (`label`, else the name); `null` when the theme has none.
+  (String, _Look)? palette(String name) {
+    final values = codeStyle('code-$name');
+    if (values == null) {
+      return null;
+    }
+    T? read<T>(T Function() get) {
+      try {
+        return get();
+      } on StateError {
+        return null; // not set
+      }
+    }
+
+    Color? color(String prop) => read(() => values.color(prop));
+    final background = color('background') ?? codeBackground;
+    return (
+      read(() => values.text('label')) ?? name,
+      _Look(
+        body: body,
+        code: code.copyWith(color: color('text') ?? code.color),
+        codeBackground: background,
+        codePadding: codePadding,
+        codeRadius: codeRadius,
+        codeBorder: color('border') ?? codeBorder,
+        codeBorderWidth: codeBorderWidth,
+        link: link,
+        rule: rule,
+        headings: headings,
+        tokens: {
+          for (final MapEntry(:key, :value) in tokens.entries)
+            key: color(key.name) ?? value,
+        },
+        syntax: syntax,
+        inlineText: inlineText,
+        inlineBackground: inlineBackground,
+        codeHeader: color('header') ?? background,
+        codeTitle: color('title') ?? codeTitle,
+        callouts: callouts,
+        cellWidth: cellWidth,
+        tableFill: tableFill,
+        codeCopy: codeCopy,
+        codeStyle: codeStyle,
+      ),
+    );
+  }
 
   static CodeSyntax? _noSyntax(String? language) => null;
 
@@ -917,11 +1102,25 @@ final class _Look {
     }
 
     final link = colorOf('link', 'color');
-    double? cellWidth;
+    final table = theme.styles['table']?.resolve(const {});
+    T? tableValue<T>(T Function(StyleValues values) read) {
+      if (table == null) {
+        return null;
+      }
+      try {
+        return read(table);
+      } on StateError {
+        return null; // not set, or not of its kind
+      }
+    }
+
+    final cellWidth = tableValue((values) => values.number('cell-width'));
+    final tableFill = tableValue((values) => values.flag('fill'));
+    bool? codeCopy;
     try {
-      cellWidth = theme.styles['table']?.resolve(const {}).number('cell-width');
+      codeCopy = theme.styles['code']?.resolve(const {}).flag('copy');
     } on StateError {
-      cellWidth = null;
+      codeCopy = null; // not set, or not true or false
     }
     Color? callout(String kind) => colorOf('callout', kind);
 
@@ -976,6 +1175,16 @@ final class _Look {
       },
       syntax: theme.syntaxOf,
       cellWidth: cellWidth ?? 280,
+      tableFill: tableFill ?? true,
+      codeCopy: codeCopy ?? true,
+      codeStyle: (name) {
+        try {
+          // Styles are kept by canonical name (`code-night` is codenight).
+          return theme.styles[ThemeValues.canonical(name)]?.resolve(const {});
+        } on StateError {
+          return null;
+        }
+      },
       inlineText: color('inline-text'),
       inlineBackground: color('inline-background'),
       codeHeader:
@@ -1027,6 +1236,14 @@ final class _Look {
   /// (`styles.table.cell-width`); a table wider than the view scrolls
   /// sideways.
   final double cellWidth;
+
+  /// Whether a table narrower than the view widens its columns to the
+  /// view's width (`styles.table.fill`, `true` by default).
+  final bool tableFill;
+
+  /// Whether every code block has a button that copies its text
+  /// (`styles.code.copy`, `true` by default).
+  final bool codeCopy;
 
   TextStyle heading(int level) => headings['h$level'] ?? body;
 

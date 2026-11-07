@@ -2496,6 +2496,19 @@
       "default": "0"
     },
     {
+      "name": "background.image.repeat",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "no-repeat",
+        "repeat",
+        "repeat-x",
+        "repeat-y"
+      ],
+      "description": "Tiles the picture over the screen, at its own size with `fit: none`: a small texture such as grain.",
+      "default": "no-repeat"
+    },
+    {
       "name": "background.overlay.color",
       "type": "color",
       "states": false,
@@ -2677,6 +2690,19 @@
       "values": [],
       "description": "A Gaussian blur radius in logical pixels; 0 is sharp.",
       "default": "0"
+    },
+    {
+      "name": "background.screens.*.image.repeat",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "no-repeat",
+        "repeat",
+        "repeat-x",
+        "repeat-y"
+      ],
+      "description": "Tiles the picture over the screen, at its own size with `fit: none`: a small texture such as grain.",
+      "default": "no-repeat"
     },
     {
       "name": "background.screens.*.overlay.color",
@@ -3160,6 +3186,19 @@
       "values": [],
       "description": "A Gaussian blur radius in logical pixels; 0 is sharp.",
       "default": "0"
+    },
+    {
+      "name": "splash.background.image.repeat",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "no-repeat",
+        "repeat",
+        "repeat-x",
+        "repeat-y"
+      ],
+      "description": "Tiles the picture over the screen, at its own size with `fit: none`: a small texture such as grain.",
+      "default": "no-repeat"
     },
     {
       "name": "splash.background.overlay.color",

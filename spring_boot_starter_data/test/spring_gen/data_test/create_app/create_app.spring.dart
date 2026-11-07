@@ -437,13 +437,185 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'DEBUG': const String.fromEnvironment('DEBUG'),
     if (const bool.hasEnvironment('LOGGING_LEVEL_ROOT'))
       'LOGGING_LEVEL_ROOT': const String.fromEnvironment('LOGGING_LEVEL_ROOT'),
+    if (const bool.hasEnvironment('SPRING_DATASOURCES'))
+      'SPRING_DATASOURCES': const String.fromEnvironment('SPRING_DATASOURCES'),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_DRIVER'))
+      'SPRING_DATASOURCE_DRIVER': const String.fromEnvironment(
+        'SPRING_DATASOURCE_DRIVER',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_PASSWORD'))
+      'SPRING_DATASOURCE_PASSWORD': const String.fromEnvironment(
+        'SPRING_DATASOURCE_PASSWORD',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POOL'))
+      'SPRING_DATASOURCE_POOL': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POOL',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POOL_CONNECTIONTIMEOUT'))
+      'SPRING_DATASOURCE_POOL_CONNECTIONTIMEOUT': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POOL_CONNECTIONTIMEOUT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POOL_IDLETIMEOUT'))
+      'SPRING_DATASOURCE_POOL_IDLETIMEOUT': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POOL_IDLETIMEOUT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POOL_MAXLIFETIME'))
+      'SPRING_DATASOURCE_POOL_MAXLIFETIME': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POOL_MAXLIFETIME',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POOL_MAXSIZE'))
+      'SPRING_DATASOURCE_POOL_MAXSIZE': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POOL_MAXSIZE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POOL_MINIDLE'))
+      'SPRING_DATASOURCE_POOL_MINIDLE': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POOL_MINIDLE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POOL_VALIDATION'))
+      'SPRING_DATASOURCE_POOL_VALIDATION': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POOL_VALIDATION',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POSTGRESQL'))
+      'SPRING_DATASOURCE_POSTGRESQL': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POSTGRESQL',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_DATASOURCE_POSTGRESQL_APPLICATIONNAME',
+    ))
+      'SPRING_DATASOURCE_POSTGRESQL_APPLICATIONNAME':
+          const String.fromEnvironment(
+            'SPRING_DATASOURCE_POSTGRESQL_APPLICATIONNAME',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_DATASOURCE_POSTGRESQL_CONNECTTIMEOUT',
+    ))
+      'SPRING_DATASOURCE_POSTGRESQL_CONNECTTIMEOUT':
+          const String.fromEnvironment(
+            'SPRING_DATASOURCE_POSTGRESQL_CONNECTTIMEOUT',
+          ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POSTGRESQL_SEARCHPATH'))
+      'SPRING_DATASOURCE_POSTGRESQL_SEARCHPATH': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POSTGRESQL_SEARCHPATH',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POSTGRESQL_SSLMODE'))
+      'SPRING_DATASOURCE_POSTGRESQL_SSLMODE': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POSTGRESQL_SSLMODE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_POSTGRESQL_SSLROOTCERT'))
+      'SPRING_DATASOURCE_POSTGRESQL_SSLROOTCERT': const String.fromEnvironment(
+        'SPRING_DATASOURCE_POSTGRESQL_SSLROOTCERT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_SQLITE'))
+      'SPRING_DATASOURCE_SQLITE': const String.fromEnvironment(
+        'SPRING_DATASOURCE_SQLITE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_SQLITE_BASEDIRECTORY'))
+      'SPRING_DATASOURCE_SQLITE_BASEDIRECTORY': const String.fromEnvironment(
+        'SPRING_DATASOURCE_SQLITE_BASEDIRECTORY',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_SQLITE_BUSYTIMEOUT'))
+      'SPRING_DATASOURCE_SQLITE_BUSYTIMEOUT': const String.fromEnvironment(
+        'SPRING_DATASOURCE_SQLITE_BUSYTIMEOUT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_SQLITE_ISOLATE'))
+      'SPRING_DATASOURCE_SQLITE_ISOLATE': const String.fromEnvironment(
+        'SPRING_DATASOURCE_SQLITE_ISOLATE',
+      ),
     if (const bool.hasEnvironment('SPRING_DATASOURCE_URL'))
       'SPRING_DATASOURCE_URL': const String.fromEnvironment(
         'SPRING_DATASOURCE_URL',
       ),
+    if (const bool.hasEnvironment('SPRING_DATASOURCE_USERNAME'))
+      'SPRING_DATASOURCE_USERNAME': const String.fromEnvironment(
+        'SPRING_DATASOURCE_USERNAME',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC'))
+      'SPRING_DATA_JDBC': const String.fromEnvironment('SPRING_DATA_JDBC'),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_FORMATSQL'))
+      'SPRING_DATA_JDBC_FORMATSQL': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_FORMATSQL',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_SCHEMA'))
+      'SPRING_DATA_JDBC_SCHEMA': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_SCHEMA',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_SHOWPARAMETERS'))
+      'SPRING_DATA_JDBC_SHOWPARAMETERS': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_SHOWPARAMETERS',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_SHOWSQL'))
+      'SPRING_DATA_JDBC_SHOWSQL': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_SHOWSQL',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_SLOWQUERYTHRESHOLD'))
+      'SPRING_DATA_JDBC_SLOWQUERYTHRESHOLD': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_SLOWQUERYTHRESHOLD',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_MEMORY'))
+      'SPRING_DATA_MEMORY': const String.fromEnvironment('SPRING_DATA_MEMORY'),
+    if (const bool.hasEnvironment('SPRING_DATA_MEMORY_LOCKTIMEOUT'))
+      'SPRING_DATA_MEMORY_LOCKTIMEOUT': const String.fromEnvironment(
+        'SPRING_DATA_MEMORY_LOCKTIMEOUT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB'))
+      'SPRING_DATA_WEB': const String.fromEnvironment('SPRING_DATA_WEB'),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE'))
+      'SPRING_DATA_WEB_PAGEABLE': const String.fromEnvironment(
+        'SPRING_DATA_WEB_PAGEABLE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE_DEFAULTPAGESIZE'))
+      'SPRING_DATA_WEB_PAGEABLE_DEFAULTPAGESIZE': const String.fromEnvironment(
+        'SPRING_DATA_WEB_PAGEABLE_DEFAULTPAGESIZE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE_MAXPAGESIZE'))
+      'SPRING_DATA_WEB_PAGEABLE_MAXPAGESIZE': const String.fromEnvironment(
+        'SPRING_DATA_WEB_PAGEABLE_MAXPAGESIZE',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_DATA_WEB_PAGEABLE_ONEINDEXEDPARAMETERS',
+    ))
+      'SPRING_DATA_WEB_PAGEABLE_ONEINDEXEDPARAMETERS':
+          const String.fromEnvironment(
+            'SPRING_DATA_WEB_PAGEABLE_ONEINDEXEDPARAMETERS',
+          ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE_PAGEPARAMETER'))
+      'SPRING_DATA_WEB_PAGEABLE_PAGEPARAMETER': const String.fromEnvironment(
+        'SPRING_DATA_WEB_PAGEABLE_PAGEPARAMETER',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE_PREFIX'))
+      'SPRING_DATA_WEB_PAGEABLE_PREFIX': const String.fromEnvironment(
+        'SPRING_DATA_WEB_PAGEABLE_PREFIX',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_DATA_WEB_PAGEABLE_QUALIFIERDELIMITER',
+    ))
+      'SPRING_DATA_WEB_PAGEABLE_QUALIFIERDELIMITER':
+          const String.fromEnvironment(
+            'SPRING_DATA_WEB_PAGEABLE_QUALIFIERDELIMITER',
+          ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE_SIZEPARAMETER'))
+      'SPRING_DATA_WEB_PAGEABLE_SIZEPARAMETER': const String.fromEnvironment(
+        'SPRING_DATA_WEB_PAGEABLE_SIZEPARAMETER',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_SORT'))
+      'SPRING_DATA_WEB_SORT': const String.fromEnvironment(
+        'SPRING_DATA_WEB_SORT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_WEB_SORT_SORTPARAMETER'))
+      'SPRING_DATA_WEB_SORT_SORTPARAMETER': const String.fromEnvironment(
+        'SPRING_DATA_WEB_SORT_SORTPARAMETER',
+      ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
         'SPRING_FLUTTER_SCANOSENVIRONMENT',
+      ),
+    if (const bool.hasEnvironment('SPRING_JDBC_TEMPLATE'))
+      'SPRING_JDBC_TEMPLATE': const String.fromEnvironment(
+        'SPRING_JDBC_TEMPLATE',
+      ),
+    if (const bool.hasEnvironment('SPRING_JDBC_TEMPLATE_QUERYTIMEOUT'))
+      'SPRING_JDBC_TEMPLATE_QUERYTIMEOUT': const String.fromEnvironment(
+        'SPRING_JDBC_TEMPLATE_QUERYTIMEOUT',
       ),
     if (const bool.hasEnvironment('SPRING_MAIN_BANNERMODE'))
       'SPRING_MAIN_BANNERMODE': const String.fromEnvironment(
@@ -457,19 +629,199 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_PROFILES_INCLUDE': const String.fromEnvironment(
         'SPRING_PROFILES_INCLUDE',
       ),
+    if (const bool.hasEnvironment('SPRING_SQL_INIT'))
+      'SPRING_SQL_INIT': const String.fromEnvironment('SPRING_SQL_INIT'),
+    if (const bool.hasEnvironment('SPRING_SQL_MIGRATION'))
+      'SPRING_SQL_MIGRATION': const String.fromEnvironment(
+        'SPRING_SQL_MIGRATION',
+      ),
     if (const bool.hasEnvironment('TRACE'))
       'TRACE': const String.fromEnvironment('TRACE'),
     if (const bool.hasEnvironment('debug'))
       'debug': const String.fromEnvironment('debug'),
     if (const bool.hasEnvironment('logging.level.root'))
       'logging.level.root': const String.fromEnvironment('logging.level.root'),
+    if (const bool.hasEnvironment('spring.data.jdbc'))
+      'spring.data.jdbc': const String.fromEnvironment('spring.data.jdbc'),
+    if (const bool.hasEnvironment('spring.data.jdbc.format-sql'))
+      'spring.data.jdbc.format-sql': const String.fromEnvironment(
+        'spring.data.jdbc.format-sql',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.schema'))
+      'spring.data.jdbc.schema': const String.fromEnvironment(
+        'spring.data.jdbc.schema',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.show-parameters'))
+      'spring.data.jdbc.show-parameters': const String.fromEnvironment(
+        'spring.data.jdbc.show-parameters',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.show-sql'))
+      'spring.data.jdbc.show-sql': const String.fromEnvironment(
+        'spring.data.jdbc.show-sql',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.slow-query-threshold'))
+      'spring.data.jdbc.slow-query-threshold': const String.fromEnvironment(
+        'spring.data.jdbc.slow-query-threshold',
+      ),
+    if (const bool.hasEnvironment('spring.data.memory'))
+      'spring.data.memory': const String.fromEnvironment('spring.data.memory'),
+    if (const bool.hasEnvironment('spring.data.memory.lock-timeout'))
+      'spring.data.memory.lock-timeout': const String.fromEnvironment(
+        'spring.data.memory.lock-timeout',
+      ),
+    if (const bool.hasEnvironment('spring.data.web'))
+      'spring.data.web': const String.fromEnvironment('spring.data.web'),
+    if (const bool.hasEnvironment('spring.data.web.pageable'))
+      'spring.data.web.pageable': const String.fromEnvironment(
+        'spring.data.web.pageable',
+      ),
+    if (const bool.hasEnvironment('spring.data.web.pageable.default-page-size'))
+      'spring.data.web.pageable.default-page-size':
+          const String.fromEnvironment(
+            'spring.data.web.pageable.default-page-size',
+          ),
+    if (const bool.hasEnvironment('spring.data.web.pageable.max-page-size'))
+      'spring.data.web.pageable.max-page-size': const String.fromEnvironment(
+        'spring.data.web.pageable.max-page-size',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.data.web.pageable.one-indexed-parameters',
+    ))
+      'spring.data.web.pageable.one-indexed-parameters':
+          const String.fromEnvironment(
+            'spring.data.web.pageable.one-indexed-parameters',
+          ),
+    if (const bool.hasEnvironment('spring.data.web.pageable.page-parameter'))
+      'spring.data.web.pageable.page-parameter': const String.fromEnvironment(
+        'spring.data.web.pageable.page-parameter',
+      ),
+    if (const bool.hasEnvironment('spring.data.web.pageable.prefix'))
+      'spring.data.web.pageable.prefix': const String.fromEnvironment(
+        'spring.data.web.pageable.prefix',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.data.web.pageable.qualifier-delimiter',
+    ))
+      'spring.data.web.pageable.qualifier-delimiter':
+          const String.fromEnvironment(
+            'spring.data.web.pageable.qualifier-delimiter',
+          ),
+    if (const bool.hasEnvironment('spring.data.web.pageable.size-parameter'))
+      'spring.data.web.pageable.size-parameter': const String.fromEnvironment(
+        'spring.data.web.pageable.size-parameter',
+      ),
+    if (const bool.hasEnvironment('spring.data.web.sort'))
+      'spring.data.web.sort': const String.fromEnvironment(
+        'spring.data.web.sort',
+      ),
+    if (const bool.hasEnvironment('spring.data.web.sort.sort-parameter'))
+      'spring.data.web.sort.sort-parameter': const String.fromEnvironment(
+        'spring.data.web.sort.sort-parameter',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.driver'))
+      'spring.datasource.driver': const String.fromEnvironment(
+        'spring.datasource.driver',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.password'))
+      'spring.datasource.password': const String.fromEnvironment(
+        'spring.datasource.password',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.pool'))
+      'spring.datasource.pool': const String.fromEnvironment(
+        'spring.datasource.pool',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.pool.connection-timeout'))
+      'spring.datasource.pool.connection-timeout': const String.fromEnvironment(
+        'spring.datasource.pool.connection-timeout',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.pool.idle-timeout'))
+      'spring.datasource.pool.idle-timeout': const String.fromEnvironment(
+        'spring.datasource.pool.idle-timeout',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.pool.max-lifetime'))
+      'spring.datasource.pool.max-lifetime': const String.fromEnvironment(
+        'spring.datasource.pool.max-lifetime',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.pool.max-size'))
+      'spring.datasource.pool.max-size': const String.fromEnvironment(
+        'spring.datasource.pool.max-size',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.pool.min-idle'))
+      'spring.datasource.pool.min-idle': const String.fromEnvironment(
+        'spring.datasource.pool.min-idle',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.pool.validation'))
+      'spring.datasource.pool.validation': const String.fromEnvironment(
+        'spring.datasource.pool.validation',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.postgresql'))
+      'spring.datasource.postgresql': const String.fromEnvironment(
+        'spring.datasource.postgresql',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.datasource.postgresql.application-name',
+    ))
+      'spring.datasource.postgresql.application-name':
+          const String.fromEnvironment(
+            'spring.datasource.postgresql.application-name',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.datasource.postgresql.connect-timeout',
+    ))
+      'spring.datasource.postgresql.connect-timeout':
+          const String.fromEnvironment(
+            'spring.datasource.postgresql.connect-timeout',
+          ),
+    if (const bool.hasEnvironment('spring.datasource.postgresql.search-path'))
+      'spring.datasource.postgresql.search-path': const String.fromEnvironment(
+        'spring.datasource.postgresql.search-path',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.postgresql.ssl-root-cert'))
+      'spring.datasource.postgresql.ssl-root-cert':
+          const String.fromEnvironment(
+            'spring.datasource.postgresql.ssl-root-cert',
+          ),
+    if (const bool.hasEnvironment('spring.datasource.postgresql.sslmode'))
+      'spring.datasource.postgresql.sslmode': const String.fromEnvironment(
+        'spring.datasource.postgresql.sslmode',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.sqlite'))
+      'spring.datasource.sqlite': const String.fromEnvironment(
+        'spring.datasource.sqlite',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.sqlite.base-directory'))
+      'spring.datasource.sqlite.base-directory': const String.fromEnvironment(
+        'spring.datasource.sqlite.base-directory',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.sqlite.busy-timeout'))
+      'spring.datasource.sqlite.busy-timeout': const String.fromEnvironment(
+        'spring.datasource.sqlite.busy-timeout',
+      ),
+    if (const bool.hasEnvironment('spring.datasource.sqlite.isolate'))
+      'spring.datasource.sqlite.isolate': const String.fromEnvironment(
+        'spring.datasource.sqlite.isolate',
+      ),
     if (const bool.hasEnvironment('spring.datasource.url'))
       'spring.datasource.url': const String.fromEnvironment(
         'spring.datasource.url',
       ),
+    if (const bool.hasEnvironment('spring.datasource.username'))
+      'spring.datasource.username': const String.fromEnvironment(
+        'spring.datasource.username',
+      ),
+    if (const bool.hasEnvironment('spring.datasources'))
+      'spring.datasources': const String.fromEnvironment('spring.datasources'),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
         'spring.flutter.scan-os-environment',
+      ),
+    if (const bool.hasEnvironment('spring.jdbc.template'))
+      'spring.jdbc.template': const String.fromEnvironment(
+        'spring.jdbc.template',
+      ),
+    if (const bool.hasEnvironment('spring.jdbc.template.query-timeout'))
+      'spring.jdbc.template.query-timeout': const String.fromEnvironment(
+        'spring.jdbc.template.query-timeout',
       ),
     if (const bool.hasEnvironment('spring.main.banner-mode'))
       'spring.main.banner-mode': const String.fromEnvironment(
@@ -483,10 +835,16 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.profiles.include': const String.fromEnvironment(
         'spring.profiles.include',
       ),
+    if (const bool.hasEnvironment('spring.sql.init'))
+      'spring.sql.init': const String.fromEnvironment('spring.sql.init'),
+    if (const bool.hasEnvironment('spring.sql.migration'))
+      'spring.sql.migration': const String.fromEnvironment(
+        'spring.sql.migration',
+      ),
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '2e0f4283',
+  fingerprint: '3e3eb00e',
 );
 
 /// Starts the application: config files, environment, context, runners

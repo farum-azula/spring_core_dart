@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-core-dart-generator](https://farum-azula.org/components/spring-core-dart-generator)
 
 `spring_core_dart_generator` is the code generator of
 [`spring_core_dart`](https://pub.dev/packages/spring_core_dart). It reads
@@ -60,7 +60,7 @@ runnable walk-through is in the
 
 ## What it generates
 
-The package registers three builders in its `build.yaml`; all apply
+The package registers nine builders in its `build.yaml`; all but `spring_properties` apply
 automatically to every package that depends on it.
 
 **`spring_core_dart`** (the main builder) writes `<file>.spring.dart` into the
@@ -78,7 +78,17 @@ automatically to every package that depends on it.
   `example/`). It also declares `springApplication`, `runApplication`
   and the hot-reload functions, with the auto-configuration modules of
   every dependency (each starter's `lib/spring_auto_configuration.dart`)
-  and the `--dart-define` keys the application may read (below).
+  and the `--dart-define` keys the application may read (below). A
+  module declared with `@AutoConfigurationModule(build:
+  AutoConfigurationBuild('<property>'))` is written by the property in
+  the application's `application.yml` / `application.properties` (no
+  profile): always (`true`), never (`false`: no code, no import), or,
+  when not set, as its `whenMissing` says (by default under
+  `if (!const bool.fromEnvironment('dart.vm.product'))`, so a release
+  compiles it away). The proxies written for library beans follow the
+  modules they come from. A property the build cannot read (`${FLAG}`
+  without a default, a file that does not parse) fails the build naming
+  the module; one set only in a profile's file is warned about.
 
 Into that file it writes:
 
@@ -244,6 +254,8 @@ names come from the `${...}` placeholders in annotation arguments,
 `@ConditionalOnProperty` names, the fields of `@ConfigurationProperties`
 classes, the keys and placeholders of the `application*` files in
 `lib/resources/`, and a few properties read before the config files.
+The nested `@ComponentScan` modules of the package (a `lib/src/feature/`
+with its own scan) count too.
 
 ## `@Log`
 
@@ -366,7 +378,8 @@ error; the generated file is then left as it is.
 spring:
   flutter:
     web:
-      port: 5050
+      dev-server:
+        port: 5050
 ```
 
 The file is no declared build output, because build_runner would
@@ -416,7 +429,7 @@ file).
 - `context.theme` (`AppTheme`): `colors.<role>` (`Color`), `spacing.<name>`
   (`double`), `typography.<style>` (`TextStyle`; the 15 Material styles and
   `code`), `tokens.<group>...<key>` (any depth, a class per group: `Color` for
-  `#RRGGBB` / `0x...` and references to colors, `double` for numbers,
+  `#RRGGBB` and references to colors, `double` for numbers,
   `Duration` for `250ms`, `List<Color>` / `List<double>` / `List<String>`,
   `ThemeImage` for a map with `source`, `String` otherwise; a token of
   different types in two themes is an error), `styles.<name>` (a typed
@@ -444,10 +457,15 @@ file).
   numbers (`+5`, `.5`, `1e3`), durations (`250ms`, `250 ms`, `s`/`m`/`h`),
   colors (hex, Material names such as `grey.shade200` or `black54`, chained
   `alpha` / `mix` in any case); `$colors.<any Material role>` and
-  `$shape.<scale name>` resolve without being declared. An image token is a
+  `$shape.<scale name>` resolve without being declared. A reference whose
+  first segment is a section of a theme (`colors`, `styles`, `loaders`,
+  `syntax`, `frame-meter`, ...) is a path from the theme's root
+  (`$frame-meter.good`), anything else a token. The values of `syntax.*`
+  (the languages of code blocks, regular expressions) and of `glyphs` keys
+  are taken as written, never as references. An image token is a
   token at least `tokens.<group>.<key>` deep with a `source` and only image
-  keys (`refresh`, `source-sha256`, `headers`, `timeout`, `fallback`,
-  `allow-http`); with any other key it is a group.
+  keys (`refresh`, `source-sha256`, `headers`, `timeout`, `fallback`);
+  with any other key it is a group.
 
 ```dart
 // lib/spring_gen/theme.spring.dart (generated; part of main.spring.dart)
@@ -503,15 +521,23 @@ ThemeLoaderKinds.register<DoorsLoaderProps>(r'doors',
 ```
 
 **`spring_flutter_seo`** writes the pages of `spring.flutter.web.seo.*`
-for a Flutter web app: a page per route and Markdown file (`<path>/index.html`
-with the page's head and its text, under the page loader), `<path>.md`,
-`sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`, into `web/`
-(see `docs/configuration.md`, *The site's pages*).
+for a Flutter web app: a page per route and Markdown file (`<path>/index.html`,
+or `<path>.html` with `page-files: html`, with the page's head and its text,
+under the page loader), `<path>.md` (`web/index.md` for the root page),
+`sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`, into `web/`.
+The head carries what link previews read (`og:site_name` from `site-name`,
+`twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`);
+the canonical address matches what the host serves (`/` at the end with
+`directory`, the default). `exclude` leaves files of every Markdown folder
+out (`**/contents*.md`). See [docs/configuration.md, *The site's
+pages*](../docs/configuration.md#the-sites-pages-springflutterwebseo).
 
 **`spring_flutter_deep_links`** writes the deep links of
 `spring.flutter.navigation.deep-links.*` (the scheme, the domains) into the
 platforms' files between `spring:deep-links` markers, and the files the
-domains serve (`apple-app-site-association`, `assetlinks.json`).
+domains serve (`apple-app-site-association`, `assetlinks.json`). It reads
+the profiles as the app does: the platform's (`application-ios.yml`) after
+`mobile` / `desktop`, so the platform's file wins.
 
 **`spring_flutter_page_loader`** writes the page loader of the active
 theme's `splash` into `web/index.html`: a block between
@@ -522,7 +548,11 @@ included, when the theme has no splash; a page that does not exist is not
 created). It is HTML, CSS and one small script, no external file: the
 background, logo and title of the splash, the built-in loader kinds in CSS,
 or for a kind of the app's own its `web:` HTML file (below the app's
-directory, else `lib/resources/` of a package it uses) with the loader's keys
+directory or its `lib/resources/`, else `lib/resources/` of a package it
+uses; or an address the build downloads, `https://...` or
+`github:owner/repo/path@ref`, optionally pinned by `web-sha256`, kept in
+`.dart_tool/spring/loaders/` for offline builds; `http://` only with
+`spring.remote.allow-insecure`) with the loader's keys
 as CSS variables named after the key path (`door.edge.color` is
 `--door-edge-color`; colors are `#rrggbb` / `rgba()`, numbers are unitless,
 durations `500ms`, curves CSS timing functions, texts quoted CSS strings; the
@@ -530,12 +560,28 @@ text of a theme never leaves its string or the page). Colors, references and
 Material roles are resolved at build time from the theme (the seed makes the
 roles). With `system` the dark theme's values go into a
 `prefers-color-scheme: dark` rule. The script follows Flutter's loader
-(`--spring-progress` 0 to 1 and `data-stage` `load`, `app`, `engine`, `run`,
-`done` on the loader), honours `prefers-reduced-motion`, and removes the
+(`--spring-progress` 0 to 1 and `data-stage` on the loader), records the
+start's first stages (`page`, `engine`) in `window.springLoader.stages`,
+`data-splash-stage` and a `spring-splash-stage` event, from which the
+Flutter splash goes on, honours `prefers-reduced-motion`, and removes the
 loader when the Flutter side calls `window.springLoaderHandOff(progress)`, or
-after a timeout. Its text never changes, so spa mode's Content-Security-Policy
-allows it by hash; with your own policy add that hash
-(`WebPageLoader.scriptHash`) to `script-src`.
+after a timeout. Its text never changes, and it is written with nothing else
+between its tags, so spa mode's Content-Security-Policy allows it by hash;
+with your own policy add that hash (`WebPageLoader.scriptHash`) to
+`script-src`.
+
+The same builder keeps the rest of `web/index.html` and `web/manifest.json`
+in step with the configuration (`WebPageHead`): the title and description
+of `spring.flutter.app.*` and the active theme's colors; Flutter's
+`<meta name="viewport">` when the page has none;
+`spring.flutter.web.page.translate: false` (`translate="no"` and
+`<meta name="google" content="notranslate">`);
+`spring.flutter.web.page.max-pixel-ratio` (a script capping the pixel ratio
+Flutter draws at); `spring.flutter.web.page.swipe-to-close: false` (a block
+keeping the page open on a swipe down in apps' own browsers and Telegram
+Mini Apps). Spa mode's policy allows these scripts by hash too
+(`WebPageHead.hashOf`). The profile files are read after the files without
+one (`application-web.yml` wins over `application.yml`), as in the browser.
 
 ## Metadata for editors
 
@@ -712,17 +758,20 @@ package of a pub workspace from one directory.
 
 ## Public API
 
-`lib/builder.dart` has the three builder factories that `build.yaml`
+`lib/builder.dart` has the nine builder factories that `build.yaml`
 names; applications do not import it.
 
 | Factory | Builder | `build.yaml` entry |
 |---|---|---|
 | `springCoreDartBuilder` | the main builder, with the `aop_proxies`, `aop_prune`, `aop_defer` and `dart_defines_exclude` options | `spring_core_dart`: `auto_apply: dependents`, `build_to: source`, `lib/{{}}.dart` → `lib/spring_gen/{{}}.spring.dart` (the same for `bin/`, `test/`, `example/`) |
+| `springPropertiesBuilder` | the main builder for `lib/` only, in a phase before it, with its options | `spring_properties`: `auto_apply: none` (a hand-written starter turns it on in its `build.yaml` to generate the binding of its typed properties, which its example imports), `build_to: source`, `lib/{{}}.dart` → `lib/spring_gen/{{}}.spring.dart` |
 | `springTestBuilder` | the test builder, no options | `spring_test`: `auto_apply: dependents`, `build_to: source`, `test/<name>_test.dart` → `test/spring_gen/<name>.test.spring.dart` |
 | `springFlutterPageLoaderBuilder` | the page loader builder, no options | `spring_flutter_page_loader`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web/index.html` itself) |
 | `springFlutterWebBuilder` | the `web_dev_config.yaml` builder, no options | `spring_flutter_web`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web_dev_config.yaml` itself) |
 | `springFlutterSeoBuilder` | the site's pages, no options | `spring_flutter_seo`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes the pages into `web/` itself, after `spring_metadata` and `spring_flutter_page_loader`) |
 | `springFlutterDeepLinksBuilder` | the deep links, no options | `spring_flutter_deep_links`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes its blocks into `Info.plist`, `Runner.entitlements`, `AndroidManifest.xml` and the domain files itself) |
+| `springFlutterKeysBuilder` | the typed keys of the theme and messages, no options | `spring_flutter_keys`: `auto_apply: dependents`, `build_to: source`, `$package$` → `lib/spring_gen/theme.spring.dart`, `lib/spring_gen/messages.spring.dart` |
+| `springMetadataBuilder` | the metadata for editors, no options | `spring_metadata`: `auto_apply: dependents`, `build_to: source`, `$package$` → `lib/spring_gen/spring_metadata.json` (before `spring_flutter_seo`) |
 
 ## Dependencies
 

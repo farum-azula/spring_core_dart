@@ -220,6 +220,30 @@ void main() {
     expect(files.files['android/app/src/main/AndroidManifest.xml'], _manifest);
   });
 
+  test(
+    'the platform profile wins over mobile and desktop, as in the app',
+    () async {
+      final files = _app();
+      await _build(files, {
+        'application.yml': _config,
+        'application-mobile.yml':
+            'spring.flutter.navigation.deep-links.scheme: mobilebooks',
+        'application-ios.yml':
+            'spring.flutter.navigation.deep-links.scheme: iosbooks',
+        'application-desktop.yml':
+            'spring.flutter.navigation.deep-links.scheme: desktopbooks',
+        'application-macos.yml':
+            'spring.flutter.navigation.deep-links.scheme: macbooks',
+      });
+      expect(files.files['ios/Runner/Info.plist'], contains('iosbooks'));
+      expect(
+        files.files['android/app/src/main/AndroidManifest.xml'],
+        contains('mobilebooks'),
+      );
+      expect(files.files['macos/Runner/Info.plist'], contains('macbooks'));
+    },
+  );
+
   test('a platform profile turns them off for that platform', () async {
     final files = _app();
     await _build(files, {

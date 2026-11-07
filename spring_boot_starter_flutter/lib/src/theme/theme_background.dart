@@ -69,6 +69,7 @@ final class ThemeBackgroundImage {
     this.alignment,
     this.opacity,
     this.blur,
+    this.repeat,
   });
 
   /// The picture; `null` in a screen's override that keeps the theme's.
@@ -86,6 +87,11 @@ final class ThemeBackgroundImage {
   /// The blur radius in logical pixels; `null`: none.
   final double? blur;
 
+  /// Whether the picture is tiled over the screen: a small texture (grain,
+  /// paper, a pattern) repeated at its own size with `fit: none`; `null`:
+  /// [repeatOrDefault].
+  final ImageRepeat? repeat;
+
   /// [fit], `cover` when not set.
   BoxFit get fitOrDefault => fit ?? BoxFit.cover;
 
@@ -98,6 +104,9 @@ final class ThemeBackgroundImage {
   /// [blur], 0 when not set.
   double get blurOrDefault => blur ?? 0;
 
+  /// [repeat], no repeat when not set.
+  ImageRepeat get repeatOrDefault => repeat ?? ImageRepeat.noRepeat;
+
   /// This image's settings over [base]'s: what [this] sets wins.
   ThemeBackgroundImage over(ThemeBackgroundImage? base) => ThemeBackgroundImage(
     image: image ?? base?.image,
@@ -105,9 +114,17 @@ final class ThemeBackgroundImage {
     alignment: alignment ?? base?.alignment,
     opacity: opacity ?? base?.opacity,
     blur: blur ?? base?.blur,
+    repeat: repeat ?? base?.repeat,
   );
 
-  static const _keys = ['fit', 'alignment', 'opacity', 'blur'];
+  static const _keys = ['fit', 'alignment', 'opacity', 'blur', 'repeat'];
+
+  static const _repeats = {
+    'no-repeat': ImageRepeat.noRepeat,
+    'repeat': ImageRepeat.repeat,
+    'repeat-x': ImageRepeat.repeatX,
+    'repeat-y': ImageRepeat.repeatY,
+  };
 
   static ThemeBackgroundImage _parse(ThemeProperties p, String path) {
     const fits = BoxFit.values;
@@ -138,6 +155,11 @@ final class ThemeBackgroundImage {
         },
         'a blur radius of 0 or more',
       ),
+      repeat: p.read(
+        '$path.repeat',
+        (v) => _repeats[v.trim().toLowerCase()],
+        _repeats.keys.join(', '),
+      ),
     );
   }
 
@@ -148,10 +170,11 @@ final class ThemeBackgroundImage {
       other.fit == fit &&
       other.alignment == alignment &&
       other.opacity == opacity &&
-      other.blur == blur;
+      other.blur == blur &&
+      other.repeat == repeat;
 
   @override
-  int get hashCode => Object.hash(image, fit, alignment, opacity, blur);
+  int get hashCode => Object.hash(image, fit, alignment, opacity, blur, repeat);
 }
 
 /// A gradient over the background: `type`, `begin`, `end`, `colors` and

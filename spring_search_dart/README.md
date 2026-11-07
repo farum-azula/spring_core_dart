@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-search-dart](https://farum-azula.org/components/spring-search-dart)
 
 Full-text search for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
@@ -62,7 +62,9 @@ for (final hit in hits) {
 
 Each hit has its document, its score, the stretches of each field that
 matched (`highlights`) and `snippet(field)`, a piece of the text around
-the first match.
+the first match (160 characters by default, `length:`). `search(query,
+language:, limit:)` takes at most `limit` hits (`spring.search.max-hits`
+by default).
 
 ## Documents
 
@@ -71,9 +73,10 @@ A document has an `id`, searched `fields`, a `language`, a `link` and
 
 - `spring.search.markdown[n]`: Markdown files cut into one document per
   section, with the page's `title`, the section's `heading` and `body`,
-  and the link of the section (`/docs/beans#scope`). `name.ja.md` is the
-  Japanese of `name.md`; a page without a translation is searched in its
-  own language.
+  and the link of the section (`/docs/beans#scope`), and the attributes
+  `page` (the page's link, for `collapse-by: page`), `section` and
+  `path`. `name.ja.md` is the Japanese of `name.md`; a page without a
+  translation is searched in the other languages too, in its own.
 - Any bean that implements `SearchDocumentSource`:
 
 ```dart
@@ -108,12 +111,32 @@ Everything is a bean, asked in `@Order`:
 | `SearchAnalyzer` | Cuts the text of a language into terms: a `SearchTokenizer` then `SearchTokenFilter`s. Name it in `spring.search.analyzers.<language>` |
 | `SearchRanker` | Changes the score of each hit, after the index |
 
+The filters that come with it: `WordPartsFilter` (camel-case parts),
+`LowerCaseFilter`, `AsciiFoldingFilter` (accents removed),
+`StopWordFilter` (`StopWordFilter.english`, or your own words) and
+`EnglishStemFilter`; the tokenizer is `StandardTokenizer`. The built-in
+analyzers are `standard` and `english`; a bean of the same name replaces
+one. A filter of your own implements `SearchTokenFilter` (a German
+stemmer, say).
+
 ```dart
 @Bean()
 SearchAnalyzer german() => const SearchAnalyzer(
   'german',
-  filters: [LowerCaseFilter(), AsciiFoldingFilter(), GermanStemFilter()],
+  filters: [
+    WordPartsFilter(),
+    LowerCaseFilter(),
+    AsciiFoldingFilter(),
+    StopWordFilter({'der', 'die', 'das', 'und', 'ist'}),
+  ],
 );
+```
+
+```yaml
+spring:
+  search:
+    analyzers:
+      de: german
 ```
 
 ## Properties
@@ -123,7 +146,7 @@ SearchAnalyzer german() => const SearchAnalyzer(
 | `spring.search.enabled` | `true` | `false`: no `SearchService` |
 | `spring.search.default-language` | `en` | The language of documents and searches that name none |
 | `spring.search.fields.<field>` | `title` 8, `heading` 4, `body` 1 | The weight of a field |
-| `spring.search.fuzzy` | `1` | Typos per word (one below eight letters, none below five) |
+| `spring.search.fuzzy` | `1` | Typos per word of Latin letters (at most one below eight letters, none below five); `0` for none |
 | `spring.search.max-hits` | `20` | The most hits of a search |
 | `spring.search.operator` | `and` | `and`: every word; `or`: one of them |
 | `spring.search.analyzers.<language>` | `english` for `en`, `standard` otherwise | The analyzer of a language |

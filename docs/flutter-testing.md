@@ -272,6 +272,14 @@ class DarkThemeTest {
   `Brightness.dark` to test the device's dark mode.
 - The theme's fonts are loaded from the assets in tests as in the app,
   so golden tests show them instead of the test font.
+- The theme a test selects with `ThemeSelection.select` is kept, like
+  the user's choice in the app (`spring.flutter.theme.remember`, `true` by
+  default), and a test that pumps `SpringApplicationWidget` shows a kept
+  choice again while the splash shows. Set
+  `spring.flutter.theme.remember: false` in the test's properties, or
+  replace the `ThemeChoiceStore` bean with a fake
+  (`BeanOverride<ThemeChoiceStore>(...)`), so no test depends on another's
+  choice.
 
 ## 7. Platforms and their profiles
 

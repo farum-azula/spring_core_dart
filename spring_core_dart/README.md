@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components/spring-core-dart)
+**Documentation:** [farum-azula.org/components/spring-core-dart](https://farum-azula.org/components/spring-core-dart)
 
 `spring_core_dart` creates the objects of your application, gives each
 one the other objects it needs, and configures them from settings files.
@@ -1246,6 +1246,30 @@ is. Kept differences from Spring 7:
   resolved to URL because it does not exist`); `resources*:` gives an
   empty list in both.
 
+A resource of `resources:` (embedded or read from disk,
+`ClasspathFileResource`) is a `ContextResource`: its `pathWithinContext`
+is its path below `lib/resources/`, so code that lists files by a pattern
+can name each one:
+
+```dart
+for (final page in context.getResources('resources:content/**/*.md')) {
+  if (page case final ContextResource resource) {
+    log.info(resource.pathWithinContext); // content/guide/index.md
+  }
+}
+```
+
+**Remote addresses.** Configuration that downloads a file (themes,
+images, page loaders) reads its address through `RemoteAddresses`, a
+chain of `RemoteAddressResolver`s: the application's first (by
+`Ordered`), then the built-in `GitHubAddressResolver`
+(`github:owner/repo/path@ref`) and `UrlAddressResolver` (`https://`,
+`http://`); a new kind of address (`cdn:`) is a resolver of its own.
+`RemoteAddressPolicy` checks every address one way: an insecure one stops
+the start with `InsecureConnectionException`, naming it and its property,
+unless `spring.remote.allow-insecure=true`, which logs a warning listing
+them.
+
 **Why `lib/resources/`**, and not `bin/` or the project root: `lib/` is
 the only part of a Dart package that other packages can use. A starter
 keeps its defaults and messages in its own `lib/resources/`, and they join
@@ -2067,7 +2091,7 @@ function `log`.
 The logger is a `SpringLog`, the logging facade of the whole family: the
 framework, the starters and applications log through it, and a backend
 such as `spring_boot_starter_logging` decides where the records go.
-Without a backend, warnings and errors are printed.
+Without a backend, records at `info` and above are printed.
 
 ```dart
 import 'package:neon/spring_gen/app.spring.dart'; // the generated file
@@ -2140,6 +2164,15 @@ A regular bean created while the `BeanPostProcessor`s are being registered
 'repo' of type [Repo] is not eligible for getting processed by all
 BeanPostProcessors ...", naming the post-processor being created). Make
 such a dependency an `ObjectProvider` or `@Lazy`.
+
+**Measuring and pacing the start.** `DefaultListableBeanFactory.applicationStartup`
+(Spring's `ApplicationStartup`, `ApplicationStartup.none` by default)
+records each eager bean as a `spring.beans.instantiate` step tagged with
+its `beanName`; `BufferingApplicationStartup` keeps the ended steps
+(`RecordedStartupStep`: name, start, duration, tags). A `StartupPacer`
+(`DefaultListableBeanFactory.startupPacer`) is asked between eager beans
+on the asynchronous path (`refreshAsync`) and may make the start wait,
+so a UI draws its frames (a splash that moves) while the beans are made.
 
 `EmbeddedValueResolverAware` gets Spring's `EmbeddedValueResolver`: it
 resolves `${...}` placeholders, then `#{...}` expressions

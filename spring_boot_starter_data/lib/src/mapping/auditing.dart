@@ -49,7 +49,8 @@ class EnableDataAuditing {
 }
 
 /// Tells who is acting: the value of `@CreatedBy` and `@LastModifiedBy`
-/// properties. With the security starter, the logged-in user's name.
+/// properties. The application declares it (no starter provides one): for
+/// example the logged-in user's name from the security context.
 ///
 /// An answer of null (nobody is logged in) leaves the properties as they
 /// are.

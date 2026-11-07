@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-dart](https://farum-azula.org/components/spring-boot-dart)
 
 The part of Spring for Dart that starts an application. With
 [`spring_core_dart`](../spring_core_dart) alone you have a container of
@@ -362,6 +362,24 @@ eager: `LazyInitializationExcludeFilter.forBeanTypes([CacheWarmer])`.
 a bean definition replace another of the same name; it is off by
 default, so a duplicate name stops the start.
 
+**Measuring the start.** `SpringApplication(applicationStartup:
+BufferingApplicationStartup())` records the steps of the start
+(`spring.boot.application.starting`, `environment-prepared`, `context`)
+and each eager bean (`spring.beans.instantiate`, tagged with its
+`beanName`); its `steps` give each step's name, start and `duration`.
+Spring's `ApplicationStartup`; nothing is recorded by default
+(`ApplicationStartup.none`).
+
+**Downloaded configuration.** Themes, images and page loaders may come
+from an address (`https://...`, `github:owner/repo/path@ref`). Each is
+read by the `RemoteAddresses` chain (the `remoteAddresses` bean):
+`SpringApplication(addressResolvers: [...])` adds the application's
+`RemoteAddressResolver`s, asked before the built-in ones, for a new kind
+of address such as `cdn:`. An insecure address (`http://`) stops the
+start with `InsecureConnectionException`, naming it and its property,
+unless `spring.remote.allow-insecure=true`, which logs a warning listing
+them.
+
 ## Validation
 
 Every application gets validation without setup, as with Boot's
@@ -420,8 +438,9 @@ class Catalog {
 | `spring.json.mapper.sort-properties-alphabetically` | `true` | properties sorted by JSON name, constructor parameters first (Jackson 3's and Boot 4's order); `false`: declaration order |
 | `spring.json.time-zone` | each date in its own zone | `UTC` or a fixed offset such as `+02:00` |
 
-A boolean property that is not `true` counts as `false`, so a typo such
-as `ture` silently turns a feature off. Any other `spring.json.*`
+A boolean property that is not a boolean (a typo such as `ture`) stops
+the start with a `ConfigurationPropertiesBindException` naming the key,
+as for any other property. Any other `spring.json.*`
 key (Boot binds Jackson's feature flags, `date-format`, `locale`, ...)
 is logged as a warning naming the key and ignored. Dart has no time zone
 database, so a named zone such as `Europe/Berlin` stops the start with a
@@ -570,7 +589,8 @@ spring.autoconfigure.exclude=JacksonAutoConfiguration
 whose timeout per shutdown phase is
 `spring.lifecycle.timeout-per-shutdown-phase` (30 s by default, as in
 Boot's `LifecycleAutoConfiguration`; without it the context waits 10 s,
-Spring Framework's default), and `MessageSourceAutoConfiguration`. That one registers a `messageSource`
+Spring Framework's default), the `applicationAvailability` bean (see
+[Availability](#availability)), and `MessageSourceAutoConfiguration`. That one registers a `messageSource`
 for `resources:<spring.messages.basename>` (`messages` by default) when
 the context, not counting a parent, has no bean named `messageSource`.
 It reads `spring.messages.encoding`, `use-code-as-default-message`,
@@ -583,11 +603,14 @@ It reads `spring.messages.encoding`, `use-code-as-default-message`,
 |---|---|
 | [`spring_boot_starter_logging`](../spring_boot_starter_logging/README.md) | Console output with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` for an in-app log screen. |
 | [`spring_boot_starter_web`](../spring_boot_starter_web/README.md) | A web server: `@RestController` classes, JSON bodies, `@Valid`, `ProblemDetail` errors, server-sent events, filters, CORS. |
-| [`spring_boot_starter_security`](../spring_boot_starter_security/README.md) | Security for the web starter: a filter chain configured with `HttpSecurity`, HTTP Basic, form login, sessions, CSRF, JWT resource servers. |
+| [`spring_boot_starter_security`](../spring_boot_starter_security/README.md) | Security for the web starter: a filter chain configured with `HttpSecurity`, HTTP Basic, form login, `oauth2Login()`, sessions, CSRF, JWT and DPoP resource servers. |
 | [`spring_boot_starter_feign`](../spring_boot_starter_feign/README.md) | HTTP clients from annotated interfaces (`@FeignClient`), with interceptors, retries and fallbacks. |
 | [`spring_boot_starter_websocket`](../spring_boot_starter_websocket/README.md) | WebSocket clients from annotated interfaces (`@WebSocketClient`), and endpoints with the web starter. |
 | [`spring_boot_starter_cache`](../spring_boot_starter_cache/README.md) | `@Cacheable`, `@CachePut`, `@CacheEvict` on bean methods, a `CacheManager` with TTL and size limits. |
 | [`spring_boot_starter_scheduling`](../spring_boot_starter_scheduling/README.md) | `@Scheduled` methods (fixed rate, fixed delay, cron) and a `TaskScheduler` bean. |
+| [`spring_boot_starter_data`](../spring_boot_starter_data/README.md) | Repositories (Spring Data JDBC's model) in memory, on SQLite or PostgreSQL, `@Transactional`, migrations, `@DataTest`. |
+| [`spring_boot_starter_oauth2_client`](../spring_boot_starter_oauth2_client/README.md) | OAuth 2.0 and OpenID Connect clients: registrations, client-credentials tokens on Feign calls, the base of the logins. |
+| [`spring_boot_starter_actuator`](../spring_boot_starter_actuator/README.md) | `/actuator/health` (with Kubernetes probes), `/actuator/info`, `/actuator/mappings` and endpoints of your own, over the web starter. |
 | [`spring_boot_starter_flutter`](../spring_boot_starter_flutter/README.md) | Flutter apps: `SpringApplicationWidget`, beans in widgets, the app lifecycle, platform profiles. |
 | [`spring_boot_starter_test`](../spring_boot_starter_test/README.md) (dev) | `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, bean matchers, `captureLogs`. |
 
@@ -679,6 +702,18 @@ Good to know:
   `factoryMethodName` (a `@Bean` method) for its bean conditions to be
   decided in that order too; a definition with neither is decided at
   once.
+- **A module the application may leave out of the build.**
+  `@AutoConfigurationModule(build: AutoConfigurationBuild('neon.cache.enabled'))`
+  lets the application's configuration decide, when the generator runs:
+  `true` builds the module in, `false` leaves it out (no code at all),
+  not set follows `whenMissing` (`BuildInclusion.notInRelease` by
+  default: in debug and profile builds, under
+  `if (!const bool.fromEnvironment('dart.vm.product'))`, so a release
+  compiles it away; or `always`, `never`). The generator reads
+  `application.yml` and `application.properties` without a profile; a
+  value it cannot read stops the build, and one set only in a profile's
+  file is warned about. Such a module takes no `order`, `before` or
+  `after`.
 - Keep the starter's third-party constraints wide (`dio: '>=5.0.0 <7.0.0'`)
   so applications can resolve them together with other starters.
 
@@ -698,6 +733,16 @@ logging.level.payments=trace
 `LOGGING_LEVEL_NEON_CHECKOUT=debug` as an environment variable works
 too. A value that is not a level (`trace`, `debug`, `info`, `warn`,
 `error`, `fatal`, `off`) stops the start, as Boot's binding does.
+
+As in Boot, two groups exist without `logging.group.*`
+(`SpringApplication.predefinedLoggerGroups`): `web` (the loggers
+`spring.web` and `spring.websocket`) and `sql` (`spring.jdbc.core.JdbcTemplate`,
+`spring.jdbc.core.StatementCreatorUtils`); a `logging.group.web` of the
+application replaces the list. `--debug` (or `debug=true`) turns the
+framework's loggers (`spring_core_dart`, `spring_boot_dart`,
+`spring.web.server`) to `debug`, `--trace` to `trace`; levels in
+`logging.level.*` win. Without the logging starter, `SpringLog` prints
+records at `info` and above.
 
 ## Context initializers and test properties
 
@@ -762,6 +807,22 @@ class Warmup {
   @EventListener()
   void onReady(ApplicationReadyEvent event) => cache.fill();
 }
+```
+
+### Availability
+
+As in Spring Boot, `ApplicationStartedEvent` is followed by an
+`AvailabilityChangeEvent` of `LivenessState.correct` and
+`ApplicationReadyEvent` by one of `ReadinessState.acceptingTraffic`. The
+`applicationAvailability` bean (`ApplicationAvailability`) keeps the last
+state of each kind; the actuator starter's liveness and readiness health
+groups read it. Code that is busy for a while publishes a new state:
+
+```dart
+// No requests while the cache is rebuilt.
+AvailabilityChangeEvent.publish(events, ReadinessState.refusingTraffic);
+await cache.rebuild();
+AvailabilityChangeEvent.publish(events, ReadinessState.acceptingTraffic);
 ```
 
 ## Versions and starter compatibility
@@ -990,13 +1051,12 @@ starter does this for you and starts the application from a widget.
 | `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1, or name one file's encoding where it is named, `resources:legacy.properties[encoding=iso-8859-1]`, as in Boot 4.1) | Dart files are UTF-8 |
 | YAML 1.1 (SnakeYAML) | YAML 1.2 (`package:yaml`): `on`, `off`, `yes`, `no` stay strings (converting them to `bool` still works), `0777` is 777 | The Dart team's YAML parser |
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
-| `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |
+| `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged at INFO, which `SpringLog` shows by default (`spring.main.log-startup-info=false` turns it off) | Dart has no process start time |
 | The shutdown hook is registered by default and runs when the JVM exits | Off by default (`spring.main.register-shutdown-hook=true` turns it on); only on SIGINT and SIGTERM (then `exit(130)` or `exit(143)`); the listener keeps the process alive until the context closes | Dart has no exit hooks, and a signal listener is an open handle that would keep a finished program running |
 | `EnvironmentPostProcessor`s listed in `META-INF/spring.factories` | `SpringApplication(environmentPostProcessors: [...])`, ordered by `Ordered` around config data (`EnvironmentPostProcessor.configDataOrder`) | No class path to scan |
 | `@DurationUnit(ChronoUnit.X)`, `@DataSizeUnit(DataUnit.X)` | The same with Dart enums (`ChronoUnit.seconds`, `DataUnit.megabytes`; no months or years) | Dart naming; `Duration` has no calendar units |
 | `BindHandler.onFailure` returns a replacement value or rethrows | `onFailure(name, error)` returns whether the failure counts (`false` leaves the property unbound) | Errors are collected and reported together |
 | `JsonMapperBuilderCustomizer` gets Jackson's `JsonMapper.Builder` | It gets the core `JsonMapperBuilder` (naming, inclusion, time zone, features, serializers, modules); Jackson's other builder methods are missing | Only what the Dart mapper supports |
-| A `spring.json.*` boolean that is not `true` or `false` fails the binding | It counts as `false`, silently | Not checked yet |
 | The condition evaluation report explains each outcome (`found bean 'x'`, `@ConditionalOnProperty (a=b) matched`) | It names each condition and whether it matched; a configuration class's conditions are listed under its key | Conditions are plain Dart objects |
 | The banner is printed to `System.out`; `banner.txt` may use `${application.version}`, `${AnsiColor.*}` | `print` (`spring.main.banner-mode=log` logs it); `banner.txt` gets `${spring-boot.version}`, `${spring-boot.formatted-version}` and environment placeholders | Dart has no manifest version or ANSI property source |
 | `@AutoConfiguration(before:, after:)` and `@AutoConfigureOrder` on the class | `before`, `after` and `order` of `@AutoConfigurationModule` (a module is the unit; classes can be named in them, by short name) | The generator discovers modules, not classes |
@@ -1006,4 +1066,8 @@ starter does this for you and starts the application from a widget.
 
 ## Not yet
 
-`AvailabilityChangeEvent`, test slices (`@WebMvcTest`-like), Actuator.
+Test slices other than `@DataTest` of `spring_boot_starter_data`
+(`@WebMvcTest`-like). `AvailabilityChangeEvent` and the application's
+availability are here (see [Availability](#availability));
+Actuator is
+[`spring_boot_starter_actuator`](../spring_boot_starter_actuator/README.md).

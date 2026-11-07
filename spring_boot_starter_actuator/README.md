@@ -4,7 +4,7 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-**Documentation:** [farum-azula.org](https://farum-azula.org/components)
+**Documentation:** [farum-azula.org/components/spring-boot-actuator](https://farum-azula.org/components/spring-boot-actuator)
 
 Spring Boot Actuator for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart) servers:

@@ -59,6 +59,7 @@ void main() {
         'background.image.alignment': 'top-left',
         'background.image.opacity': '0.9',
         'background.image.blur': '4',
+        'background.image.repeat': 'repeat',
         'background.overlay.color': '#80000000',
         'background.overlay.gradient.type': 'radial',
         'background.overlay.gradient.begin': 'center',
@@ -73,6 +74,7 @@ void main() {
       expect(b.image!.alignment, Alignment.topLeft);
       expect(b.image!.opacity, 0.9);
       expect(b.image!.blur, 4);
+      expect(b.image!.repeat, ImageRepeat.repeat);
       expect(b.overlay!.color, const Color(0x80000000));
       final gradient = b.overlay!.gradient!;
       expect(gradient.type, BackgroundGradientType.radial);

@@ -245,6 +245,47 @@ void main() {
     expect(tester.getTopLeft(find.byType(Table)).dx, lessThan(start));
   });
 
+  testWidgets('a narrow table fills the width; fill: false keeps it narrow', (
+    tester,
+  ) async {
+    Future<double> width(Map<String, String> properties) async {
+      await tester.pumpWidget(
+        WidgetsApp(
+          color: const Color(0xFF000000),
+          builder: (context, _) => Center(
+            child: SizedBox(
+              width: 600,
+              child: SpringTheme(
+                data: SpringThemes(properties).data('light'),
+                child: const MarkdownView(
+                  '| A | B |\n|---|---|\n| one | two |',
+                  selectable: false,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      return tester.getSize(find.byType(Table)).width;
+    }
+
+    expect(await width({}), 600);
+    expect(await width({'styles.table.fill': 'false'}), lessThan(200));
+  });
+
+  testWidgets('a heading breaks a long identifier after an underscore', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(const MarkdownView('# spring_boot_starter', selectable: false)),
+    );
+    final text = tester
+        .widget<RichText>(find.byType(RichText).first)
+        .text
+        .toPlainText();
+    expect(text, 'spring_\u200Bboot_\u200Bstarter');
+  });
+
   testWidgets('styles.heading: a color for every level, h2 its own', (
     tester,
   ) async {
@@ -402,7 +443,10 @@ void main() {
       ),
     );
     final spans = <(String, Color?)>[];
-    tester.widget<RichText>(find.byType(RichText)).text.visitChildren((span) {
+    // The code; the copy button's icon is a RichText too.
+    tester.widget<RichText>(find.byType(RichText).first).text.visitChildren((
+      span,
+    ) {
       if (span is TextSpan && span.text != null) {
         spans.add((span.text!, span.style?.color));
       }
@@ -531,15 +575,59 @@ void main() {
         '```dart title="lib/main.dart"\nvoid main() {}\n```\n\n```dart\nuntitled\n```\n',
       );
       expect(find.text('lib/main.dart'), findsOneWidget);
-      expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.copy_rounded));
+      // Every block has one: the titled in its header, the other in its
+      // corner.
+      expect(find.byIcon(Icons.copy_rounded), findsNWidgets(2));
+      await tester.tap(find.byIcon(Icons.copy_rounded).first);
       await tester.pump();
       expect(copied, 'void main() {}');
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.copy_rounded));
+      await tester.pump();
+      expect(copied, 'untitled');
+      // The untitled block is as wide as the titled one, the button in its
+      // corner.
+      final blocks = find.ancestor(
+        of: find.text('untitled', findRichText: true),
+        matching: find.byType(Stack),
+      );
+      expect(
+        tester.getSize(blocks.first).width,
+        tester.getSize(find.byType(MarkdownView)).width,
+      );
       expect(
         tester.widget<Text>(find.text('lib/main.dart')).style?.color,
         const Color(0xFF00AA00),
       );
+    });
+
+    testWidgets('styles.code.copy: false, no copy buttons', (tester) async {
+      await pumpThemed(
+        tester,
+        const {'styles.code.copy': 'false'},
+        '```dart title="a.dart"\na\n```\n\n```dart\nb\n```\n',
+      );
+      expect(find.byIcon(Icons.copy_rounded), findsNothing);
+    });
+
+    testWidgets('themes=: a button per palette switches the colors', (
+      tester,
+    ) async {
+      await pumpThemed(tester, const {
+        ..._java,
+        'styles.code.keyword': '#000001',
+        'styles.code-night.label': 'Night',
+        'styles.code-night.keyword': '#112233',
+        'styles.code-day.keyword': '#445566',
+      }, '```java themes="night day missing"\npublic int x;\n```\n');
+      // A palette the theme does not have is left out.
+      expect(find.text('Night'), findsOneWidget);
+      expect(find.text('day'), findsOneWidget);
+      expect(find.text('missing'), findsNothing);
+      expect(colorOf(tester, 'public'), const Color(0xFF112233));
+      await tester.tap(find.text('day'));
+      await tester.pump();
+      expect(colorOf(tester, 'public'), const Color(0xFF445566));
     });
 
     testWidgets('inline code and links in their own colors', (tester) async {

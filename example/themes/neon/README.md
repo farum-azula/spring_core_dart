@@ -7,7 +7,8 @@ Everything on screen is a widget of [`neon_ui`](../neon_ui/README.md), the
 NEON design system shipped as a library, or a small widget of this app.
 
 The look is YAML. [`neon_ui`'s `themes/neon.yml`](../neon_ui/lib/resources/themes/neon.yml)
-is imported with `spring.config.import: resources:themes/neon.yml`, and
+is imported with `spring.config.import: resources:themes/neon.yml` (with the
+app's own `resources:themes/code.yml`, the languages of the code boxes), and
 [`lib/resources/application.yml`](lib/resources/application.yml) adds a theme
 of its own, `neon-ice`, that `extends: neon` and changes one color.
 
@@ -33,8 +34,10 @@ switches pages at once, without a transition; code anywhere calls
 `context.route.go('/logs')`.
 
 The navigation is built from `NeonChip`s; each page shows a capability, the
-lines of YAML that make it (`NeonCode` boxes: a block of Markdown,
-colored by the `styles.code` of `neon_ui`'s theme) and the result. A test
+lines of YAML that make it (`NeonCode` boxes: a block of Markdown, split by
+the languages of [`themes/code.yml`](lib/resources/themes/code.yml), imported
+next to the library's theme, and colored by the `styles.code` of `neon_ui`'s
+theme) and the result. A test
 checks that every quoted line is in the resources.
 
 1. **Overview**: what the app is, the import of the library's theme.
@@ -68,7 +71,8 @@ checks that every quoted line is in the resources.
    for every screen (`motion.page-transition: { type: fade, duration:
    $motion.durations.fast, curve: ease-out }`).
 10. **Themes**: `neon` and `neon-ice`, switched with `ThemeSelection` and the
-   generated `AppThemes.*` constants.
+   generated `AppThemes.*` constants; the choice is kept between runs
+   (`spring.flutter.theme.remember`).
 
 ## The code
 

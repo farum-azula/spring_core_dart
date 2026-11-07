@@ -1,5 +1,6 @@
 ## Unreleased
 
+- README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - Fixed: the task switcher's color comes from the theme shown, not Material's fallback in a `WidgetsApp`.
 - Fixed: an address with a `/` at its end (`/docs/beans/`) is the page without it. Static hosts (Cloudflare Pages, GitHub Pages) send a folder's address that way when the build wrote `docs/beans/index.html`, and such a page opened empty.
 - `RouteContentView(scrollToTop:)`, `true` by default: another page of the same screen opens at the top of its scrollable, as a browser opens a page, scrolling there the theme's way (`motion.scroll-to-top`) (an `#anchor` scrolls to its heading; a translation of the same page keeps the position). The screen stays.

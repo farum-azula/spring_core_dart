@@ -409,8 +409,8 @@ final class SpringThemes extends ChangeNotifier {
 /// choice starts with `spring.flutter.theme.active` (`system` by default).
 /// It is a bean of the starter and a `ChangeNotifier`: a settings page
 /// calls [select], and the app follows at once.
-/// The choice is not stored; an app that wants to remember it saves
-/// [active] itself.
+/// The choice is kept between runs in [store] (`spring.flutter.theme.remember`,
+/// `true` by default) and shown again while the splash shows.
 ///
 /// ```dart
 /// // A settings tile that switches to the dark theme.
