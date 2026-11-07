@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `spring.flutter.web.page.max-pixel-ratio` (`FlutterWebPageProperties.maxPixelRatio`), read by the generator: the most pixels for each point Flutter draws at on the web, so a phone's 3x screen can be drawn at 2.
 - `background.frame-rate` (default 15; `every-frame`): a moving background is drawn again that many times a second, not at every frame, so a slow drift no longer keeps the whole screen repainting (on the web it took the time of scrolling). `ThemeAnimation(frameRate:)` plays any repeating theme animation so.
 - Fixed: `motion.wheel-scroll` steps once in each frame, by the frame's time, not by a 16 ms timer (steps came two in a frame, then none, and a 120 Hz screen moved at 60); a trackpad's scroll passes as it comes, not eased again behind the fingers.
 - `SplashTask` beans run while the splash shows, once the beans exist and before the app: the new stage `SplashStage.tasks`, their progress the loader's last share (`spring.flutter.splash.tasks.enabled`, `timeout`, `share`). A task that fails or hangs does not stop the start.

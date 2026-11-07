@@ -66,12 +66,22 @@ final class FlutterProperties {
 @ConfigurationProperties('spring.flutter.web.page')
 final class FlutterWebPageProperties {
   /// Settings with these values.
-  const FlutterWebPageProperties({this.swipeToClose = true});
+  const FlutterWebPageProperties({
+    this.swipeToClose = true,
+    this.maxPixelRatio,
+  });
 
   /// Whether a swipe down may close the page where the browser does so:
   /// an app's own browser (Telegram's, Instagram's), a Telegram Mini App.
   /// `false` keeps the page open; the swipe then scrolls the app.
   final bool swipeToClose;
+
+  /// The most pixels for each point Flutter draws at, written into
+  /// `web/index.html` by the build. A phone's screen has 3: every frame is
+  /// 9 times the pixels of the page, and its graphics chip drops frames on
+  /// a full-screen scroll. 2 draws 2.25 times fewer, the text still sharp.
+  /// `null`: the screen's own.
+  final double? maxPixelRatio;
 }
 
 /// The lifecycle of the app, `spring.flutter.lifecycle.*`.

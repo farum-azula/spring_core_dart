@@ -11,7 +11,12 @@ void main() {
   test('written once in the head, removed again', () {
     final once = WebPageHead.swipe(_page, swipeToClose: false);
     expect(once, contains(WebPageHead.swipeStart));
-    expect(once, contains('disableVerticalSwipes'));
+    expect(
+      once,
+      contains("'web_app_setup_swipe_behavior',{allow_vertical_swipe:false}"),
+    );
+    expect(once, contains('TelegramWebviewProxy'));
+    expect(once, contains("addEventListener('touchstart',keep"));
     expect(once, contains('calc(100% + 1px)'));
     expect(
       once.indexOf(WebPageHead.swipeEnd),

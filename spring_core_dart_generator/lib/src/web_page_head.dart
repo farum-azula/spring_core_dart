@@ -20,19 +20,59 @@ abstract final class WebPageHead {
   /// Where it ends.
   static const swipeEnd = '<!-- spring:page:swipe:end -->';
 
-  /// The block of `spring.flutter.web.page.swipe-to-close: false`. A
-  /// Telegram Mini App turns its vertical swipes off
-  /// (`disableVerticalSwipes`). In an app's own browser (Telegram's,
-  /// Instagram's...) a swipe down closes the page when the page is at its
-  /// top, and a Flutter page always is: the page is made one pixel taller
-  /// than the screen and kept one pixel down, so the swipe is no close.
-  /// Touch screens only; the pixel is never seen.
+  /// The block of `spring.flutter.web.page.swipe-to-close: false`.
+  ///
+  /// A Telegram Mini App is told to keep its vertical swipes for the page
+  /// (`web_app_setup_swipe_behavior`, Bot API 7.7) and to open at its full
+  /// height (`web_app_expand`), the way telegram-web-app.js sends them:
+  /// `TelegramWebviewProxy.postEvent` in the apps, a message to the parent
+  /// window in Telegram Web. No script of Telegram's is loaded for it.
+  ///
+  /// In an app's own browser (Telegram's for a link, Instagram's...) a
+  /// swipe down closes the page when the page is at its top, and a Flutter
+  /// page always is: the page is made one pixel taller than the screen and
+  /// kept one pixel down, at its load and at each touch, so the swipe is
+  /// no close. Touch screens only; the pixel is never seen.
   static const swipeBlock =
       '''
   $swipeStart
   <style>@media (pointer: coarse){html{height:calc(100% + 1px);scrollbar-width:none}html::-webkit-scrollbar{display:none}}</style>
-  <script>(function(){var t=window.Telegram&&window.Telegram.WebApp;if(t){try{t.expand();if(t.disableVerticalSwipes)t.disableVerticalSwipes();}catch(e){}}if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function keep(){if(window.scrollY<1)window.scrollTo(0,1);}addEventListener('load',keep);addEventListener('scroll',keep,{passive:true});addEventListener('resize',keep);setTimeout(keep,0);})();</script>
+  <script>(function(){function post(t,d){var e=JSON.stringify({eventType:t,eventData:d});try{var p=window.TelegramWebviewProxy;if(p&&p.postEvent){p.postEvent(t,JSON.stringify(d));}else if(window.external&&'notify' in window.external){window.external.notify(e);}else if(window.parent!==window){window.parent.postMessage(e,'*');}}catch(x){}}post('web_app_expand',{});post('web_app_setup_swipe_behavior',{allow_vertical_swipe:false});if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function keep(){if(window.scrollY<1)window.scrollTo(0,1);}addEventListener('load',keep);addEventListener('scroll',keep,{passive:true});addEventListener('resize',keep);addEventListener('touchstart',keep,{passive:true,capture:true});setTimeout(keep,0);})();</script>
   $swipeEnd''';
+
+  /// Where the block that caps the drawing's pixel ratio starts.
+  static const pixelRatioStart = '<!-- spring:page:pixel-ratio:start -->';
+
+  /// Where it ends.
+  static const pixelRatioEnd = '<!-- spring:page:pixel-ratio:end -->';
+
+  /// [html] with a block that caps the pixel ratio Flutter draws at to
+  /// [max] (`spring.flutter.web.page.max-pixel-ratio`), before the engine
+  /// starts; without it when [max] is `null`.
+  ///
+  /// A phone's screen has 3 pixels for each point: Flutter draws every
+  /// frame at 9 times the pixels of the page, and a phone's graphics chip
+  /// drops frames on a full-screen scroll. At 2 it draws 2.25 times fewer
+  /// and the text stays sharp. The browser scales the drawing to the
+  /// screen; a screen at or under [max] is left as it is.
+  static String pixelRatio(String html, {required double? max}) {
+    final block = RegExp(
+      r'\n?[ \t]*' +
+          RegExp.escape(pixelRatioStart) +
+          r'[\s\S]*?' +
+          RegExp.escape(pixelRatioEnd),
+    );
+    final without = html.replaceAll(block, '');
+    if (max == null) {
+      return without;
+    }
+    final value = max == max.roundToDouble() ? '${max.round()}' : '$max';
+    return without.replaceFirst('</head>', '''
+  $pixelRatioStart
+  <script>(function(){var m=$value;if(window.devicePixelRatio>m){try{window.devicePixelRatio=m;}catch(e){}}})();</script>
+  $pixelRatioEnd
+</head>''');
+  }
 
   /// [html] with the [swipeBlock] in its head when [swipeToClose] is
   /// `false`, without it when `true`.

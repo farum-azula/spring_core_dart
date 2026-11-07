@@ -224,14 +224,17 @@ final class WebPageLoaderBuilder implements Builder {
         : WebPageLoader.pageColors(set, diagnostics);
     final updated = loaded == null
         ? null
-        : WebPageHead.swipe(
-            WebPageHead.html(
-              loaded,
-              title: app.title,
-              description: app.description,
-              themeColor: colors?.primary,
+        : WebPageHead.pixelRatio(
+            WebPageHead.swipe(
+              WebPageHead.html(
+                loaded,
+                title: app.title,
+                description: app.description,
+                themeColor: colors?.primary,
+              ),
+              swipeToClose: app.swipeToClose,
             ),
-            swipeToClose: app.swipeToClose,
+            max: app.maxPixelRatio,
           );
     await _manifest(buildStep, package, app, colors);
     // Theme errors are the typed keys' to report.
@@ -251,7 +254,13 @@ final class WebPageLoaderBuilder implements Builder {
   // spring.flutter.app.title and .description as the app reads them in a
   // browser; none when the config cannot be read (its own builders say
   // why).
-  static ({String? title, String? description, bool swipeToClose}) _appText(
+  static ({
+    String? title,
+    String? description,
+    bool swipeToClose,
+    double? maxPixelRatio,
+  })
+  _appText(
     Map<String, String> texts,
   ) {
     try {
@@ -270,16 +279,33 @@ final class WebPageLoaderBuilder implements Builder {
         swipeToClose:
             value('spring.flutter.web.page.swipe-to-close')?.toLowerCase() !=
             'false',
+        maxPixelRatio: switch (double.tryParse(
+          value('spring.flutter.web.page.max-pixel-ratio') ?? '',
+        )) {
+          final max? when max >= 1 => max,
+          _ => null,
+        },
       );
     } on Exception {
-      return (title: null, description: null, swipeToClose: true);
+      return (
+        title: null,
+        description: null,
+        swipeToClose: true,
+        maxPixelRatio: null,
+      );
     }
   }
 
   Future<void> _manifest(
     BuildStep buildStep,
     String package,
-    ({String? title, String? description, bool swipeToClose}) app,
+    ({
+      String? title,
+      String? description,
+      bool swipeToClose,
+      double? maxPixelRatio,
+    })
+    app,
     ({String primary, String surface})? colors,
   ) async {
     const path = 'web/manifest.json';

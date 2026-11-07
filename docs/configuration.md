@@ -3883,7 +3883,8 @@ spring:
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. In a Telegram Mini App it calls `Telegram.WebApp.disableVerticalSwipes()`; in other apps' browsers it makes the page one pixel taller than the screen and keeps it one pixel down, so the swipe is no close. Touch screens only; the pixel is never seen |
+| `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. In a Telegram Mini App it tells Telegram to keep the vertical swipes for the page and to open at full height (`web_app_setup_swipe_behavior`, `web_app_expand`), sent the way Telegram's own script sends them, so no script of Telegram's is needed; in other apps' browsers it makes the page one pixel taller than the screen and keeps it one pixel down at its load and at each touch, so the swipe is no close. Touch screens only; the pixel is never seen |
+| `spring.flutter.web.page.max-pixel-ratio` | number, 1 or more | the screen's own | The most pixels for each point Flutter draws at. A phone's screen has 3, so every frame is 9 times the pixels of the page and its graphics chip drops frames on a full-screen scroll; `2` draws 2.25 times fewer and the text stays sharp. The generator writes a script into `web/index.html` that runs before the engine starts; a screen at or under the value is left as it is |
 
 ### The page loader
 

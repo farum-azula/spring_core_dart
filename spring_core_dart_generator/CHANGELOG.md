@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Fixed: `spring.flutter.web.page.swipe-to-close: false` turns a Telegram Mini App's vertical swipes off without telegram-web-app.js: the block sends `web_app_setup_swipe_behavior` and `web_app_expand` itself (it called `Telegram.WebApp`, which only that script defines, so nothing happened); the page is kept one pixel down at each touch too.
+- `spring.flutter.web.page.max-pixel-ratio` writes a script into `web/index.html` that caps the pixel ratio Flutter draws at before the engine starts (`WebPageHead.pixelRatio`); none removes it.
 - `spring.flutter.web.page.swipe-to-close: false`: a block in `web/index.html` keeps the page open on a swipe down in apps' own browsers (Telegram, Instagram) and Telegram Mini Apps (`disableVerticalSwipes`).
 - The pages for search engines carry what link previews read: `og:site_name` (`spring.flutter.web.seo.site-name`) and `twitter:card` (a large card with the page's image), `twitter:title`, `twitter:description`, `twitter:image`.
 - Fixed: a loader's `tracks` and `web-sha256` no longer become fields of the props class of its kind; the keys every loader has are one list (`loaderOwnKeys`).
