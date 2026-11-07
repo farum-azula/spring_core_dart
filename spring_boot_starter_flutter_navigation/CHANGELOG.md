@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Fixed: the task switcher's color comes from the theme shown, not Material's fallback in a `WidgetsApp`.
 - Fixed: an address with a `/` at its end (`/docs/beans/`) is the page without it. Static hosts (Cloudflare Pages, GitHub Pages) send a folder's address that way when the build wrote `docs/beans/index.html`, and such a page opened empty.
 - `RouteContentView(scrollToTop:)`, `true` by default: another page of the same screen opens at the top of its scrollable, as a browser opens a page, scrolling there the theme's way (`motion.scroll-to-top`) (an `#anchor` scrolls to its heading; a translation of the same page keeps the position). The screen stays.
 - Fixed: `RouteContentView` no longer collapses to nothing for a frame when another page of the same screen opens; it keeps its view and changes the content the theme's way (`motion.content-change`).

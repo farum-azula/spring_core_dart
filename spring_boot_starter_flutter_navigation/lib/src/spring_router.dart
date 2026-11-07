@@ -198,7 +198,13 @@ final class SpringRouterDelegate extends RouterDelegate<RouteLocation>
       return;
     }
     _shownTitle = title;
-    final color = Theme.of(context).colorScheme.primary.toARGB32();
+    // The theme shown; Material's Theme only in a MaterialApp (a WidgetsApp
+    // has none, and Theme.of would be Material's fallback).
+    final color =
+        (SpringTheme.maybeOf(context)?.colorScheme ??
+                Theme.of(context).colorScheme)
+            .primary
+            .toARGB32();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(
         SystemChrome.setApplicationSwitcherDescription(
