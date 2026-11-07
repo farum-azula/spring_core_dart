@@ -1625,7 +1625,7 @@ theme's colors, and writes the page settings of
 |---|---|---|
 | `spring.flutter.web.page.translate` | `true` | `false`: browsers and Google no longer offer to translate the page (Flutter's text is on a canvas) |
 | `spring.flutter.web.page.max-pixel-ratio` | the screen's | The most pixels per point Flutter draws at: `2` on a 3x phone draws 2.25 times fewer pixels |
-| `spring.flutter.web.page.swipe-to-close` | `true` | `false` keeps an app's own browser (Telegram, Instagram) or a Telegram Mini App from closing the page on a swipe down |
+| `spring.flutter.web.page.swipe-to-close` | `true` | `false` keeps an app's own browser (a messenger's, a social app's) from closing the page on a swipe down |
  Every key, what is written where, and how to serve the
 pages: [Configuration, the site's pages](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-sites-pages-springflutterwebseo).
 

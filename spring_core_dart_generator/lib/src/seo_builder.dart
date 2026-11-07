@@ -1050,7 +1050,7 @@ final class SeoPages {
     return result;
   }
 
-  // A large card where a preview has a picture (Telegram, X, Slack...).
+  // A large card where a preview has a picture (messengers, X, Slack...).
   static String _card(String? image) =>
       image == null ? 'summary' : 'summary_large_image';
 

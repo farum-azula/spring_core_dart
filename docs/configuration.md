@@ -3978,11 +3978,10 @@ it gets in the way.
 
 ### The page in apps' own browsers
 
-A link opened in Telegram, Instagram and other apps shows in the app's own
+A link opened in a messenger or a social app shows in the app's own
 browser, which closes the page on a swipe down when the page is at its
 top. A Flutter page always is (it scrolls inside its canvas), so every
-swipe down closes it instead of scrolling. A Telegram Mini App does the
-same with its vertical swipes.
+swipe down closes it instead of scrolling.
 
 ```yaml
 # lib/resources/application-web.yml
@@ -3995,7 +3994,7 @@ spring:
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. In a Telegram Mini App it tells Telegram to keep the vertical swipes for the page and to open at full height (`web_app_setup_swipe_behavior`, `web_app_expand`), sent the way Telegram's own script sends them, so no script of Telegram's is needed; in other apps' browsers, on a touch screen, it makes the page a thousand screens tall, scrolls it to its end with Flutter's view fixed on the screen, and stops the browser's own scrolling of the page, so the page is never at its top and a swipe down is Flutter's |
+| `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. On a touch screen it makes the page a thousand screens tall, scrolls it to its end with Flutter's view fixed on the screen, and stops the browser's own scrolling of the page, so the page is never at its top and a swipe down is Flutter's. It names no app and calls no app's API |
 | `spring.flutter.web.page.max-pixel-ratio` | number, 1 or more | the screen's own | The most pixels for each point Flutter draws at. A phone's screen has 3, so every frame is 9 times the pixels of the page and its graphics chip drops frames on a full-screen scroll; `2` draws 2.25 times fewer and the text stays sharp. The generator writes a script into `web/index.html` that runs before the engine starts; a screen at or under the value is left as it is |
 | `spring.flutter.web.page.translate` | `true`, `false` | `true` | Whether browsers and Google may offer to translate the page. Flutter draws its text on a canvas, so a translator finds none to translate; `false` writes `translate="no"` on `<html>` and `<meta name="google" content="notranslate">` into `web/index.html` (and so into the SEO pages), and the offer is gone |
 
@@ -4284,7 +4283,7 @@ Then build as usual: `dart run build_runner build` writes the pages into
 | `spring.flutter.web.seo.exclude` | globs | none | Files of every Markdown folder, the routes' and `content[n]`'s, that make no page: `['**/contents*.md']` for a table of contents the site reads for its menu. `*` matches within a folder, `**` across folders, and `**/` no folder too |
 | `spring.flutter.web.seo.title` | text with `{title}` | `{title}` | The `<title>` of every page; `{title}` is the page's own title |
 | `spring.flutter.web.seo.description` | string | none | The description of a page that has none of its own |
-| `spring.flutter.web.seo.image` | `resources:` location or URL | none | The preview image (`og:image`, `twitter:image`) of a page that has none of its own; with one, link previews (Telegram, X, Slack) show a large card (`twitter:card: summary_large_image`). About 1200×630 |
+| `spring.flutter.web.seo.image` | `resources:` location or URL | none | The preview image (`og:image`, `twitter:image`) of a page that has none of its own; with one, link previews (messengers, X, Slack) show a large card (`twitter:card: summary_large_image`). About 1200×630 |
 | `spring.flutter.web.seo.site-name` | text | none | The site's name in link previews (`og:site_name`) |
 | `spring.flutter.web.seo.content[n].location` | `resources:` folder | none | A folder of Markdown files, a page per file |
 | `spring.flutter.web.seo.content[n].path` | path | `/` | The folder's address: `first.md` is `<path>/first`, `index.md` is `<path>` itself |

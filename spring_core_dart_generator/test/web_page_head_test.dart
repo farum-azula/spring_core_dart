@@ -76,4 +76,46 @@ void main() {
       isNot(contains(WebPageHead.backgroundStart)),
     );
   });
+
+  test('a light and a dark theme: the background and theme-color of each, '
+      'written once', () {
+    String write(String page) => WebPageHead.html(
+      page,
+      themeColor: '#8a6a00',
+      backgroundColor: '#f5f6f9',
+      darkThemeColor: '#d4c664',
+      darkBackgroundColor: '#0d1017',
+    );
+    final once = write(_template);
+    expect(
+      once,
+      contains(
+        'html,body{background-color:#f5f6f9}@media '
+        '(prefers-color-scheme:dark){html,body{background-color:#0d1017}}',
+      ),
+    );
+    expect(
+      once,
+      contains(
+        '<meta name="theme-color" content="#8a6a00" '
+        'media="(prefers-color-scheme: light)">',
+      ),
+    );
+    expect(
+      once,
+      contains(
+        '<meta name="theme-color" content="#d4c664" '
+        'media="(prefers-color-scheme: dark)">',
+      ),
+    );
+    expect(write(once), once);
+    // Back to one theme: one tag, no dark rule.
+    final single = WebPageHead.html(
+      once,
+      themeColor: '#8a6a00',
+      backgroundColor: '#f5f6f9',
+    );
+    expect(single, isNot(contains('prefers-color-scheme')));
+    expect(single, contains('<meta name="theme-color" content="#8a6a00">'));
+  });
 }

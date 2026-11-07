@@ -1,3 +1,7 @@
+## Unreleased
+
+- Fixed: with a light and a dark theme (`active: system`), `web/index.html` gets the dark theme's background in a `prefers-color-scheme: dark` rule and a `theme-color` tag for each scheme. The page showed the light background where Flutter does not draw, a light strip at the top of an app's own browser in dark mode.
+
 ## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
@@ -17,8 +21,7 @@
 - `frame-meter` is a section of a theme (`$frame-meter.good` is a path, not a token).
 - `spring.flutter.web.page.max-pixel-ratio` writes a script into `web/index.html` that caps the pixel ratio Flutter draws at before the engine starts (`WebPageHead.pixelRatio`); none removes it.
 - Fixed: `web/index.html` gets Flutter's `<meta name="viewport">` when it has none, so a phone no longer shows the page loader at a third of its size until Flutter starts (the page was laid out 980 points wide).
-- Fixed: `spring.flutter.web.page.swipe-to-close: false` turns a Telegram Mini App's vertical swipes off without telegram-web-app.js: the block sends `web_app_setup_swipe_behavior` and `web_app_expand` itself (it called `Telegram.WebApp`, which only that script defines, so nothing happened); in an app's own browser the page is made a thousand screens tall and kept at its end, with Flutter's view fixed and the browser's own scrolling stopped, so a swipe down no longer closes it (one pixel down was not enough for Telegram's browser).
-- `spring.flutter.web.page.swipe-to-close: false`: a block in `web/index.html` keeps the page open on a swipe down in apps' own browsers (Telegram, Instagram) and Telegram Mini Apps (`disableVerticalSwipes`).
+- `spring.flutter.web.page.swipe-to-close: false`: a block in `web/index.html` keeps the page open on a swipe down in apps' own browsers: on a touch screen the page is made a thousand screens tall and kept at its end, with Flutter's view fixed and the browser's own scrolling stopped. It names no app and calls no app's API.
 - The pages for search engines carry what link previews read: `og:site_name` (`spring.flutter.web.seo.site-name`) and `twitter:card` (a large card with the page's image), `twitter:title`, `twitter:description`, `twitter:image`.
 - Fixed: a loader's `tracks` and `web-sha256` no longer become fields of the props class of its kind; the keys every loader has are one list (`loaderOwnKeys`).
 - The web page loader's script records the start's first stages, `page` and `engine`, with their times in `window.springLoader.stages`, sets `data-splash-stage` and sends a `spring-splash-stage` event; the Flutter splash goes on from them.

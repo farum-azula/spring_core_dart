@@ -237,6 +237,8 @@ final class WebPageLoaderBuilder implements Builder {
                   description: app.description,
                   themeColor: colors?.primary,
                   backgroundColor: colors?.surface,
+                  darkThemeColor: colors?.darkPrimary,
+                  darkBackgroundColor: colors?.darkSurface,
                 ),
                 swipeToClose: app.swipeToClose,
               ),
@@ -320,7 +322,13 @@ final class WebPageLoaderBuilder implements Builder {
       bool translate,
     })
     app,
-    ({String primary, String surface})? colors,
+    ({
+      String primary,
+      String surface,
+      String? darkPrimary,
+      String? darkSurface,
+    })?
+    colors,
   ) async {
     const path = 'web/manifest.json';
     final manifest = await _files.read(buildStep, package, path);

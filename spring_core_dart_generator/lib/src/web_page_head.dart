@@ -24,7 +24,7 @@ abstract final class WebPageHead {
 
   /// The block of `spring.flutter.web.page.swipe-to-close: false`.
   ///
-  /// In an app's own browser (Telegram's for a link, Instagram's...) a
+  /// In an app's own browser (a messenger's, a social app's) a
   /// swipe down closes the page when the page is at its top, and a Flutter
   /// page always is. On a touch screen the page is made a thousand screens
   /// tall and scrolled to its end, with Flutter's view fixed on the screen
@@ -168,8 +168,14 @@ abstract final class WebPageHead {
     String? description,
     String? themeColor,
     String? backgroundColor,
+    String? darkThemeColor,
+    String? darkBackgroundColor,
   }) {
-    var result = _background(_viewport(html), backgroundColor);
+    var result = _background(
+      _viewport(html),
+      backgroundColor,
+      dark: darkBackgroundColor,
+    );
     // The SEO build owns the page's title and description.
     final seo = html.contains(seoHeadStart);
     if (title != null) {
@@ -185,10 +191,45 @@ abstract final class WebPageHead {
     if (description != null && !seo) {
       result = _meta(result, 'description', description, add: true);
     }
-    if (themeColor != null) {
-      result = _meta(result, 'theme-color', themeColor, add: true);
+    return _themeColor(result, themeColor, dark: darkThemeColor);
+  }
+
+  /// Where the block of the light and dark `theme-color` tags starts.
+  static const themeColorStart = '<!-- spring:page:theme-color:start -->';
+
+  /// Where it ends.
+  static const themeColorEnd = '<!-- spring:page:theme-color:end -->';
+
+  // `<meta name="theme-color">` of [color]; with [dark] (a light and a dark
+  // theme) one tag for each, by `prefers-color-scheme`, so an app's browser
+  // (an app's browser bar) takes the colour of the theme shown.
+  static String _themeColor(String html, String? color, {String? dark}) {
+    final block = RegExp(
+      r'\n?[ \t]*' +
+          RegExp.escape(themeColorStart) +
+          r'[\s\S]*?' +
+          RegExp.escape(themeColorEnd),
+    );
+    var result = html.replaceAll(block, '');
+    if (color == null) {
+      return result;
     }
-    return result;
+    if (dark == null) {
+      return _meta(result, 'theme-color', color, add: true);
+    }
+    // The page's own single tag gives way to the two.
+    result = result.replaceAll(
+      RegExp(r'\n?[ \t]*<meta\s+name="theme-color"[^>]*>'),
+      '',
+    );
+    final written =
+        '  $themeColorStart\n'
+        '  <meta name="theme-color" content="${_attribute(color)}" '
+        'media="(prefers-color-scheme: light)">\n'
+        '  <meta name="theme-color" content="${_attribute(dark)}" '
+        'media="(prefers-color-scheme: dark)">\n'
+        '  $themeColorEnd';
+    return result.replaceFirst('</head>', '$written\n</head>');
   }
 
   /// [manifest] (the JSON of `web/manifest.json`) with these values; the
@@ -227,8 +268,9 @@ abstract final class WebPageHead {
   /// Where it ends.
   static const backgroundEnd = '<!-- spring:page:background:end -->';
 
-  // [html] with the block of [color]; without it when [color] is `null`.
-  static String _background(String html, String? color) {
+  // [html] with the block of [color], and of [dark] for
+  // `prefers-color-scheme: dark`; without it when [color] is `null`.
+  static String _background(String html, String? color, {String? dark}) {
     final block = RegExp(
       r'\n?[ \t]*' +
           RegExp.escape(backgroundStart) +
@@ -240,13 +282,20 @@ abstract final class WebPageHead {
     }
     final written =
         '\n  $backgroundStart\n'
-        '  <style>html,body{background-color:${_attribute(color)}}</style>\n'
+        '  <style>html,body{background-color:${_attribute(color)}}'
+        '${dark == null ? '' : _darkBackground(dark)}'
+        '</style>\n'
         '  $backgroundEnd';
     // Kept where it is, so a page written again does not change.
     if (block.hasMatch(html)) {
       return html.replaceFirst(block, written);
     }
     return html.replaceFirst('</head>', '$written\n</head>');
+  }
+
+  static String _darkBackground(String color) {
+    const query = '@media (prefers-color-scheme:dark)';
+    return '$query{html,body{background-color:${_attribute(color)}}}';
   }
 
   /// The viewport Flutter sets when it starts. Flutter's template has

@@ -581,7 +581,10 @@ spring.flutter.theme:
       expect(
         removed!
             .replaceFirst(
-              RegExp(r'\s*<meta name="theme-color" content="#[0-9a-f]{6}">'),
+              RegExp(
+                '\\s*${WebPageHead.themeColorStart}[\\s\\S]*?'
+                '${WebPageHead.themeColorEnd}',
+              ),
               '',
             )
             .replaceFirst(
@@ -649,7 +652,17 @@ spring.flutter.theme:
           '<meta name="apple-mobile-web-app-title" content="Books &amp; more">',
         ),
       );
-      expect(page, contains('<meta name="theme-color" content="#336699">'));
+      // The theme follows the system: a tag for the light and one for the
+      // dark theme.
+      expect(
+        page,
+        contains(
+          '<meta name="theme-color" content="#336699" '
+          'media="(prefers-color-scheme: light)">',
+        ),
+      );
+      expect(page, contains('media="(prefers-color-scheme: dark)"'));
+      expect(page, contains('@media (prefers-color-scheme:dark){html,body'));
       final manifest =
           jsonDecode(files.files['web/manifest.json']!) as Map<String, Object?>;
       expect(manifest, {
@@ -682,7 +695,10 @@ spring.flutter.theme:
       );
       expect(
         files.files['web/index.html'],
-        contains('<meta name="theme-color" content="#222222">'),
+        contains(
+          '<meta name="theme-color" content="#222222" '
+          'media="(prefers-color-scheme: light)">',
+        ),
       );
     });
 

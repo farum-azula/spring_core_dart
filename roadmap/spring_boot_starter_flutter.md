@@ -970,7 +970,7 @@ starter, the head and manifest of the app from `spring.flutter.app.title`
 (Cloudflare Pages serves `index.html` for unknown paths when a site has
 no `404.html`; `_headers` waits for the deep links' domain files there). A Flutter web page draws on a
 canvas: the HTML the server sends holds a script and no text, so search
-engines, link previews (Telegram, Slack, X) and the bots of models (which
+engines, link previews (messengers, Slack, X) and the bots of models (which
 run no JavaScript) see an empty page under the template's title. Pages
 written by hand next to the app would repeat the interface; instead the
 build writes, for every page, the text it already has (Markdown, titles)

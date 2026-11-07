@@ -578,8 +578,7 @@ of `spring.flutter.app.*` and the active theme's colors; Flutter's
 `<meta name="google" content="notranslate">`);
 `spring.flutter.web.page.max-pixel-ratio` (a script capping the pixel ratio
 Flutter draws at); `spring.flutter.web.page.swipe-to-close: false` (a block
-keeping the page open on a swipe down in apps' own browsers and Telegram
-Mini Apps). Spa mode's policy allows these scripts by hash too
+keeping the page open on a swipe down in apps' own browsers). Spa mode's policy allows these scripts by hash too
 (`WebPageHead.hashOf`). The profile files are read after the files without
 one (`application-web.yml` wins over `application.yml`), as in the browser.
 

@@ -497,7 +497,7 @@
     {
       "name": "spring.flutter.web.page.swipe-to-close",
       "type": "bool",
-      "description": "Whether a swipe down may close the page where the browser does so: an app's own browser (Telegram's, Instagram's), a Telegram Mini App. `false` keeps the page open; the swipe then scrolls the app.",
+      "description": "Whether a swipe down may close the page where the browser does so: an app's own browser (a messenger's, a social app's). `false` keeps the page open; the swipe then scrolls the app.",
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
@@ -587,7 +587,7 @@
     {
       "name": "spring.flutter.web.seo.image",
       "type": "String?",
-      "description": "The preview image of a page that has none (`resources:images/og.png`). Link previews (Telegram, X, Slack) show it large: about 1200×630.",
+      "description": "The preview image of a page that has none (`resources:images/og.png`). Link previews (messengers, X, Slack) show it large: about 1200×630.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
@@ -5426,6 +5426,19 @@
         "default": "0"
       },
       {
+        "name": "background.image.repeat",
+        "type": "choice",
+        "states": false,
+        "values": [
+          "no-repeat",
+          "repeat",
+          "repeat-x",
+          "repeat-y"
+        ],
+        "description": "Tiles the picture over the screen, at its own size with `fit: none`: a small texture such as grain.",
+        "default": "no-repeat"
+      },
+      {
         "name": "background.overlay.color",
         "type": "color",
         "states": false,
@@ -5607,6 +5620,19 @@
         "values": [],
         "description": "A Gaussian blur radius in logical pixels; 0 is sharp.",
         "default": "0"
+      },
+      {
+        "name": "background.screens.*.image.repeat",
+        "type": "choice",
+        "states": false,
+        "values": [
+          "no-repeat",
+          "repeat",
+          "repeat-x",
+          "repeat-y"
+        ],
+        "description": "Tiles the picture over the screen, at its own size with `fit: none`: a small texture such as grain.",
+        "default": "no-repeat"
       },
       {
         "name": "background.screens.*.overlay.color",
@@ -6090,6 +6116,19 @@
         "values": [],
         "description": "A Gaussian blur radius in logical pixels; 0 is sharp.",
         "default": "0"
+      },
+      {
+        "name": "splash.background.image.repeat",
+        "type": "choice",
+        "states": false,
+        "values": [
+          "no-repeat",
+          "repeat",
+          "repeat-x",
+          "repeat-y"
+        ],
+        "description": "Tiles the picture over the screen, at its own size with `fit: none`: a small texture such as grain.",
+        "default": "no-repeat"
       },
       {
         "name": "splash.background.overlay.color",

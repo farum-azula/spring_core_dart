@@ -245,24 +245,43 @@ abstract final class WebPageLoader {
   /// The colors of the app's page and manifest: the active theme's
   /// `primary` (the browser's `theme-color`) and `surface` (the manifest's
   /// background), as `#rrggbb`.
-  static ({String primary, String surface}) pageColors(
-    ThemeSet set,
-    KeysDiagnostics diagnostics,
-  ) {
-    final (:light, dark: _) = _active(set);
-    final scope = set.scope(light);
-    final look = _Look(
-      scope,
-      ThemeValueResolver(scope, dark: _isDark(scope, light)),
-      diagnostics,
-    );
-    String opaque(String role, int fallback) => cssColor(
-      0xFF000000 |
-          ((look.resolver.color(look._roleNode(role)) ?? fallback) & 0xFFFFFF),
-    );
+  ///
+  /// With `system` (a light and a dark theme), `darkPrimary` and
+  /// `darkSurface` are the dark theme's, for a `prefers-color-scheme: dark`
+  /// rule; `null` with one theme.
+  static ({
+    String primary,
+    String surface,
+    String? darkPrimary,
+    String? darkSurface,
+  })
+  pageColors(ThemeSet set, KeysDiagnostics diagnostics) {
+    final (:light, :dark) = _active(set);
+    ({String primary, String surface}) of(String name) {
+      final scope = set.scope(name);
+      final look = _Look(
+        scope,
+        ThemeValueResolver(scope, dark: _isDark(scope, name)),
+        diagnostics,
+      );
+      String opaque(String role, int fallback) => cssColor(
+        0xFF000000 |
+            ((look.resolver.color(look._roleNode(role)) ?? fallback) &
+                0xFFFFFF),
+      );
+      return (
+        primary: opaque('primary', 0xFF6750A4),
+        surface: opaque('surface', 0xFFFFFFFF),
+      );
+    }
+
+    final lightColors = of(light);
+    final darkColors = dark == null ? null : of(dark);
     return (
-      primary: opaque('primary', 0xFF6750A4),
-      surface: opaque('surface', 0xFFFFFFFF),
+      primary: lightColors.primary,
+      surface: lightColors.surface,
+      darkPrimary: darkColors?.primary,
+      darkSurface: darkColors?.surface,
     );
   }
 

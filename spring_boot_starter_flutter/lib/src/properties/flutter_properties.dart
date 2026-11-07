@@ -118,7 +118,7 @@ final class FlutterWebPageProperties {
   });
 
   /// Whether a swipe down may close the page where the browser does so:
-  /// an app's own browser (Telegram's, Instagram's), a Telegram Mini App.
+  /// an app's own browser (a messenger's, a social app's).
   /// `false` keeps the page open; the swipe then scrolls the app.
   final bool swipeToClose;
 
@@ -365,7 +365,7 @@ final class FlutterWebSeoProperties {
   final String? description;
 
   /// The preview image of a page that has none
-  /// (`resources:images/og.png`). Link previews (Telegram, X, Slack) show
+  /// (`resources:images/og.png`). Link previews (messengers, X, Slack) show
   /// it large: about 1200×630.
   final String? image;
 
