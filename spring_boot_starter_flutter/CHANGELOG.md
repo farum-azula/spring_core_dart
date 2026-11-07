@@ -1,5 +1,12 @@
 ## Unreleased
 
+- A `MarkdownView` table wider than the view scrolls sideways; a column grows to `styles.table.cell-width` (default 280) and wraps there, not squeezed to a word a line on a phone.
+- `styles.heading` (`color`, `h1` ... `h6`): the color of `MarkdownView`'s headings, to set them apart from the text.
+- Fixed: `MarkdownView` in a `WidgetsApp` (no Material `Theme`) took Material's light fallback: black text and small headings on a dark theme. It takes the theme's text styles with Material's sizes for the locale's script. The router's task-switcher color likewise comes from the theme shown.
+- `spring.flutter.theme.remember` (default `true`): the theme chosen with `ThemeSelection.select` is kept between runs (`ThemeChoiceStore`, `FileThemeChoiceStore` in the app's files) and shown again while the splash shows (`ThemeChoiceRestore`, a `SplashTask`), so a reload does not flash the default theme.
+- The debug panel (`springBootStarterFlutterDebugAutoConfiguration`, `DebugPanel`, `DebugPanelSection`): logs, frames, configuration, beans, themes and the start of the running app, opened by the action `debug.open` (⌘⇧D, or four quick taps and a fifth held three seconds). `spring.flutter.debug.enabled` decides at build time: `true` every build, `false` none (no code), not set debug and profile builds only.
+- Shortcuts done with taps: `taps:4+hold:3s` (`TouchPatternNotation`, `TouchPattern`, `ShortcutGesture`, `TouchPatternDetector`), on every platform, in `spring.flutter.shortcuts` like keys. `KeyedShortcutHandler`: a handler bean that names its action's default keys.
+- The frame meter neither shows nor counts while the splash shows (`FrameMeter.stages`).
 - `spring.flutter.web.seo.page-files` (`FlutterWebSeoProperties.pageFiles`), read by the generator.
 - The frame meter (`FrameMeter`, `spring.flutter.frame-meter.enabled`, `position`, `target-rate`): a panel over the app with the frames a second it really draws, the build and raster times, the worst frame and a bar per frame, from Flutter's own timings, so a phone shows whether it keeps up. Its look is the theme's `frame-meter` (`background`, `foreground`, `good`, `warning`, `bad`, `text-style`; `FrameMeterTheme`).
 - The text warm-up lays its characters out once, `spring.flutter.splash.warm-up.text.chunk` (default 200) a frame, not all of them at every font that came in: the splash no longer stutters on a phone while the fonts come.

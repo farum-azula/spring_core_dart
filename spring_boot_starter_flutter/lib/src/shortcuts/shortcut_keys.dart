@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart' show OrderComparator;
+import 'package:spring_boot_starter_flutter/src/shortcuts/touch_pattern.dart';
 
 /// The keys of a shortcut as the configuration writes them: what Flutter
 /// listens for ([activator]) and how a label shows them.
@@ -41,7 +42,8 @@ abstract interface class ShortcutNotation {
 }
 
 /// The notations of the shortcuts: the app's own first (by `Ordered`),
-/// then the built-in [CharacterNotation] and [KeyCombinationNotation].
+/// then the built-in [CharacterNotation], [TouchPatternNotation] and
+/// [KeyCombinationNotation].
 final class ShortcutNotations {
   /// The chain of [notations], then the built-in ones.
   const ShortcutNotations([this.notations = const []]);
@@ -49,6 +51,7 @@ final class ShortcutNotations {
   /// The built-in notations, asked after the app's.
   static const builtIn = <ShortcutNotation>[
     CharacterNotation(),
+    TouchPatternNotation(),
     KeyCombinationNotation(),
   ];
 

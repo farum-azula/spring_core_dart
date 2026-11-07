@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_choice_store.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 
 /// Changes, in code, every Material `ThemeData` made from the theme
@@ -428,9 +431,14 @@ final class SpringThemes extends ChangeNotifier {
 final class ThemeSelection extends ChangeNotifier {
   /// The choice among [themes], starting with their `active` property.
   /// Throws an `ArgumentError` when that names no theme.
-  ThemeSelection(this.themes) : _active = _valid(themes, themes.config.active) {
+  ThemeSelection(this.themes, {this.store})
+    : _active = _valid(themes, themes.config.active) {
     themes.addListener(_onThemesChanged);
   }
+
+  /// Where a choice is kept between runs when `spring.flutter.theme.remember`
+  /// is on (the default); `null`: not kept.
+  final ThemeChoiceStore? store;
 
   /// The choice of [context]: its bean, else, for a context without the
   /// starter's auto-configuration, one made once.
@@ -471,6 +479,45 @@ final class ThemeSelection extends ChangeNotifier {
   /// unknown name. Listeners are told only when the choice changes.
   void select(String name) {
     final valid = _valid(themes, name);
+    if (valid != _active) {
+      _active = valid;
+      notifyListeners();
+      if (themes.config.remember) {
+        _keep(valid);
+      }
+    }
+  }
+
+  // Keeps [choice]; a store that fails (no files in a test, storage full)
+  // is logged, the choice still shows.
+  void _keep(String choice) {
+    final store = this.store;
+    if (store == null) {
+      return;
+    }
+    unawaited(
+      Future.sync(() => store.write(choice)).catchError(
+        (Object error) => _log.warning(
+          () => 'The theme chosen is not kept: $error',
+        ),
+      ),
+    );
+  }
+
+  static const _log = SpringLog('spring_boot_starter_flutter.ThemeSelection');
+
+  /// Shows [name], a choice kept from an earlier run, without keeping it
+  /// again; a name that is no theme any more is ignored.
+  void restore(String name) {
+    if (!themes.config.remember) {
+      return;
+    }
+    final String valid;
+    try {
+      valid = _valid(themes, name);
+    } on ArgumentError {
+      return;
+    }
     if (valid != _active) {
       _active = valid;
       notifyListeners();

@@ -10,8 +10,12 @@ import 'package:flutter/material.dart'
     show
         Icons,
         MaterialLocalizations,
+        ScriptCategory,
         SelectionArea,
+        TextTheme,
         Theme,
+        ThemeData,
+        Typography,
         desktopTextSelectionHandleControls,
         materialTextSelectionHandleControls;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -21,6 +25,7 @@ import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/markdown_outline.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_styles.dart';
 
@@ -695,7 +700,10 @@ class _MarkdownViewState extends State<MarkdownView> {
       (max, row) =>
           (row.children?.length ?? 0) > max ? row.children!.length : max,
     );
-    return Table(
+    // Each column as wide as its text up to `cellWidth`, the text wrapping
+    // beyond; a table wider than the view scrolls sideways instead of
+    // squeezing its columns.
+    final grid = Table(
       border: TableBorder.all(color: look.rule),
       defaultColumnWidth: const IntrinsicColumnWidth(),
       children: [
@@ -703,7 +711,8 @@ class _MarkdownViewState extends State<MarkdownView> {
           TableRow(
             children: [
               for (var i = 0; i < width; i++)
-                Padding(
+                Container(
+                  constraints: BoxConstraints(maxWidth: look.cellWidth),
                   padding: const EdgeInsets.all(6),
                   child: switch (row.children?.elementAtOrNull(i)) {
                     final md.Element cell => Text.rich(
@@ -718,6 +727,10 @@ class _MarkdownViewState extends State<MarkdownView> {
             ],
           ),
       ],
+    );
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: grid,
     );
   }
 
@@ -835,9 +848,24 @@ final class _Look {
     this.codeHeader,
     this.codeTitle,
     this.callouts = const {},
+    this.cellWidth = 280,
   });
 
   static CodeSyntax? _noSyntax(String? language) => null;
+
+  // What Theme.of gives in a MaterialApp, without one: the theme's text
+  // styles with the sizes of the locale's script (Material's typography).
+  static TextTheme _localized(BuildContext context, SpringThemeData theme) {
+    final script = switch (Localizations.maybeLocaleOf(context)?.languageCode) {
+      'ja' || 'zh' || 'ko' => ScriptCategory.dense,
+      'ar' || 'fa' || 'hi' || 'th' || 'bn' || 'ur' => ScriptCategory.tall,
+      _ => ScriptCategory.englishLike,
+    };
+    final geometry = Typography.material2021(
+      platform: defaultTargetPlatform,
+    ).geometryThemeFor(script);
+    return ThemeData.localize(theme.toMaterial(), geometry).textTheme;
+  }
 
   static _Look of(BuildContext context) {
     final theme = SpringTheme.maybeOf(context);
@@ -889,11 +917,21 @@ final class _Look {
     }
 
     final link = colorOf('link', 'color');
+    double? cellWidth;
+    try {
+      cellWidth = theme.styles['table']?.resolve(const {}).number('cell-width');
+    } on StateError {
+      cellWidth = null;
+    }
     Color? callout(String kind) => colorOf('callout', kind);
 
     // Theme.of's styles: the theme's, with the sizes of the locale's
-    // script (a SpringTheme's own text styles have only what was set).
-    final text = Theme.of(context).textTheme;
+    // script (a SpringTheme's own text styles have only what was set). A
+    // WidgetsApp has no Theme, and Theme.of would give Material's light
+    // fallback, black text on a dark theme: the theme's own then.
+    final text = context.findAncestorWidgetOfExactType<Theme>() == null
+        ? _localized(context, theme)
+        : Theme.of(context).textTheme;
     final roles = [
       text.headlineLarge,
       text.headlineMedium,
@@ -915,9 +953,14 @@ final class _Look {
       codeBorderWidth: read((values) => values.number('border-width')) ?? 1,
       link: link ?? scheme.primary,
       rule: scheme.outlineVariant,
+      // `styles.heading`: `color` for every level, `h1` ... `h6` for one.
       headings: {
         for (var level = 1; level <= 6; level++)
-          'h$level': roles[level - 1] ?? base,
+          'h$level': switch (colorOf('heading', 'h$level') ??
+              colorOf('heading', 'color')) {
+            final color? => (roles[level - 1] ?? base).copyWith(color: color),
+            null => roles[level - 1] ?? base,
+          },
       },
       tokens: {
         CodeTokenKind.keyword: color('keyword') ?? scheme.primary,
@@ -932,6 +975,7 @@ final class _Look {
         CodeTokenKind.type: color('type') ?? scheme.onSecondaryContainer,
       },
       syntax: theme.syntaxOf,
+      cellWidth: cellWidth ?? 280,
       inlineText: color('inline-text'),
       inlineBackground: color('inline-background'),
       codeHeader:
@@ -978,6 +1022,11 @@ final class _Look {
 
   /// The colors of the callouts by kind (`styles.callout.<kind>`).
   final Map<String, Color> callouts;
+
+  /// The widest a table's column grows before its text wraps
+  /// (`styles.table.cell-width`); a table wider than the view scrolls
+  /// sideways.
+  final double cellWidth;
 
   TextStyle heading(int level) => headings['h$level'] ?? body;
 

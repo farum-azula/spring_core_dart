@@ -79,6 +79,7 @@ spring:
 | `active` | root | The theme shown at start. `system` (the default) follows the device's light or dark mode |
 | `system-light` | root | The theme `system` shows when the device is in light mode. Default `light` |
 | `system-dark` | root | The theme `system` shows when the device is in dark mode. Default `dark` |
+| `remember` | root | Keeps the theme the user chooses between runs and shows it again while the splash shows. Default `true` |
 | `themes.<name>` | root | A theme of your own, or a change to `light` or `dark` |
 | `extends` | in `themes.<name>` | Starts the theme from another theme instead of the root. Chains work; a cycle or an unknown name stops the start |
 

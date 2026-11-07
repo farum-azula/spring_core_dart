@@ -27,3 +27,12 @@ abstract interface class ShortcutHandler {
   /// Handles [invocation]; `false` passes it on to the next handler.
   bool handle(ShortcutInvocation invocation);
 }
+
+/// A [ShortcutHandler] that names its action's keys when the configuration
+/// does not (`spring.flutter.shortcuts.<action>` replaces them), like
+/// `@Shortcut(keys:)` does for a method.
+abstract interface class KeyedShortcutHandler implements ShortcutHandler {
+  /// The action's keys by default, in any notation (`primary+shift+d`,
+  /// `taps:4+hold:3s`).
+  List<String> get keys;
+}

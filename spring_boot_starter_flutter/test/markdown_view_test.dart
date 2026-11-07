@@ -207,6 +207,118 @@ void main() {
     );
   });
 
+  testWidgets('a wide table scrolls sideways; a column wraps at cell-width', (
+    tester,
+  ) async {
+    final data = SpringThemes({'styles.table.cell-width': '150'}).data('light');
+    final long = 'a long text that wraps inside its column ' * 3;
+    await tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF000000),
+        builder: (context, _) => Center(
+          child: SizedBox(
+            width: 320,
+            child: SpringTheme(
+              data: data,
+              child: MarkdownView(
+                '| A | B | C |\n|---|---|---|\n| $long | $long | $long |',
+                selectable: false,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final table = tester.getSize(find.byType(Table));
+    expect(table.width, greaterThan(320), reason: 'not squeezed');
+    expect(table.width, lessThanOrEqualTo(3 * 150 + 4));
+    final scroll = tester.widget<SingleChildScrollView>(
+      find.ancestor(
+        of: find.byType(Table),
+        matching: find.byType(SingleChildScrollView),
+      ),
+    );
+    expect(scroll.scrollDirection, Axis.horizontal);
+    final start = tester.getTopLeft(find.byType(Table)).dx;
+    await tester.drag(find.byType(Table), const Offset(-200, 0));
+    await tester.pump();
+    expect(tester.getTopLeft(find.byType(Table)).dx, lessThan(start));
+  });
+
+  testWidgets('styles.heading: a color for every level, h2 its own', (
+    tester,
+  ) async {
+    final data = SpringThemes({
+      'styles.heading.color': '#112233',
+      'styles.heading.h2': '#445566',
+    }).data('light');
+    await tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF000000),
+        builder: (context, _) => SpringTheme(
+          data: data,
+          child: const MarkdownView(
+            '# One\n\n## Two\n\ntext',
+            selectable: false,
+          ),
+        ),
+      ),
+    );
+    Color? colorOf(String text) => tester
+        .widget<RichText>(
+          find.byWidgetPredicate(
+            (w) => w is RichText && w.text.toPlainText() == text,
+          ),
+        )
+        .text
+        .style
+        ?.color;
+    expect(colorOf('One'), const Color(0xFF112233));
+    expect(colorOf('Two'), const Color(0xFF445566));
+    expect(colorOf('text'), isNot(const Color(0xFF112233)));
+  });
+
+  testWidgets('in a WidgetsApp, a dark theme: the text in its colors', (
+    tester,
+  ) async {
+    final data = SpringThemes({
+      'themes.night.brightness': 'dark',
+    }).data('night');
+    await tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF000000),
+        builder: (context, _) => SpringTheme(
+          data: data,
+          child: const MarkdownView('# Big\n\nbody', selectable: false),
+        ),
+      ),
+    );
+    Color? colorOf(String text) => tester
+        .widget<RichText>(
+          find.byWidgetPredicate(
+            (w) => w is RichText && w.text.toPlainText() == text,
+          ),
+        )
+        .text
+        .style
+        ?.color;
+    // Not Material's light fallback: the dark theme's light text.
+    expect(colorOf('body'), data.toMaterial().textTheme.bodyLarge!.color);
+    expect(colorOf('body')!.computeLuminance(), greaterThan(0.5));
+    expect(colorOf('Big')!.computeLuminance(), greaterThan(0.5));
+    // The sizes of Material's typography, as Theme.of would give them.
+    double? sizeOf(String text) => tester
+        .widget<RichText>(
+          find.byWidgetPredicate(
+            (w) => w is RichText && w.text.toPlainText() == text,
+          ),
+        )
+        .text
+        .style
+        ?.fontSize;
+    expect(sizeOf('Big'), greaterThan(sizeOf('body')! * 1.5));
+  });
+
   testWidgets("in a SpringTheme: headings in Theme.of's sizes, code in "
       'styles.code', (tester) async {
     final themes = SpringThemes({

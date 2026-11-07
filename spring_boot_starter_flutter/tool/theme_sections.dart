@@ -149,6 +149,15 @@ List<ThemeProp> _root() => [
     scope: 'root',
   ),
   _p(
+    'remember',
+    'choice',
+    'Keeps the theme the user chooses (`ThemeSelection.select`) between '
+        'runs and shows it again while the splash shows.',
+    defaultValue: 'true',
+    values: ['true', 'false'],
+    scope: 'root',
+  ),
+  _p(
     'extends',
     'text',
     'Start this theme from another theme (`light`, `dark` or one of your '

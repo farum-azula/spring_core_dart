@@ -386,6 +386,29 @@ class OrderService { ... }
 
 Links take `styles.link.color` (`$colors.primary` by default).
 
+Headings take the sizes of the typography (`#` is `headline-large`, `##`
+`headline-medium`, `###` `headline-small`, then `title-large`,
+`title-medium`, `title-small`) and the color of `styles.heading`:
+`color` for every level, `h1` ... `h6` for one level. Without it they are
+in the text's color.
+
+```yaml
+styles:
+  heading:
+    color: $colors.primary     # every heading
+    h1: $colors.on-surface     # but # in the text's color
+```
+
+A table's column is as wide as its text, up to `styles.table.cell-width`
+(280 by default), where the text wraps. A table wider than the view
+scrolls sideways instead of squeezing its columns, so it reads on a phone.
+
+```yaml
+styles:
+  table:
+    cell-width: 240
+```
+
 ### Callouts
 
 GitHub's callouts are boxes in their kind's color, with the kind's name as

@@ -59,6 +59,9 @@ final class KeyboardShortcuts extends BeanPostProcessor
   Object postProcessAfterInitialization(Object bean, String beanName) {
     if (bean is ShortcutHandler) {
       _add(bean.action, bean is Ordered ? (bean as Ordered).order : 0, bean);
+      if (bean is KeyedShortcutHandler && bean.keys.isNotEmpty) {
+        _defaults.putIfAbsent(bean.action, () => bean.keys);
+      }
     }
     final factory = _factory;
     if (factory is! BeanDefinitionRegistry ||

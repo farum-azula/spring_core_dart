@@ -41,6 +41,8 @@ final class ThemeConfig {
           systemLight = value.trim();
         case 'systemdark':
           systemDark = value.trim();
+        case 'remember':
+          remember = value.trim().toLowerCase() != 'false';
         case 'source' || 'sourcesha256' || 'refresh':
           break;
         default:
@@ -64,6 +66,10 @@ final class ThemeConfig {
   /// The theme `system` shows when the device is in dark mode, from
   /// `system-dark`; `dark` by default.
   String systemDark = 'dark';
+
+  /// Whether the theme the user chooses is kept between runs, from
+  /// `remember`; `true` by default.
+  bool remember = true;
 
   final _base = <String, String>{};
   final _own = <String, Map<String, String>>{};

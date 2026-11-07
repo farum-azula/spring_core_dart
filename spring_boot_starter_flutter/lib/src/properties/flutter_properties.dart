@@ -63,6 +63,24 @@ final class FlutterProperties {
   final Map<String, List<String>> shortcuts;
 }
 
+/// The debug panel, `spring.flutter.debug.*`: logs, frames, the
+/// configuration, the beans, the themes and the start of the running app,
+/// opened with the action `debug.open` (⌘⇧D, or four quick taps and a
+/// fifth held three seconds; `spring.flutter.shortcuts.debug.open`).
+///
+/// The generator reads [enabled] when it writes `main.spring.dart`: with
+/// `false` the panel is no code in the app.
+@ConfigurationProperties('spring.flutter.debug')
+final class FlutterDebugProperties {
+  /// Settings with these values.
+  const FlutterDebugProperties({this.enabled});
+
+  /// Whether the app has the debug panel: `true` in every build, `false`
+  /// in none (the build leaves its code out), not set in debug and
+  /// profile builds only (a release build compiles it away).
+  final bool? enabled;
+}
+
 /// The frame meter, `spring.flutter.frame-meter.*`: a small panel over
 /// the app with the frames a second it really draws and their times, to
 /// see on a phone whether it keeps up. Its look is the theme's

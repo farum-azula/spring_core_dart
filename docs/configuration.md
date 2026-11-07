@@ -2816,6 +2816,7 @@ spring.flutter.theme.themes.ocean-night.brightness=dark
 | `active` | `system` or a theme name | `system` | The theme shown. `system` follows the device's light or dark mode. `ThemeSelection.select(...)` changes it at run time |
 | `system-light` | theme name | `light` | What `system` shows in light mode |
 | `system-dark` | theme name | `dark` | What `system` shows in dark mode |
+| `remember` | `true` / `false` | `true` | Keeps the theme the user chooses (`ThemeSelection.select`) between runs: written at each choice by the `ThemeChoiceStore` bean (the app's files by default, IndexedDB in a browser; your own bean keeps it elsewhere) and shown again while the splash shows, so a reload does not flash `active` first. A kept theme that no longer exists is ignored |
 
 **A theme.** These keys exist at the root and in each `themes.<name>`. A
 theme starts from the root, or from the theme it `extends`:
@@ -3544,6 +3545,59 @@ The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
 `debug`) are always active; see
 [Profiles](#profile-files-and-activation).
 
+### The debug panel
+
+A panel over the running app for whoever builds it: the logs, the frame
+meter, the configuration, the beans, the themes and the start, each a tab.
+It opens with the action `debug.open`: ⌘⇧D (Ctrl+Shift+D), or four quick
+taps and a fifth held three seconds, on every platform. Other keys or taps
+are written like any [shortcut](#keyboard-shortcuts):
+
+```yaml
+spring:
+  flutter:
+    debug:
+      enabled: true          # true: every build; false: none; not set: debug and profile builds only
+    shortcuts:
+      debug.open: [primary+shift+d, taps:5+hold:2s]
+```
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.debug.enabled` | `true` / `false` | not set | Read by the generator when it writes `main.spring.dart`. `true`: the panel is in every build. `false`: it is in none; the module is not written, so the app has none of its code. Not set: it is written for debug and profile builds only, and a release build compiles it away. Set to `false` in a profile, it turns off the panel of a running app whose build has it |
+
+The tabs:
+
+| Tab | What it shows |
+|---|---|
+| Logs | The records of the logging system's buffer (`logBuffer`), newest first and live, by level and text |
+| Frames | The [frame meter](#the-app-widget) on or off over the app, and its corner, without a new build |
+| Configuration | The active profiles and every property with the source that sets it; values of keys that name a secret (`password`, `secret`, `token`, `key`, `credential`) show as `******` |
+| Beans | Every bean of the context with its type |
+| Theme | The app's themes and `system`; a tap shows one |
+| Start | When each stage of the start was reached |
+
+A tab of your own is a `DebugPanelSection` bean, in the order of the beans:
+
+```dart
+@Component()
+@Order(100)
+class CartSection implements DebugPanelSection {
+  CartSection(this.cart);
+  final Cart cart;
+
+  @override
+  String get title => 'Cart';
+
+  @override
+  Widget build(BuildContext context) => Text('${cart.items.length} items');
+}
+```
+
+`DebugStyle.of(context)`, `DebugChip` and `DebugFilter` give a tab the
+panel's look. `debugPanel` (`DebugPanel`) is the panel's state: `toggle()`,
+`close()`, `frameMeter`.
+
 ### Keyboard shortcuts
 
 An action's keys are configuration, its handler is a bean method. Change the
@@ -3572,7 +3626,8 @@ Writing keys:
 |---|---|
 | `primary+shift+k` | Modifiers and one key, joined by `+`. Modifiers: `primary` (⌘ on Apple's platforms, Ctrl elsewhere), `shift`, `alt` (`option`), `control` (`ctrl`), `meta` (`cmd`). Keys: letters, digits, `f1`–`f12`, `enter`, `escape`, `space`, `tab`, `backspace`, `delete`, `home`, `end`, `page-up`, `page-down`, `up`, `down`, `left`, `right`, `slash`, `backslash`, `comma`, `period`, `semicolon`, `quote`, `minus`, `equal`, `bracket-left`, `bracket-right`, `backquote` |
 | `char:?` | The character typed, on any keyboard layout |
-| a list | Any of them: `[primary+k, slash]` |
+| `taps:4+hold:3s` | Taps on the screen, not keys: quick taps anywhere (1 to 10), then, with `hold`, one press held that long (`ms`, `s`). Every platform: a finger, a pen or a mouse. Without `hold` the last tap is the shortcut (`taps:3`). It only listens: every touch still reaches the app. A tap lasts at most 300 ms, two taps are at most 400 ms apart, a finger that moves more than 18 points is a scroll and starts again |
+| a list | Any of them: `[primary+k, slash, taps:3]` |
 
 A value no notation reads stops the start, naming the property
 (`spring.flutter.shortcuts.search.open: 'moon' is no key ...`). The same
@@ -3585,7 +3640,9 @@ Handlers:
   `ShortcutInvocation`. It returns nothing (handled) or a `bool`: `false`
   passes the press on. Another signature stops the start.
 - A bean that implements `ShortcutHandler` handles its `action`; with
-  `Ordered` it takes its place among the others.
+  `Ordered` it takes its place among the others. One that implements
+  `KeyedShortcutHandler` names its action's keys when the configuration
+  does not, as `@Shortcut(keys:)` does.
 - An action's handlers are asked by `@Shortcut(order:)` / `Ordered`, lower
   first, until one handles the press.
 - A screen's own handlers sit in the widget tree and are asked first while
@@ -3616,8 +3673,8 @@ context.bean<KeyboardShortcuts>(), child: child)` in its `builder`.
 
 To read keys written another way (`numpad:5`, a chord), declare a
 `ShortcutNotation` bean. The notations form a chain of responsibility: the
-app's own are asked first (by `@Order`), then `CharacterNotation` and
-`KeyCombinationNotation`.
+app's own are asked first (by `@Order`), then `CharacterNotation`,
+`TouchPatternNotation` and `KeyCombinationNotation`.
 
 ```dart
 @Component()

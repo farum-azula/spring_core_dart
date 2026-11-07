@@ -573,6 +573,18 @@
       "scope": "root"
     },
     {
+      "name": "remember",
+      "type": "choice",
+      "states": false,
+      "values": [
+        "true",
+        "false"
+      ],
+      "description": "Keeps the theme the user chooses (`ThemeSelection.select`) between runs and shows it again while the splash shows.",
+      "default": "true",
+      "scope": "root"
+    },
+    {
       "name": "extends",
       "type": "text",
       "states": false,

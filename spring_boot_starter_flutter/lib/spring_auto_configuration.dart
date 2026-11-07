@@ -11,6 +11,14 @@ import 'package:flutter/material.dart' show ThemeData;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
 import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_host.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/beans_section.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/configuration_section.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/frames_section.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/logs_section.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/start_section.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/theme_section.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_store.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
 import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
@@ -19,12 +27,17 @@ import 'package:spring_boot_starter_flutter/src/properties/properties_beans.dart
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
 import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts_customizer.dart';
+import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_handler.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_task.dart';
 import 'package:spring_boot_starter_flutter/src/splash/text_warm_up.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_choice_store.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_source.dart';
+import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart'
+    show LogBuffer;
 import 'package:spring_web_dart/spring_web_dart.dart' show HttpTransport;
 
 // The auto-configurations this starter builds on (logging, and through it spring_boot_dart's), so a test of an application that lists only this starter can name them.
@@ -32,6 +45,13 @@ export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
 const _source =
     'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
+
+// The theme the user chose, kept between runs unless turned off.
+const _rememberTheme = ConditionalOnProperty(
+  'spring.flutter.theme.remember',
+  havingValue: 'true',
+  matchIfMissing: true,
+);
 
 // The text warm-up: only when turned on.
 const _textWarmUp = ConditionalOnProperty(
@@ -55,6 +75,10 @@ const _textWarmUp = ConditionalOnProperty(
 /// - the keyboard shortcuts of `spring.flutter.shortcuts.*` and the
 ///   `@Shortcut` methods (`keyboardShortcuts`), around the app's navigator
 ///   (`keyboardShortcutsCustomizer`);
+/// - the theme the user chooses, kept between runs (`fileThemeChoiceStore`,
+///   unless the app declares a `ThemeChoiceStore`) and shown again while
+///   the splash shows (`themeChoiceRestore`), unless
+///   `spring.flutter.theme.remember` is `false`;
 /// - with `spring.flutter.splash.warm-up.text.enabled`, the fonts of the
 ///   app's text downloaded while the splash shows (`textWarmUp`, a `SplashTask`, of the text of
 ///   `spring.flutter.splash.warm-up.text.resources` and the
@@ -177,7 +201,32 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       name: 'themeSelection',
       types: const [ThemeSelection, ChangeNotifier, Listenable],
       source: _source,
-      create: (r) => ThemeSelection(r.dependency<SpringThemes>()),
+      create: (r) => ThemeSelection(
+        r.dependency<SpringThemes>(),
+        store: r.optionalDependency<ThemeChoiceStore>(),
+      ),
+    ),
+    BeanDefinition<ThemeChoiceStore>(
+      name: 'fileThemeChoiceStore',
+      types: const [ThemeChoiceStore, FileThemeChoiceStore],
+      source: _source,
+      conditions: const [
+        _rememberTheme,
+        ConditionGroup('$_source.fileThemeChoiceStore', [
+          ConditionalOnMissingBean(ThemeChoiceStore),
+        ]),
+      ],
+      create: (r) => FileThemeChoiceStore(r.dependency<FileTemplate>()),
+    ),
+    BeanDefinition<ThemeChoiceRestore>(
+      name: 'themeChoiceRestore',
+      types: const [ThemeChoiceRestore, SplashTask],
+      source: _source,
+      conditions: const [_rememberTheme],
+      create: (r) => ThemeChoiceRestore(
+        r.dependency<ThemeSelection>(),
+        r.dependency<ThemeChoiceStore>(),
+      ),
     ),
     BeanDefinition<FileStore>(
       name: 'platformFileStore',
@@ -232,4 +281,99 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
     ),
   ],
   imports: [flutterConfigBeans],
+);
+
+const _debugSource =
+    'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
+
+// The panel in a running app: off with spring.flutter.debug.enabled=false
+// in a profile, though the build has it.
+const _debugOn = ConditionalOnProperty(
+  'spring.flutter.debug.enabled',
+  havingValue: 'true',
+  matchIfMissing: true,
+);
+
+/// The debug panel (`debugPanel`) and its sections: logs, frames, the
+/// configuration, the beans, the themes and the start, over the app
+/// (`debugPanelCustomizer`). The generator puts this module into the app
+/// by `spring.flutter.debug.enabled`: `true` always, `false` never (no
+/// code), not set in debug and profile builds only.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('spring.flutter.debug.enabled'),
+)
+final BeanModule springBootStarterFlutterDebugAutoConfiguration = BeanModule(
+  'springBootStarterFlutterDebugAutoConfiguration',
+  [
+    BeanDefinition<DebugPanel>(
+      name: 'debugPanel',
+      types: const [
+        DebugPanel,
+        ChangeNotifier,
+        Listenable,
+        ShortcutHandler,
+        KeyedShortcutHandler,
+      ],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (_) => DebugPanel(),
+    ),
+    BeanDefinition<DebugLogsSection>(
+      name: 'debugLogsSection',
+      types: const [DebugLogsSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugLogsSection(r.optionalDependency<LogBuffer>()),
+    ),
+    BeanDefinition<DebugFramesSection>(
+      name: 'debugFramesSection',
+      types: const [DebugFramesSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugFramesSection(r.dependency<DebugPanel>()),
+    ),
+    BeanDefinition<DebugConfigurationSection>(
+      name: 'debugConfigurationSection',
+      types: const [DebugConfigurationSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugConfigurationSection(
+        r.dependency<ConfigurableEnvironment>(),
+      ),
+    ),
+    BeanDefinition<DebugBeansSection>(
+      name: 'debugBeansSection',
+      types: const [DebugBeansSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugBeansSection(r.dependency<ApplicationContext>()),
+    ),
+    BeanDefinition<DebugThemeSection>(
+      name: 'debugThemeSection',
+      types: const [DebugThemeSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugThemeSection(
+        r.dependency<SpringThemes>(),
+        r.dependency<ThemeSelection>(),
+      ),
+    ),
+    BeanDefinition<DebugStartSection>(
+      name: 'debugStartSection',
+      types: const [DebugStartSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugStartSection(r.optionalDependency<SplashStages>()),
+    ),
+    BeanDefinition<DebugPanelCustomizer>(
+      name: 'debugPanelCustomizer',
+      types: const [DebugPanelCustomizer, FlutterAppCustomizer],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugPanelCustomizer(
+        r.dependency<DebugPanel>(),
+        r.optionalDependencyList<DebugPanelSection>() ?? const [],
+      ),
+    ),
+  ],
 );

@@ -5,6 +5,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
 import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
@@ -318,9 +319,13 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
     }
     final meter = _frameMeter(SpringScope.of(context));
     if (meter.enabled) {
+      final spring = SpringScope.of(context);
       content = FrameMeter(
         position: meter.position,
         targetRate: meter.targetRate,
+        stages: spring.containsBean('splashStages')
+            ? spring.getBean<SplashStages>()
+            : null,
         child: content,
       );
     }

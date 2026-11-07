@@ -3,7 +3,9 @@ import 'dart:collection';
 import 'dart:ui' show FramePhase, FrameTiming;
 
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_stage.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
 /// The corner of the screen the frame meter shows in
@@ -39,6 +41,7 @@ class FrameMeter extends StatefulWidget {
     required this.child,
     this.position = FrameMeterPosition.topRight,
     this.targetRate = 60,
+    this.stages,
     super.key,
   });
 
@@ -50,6 +53,10 @@ class FrameMeter extends StatefulWidget {
 
   /// The frames a second the screen is meant to show.
   final int targetRate;
+
+  /// The stages of the start: until the app shows, the meter neither shows
+  /// nor counts, so it takes nothing from the splash. `null`: always on.
+  final ValueListenable<SplashStage>? stages;
 
   @override
   State<FrameMeter> createState() => _FrameMeterState();
@@ -75,6 +82,7 @@ class _FrameMeterState extends State<FrameMeter> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addTimingsCallback(_timings);
+    widget.stages?.addListener(_stageChanged);
     _timer = Timer.periodic(const Duration(milliseconds: 250), (_) {
       if (_fresh && mounted) {
         _fresh = false;
@@ -84,14 +92,27 @@ class _FrameMeterState extends State<FrameMeter> {
     });
   }
 
+  void _stageChanged() {
+    if (_started && mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
+    widget.stages?.removeListener(_stageChanged);
     _timer?.cancel();
     SchedulerBinding.instance.removeTimingsCallback(_timings);
     super.dispose();
   }
 
+  bool get _started =>
+      widget.stages == null || widget.stages!.value == SplashStage.app;
+
   void _timings(List<FrameTiming> timings) {
+    if (!_started) {
+      return;
+    }
     for (final timing in timings) {
       final start = timing.timestampInMicroseconds(FramePhase.vsyncStart);
       final last = _lastStart;
@@ -128,24 +149,25 @@ class _FrameMeterState extends State<FrameMeter> {
       textDirection: TextDirection.ltr,
       children: [
         widget.child,
-        Positioned(
-          top: top ? 0 : null,
-          bottom: top ? null : 0,
-          left: left ? 0 : null,
-          right: left ? null : 0,
-          child: IgnorePointer(
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: _Panel(
-                  frames: _frames.toList(),
-                  budget: 1000000 ~/ widget.targetRate,
-                  window: _window.inMicroseconds,
+        if (_started)
+          Positioned(
+            top: top ? 0 : null,
+            bottom: top ? null : 0,
+            left: left ? 0 : null,
+            right: left ? null : 0,
+            child: IgnorePointer(
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: _Panel(
+                    frames: _frames.toList(),
+                    budget: 1000000 ~/ widget.targetRate,
+                    window: _window.inMicroseconds,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
