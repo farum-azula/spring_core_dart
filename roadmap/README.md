@@ -228,6 +228,15 @@ What comes next, in order:
    hand-written stays: it reads better for this code and needs no
    generator round trip; the beans an application gets are the same
    either way.
+19. **What else the build can leave out** (the owner, November 2026; to
+   think through before any change): `AutoConfigurationModule(build:
+   AutoConfigurationBuild(...))` removes a module, and everything only it
+   reaches, from the application or from release builds. Only the Flutter
+   starter's debug panel uses it so far. Candidates, each with its gain in
+   size and start time measured first: the actuator's endpoints in mobile
+   apps, the parts of starters only development needs, and
+   `@SpringBootApplication(exclude:)` decided by the build (today an
+   excluded module stays in the code and only registers no beans).
 
 | File | Package | Status |
 |---|---|---|
