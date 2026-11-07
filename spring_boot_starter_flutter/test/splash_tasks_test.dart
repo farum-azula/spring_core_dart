@@ -35,10 +35,11 @@ final class _Fonts extends ChangeNotifier {
 }
 
 final class _WarmUp extends TextWarmUp {
-  _WarmUp(super.sources, {super.fontsChanged})
+  _WarmUp(super.sources, {super.fontsChanged, super.chunk})
     : super(
         firstFont: const Duration(milliseconds: 100),
         settle: const Duration(milliseconds: 50),
+        nextFrame: () async {},
       );
 
   final laidOut = <String>[];
@@ -172,8 +173,20 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 30));
     expect(ended, isFalse, reason: 'a font came in 30 ms ago');
     await run;
-    expect(warmUp.laidOut, hasLength(3));
+    expect(warmUp.laidOut, hasLength(1), reason: 'laid out once');
     expect(progress, [0.5, closeTo(2 / 3, 1e-9)]);
+  });
+
+  test('the warm-up lays out a chunk a frame', () async {
+    final warmUp = _WarmUp(
+      const [
+        _Texts(['日本語の文']),
+      ],
+      fontsChanged: _Fonts(),
+      chunk: 2,
+    );
+    await warmUp.run(SplashTaskContext(_NoContext(), (_) {}));
+    expect([for (final text in warmUp.laidOut) text.length], [2, 2, 1]);
   });
 }
 

@@ -479,10 +479,13 @@ spring:
             - resources:content/**/contents*.md
           first-font: 400ms    # no font in that time: none is needed
           settle: 250ms        # after a font, how long without another
+          chunk: 200           # characters laid out in one frame
 ```
 
 Only the characters count, each once: a large file costs its reading, not
-its layout. Characters missing from it are still downloaded when they are
+its layout. They are laid out `chunk` at a time, one chunk a frame, so the
+splash keeps moving on a phone, and only once: the engine asks for every
+font they need at their first layout. Characters missing from it are still downloaded when they are
 shown.
 
 ## Tracing the start

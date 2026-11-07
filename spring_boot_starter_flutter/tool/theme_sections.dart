@@ -61,6 +61,7 @@ List<ThemeProp> themeSections() => [
   ..._loaders(),
   ..._splash(),
   ..._syntax(),
+  ..._frameMeter(),
   _p(
     'tokens.*',
     'map',
@@ -974,6 +975,25 @@ List<ThemeProp> _loaders() => [
     'A kind of the app\'s own takes the keys it registered; their values '
         'are read like tokens.',
     open: true,
+  ),
+];
+
+// The look of the frame meter (spring.flutter.frame-meter.enabled).
+List<ThemeProp> _frameMeter() => [
+  for (final (key, meaning, fallback) in [
+    ('background', "The meter's fill.", 'the surface at 85%'),
+    ('foreground', 'The text.', 'on-surface'),
+    ('good', 'A frame within the budget.', 'primary'),
+    ('warning', 'A frame up to twice the budget.', 'tertiary'),
+    ('bad', 'A frame over twice the budget.', 'error'),
+  ])
+    _p('frame-meter.$key', 'color', meaning, defaultValue: fallback),
+  _p(
+    'frame-meter.text-style',
+    'text',
+    'The typography style of the text: `label-small`, `body-medium`... or '
+        '`code`.',
+    defaultValue: 'label-small',
   ),
 ];
 

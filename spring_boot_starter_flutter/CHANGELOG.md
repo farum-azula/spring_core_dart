@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `spring.flutter.web.seo.page-files` (`FlutterWebSeoProperties.pageFiles`), read by the generator.
+- The frame meter (`FrameMeter`, `spring.flutter.frame-meter.enabled`, `position`, `target-rate`): a panel over the app with the frames a second it really draws, the build and raster times, the worst frame and a bar per frame, from Flutter's own timings, so a phone shows whether it keeps up. Its look is the theme's `frame-meter` (`background`, `foreground`, `good`, `warning`, `bad`, `text-style`; `FrameMeterTheme`).
+- The text warm-up lays its characters out once, `spring.flutter.splash.warm-up.text.chunk` (default 200) a frame, not all of them at every font that came in: the splash no longer stutters on a phone while the fonts come.
 - `spring.flutter.web.page.max-pixel-ratio` (`FlutterWebPageProperties.maxPixelRatio`), read by the generator: the most pixels for each point Flutter draws at on the web, so a phone's 3x screen can be drawn at 2.
 - `background.frame-rate` (default 15; `every-frame`): a moving background is drawn again that many times a second, not at every frame, so a slow drift no longer keeps the whole screen repainting (on the web it took the time of scrolling). `ThemeAnimation(frameRate:)` plays any repeating theme animation so.
 - Fixed: `motion.wheel-scroll` steps once in each frame, by the frame's time, not by a 16 ms timer (steps came two in a frame, then none, and a 120 Hz screen moved at 60); a trackpad's scroll passes as it comes, not eased again behind the fingers.

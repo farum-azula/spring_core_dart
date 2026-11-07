@@ -45,6 +45,7 @@ root-sections:
   - background
   - loaders
   - syntax
+  - frame-meter
 
 # An image token is a node at least tokens.<group>.<key> deep that has
 # `source` and whose children are ALL among these keys (kebab case; the

@@ -1,6 +1,7 @@
 import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:spring_boot_starter_flutter/src/theme/frame_meter_theme.dart';
 import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_background.dart';
@@ -378,6 +379,7 @@ final class SpringThemeData {
       animations[name] = AnimationSpec.parse(p, name);
     }
     background = ThemeBackgroundData.parse(p);
+    frameMeter = FrameMeterTheme.parse(p);
     for (final name in p.children('loaders')) {
       loaders[name] = ThemeLoaderSpec.parse(p, name);
     }
@@ -451,6 +453,7 @@ final class SpringThemeData {
     'background',
     'loaders',
     'syntax',
+    'frame-meter',
   ];
 
   static const _textSpecProperties = {
@@ -653,6 +656,10 @@ final class SpringThemeData {
   /// The `background` of the theme (a color, an image, an overlay, an
   /// animation, per-screen overrides); `null` when the theme has none.
   late final ThemeBackgroundData? background;
+
+  /// How the frame meter looks (`frame-meter`), shown with
+  /// `spring.flutter.frame-meter.enabled`.
+  late final FrameMeterTheme frameMeter;
 
   /// The loaders of `loaders.*` by canonical name (`neondoors`).
   final Map<String, ThemeLoaderSpec> loaders = {};

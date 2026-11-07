@@ -2058,6 +2058,46 @@ The start behind the splash (the splash's look is the theme's `splash`; see
 | `spring.flutter.splash.warm-up.text.resources` | list of locations | `resources:messages*.properties` | The files whose characters are laid out (patterns) |
 | `spring.flutter.splash.warm-up.text.first-font` | duration | `400ms` | No font downloaded in that time: none is needed |
 | `spring.flutter.splash.warm-up.text.settle` | duration | `250ms` | After a font came in, how long without another before the warm-up ends |
+| `spring.flutter.splash.warm-up.text.chunk` | number | `200` | How many characters are laid out in one frame, so the splash keeps moving on a phone |
+
+The frame meter: a small panel over the app with the frames a second it
+really draws, the average time of their build and raster, the worst frame,
+and a bar per frame (within the budget, up to twice it, over). The times are
+Flutter's own (`FrameTiming`), on every platform the web included, so it
+shows on a phone what a desktop browser cannot. The panel is drawn again at
+most four times a second and its own frames are not counted: an app that
+draws nothing shows `idle`. Turn it on in a profile you test with.
+
+```yaml
+spring:
+  flutter:
+    frame-meter:
+      enabled: true
+      position: bottom-right
+      target-rate: 60
+```
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.frame-meter.enabled` | `true` / `false` | `false` | Shows the frame meter over the app (`FrameMeter`, put there by `SpringApp`) |
+| `spring.flutter.frame-meter.position` | `top-left` / `top-right` / `bottom-left` / `bottom-right` | `top-right` | The corner of the screen it shows in, inside the safe area |
+| `spring.flutter.frame-meter.target-rate` | number | `60` | The frames a second the screen is meant to show: a frame within `1 / target-rate` is good, up to twice that a warning, more a drop |
+
+Its look is the theme's `frame-meter`; a value left out comes from the
+theme's colors and typography:
+
+```yaml
+spring:
+  flutter:
+    theme:
+      frame-meter:
+        background: { color: $colors.surface, alpha: 85% }
+        foreground: $colors.on-surface
+        good: $colors.primary
+        warning: $colors.tertiary
+        bad: $colors.error
+        text-style: label-small
+```
 
 The window of a desktop app (macOS, Windows, Linux) has keys of its own.
 They carry `desktop` in their name because only desktop apps read them: a
@@ -3883,7 +3923,7 @@ spring:
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. In a Telegram Mini App it tells Telegram to keep the vertical swipes for the page and to open at full height (`web_app_setup_swipe_behavior`, `web_app_expand`), sent the way Telegram's own script sends them, so no script of Telegram's is needed; in other apps' browsers it makes the page one pixel taller than the screen and keeps it one pixel down at its load and at each touch, so the swipe is no close. Touch screens only; the pixel is never seen |
+| `spring.flutter.web.page.swipe-to-close` | `true` / `false` | `true` | `false`: the generator writes a block into `web/index.html` that keeps the page open. In a Telegram Mini App it tells Telegram to keep the vertical swipes for the page and to open at full height (`web_app_setup_swipe_behavior`, `web_app_expand`), sent the way Telegram's own script sends them, so no script of Telegram's is needed; in other apps' browsers, on a touch screen, it makes the page a thousand screens tall, scrolls it to its end with Flutter's view fixed on the screen, and stops the browser's own scrolling of the page, so the page is never at its top and a swipe down is Flutter's |
 | `spring.flutter.web.page.max-pixel-ratio` | number, 1 or more | the screen's own | The most pixels for each point Flutter draws at. A phone's screen has 3, so every frame is 9 times the pixels of the page and its graphics chip drops frames on a full-screen scroll; `2` draws 2.25 times fewer and the text stays sharp. The generator writes a script into `web/index.html` that runs before the engine starts; a screen at or under the value is left as it is |
 
 ### The page loader
@@ -4183,6 +4223,7 @@ Then build as usual: `dart run build_runner build` writes the pages into
 | `spring.flutter.web.seo.sitemap` | `true` / `false` | `true` | Whether `sitemap.xml` and `robots.txt` are written |
 | `spring.flutter.web.seo.llms` | `true` / `false` | `true` | Whether `llms.txt` and `llms-full.txt` are written |
 | `spring.flutter.web.seo.markdown` | `true` / `false` | `true` | Whether `<path>.md` is written next to a Markdown page |
+| `spring.flutter.web.seo.page-files` | `directory` / `html` | `directory` | How a page's file is named. `directory`: `<path>/index.html`; a static host serves it only after a redirect from `<path>` to `<path>/`, so the canonical address, `og:url`, the languages' links and the sitemap end with `/`. `html`: `<path>.html`; Cloudflare Pages, GitHub Pages and Netlify serve it at `<path>` itself with no redirect, and the addresses have no `/` at the end. A canonical address that redirects keeps a page out of search engines, so it always matches what the host serves |
 
 #### Where the pages come from
 

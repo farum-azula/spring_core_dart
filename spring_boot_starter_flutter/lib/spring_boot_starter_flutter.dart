@@ -82,6 +82,7 @@ export 'src/spring_widgets.dart';
 export 'src/text/highlighted_text.dart';
 export 'src/theme/content_change.dart';
 export 'src/theme/wheel_scroll.dart';
+export 'src/frame_meter/frame_meter.dart';
 export 'src/splash/frame_pacer.dart';
 export 'src/splash/splash_properties.dart';
 export 'src/splash/splash_stage.dart';
@@ -113,6 +114,7 @@ export 'src/theme/theme_loader.dart'
         ThemeLoaderWidget;
 export 'src/theme/theme_loader_widget.dart'
     show LoaderTimeline, ThemeLoader, ThemeSkeleton;
+export 'src/theme/frame_meter_theme.dart';
 export 'src/theme/theme_splash.dart' show ThemeSplash, ThemeSplashData;
 export 'src/theme/theme_key_reader.dart';
 export 'src/theme/theme_states.dart';

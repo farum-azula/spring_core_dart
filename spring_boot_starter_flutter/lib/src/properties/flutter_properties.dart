@@ -1,4 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart'
+    show FrameMeterPosition;
 import 'package:spring_boot_starter_flutter/src/spring_app.dart' show AppType;
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart'
     show SqliteLocation;
@@ -59,6 +61,31 @@ final class FlutterProperties {
   /// and Ctrl elsewhere, `char:?` a character. They run the action's
   /// `@Shortcut` methods and `ShortcutHandler` beans.
   final Map<String, List<String>> shortcuts;
+}
+
+/// The frame meter, `spring.flutter.frame-meter.*`: a small panel over
+/// the app with the frames a second it really draws and their times, to
+/// see on a phone whether it keeps up. Its look is the theme's
+/// `frame-meter`.
+@ConfigurationProperties('spring.flutter.frame-meter')
+final class FlutterFrameMeterProperties {
+  /// Settings with these values.
+  const FlutterFrameMeterProperties({
+    this.enabled = false,
+    this.position = FrameMeterPosition.topRight,
+    this.targetRate = 60,
+  });
+
+  /// Whether the meter shows. Off by default; turn it on in a profile you
+  /// test with, not for your users.
+  final bool enabled;
+
+  /// The corner of the screen it shows in.
+  final FrameMeterPosition position;
+
+  /// The frames a second the screen is meant to show: a frame within
+  /// `1 / target-rate` is good, up to twice that a warning, more a drop.
+  final int targetRate;
 }
 
 /// The web page around the app, `spring.flutter.web.page.*`; read by
@@ -281,6 +308,7 @@ final class FlutterWebSeoProperties {
     this.sitemap = true,
     this.llms = true,
     this.markdown = true,
+    this.pageFiles = 'directory',
   });
 
   /// Whether the build writes the pages.
@@ -323,6 +351,12 @@ final class FlutterWebSeoProperties {
 
   /// Whether the Markdown of a page is written next to it (`<path>.md`).
   final bool markdown;
+
+  /// How a page's file is named: `directory` (`<path>/index.html`, which a
+  /// static host serves after a redirect to `<path>/`, so the page's
+  /// addresses end with `/`) or `html` (`<path>.html`, which Cloudflare
+  /// Pages, GitHub Pages and Netlify serve at `<path>` with no redirect).
+  final String pageFiles;
 }
 
 /// A folder of Markdown files, `spring.flutter.web.seo.content[n]`.

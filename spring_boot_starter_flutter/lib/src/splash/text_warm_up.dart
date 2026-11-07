@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_task.dart';
 
@@ -43,8 +44,9 @@ final class ResourceTextWarmUpSource implements TextWarmUpSource {
 /// do not have (Japanese, Chinese, Arabic, emoji: Noto fonts) the first
 /// time it lays them out, then lays out all the text again: a language
 /// changed for the first time stutters for a second. This task lays out
-/// every character of its [sources] once, and waits until the fonts are
-/// in. Off by default: `spring.flutter.splash.warm-up.text.enabled: true`.
+/// every character of its [sources] once, [chunk] characters a frame so
+/// the splash keeps moving, and waits until the fonts are in. Off by
+/// default: `spring.flutter.splash.warm-up.text.enabled: true`.
 class TextWarmUp extends SplashTask {
   /// Lays out the characters of [sources] in [fontFamilies]; [fontsChanged]
   /// tells when a font came in (`PaintingBinding.systemFonts`).
@@ -53,7 +55,9 @@ class TextWarmUp extends SplashTask {
     this.fontFamilies = const {},
     this.firstFont = const Duration(milliseconds: 400),
     this.settle = const Duration(milliseconds: 250),
+    this.chunk = 200,
     this.fontsChanged,
+    this.nextFrame,
   });
 
   /// The text sources.
@@ -69,8 +73,18 @@ class TextWarmUp extends SplashTask {
   /// Once a font came in, how long without another before the task ends.
   final Duration settle;
 
+  /// How many characters are laid out in one frame: a few hundred keep a
+  /// phone's frame short.
+  final int chunk;
+
   /// Tells when a font came in; `PaintingBinding.systemFonts` when null.
   final Listenable? fontsChanged;
+
+  /// Waits for the next frame; the scheduler's when null.
+  final Future<void> Function()? nextFrame;
+
+  Future<void> _frame() =>
+      nextFrame?.call() ?? SchedulerBinding.instance.endOfFrame;
 
   @override
   String get name => 'text warm-up';
@@ -99,17 +113,24 @@ class TextWarmUp extends SplashTask {
       });
     }
 
+    // Laid out once: the engine asks for every font the characters need at
+    // their first layout, and a font coming in needs no layout again.
     var fontsIn = 0;
     void changed() {
       task.progress(1 - 1 / (++fontsIn + 1));
-      layOut(String.fromCharCodes(characters));
       wait(settle);
     }
 
     fonts.addListener(changed);
     try {
-      wait(firstFont);
-      layOut(String.fromCharCodes(characters));
+      final all = characters.toList();
+      for (var i = 0; i < all.length; i += chunk) {
+        layOut(String.fromCharCodes(all.skip(i).take(chunk)));
+        await _frame();
+      }
+      if (fontsIn == 0) {
+        wait(firstFont);
+      }
       await quiet.future;
     } finally {
       timer?.cancel();

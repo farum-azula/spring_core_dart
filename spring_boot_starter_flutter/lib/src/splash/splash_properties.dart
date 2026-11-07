@@ -54,4 +54,8 @@ class TextWarmUpProperties {
   /// After a font came in, how long without another before the warm-up
   /// ends.
   Duration settle = const Duration(milliseconds: 250);
+
+  /// How many characters are laid out in one frame, so the splash keeps
+  /// moving on a phone.
+  int chunk = 200;
 }

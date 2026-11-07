@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
+import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
@@ -315,8 +316,25 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         child: content,
       );
     }
+    final meter = _frameMeter(SpringScope.of(context));
+    if (meter.enabled) {
+      content = FrameMeter(
+        position: meter.position,
+        targetRate: meter.targetRate,
+        child: content,
+      );
+    }
     return (app.builder ?? (_, child) => child!)(context, content);
   };
+
+  // `spring.flutter.frame-meter.*`, read once per context.
+  static FlutterFrameMeterProperties _frameMeter(ApplicationContext context) =>
+      _meters[context] ??= boundProperties<FlutterFrameMeterProperties>(
+        context.environment,
+        'flutterFrameMeterProperties',
+      );
+
+  static final _meters = Expando<FlutterFrameMeterProperties>('frame meter');
 
   Widget _app(
     FlutterAppSettings app,

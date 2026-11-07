@@ -9,7 +9,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 415,
+      "line": 449,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 399,
+      "line": 433,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 415,
+      "line": 449,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 399,
+      "line": 433,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 380,
+      "line": 414,
       "class": "FlutterRestartProperties"
     },
     {
@@ -59,7 +59,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 36,
+      "line": 38,
       "class": "FlutterAppProperties"
     },
     {
@@ -69,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 33,
+      "line": 35,
       "class": "FlutterAppProperties"
     },
     {
@@ -79,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 40,
+      "line": 42,
       "class": "FlutterAppProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 28,
+      "line": 30,
       "class": "FlutterAppProperties"
     },
     {
@@ -99,7 +99,7 @@
       "default": "widgets",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 24,
+      "line": 26,
       "class": "FlutterAppProperties"
     },
     {
@@ -109,7 +109,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 137,
+      "line": 164,
       "class": "DesktopWindowProperties"
     },
     {
@@ -119,7 +119,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 143,
+      "line": 170,
       "class": "DesktopWindowProperties"
     },
     {
@@ -129,7 +129,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 140,
+      "line": 167,
       "class": "DesktopWindowProperties"
     },
     {
@@ -139,7 +139,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 127,
+      "line": 154,
       "class": "DesktopWindowProperties"
     },
     {
@@ -149,7 +149,7 @@
       "default": "default",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 133,
+      "line": 160,
       "class": "DesktopWindowProperties"
     },
     {
@@ -159,7 +159,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 104,
+      "line": 131,
       "class": "FlutterFontsProperties"
     },
     {
@@ -169,8 +169,38 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 107,
+      "line": 134,
       "class": "FlutterFontsProperties"
+    },
+    {
+      "name": "spring.flutter.frame-meter.enabled",
+      "type": "bool",
+      "description": "Whether the meter shows. Off by default; turn it on in a profile you test with, not for your users.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 81,
+      "class": "FlutterFrameMeterProperties"
+    },
+    {
+      "name": "spring.flutter.frame-meter.position",
+      "type": "FrameMeterPosition",
+      "description": "The corner of the screen it shows in.",
+      "default": "top-right",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 84,
+      "class": "FlutterFrameMeterProperties"
+    },
+    {
+      "name": "spring.flutter.frame-meter.target-rate",
+      "type": "int",
+      "description": "The frames a second the screen is meant to show: a frame within `1 / target-rate` is good, up to twice that a warning, more a drop.",
+      "default": 60,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 88,
+      "class": "FlutterFrameMeterProperties"
     },
     {
       "name": "spring.flutter.lifecycle.pause-in-background",
@@ -179,7 +209,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 94,
+      "line": 121,
       "class": "FlutterLifecycleProperties"
     },
     {
@@ -189,7 +219,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 55,
+      "line": 57,
       "class": "FlutterProperties"
     },
     {
@@ -199,7 +229,7 @@
       "default": {},
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 61,
+      "line": 63,
       "class": "FlutterProperties"
     },
     {
@@ -251,6 +281,16 @@
       "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
       "line": 19,
       "class": "SplashProperties"
+    },
+    {
+      "name": "spring.flutter.splash.warm-up.text.chunk",
+      "type": "int",
+      "description": "How many characters are laid out in one frame, so the splash keeps moving on a phone.",
+      "default": 200,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/splash/splash_properties.dart",
+      "line": 60,
+      "class": "TextWarmUpProperties"
     },
     {
       "name": "spring.flutter.splash.warm-up.text.enabled",
@@ -311,7 +351,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 189,
+      "line": 216,
       "class": "FlutterWebProperties"
     },
     {
@@ -321,7 +361,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 198,
+      "line": 225,
       "class": "FlutterWebProperties"
     },
     {
@@ -331,7 +371,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 205,
+      "line": 232,
       "class": "FlutterWebProperties"
     },
     {
@@ -341,7 +381,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 201,
+      "line": 228,
       "class": "FlutterWebProperties"
     },
     {
@@ -351,7 +391,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 195,
+      "line": 222,
       "class": "FlutterWebProperties"
     },
     {
@@ -361,7 +401,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 171,
+      "line": 198,
       "class": "FlutterWebProperties"
     },
     {
@@ -371,7 +411,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 220,
+      "line": 247,
       "class": "FlutterWebHttps"
     },
     {
@@ -381,7 +421,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 217,
+      "line": 244,
       "class": "FlutterWebHttps"
     },
     {
@@ -391,7 +431,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 186,
+      "line": 213,
       "class": "FlutterWebProperties"
     },
     {
@@ -401,7 +441,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 235,
+      "line": 262,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -411,7 +451,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 239,
+      "line": 266,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -421,7 +461,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 243,
+      "line": 270,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -431,7 +471,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 247,
+      "line": 274,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -441,7 +481,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 84,
+      "line": 111,
       "class": "FlutterWebPageProperties"
     },
     {
@@ -451,7 +491,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 77,
+      "line": 104,
       "class": "FlutterWebPageProperties"
     },
     {
@@ -461,7 +501,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 341,
+      "line": 375,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -471,7 +511,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 334,
+      "line": 368,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -481,7 +521,7 @@
       "default": "/",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 338,
+      "line": 372,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -491,7 +531,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 302,
+      "line": 330,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -501,7 +541,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 287,
+      "line": 315,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -511,7 +551,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 296,
+      "line": 324,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -521,7 +561,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 307,
+      "line": 335,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -531,7 +571,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 322,
+      "line": 350,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -541,7 +581,17 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 325,
+      "line": 353,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.page-files",
+      "type": "String",
+      "description": "How a page's file is named: `directory` (`<path>/index.html`, which a static host serves after a redirect to `<path>/`, so the page's addresses end with `/`) or `html` (`<path>.html`, which Cloudflare Pages, GitHub Pages and Netlify serve at `<path>` with no redirect).",
+      "default": "directory",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 359,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -551,7 +601,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 362,
+      "line": 396,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -561,7 +611,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 365,
+      "line": 399,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -571,7 +621,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 369,
+      "line": 403,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -581,7 +631,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 356,
+      "line": 390,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -591,7 +641,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 359,
+      "line": 393,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -601,7 +651,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 310,
+      "line": 338,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -611,7 +661,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 292,
+      "line": 320,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -621,7 +671,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 319,
+      "line": 347,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -631,7 +681,7 @@
       "default": "{title}",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 299,
+      "line": 327,
       "class": "FlutterWebSeoProperties"
     }
   ],
@@ -701,6 +751,27 @@
         {
           "value": "hidden",
           "description": null
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.frame-meter.position",
+      "values": [
+        {
+          "value": "top-left",
+          "description": "Top left."
+        },
+        {
+          "value": "top-right",
+          "description": "Top right."
+        },
+        {
+          "value": "bottom-left",
+          "description": "Bottom left."
+        },
+        {
+          "value": "bottom-right",
+          "description": "Bottom right."
         }
       ]
     },
@@ -891,7 +962,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 113,
+      "line": 140,
       "injects": [],
       "members": [
         {
@@ -935,7 +1006,7 @@
         "@ConditionalOnMissingBean(FileTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 188,
+      "line": 193,
       "injects": [],
       "members": [
         {
@@ -1064,7 +1135,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 12,
+      "line": 14,
       "injects": [],
       "members": [
         {
@@ -1106,7 +1177,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 387,
+      "line": 421,
       "injects": [],
       "members": [
         {
@@ -1133,7 +1204,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 420,
+      "line": 454,
       "injects": [],
       "members": [
         {
@@ -1155,7 +1226,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 99,
+      "line": 126,
       "injects": [],
       "members": [
         {
@@ -1171,6 +1242,38 @@
       ]
     },
     {
+      "name": "flutterFrameMeterProperties",
+      "type": "FlutterFrameMeterProperties",
+      "types": [
+        "FlutterFrameMeterProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 71,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "position",
+          "kind": "field",
+          "type": "FrameMeterPosition"
+        },
+        {
+          "name": "targetRate",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
       "name": "flutterLifecycleProperties",
       "type": "FlutterLifecycleProperties",
       "types": [
@@ -1182,7 +1285,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 89,
+      "line": 116,
       "injects": [],
       "members": [
         {
@@ -1204,7 +1307,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 45,
+      "line": 47,
       "injects": [],
       "members": [
         {
@@ -1231,7 +1334,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 374,
+      "line": 408,
       "injects": [],
       "members": [
         {
@@ -1253,7 +1356,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 67,
+      "line": 94,
       "injects": [],
       "members": [
         {
@@ -1280,7 +1383,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 155,
+      "line": 182,
       "injects": [],
       "members": [
         {
@@ -1342,7 +1445,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 269,
+      "line": 296,
       "injects": [],
       "members": [
         {
@@ -1379,6 +1482,11 @@
           "name": "markdown",
           "kind": "field",
           "type": "bool"
+        },
+        {
+          "name": "pageFiles",
+          "kind": "field",
+          "type": "String"
         },
         {
           "name": "pages",
@@ -1598,7 +1706,7 @@
         "@ConditionalOnMissingBean(FileStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 177,
+      "line": 182,
       "injects": [],
       "members": [
         {
@@ -1792,7 +1900,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 155,
+      "line": 160,
       "injects": [],
       "members": [
         {
@@ -1942,6 +2050,11 @@
       "injects": [],
       "members": [
         {
+          "name": "chunk",
+          "kind": "field",
+          "type": "int"
+        },
+        {
           "name": "firstFont",
           "kind": "field",
           "type": "Duration"
@@ -1968,6 +2081,11 @@
           "name": "name",
           "kind": "getter",
           "type": "String"
+        },
+        {
+          "name": "nextFrame",
+          "kind": "field",
+          "type": "Future<void> Function()?"
         },
         {
           "name": "run",
@@ -2005,6 +2123,11 @@
       "injects": [],
       "members": [
         {
+          "name": "chunk",
+          "kind": "field",
+          "type": "int"
+        },
+        {
           "name": "enabled",
           "kind": "field",
           "type": "bool"
@@ -2039,7 +2162,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 214,
+      "line": 219,
       "injects": [],
       "members": [
         {
@@ -2103,7 +2226,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 171,
+      "line": 176,
       "injects": [],
       "members": [
         {
@@ -2195,7 +2318,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 202,
+      "line": 207,
       "injects": [],
       "members": [
         {
@@ -5600,6 +5723,54 @@
         "values": [],
         "description": "Other names of the language in a fenced block's info (`yml`, `bash`).",
         "default": "none"
+      },
+      {
+        "name": "frame-meter.background",
+        "type": "color",
+        "states": false,
+        "values": [],
+        "description": "The meter's fill.",
+        "default": "the surface at 85%"
+      },
+      {
+        "name": "frame-meter.foreground",
+        "type": "color",
+        "states": false,
+        "values": [],
+        "description": "The text.",
+        "default": "on-surface"
+      },
+      {
+        "name": "frame-meter.good",
+        "type": "color",
+        "states": false,
+        "values": [],
+        "description": "A frame within the budget.",
+        "default": "primary"
+      },
+      {
+        "name": "frame-meter.warning",
+        "type": "color",
+        "states": false,
+        "values": [],
+        "description": "A frame up to twice the budget.",
+        "default": "tertiary"
+      },
+      {
+        "name": "frame-meter.bad",
+        "type": "color",
+        "states": false,
+        "values": [],
+        "description": "A frame over twice the budget.",
+        "default": "error"
+      },
+      {
+        "name": "frame-meter.text-style",
+        "type": "text",
+        "states": false,
+        "values": [],
+        "description": "The typography style of the text: `label-small`, `body-medium`... or `code`.",
+        "default": "label-small"
       },
       {
         "name": "tokens.*",

@@ -149,6 +149,11 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
                 'spring.flutter.splash.warm-up.text.settle',
               ) ??
               const Duration(milliseconds: 250),
+          chunk:
+              environment.getPropertyAs<int>(
+                'spring.flutter.splash.warm-up.text.chunk',
+              ) ??
+              200,
         );
       },
     ),

@@ -3361,6 +3361,54 @@
       "default": "none"
     },
     {
+      "name": "frame-meter.background",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "The meter's fill.",
+      "default": "the surface at 85%"
+    },
+    {
+      "name": "frame-meter.foreground",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "The text.",
+      "default": "on-surface"
+    },
+    {
+      "name": "frame-meter.good",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "A frame within the budget.",
+      "default": "primary"
+    },
+    {
+      "name": "frame-meter.warning",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "A frame up to twice the budget.",
+      "default": "tertiary"
+    },
+    {
+      "name": "frame-meter.bad",
+      "type": "color",
+      "states": false,
+      "values": [],
+      "description": "A frame over twice the budget.",
+      "default": "error"
+    },
+    {
+      "name": "frame-meter.text-style",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The typography style of the text: `label-small`, `body-medium`... or `code`.",
+      "default": "label-small"
+    },
+    {
       "name": "tokens.*",
       "type": "map",
       "states": false,
