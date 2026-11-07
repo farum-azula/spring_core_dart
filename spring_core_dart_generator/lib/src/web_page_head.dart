@@ -22,22 +22,18 @@ abstract final class WebPageHead {
 
   /// The block of `spring.flutter.web.page.swipe-to-close: false`.
   ///
-  /// A Telegram Mini App is told to keep its vertical swipes for the page
-  /// (`web_app_setup_swipe_behavior`, Bot API 7.7) and to open at its full
-  /// height (`web_app_expand`), the way telegram-web-app.js sends them:
-  /// `TelegramWebviewProxy.postEvent` in the apps, a message to the parent
-  /// window in Telegram Web. No script of Telegram's is loaded for it.
-  ///
   /// In an app's own browser (Telegram's for a link, Instagram's...) a
   /// swipe down closes the page when the page is at its top, and a Flutter
-  /// page always is: the page is made one pixel taller than the screen and
-  /// kept one pixel down, at its load and at each touch, so the swipe is
-  /// no close. Touch screens only; the pixel is never seen.
+  /// page always is. On a touch screen the page is made a thousand screens
+  /// tall and scrolled to its end, with Flutter's view fixed on the screen
+  /// (on all four sides, so it fills the screen whatever `100vh` is there),
+  /// and the browser's own scrolling of the page is stopped (`touchmove`),
+  /// so the page is never at its top: a swipe down is Flutter's.
   static const swipeBlock =
       '''
   $swipeStart
-  <style>@media (pointer: coarse){html{height:calc(100% + 1px);scrollbar-width:none}html::-webkit-scrollbar{display:none}}</style>
-  <script>(function(){function post(t,d){var e=JSON.stringify({eventType:t,eventData:d});try{var p=window.TelegramWebviewProxy;if(p&&p.postEvent){p.postEvent(t,JSON.stringify(d));}else if(window.external&&'notify' in window.external){window.external.notify(e);}else if(window.parent!==window){window.parent.postMessage(e,'*');}}catch(x){}}post('web_app_expand',{});post('web_app_setup_swipe_behavior',{allow_vertical_swipe:false});if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function keep(){if(window.scrollY<1)window.scrollTo(0,1);}addEventListener('load',keep);addEventListener('scroll',keep,{passive:true});addEventListener('resize',keep);addEventListener('touchstart',keep,{passive:true,capture:true});setTimeout(keep,0);})();</script>
+  <style>@media (pointer: coarse){html{scrollbar-width:none}html::-webkit-scrollbar{display:none}body{height:1000vh!important;position:static!important;overscroll-behavior:none}flutter-view{position:fixed!important;inset:0!important;width:auto!important;height:auto!important}}</style>
+  <script>(function(){if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function end(){window.scrollTo(0,document.body.scrollHeight);}addEventListener('DOMContentLoaded',end);addEventListener('load',end);addEventListener('resize',end);document.addEventListener('touchmove',function(e){e.preventDefault();},{passive:false});})();</script>
   $swipeEnd''';
 
   /// Where the block that caps the drawing's pixel ratio starts.
@@ -93,14 +89,19 @@ abstract final class WebPageHead {
   /// [html] with [title] in `<title>` and `apple-mobile-web-app-title`,
   /// [description] in `<meta name="description">` and [themeColor] in
   /// `<meta name="theme-color">` (added when missing); a `null` value
-  /// changes nothing.
+  /// changes nothing. A page without `<meta name="viewport">` gets
+  /// Flutter's [viewport]. [backgroundColor] (the theme's surface) is the
+  /// page's own background, between [backgroundStart] and its end: what
+  /// shows where Flutter does not draw (an app's browser resizing, a gap
+  /// at an edge) is the theme's, not white.
   static String html(
     String html, {
     String? title,
     String? description,
     String? themeColor,
+    String? backgroundColor,
   }) {
-    var result = html;
+    var result = _background(_viewport(html), backgroundColor);
     // The SEO build owns the page's title and description.
     final seo = html.contains(seoHeadStart);
     if (title != null) {
@@ -150,6 +151,51 @@ abstract final class WebPageHead {
       'background_color': ?backgroundColor,
     };
     return '${const JsonEncoder.withIndent('    ').convert(updated)}\n';
+  }
+
+  /// Where the block of the page's background color starts.
+  static const backgroundStart = '<!-- spring:page:background:start -->';
+
+  /// Where it ends.
+  static const backgroundEnd = '<!-- spring:page:background:end -->';
+
+  // [html] with the block of [color]; without it when [color] is `null`.
+  static String _background(String html, String? color) {
+    final block = RegExp(
+      r'\n?[ \t]*' +
+          RegExp.escape(backgroundStart) +
+          r'[\s\S]*?' +
+          RegExp.escape(backgroundEnd),
+    );
+    if (color == null) {
+      return html.replaceAll(block, '');
+    }
+    final written =
+        '\n  $backgroundStart\n'
+        '  <style>html,body{background-color:${_attribute(color)}}</style>\n'
+        '  $backgroundEnd';
+    // Kept where it is, so a page written again does not change.
+    if (block.hasMatch(html)) {
+      return html.replaceFirst(block, written);
+    }
+    return html.replaceFirst('</head>', '$written\n</head>');
+  }
+
+  /// The viewport Flutter sets when it starts. Flutter's template has
+  /// none, so until then a phone lays the page out about 980 points wide
+  /// and shrinks it: the page loader shows at a third of its size, then
+  /// grows when Flutter's tag comes. With the same tag from the start
+  /// nothing moves.
+  static const viewport =
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, '
+      'user-scalable=no';
+
+  // [html] with the [viewport] tag when it has none; a page's own is kept.
+  static String _viewport(String html) {
+    if (RegExp(r'<meta\s+name="viewport"').hasMatch(html)) {
+      return html;
+    }
+    return _meta(html, 'viewport', viewport, add: true);
   }
 
   // The content of `<meta name="[name]">`, or a new one before `</head>`

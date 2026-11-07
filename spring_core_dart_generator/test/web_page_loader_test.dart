@@ -16,6 +16,7 @@ import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 import 'package:spring_core_dart_generator/src/web_loader_download.dart';
+import 'package:spring_core_dart_generator/src/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
 import 'package:test/test.dart';
@@ -572,12 +573,25 @@ spring.flutter.theme:
         page: written,
         yaml: 'spring.flutter.theme: { seed-color: red }',
       );
-      // The loader is gone; the theme's color stays the page's.
+      // The loader is gone; the theme's colors and Flutter's viewport stay
+      // the page's.
       expect(
-        removed!.replaceFirst(
-          RegExp(r'\s*<meta name="theme-color" content="#[0-9a-f]{6}">'),
-          '',
-        ),
+        removed!
+            .replaceFirst(
+              RegExp(r'\s*<meta name="theme-color" content="#[0-9a-f]{6}">'),
+              '',
+            )
+            .replaceFirst(
+              '\n  <meta name="viewport" content="${WebPageHead.viewport}">',
+              '',
+            )
+            .replaceFirst(
+              RegExp(
+                '\\s*${WebPageHead.backgroundStart}[\\s\\S]*?'
+                '<!-- spring:page:background:end -->',
+              ),
+              '',
+            ),
         _page,
       );
     });

@@ -231,6 +231,7 @@ final class WebPageLoaderBuilder implements Builder {
                 title: app.title,
                 description: app.description,
                 themeColor: colors?.primary,
+                backgroundColor: colors?.surface,
               ),
               swipeToClose: app.swipeToClose,
             ),

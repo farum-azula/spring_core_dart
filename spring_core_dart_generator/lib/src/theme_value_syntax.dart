@@ -11,7 +11,7 @@ abstract final class ThemeValueSyntax {
     'typography', 'shape', 'elevation', 'spacing', 'visualdensity', //
     'taptargetsize', 'splash', 'motion', 'components', 'tokens', //
     'cupertino', 'styles', 'animations', 'background', 'loaders', //
-    'syntax',
+    'syntax', 'framemeter',
   };
 
   /// The keys of an image token, canonical: a token map with `source` and

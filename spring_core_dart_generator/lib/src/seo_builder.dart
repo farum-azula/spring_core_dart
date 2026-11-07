@@ -187,6 +187,18 @@ typedef PageOverride = ({
   bool? index,
 });
 
+/// How the SEO build names a page's file (`spring.flutter.web.seo.page-files`).
+enum SeoPageFiles {
+  /// `<path>/index.html`: any static host serves it, after a redirect from
+  /// `<path>` to `<path>/`; the page's addresses end with `/`.
+  directory,
+
+  /// `<path>.html`: Cloudflare Pages, GitHub Pages and Netlify serve it at
+  /// `<path>` itself, with no redirect; the addresses have no `/` at the
+  /// end.
+  html,
+}
+
 /// `spring.flutter.web.seo.*` as the app reads it in a browser.
 final class SeoSettings {
   SeoSettings._({
@@ -201,6 +213,7 @@ final class SeoSettings {
     required this.sitemap,
     required this.llms,
     required this.markdown,
+    this.pageFiles = SeoPageFiles.directory,
     this.languages = const [],
   });
 
@@ -263,6 +276,13 @@ final class SeoSettings {
         );
       }
     }
+    final files = string('page-files')?.toLowerCase();
+    if (files != null && files != 'directory' && files != 'html') {
+      throw WebDevConfigException(
+        '${SeoBuilder.prefix}.page-files: "$files" is directory '
+        '(<path>/index.html) or html (<path>.html).',
+      );
+    }
     final site = string('site-url');
     final uri = site == null ? null : Uri.tryParse(site);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
@@ -303,6 +323,7 @@ final class SeoSettings {
       sitemap: flag('sitemap', true),
       llms: flag('llms', true),
       markdown: flag('markdown', true),
+      pageFiles: files == 'html' ? SeoPageFiles.html : SeoPageFiles.directory,
       languages: languages,
     );
   }
@@ -339,6 +360,24 @@ final class SeoSettings {
 
   /// Whether `<path>.md` is written next to a Markdown page.
   final bool markdown;
+
+  /// How a page's file is named (`page-files`).
+  final SeoPageFiles pageFiles;
+
+  /// The file of the page at [path] under `web/`: `<path>/index.html` or
+  /// `<path>.html`.
+  String fileOf(String path) =>
+      pageFiles == SeoPageFiles.html ? 'web$path.html' : 'web$path/index.html';
+
+  /// The absolute address of the page at [path], as the host serves its
+  /// file without a redirect: a static host answers `<path>` with
+  /// `<path>/index.html` only after a redirect to `<path>/`, and serves
+  /// `<path>.html` at `<path>` itself. The canonical address, `og:url`,
+  /// the languages' links and the sitemap use it.
+  String pageUrl(String path) =>
+      pageFiles == SeoPageFiles.directory && path != '/'
+      ? '${url(path)}/'
+      : url(path);
 
   /// The languages with their own addresses, the default first
   /// (`spring.flutter.navigation.languages`); empty for one language.
@@ -507,10 +546,10 @@ final class SeoPages {
     };
     // The addresses of [path] in every language that has its text.
     Map<String, String> alternates(String path) => {
-      ?settings.defaultLanguage: settings.url(path),
+      ?settings.defaultLanguage: settings.pageUrl(path),
       for (final MapEntry(key: language, value: byPath) in translated.entries)
         if (byPath[path] case final page? when !page.fallback)
-          language: settings.url(_prefixed(language, path)),
+          language: settings.pageUrl(_prefixed(language, path)),
     };
 
     final base = _baseTemplate();
@@ -530,7 +569,7 @@ final class SeoPages {
         );
         continue;
       }
-      files['web${page.path}/index.html'] = _page(
+      files[settings.fileOf(page.path)] = _page(
         base,
         page,
         body,
@@ -547,14 +586,14 @@ final class SeoPages {
         final body = page.markdown == null
             ? null
             : _html(page, language: language);
-        files['web$address/index.html'] = _page(
+        files[settings.fileOf(address)] = _page(
           base,
           page,
           body,
           language: language,
           address: address,
           alternates: page.fallback ? const {} : alternates(page.path),
-          canonical: page.fallback ? settings.url(page.path) : null,
+          canonical: page.fallback ? settings.pageUrl(page.path) : null,
         );
         if (settings.markdown && page.markdown != null && !page.fallback) {
           files['web$address.md'] = page.markdown!;
@@ -577,7 +616,7 @@ final class SeoPages {
       files['web/llms.txt'] = _llms(pages['/'], markdownPages);
       files['web/llms-full.txt'] = [
         for (final page in markdownPages)
-          '<!-- ${settings.url(page.path)} -->\n${page.markdown!.trim()}\n',
+          '<!-- ${settings.pageUrl(page.path)} -->\n${page.markdown!.trim()}\n',
       ].join('\n');
     }
     return files;
@@ -908,7 +947,7 @@ final class SeoPages {
     final description = page.description ?? settings.description;
     final image = page.image ?? settings.image;
     final at = address ?? page.path;
-    final url = settings.url(at);
+    final url = settings.pageUrl(at);
     final head = [
       _headStart,
       if (description != null)
@@ -1031,12 +1070,12 @@ final class SeoPages {
     final sorted = pages.toList()..sort((a, b) => a.path.compareTo(b.path));
     final entries = [
       for (final page in sorted)
-        if (page.index) entry(settings.url(page.path), page.path),
+        if (page.index) entry(settings.pageUrl(page.path), page.path),
       for (final MapEntry(key: language, value: byPath) in translated.entries)
         for (final page in sorted)
           if (byPath[page.path] case final local?
               when local.index && !local.fallback)
-            entry(settings.url(_prefixed(language, page.path)), page.path),
+            entry(settings.pageUrl(_prefixed(language, page.path)), page.path),
     ];
     final xhtml = translated.isEmpty
         ? ''

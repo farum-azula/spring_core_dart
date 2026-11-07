@@ -152,6 +152,37 @@ Map<String, String> _site() => {
 };
 
 void main() {
+  test(
+    'page-files: html writes <path>.html, its addresses without a /',
+    () async {
+      final files = _Memory({'web/index.html': _index});
+      final site = _site()
+        ..['application.yml'] = _config.replaceFirst(
+          '        enabled: true\n',
+          '        enabled: true\n        page-files: html\n',
+        );
+      final logs = await _build(files, site, metadata: _routes);
+      expect(logs.where((l) => l.startsWith('SEVERE')), isEmpty);
+      expect(
+        files.files,
+        isNot(contains('web/docs/core/configuration/index.html')),
+      );
+      final page = files.files['web/docs/core/configuration.html']!;
+      expect(
+        page,
+        contains(
+          '<link rel="canonical" '
+          'href="https://spring-dart.dev/docs/core/configuration">',
+        ),
+      );
+      expect(
+        files.files['web/sitemap.xml'],
+        contains('<loc>https://spring-dart.dev/docs/core/beans</loc>'),
+      );
+      expect(files.files['web/docs/core/configuration.md'], isNotNull);
+    },
+  );
+
   test('a page per route and Markdown file, with its head and text', () async {
     final files = _Memory({'web/index.html': _index});
     final logs = await _build(files, _site(), metadata: _routes);
@@ -173,7 +204,7 @@ void main() {
       page,
       contains(
         '<link rel="canonical" '
-        'href="https://spring-dart.dev/docs/core/configuration">',
+        'href="https://spring-dart.dev/docs/core/configuration/">',
       ),
     );
     expect(
@@ -244,7 +275,7 @@ void main() {
     final sitemap = files.files['web/sitemap.xml']!;
     expect(
       sitemap,
-      contains('<loc>https://spring-dart.dev/docs/core/beans</loc>'),
+      contains('<loc>https://spring-dart.dev/docs/core/beans/</loc>'),
     );
     expect(sitemap, isNot(contains('/account')));
     expect(
@@ -331,7 +362,7 @@ spring.flutter.web.seo:
       files.files['web/blog/first/index.html'],
       allOf(
         contains('<base href="/app/">'),
-        contains('href="https://example.dev/app/blog/first"'),
+        contains('href="https://example.dev/app/blog/first/"'),
       ),
     );
     expect(files.files, isNot(contains('web/blog/_draft/index.html')));
@@ -374,15 +405,15 @@ spring.flutter.web.seo:
       ja,
       contains(
         '<link rel="canonical" '
-        'href="https://spring-dart.dev/ja/docs/core/configuration">',
+        'href="https://spring-dart.dev/ja/docs/core/configuration/">',
       ),
     );
     expect(ja, contains('<a href="/ja/docs/core/beans">ビーン</a>'));
     expect(ja, contains('<a href="/ja/docs">索引</a>'));
     for (final link in [
-      'hreflang="en" href="https://spring-dart.dev/docs/core/configuration"',
-      'hreflang="ja" href="https://spring-dart.dev/ja/docs/core/configuration"',
-      'hreflang="x-default" href="https://spring-dart.dev/docs/core/configuration"',
+      'hreflang="en" href="https://spring-dart.dev/docs/core/configuration/"',
+      'hreflang="ja" href="https://spring-dart.dev/ja/docs/core/configuration/"',
+      'hreflang="x-default" href="https://spring-dart.dev/docs/core/configuration/"',
     ]) {
       expect(ja, contains(link));
       expect(
@@ -404,7 +435,7 @@ spring.flutter.web.seo:
     expect(
       beans,
       contains(
-        '<link rel="canonical" href="https://spring-dart.dev/docs/core/beans">',
+        '<link rel="canonical" href="https://spring-dart.dev/docs/core/beans/">',
       ),
     );
     expect(beans, contains('<meta name="robots" content="noindex">'));
@@ -428,13 +459,15 @@ spring.flutter.web.seo:
     expect(sitemap, contains('xmlns:xhtml="http://www.w3.org/1999/xhtml"'));
     expect(
       sitemap,
-      contains('<loc>https://spring-dart.dev/ja/docs/core/configuration</loc>'),
+      contains(
+        '<loc>https://spring-dart.dev/ja/docs/core/configuration/</loc>',
+      ),
     );
     expect(
       sitemap,
       contains(
         '<xhtml:link rel="alternate" hreflang="ja" '
-        'href="https://spring-dart.dev/ja/docs/core/configuration"/>',
+        'href="https://spring-dart.dev/ja/docs/core/configuration/"/>',
       ),
     );
     expect(sitemap, isNot(contains('/ja/docs/core/beans<')));

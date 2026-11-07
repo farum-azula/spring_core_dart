@@ -54,4 +54,26 @@ void main() {
     );
     expect(html, contains('<meta name="theme-color" content="#123456">'));
   });
+
+  test("a page without a viewport gets Flutter's; its own is kept", () {
+    final html = WebPageHead.html(_template);
+    expect(
+      html,
+      contains('<meta name="viewport" content="${WebPageHead.viewport}">'),
+    );
+    expect(WebPageHead.html(html), html, reason: 'written once');
+    const own =
+        '<head>\n  <meta name="viewport" content="width=500">\n</head>\n';
+    expect(WebPageHead.html(own), own);
+  });
+
+  test("the page's background is the theme's, written once", () {
+    final html = WebPageHead.html(_template, backgroundColor: '#0d1017');
+    expect(html, contains('html,body{background-color:#0d1017}'));
+    expect(WebPageHead.html(html, backgroundColor: '#0d1017'), html);
+    expect(
+      WebPageHead.html(html),
+      isNot(contains(WebPageHead.backgroundStart)),
+    );
+  });
 }
