@@ -310,14 +310,7 @@ class ModuleEmitter {
             ),
         ]),
       if (module.foreignProxies.any((f) => f.proxy.unavailableReason == null))
-        'aopProxies': literalMap({
-          for (final foreign in module.foreignProxies)
-            if (foreign.proxy.unavailableReason == null)
-              _str(foreign.source): _proxyFactory(
-                foreign.proxy,
-                foreign.element,
-              ),
-        }),
+        'aopProxies': _foreignProxies(module.foreignProxies),
       if (module.introspections.isNotEmpty)
         'introspections': literalList([
           for (final introspection in module.introspections)
@@ -1752,6 +1745,36 @@ class ModuleEmitter {
 
   // The runtime decides whether to proxy (any advisor matching one of the
   // signatures) and then calls `create` with the target and an invoker.
+
+  // The factories of the foreign proxies by source; those of beans only in
+  // modules left out of a release under `!dart.vm.product`.
+  Expression _foreignProxies(List<ForeignProxyModel> proxies) {
+    final available = [
+      for (final foreign in proxies)
+        if (foreign.proxy.unavailableReason == null) foreign,
+    ];
+    if (!available.any((foreign) => foreign.notInRelease)) {
+      return literalMap({
+        for (final foreign in available)
+          _str(foreign.source): _proxyFactory(foreign.proxy, foreign.element),
+      });
+    }
+    return CodeExpression(
+      Block.of([
+        const Code('{'),
+        for (final foreign in available) ...[
+          if (foreign.notInRelease)
+            const Code("if (!bool.fromEnvironment('dart.vm.product')) "),
+          _str(foreign.source).code,
+          const Code(': '),
+          _proxyFactory(foreign.proxy, foreign.element).code,
+          const Code(', '),
+        ],
+        const Code('}'),
+      ]),
+    );
+  }
+
   Expression _proxyFactory(ProxyModel proxy, Element element) {
     // The runtime's `AopProxyFactory.prunedReason` says why.
     if (proxy.pruned) {

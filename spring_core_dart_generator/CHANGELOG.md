@@ -1,6 +1,8 @@
 ## Unreleased
 
 - `AutoConfigurationModule.build`: the generator reads the property from the application's configuration and writes the module always, never, or under `if (!bool.fromEnvironment('dart.vm.product'))`, which a release build compiles away with everything only the module reaches.
+- Fixed: the proxies the application writes for library beans (`AopProxyFactory.deferred`) follow the build of their module: a bean only in modules left out (`false`) gets no proxy class, no registration and no import; a bean only in modules left out of a release is registered under `!dart.vm.product`, so a release compiles its proxy away. A bean also in a module always built keeps its proxy. The modules are walked only when one is decided by its property.
+- A module's build property set only in a profile's file (`application-web.yml`) warns: the build reads `application.yml` and `application.properties` without a profile, and builds the module as when the property is not set.
 - `spring.flutter.web.seo.page-files` (`directory`, `html`): `html` writes `<path>.html`, which Cloudflare Pages, GitHub Pages and Netlify serve at `<path>` with no redirect. Fixed: with `directory` (the default) the canonical address, `og:url`, the languages' links and the sitemap end with `/`, where the host redirects `<path>` to; a canonical address that redirects kept pages out of search engines.
 - `frame-meter` is a section of a theme (`$frame-meter.good` is a path, not a token).
 - `spring.flutter.web.page.max-pixel-ratio` writes a script into `web/index.html` that caps the pixel ratio Flutter draws at before the engine starts (`WebPageHead.pixelRatio`); none removes it.

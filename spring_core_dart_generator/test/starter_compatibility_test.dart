@@ -29,6 +29,8 @@ Future<TestBuilderResult> _build(
   String app = _app,
   String arguments = '',
   String? config,
+  String configFile = 'application.properties',
+  List<String>? logs,
 }) async {
   final isolateConfig = await loadPackageConfigUri(
     (await Isolate.packageConfig)!,
@@ -50,7 +52,7 @@ Future<TestBuilderResult> _build(
     SpringBuilder(),
     {
       'pkg|bin/main.dart': app,
-      'pkg|lib/resources/application.properties': ?config,
+      'pkg|lib/resources/$configFile': ?config,
       'neon_cache|lib/spring_auto_configuration.dart': _starter(
         requires,
         arguments,
@@ -60,6 +62,9 @@ Future<TestBuilderResult> _build(
     readerWriter: readerWriter,
     packageConfig: packageConfig,
     flattenOutput: true,
+    onLog: logs == null
+        ? null
+        : (record) => logs.add('${record.level.name}: ${record.message}'),
   );
 }
 
@@ -99,6 +104,47 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('set only in a profile: a warning, built as when not set', () async {
+      for (final (file, config) in [
+        ('application-web.yml', 'neon:\n  debug:\n    enabled: false\n'),
+        ('application-web.yml', 'neon.debug:\n  enabled: false\n'),
+        ('application-web.properties', 'neon.debug.enabled=false\n'),
+      ]) {
+        final logs = <String>[];
+        final result = await _build(
+          '^$springBootVersion',
+          arguments: build,
+          config: config,
+          configFile: file,
+          logs: logs,
+        );
+        expect(result.errors, isEmpty);
+        expect(
+          logs,
+          contains(
+            allOf(
+              startsWith('WARNING: '),
+              contains('neon_cache.neonCacheAutoConfiguration: '),
+              contains('neon.debug.enabled is set only in $file'),
+            ),
+          ),
+          reason: '$file: $config',
+        );
+        expect(_compact(result), contains("dart.vm.product'))_i"));
+      }
+    });
+
+    test('set without a profile: no warning', () async {
+      final logs = <String>[];
+      await _build(
+        '^$springBootVersion',
+        arguments: build,
+        config: 'neon.debug.enabled=false',
+        logs: logs,
+      );
+      expect(logs.where((log) => log.contains('set only in')), isEmpty);
     });
 
     test('not set, whenMissing: never', () async {

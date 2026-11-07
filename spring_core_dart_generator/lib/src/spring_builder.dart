@@ -680,7 +680,10 @@ class SpringBuilder implements Builder {
     );
     scanner.throwErrors();
 
-    final autoConfigurations = await _autoConfigurations(
+    final (
+      modules: autoConfigurations,
+      proxies: proxyBuild,
+    ) = await _autoConfigurations(
       buildStep,
       includeOwn: example,
       configuration: _texts(resources),
@@ -690,6 +693,10 @@ class SpringBuilder implements Builder {
     if (proxyMode != ProxyMode.none) {
       for (final (:source, :beanName, :beanNames, :type)
           in await _deferredProxies(buildStep, assets, includeOwn: example)) {
+        final build = proxyBuild[source];
+        if (build == _BuildChoice.never) {
+          continue; // a bean only of modules the build leaves out
+        }
         if (scanner.foreignProxyModel(type) case final proxy?) {
           module.foreignProxies.add(
             ForeignProxyModel(
@@ -698,6 +705,7 @@ class SpringBuilder implements Builder {
               beanNames: beanNames,
               proxy: proxy,
               element: type.element,
+              notInRelease: build == _BuildChoice.notInRelease,
             ),
           );
         }
@@ -1085,14 +1093,24 @@ class SpringBuilder implements Builder {
   // A module with `build: AutoConfigurationBuild(property)` is decided by
   // that property of the application's [configuration]: in, out (no code
   // at all), or in under `!dart.vm.product`, which a release build
-  // compiles away with everything only the module reaches.
-  static Future<List<(Expression, Expression?)>> _autoConfigurations(
+  // compiles away with everything only the module reaches. [proxies]: the
+  // build of the beans (by source) with a deferred proxy that are only in
+  // such modules, so their proxies leave with them; walked only when a
+  // module is decided so.
+  static Future<
+    ({
+      List<(Expression, Expression?)> modules,
+      Map<String, _BuildChoice> proxies,
+    })
+  >
+  _autoConfigurations(
     BuildStep buildStep, {
     bool includeOwn = false,
     Map<String, String> configuration = const {},
   }) async {
     final root = buildStep.inputId.package;
     final found = <(Expression?, String, String, String, _BuildChoice)>[];
+    final decided = <_BuildChoice, List<TopLevelVariableElement>>{};
     String? Function(String key)? lookup;
     String? property(String key) {
       lookup ??= readPlatformEnvironment(
@@ -1132,7 +1150,9 @@ class SpringBuilder implements Builder {
             ConstantReader(annotation).peek('build'),
             property,
             '${package.name}.${variable.name}',
+            profiled: (key) => _profileSetting(configuration, key),
           );
+          (decided[choice] ??= []).add(variable);
           if (choice == _BuildChoice.never) {
             continue;
           }
@@ -1158,7 +1178,7 @@ class SpringBuilder implements Builder {
       final byPackage = a.$2.compareTo(b.$2);
       return byPackage != 0 ? byPackage : a.$3.compareTo(b.$3);
     });
-    return [
+    final modules = [
       for (final (ordering, _, name, url, choice) in found)
         (
           choice == _BuildChoice.always
@@ -1173,14 +1193,92 @@ class SpringBuilder implements Builder {
           ordering,
         ),
     ];
+    return (
+      modules: modules,
+      proxies: await _proxyBuild(buildStep.resolver, decided),
+    );
+  }
+
+  // The beans with a deferred proxy that only modules left out of the
+  // build, or out of a release, define: `never` or `notInRelease` by
+  // source. A bean also in a module always built keeps its proxy.
+  static Future<Map<String, _BuildChoice>> _proxyBuild(
+    Resolver resolver,
+    Map<_BuildChoice, List<TopLevelVariableElement>> decided,
+  ) async {
+    final never = decided[_BuildChoice.never] ?? const [];
+    final notInRelease = decided[_BuildChoice.notInRelease] ?? const [];
+    if (never.isEmpty && notInRelease.isEmpty) {
+      return const {};
+    }
+    final walker = _ModuleProxies(resolver);
+    Future<Set<String>> of(List<TopLevelVariableElement> modules) async => {
+      for (final module in modules) ...await walker.of(module),
+    };
+    final out = await of(never);
+    final debug = await of(notInRelease);
+    if (out.isEmpty && debug.isEmpty) {
+      return const {};
+    }
+    final kept = await of(decided[_BuildChoice.always] ?? const []);
+    return {
+      for (final source in out.difference(kept).difference(debug))
+        source: _BuildChoice.never,
+      for (final source in debug.difference(kept))
+        source: _BuildChoice.notInRelease,
+    };
+  }
+
+  // The profile's configuration file (`application-web.yml`) that sets
+  // [key], which the build does not read; `null` when none does.
+  static String? _profileSetting(Map<String, String> files, String key) {
+    final parts = key.split('.');
+    bool sets(Object? node, List<String> rest) {
+      if (rest.isEmpty) {
+        return node != null;
+      }
+      if (node is! Map) {
+        return false;
+      }
+      for (var i = 1; i <= rest.length; i++) {
+        final name = rest.take(i).join('.');
+        if (node.containsKey(name) && sets(node[name], rest.sublist(i))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    for (final MapEntry(key: path, value: text) in files.entries) {
+      final name = p.basename(path);
+      if (!RegExp(r'^application-[^.]+\.(ya?ml|properties)$').hasMatch(name)) {
+        continue;
+      }
+      try {
+        final set = name.endsWith('.properties')
+            ? LineSplitter.split(text).any(
+                (line) => RegExp(
+                  '^\\s*${RegExp.escape(key)}\\s*[=:]',
+                ).hasMatch(line),
+              )
+            : loadYamlDocuments(text).any((doc) => sets(doc.contents, parts));
+        if (set) {
+          return name;
+        }
+      } on Object {
+        continue; // the configuration's own reading reports a broken file
+      }
+    }
+    return null;
   }
 
   // `AutoConfigurationModule.build` against the application's property.
   static _BuildChoice _buildChoice(
     ConstantReader? build,
     String? Function(String key) property,
-    String module,
-  ) {
+    String module, {
+    String? Function(String key)? profiled,
+  }) {
     if (build == null || build.isNull) {
       return _BuildChoice.always;
     }
@@ -1192,6 +1290,13 @@ class SpringBuilder implements Builder {
       case 'false':
         return _BuildChoice.never;
       case null || '':
+        if (profiled?.call(key) case final file?) {
+          log.warning(
+            '$module: $key is set only in $file, which the build does not '
+            'read: it decides by application.yml or application.properties '
+            'without a profile. The module is built as when it is not set.',
+          );
+        }
         final missing = build.read('whenMissing').objectValue;
         final name = missing.variable?.name ?? 'notInRelease';
         return switch (name) {
@@ -1932,3 +2037,56 @@ class SpringPropertiesBuilder extends SpringBuilder {
 
 // Where the build puts an auto-configuration module.
 enum _BuildChoice { always, notInRelease, never }
+
+// The sources of the beans with a deferred proxy a module defines: those
+// of its initializer and of the top-level getters and variables it reads,
+// through every package library.
+final class _ModuleProxies {
+  _ModuleProxies(this.resolver);
+
+  final Resolver resolver;
+  final _seen = <Element, Set<String>>{};
+
+  Future<Set<String>> of(Element element) async {
+    if (_seen[element] case final found?) {
+      return found; // done, or being walked (a cycle)
+    }
+    final found = _seen[element] = <String>{};
+    final fragment = switch (element) {
+      GetterElement(isOriginDeclaration: true) => element.firstFragment,
+      GetterElement(:final variable) => variable.firstFragment,
+      TopLevelVariableElement() => element.firstFragment,
+      _ => null,
+    };
+    if (fragment == null || element.library?.uri.scheme != 'package') {
+      return found;
+    }
+    final node = await resolver.astNodeFor(fragment, resolve: true);
+    if (node == null) {
+      return found;
+    }
+    final visitor = _ModuleReferences();
+    node.accept(visitor);
+    found.addAll([for (final proxy in visitor.found) proxy.source]);
+    for (final read in visitor.reads) {
+      found.addAll(await of(read));
+    }
+    return found;
+  }
+}
+
+// The deferred proxies of a declaration, and the top-level getters and
+// variables it reads.
+class _ModuleReferences extends _DeferredProxies {
+  final reads = <Element>{};
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    super.visitSimpleIdentifier(node);
+    final element = node.element;
+    if ((element is GetterElement || element is TopLevelVariableElement) &&
+        element!.enclosingElement is LibraryElement) {
+      reads.add(element);
+    }
+  }
+}

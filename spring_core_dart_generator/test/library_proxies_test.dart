@@ -63,8 +63,13 @@ Future<(Map<String, String>, String)> _build({
   String main = _main,
   Map<String, String> starter = const {},
   Map<String, String> library = const {},
+  String? config,
 }) async {
-  final sources = {'lib/app.dart': app, 'bin/main.dart': main};
+  final sources = {
+    'lib/app.dart': app,
+    'bin/main.dart': main,
+    'lib/resources/application.properties': ?config,
+  };
   final readerWriter = TestReaderWriter(
     rootPackage: 'pkg',
     flattenOutput: true,
@@ -531,4 +536,113 @@ class SettingsAudit {
       'calls': ['location'],
     });
   }, timeout: const Timeout.factor(4));
+
+  group('the proxies of a module the build decides go with it', () {
+    String starter({String also = ''}) =>
+        """
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:starter/spring_gen/beans.spring.dart';
+
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('starter.debug.enabled'),
+)
+final BeanModule starterDebugAutoConfiguration = BeanModule(
+  'starterDebugAutoConfiguration',
+  const [],
+  imports: [\$starterBeans],
+);
+$also
+""";
+    const beans = {
+      'lib/task.dart': 'class Task { void run() {} }',
+      'lib/spring_gen/beans.spring.dart': r"""
+import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:starter/task.dart';
+
+BeanModule get $starterBeans => BeanModule(r'starterBeans', [
+  BeanDefinition<Task>(
+    name: r'task',
+    source: r'package:starter/task.dart#Task',
+    create: (r) => Task(),
+    aopProxy: const AopProxyFactory.deferred(signatures: []),
+  ),
+]);
+""",
+    };
+    const main = """
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:pkg/app.dart';
+
+import 'spring_gen/main.spring.dart';
+
+@SpringBootApplication()
+void main() => runApplication();
+""";
+    const app = """
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+
+@Aspect()
+@Component()
+class TaskAudit {
+  @Before('bean(task)')
+  void audit(JoinPoint joinPoint) {}
+}
+""";
+    Future<String> output({String? config, String also = ''}) async {
+      final (_, output) = await _build(
+        app: app,
+        main: main,
+        config: config,
+        starter: {
+          ...beans,
+          'lib/spring_auto_configuration.dart': starter(also: also),
+        },
+      );
+      return output;
+    }
+
+    test('false: no proxy, no source, no import of the starter', () async {
+      final code = await output(config: 'starter.debug.enabled=false');
+      expect(code, isNot(contains(r'_$TaskProxy')));
+      expect(code, isNot(contains('starter/task.dart')));
+      expect(code, isNot(contains('package:starter/')));
+      expect(code, isNot(contains('starterDebugAutoConfiguration')));
+    });
+
+    test('not set: the proxy registered only outside a release', () async {
+      final code = (await output()).replaceAll(RegExp(r'\s'), '');
+      expect(code, contains(r'class_$TaskProxy'));
+      expect(
+        code,
+        contains(
+          "aopProxies:{if(!bool.fromEnvironment('dart.vm.product'))"
+          "r'package:starter/task.dart#Task':",
+        ),
+      );
+    });
+
+    test('true: the proxy, as for any module', () async {
+      final code = (await output(
+        config: 'starter.debug.enabled=true',
+      )).replaceAll(RegExp(r'\s'), '');
+      expect(code, contains("aopProxies:{r'package:starter/task.dart#Task':"));
+      expect(code, isNot(contains('dart.vm.product')));
+    });
+
+    test('false, the bean also in a module always built: kept', () async {
+      final code = (await output(
+        config: 'starter.debug.enabled=false',
+        also: r"""
+@AutoConfigurationModule()
+final BeanModule starterAutoConfiguration = BeanModule(
+  'starterAutoConfiguration',
+  const [],
+  imports: [$starterBeans],
+);
+""",
+      )).replaceAll(RegExp(r'\s'), '');
+      expect(code, contains("aopProxies:{r'package:starter/task.dart#Task':"));
+      expect(code, isNot(contains('starterDebugAutoConfiguration')));
+    });
+  });
 }
