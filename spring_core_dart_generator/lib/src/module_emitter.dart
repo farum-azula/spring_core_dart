@@ -1764,7 +1764,7 @@ class ModuleEmitter {
         const Code('{'),
         for (final foreign in available) ...[
           if (foreign.notInRelease)
-            const Code("if (!bool.fromEnvironment('dart.vm.product')) "),
+            const Code("if (!const bool.fromEnvironment('dart.vm.product')) "),
           _str(foreign.source).code,
           const Code(': '),
           _proxyFactory(foreign.proxy, foreign.element).code,

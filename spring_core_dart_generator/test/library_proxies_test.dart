@@ -615,7 +615,7 @@ class TaskAudit {
       expect(
         code,
         contains(
-          "aopProxies:{if(!bool.fromEnvironment('dart.vm.product'))"
+          "aopProxies:{if(!constbool.fromEnvironment('dart.vm.product'))"
           "r'package:starter/task.dart#Task':",
         ),
       );

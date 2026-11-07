@@ -99,7 +99,7 @@ void main() {
         code,
         matches(
           RegExp(
-            r"if\(!bool\.fromEnvironment\('dart\.vm\.product'\)\)"
+            r"if\(!constbool\.fromEnvironment\('dart\.vm\.product'\)\)"
             r'_i\d+\.neonCacheAutoConfiguration',
           ),
         ),
@@ -134,6 +134,22 @@ void main() {
         );
         expect(_compact(result), contains("dart.vm.product'))_i"));
       }
+    });
+
+    test('a value the build cannot read fails, naming the module', () async {
+      final result = await _build(
+        '^$springBootVersion',
+        arguments: build,
+        config: r'neon.debug.enabled=${FLAG}',
+      );
+      expect(
+        result.errors.join(),
+        allOf(
+          contains('neon_cache.neonCacheAutoConfiguration'),
+          contains('neon.debug.enabled'),
+          contains("'FLAG'"),
+        ),
+      );
     });
 
     test('set without a profile: no warning', () async {

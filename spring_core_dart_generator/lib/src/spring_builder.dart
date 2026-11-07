@@ -1186,7 +1186,7 @@ class SpringBuilder implements Builder {
               : CodeExpression(
                   Code.scope(
                     (allocate) =>
-                        "if (!bool.fromEnvironment('dart.vm.product')) "
+                        "if (!const bool.fromEnvironment('dart.vm.product')) "
                         '${allocate(refer(name, url))}',
                   ),
                 ),
@@ -1283,7 +1283,21 @@ class SpringBuilder implements Builder {
       return _BuildChoice.always;
     }
     final key = build.read('property').stringValue;
-    final value = property(key);
+    final String? value;
+    try {
+      value = property(key);
+    } on Object catch (error) {
+      throw InvalidGenerationSourceError(
+        '$module: the build reads $key to decide whether the module is '
+        'built, and could not: $error',
+        todo:
+            'Give $key a value the build can read in application.yml or '
+            'application.properties, or a placeholder with a default '
+            r'(${FLAG:true}): '
+            'environment variables and --dart-define values do not exist '
+            'at build time.',
+      );
+    }
     switch (value) {
       case 'true':
         return _BuildChoice.always;

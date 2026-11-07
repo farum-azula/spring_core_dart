@@ -52,7 +52,9 @@ void main() {
       expect(_meta(html, 'description'), expected.$2, reason: path);
       expect(
         RegExp('<link rel="canonical" href="([^"]*)"').firstMatch(html)?[1],
-        'https://lumen.example$path',
+        // A page is a folder (page-files: directory): its address ends with
+        // the slash the host redirects to.
+        path == '/' ? 'https://lumen.example/' : 'https://lumen.example$path/',
         reason: path,
       );
     });
@@ -91,7 +93,7 @@ void main() {
       '/docs/guides/routing',
       '/legal/terms',
     ]) {
-      expect(sitemap, contains('<loc>https://lumen.example$path</loc>'));
+      expect(sitemap, contains('<loc>https://lumen.example$path/</loc>'));
     }
   });
 
@@ -125,13 +127,13 @@ void main() {
     expect(
       ja,
       contains(
-        '<link rel="canonical" href="https://lumen.example/ja/docs/getting-started">',
+        '<link rel="canonical" href="https://lumen.example/ja/docs/getting-started/">',
       ),
     );
     for (final link in [
-      'hreflang="en" href="https://lumen.example/docs/getting-started"',
-      'hreflang="ja" href="https://lumen.example/ja/docs/getting-started"',
-      'hreflang="x-default" href="https://lumen.example/docs/getting-started"',
+      'hreflang="en" href="https://lumen.example/docs/getting-started/"',
+      'hreflang="ja" href="https://lumen.example/ja/docs/getting-started/"',
+      'hreflang="x-default" href="https://lumen.example/docs/getting-started/"',
     ]) {
       expect(ja, contains(link));
       expect(_page('/docs/getting-started'), contains(link));
@@ -150,17 +152,17 @@ void main() {
     expect(
       routing,
       contains(
-        '<link rel="canonical" href="https://lumen.example/docs/guides/routing">',
+        '<link rel="canonical" href="https://lumen.example/docs/guides/routing/">',
       ),
     );
     expect(routing, contains('<meta name="robots" content="noindex">'));
 
     final sitemap = File('web/sitemap.xml').readAsStringSync();
-    expect(sitemap, contains('<loc>https://lumen.example/ja/docs</loc>'));
+    expect(sitemap, contains('<loc>https://lumen.example/ja/docs/</loc>'));
     expect(
       sitemap,
       contains(
-        '<xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs"/>',
+        '<xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/"/>',
       ),
     );
     expect(sitemap, isNot(contains('/ja/docs/guides/routing<')));
