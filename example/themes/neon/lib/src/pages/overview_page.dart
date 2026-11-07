@@ -49,7 +49,7 @@ class OverviewPage extends StatelessWidget {
             '''
 spring:
   config:
-    import: resources:themes/neon.yml
+    import: resources:themes/neon.yml, resources:themes/code.yml
   flutter:
     app:
       type: widgets

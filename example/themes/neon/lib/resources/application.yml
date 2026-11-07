@@ -6,8 +6,9 @@
 spring:
    config:
       # The theme of the library: `neon_ui` embeds its lib/resources/, so the
-      # file is found as if it were ours.
-      import: resources:themes/neon.yml
+      # file is found as if it were ours. code.yml: the languages of the
+      # code blocks, a copy of themes/code.yml of farum-azula/themes.
+      import: resources:themes/neon.yml, resources:themes/code.yml
 
    flutter:
       web:

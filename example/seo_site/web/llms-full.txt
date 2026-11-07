@@ -1,16 +1,16 @@
-<!-- https://lumen.example/blog/hello -->
+<!-- https://lumen.example/blog/hello/ -->
 # Hello, Lumen
 
 Lumen began as a weekend project. This post is a page of the site, with
 its own preview picture.
 
-<!-- https://lumen.example/docs -->
+<!-- https://lumen.example/docs/ -->
 # Documentation
 
 Lumen is a small library. Start with [getting started](getting-started.md),
 then read about [routing](guides/routing.md).
 
-<!-- https://lumen.example/docs/getting-started -->
+<!-- https://lumen.example/docs/getting-started/ -->
 # Getting started
 
 Add the package:
@@ -22,7 +22,7 @@ dependencies:
 
 Then read the [routing guide](guides/routing.md#paths).
 
-<!-- https://lumen.example/docs/guides/routing -->
+<!-- https://lumen.example/docs/guides/routing/ -->
 # Routing
 
 A page has an address. Without a front matter, the first heading is the
@@ -33,12 +33,12 @@ page's title.
 `/docs/guides/routing` is this file, `guides/routing.md`. Back to the
 [documentation](../index.md).
 
-<!-- https://lumen.example/legal/privacy -->
+<!-- https://lumen.example/legal/privacy/ -->
 # Privacy
 
 The site keeps no data about its visitors.
 
-<!-- https://lumen.example/legal/terms -->
+<!-- https://lumen.example/legal/terms/ -->
 # Terms
 
 Use the site as you like.

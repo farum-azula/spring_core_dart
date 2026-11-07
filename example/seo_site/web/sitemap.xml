@@ -3,65 +3,65 @@
   <url>
     <loc>https://lumen.example/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/"/>
   </url>
   <url>
-    <loc>https://lumen.example/about</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/about"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/about"/>
+    <loc>https://lumen.example/about/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/about/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/about/"/>
   </url>
-  <url><loc>https://lumen.example/blog/hello</loc></url>
+  <url><loc>https://lumen.example/blog/hello/</loc></url>
   <url>
-    <loc>https://lumen.example/books/1</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/1"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/1"/>
-  </url>
-  <url>
-    <loc>https://lumen.example/books/2</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/2"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/2"/>
+    <loc>https://lumen.example/books/1/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/1/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/1/"/>
   </url>
   <url>
-    <loc>https://lumen.example/docs</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs"/>
+    <loc>https://lumen.example/books/2/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/2/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/2/"/>
   </url>
   <url>
-    <loc>https://lumen.example/docs/getting-started</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/getting-started"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/getting-started"/>
+    <loc>https://lumen.example/docs/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/"/>
   </url>
-  <url><loc>https://lumen.example/docs/guides/routing</loc></url>
-  <url><loc>https://lumen.example/legal/privacy</loc></url>
-  <url><loc>https://lumen.example/legal/terms</loc></url>
   <url>
-    <loc>https://lumen.example/ja</loc>
+    <loc>https://lumen.example/docs/getting-started/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/getting-started/"/>
+  </url>
+  <url><loc>https://lumen.example/docs/guides/routing/</loc></url>
+  <url><loc>https://lumen.example/legal/privacy/</loc></url>
+  <url><loc>https://lumen.example/legal/terms/</loc></url>
+  <url>
+    <loc>https://lumen.example/ja/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/"/>
   </url>
   <url>
-    <loc>https://lumen.example/ja/about</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/about"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/about"/>
+    <loc>https://lumen.example/ja/about/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/about/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/about/"/>
   </url>
   <url>
-    <loc>https://lumen.example/ja/books/1</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/1"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/1"/>
+    <loc>https://lumen.example/ja/books/1/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/1/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/1/"/>
   </url>
   <url>
-    <loc>https://lumen.example/ja/books/2</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/2"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/2"/>
+    <loc>https://lumen.example/ja/books/2/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/2/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/books/2/"/>
   </url>
   <url>
-    <loc>https://lumen.example/ja/docs</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs"/>
+    <loc>https://lumen.example/ja/docs/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/"/>
   </url>
   <url>
-    <loc>https://lumen.example/ja/docs/getting-started</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/getting-started"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/getting-started"/>
+    <loc>https://lumen.example/ja/docs/getting-started/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/getting-started/"/>
   </url>
 </urlset>
