@@ -28,6 +28,7 @@ Future<TestBuilderResult> _build(
   String requires, {
   String app = _app,
   String arguments = '',
+  String? config,
 }) async {
   final isolateConfig = await loadPackageConfigUri(
     (await Isolate.packageConfig)!,
@@ -49,6 +50,7 @@ Future<TestBuilderResult> _build(
     SpringBuilder(),
     {
       'pkg|bin/main.dart': app,
+      'pkg|lib/resources/application.properties': ?config,
       'neon_cache|lib/spring_auto_configuration.dart': _starter(
         requires,
         arguments,
@@ -62,6 +64,53 @@ Future<TestBuilderResult> _build(
 }
 
 void main() {
+  group('build: AutoConfigurationBuild(property) decides at build time', () {
+    const build = ", build: AutoConfigurationBuild('neon.debug.enabled')";
+
+    Future<String> output({String? config, String arguments = build}) async {
+      final result = await _build(
+        '^$springBootVersion',
+        arguments: arguments,
+        config: config,
+      );
+      expect(result.errors, isEmpty);
+      return _compact(result);
+    }
+
+    test('true: the module, always', () async {
+      final code = await output(config: 'neon.debug.enabled=true');
+      expect(code, matches(RegExp(r'[\[,]_i\d+\.neonCacheAutoConfiguration,')));
+      expect(code, isNot(contains('dart.vm.product')));
+    });
+
+    test('false: no module, no code', () async {
+      final code = await output(config: 'neon.debug.enabled=false');
+      expect(code, isNot(contains('neonCacheAutoConfiguration')));
+    });
+
+    test('not set: only outside a release', () async {
+      final code = await output();
+      expect(
+        code,
+        matches(
+          RegExp(
+            r"if\(!bool\.fromEnvironment\('dart\.vm\.product'\)\)"
+            r'_i\d+\.neonCacheAutoConfiguration',
+          ),
+        ),
+      );
+    });
+
+    test('not set, whenMissing: never', () async {
+      final code = await output(
+        arguments:
+            ", build: AutoConfigurationBuild('neon.debug.enabled', "
+            'whenMissing: BuildInclusion.never)',
+      );
+      expect(code, isNot(contains('neonCacheAutoConfiguration')));
+    });
+  });
+
   test('a compatible starter is discovered', () async {
     final result = await _build('^$springBootVersion');
     expect(result.errors, isEmpty);

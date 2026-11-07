@@ -32,6 +32,8 @@ import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
     show KeysDiagnostics;
+import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
+    show readPlatformEnvironment;
 import 'package:yaml/yaml.dart';
 
 // Suffix of generated files; also used to skip them as scan inputs.
@@ -681,6 +683,7 @@ class SpringBuilder implements Builder {
     final autoConfigurations = await _autoConfigurations(
       buildStep,
       includeOwn: example,
+      configuration: _texts(resources),
     );
     // The beans of the auto-configurations' modules whose proxy class is
     // left to the application.
@@ -1078,12 +1081,27 @@ class SpringBuilder implements Builder {
   // `order` / `before` / `after` when set. `SpringApplication` sorts them
   // (Boot's AutoConfigurationSorter); here they are by package, then name.
   // With [includeOwn] (an example), the package's own too.
+  //
+  // A module with `build: AutoConfigurationBuild(property)` is decided by
+  // that property of the application's [configuration]: in, out (no code
+  // at all), or in under `!dart.vm.product`, which a release build
+  // compiles away with everything only the module reaches.
   static Future<List<(Expression, Expression?)>> _autoConfigurations(
     BuildStep buildStep, {
     bool includeOwn = false,
+    Map<String, String> configuration = const {},
   }) async {
     final root = buildStep.inputId.package;
-    final found = <(Expression?, String, String, String)>[];
+    final found = <(Expression?, String, String, String, _BuildChoice)>[];
+    String? Function(String key)? lookup;
+    String? property(String key) {
+      lookup ??= readPlatformEnvironment(
+        configuration,
+        profiles: const [],
+      ).getProperty;
+      return lookup!(key)?.trim().toLowerCase();
+    }
+
     final config = await buildStep.packageConfig;
     final reachable = await _reachablePackages(buildStep);
     for (final package in config.packages) {
@@ -1110,11 +1128,28 @@ class SpringBuilder implements Builder {
             ConstantReader(annotation).peek('requires')?.stringValue,
             variable,
           );
+          final choice = _buildChoice(
+            ConstantReader(annotation).peek('build'),
+            property,
+            '${package.name}.${variable.name}',
+          );
+          if (choice == _BuildChoice.never) {
+            continue;
+          }
+          final ordering = _orderingOf(ConstantReader(annotation));
+          if (ordering != null && choice == _BuildChoice.notInRelease) {
+            log.warning(
+              '${package.name}.${variable.name}: a module the build puts in '
+              'only outside a release takes no order, before or after; '
+              'they are ignored.',
+            );
+          }
           found.add((
-            _orderingOf(ConstantReader(annotation)),
+            choice == _BuildChoice.always ? ordering : null,
             package.name,
             variable.name!,
             'package:${package.name}/spring_auto_configuration.dart',
+            choice,
           ));
         }
       }
@@ -1124,9 +1159,53 @@ class SpringBuilder implements Builder {
       return byPackage != 0 ? byPackage : a.$3.compareTo(b.$3);
     });
     return [
-      for (final (ordering, _, name, url) in found)
-        (refer(name, url), ordering),
+      for (final (ordering, _, name, url, choice) in found)
+        (
+          choice == _BuildChoice.always
+              ? refer(name, url)
+              : CodeExpression(
+                  Code.scope(
+                    (allocate) =>
+                        "if (!bool.fromEnvironment('dart.vm.product')) "
+                        '${allocate(refer(name, url))}',
+                  ),
+                ),
+          ordering,
+        ),
     ];
+  }
+
+  // `AutoConfigurationModule.build` against the application's property.
+  static _BuildChoice _buildChoice(
+    ConstantReader? build,
+    String? Function(String key) property,
+    String module,
+  ) {
+    if (build == null || build.isNull) {
+      return _BuildChoice.always;
+    }
+    final key = build.read('property').stringValue;
+    final value = property(key);
+    switch (value) {
+      case 'true':
+        return _BuildChoice.always;
+      case 'false':
+        return _BuildChoice.never;
+      case null || '':
+        final missing = build.read('whenMissing').objectValue;
+        final name = missing.variable?.name ?? 'notInRelease';
+        return switch (name) {
+          'always' => _BuildChoice.always,
+          'never' => _BuildChoice.never,
+          _ => _BuildChoice.notInRelease,
+        };
+      default:
+        log.warning(
+          "$module: $key is '$value', not true or false; the module is "
+          'built as when it is not set.',
+        );
+        return _buildChoice(build, (_) => null, module);
+    }
   }
 
   // The beans whose module left their proxy class to the application
@@ -1850,3 +1929,6 @@ class SpringPropertiesBuilder extends SpringBuilder {
     '^lib/{{}}.dart': ['lib/spring_gen/{{}}.spring.dart'],
   };
 }
+
+// Where the build puts an auto-configuration module.
+enum _BuildChoice { always, notInRelease, never }

@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `AutoConfigurationModule(build: AutoConfigurationBuild(property, whenMissing:))`: the application's configuration decides when the generator runs whether a module is in the application: `true` always, `false` never (no code at all), not set as `whenMissing` (`BuildInclusion.notInRelease` by default: in debug and profile builds, compiled away from a release).
 - `SpringApplication(applicationStartup:)`: the recorder of the start's steps (`spring.boot.application.starting`, `environment-prepared`, `context`) and of the beans; none by default.
 - `SpringApplication(addressResolvers:)` adds the application's `RemoteAddressResolver`s, asked before the built-in ones; the context has the chain as the `remoteAddresses` bean (`SpringApplication.remoteAddresses`). They are passed to the application because the themes are read before the beans exist.
 

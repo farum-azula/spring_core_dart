@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `AutoConfigurationModule.build`: the generator reads the property from the application's configuration and writes the module always, never, or under `if (!bool.fromEnvironment('dart.vm.product'))`, which a release build compiles away with everything only the module reaches.
 - `spring.flutter.web.seo.page-files` (`directory`, `html`): `html` writes `<path>.html`, which Cloudflare Pages, GitHub Pages and Netlify serve at `<path>` with no redirect. Fixed: with `directory` (the default) the canonical address, `og:url`, the languages' links and the sitemap end with `/`, where the host redirects `<path>` to; a canonical address that redirects kept pages out of search engines.
 - `frame-meter` is a section of a theme (`$frame-meter.good` is a path, not a token).
 - `spring.flutter.web.page.max-pixel-ratio` writes a script into `web/index.html` that caps the pixel ratio Flutter draws at before the engine starts (`WebPageHead.pixelRatio`); none removes it.

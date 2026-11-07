@@ -184,6 +184,12 @@ class AutoConfiguration extends Configuration {
 /// explanation when they do not match: the job Spring Boot's BOM and
 /// Spring Cloud's compatibility verifier do in Java.
 ///
+/// [build] lets the application's configuration decide, when the
+/// generator runs, whether the module is in the application at all: a
+/// module left out is no code in the build, as if the starter had none.
+/// For a feature only developers use (a debug panel), so a release does
+/// not ship it.
+///
 /// Spring (Java): the `META-INF/spring/...AutoConfiguration.imports` file
 /// of a starter, plus `@AutoConfigureOrder` and
 /// `@AutoConfiguration(before = ..., after = ...)`. Spring Boot reads the
@@ -197,6 +203,7 @@ class AutoConfigurationModule {
     this.requires,
     this.before = const [],
     this.after = const [],
+    this.build,
   });
 
   /// The position among the auto-configuration modules, lower first;
@@ -217,6 +224,55 @@ class AutoConfigurationModule {
   /// The `spring_boot_dart` versions this starter works with, as a pub
   /// version range; `null` (the default) accepts any version.
   final String? requires;
+
+  /// Whether the build puts the module into the application, by a property
+  /// of its configuration; `null` (the default): always. A module the
+  /// build puts in only on a condition takes no [order], [before] or
+  /// [after].
+  final AutoConfigurationBuild? build;
+}
+
+/// When the generator puts an [AutoConfigurationModule] into the
+/// application: by [property] of the application's configuration
+/// (`application.yml` and `application.properties` without a profile),
+/// read when `build_runner` runs.
+///
+/// - `true`: in every build;
+/// - `false`: in none, so the module is no code at all;
+/// - not set: [whenMissing].
+///
+/// ```dart
+/// @AutoConfigurationModule(
+///   build: AutoConfigurationBuild('spring.flutter.debug.enabled'),
+/// )
+/// final BeanModule debugAutoConfiguration = BeanModule(...);
+/// ```
+class AutoConfigurationBuild {
+  /// The module by [property]; [whenMissing] when it is not set.
+  const AutoConfigurationBuild(
+    this.property, {
+    this.whenMissing = BuildInclusion.notInRelease,
+  });
+
+  /// The property that decides (`spring.flutter.debug.enabled`).
+  final String property;
+
+  /// What the build does when the configuration does not set [property].
+  final BuildInclusion whenMissing;
+}
+
+/// Where an [AutoConfigurationBuild] module goes when its property is not
+/// set.
+enum BuildInclusion {
+  /// In every build.
+  always,
+
+  /// In debug and profile builds; a release build compiles it away
+  /// (`dart.vm.product`), so it ships none of its code.
+  notInRelease,
+
+  /// In no build.
+  never,
 }
 
 /// The unit of a `Duration` property written as a plain number.
