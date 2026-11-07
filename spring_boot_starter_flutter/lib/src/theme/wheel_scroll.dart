@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart'
     show didYouMean;
@@ -91,10 +91,13 @@ final class WheelScrollSpec {
 }
 
 /// Eases the wheel's scroll signals for every scrollable of the app: a
-/// step of the wheel becomes small steps over the theme's
+/// step of the wheel becomes a small step in each frame over the theme's
 /// `motion.wheel-scroll`, scaled by its speed. It sits between the
 /// platform and Flutter's gesture binding, so no scrollable needs a
 /// controller of its own. `SpringApp` sets [spec] from the active theme.
+///
+/// A trackpad's scroll passes as it comes: it is smooth already, and
+/// easing it again would lag behind the fingers.
 final class WheelScrollSmoother {
   WheelScrollSmoother._(this._dispatcher);
 
@@ -116,10 +119,11 @@ final class WheelScrollSmoother {
   PointerData? _last;
   double _restX = 0;
   double _restY = 0;
-  Timer? _timer;
-  final _clock = Stopwatch();
+  bool _scheduled = false;
+  Duration? _lastFrame;
 
-  static const _tick = Duration(milliseconds: 16);
+  // The time of a frame when there is no frame before.
+  static const _frame = Duration(microseconds: 16667);
 
   /// How the wheel scrolls now.
   WheelScrollSpec get spec => _spec;
@@ -132,6 +136,11 @@ final class WheelScrollSmoother {
     }
   }
 
+  bool _eases(PointerData data) =>
+      data.signalKind == PointerSignalKind.scroll &&
+      data.kind != PointerDeviceKind.trackpad &&
+      !_spec.isNone;
+
   void _receive(PointerDataPacket packet) {
     final forward = _forward;
     if (forward == null) {
@@ -139,7 +148,7 @@ final class WheelScrollSmoother {
     }
     final pass = <PointerData>[];
     for (final data in packet.data) {
-      if (data.signalKind == PointerSignalKind.scroll && !_spec.isNone) {
+      if (_eases(data)) {
         _restX += data.scrollDeltaX * _spec.speed;
         _restY += data.scrollDeltaY * _spec.speed;
         _last = data;
@@ -150,24 +159,25 @@ final class WheelScrollSmoother {
     if (pass.isNotEmpty) {
       forward(PointerDataPacket(data: pass));
     }
-    if (_last != null && _timer == null) {
-      _clock
-        ..reset()
-        ..start();
-      _timer = Timer(_tick, _step);
+    if (_last != null && !_scheduled) {
+      _scheduled = true;
+      _lastFrame = null;
+      SchedulerBinding.instance.scheduleFrameCallback(_step);
     }
   }
 
-  void _step() {
+  // One step in each frame, by the frame's time: as smooth as the screen.
+  void _step(Duration frame) {
+    _scheduled = false;
     final last = _last;
     final forward = _forward;
     if (last == null || forward == null) {
-      _timer = null;
       return;
     }
-    // At least a tick: a late timer catches up, never lags further.
-    final dt = math.max(_clock.elapsedMicroseconds, _tick.inMicroseconds);
-    _clock.reset();
+    final before = _lastFrame;
+    _lastFrame = frame;
+    final dt = (before == null || frame <= before ? _frame : frame - before)
+        .inMicroseconds;
     final tau = _spec.duration.inMicroseconds / 3;
     final share = tau <= 0 ? 1.0 : 1 - math.exp(-dt / tau);
     var dx = _restX * share;
@@ -200,9 +210,9 @@ final class WheelScrollSmoother {
     }
     if (_restX == 0 && _restY == 0) {
       _last = null;
-      _timer = null;
       return;
     }
-    _timer = Timer(_tick, _step);
+    _scheduled = true;
+    SchedulerBinding.instance.scheduleFrameCallback(_step);
   }
 }

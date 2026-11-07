@@ -741,6 +741,13 @@ List<ThemeProp> _background() {
       'The cross-fade when the background changes: `<duration> [<curve>]`.',
       defaultValue: '300ms ease-out',
     ),
+    _p(
+      '$root.frame-rate',
+      'text',
+      'How many times a second the moving image is drawn again: a number, '
+          'or `every-frame`.',
+      defaultValue: '15',
+    ),
   ];
   return [
     ...keys('background', 'of every screen'),

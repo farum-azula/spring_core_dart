@@ -1,6 +1,6 @@
 // motion.wheel-scroll: none by default; a step of the wheel arrives in
-// small steps over the duration, scaled by the speed; other pointer data
-// passes as it came.
+// a step in each frame over the duration, scaled by the speed; other
+// pointer data and a trackpad's scroll pass as they came.
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -66,7 +66,10 @@ void main() {
     );
     // The hover passes at once; the scroll is not one jump.
     expect(received.single.change, PointerChange.hover);
-    await tester.pump(const Duration(milliseconds: 600));
+    // A step in each frame.
+    for (var i = 0; i < 40; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
     final scrolls = [
       for (final data in received)
         if (data.signalKind == PointerSignalKind.scroll) data,
@@ -82,5 +85,22 @@ void main() {
       isTrue,
     );
     expect(smoother.spec.speed, 0.5);
+
+    // A trackpad passes as it came, at once.
+    received.clear();
+    dispatcher.onPointerDataPacket!(
+      const PointerDataPacket(
+        data: [
+          PointerData(
+            kind: PointerDeviceKind.trackpad,
+            signalKind: PointerSignalKind.scroll,
+            scrollDeltaY: 30,
+          ),
+        ],
+      ),
+    );
+    expect(received.single.scrollDeltaY, 30);
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(received, hasLength(1));
   });
 }

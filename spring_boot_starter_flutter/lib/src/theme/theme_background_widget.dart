@@ -181,6 +181,7 @@ class _ThemeBackgroundState extends State<ThemeBackground> {
       overlay: data.overlay,
       spec: reduced ? null : spec,
       effect: data.effectiveEffect,
+      frameRate: data.frameRateOrDefault,
     );
     return AnimatedSwitcher(
       duration: reduced ? Duration.zero : transition.duration,
@@ -215,6 +216,7 @@ class _Layers extends StatelessWidget {
     required this.overlay,
     required this.spec,
     required this.effect,
+    required this.frameRate,
   });
 
   final Color color;
@@ -223,6 +225,7 @@ class _Layers extends StatelessWidget {
   final ThemeBackgroundOverlay? overlay;
   final AnimationSpec? spec;
   final BackgroundEffect? effect;
+  final double frameRate;
 
   @override
   Widget build(BuildContext context) {
@@ -277,6 +280,7 @@ class _Layers extends StatelessWidget {
     }
     return ThemeAnimation(
       spec,
+      frameRate: frameRate,
       builder: (context, t) => AnimatedBuilder(
         animation: t,
         builder: (context, _) => switch (effect) {

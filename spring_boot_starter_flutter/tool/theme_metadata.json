@@ -2563,6 +2563,14 @@
       "default": "300ms ease-out"
     },
     {
+      "name": "background.frame-rate",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "How many times a second the moving image is drawn again: a number, or `every-frame`.",
+      "default": "15"
+    },
+    {
       "name": "background.screens.*.color",
       "type": "color",
       "states": false,
@@ -2736,6 +2744,14 @@
       "values": [],
       "description": "The cross-fade when the background changes: `<duration> [<curve>]`.",
       "default": "300ms ease-out"
+    },
+    {
+      "name": "background.screens.*.frame-rate",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "How many times a second the moving image is drawn again: a number, or `every-frame`.",
+      "default": "15"
     },
     {
       "name": "loaders.*.kind",
@@ -3211,6 +3227,14 @@
       "values": [],
       "description": "The cross-fade when the background changes: `<duration> [<curve>]`.",
       "default": "300ms ease-out"
+    },
+    {
+      "name": "splash.background.frame-rate",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "How many times a second the moving image is drawn again: a number, or `every-frame`.",
+      "default": "15"
     },
     {
       "name": "splash.logo.source",

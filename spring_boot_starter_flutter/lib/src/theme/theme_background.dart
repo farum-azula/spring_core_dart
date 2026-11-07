@@ -361,6 +361,7 @@ final class ThemeBackgroundTransition {
 ///   animation: background-drift      # an animations.* name
 ///   effect: drift                    # drift | zoom | pulse
 ///   transition: 400ms ease-out
+///   frame-rate: 15                   # or every-frame
 ///   screens:
 ///     login: { image: { source: packages/neon_ui/assets/images/login.jpg } }
 /// ```
@@ -377,6 +378,7 @@ final class ThemeBackgroundData {
     this.animation,
     this.effect,
     this.transition,
+    this.frameRate,
     this.screens = const {},
   });
 
@@ -398,6 +400,19 @@ final class ThemeBackgroundData {
 
   /// The cross-fade to a new background; `null`: [defaultTransition].
   final ThemeBackgroundTransition? transition;
+
+  /// How many times a second the moving image is drawn again
+  /// (`frame-rate`); [double.infinity] (`every-frame`) at every frame of
+  /// the screen; `null`: [defaultFrameRate]. A slow drift moves a pixel or
+  /// two a second: drawn at every frame it keeps the whole screen
+  /// repainting, which takes the time of scrolling and the battery.
+  final double? frameRate;
+
+  /// The frame rate when the theme sets none: 15 a second.
+  static const defaultFrameRate = 15.0;
+
+  /// The frame rate to use: [frameRate] or [defaultFrameRate].
+  double get frameRateOrDefault => frameRate ?? defaultFrameRate;
 
   /// The overrides of single screens, by canonical name.
   final Map<String, ThemeBackgroundData> screens;
@@ -432,6 +447,7 @@ final class ThemeBackgroundData {
       animation: own.animation ?? animation,
       effect: own.effect ?? effect,
       transition: own.transition ?? transition,
+      frameRate: own.frameRate ?? frameRate,
     );
   }
 
@@ -453,6 +469,7 @@ final class ThemeBackgroundData {
     'animation',
     'effect',
     'transition',
+    'frame-rate',
   ];
 
   /// Reads `background` of [p]; `null` when the theme has none. Throws a
@@ -532,6 +549,16 @@ final class ThemeBackgroundData {
         (v) => ThemeValues.enumValue(BackgroundEffect.values, v),
         'drift, zoom or pulse',
       ),
+      frameRate: p.read(
+        '$path.framerate',
+        (v) => ThemeValues.canonical(v) == 'everyframe'
+            ? double.infinity
+            : switch (ThemeValues.number(v)) {
+                final n? when n > 0 => n.toDouble(),
+                _ => null,
+              },
+        'a number of frames a second over zero, or every-frame',
+      ),
       transition: transitionText == null
           ? null
           : ThemeBackgroundTransition.parse(transitionText) ??
@@ -559,9 +586,17 @@ final class ThemeBackgroundData {
       other.overlay == overlay &&
       other.animation == animation &&
       other.effect == effect &&
-      other.transition == transition;
+      other.transition == transition &&
+      other.frameRate == frameRate;
 
   @override
-  int get hashCode =>
-      Object.hash(color, image, overlay, animation, effect, transition);
+  int get hashCode => Object.hash(
+    color,
+    image,
+    overlay,
+    animation,
+    effect,
+    transition,
+    frameRate,
+  );
 }

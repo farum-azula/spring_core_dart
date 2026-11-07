@@ -68,6 +68,7 @@ Any other key stops the start and lists the valid ones.
 | `background.animation` | text | the name of an `animations.<name>` | none | The animation that moves the image |
 | `background.effect` | enum | `drift`, `zoom`, `pulse` | `drift` when `animation` is set | How the image moves |
 | `background.transition` | text | `<duration> [<curve>]`, such as `400ms ease-out` | `300ms ease-out` | The cross-fade when the background changes |
+| `background.frame-rate` | number or `every-frame` | over zero | `15` | How many times a second the moving image is drawn again |
 | `background.screens.<name>` | map | the keys above except `screens` | none | A background for one screen. See [per-screen backgrounds](#per-screen-backgrounds) |
 
 ### The image
@@ -172,6 +173,26 @@ Notes:
   `repeat: reverse` it goes there and back smoothly, which suits a
   background. A long `duration` (30 seconds or more) keeps it calm.
 - When the device asks for less motion, the image stands still.
+
+### The frame rate
+
+A moving background is the whole screen: each time it moves, everything on
+the screen is drawn again. A drift of 40 seconds moves the image a pixel or
+two a second, so drawing it at every frame (60 or 120 a second) keeps the
+screen repainting while nothing else changes. On the web this takes the time
+scrolling needs and the battery.
+
+`frame-rate` is how many times a second the image moves on: 15 by default,
+which a slow drift cannot tell from every frame. Between two of its steps
+the screen is not drawn for the background. `every-frame` moves it at every
+frame of the screen, for a fast animation:
+
+```yaml
+background:
+  animation: background-drift
+  effect: drift
+  frame-rate: 10          # or every-frame
+```
 
 ### The transition
 

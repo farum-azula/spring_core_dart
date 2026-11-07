@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart'
@@ -119,11 +121,23 @@ final class AnimationSpec {
 /// )
 /// ```
 class ThemeAnimation extends StatefulWidget {
-  /// Plays [spec] and builds with its progress.
-  const ThemeAnimation(this.spec, {required this.builder, super.key});
+  /// Plays [spec] and builds with its progress; a repeating one
+  /// [frameRate] times a second, when given.
+  const ThemeAnimation(
+    this.spec, {
+    required this.builder,
+    this.frameRate,
+    super.key,
+  });
 
   /// What to play.
   final AnimationSpec spec;
+
+  /// How many times a second a repeating animation moves on; `null` or
+  /// [double.infinity]: at every frame of the screen. A slow animation
+  /// over a large area (a background) needs few: the screen repaints only
+  /// when it moves.
+  final double? frameRate;
 
   /// Builds the child from the animation, whose value follows the curve.
   final Widget Function(BuildContext context, Animation<double> animation)
@@ -141,6 +155,9 @@ class _ThemeAnimationState extends State<ThemeAnimation>
   );
   late Animation<double> _animation = _curved(widget.spec.curve);
   bool? _still;
+  // The frame-rate clock of a repeating animation that moves less often
+  // than the screen draws.
+  Timer? _timer;
 
   Animation<double> _curved(Curve curve) =>
       CurveTween(curve: curve).animate(_controller);
@@ -163,7 +180,8 @@ class _ThemeAnimationState extends State<ThemeAnimation>
       _animation = _curved(spec.curve);
     }
     if (spec.duration != oldWidget.spec.duration ||
-        spec.repeat != oldWidget.spec.repeat) {
+        spec.repeat != oldWidget.spec.repeat ||
+        widget.frameRate != oldWidget.frameRate) {
       _controller.duration = spec.duration;
       _play();
     }
@@ -173,6 +191,24 @@ class _ThemeAnimationState extends State<ThemeAnimation>
 
   void _play() {
     final spec = widget.spec;
+    _timer?.cancel();
+    _timer = null;
+    final rate = widget.frameRate;
+    if (!(_still ?? false) &&
+        _repeats &&
+        spec.duration > Duration.zero &&
+        rate != null &&
+        rate.isFinite) {
+      _controller.stop();
+      final step = Duration(microseconds: (1e6 / rate).round());
+      // By the ticks, not the wall clock: a page in the background, whose
+      // timers wait, goes on where it stopped instead of jumping.
+      _timer = Timer.periodic(
+        step,
+        (timer) => _controller.value = _at(step * timer.tick),
+      );
+      return;
+    }
     if (_still ?? false) {
       _controller
         ..stop()
@@ -194,8 +230,20 @@ class _ThemeAnimationState extends State<ThemeAnimation>
     }
   }
 
+  // Where a repeating run is [elapsed] after its start: a loop starts
+  // again, back and forth comes back.
+  double _at(Duration elapsed) {
+    final run = widget.spec.duration.inMicroseconds;
+    final runs = elapsed.inMicroseconds / run;
+    final into = runs - runs.floor();
+    return widget.spec.repeat == AnimationRepeat.reverse && runs.floor().isOdd
+        ? 1 - into
+        : into;
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }

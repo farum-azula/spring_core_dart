@@ -203,6 +203,18 @@ void main() {
       );
     });
 
+    test('frame-rate: a number, every-frame, or 15 by default', () {
+      Map<String, String> with_(String? rate) => {
+        'background.color': '#101010',
+        'background.frame-rate': ?rate,
+      };
+      expect(_parse(with_(null))!.frameRateOrDefault, 15);
+      expect(_parse(with_('8'))!.frameRate, 8);
+      expect(_parse(with_('every-frame'))!.frameRate, double.infinity);
+      expect(() => _parse(with_('0')), _fails('every-frame'));
+      expect(() => _parse(with_('fast')), _fails('background.framerate'));
+    });
+
     test('an animation must be one of animations.*', () {
       expect(
         () => _parse({'background.animation': 'nope'}),
