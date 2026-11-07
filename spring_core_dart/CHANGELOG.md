@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - `ContextResource` (`pathWithinContext`): a `resources:` file knows its path below `lib/resources/`, embedded or read from disk (`ClasspathFileResource`), so a feature that lists files by a pattern can name them.

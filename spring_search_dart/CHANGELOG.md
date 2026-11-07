@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - Not published yet (`tool/publish.dart` skips it): a git dependency of this repository. The `SearchService` bean searches the documents of the `SearchDocumentSource` beans and of `spring.search.markdown` (Markdown resources cut into sections with GitHub's anchors, translations `name.ja.md` next to the file). Analyzers per language (`SearchAnalyzer` beans, `spring.search.analyzers`): words in any script and Chinese, Japanese and Korean in pairs of characters, camel-case parts, accents, English stop words and endings. BM25 per field (`spring.search.fields`), every word or one of them (`spring.search.operator`), the word being typed as a prefix, typos (`spring.search.fuzzy`), phrases in double quotes, `SearchRanker` beans, one hit per page (`spring.search.collapse-by`), highlights and snippets. `SearchIndexInvalidatedEvent` builds the index again.

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - `background.image.repeat` (`no-repeat`, `repeat`, `repeat-x`, `repeat-y`): tiles the background picture, so a small texture covers the screen at its own size (`ThemeBackgroundImage.repeat`).

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - Docs: `@CreatedBy` is filled by the application's own `AuditorAware`; the doc comments no longer promise the security starter's user.

@@ -50,11 +50,11 @@ golden screenshots: the
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_starter_flutter: ^0.7.1
+  spring_boot_starter_flutter: ^0.7.2
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.1
+  spring_core_dart_generator: ^0.7.2
 ```
 
 ### 1. Start the application

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - `spring.flutter.web.seo.exclude`: globs of the files of every Markdown folder, the routes' and `content[n]`'s, that make no page (`['**/contents*.md']`, a table of contents). In every exclude, `**/` now matches no folder too, so `**/contents.md` covers the folder's own.

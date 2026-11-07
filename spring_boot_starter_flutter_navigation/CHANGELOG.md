@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - Fixed: the task switcher's color comes from the theme shown, not Material's fallback in a `WidgetsApp`.

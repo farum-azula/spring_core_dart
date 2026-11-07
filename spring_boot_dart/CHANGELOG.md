@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.
 - `AutoConfigurationModule(build: AutoConfigurationBuild(property, whenMissing:))`: the application's configuration decides when the generator runs whether a module is in the application: `true` always, `false` never (no code at all), not set as `whenMissing` (`BuildInclusion.notInRelease` by default: in debug and profile builds, compiled away from a release).
