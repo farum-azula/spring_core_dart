@@ -165,12 +165,12 @@ void main() {
   });
 
   test('primary constructors: the dependencies and a const bean', () async {
-    final code = await _generate('''
+    final code = await _generate(r'''
 @Component()
 class const Clock();
 
 @Service()
-class Greeter(this.clock, {@Value(r'\${greeting:Hi}') this.greeting = 'Hi'}) {
+class Greeter(this.clock, {@Value(r'${greeting:Hi}') this.greeting = 'Hi'}) {
   final Clock clock;
   final String greeting;
 }
