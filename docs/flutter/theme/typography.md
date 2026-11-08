@@ -163,6 +163,8 @@ one of `Playfair Display`. Use that name in `font-family`.
 |---|---|---|---|---|
 | `spring.flutter.fonts.auto-load` | bool | `true`, `false` | `true` | `false` loads no font files this way. Fonts under `flutter: fonts:` still work |
 | `spring.flutter.fonts.exclude` | list of globs | `assets/pdf/**` | none | Font assets not to load, such as fonts used only to make PDFs. `*` stays inside a directory, `**` crosses directories |
+| `spring.flutter.fonts.families.<family>.files` | list of assets | `assets/fonts/NotoSansJP.woff2` | none | The files of a family declared by name, loaded into it in any format the platform reads (`.ttf`, `.otf`; `.woff2` on the web); `auto-load` leaves them alone |
+| `spring.flutter.fonts.families.<family>.languages` | list of language tags | `ja`, `zh-Hant` | none | The languages the family is for: loaded before the first frame when the app starts in one of them, else when it switches to one (`ja` covers `ja-JP`). None: loaded at the start |
 
 ```yaml
 spring:
@@ -170,6 +172,31 @@ spring:
     fonts:
       auto-load: true
       exclude: [assets/pdf/**]
+```
+
+### A font for a language
+
+A family declared by name is loaded from the files it lists, and one with
+`languages` only when the app shows one of them. The other languages never
+download it, and the web engine fetches no fallback fonts of its own for
+the characters the main font lacks, which it otherwise does page after
+page, laying the page out again at each. Name the family in
+`typography.font-family-fallback`; with the navigation starter, `/ja/...`
+has it before the first frame, and `switchLanguage` loads it before the
+text changes.
+
+```yaml
+spring:
+  flutter:
+    fonts:
+      families:
+        Noto Sans JP:
+          files: [assets/fonts/NotoSansJP.woff2]
+          languages: [ja]
+    theme:
+      typography:
+        font-family: Inter
+        font-family-fallback: [Noto Sans JP]
 ```
 
 ## Read it in Dart

@@ -267,12 +267,16 @@ final class _SpringPage extends Page<Object?> {
       PageTransition.zoom => PageTransitionType.zoom,
       PageTransition.cupertino => PageTransitionType.cupertino,
       PageTransition.fade => PageTransitionType.fade,
+      PageTransition.content => PageTransitionType.content,
       PageTransition.none => PageTransitionType.none,
     };
     // Reduced motion on the device: every transition at once.
     final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final duration = still ? Duration.zero : theme.duration;
     final curve = theme.curve;
+    final content =
+        SpringTheme.maybeOf(context)?.contentChange ??
+        const ContentChangeSpec();
     final Route<Object?> route = switch ((type, kind)) {
       (PageTransitionType.none, _) ||
       (PageTransitionType.platform, _PageKind.widgets) => _PlainRoute(
@@ -308,6 +312,12 @@ final class _SpringPage extends Page<Object?> {
         builder: const _Fade(),
         duration: duration ?? const Duration(milliseconds: 250),
         curve: curve,
+      ),
+      (PageTransitionType.content, _) => _PlainRoute(
+        this,
+        builder: const ContentPageTransitionsBuilder(),
+        duration: still ? Duration.zero : duration ?? content.duration,
+        curve: curve ?? content.curve,
       ),
     };
     final screen = this.screen;

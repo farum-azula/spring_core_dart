@@ -1,3 +1,8 @@
+## Unreleased
+
+- `PageTransition.content` (`motion.page-transition: content`): the screen comes in as the theme's `motion.content-change` shows other content.
+- The first address's language (`/ja/...`) is the app's locale from the start (`FlutterAppSettings.locale`), so what the start prepares for a language is ready for the first frame: the fonts of `spring.flutter.fonts.families`. `switchLanguage` loads the fonts declared for the language before the text changes; `Navigation.languageOf(path)` is the language a path names.
+
 ## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.

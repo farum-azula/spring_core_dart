@@ -42,6 +42,10 @@ enum PageTransition {
   /// Material's fade with an upward slide.
   fadeUpwards,
 
+  /// As the theme's `motion.content-change`: the screen comes in the way a
+  /// part of a screen shows other content (`fade-up`).
+  content,
+
   /// Material's zoom.
   zoom,
 

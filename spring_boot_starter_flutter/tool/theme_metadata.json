@@ -2139,6 +2139,14 @@
       "default": null
     },
     {
+      "name": "motion.enabled",
+      "type": "true / false",
+      "states": false,
+      "values": [],
+      "description": "Whether the app moves at all: `false` makes every page transition, text and content change, scroll to the top and theme animation instant, as the device's \"reduce motion\" does.",
+      "default": "true"
+    },
+    {
       "name": "motion.page-transition",
       "type": "choice",
       "states": false,
@@ -2148,7 +2156,8 @@
         "fade-upwards",
         "zoom",
         "cupertino",
-        "fade"
+        "fade",
+        "content"
       ],
       "description": "How a new screen comes in, on every platform: a kind, or a map of `type`, `duration`, `curve`.",
       "default": "none"
@@ -2163,7 +2172,8 @@
         "fade-upwards",
         "zoom",
         "cupertino",
-        "fade"
+        "fade",
+        "content"
       ],
       "description": "The map form's kind.",
       "default": "none"
@@ -2322,9 +2332,10 @@
       "values": [
         "none",
         "fade",
-        "fade-up"
+        "fade-up",
+        "morph"
       ],
-      "description": "How a part of a screen shows other content in its place (another page in `RouteContentView`, `ContentChange`): at once, a cross-fade, or a cross-fade rising a little; a kind of the app's own with `ContentTransitions.register`. A kind, or a map of `type`, `duration`, `curve`.",
+      "description": "How a part of a screen shows other content in its place (another page in `RouteContentView`, `ContentChange`): at once, a cross-fade, a cross-fade rising a little, or `morph`, the new page typing itself in line after line; a kind of the app's own with `ContentTransitions.register`. A kind, or a map of `type`, `duration`, `curve`, `stagger`, `delay`.",
       "default": "none"
     },
     {
@@ -2334,7 +2345,8 @@
       "values": [
         "none",
         "fade",
-        "fade-up"
+        "fade-up",
+        "morph"
       ],
       "description": "The map form's kind; a kind of the app's own too.",
       "default": "none"
@@ -2344,7 +2356,7 @@
       "type": "duration",
       "states": false,
       "values": [],
-      "description": "How long the change takes.",
+      "description": "How long the change takes; for `morph`, the whole page.",
       "default": "200ms"
     },
     {
@@ -2354,6 +2366,22 @@
       "values": [],
       "description": "The curve of the change.",
       "default": "ease-out"
+    },
+    {
+      "name": "motion.content-change.stagger",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "For `morph`: how much later each line starts than the one before it; the starts take at most 85 percent of the duration.",
+      "default": "30ms"
+    },
+    {
+      "name": "motion.content-change.delay",
+      "type": "duration",
+      "states": false,
+      "values": [],
+      "description": "For `morph`: how long the new page waits, blank at its full height, before its first line (the duration of `text-change`, so a text above it morphs first).",
+      "default": "0ms"
     },
     {
       "name": "motion.durations.*",

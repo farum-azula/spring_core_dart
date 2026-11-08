@@ -459,24 +459,31 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     }
   }
 
-  // An invalid `spring.flutter.app.*` value fails the start.
+  // An invalid `spring.flutter.app.*` value fails the start. The router
+  // first: it reads the first address, whose language the app's settings
+  // take (`FlutterAppSettings.locale`).
   void _checkApp(ApplicationContext context) {
     if (widget.child == null) {
-      FlutterAppSettings.of(context);
-      ThemeSelection.of(context); // reads and checks every theme
       if (widget.home == null) {
         SpringApp.routerOf(context); // the router the app widget needs
       }
+      FlutterAppSettings.of(context);
+      ThemeSelection.of(context); // reads and checks every theme
     }
   }
 
   // The app's font files, before the first frame.
-  static Future<void> _loadFonts(ApplicationContext context) {
+  Future<void> _loadFonts(ApplicationContext context) {
     final manifest = AssetProtocolResolver.rootManifest;
     if (manifest == null) {
       return Future.value();
     }
     final themes = SpringThemes.of(context);
+    // The language the app starts in: the settings' (the navigation
+    // starter: the first address's), else the device's.
+    final locale = widget.child == null
+        ? FlutterAppSettings.of(context).locale
+        : null;
     return ThemeFonts.loadFor(
       context,
       rootBundle,
@@ -484,6 +491,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       themeFamilies: {
         for (final name in themes.names) ...themes.data(name).fontFamilies,
       },
+      language: (locale ?? PlatformDispatcher.instance.locale).toLanguageTag(),
     );
   }
 

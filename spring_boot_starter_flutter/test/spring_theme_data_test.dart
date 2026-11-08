@@ -302,6 +302,7 @@ void main() {
       expect(transition('fadeUpwards'), FadeUpwardsPageTransitionsBuilder);
       expect(transition('zoom'), ZoomPageTransitionsBuilder);
       expect(transition('cupertino'), CupertinoPageTransitionsBuilder);
+      expect(transition('content'), ContentPageTransitionsBuilder);
       expect(transition('none').toString(), '_NoTransition');
       // platform: Flutter's own per platform.
       expect(
@@ -337,6 +338,18 @@ void main() {
       expect(
         theme({'motion.page-transition': 'none'}).pageTransitions,
         const PageTransitionSpec(type: PageTransitionType.none),
+      );
+      expect(theme({}).motionEnabled, isTrue);
+      expect(theme({'motion.enabled': 'false'}).motionEnabled, isFalse);
+      expect(
+        () => theme({'motion.speed': 'fast'}),
+        throwsA(
+          isA<ThemePropertyException>().having(
+            (e) => '$e',
+            'message',
+            contains('motion.enabled, motion.page-transition'),
+          ),
+        ),
       );
       final map = theme({
         'motion.durations.fast': '140ms',

@@ -298,4 +298,105 @@ spring.flutter.fonts.exclude: [pdf/**]
       expect(warnings, isEmpty);
     });
   });
+
+  group('families', () {
+    tearDown(ThemeFonts.forget);
+    Future<ConfigurableApplicationContext> context(String properties) =>
+        SpringApplication([
+          BeanModule(
+            'm',
+            const [],
+            resources: {'application.yml': EmbeddedResource.text(properties)},
+          ),
+        ], bannerMode: BannerMode.off).runAsync(const []);
+
+    testWidgets('a family for no language at the start, one for a language '
+        'when the app shows it, once; its files not loaded on their own', (
+      tester,
+    ) async {
+      final warnings = captureWarnings();
+      final app = (await tester.runAsync(
+        () => context('''
+spring.flutter.fonts.families:
+  Brand:
+    files: [fonts/brand.ttf]
+  JP:
+    files: [fonts/jp.woff2, fonts/jp-bold.woff2]
+    languages: [ja]
+'''),
+      ))!;
+      addTearDown(app.close);
+      final regular = sdkFont('Roboto-Regular.ttf').readAsBytesSync();
+      final bundle = Bundle({
+        'fonts/brand.ttf': regular,
+        'fonts/jp.woff2': regular,
+        'fonts/jp-bold.woff2': regular,
+        'families/Roboto-Regular.ttf': regular,
+      });
+      List<String> fonts() => [
+        for (final key in bundle.loads)
+          if (key != 'FontManifest.json') key,
+      ];
+      await tester.runAsync(
+        () => ThemeFonts.loadFor(
+          app,
+          bundle,
+          bundle.files.keys,
+          themeFamilies: {'Roboto', 'Brand', 'JP'},
+          language: 'en-US',
+        ),
+      );
+      // Brand at the start; JP not for English; brand.ttf not again as
+      // Roboto; every family found, so no warning.
+      expect(fonts(), ['fonts/brand.ttf', 'families/Roboto-Regular.ttf']);
+      expect(warnings, isEmpty);
+      expect(ThemeFonts.declaredFiles, [
+        'fonts/brand.ttf',
+        'fonts/jp.woff2',
+        'fonts/jp-bold.woff2',
+      ]);
+
+      expect(ThemeFonts.loadLanguage('en'), isNull);
+      final loading = ThemeFonts.loadLanguage('ja-JP');
+      expect(loading, isNotNull);
+      await tester.runAsync(() => loading!);
+      expect(fonts().sublist(2), ['fonts/jp.woff2', 'fonts/jp-bold.woff2']);
+      expect(ThemeFonts.loadLanguage('ja'), isNull);
+    });
+
+    testWidgets('the start language\'s family before the first frame; a '
+        'missing file is a warning', (tester) async {
+      final warnings = captureWarnings();
+      final app = (await tester.runAsync(
+        () => context('''
+spring.flutter.fonts.families:
+  JP:
+    files: [fonts/jp.woff2, fonts/missing.woff2]
+    languages: [ja]
+  Hant:
+    files: [fonts/hant.ttf]
+    languages: [zh-Hant]
+'''),
+      ))!;
+      addTearDown(app.close);
+      final regular = sdkFont('Roboto-Regular.ttf').readAsBytesSync();
+      final bundle = Bundle({
+        'fonts/jp.woff2': regular,
+        'fonts/hant.ttf': regular,
+      });
+      await tester.runAsync(
+        () => ThemeFonts.loadFor(app, bundle, const [], language: 'ja'),
+      );
+      expect(
+        bundle.loads.where((key) => key != 'FontManifest.json'),
+        ['fonts/jp.woff2', 'fonts/missing.woff2'],
+      );
+      expect(warnings, [
+        contains('fonts/missing.woff2 of JP could not be read'),
+      ]);
+      // A language alone covers its regions; a script only itself.
+      expect(ThemeFonts.loadLanguage('zh'), isNull);
+      expect(ThemeFonts.loadLanguage('zh-Hant'), isNotNull);
+    });
+  });
 }

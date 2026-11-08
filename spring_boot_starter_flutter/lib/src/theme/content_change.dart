@@ -14,8 +14,13 @@ typedef ContentTransitionBuilder = Widget Function(
 );
 
 /// The kinds of `motion.content-change`, by name: the built-in `none`,
-/// `fade` and `fade-up`, and the application's own. Registered before the
-/// themes are read (the start reads them), as the loader kinds are.
+/// `fade`, `fade-up` and `morph`, and the application's own. Registered
+/// before the themes are read (the start reads them), as the loader kinds
+/// are.
+///
+/// `morph` is the content's own to do: `MarkdownView` types its new page
+/// in line after line, as `text-change: morph` types a line; a
+/// [ContentChange] of anything else shows the new content at once.
 ///
 /// ```dart
 /// // `motion.content-change: scale`
@@ -43,7 +48,11 @@ abstract final class ContentTransitions {
         child: child,
       ),
     ),
+    'morph': (child, _) => child,
   };
+
+  /// The kind the content itself plays, line after line.
+  static const morph = 'morph';
 
   static bool _started = false;
 
@@ -86,18 +95,25 @@ abstract final class ContentTransitions {
 /// The theme's content change, `motion.content-change`: how a part of a
 /// screen shows other content in its place (another page of the docs in
 /// `RouteContentView`): a kind alone, or a map of `type`, `duration`,
-/// `curve`.
+/// `curve`, and for `morph` `stagger` (how much later each line starts
+/// than the one before it) and `delay` (how long the new page waits, blank
+/// at its full height, before its first line: the time a `ThemeText` above
+/// it takes to morph, so the two go one after the other).
 ///
 /// ```yaml
 /// motion:
 ///   content-change: { type: fade-up, duration: 220ms, curve: ease-out }
+///   content-change: { type: morph, duration: 1.2s, stagger: 40ms, delay: 650ms }
 /// ```
 final class ContentChangeSpec {
-  /// A change of [type] over [duration] along [curve].
+  /// A change of [type] over [duration] along [curve]; `morph` the lines
+  /// [stagger] apart, after [delay].
   const ContentChangeSpec({
     this.type = 'none',
     this.duration = const Duration(milliseconds: 200),
     this.curve = Curves.easeOut,
+    this.stagger = const Duration(milliseconds: 30),
+    this.delay = Duration.zero,
   });
 
   /// Reads the change at [base] of [p]; `null` when nothing is written.
@@ -116,26 +132,23 @@ final class ContentChangeSpec {
       final type = kind(base);
       return type == null ? null : ContentChangeSpec(type: type);
     }
-    const keys = ['type', 'duration', 'curve'];
+    const keys = ['type', 'duration', 'curve', 'stagger', 'delay'];
     for (final key in children) {
       if (!keys.contains(key)) {
         throw ThemePropertyException(
           p.propertyName('$base.$key'),
           p['$base.$key'] ?? '',
-          'type, duration or curve${didYouMean(key, keys)}',
+          'type, duration, curve, stagger or delay${didYouMean(key, keys)}',
         );
       }
     }
     const defaults = ContentChangeSpec();
+    Duration? duration(String key, Duration fallback, String example) =>
+        p.read('$base.$key', ThemeValues.duration, 'a duration like $example');
     return ContentChangeSpec(
       type: kind('$base.type') ?? defaults.type,
       duration:
-          p.read(
-            '$base.duration',
-            ThemeValues.duration,
-            'a duration like 200ms',
-          ) ??
-          defaults.duration,
+          duration('duration', defaults.duration, '200ms') ?? defaults.duration,
       curve:
           p.read(
             '$base.curve',
@@ -143,27 +156,71 @@ final class ContentChangeSpec {
             'a curve: ${ThemeValues.curveNames.join(', ')}, or four numbers',
           ) ??
           defaults.curve,
+      stagger:
+          duration('stagger', defaults.stagger, '30ms') ?? defaults.stagger,
+      delay: duration('delay', defaults.delay, '650ms') ?? defaults.delay,
     );
   }
 
   /// The kind, a name of [ContentTransitions].
   final String type;
 
-  /// How long the change takes.
+  /// How long the change takes: for `morph`, the whole page's.
   final Duration duration;
 
   /// The curve of the change.
   final Curve curve;
+
+  /// For `morph`, how much later each line starts than the one before it;
+  /// the lines never take more than 85 percent of [duration] to start, so
+  /// a long page is done in [duration] too.
+  final Duration stagger;
+
+  /// For `morph`, how long the new content waits before its first line.
+  final Duration delay;
+
+  /// Whether the content plays the change itself, line after line.
+  bool get morphs => type == ContentTransitions.morph;
 
   @override
   bool operator ==(Object other) =>
       other is ContentChangeSpec &&
       other.type == type &&
       other.duration == duration &&
-      other.curve == curve;
+      other.curve == curve &&
+      other.stagger == stagger &&
+      other.delay == delay;
 
   @override
-  int get hashCode => Object.hash(type, duration, curve);
+  int get hashCode => Object.hash(type, duration, curve, stagger, delay);
+}
+
+/// The page transition `motion.page-transition: content`: a screen comes
+/// in the way `motion.content-change` shows other content (`fade-up`, a
+/// kind of the app's own), over the screen before it. The navigation
+/// starter's router and Material's own routes use it; `none` and `morph`
+/// show the screen at once.
+final class ContentPageTransitionsBuilder extends PageTransitionsBuilder {
+  /// The builder.
+  const ContentPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final spec =
+        SpringTheme.maybeOf(context)?.contentChange ??
+        const ContentChangeSpec();
+    final builder = ContentTransitions.lookup(spec.type);
+    if (builder == null || spec.type == 'none' || spec.morphs) {
+      return child;
+    }
+    return builder(child, animation);
+  }
 }
 
 /// Shows [child], and another content in its place the theme's way
@@ -190,6 +247,7 @@ class ContentChange extends StatelessWidget {
     if (reduce ||
         builder == null ||
         spec.type == 'none' ||
+        spec.morphs ||
         spec.duration == Duration.zero) {
       return KeyedSubtree(key: ValueKey(id), child: child);
     }

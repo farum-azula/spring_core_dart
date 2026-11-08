@@ -31,12 +31,15 @@
 
   <title>Static site</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b6b59">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <!-- spring:page:background:start -->
-  <style>html,body{background-color:#f5fbf7}</style>
+  <style>html,body{background-color:#f5fbf7}@media (prefers-color-scheme:dark){html,body{background-color:#0e1513}}</style>
   <!-- spring:page:background:end -->
+  <!-- spring:page:theme-color:start -->
+  <meta name="theme-color" content="#0b6b59" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#85d6c0" media="(prefers-color-scheme: dark)">
+  <!-- spring:page:theme-color:end -->
 </head>
 <body>
   <!--

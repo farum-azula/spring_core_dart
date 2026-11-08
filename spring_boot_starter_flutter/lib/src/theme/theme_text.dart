@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/text/highlighted_text.dart';
+import 'package:spring_boot_starter_flutter/src/text/text_morph.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 
 /// A [Text] that changes its text the theme's way (`motion.text-change`):
@@ -81,34 +82,16 @@ class ThemeText extends StatefulWidget {
     bool keepUnchanged = false,
     String glyphs = TextChangeSpec.defaultGlyphs,
   }) {
-    final pool = glyphs.characters.toList();
-    final a = from.characters.toList();
-    final b = to.characters.toList();
-    final count = a.length > b.length ? a.length : b.length;
-    if (count == 0) {
-      return '';
-    }
-    final spread = (stagger * (count - 1)).clamp(0.0, 0.85);
-    final window = 1 - spread;
-    final out = StringBuffer();
-    for (var i = 0; i < count; i++) {
-      final start = count == 1 ? 0.0 : spread * i / (count - 1);
-      final local = (progress - start) / window;
-      final old = i < a.length ? a[i] : '';
-      final next = i < b.length ? b[i] : '';
-      if (keepUnchanged && old == next) {
-        out.write(old);
-      } else if (local <= 0) {
-        out.write(old);
-      } else if (local >= 1) {
-        out.write(next);
-      } else if (next.trim().isEmpty && old.trim().isEmpty) {
-        out.write(next.isEmpty ? old : next);
-      } else {
-        out.write(pool[(seed * 7 + i * 13) % pool.length]);
-      }
-    }
-    return out.toString().trimRight();
+    final a = from.characters.length;
+    final b = to.characters.length;
+    return TextMorph(
+      count: a > b ? a : b,
+      progress: progress,
+      stagger: stagger,
+      seed: seed,
+      keepUnchanged: keepUnchanged,
+      glyphs: glyphs,
+    ).of(from, to);
   }
 
   @override

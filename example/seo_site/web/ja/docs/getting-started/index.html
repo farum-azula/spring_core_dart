@@ -30,12 +30,15 @@
 
   <title>はじめに · Lumen</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#3f5f90">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <!-- spring:page:background:start -->
-  <style>html,body{background-color:#f9f9ff}</style>
+  <style>html,body{background-color:#f9f9ff}@media (prefers-color-scheme:dark){html,body{background-color:#111318}}</style>
   <!-- spring:page:background:end -->
+  <!-- spring:page:theme-color:start -->
+  <meta name="theme-color" content="#3f5f90" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#a9c7ff" media="(prefers-color-scheme: dark)">
+  <!-- spring:page:theme-color:end -->
   <!-- spring:seo:head:start -->
   <meta name="description" content="Lumen をインストールして、5 分で最初のページを表示します。">
   <link rel="canonical" href="https://lumen.example/ja/docs/getting-started/">

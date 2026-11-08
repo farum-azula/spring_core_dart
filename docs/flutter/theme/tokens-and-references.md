@@ -231,7 +231,7 @@ by a path from the theme's root, and has to be resolved per theme, after
 ## Color expressions
 
 `alpha` and `mix` work on any color value, including references. See
-[colors](colors.md#opacity-and-mixing-alpha-and-mix).
+[colors](colors.md#opacity-and-mixing-the-color-object).
 
 ## See also
 

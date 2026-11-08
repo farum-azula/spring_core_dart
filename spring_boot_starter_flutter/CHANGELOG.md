@@ -1,3 +1,13 @@
+## Unreleased
+
+- `motion.content-change: morph`: the new page of a `MarkdownView` (`RouteContentView`) types itself in line after line from the top, each line's characters running through glyphs as `text-change: morph` does, the old page gone at once; the page has its full height from the first frame. `stagger` (30ms) is how much later each line starts than the one before it, over at most 85 percent of `duration`; `delay` how long the page waits before its first line (the duration of `text-change`, so breadcrumbs above it morph first). `TextMorph` is the glyph-by-glyph change both share, over the pieces of a span with their styles and links kept.
+- `spring.flutter.fonts.families.<family>` (`files`, `languages`): a font family declared by name, loaded from its files in any format the platform reads (`.woff2` on the web too), and one for a language only when the app shows that language: before the first frame when it starts in it, else when it switches to it (`ThemeFonts.loadLanguage`). On the web, the engine then downloads no fallback fonts of its own, page after page, for the characters the main font lacks, which laid a Japanese page out again at every download.
+- Fixed: the text warm-up (`spring.flutter.splash.warm-up.text`) laid each font family out alone, so the characters the main font lacks counted as missing even when a fallback family has them, and the web engine downloaded Noto subsets for a Japanese app that had its own Japanese font. Each family is laid out with the theme's `font-family-fallback` behind it now.
+- `motion.page-transition: content`: a screen comes in the way `motion.content-change` shows other content (`fade-up`, a kind of the app's own), with its duration and curve unless the transition sets its own; so the pages of a site and its screens change alike (`ContentPageTransitionsBuilder`).
+- `motion.enabled` (`true` by default): `false` makes every motion of the app instant, as the device's "reduce motion" does (`SpringThemeData.motionEnabled`). The debug panel has a Motion tab that switches it at run time (`DebugPanel.animations`, `DebugMotionSection`).
+- The debug panel's Theme tab offers the themes the app's own files declare or choose (`SpringThemes.ownNames`), not every base theme a `source` file brings.
+- `FlutterAppSettings.locale`: the locale the app shows (`MaterialApp.locale`); a customizer sets it, the navigation starter to the first address's language.
+
 ## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.

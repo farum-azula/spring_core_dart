@@ -54,9 +54,12 @@ class DebugHost extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         if (panel.frameMeter)
-          FrameMeter(position: panel.frameMeterPosition, child: app!)
+          FrameMeter(
+            position: panel.frameMeterPosition,
+            child: _Motion(on: panel.animations, child: app!),
+          )
         else
-          app!,
+          _Motion(on: panel.animations, child: app!),
         if (panel.isOpen)
           Positioned.fill(
             child: _Panel(panel: panel, sections: sections),
@@ -128,4 +131,21 @@ class _PanelState extends State<_Panel> {
       ),
     );
   }
+}
+
+// The app with its motion on, or off as the device's "reduce motion"
+// turns it off (`MediaQuery.disableAnimations`), from the panel's switch.
+class _Motion extends StatelessWidget {
+  const _Motion({required this.on, required this.child});
+
+  final bool on;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => on
+      ? child
+      : MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child,
+        );
 }

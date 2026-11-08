@@ -271,6 +271,11 @@ enum PageTransitionType {
   /// A fade.
   fade,
 
+  /// As `motion.content-change`: the screen comes in the way a part of a
+  /// screen shows other content (`fade-up` and the rest), with its
+  /// duration and curve unless the transition sets its own.
+  content,
+
   /// None: the screen shows at once.
   none,
 }
@@ -304,7 +309,8 @@ final class PageTransitionSpec {
   /// `type`, `duration` and `curve`); `null` when nothing is written.
   /// Throws a [ThemePropertyException] for a wrong value or key.
   static PageTransitionSpec? parseAt(ThemeProperties p, String base) {
-    const kinds = 'platform, fadeUpwards, zoom, cupertino, fade or none';
+    const kinds =
+        'platform, fadeUpwards, zoom, cupertino, fade, content or none';
     PageTransitionType? kind(String value) =>
         ThemeValues.enumValue(PageTransitionType.values, value);
     final children = p.children(base);

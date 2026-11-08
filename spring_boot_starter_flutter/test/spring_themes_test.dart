@@ -426,4 +426,17 @@ spring:
       expect(find.text('Inter'), findsOneWidget);
     });
   });
+
+  test('ownNames: the themes the files declare or choose, not every name', () {
+    final t = SpringThemes({
+      'themes.ocean.colors.primary': '#000000',
+      'active': 'system',
+      'system-light': 'ocean',
+      'system-dark': 'dark',
+    });
+    expect(t.names, ['light', 'dark', 'ocean']);
+    expect(t.ownNames, ['dark', 'ocean']);
+    // Nothing chosen: `light` is active and `dark` the system's dark one.
+    expect(SpringThemes(const {}).ownNames, ['light', 'dark']);
+  });
 }

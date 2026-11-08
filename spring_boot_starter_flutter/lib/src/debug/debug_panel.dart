@@ -14,6 +14,7 @@ import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_invocation.da
 class DebugPanel extends ChangeNotifier implements KeyedShortcutHandler {
   bool _open = false;
   bool _frameMeter = false;
+  bool _animations = true;
   FrameMeterPosition _position = FrameMeterPosition.topRight;
 
   @override
@@ -56,8 +57,22 @@ class DebugPanel extends ChangeNotifier implements KeyedShortcutHandler {
   }
 
   /// The corner the frame meter shows in.
+  /// Whether the app under the panel moves: `false` makes every animation
+  /// instant, as the device's "reduce motion" does (the Motion tab).
+  bool get animations => _animations;
+
+  /// Turns the app's motion on or off.
+  set animations(bool value) {
+    if (value != _animations) {
+      _animations = value;
+      notifyListeners();
+    }
+  }
+
+  /// The corner the frame meter shows in.
   FrameMeterPosition get frameMeterPosition => _position;
 
+  /// Moves the frame meter to a corner.
   set frameMeterPosition(FrameMeterPosition value) {
     if (value != _position) {
       _position = value;

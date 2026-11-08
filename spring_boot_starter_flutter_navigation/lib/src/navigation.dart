@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart'
     show SynchronousFuture, ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
+    show ThemeFonts;
 import 'package:spring_boot_starter_flutter_navigation/src/language_changed_event.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_location.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_scopes.dart';
@@ -205,7 +207,10 @@ final class Navigation extends ChangeNotifier {
 
   /// Shows the app in [language] at the same screen: the address gets the
   /// language's prefix (none for the default one). Throws an
-  /// [ArgumentError] for a language that is not one of [languages].
+  /// [ArgumentError] for a language that is not one of [languages]. The
+  /// fonts declared for the language (`spring.flutter.fonts.families`)
+  /// load first, when they are not loaded yet, so no text shows without
+  /// them.
   void switchLanguage(String language) {
     if (!languages.contains(language)) {
       throw ArgumentError.value(language, 'language', 'not one of $languages');
@@ -213,8 +218,30 @@ final class Navigation extends ChangeNotifier {
     if (language == _language.value) {
       return;
     }
-    _language.value = language;
-    _changed();
+    void switched() {
+      if (language != _language.value) {
+        _language.value = language;
+        _changed();
+      }
+    }
+
+    final fonts = ThemeFonts.loadLanguage(language);
+    if (fonts == null) {
+      switched();
+    } else {
+      unawaited(fonts.then((_) => switched()));
+    }
+  }
+
+  /// The language [path] names with its first segment (`/ja/catalog` is
+  /// `ja`), else the default one; `null` without [languages].
+  String? languageOf(String path) {
+    if (languages.isEmpty) {
+      return null;
+    }
+    final segments = path.split('/');
+    final first = segments.length > 1 ? segments[1] : '';
+    return languages.contains(first) ? first : languages.first;
   }
 
   /// [location] without its language prefix (`/ja/catalog` is `/catalog`),

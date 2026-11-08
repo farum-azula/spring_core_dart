@@ -4,8 +4,9 @@ import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
-/// The themes: the app's themes, the one shown selected; a tap shows
-/// another, `system` follows the device.
+/// The themes: those the app's own files declare or choose
+/// (`SpringThemes.ownNames`, not the base themes a `source` brings), the
+/// one shown selected; a tap shows another, `system` follows the device.
 final class DebugThemeSection implements DebugPanelSection, Ordered {
   /// The section of [themes] and [selection].
   const DebugThemeSection(this.themes, this.selection);
@@ -34,7 +35,11 @@ final class DebugThemeSection implements DebugPanelSection, Ordered {
           const SizedBox(height: 8),
           Wrap(
             children: [
-              for (final name in ['system', ...themes.names])
+              for (final name in {
+                'system',
+                ...themes.ownNames,
+                if (selection.active != 'system') selection.active,
+              })
                 DebugChip(
                   name,
                   selected: selection.active == name,

@@ -53,6 +53,7 @@ class TextWarmUp extends SplashTask {
   TextWarmUp(
     this.sources, {
     this.fontFamilies = const {},
+    this.fontFamilyFallback = const [],
     this.firstFont = const Duration(milliseconds: 400),
     this.settle = const Duration(milliseconds: 250),
     this.chunk = 200,
@@ -64,7 +65,14 @@ class TextWarmUp extends SplashTask {
   final List<TextWarmUpSource> sources;
 
   /// The families the app's text is in; the platform's default as well.
+  /// Each is laid out with [fontFamilyFallback] behind it, as the app's
+  /// text is: a character one of those has (a font declared for the
+  /// language, `spring.flutter.fonts.families`) needs no download.
   final Set<String> fontFamilies;
+
+  /// The families behind each of [fontFamilies], the theme's
+  /// `typography.font-family-fallback`.
+  final List<String> fontFamilyFallback;
 
   /// How long to wait for the first font: none in that time means the
   /// fonts the app has show all the characters.
@@ -138,13 +146,20 @@ class TextWarmUp extends SplashTask {
     }
   }
 
-  /// Lays [text] out in each of [fontFamilies] and in the default.
+  /// Lays [text] out in each of [fontFamilies] and in the default, with
+  /// [fontFamilyFallback] behind each.
   @visibleForTesting
   void layOut(String text) {
     for (final family in <String?>[null, ...fontFamilies]) {
-      (ui.ParagraphBuilder(
-          ui.ParagraphStyle(fontFamily: family),
-        )..addText(text)).build()
+      (ui.ParagraphBuilder(ui.ParagraphStyle(fontFamily: family))
+            ..pushStyle(
+              ui.TextStyle(
+                fontFamily: family,
+                fontFamilyFallback: fontFamilyFallback,
+              ),
+            )
+            ..addText(text))
+          .build()
         ..layout(const ui.ParagraphConstraints(width: 1024))
         ..dispose();
     }

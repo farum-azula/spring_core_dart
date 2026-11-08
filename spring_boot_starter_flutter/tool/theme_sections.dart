@@ -426,19 +426,43 @@ List<ThemeProp> _shape() {
 
 List<ThemeProp> _motion() => [
   _p(
+    'motion.enabled',
+    'true / false',
+    'Whether the app moves at all: `false` makes every page transition, '
+        'text and content change, scroll to the top and theme animation '
+        'instant, as the device\'s "reduce motion" does.',
+    defaultValue: 'true',
+  ),
+  _p(
     'motion.page-transition',
     'choice',
     'How a new screen comes in, on every platform: a kind, or a map of '
         '`type`, `duration`, `curve`.',
     defaultValue: 'none',
-    values: ['none', 'platform', 'fade-upwards', 'zoom', 'cupertino', 'fade'],
+    values: [
+      'none',
+      'platform',
+      'fade-upwards',
+      'zoom',
+      'cupertino',
+      'fade',
+      'content',
+    ],
   ),
   _p(
     'motion.page-transition.type',
     'choice',
     'The map form\'s kind.',
     defaultValue: 'none',
-    values: ['none', 'platform', 'fade-upwards', 'zoom', 'cupertino', 'fade'],
+    values: [
+      'none',
+      'platform',
+      'fade-upwards',
+      'zoom',
+      'cupertino',
+      'fade',
+      'content',
+    ],
   ),
   _p(
     'motion.page-transition.duration',
@@ -560,24 +584,25 @@ List<ThemeProp> _motion() => [
     'motion.content-change',
     'choice',
     'How a part of a screen shows other content in its place (another page '
-        'in `RouteContentView`, `ContentChange`): at once, a cross-fade, or '
-        'a cross-fade rising a little; a kind of the app\'s own with '
+        'in `RouteContentView`, `ContentChange`): at once, a cross-fade, '
+        'a cross-fade rising a little, or `morph`, the new page typing '
+        'itself in line after line; a kind of the app\'s own with '
         '`ContentTransitions.register`. A kind, or a map of `type`, '
-        '`duration`, `curve`.',
+        '`duration`, `curve`, `stagger`, `delay`.',
     defaultValue: 'none',
-    values: ['none', 'fade', 'fade-up'],
+    values: ['none', 'fade', 'fade-up', 'morph'],
   ),
   _p(
     'motion.content-change.type',
     'choice',
     'The map form\'s kind; a kind of the app\'s own too.',
     defaultValue: 'none',
-    values: ['none', 'fade', 'fade-up'],
+    values: ['none', 'fade', 'fade-up', 'morph'],
   ),
   _p(
     'motion.content-change.duration',
     'duration',
-    'How long the change takes.',
+    'How long the change takes; for `morph`, the whole page.',
     defaultValue: '200ms',
   ),
   _p(
@@ -585,6 +610,21 @@ List<ThemeProp> _motion() => [
     'curve',
     'The curve of the change.',
     defaultValue: 'ease-out',
+  ),
+  _p(
+    'motion.content-change.stagger',
+    'duration',
+    'For `morph`: how much later each line starts than the one before it; '
+        'the starts take at most 85 percent of the duration.',
+    defaultValue: '30ms',
+  ),
+  _p(
+    'motion.content-change.delay',
+    'duration',
+    'For `morph`: how long the new page waits, blank at its full height, '
+        'before its first line (the duration of `text-change`, so a text '
+        'above it morphs first).',
+    defaultValue: '0ms',
   ),
   _p(
     'motion.durations.*',

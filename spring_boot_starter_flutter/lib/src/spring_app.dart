@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -11,6 +13,7 @@ import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_background_widget.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_fonts.dart';
 import 'package:spring_boot_starter_flutter/src/theme/wheel_scroll.dart';
 
 /// The kind of app widget [SpringApp] builds, chosen with
@@ -80,9 +83,17 @@ final class FlutterAppSettings {
     List<Locale>? supportedLocales,
     List<LocalizationsDelegate<Object?>>? localizationsDelegates,
     List<NavigatorObserver>? navigatorObservers,
+    this.locale,
   }) : supportedLocales = supportedLocales ?? [const Locale('en')],
        localizationsDelegates = localizationsDelegates ?? [],
        navigatorObservers = navigatorObservers ?? [];
+
+  /// The locale the app shows (Flutter's `locale:`); `null` by default,
+  /// the device's. The navigation starter sets the language of the first
+  /// address (`/ja/...`), so what the start prepares for a language (the
+  /// fonts of `spring.flutter.fonts.families`) is ready for the first
+  /// frame.
+  Locale? locale;
 
   /// The kind of app widget, from `spring.flutter.app.type`; `widgets` by
   /// default.
@@ -310,7 +321,17 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
   // `motion.overscroll: none` turns the stretch or glow at a
   // scrollable's end off for the whole app.
   TransitionBuilder _builder(FlutterAppSettings app) => (context, child) {
-    Widget content = ThemeBackground(child: child ?? const SizedBox.shrink());
+    Widget content = _LanguageFonts(
+      child: ThemeBackground(child: child ?? const SizedBox.shrink()),
+    );
+    // `motion.enabled: false`: every motion instant, as the device's
+    // "reduce motion".
+    if (SpringTheme.maybeOf(context)?.motionEnabled == false) {
+      content = MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: true),
+        child: content,
+      );
+    }
     if (SpringTheme.maybeOf(context)?.overscroll == OverscrollEffect.none) {
       content = ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
@@ -364,6 +385,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
             : null,
         themeMode: selection.followsSystem ? ThemeMode.system : ThemeMode.light,
         color: shown.appColor,
+        locale: app.locale,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
@@ -377,6 +399,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
         theme: themes.cupertino(shown.name),
         color: shown.appColor,
+        locale: app.locale,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
@@ -390,6 +413,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
         color: shown.appColor,
         textStyle: shown.widgetsTextStyle,
+        locale: app.locale,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
@@ -426,6 +450,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
             : null,
         themeMode: selection.followsSystem ? ThemeMode.system : ThemeMode.light,
         color: shown.appColor,
+        locale: app.locale,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         builder: _builder(app),
@@ -438,6 +463,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
         theme: themes.cupertino(shown.name),
         color: shown.appColor,
+        locale: app.locale,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         builder: _builder(app),
@@ -450,6 +476,7 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
         color: shown.appColor,
         textStyle: shown.widgetsTextStyle,
+        locale: app.locale,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         builder: _builder(app),
@@ -457,4 +484,33 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
       ),
     };
   }
+}
+
+// Loads the font families declared for the language the app shows
+// (`spring.flutter.fonts.families.<family>.languages`) when it changes;
+// the start loaded the first language's before the first frame.
+class _LanguageFonts extends StatefulWidget {
+  const _LanguageFonts({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_LanguageFonts> createState() => _LanguageFontsState();
+}
+
+class _LanguageFontsState extends State<_LanguageFonts> {
+  Locale? _locale;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = Localizations.maybeLocaleOf(context);
+    if (locale != null && locale != _locale) {
+      _locale = locale;
+      unawaited(ThemeFonts.loadLanguage(locale.toLanguageTag()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

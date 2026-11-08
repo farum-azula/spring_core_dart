@@ -322,6 +322,8 @@ final class SpringThemeData {
         ContentChangeSpec.parseAt(p, 'motion.contentchange') ??
         const ContentChangeSpec();
     wheelScroll = WheelScrollSpec.parseAt(p, 'motion.wheelscroll');
+    motionEnabled =
+        p.read('motion.enabled', ThemeValues.boolean, 'true or false') ?? true;
     overscroll =
         p.read(
           'motion.overscroll',
@@ -349,6 +351,7 @@ final class SpringThemeData {
       PageTransitionType.zoom => const ZoomPageTransitionsBuilder(),
       PageTransitionType.cupertino => const CupertinoPageTransitionsBuilder(),
       PageTransitionType.fade => const _FadeTransition(),
+      PageTransitionType.content => const ContentPageTransitionsBuilder(),
       PageTransitionType.none => const _NoTransition(),
     };
     for (final key in p.children('motion')) {
@@ -481,7 +484,8 @@ final class SpringThemeData {
       final second = segments.length > 1 ? segments[1] : null;
       switch (segments.first) {
         case 'motion'
-            when second != 'pagetransition' &&
+            when second != 'enabled' &&
+                second != 'pagetransition' &&
                 second != 'textchange' &&
                 second != 'contentchange' &&
                 second != 'scrolltotop' &&
@@ -492,7 +496,7 @@ final class SpringThemeData {
           throw ThemePropertyException(
             p.propertyName(key),
             p.values[key]!,
-            'motion.page-transition, motion.text-change, '
+            'motion.enabled, motion.page-transition, motion.text-change, '
             'motion.content-change, motion.scroll-to-top, motion.wheel-scroll, '
             'motion.overscroll, '
             'motion.durations.<name> or motion.curves.<name>',
@@ -625,6 +629,12 @@ final class SpringThemeData {
   /// `motion.overscroll`: the app type's own (`platform`, the default:
   /// Material's stretch on Android) or nothing (`none`).
   late final OverscrollEffect overscroll;
+
+  /// `motion.enabled` (`true` by default): `false` makes every motion of
+  /// the app instant, as the device's "reduce motion" does: page
+  /// transitions, text and content changes, the scroll to the top, the
+  /// theme's animations and Flutter's own.
+  late final bool motionEnabled;
 
   /// How a mouse wheel scrolls, from `motion.wheel-scroll`: Flutter's own
   /// step at once (`none`, the default), or eased and scaled.

@@ -184,4 +184,29 @@ void main() {
       ['en->ja', 'ja->en'],
     );
   });
+
+  testWidgets("the first address's language is the app's locale from the "
+      'start; languageOf', (tester) async {
+    await _start(tester);
+    final context = SpringScope.of(
+      tester.element(find.byType(Navigator).first),
+    );
+    final navigation = context.getBean<Navigation>();
+    // The test's platform address is `/`: the default language.
+    expect(FlutterAppSettings.of(context).locale, const Locale('en'));
+    expect(navigation.languageOf('/ja/docs'), 'ja');
+    expect(navigation.languageOf('/docs'), 'en');
+    expect(navigation.languageOf('/fr/docs'), 'en');
+  });
+
+  testWidgets('without languages the app has no locale of its own', (
+    tester,
+  ) async {
+    await _start(tester, languages: false);
+    final context = SpringScope.of(
+      tester.element(find.byType(Navigator).first),
+    );
+    expect(FlutterAppSettings.of(context).locale, isNull);
+    expect(context.getBean<Navigation>().languageOf('/ja/docs'), isNull);
+  });
 }

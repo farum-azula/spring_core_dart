@@ -658,7 +658,7 @@ spring:
       tap-target-size: padded
       splash: sparkle                         # ripple | sparkle | none
       motion:
-        page-transition: zoom                 # platform | fadeUpwards | zoom | cupertino | fade | none, or { type, duration, curve }
+        page-transition: zoom                 # platform | fadeUpwards | zoom | cupertino | fade | content | none, or { type, duration, curve }
         durations:
           medium: 250ms
         curves:
@@ -874,6 +874,26 @@ skipped with a warning.
 spring.flutter.fonts.auto-load=true
 # font files for other uses, such as PDFs
 spring.flutter.fonts.exclude=assets/pdf/**
+```
+
+A family declared by name is loaded from the files it lists, in any
+format the platform reads (`.woff2` on the web too), and one with
+`languages` only when the app shows one of them: before the first frame
+when the app starts in it, else when it switches to it. The other
+languages never download it, and on the web the engine fetches no
+fallback fonts of its own for the characters the main font lacks.
+
+```yaml
+spring:
+  flutter:
+    fonts:
+      families:
+        Noto Sans JP:
+          files: [assets/fonts/NotoSansJP.woff2]
+          languages: [ja]
+    theme:
+      typography:
+        font-family-fallback: [Noto Sans JP]
 ```
 
 ### Themes from a URL

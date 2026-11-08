@@ -213,6 +213,7 @@ context.route.go('/motion', transition: PageTransition.none);
 | `theme` | The theme's `motion.page-transition`, none when it sets nothing (the default) |
 | `platform` | The app type's own |
 | `fadeUpwards`, `zoom`, `cupertino`, `fade` | That kind, in any app type |
+| `content` | As the theme's `motion.content-change`: the way a part of a screen shows other content (`fade-up`) |
 | `none` | At once |
 
 The kinds take the theme's duration and curve when it sets them. With

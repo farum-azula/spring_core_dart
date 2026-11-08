@@ -150,13 +150,38 @@ final class FlutterLifecycleProperties {
 @ConfigurationProperties('spring.flutter.fonts')
 final class FlutterFontsProperties {
   /// Settings with these values.
-  const FlutterFontsProperties({this.autoLoad = true, this.exclude});
+  const FlutterFontsProperties({
+    this.autoLoad = true,
+    this.exclude,
+    this.families,
+  });
 
   /// Whether the fonts named by the theme are loaded from the assets.
   final bool autoLoad;
 
   /// Asset globs the font loader skips.
   final List<String>? exclude;
+
+  /// Font families declared by name, `spring.flutter.fonts.families.<family>.*`:
+  /// their asset files, and the languages they are for. One for a
+  /// language is loaded when the app shows that language, not before.
+  final Map<String, FontFamilyProperties>? families;
+}
+
+/// A font family of `spring.flutter.fonts.families.<family>`.
+final class FontFamilyProperties {
+  /// A family of these files, for these languages.
+  const FontFamilyProperties({this.files = const [], this.languages});
+
+  /// The asset files of the family (`assets/fonts/NotoSansJP.woff2`); a
+  /// file's format is any the platform reads (`.ttf`, `.otf`; `.woff2`
+  /// on the web).
+  final List<String> files;
+
+  /// The languages the family is for (`ja`, `zh-Hant`): loaded before the
+  /// first frame when the app starts in one of them, else when it switches
+  /// to one. None: loaded before the first frame, always.
+  final List<String>? languages;
 }
 
 /// The desktop window as text, `spring.flutter.desktop.window.*`; the

@@ -26,8 +26,10 @@ import 'package:spring_boot_starter_flutter/src/markdown/markdown_outline.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
+import 'package:spring_boot_starter_flutter/src/text/text_morph.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_styles.dart';
 
 /// Shows Markdown with the theme's text styles and the code colored by
@@ -257,8 +259,17 @@ class _CopyButtonState extends State<_CopyButton> {
   );
 }
 
-class _MarkdownViewState extends State<MarkdownView> {
+class _MarkdownViewState extends State<MarkdownView>
+    with SingleTickerProviderStateMixin {
   var _recognizers = <GestureRecognizer>[];
+  // `motion.content-change: morph`: the page's lines come in one after the
+  // other as [_appear] runs; [_lines] is how many the last build made,
+  // [_line] the one being made.
+  late final _appear = AnimationController(vsync: this, value: 1);
+  ContentChangeSpec? _morph;
+  String? _appearFor;
+  int _lines = 0;
+  int _line = 0;
   // The links of the content going out while another comes in; disposed at
   // the next change, long after its transition.
   var _retired = <GestureRecognizer>[];
@@ -352,7 +363,36 @@ class _MarkdownViewState extends State<MarkdownView> {
   void dispose() {
     _disposeRecognizers();
     _ownOutline.dispose();
+    _appear.dispose();
     super.dispose();
+  }
+
+  // The morph of the theme's content change when it applies here: a page
+  // read from a resource, motion not reduced. Another page starts it over
+  // once the page is built and its lines are counted.
+  ContentChangeSpec? _morphFor(String? file) {
+    final spec = SpringTheme.maybeOf(context)?.contentChange;
+    if (spec == null ||
+        !spec.morphs ||
+        spec.duration <= Duration.zero ||
+        (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+      _appearFor = null;
+      return null;
+    }
+    if (file != _appearFor) {
+      _appearFor = file;
+      _appear
+        ..stop()
+        ..value = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _appearFor == file) {
+          _appear
+            ..duration = spec.delay + spec.duration
+            ..forward(from: 0);
+        }
+      });
+    }
+    return spec;
   }
 
   void _disposeRecognizers() {
@@ -393,9 +433,31 @@ class _MarkdownViewState extends State<MarkdownView> {
     if (shown == null) {
       return const SizedBox.shrink();
     }
+    _morph = _morphFor(_shownFile);
     return ContentChange(
       id: _shownFile,
       child: _view(context, shown, content: _shownFile),
+    );
+  }
+
+  // A line of the page: [span] in [style], with [key]. With the morph it
+  // comes in at its turn, [line] (the next one unless given: a list's
+  // marker shares its item's).
+  Widget _text(InlineSpan span, {TextStyle? style, Key? key, int? line}) {
+    final morph = _morph;
+    final settled = Text.rich(span, style: style);
+    if (morph == null) {
+      return key == null ? settled : KeyedSubtree(key: key, child: settled);
+    }
+    return _MorphLine(
+      key: key,
+      index: line ?? _line++,
+      lines: () => _lines,
+      appear: _appear,
+      spec: morph,
+      span: span,
+      style: style,
+      settled: settled,
     );
   }
 
@@ -403,11 +465,13 @@ class _MarkdownViewState extends State<MarkdownView> {
     _renewRecognizers(content ?? markdown);
     _ids.clear();
     _headings.clear();
+    _line = 0;
     final nodes = md.Document(
       extensionSet: MarkdownView.syntax,
     ).parse(MarkdownView.withoutFrontMatter(markdown));
     final look = _Look.of(context);
     final blocks = _blocks(nodes, look);
+    _lines = _line;
     final headings = List.of(_headings);
     final page = _builtFor;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -484,7 +548,7 @@ class _MarkdownViewState extends State<MarkdownView> {
 
   List<Widget> _block(md.Node node, _Look look) {
     if (node is md.Text) {
-      return [Text.rich(TextSpan(text: node.text))];
+      return [_text(TextSpan(text: node.text))];
     }
     if (node is! md.Element) {
       return const [];
@@ -501,7 +565,7 @@ class _MarkdownViewState extends State<MarkdownView> {
         );
         _headings.add(heading);
         return [
-          Text.rich(
+          _text(
             key: _outline.keyOf(heading.id, page: _builtFor),
             TextSpan(
               children: [
@@ -513,7 +577,7 @@ class _MarkdownViewState extends State<MarkdownView> {
           ),
         ];
       case 'p':
-        return [Text.rich(TextSpan(children: _inline(children, look)))];
+        return [_text(TextSpan(children: _inline(children, look)))];
       case 'pre':
         final code = children.whereType<md.Element>().firstOrNull;
         final language = code?.attributes['class']?.replaceFirst(
@@ -607,17 +671,22 @@ class _MarkdownViewState extends State<MarkdownView> {
         : checkbox.first.attributes.containsKey('checked')
         ? '☑'
         : '☐';
+    // The marker comes in with the item's first line.
+    final line = _morph == null ? null : _line;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 24, child: Text(mark)),
+        SizedBox(
+          width: 24,
+          child: _text(TextSpan(text: mark), line: line),
+        ),
         Expanded(
           child: blocks
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: _blocks(children, look),
                 )
-              : Text.rich(
+              : _text(
                   TextSpan(
                     children: _inline(
                       [
@@ -671,8 +740,8 @@ class _MarkdownViewState extends State<MarkdownView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title.toUpperCase(),
+          _text(
+            TextSpan(text: title.toUpperCase()),
             style: look.body.copyWith(
               color: color,
               fontSize: (look.body.fontSize ?? 14) * 0.75,
@@ -776,7 +845,7 @@ class _MarkdownViewState extends State<MarkdownView> {
     ),
     child: SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Text.rich(
+      child: _text(
         TextSpan(
           style: look.code,
           children: [
@@ -821,7 +890,7 @@ class _MarkdownViewState extends State<MarkdownView> {
                   constraints: BoxConstraints(maxWidth: look.cellWidth),
                   padding: const EdgeInsets.all(6),
                   child: switch (row.children?.elementAtOrNull(i)) {
-                    final md.Element cell => Text.rich(
+                    final md.Element cell => _text(
                       TextSpan(children: _inline(cell.children ?? [], look)),
                       style: cell.tag == 'th'
                           ? const TextStyle(fontWeight: FontWeight.w600)
@@ -954,6 +1023,104 @@ class _MarkdownViewState extends State<MarkdownView> {
       .replaceAll('&quot;', '"')
       .replaceAll('&#39;', "'")
       .replaceAll('&amp;', '&');
+}
+
+// One line of a page coming in with `motion.content-change: morph`: at
+// its turn among [lines] (the [index]th start, the starts [spec.stagger]
+// apart over at most 85 percent of [spec.duration]) its characters type
+// in as `text-change: morph` types a line, from the start. Before its
+// turn it holds its place unseen, so the page has its height from the
+// first frame; after it, it is [settled].
+class _MorphLine extends StatelessWidget {
+  const _MorphLine({
+    required this.index,
+    required this.lines,
+    required this.appear,
+    required this.spec,
+    required this.span,
+    required this.style,
+    required this.settled,
+    super.key,
+  });
+
+  final int index;
+  final int Function() lines;
+  final Animation<double> appear;
+  final ContentChangeSpec spec;
+  final InlineSpan span;
+  final TextStyle? style;
+  final Widget settled;
+
+  // How far this line is, 0 to 1, at [value] of the whole change (the
+  // delay included).
+  double _local(double value) {
+    final total = spec.delay + spec.duration;
+    final page =
+        ((value * total.inMicroseconds - spec.delay.inMicroseconds) /
+                spec.duration.inMicroseconds)
+            .clamp(0.0, 1.0);
+    final progress = spec.curve.transform(page);
+    final count = lines();
+    final spread =
+        (spec.stagger.inMicroseconds /
+                spec.duration.inMicroseconds *
+                (count - 1))
+            .clamp(0.0, 0.85);
+    final start = count <= 1 ? 0.0 : spread * index / (count - 1);
+    return ((progress - start) / (1 - spread)).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text =
+        SpringTheme.maybeOf(context)?.textChange ?? const TextChangeSpec();
+    return AnimatedBuilder(
+      animation: appear,
+      builder: (context, _) {
+        final local = _local(appear.value);
+        if (local >= 1) {
+          return settled;
+        }
+        if (local <= 0) {
+          return Visibility.maintain(visible: false, child: settled);
+        }
+        // The window one line types in, for the pace of its characters.
+        final count = lines();
+        final spread =
+            (spec.stagger.inMicroseconds /
+                    spec.duration.inMicroseconds *
+                    (count - 1))
+                .clamp(0.0, 0.85);
+        final window = spec.duration * (1 - spread);
+        final morph = TextMorph(
+          count: TextMorph.lengthOf(span),
+          progress: local,
+          stagger: window == Duration.zero
+              ? 0
+              : text.stagger.inMicroseconds / window.inMicroseconds,
+          seed:
+              (local *
+                      window.inMicroseconds /
+                      text.glyphDuration.inMicroseconds)
+                  .floor(),
+          glyphs: text.glyphs,
+        );
+        final (typed, _) = morph.spanOf(span);
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Visibility.maintain(visible: false, child: settled),
+            Positioned(
+              left: 0,
+              top: 0,
+              right: 0,
+              child: Text.rich(typed, style: style),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 // The theme's styles and colors for Markdown.

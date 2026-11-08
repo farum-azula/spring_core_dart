@@ -41,22 +41,24 @@ spring:
 
 | Property | Type | Values | Default | What it does |
 |---|---|---|---|---|
-| `motion.page-transition` | enum, or a map | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `none` | `none` | The page transition of every screen |
+| `motion.enabled` | bool | `true`, `false` | `true` | `false` makes every motion of the app instant, as the device's "reduce motion" does: page transitions, text and content changes, the scroll to the top, the theme's animations and Flutter's own. The debug panel's Motion tab switches it at run time |
+| `motion.page-transition` | enum, or a map | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `content`, `none` | `none` | The page transition of every screen |
 | `motion.page-transition.type` / `.duration` / `.curve` | enum / duration / curve | as above, `200ms`, a curve name | the kind's own | The map form: the kind with its duration and curve |
 | `motion.text-change` | enum, or a map | `none`, `fade`, `morph` | `none` | What a `ThemeText` does when its text changes, another language say |
 | `motion.text-change.type` / `.duration` / `.curve` / `.stagger` / `.keep-unchanged` / `.glyphs` / `.glyph-duration` | enum / duration / curve / duration / boolean / text / duration | as above, `450ms`, a curve name, `12ms`, `true` / `false`, any characters, a duration over zero | `none`, `450ms`, `ease-out`, `12ms`, `false`, `▓▒░<>/\|=+*#%&@$?!01`, `40ms` | The map form; `stagger` is how much later each character of `morph` starts; `keep-unchanged` leaves the characters that stay the same in place |
 | `motion.overscroll` | `platform`, `none` | | `platform` | What a scrollable shows when pulled past its end: the app type's own (Material's stretch on Android, which distorts the content for a moment) or nothing |
 | `motion.wheel-scroll` | `none`, or a map of `duration` and `speed` | | `none` (`250ms`, `1` in the map) | How a mouse wheel scrolls every scrollable: `none` jumps by the wheel's step as Flutter does; a map eases each step over `duration` and scales it by `speed` |
 | `motion.scroll-to-top` | `none`, or a map of `duration` and `curve` | | `400ms`, `ease-out-cubic` | How a screen goes back to its top when it shows another page (`RouteContentView`); `none` jumps |
-| `motion.content-change` | a kind, or a map | `none`, `fade`, `fade-up`, or a kind of the app's own | `none` | How a part of a screen shows other content in its place (another page in `RouteContentView`) |
+| `motion.content-change` | a kind, or a map | `none`, `fade`, `fade-up`, `morph`, or a kind of the app's own | `none` | How a part of a screen shows other content in its place (another page in `RouteContentView`) |
 | `motion.content-change.type` / `.duration` / `.curve` | kind / duration / curve | as above, `200ms`, a curve name | `none`, `200ms`, `ease-out` | The map form |
+| `motion.content-change.stagger` / `.delay` | duration / duration | `40ms`, `650ms` | `30ms`, none | For `morph`: how much later each line starts than the one before it, and how long the new page waits before its first line |
 | `motion.durations.<name>` | duration | `120ms`, `1.5s`, `2m`, `1h` | `short` 100ms, `medium` 250ms, `long` 450ms | A named duration |
 | `motion.curves.<name>` | curve | a curve name, or four numbers | `standard` | A named curve |
 | `animations.<name>.duration` | duration | `4s`, `250ms` | required | How long one run takes |
 | `animations.<name>.curve` | curve | a curve name, or four numbers | `linear` | The curve of one run |
 | `animations.<name>.repeat` | enum | `none`, `loop`, `reverse` | `none` | What happens at the end of a run |
 
-Inside `motion` only `page-transition`, `text-change`, `content-change`, `scroll-to-top`, `wheel-scroll`, `overscroll`, `durations` and `curves` exist.
+Inside `motion` only `enabled`, `page-transition`, `text-change`, `content-change`, `scroll-to-top`, `wheel-scroll`, `overscroll`, `durations` and `curves` exist.
 Inside an animation only `duration`, `curve` and `repeat` exist; another key
 stops the start and names the closest one.
 
@@ -76,6 +78,7 @@ Material's own page routes follow it too.
 | `zoom` | The new page grows from the centre while it fades in (Android 10 style) |
 | `cupertino` | The iOS slide from the right, with the swipe-back gesture, in any app type |
 | `fade` | The new page fades in |
+| `content` | The new page comes in as `motion.content-change` shows other content (`fade-up`, a kind of the app's own), with its duration and curve unless the map form sets its own: the screens of a site change as its pages do |
 
 Screens show at once by default, in every app type. Turn the platform's
 transition on for every screen:
@@ -174,7 +177,27 @@ spring:
 
 - `fade`: the old content fades out while the new one fades in.
 - `fade-up`: the same, the new content rising a little.
+- `morph`: the new content types itself in, line after line from the top,
+  each line's characters running through glyphs as `text-change: morph`
+  does; the old content goes at once. The page has its full height from
+  the first frame: a line whose turn has not come holds its place unseen.
 - `none` (the default): the new content at once.
+
+With `morph`, `stagger` is how much later each line starts than the one
+before it (30ms by default), and `delay` how long the page waits, blank,
+before its first line (none by default). Give it the duration of
+`text-change`, and a `ThemeText` above the page (breadcrumbs) morphs
+first, the page follows:
+
+```yaml
+motion:
+  text-change: { type: morph, duration: 650ms }
+  content-change: { type: morph, duration: 1.2s, stagger: 40ms, delay: 650ms }
+```
+
+The lines start over at most 85 percent of `duration`, so a long page is
+done in `duration` too. `MarkdownView` and `RouteContentView` morph; a
+`ContentChange` of anything else shows its new content at once.
 
 When another page opens on the same screen (`RouteContentView`), the
 screen also goes back to its top, as a browser opens a page:

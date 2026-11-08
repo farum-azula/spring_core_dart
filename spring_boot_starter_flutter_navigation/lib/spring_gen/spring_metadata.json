@@ -227,6 +227,14 @@
           "type": "ValueListenable<String?>"
         },
         {
+          "name": "languageOf",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "String path"
+          ]
+        },
+        {
           "name": "languages",
           "kind": "field",
           "type": "List<String>"

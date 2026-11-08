@@ -20,6 +20,12 @@ final class RouteLanguageCustomizer implements FlutterAppCustomizer {
     if (navigation.languages.isEmpty) {
       return;
     }
+    // The first address's language: the router read it before the app's
+    // settings are made, so what the start prepares for a language (its
+    // fonts) is ready for the first frame.
+    if (navigation.language case final first?) {
+      app.locale = localeOf(first);
+    }
     final inner = app.builder;
     app.builder = (context, child) => ValueListenableBuilder<String?>(
       valueListenable: navigation.languageListenable,

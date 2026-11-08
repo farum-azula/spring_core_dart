@@ -16,6 +16,7 @@ import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/beans_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/configuration_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/frames_section.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/motion_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/logs_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/start_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/theme_section.dart';
@@ -163,6 +164,10 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
           fontFamilies: {
             for (final name in themes.names) ...themes.data(name).fontFamilies,
           },
+          fontFamilyFallback: {
+            for (final name in themes.names)
+              ...?themes.data(name).fontFamilyFallback,
+          }.toList(),
           firstFont:
               environment.getPropertyAs<Duration>(
                 'spring.flutter.splash.warm-up.text.first-font',
@@ -331,6 +336,13 @@ final BeanModule springBootStarterFlutterDebugAutoConfiguration = BeanModule(
       source: _debugSource,
       conditions: const [_debugOn],
       create: (r) => DebugFramesSection(r.dependency<DebugPanel>()),
+    ),
+    BeanDefinition<DebugMotionSection>(
+      name: 'debugMotionSection',
+      types: const [DebugMotionSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugMotionSection(r.dependency<DebugPanel>()),
     ),
     BeanDefinition<DebugConfigurationSection>(
       name: 'debugConfigurationSection',

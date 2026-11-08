@@ -71,6 +71,7 @@ void main() {
     for (final tab in [
       'Logs',
       'Frames',
+      'Motion',
       'Configuration',
       'Beans',
       'Theme',
@@ -131,6 +132,19 @@ void main() {
     await tester.pump();
     expect(panel.frameMeter, isTrue);
     expect(find.byType(FrameMeter), findsOneWidget);
+
+    // Motion off: the app under the panel has animations disabled.
+    await tester.tap(find.text('Motion'));
+    await tester.pump();
+    await tester.tap(find.text('Off').last);
+    await tester.pump();
+    expect(panel.animations, isFalse);
+    expect(
+      MediaQuery.disableAnimationsOf(
+        tester.element(find.byType(Navigator).first),
+      ),
+      isTrue,
+    );
 
     final rows = context.getBean<DebugConfigurationSection>().properties();
     final token = rows.firstWhere((row) => row.$1 == 'app.api-token');

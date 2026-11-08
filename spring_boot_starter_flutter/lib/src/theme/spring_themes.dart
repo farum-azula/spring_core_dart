@@ -7,6 +7,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_choice_store.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 
 /// Changes, in code, every Material `ThemeData` made from the theme
 /// properties: for what the properties do not cover.
@@ -240,6 +241,29 @@ final class SpringThemes extends ChangeNotifier {
   /// The names of every theme: `light`, `dark`, then the custom ones in
   /// alphabetical order. A theme menu lists these.
   List<String> get names => _config.names;
+
+  /// The themes the app's own files declare or choose (`themes.<name>`,
+  /// `active`, `system-light`, `system-dark`), in the order of [names];
+  /// not the rest of what a `source` file brings (its base themes). What
+  /// the debug panel offers to try.
+  List<String> get ownNames {
+    final own = <String>{
+      for (final key in _files.keys)
+        if (key.split('.') case [final first, final name, _, ...]
+            when ThemeValues.canonical(first) == 'themes')
+          ThemeValues.canonical(name),
+      for (final chosen in [
+        _config.active,
+        _config.systemLight,
+        _config.systemDark,
+      ])
+        if (chosen != 'system') ThemeValues.canonical(chosen),
+    };
+    return [
+      for (final name in names)
+        if (own.contains(ThemeValues.canonical(name))) name,
+    ];
+  }
 
   /// The theme's name as declared, for [name] written in any case or with
   /// `-` and `_` (`Ocean-Night` gives `ocean-night`); `null` when there is

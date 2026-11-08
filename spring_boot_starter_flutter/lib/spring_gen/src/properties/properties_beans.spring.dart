@@ -153,19 +153,30 @@ _i2.FlutterLifecycleProperties _$create33(
 );
 Object? _$get34(_i2.FlutterFontsProperties bean) => bean.autoLoad;
 Object? _$get35(_i2.FlutterFontsProperties bean) => bean.exclude;
-_i2.FlutterFontsProperties _$create36(
+Object? _$get36(_i2.FlutterFontsProperties bean) => bean.families;
+_i2.FlutterFontsProperties _$create37(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterFontsProperties(
   autoLoad: named.argumentOr(#autoLoad, true),
   exclude: named.argumentOr(#exclude, null),
+  families: named.argumentOr(#families, null),
 );
-Object? _$get37(_i2.DesktopWindowProperties bean) => bean.title;
-Object? _$get38(_i2.DesktopWindowProperties bean) => bean.titleBar;
-Object? _$get39(_i2.DesktopWindowProperties bean) => bean.initialSize;
-Object? _$get40(_i2.DesktopWindowProperties bean) => bean.minSize;
-Object? _$get41(_i2.DesktopWindowProperties bean) => bean.maxSize;
-_i2.DesktopWindowProperties _$create42(
+Object? _$get38(_i2.FontFamilyProperties bean) => bean.files;
+Object? _$get39(_i2.FontFamilyProperties bean) => bean.languages;
+_i2.FontFamilyProperties _$create40(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.FontFamilyProperties(
+  files: named.argumentOr(#files, const <String>[]),
+  languages: named.argumentOr(#languages, null),
+);
+Object? _$get41(_i2.DesktopWindowProperties bean) => bean.title;
+Object? _$get42(_i2.DesktopWindowProperties bean) => bean.titleBar;
+Object? _$get43(_i2.DesktopWindowProperties bean) => bean.initialSize;
+Object? _$get44(_i2.DesktopWindowProperties bean) => bean.minSize;
+Object? _$get45(_i2.DesktopWindowProperties bean) => bean.maxSize;
+_i2.DesktopWindowProperties _$create46(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.DesktopWindowProperties(
@@ -175,18 +186,18 @@ _i2.DesktopWindowProperties _$create42(
   minSize: named.argumentOr(#minSize, null),
   maxSize: named.argumentOr(#maxSize, null),
 );
-Object? _$get43(_i2.FlutterWebProperties bean) => bean.host;
-Object? _$get44(_i2.FlutterWebProperties bean) => bean.port;
-Object? _$get45(_i2.FlutterWebProperties bean) => bean.baseHref;
-Object? _$get46(_i2.FlutterWebProperties bean) => bean.https;
-Object? _$get47(_i2.FlutterWebProperties bean) => bean.headers;
-Object? _$get48(_i2.FlutterWebProperties bean) => bean.contentSecurityPolicy;
-Object? _$get49(_i2.FlutterWebProperties bean) =>
+Object? _$get47(_i2.FlutterWebProperties bean) => bean.host;
+Object? _$get48(_i2.FlutterWebProperties bean) => bean.port;
+Object? _$get49(_i2.FlutterWebProperties bean) => bean.baseHref;
+Object? _$get50(_i2.FlutterWebProperties bean) => bean.https;
+Object? _$get51(_i2.FlutterWebProperties bean) => bean.headers;
+Object? _$get52(_i2.FlutterWebProperties bean) => bean.contentSecurityPolicy;
+Object? _$get53(_i2.FlutterWebProperties bean) =>
     bean.contentSecurityPolicyReportOnly;
-Object? _$get50(_i2.FlutterWebProperties bean) =>
+Object? _$get54(_i2.FlutterWebProperties bean) =>
     bean.contentSecurityPolicyConnectSrc;
-Object? _$get51(_i2.FlutterWebProperties bean) => bean.proxy;
-_i2.FlutterWebProperties _$create52(
+Object? _$get55(_i2.FlutterWebProperties bean) => bean.proxy;
+_i2.FlutterWebProperties _$create56(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterWebProperties(
@@ -206,20 +217,20 @@ _i2.FlutterWebProperties _$create52(
   ),
   proxy: named.argumentOr(#proxy, null),
 );
-Object? _$get53(_i2.FlutterWebHttps bean) => bean.certPath;
-Object? _$get54(_i2.FlutterWebHttps bean) => bean.certKeyPath;
-_i2.FlutterWebHttps _$create55(
+Object? _$get57(_i2.FlutterWebHttps bean) => bean.certPath;
+Object? _$get58(_i2.FlutterWebHttps bean) => bean.certKeyPath;
+_i2.FlutterWebHttps _$create59(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterWebHttps(
   certPath: named.argumentOr(#certPath, null),
   certKeyPath: named.argumentOr(#certKeyPath, null),
 );
-Object? _$get56(_i2.FlutterWebProxyRule bean) => bean.prefix;
-Object? _$get57(_i2.FlutterWebProxyRule bean) => bean.regex;
-Object? _$get58(_i2.FlutterWebProxyRule bean) => bean.replace;
-Object? _$get59(_i2.FlutterWebProxyRule bean) => bean.target;
-_i2.FlutterWebProxyRule _$create60(
+Object? _$get60(_i2.FlutterWebProxyRule bean) => bean.prefix;
+Object? _$get61(_i2.FlutterWebProxyRule bean) => bean.regex;
+Object? _$get62(_i2.FlutterWebProxyRule bean) => bean.replace;
+Object? _$get63(_i2.FlutterWebProxyRule bean) => bean.target;
+_i2.FlutterWebProxyRule _$create64(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterWebProxyRule(
@@ -228,21 +239,21 @@ _i2.FlutterWebProxyRule _$create60(
   replace: named.argumentOr(#replace, null),
   target: named.argumentOr(#target, null),
 );
-Object? _$get61(_i2.FlutterWebSeoProperties bean) => bean.enabled;
-Object? _$get62(_i2.FlutterWebSeoProperties bean) => bean.siteUrl;
-Object? _$get63(_i2.FlutterWebSeoProperties bean) => bean.fromRoutes;
-Object? _$get64(_i2.FlutterWebSeoProperties bean) => bean.exclude;
-Object? _$get65(_i2.FlutterWebSeoProperties bean) => bean.title;
-Object? _$get66(_i2.FlutterWebSeoProperties bean) => bean.description;
-Object? _$get67(_i2.FlutterWebSeoProperties bean) => bean.image;
-Object? _$get68(_i2.FlutterWebSeoProperties bean) => bean.siteName;
-Object? _$get69(_i2.FlutterWebSeoProperties bean) => bean.content;
-Object? _$get70(_i2.FlutterWebSeoProperties bean) => bean.pages;
-Object? _$get71(_i2.FlutterWebSeoProperties bean) => bean.sitemap;
-Object? _$get72(_i2.FlutterWebSeoProperties bean) => bean.llms;
-Object? _$get73(_i2.FlutterWebSeoProperties bean) => bean.markdown;
-Object? _$get74(_i2.FlutterWebSeoProperties bean) => bean.pageFiles;
-_i2.FlutterWebSeoProperties _$create75(
+Object? _$get65(_i2.FlutterWebSeoProperties bean) => bean.enabled;
+Object? _$get66(_i2.FlutterWebSeoProperties bean) => bean.siteUrl;
+Object? _$get67(_i2.FlutterWebSeoProperties bean) => bean.fromRoutes;
+Object? _$get68(_i2.FlutterWebSeoProperties bean) => bean.exclude;
+Object? _$get69(_i2.FlutterWebSeoProperties bean) => bean.title;
+Object? _$get70(_i2.FlutterWebSeoProperties bean) => bean.description;
+Object? _$get71(_i2.FlutterWebSeoProperties bean) => bean.image;
+Object? _$get72(_i2.FlutterWebSeoProperties bean) => bean.siteName;
+Object? _$get73(_i2.FlutterWebSeoProperties bean) => bean.content;
+Object? _$get74(_i2.FlutterWebSeoProperties bean) => bean.pages;
+Object? _$get75(_i2.FlutterWebSeoProperties bean) => bean.sitemap;
+Object? _$get76(_i2.FlutterWebSeoProperties bean) => bean.llms;
+Object? _$get77(_i2.FlutterWebSeoProperties bean) => bean.markdown;
+Object? _$get78(_i2.FlutterWebSeoProperties bean) => bean.pageFiles;
+_i2.FlutterWebSeoProperties _$create79(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterWebSeoProperties(
@@ -261,10 +272,10 @@ _i2.FlutterWebSeoProperties _$create75(
   markdown: named.argumentOr(#markdown, true),
   pageFiles: named.argumentOr(#pageFiles, r'directory'),
 );
-Object? _$get76(_i2.FlutterWebSeoContent bean) => bean.location;
-Object? _$get77(_i2.FlutterWebSeoContent bean) => bean.path;
-Object? _$get78(_i2.FlutterWebSeoContent bean) => bean.exclude;
-_i2.FlutterWebSeoContent _$create79(
+Object? _$get80(_i2.FlutterWebSeoContent bean) => bean.location;
+Object? _$get81(_i2.FlutterWebSeoContent bean) => bean.path;
+Object? _$get82(_i2.FlutterWebSeoContent bean) => bean.exclude;
+_i2.FlutterWebSeoContent _$create83(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterWebSeoContent(
@@ -272,12 +283,12 @@ _i2.FlutterWebSeoContent _$create79(
   path: named.argumentOr(#path, r'/'),
   exclude: named.argumentOr(#exclude, null),
 );
-Object? _$get80(_i2.FlutterWebSeoPage bean) => bean.path;
-Object? _$get81(_i2.FlutterWebSeoPage bean) => bean.title;
-Object? _$get82(_i2.FlutterWebSeoPage bean) => bean.description;
-Object? _$get83(_i2.FlutterWebSeoPage bean) => bean.image;
-Object? _$get84(_i2.FlutterWebSeoPage bean) => bean.index;
-_i2.FlutterWebSeoPage _$create85(
+Object? _$get84(_i2.FlutterWebSeoPage bean) => bean.path;
+Object? _$get85(_i2.FlutterWebSeoPage bean) => bean.title;
+Object? _$get86(_i2.FlutterWebSeoPage bean) => bean.description;
+Object? _$get87(_i2.FlutterWebSeoPage bean) => bean.image;
+Object? _$get88(_i2.FlutterWebSeoPage bean) => bean.index;
+_i2.FlutterWebSeoPage _$create89(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterWebSeoPage(
@@ -287,29 +298,29 @@ _i2.FlutterWebSeoPage _$create85(
   image: named.argumentOr(#image, null),
   index: named.argumentOr(#index, null),
 );
-Object? _$get86(_i2.FlutterRestartProperties bean) => bean.enabled;
-_i2.FlutterRestartProperties _$create87(
+Object? _$get90(_i2.FlutterRestartProperties bean) => bean.enabled;
+_i2.FlutterRestartProperties _$create91(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterRestartProperties(enabled: named.argumentOr(#enabled, true));
-Object? _$get88(_i2.FlutterDataSourceProperties bean) => bean.url;
-Object? _$get89(_i2.FlutterDataSourceProperties bean) => bean.sqlite;
-_i2.FlutterDataSourceProperties _$create90(
+Object? _$get92(_i2.FlutterDataSourceProperties bean) => bean.url;
+Object? _$get93(_i2.FlutterDataSourceProperties bean) => bean.sqlite;
+_i2.FlutterDataSourceProperties _$create94(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterDataSourceProperties(
   url: named.argumentOr(#url, null),
   sqlite: named.argumentOr(#sqlite, const _i2.FlutterSqliteProperties()),
 );
-Object? _$get91(_i2.FlutterSqliteProperties bean) => bean.location;
-_i2.FlutterSqliteProperties _$create92(
+Object? _$get95(_i2.FlutterSqliteProperties bean) => bean.location;
+_i2.FlutterSqliteProperties _$create96(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterSqliteProperties(
   location: named.argumentOr(#location, _i5.SqliteLocation.support),
 );
-Object? _$get93(_i2.FlutterDataSourcesProperties bean) => bean.datasources;
-_i2.FlutterDataSourcesProperties _$create94(
+Object? _$get97(_i2.FlutterDataSourcesProperties bean) => bean.datasources;
+_i2.FlutterDataSourcesProperties _$create98(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.FlutterDataSourcesProperties(
@@ -538,6 +549,13 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'families',
+            _$target6,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
+            returnType: r'Map',
           ),
         ],
         reason: r'FlutterFontsProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
@@ -1240,6 +1258,16 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           ),
           get: _$get35,
         ),
+        _i1.BeanProperty<_i2.FlutterFontsProperties>(
+          r'families',
+          nullable: true,
+          typeInfo: _i1.MapType<String, _i2.FontFamilyProperties>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<_i2.FontFamilyProperties>(),
+            nullable: true,
+          ),
+          get: _$get36,
+        ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.flutter.fonts')],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -1258,8 +1286,55 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             type: _i1.ListType<String>(_i1.ClassType<String>(), nullable: true),
             symbol: #exclude,
           ),
+          _i1.BeanParameter(
+            r'families',
+            type: _i1.MapType<String, _i2.FontFamilyProperties>(
+              _i1.ClassType<String>(),
+              _i1.ClassType<_i2.FontFamilyProperties>(),
+              nullable: true,
+            ),
+            symbol: #families,
+          ),
         ],
-        create: _$create36,
+        create: _$create37,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.FontFamilyProperties>(
+      className: r'FontFamilyProperties',
+      properties: [
+        _i1.BeanProperty<_i2.FontFamilyProperties>(
+          r'files',
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get38,
+        ),
+        _i1.BeanProperty<_i2.FontFamilyProperties>(
+          r'languages',
+          nullable: true,
+          typeInfo: _i1.ListType<String>(
+            _i1.ClassType<String>(),
+            nullable: true,
+          ),
+          get: _$get39,
+        ),
+      ],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.FontFamilyProperties.new,
+      constructor: _i1.BeanConstructor<_i2.FontFamilyProperties>(
+        parameters: [
+          _i1.BeanParameter(
+            r'files',
+            type: _i1.ListType<String>(_i1.ClassType<String>()),
+            symbol: #files,
+            hasDefaultValue: true,
+            defaultValue: <String>[],
+          ),
+          _i1.BeanParameter(
+            r'languages',
+            type: _i1.ListType<String>(_i1.ClassType<String>(), nullable: true),
+            symbol: #languages,
+          ),
+        ],
+        create: _$create40,
       ),
     ),
     const _i1.BeanIntrospection<_i2.DesktopWindowProperties>(
@@ -1269,12 +1344,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'title',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get37,
+          get: _$get41,
         ),
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'titleBar',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get38,
+          get: _$get42,
           annotations: [
             _i1.PropertyValues([r'default', r'transparent', r'hidden']),
           ],
@@ -1283,19 +1358,19 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'initialSize',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get39,
+          get: _$get43,
         ),
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'minSize',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get40,
+          get: _$get44,
         ),
         _i1.BeanProperty<_i2.DesktopWindowProperties>(
           r'maxSize',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get41,
+          get: _$get45,
         ),
       ],
       annotations: [
@@ -1333,7 +1408,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #maxSize,
           ),
         ],
-        create: _$create42,
+        create: _$create46,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterWebProperties>(
@@ -1343,13 +1418,13 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'host',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get43,
+          get: _$get47,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'port',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get44,
+          get: _$get48,
           annotations: [
             _i1.Range(0, 65535),
             _i1.WarnValues(
@@ -1445,13 +1520,13 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'baseHref',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get45,
+          get: _$get49,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'https',
           nullable: true,
           typeInfo: _i1.ClassType<_i2.FlutterWebHttps>(nullable: true),
-          get: _$get46,
+          get: _$get50,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'headers',
@@ -1461,19 +1536,19 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: _$get47,
+          get: _$get51,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'contentSecurityPolicy',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get48,
+          get: _$get52,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'contentSecurityPolicyReportOnly',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get49,
+          get: _$get53,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'contentSecurityPolicyConnectSrc',
@@ -1482,7 +1557,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: _$get50,
+          get: _$get54,
         ),
         _i1.BeanProperty<_i2.FlutterWebProperties>(
           r'proxy',
@@ -1491,7 +1566,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<_i2.FlutterWebProxyRule>(),
             nullable: true,
           ),
-          get: _$get51,
+          get: _$get55,
         ),
       ],
       annotations: [
@@ -1554,7 +1629,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #proxy,
           ),
         ],
-        create: _$create52,
+        create: _$create56,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterWebHttps>(
@@ -1564,13 +1639,13 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'certPath',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get53,
+          get: _$get57,
         ),
         _i1.BeanProperty<_i2.FlutterWebHttps>(
           r'certKeyPath',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get54,
+          get: _$get58,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -1588,7 +1663,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #certKeyPath,
           ),
         ],
-        create: _$create55,
+        create: _$create59,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterWebProxyRule>(
@@ -1598,25 +1673,25 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'prefix',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get56,
+          get: _$get60,
         ),
         _i1.BeanProperty<_i2.FlutterWebProxyRule>(
           r'regex',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get57,
+          get: _$get61,
         ),
         _i1.BeanProperty<_i2.FlutterWebProxyRule>(
           r'replace',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get58,
+          get: _$get62,
         ),
         _i1.BeanProperty<_i2.FlutterWebProxyRule>(
           r'target',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get59,
+          get: _$get63,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -1644,7 +1719,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #target,
           ),
         ],
-        create: _$create60,
+        create: _$create64,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterWebSeoProperties>(
@@ -1653,18 +1728,18 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'enabled',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get61,
+          get: _$get65,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'siteUrl',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get62,
+          get: _$get66,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'fromRoutes',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get63,
+          get: _$get67,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'exclude',
@@ -1673,30 +1748,30 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: _$get64,
+          get: _$get68,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'title',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get65,
+          get: _$get69,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'description',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get66,
+          get: _$get70,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'image',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get67,
+          get: _$get71,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'siteName',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get68,
+          get: _$get72,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'content',
@@ -1705,7 +1780,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<_i2.FlutterWebSeoContent>(),
             nullable: true,
           ),
-          get: _$get69,
+          get: _$get73,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'pages',
@@ -1714,27 +1789,27 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<_i2.FlutterWebSeoPage>(),
             nullable: true,
           ),
-          get: _$get70,
+          get: _$get74,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'sitemap',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get71,
+          get: _$get75,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'llms',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get72,
+          get: _$get76,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'markdown',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get73,
+          get: _$get77,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoProperties>(
           r'pageFiles',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get74,
+          get: _$get78,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.flutter.web.seo')],
@@ -1833,7 +1908,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             defaultValue: r'directory',
           ),
         ],
-        create: _$create75,
+        create: _$create79,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterWebSeoContent>(
@@ -1843,12 +1918,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'location',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get76,
+          get: _$get80,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoContent>(
           r'path',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get77,
+          get: _$get81,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoContent>(
           r'exclude',
@@ -1857,7 +1932,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: _$get78,
+          get: _$get82,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -1882,7 +1957,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #exclude,
           ),
         ],
-        create: _$create79,
+        create: _$create83,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterWebSeoPage>(
@@ -1892,31 +1967,31 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'path',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get80,
+          get: _$get84,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoPage>(
           r'title',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get81,
+          get: _$get85,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoPage>(
           r'description',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get82,
+          get: _$get86,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoPage>(
           r'image',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get83,
+          get: _$get87,
         ),
         _i1.BeanProperty<_i2.FlutterWebSeoPage>(
           r'index',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get84,
+          get: _$get88,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -1949,7 +2024,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #index,
           ),
         ],
-        create: _$create85,
+        create: _$create89,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterRestartProperties>(
@@ -1958,7 +2033,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.FlutterRestartProperties>(
           r'enabled',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get86,
+          get: _$get90,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.devtools.restart')],
@@ -1974,7 +2049,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             defaultValue: true,
           ),
         ],
-        create: _$create87,
+        create: _$create91,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterDataSourceProperties>(
@@ -1984,12 +2059,12 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
           r'url',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get88,
+          get: _$get92,
         ),
         _i1.BeanProperty<_i2.FlutterDataSourceProperties>(
           r'sqlite',
           typeInfo: _i1.ClassType<_i2.FlutterSqliteProperties>(),
-          get: _$get89,
+          get: _$get93,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.datasource')],
@@ -2010,7 +2085,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             defaultValue: _i2.FlutterSqliteProperties(),
           ),
         ],
-        create: _$create90,
+        create: _$create94,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterSqliteProperties>(
@@ -2019,7 +2094,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.FlutterSqliteProperties>(
           r'location',
           typeInfo: _i1.EnumType<_i5.SqliteLocation>(_i5.SqliteLocation.values),
-          get: _$get91,
+          get: _$get95,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -2034,7 +2109,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             defaultValue: _i5.SqliteLocation.support,
           ),
         ],
-        create: _$create92,
+        create: _$create96,
       ),
     ),
     const _i1.BeanIntrospection<_i2.FlutterDataSourcesProperties>(
@@ -2048,7 +2123,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             _i1.ClassType<_i2.FlutterDataSourceProperties>(),
             nullable: true,
           ),
-          get: _$get93,
+          get: _$get97,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring')],
@@ -2066,7 +2141,7 @@ _i1.BeanModule get $flutterConfigBeans => _i1.BeanModule(
             symbol: #datasources,
           ),
         ],
-        create: _$create94,
+        create: _$create98,
       ),
     ),
   ],
