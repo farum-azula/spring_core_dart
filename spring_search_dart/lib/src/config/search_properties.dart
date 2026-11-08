@@ -49,6 +49,26 @@ class SearchProperties {
 
   /// The Markdown files to search.
   List<MarkdownSearchProperties> markdown = [];
+
+  /// When the indexes are built: at the first search (`first-search`, the
+  /// default), while the application starts (`start`: an
+  /// `ApplicationRunner`, so a Flutter app builds them behind its splash),
+  /// or right after it, behind the running app (`background`).
+  SearchIndexing indexing = SearchIndexing.firstSearch;
+}
+
+/// When `spring.search.indexing` builds the indexes.
+enum SearchIndexing {
+  /// At the first search, or when the app calls `SearchService.prepare`.
+  firstSearch,
+
+  /// While the application starts, before it is shown.
+  start,
+
+  /// Right after the application starts, a little at a time while it runs:
+  /// the start does not wait, and the first search most likely finds the
+  /// index of its language ready.
+  background,
 }
 
 /// One `spring.search.markdown[n]` entry: the Markdown files of a

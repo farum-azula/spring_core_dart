@@ -164,6 +164,23 @@ void main() {
     });
   });
 
+  test('primary constructors: the dependencies and a const bean', () async {
+    final code = await _generate('''
+@Component()
+class const Clock();
+
+@Service()
+class Greeter(this.clock, {@Value(r'\${greeting:Hi}') this.greeting = 'Hi'}) {
+  final Clock clock;
+  final String greeting;
+}
+''');
+    expect(code, _has('Clock()'));
+    expect(code, _has("Dependency(Clock, name: r'clock')"));
+    expect(code, _has('Greeter(r.dependency<Clock>('));
+    expect(code, contains('greeting:'));
+  });
+
   group('generated code compiles', () {
     test('SDK types as beans (internal dart:_http, dart:_internal)', () async {
       expect(

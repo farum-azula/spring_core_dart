@@ -41,6 +41,8 @@ final class SearchService implements GenericApplicationListener {
 
   static const _log = SpringLog('spring_search_dart.SearchService');
 
+  static const _slice = Duration(milliseconds: 8);
+
   /// Where the documents come from.
   final List<SearchDocumentSource> sources;
 
@@ -68,7 +70,10 @@ final class SearchService implements GenericApplicationListener {
   /// The attribute whose value only its best hit keeps.
   final String? collapseBy;
 
-  Future<Map<String, SearchIndex>>? _indexes;
+  // The documents, read once, by language; the index of each language,
+  // built when that language is first searched (or prepared).
+  Future<Map<String, List<SearchDocument>>>? _documents;
+  final _indexes = <String, Future<SearchIndex>>{};
 
   /// The hits of [query] in [language], best first, at most [limit]
   /// (`spring.search.max-hits`).
@@ -95,7 +100,10 @@ final class SearchService implements GenericApplicationListener {
       hits = [
         for (final hit in hits)
           hit.withScore(
-            rankers.fold(hit.score, (score, ranker) => ranker.rank(hit, score)),
+            rankers.fold(
+              hit.score,
+              (score, ranker) => ranker.rank(hit, score, parsed),
+            ),
           ),
       ]..sort((a, b) => b.score.compareTo(a.score));
     }
@@ -111,41 +119,100 @@ final class SearchService implements GenericApplicationListener {
   }
 
   /// The index of [language], or the default language's when it has no
-  /// documents; `null` when there are none at all.
+  /// documents; `null` when there are none at all. Built the first time
+  /// it is asked for: a search in one language waits for its index only.
   Future<SearchIndex?> index(String language) async {
-    final indexes = await (_indexes ??= _build());
-    return indexes[language] ??
-        indexes[language.split(RegExp('[-_]')).first] ??
-        indexes[defaultLanguage];
+    final documents = await (_documents ??= _read());
+    final key = documents.containsKey(language)
+        ? language
+        : documents.containsKey(language.split(RegExp('[-_]')).first)
+        ? language.split(RegExp('[-_]')).first
+        : defaultLanguage;
+    final texts = documents[key];
+    if (texts == null) {
+      return null;
+    }
+    return await _indexes.putIfAbsent(key, () => _build(key, texts));
   }
 
-  /// Forgets the indexes: the next search builds them again.
-  void invalidate() => _indexes = null;
+  /// Starts building the index of [language] now (every language when
+  /// none is named, the default one first), when it is not built or being
+  /// built; completes when it is. A search waits for the same build. An
+  /// app calls it when its search opens, so the first word typed finds the
+  /// index ready; `spring.search.indexing` builds at the start (`start`)
+  /// or right after it, behind the app (`background`).
+  Future<void> prepare({String? language}) async {
+    if (language != null) {
+      await index(language);
+      return;
+    }
+    final documents = await (_documents ??= _read());
+    for (final key in [
+      if (documents.containsKey(defaultLanguage)) defaultLanguage,
+      ...documents.keys.where((key) => key != defaultLanguage),
+    ]) {
+      await index(key);
+    }
+  }
 
-  Future<Map<String, SearchIndex>> _build() async {
+  /// Whether the documents are read (or being read): a build started.
+  bool get prepared => _documents != null;
+
+  /// Whether the index of [language] (as the documents name it) is built
+  /// or being built.
+  bool isIndexed(String language) => _indexes.containsKey(language);
+
+  /// Forgets the documents and the indexes: the next search reads and
+  /// builds them again.
+  void invalidate() {
+    _documents = null;
+    _indexes.clear();
+  }
+
+  Future<Map<String, List<SearchDocument>>> _read() async {
     final watch = Stopwatch()..start();
     final byLanguage = <String, List<SearchDocument>>{};
+    // A source may give its documents without a real pause (resources read
+    // from memory): a turn of the event loop every few milliseconds lets
+    // the app draw its frames meanwhile.
+    final slice = Stopwatch()..start();
     for (final source in sources) {
       await for (final document in source.documents()) {
         byLanguage
             .putIfAbsent(document.language ?? defaultLanguage, () => [])
             .add(document);
+        if (slice.elapsed >= _slice) {
+          await Future<void>.delayed(Duration.zero);
+          slice.reset();
+        }
       }
     }
-    final indexes = {
-      for (final MapEntry(key: language, value: documents)
-          in byLanguage.entries)
-        language: SearchIndex.build(documents, analyzers.of(language)),
-    };
     _log.debug(() {
-      final sizes = [
-        for (final MapEntry(key: language, value: index) in indexes.entries)
-          _size(language, index),
+      final counts = [
+        for (final MapEntry(:key, :value) in byLanguage.entries)
+          '$key: ${value.length}',
       ];
-      return 'Search index built in ${watch.elapsedMilliseconds} ms '
-          '(${sizes.join('; ')})';
+      return 'Search documents read in ${watch.elapsedMilliseconds} ms '
+          '(${counts.join('; ')})';
     });
-    return indexes;
+    return byLanguage;
+  }
+
+  Future<SearchIndex> _build(
+    String language,
+    List<SearchDocument> documents,
+  ) async {
+    final watch = Stopwatch()..start();
+    final index = await SearchIndex.buildAsync(
+      documents,
+      analyzers.of(language),
+    );
+    _log.debug(
+      () =>
+          'Search index built in ${watch.elapsedMilliseconds} ms '
+          '(${_size(language, index)})',
+    );
+    return index;
   }
 
   static String _size(String language, SearchIndex index) =>

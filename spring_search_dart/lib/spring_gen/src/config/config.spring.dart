@@ -44,20 +44,23 @@ void _$set16(_i2.SearchProperties bean, Object? value) =>
 Object? _$get17(_i2.SearchProperties bean) => bean.markdown;
 void _$set18(_i2.SearchProperties bean, Object? value) =>
     bean.markdown = (value as List<_i2.MarkdownSearchProperties>);
-_i2.SearchProperties _$create19(
+Object? _$get19(_i2.SearchProperties bean) => bean.indexing;
+void _$set20(_i2.SearchProperties bean, Object? value) =>
+    bean.indexing = (value as _i2.SearchIndexing);
+_i2.SearchProperties _$create21(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SearchProperties();
-Object? _$get20(_i2.MarkdownSearchProperties bean) => bean.location;
-void _$set21(_i2.MarkdownSearchProperties bean, Object? value) =>
-    bean.location = (value as String);
-Object? _$get22(_i2.MarkdownSearchProperties bean) => bean.exclude;
+Object? _$get22(_i2.MarkdownSearchProperties bean) => bean.location;
 void _$set23(_i2.MarkdownSearchProperties bean, Object? value) =>
-    bean.exclude = (value as List<String>);
-Object? _$get24(_i2.MarkdownSearchProperties bean) => bean.link;
+    bean.location = (value as String);
+Object? _$get24(_i2.MarkdownSearchProperties bean) => bean.exclude;
 void _$set25(_i2.MarkdownSearchProperties bean, Object? value) =>
+    bean.exclude = (value as List<String>);
+Object? _$get26(_i2.MarkdownSearchProperties bean) => bean.link;
+void _$set27(_i2.MarkdownSearchProperties bean, Object? value) =>
     bean.link = (value as String);
-_i2.MarkdownSearchProperties _$create26(
+_i2.MarkdownSearchProperties _$create28(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.MarkdownSearchProperties();
@@ -128,6 +131,12 @@ _i1.BeanModule get $searchProperties => _i1.BeanModule(
             returnType: r'List',
           ),
           _i1.MethodSignature.of(
+            r'indexing',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'SearchIndexing',
+          ),
+          _i1.MethodSignature.of(
             r'enabled',
             _$target0,
             kind: _i1.MemberKind.setter,
@@ -180,6 +189,12 @@ _i1.BeanModule get $searchProperties => _i1.BeanModule(
             _$target0,
             kind: _i1.MemberKind.setter,
             returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'indexing',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'SearchIndexing',
           ),
         ],
       ),
@@ -262,13 +277,21 @@ _i1.BeanModule get $searchProperties => _i1.BeanModule(
           get: _$get17,
           set: _$set18,
         ),
+        _i1.BeanProperty<_i2.SearchProperties>(
+          r'indexing',
+          typeInfo: _i1.EnumType<_i2.SearchIndexing>(_i2.SearchIndexing.values),
+          hasInitialValue: true,
+          initialValue: _i2.SearchIndexing.firstSearch,
+          get: _$get19,
+          set: _$set20,
+        ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.search')],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.SearchProperties.new,
       constructor: _i1.BeanConstructor<_i2.SearchProperties>(
         parameters: [],
-        create: _$create19,
+        create: _$create21,
       ),
     ),
     const _i1.BeanIntrospection<_i2.MarkdownSearchProperties>(
@@ -279,28 +302,28 @@ _i1.BeanModule get $searchProperties => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'',
-          get: _$get20,
-          set: _$set21,
+          get: _$get22,
+          set: _$set23,
         ),
         _i1.BeanProperty<_i2.MarkdownSearchProperties>(
           r'exclude',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get22,
-          set: _$set23,
+          get: _$get24,
+          set: _$set25,
         ),
         _i1.BeanProperty<_i2.MarkdownSearchProperties>(
           r'link',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'/{path}',
-          get: _$get24,
-          set: _$set25,
+          get: _$get26,
+          set: _$set27,
         ),
       ],
       instantiate: _i2.MarkdownSearchProperties.new,
       constructor: _i1.BeanConstructor<_i2.MarkdownSearchProperties>(
         parameters: [],
-        create: _$create26,
+        create: _$create28,
       ),
     ),
   ],

@@ -36,21 +36,74 @@ final class SearchIndex {
     final tokens = <Map<String, List<SearchToken>>>[];
     final postings = <String, Map<int, Map<String, List<int>>>>{};
     for (final (id, document) in docs.indexed) {
-      final fields = <String, List<SearchToken>>{};
-      for (final MapEntry(key: field, value: text) in document.fields.entries) {
-        final analyzed = analyzer.analyze(text);
-        fields[field] = analyzed;
-        for (final (position, token) in analyzed.indexed) {
-          postings
-              .putIfAbsent(token.term, () => {})
-              .putIfAbsent(id, () => {})
-              .putIfAbsent(field, () => [])
-              .add(position);
-        }
-      }
-      tokens.add(fields);
+      tokens.add(_add(id, document, analyzer, postings));
     }
     return SearchIndex._(analyzer, List.unmodifiable(docs), tokens, postings);
+  }
+
+  /// The index of [documents] as [SearchIndex.build] makes it, with a
+  /// pause ([pause]: a turn of the event loop by default) whenever it has
+  /// worked [budget] without one, so an app keeps drawing its frames while
+  /// it builds: the web has one thread for both. What the first search
+  /// would otherwise sort at once is sorted here too, a pause before each.
+  static Future<SearchIndex> buildAsync(
+    Iterable<SearchDocument> documents,
+    SearchAnalyzer analyzer, {
+    Duration budget = const Duration(milliseconds: 8),
+    Future<void> Function()? pause,
+  }) async {
+    Future<void> rest() => pause?.call() ?? Future<void>.delayed(Duration.zero);
+    final docs = documents.toList();
+    final tokens = <Map<String, List<SearchToken>>>[];
+    final postings = <String, Map<int, Map<String, List<int>>>>{};
+    final surfaces = <String, Set<String>>{};
+    final watch = Stopwatch()..start();
+    for (final (id, document) in docs.indexed) {
+      if (watch.elapsed >= budget) {
+        await rest();
+        watch.reset();
+      }
+      tokens.add(_add(id, document, analyzer, postings, surfaces));
+    }
+    final index = SearchIndex._(
+      analyzer,
+      List.unmodifiable(docs),
+      tokens,
+      postings,
+    ).._bySurfaceCache = surfaces;
+    await rest();
+    index._termsCache = postings.keys.toList()..sort();
+    await rest();
+    index._surfacesCache = surfaces.keys.toList()..sort();
+    return index;
+  }
+
+  // The terms of [document], number [id], into [postings], and into
+  // [surfaces] each word as written whose term differs; its tokens by
+  // field.
+  static Map<String, List<SearchToken>> _add(
+    int id,
+    SearchDocument document,
+    SearchAnalyzer analyzer,
+    Map<String, Map<int, Map<String, List<int>>>> postings, [
+    Map<String, Set<String>>? surfaces,
+  ]) {
+    final fields = <String, List<SearchToken>>{};
+    for (final MapEntry(key: field, value: text) in document.fields.entries) {
+      final analyzed = analyzer.analyze(text);
+      fields[field] = analyzed;
+      for (final (position, token) in analyzed.indexed) {
+        postings
+            .putIfAbsent(token.term, () => {})
+            .putIfAbsent(id, () => {})
+            .putIfAbsent(field, () => [])
+            .add(position);
+        if (surfaces != null && token.surface != token.term) {
+          surfaces.putIfAbsent(token.surface, () => {}).add(token.term);
+        }
+      }
+    }
+    return fields;
   }
 
   /// How the texts became terms; the query goes through it too.
@@ -63,9 +116,14 @@ final class SearchIndex {
   final Map<String, Map<int, Map<String, List<int>>>> _postings;
   final Map<String, double> _averages;
 
-  late final List<String> _terms = _postings.keys.toList()..sort();
+  // Made by the first search, or by buildAsync beforehand.
+  List<String>? _termsCache;
+  Map<String, Set<String>>? _bySurfaceCache;
+  List<String>? _surfacesCache;
 
-  late final Map<String, Set<String>> _bySurface = () {
+  List<String> get _terms => _termsCache ??= _postings.keys.toList()..sort();
+
+  Map<String, Set<String>> get _bySurface => _bySurfaceCache ??= () {
     final result = <String, Set<String>>{};
     for (final fields in _tokens) {
       for (final tokens in fields.values) {
@@ -79,7 +137,8 @@ final class SearchIndex {
     return result;
   }();
 
-  late final List<String> _surfaces = _bySurface.keys.toList()..sort();
+  List<String> get _surfaces =>
+      _surfacesCache ??= _bySurface.keys.toList()..sort();
 
   static const _k1 = 1.2;
   static const _b = 0.75;

@@ -63,13 +63,23 @@
       "class": "SearchProperties"
     },
     {
+      "name": "spring.search.indexing",
+      "type": "SearchIndexing",
+      "description": "When the indexes are built: at the first search (`first-search`, the default), while the application starts (`start`: an `ApplicationRunner`, so a Flutter app builds them behind its splash), or right after it, behind the running app (`background`).",
+      "default": "first-search",
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 57,
+      "class": "SearchProperties"
+    },
+    {
       "name": "spring.search.markdown[*].exclude",
       "type": "List<String>",
       "description": "Patterns of files to leave out, relative to the location's directory (`**/contents*.md`).",
       "default": [],
       "deprecated": null,
       "source": "package:spring_search_dart/src/config/search_properties.dart",
-      "line": 63,
+      "line": 83,
       "class": "MarkdownSearchProperties"
     },
     {
@@ -79,7 +89,7 @@
       "default": "/{path}",
       "deprecated": null,
       "source": "package:spring_search_dart/src/config/search_properties.dart",
-      "line": 67,
+      "line": 87,
       "class": "MarkdownSearchProperties"
     },
     {
@@ -89,7 +99,7 @@
       "default": "",
       "deprecated": null,
       "source": "package:spring_search_dart/src/config/search_properties.dart",
-      "line": 59,
+      "line": 79,
       "class": "MarkdownSearchProperties"
     },
     {
@@ -115,6 +125,23 @@
   ],
   "hints": [
     {
+      "name": "spring.search.indexing",
+      "values": [
+        {
+          "value": "first-search",
+          "description": "At the first search, or when the app calls `SearchService.prepare`."
+        },
+        {
+          "value": "start",
+          "description": "While the application starts, before it is shown."
+        },
+        {
+          "value": "background",
+          "description": "Right after the application starts, a little at a time while it runs: the start does not wait, and the first search most likely finds the index of its language ready."
+        }
+      ]
+    },
+    {
       "name": "spring.search.operator",
       "values": [
         {
@@ -129,6 +156,45 @@
     }
   ],
   "beans": [
+    {
+      "name": "searchIndexRunner",
+      "type": "SearchIndexRunner",
+      "types": [
+        "SearchIndexRunner",
+        "ApplicationRunner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('enabled', prefix: 'spring.search', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('indexing', prefix: 'spring.search')"
+      ],
+      "source": "package:spring_search_dart/src/search_auto_configuration.dart",
+      "line": 19,
+      "injects": [],
+      "members": [
+        {
+          "name": "indexing",
+          "kind": "field",
+          "type": "SearchIndexing"
+        },
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ApplicationArguments args"
+          ]
+        },
+        {
+          "name": "search",
+          "kind": "field",
+          "type": "SearchService"
+        }
+      ]
+    },
     {
       "name": "searchProperties",
       "type": "SearchProperties",
@@ -175,6 +241,11 @@
           "type": "int"
         },
         {
+          "name": "indexing",
+          "kind": "field",
+          "type": "SearchIndexing"
+        },
+        {
           "name": "markdown",
           "kind": "field",
           "type": "List<MarkdownSearchProperties>"
@@ -206,7 +277,7 @@
         "@ConditionalOnProperty('enabled', prefix: 'spring.search', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_search_dart/src/search_auto_configuration.dart",
-      "line": 16,
+      "line": 39,
       "injects": [],
       "members": [
         {
@@ -244,6 +315,14 @@
           "parameters": []
         },
         {
+          "name": "isIndexed",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String language"
+          ]
+        },
+        {
           "name": "maxHits",
           "kind": "field",
           "type": "int"
@@ -260,6 +339,19 @@
           "name": "operator",
           "kind": "field",
           "type": "SearchOperator"
+        },
+        {
+          "name": "prepare",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{String? language}"
+          ]
+        },
+        {
+          "name": "prepared",
+          "kind": "getter",
+          "type": "bool"
         },
         {
           "name": "rankers",

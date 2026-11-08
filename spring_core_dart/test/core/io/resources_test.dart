@@ -1,6 +1,7 @@
 @TestOn('vm')
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -29,6 +30,27 @@ void main() {
       'class path resource [app/greeting.txt]',
     );
   });
+
+  test(
+    'embedded text as written, its bytes in UTF-8 or another encoding',
+    () async {
+      Resources.registerAll(const {
+        'app/japanese.txt': EmbeddedResource.text('日本語 é'),
+      });
+      final resource = Resources.resolve('app/japanese.txt');
+      expect(await resource.readAsString(), '日本語 é');
+      expect(resource.readAsStringSync(), '日本語 é');
+      expect(resource.readAsBytesSync(), utf8.encode('日本語 é'));
+      expect(
+        resource.readAsStringSync(encoding: latin1),
+        latin1.decode(utf8.encode('日本語 é')),
+      );
+      // A copy each time: changing it changes no later read.
+      resource.readAsBytesSync()[0] = 0;
+      expect(resource.readAsBytesSync().first, utf8.encode('日').first);
+      expect(resource, Resources.resolve('app/japanese.txt'));
+    },
+  );
 
   test('the first registration of a path wins', () {
     Resources.registerAll(const {

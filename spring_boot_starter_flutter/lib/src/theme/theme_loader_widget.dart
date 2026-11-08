@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
+import 'package:spring_boot_starter_flutter/src/loader_hand_off.dart';
 import 'package:spring_boot_starter_flutter/src/theme/loader_tracks.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_loader.dart';
@@ -342,7 +343,16 @@ class _ThemeLoaderState extends State<ThemeLoader>
       widget.spec.values;
 
   void _tick(Duration elapsed) {
-    final dt = elapsed - _last;
+    var dt = elapsed - _last;
+    // A loader that takes over from the web page's runs on the page's
+    // clock while that one is in the page: the frames the engine missed
+    // count too, so both show the same at the hand-off.
+    if (widget.resumeElapsed != null) {
+      final page = LoaderHandOff.pageElapsed();
+      if (page != null && page > _elapsed) {
+        dt = page - _elapsed;
+      }
+    }
     _last = elapsed;
     _elapsed += dt;
     _timeline.advance(dt, progress: widget.progress, ready: _ready);

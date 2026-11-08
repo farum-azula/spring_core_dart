@@ -149,6 +149,7 @@ spring:
 | `spring.search.fuzzy` | `1` | Typos per word of Latin letters (at most one below eight letters, none below five); `0` for none |
 | `spring.search.max-hits` | `20` | The most hits of a search |
 | `spring.search.operator` | `and` | `and`: every word; `or`: one of them |
+| `spring.search.indexing` | `first-search` | When the indexes are built: at the first search (or `SearchService.prepare()`), `start`: while the application starts, behind a Flutter app's splash, or `background`: right after it, while the app runs |
 | `spring.search.analyzers.<language>` | `english` for `en`, `standard` otherwise | The analyzer of a language |
 | `spring.search.collapse-by` | none | Keep the best hit per value of this attribute (`page`) |
 | `spring.search.markdown[n].location` | — | The Markdown files, a `resources:` pattern |

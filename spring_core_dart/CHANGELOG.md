@@ -1,3 +1,7 @@
+## Unreleased
+
+- An embedded resource (`EmbeddedResource.text`) gives its text as it is and makes its bytes only when they are read: a pattern over many files (`resources:content/**/*.md`) encoded every one of them to UTF-8 to list it, and `readAsString` decoded them back (47 ms for 834 Markdown files, now 2 ms).
+
 ## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.

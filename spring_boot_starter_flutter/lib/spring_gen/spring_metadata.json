@@ -938,7 +938,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 93,
+      "line": 94,
       "injects": [],
       "members": [
         {
@@ -974,7 +974,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 112,
+      "line": 113,
       "injects": [],
       "members": [
         {
@@ -1016,7 +1016,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 344,
+      "line": 356,
       "injects": [],
       "members": [
         {
@@ -1060,7 +1060,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 335,
+      "line": 347,
       "injects": [],
       "members": [
         {
@@ -1110,7 +1110,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 328,
+      "line": 333,
       "injects": [],
       "members": [
         {
@@ -1154,7 +1154,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 321,
+      "line": 326,
       "injects": [],
       "members": [
         {
@@ -1183,6 +1183,50 @@
       ]
     },
     {
+      "name": "debugMotionSection",
+      "type": "DebugMotionSection",
+      "types": [
+        "DebugMotionSection",
+        "DebugPanelSection",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 340,
+      "injects": [],
+      "members": [
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "panel",
+          "kind": "field",
+          "type": "DebugPanel"
+        },
+        {
+          "name": "title",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
       "name": "debugPanel",
       "type": "DebugPanel",
       "types": [
@@ -1200,7 +1244,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 308,
+      "line": 313,
       "injects": [],
       "members": [
         {
@@ -1215,6 +1259,11 @@
           "parameters": [
             "void Function() listener"
           ]
+        },
+        {
+          "name": "animations",
+          "kind": "getter",
+          "type": "bool"
         },
         {
           "name": "close",
@@ -1298,7 +1347,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 368,
+      "line": 380,
       "injects": [],
       "members": [
         {
@@ -1337,7 +1386,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 361,
+      "line": 373,
       "injects": [],
       "members": [
         {
@@ -1381,7 +1430,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 351,
+      "line": 363,
       "injects": [],
       "members": [
         {
@@ -1470,7 +1519,7 @@
         "@ConditionalOnMissingBean(FileTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 242,
+      "line": 247,
       "injects": [],
       "members": [
         {
@@ -1602,7 +1651,7 @@
         "@ConditionalOnMissingBean(ThemeChoiceStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 209,
+      "line": 214,
       "injects": [],
       "members": [
         {
@@ -2066,7 +2115,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 121,
+      "line": 122,
       "injects": [],
       "members": [
         {
@@ -2168,7 +2217,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 132,
+      "line": 133,
       "injects": [],
       "members": [
         {
@@ -2201,7 +2250,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 103,
+      "line": 104,
       "injects": [],
       "members": [
         {
@@ -2241,7 +2290,7 @@
         "@ConditionalOnMissingBean(FileStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 231,
+      "line": 236,
       "injects": [],
       "members": [
         {
@@ -2336,7 +2385,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 140,
+      "line": 141,
       "injects": [],
       "members": [
         {
@@ -2435,7 +2484,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 184,
+      "line": 189,
       "injects": [],
       "members": [
         {
@@ -2551,6 +2600,11 @@
           "parameters": []
         },
         {
+          "name": "ownNames",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
           "name": "removeListener",
           "kind": "method",
           "type": "void",
@@ -2581,7 +2635,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 153,
+      "line": 154,
       "injects": [],
       "members": [
         {
@@ -2598,6 +2652,11 @@
           "name": "fontFamilies",
           "kind": "field",
           "type": "Set<String>"
+        },
+        {
+          "name": "fontFamilyFallback",
+          "kind": "field",
+          "type": "List<String>"
         },
         {
           "name": "fontsChanged",
@@ -2699,7 +2758,7 @@
         "@ConditionalOnProperty('spring.flutter.theme.remember', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 221,
+      "line": 226,
       "injects": [],
       "members": [
         {
@@ -2740,7 +2799,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 268,
+      "line": 273,
       "injects": [],
       "members": [
         {
@@ -2804,7 +2863,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 200,
+      "line": 205,
       "injects": [],
       "members": [
         {
@@ -2909,7 +2968,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 256,
+      "line": 261,
       "injects": [],
       "members": [
         {
@@ -5094,6 +5153,14 @@
         "default": null
       },
       {
+        "name": "motion.enabled",
+        "type": "true / false",
+        "states": false,
+        "values": [],
+        "description": "Whether the app moves at all: `false` makes every page transition, text and content change, scroll to the top and theme animation instant, as the device's \"reduce motion\" does.",
+        "default": "true"
+      },
+      {
         "name": "motion.page-transition",
         "type": "choice",
         "states": false,
@@ -5103,7 +5170,8 @@
           "fade-upwards",
           "zoom",
           "cupertino",
-          "fade"
+          "fade",
+          "content"
         ],
         "description": "How a new screen comes in, on every platform: a kind, or a map of `type`, `duration`, `curve`.",
         "default": "none"
@@ -5118,7 +5186,8 @@
           "fade-upwards",
           "zoom",
           "cupertino",
-          "fade"
+          "fade",
+          "content"
         ],
         "description": "The map form's kind.",
         "default": "none"

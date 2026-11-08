@@ -157,4 +157,25 @@ void main() {
     expect(_ids(index, 'the '), isEmpty);
     expect(_ids(index, '   '), isEmpty);
   });
+
+  test(
+    'buildAsync: the same index, a pause whenever the budget is spent',
+    () async {
+      var pauses = 0;
+      final built = await SearchIndex.buildAsync(
+        _docs,
+        SearchAnalyzer.english,
+        budget: Duration.zero,
+        pause: () async => pauses++,
+      );
+      // Before every document, then before each of the two sorts.
+      expect(pauses, _docs.length + 2);
+      for (final query in ['bean', 'scope', 'config', 'beans', 'sco']) {
+        List<String> ids(SearchIndex i) => [
+          for (final hit in i.search(SearchQuery.parse(query))) hit.document.id,
+        ];
+        expect(ids(built), ids(index), reason: query);
+      }
+    },
+  );
 }

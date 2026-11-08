@@ -1,5 +1,6 @@
 ## Unreleased
 
+- SEO pages: a page whose title another page has too gets the titles of its sections in front (`Properties · Search · Spring for Dart`), so each indexed page has its own `<title>`; the sitemap gives each page's `<lastmod>` from the date of the last commit of its Markdown (`git log`; none outside a repository); every page but the root has a `BreadcrumbList` (JSON-LD) of its sections.
 - Fixed: with a light and a dark theme (`active: system`), `web/index.html` gets the dark theme's background in a `prefers-color-scheme: dark` rule and a `theme-color` tag for each scheme. The page showed the light background where Flutter does not draw, a light strip at the top of an app's own browser in dark mode.
 
 ## 0.7.2

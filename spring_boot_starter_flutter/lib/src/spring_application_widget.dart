@@ -242,6 +242,28 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     }
   }
 
+  // The theme's splash painted. The web page loader stays over it until
+  // the app is built under it too: the page's loader moves without the
+  // engine, the splash stops while the app's first frames are made (the
+  // page's own timeout removes it anyway).
+  void _splashShown() {
+    _stages.enter(SplashStage.splash);
+    if (_context != null || _error != null) {
+      _handOff();
+    }
+  }
+
+  // The app's first frames are made: the splash takes over from the page
+  // loader.
+  void _handOffAfterAppFrames() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _handOffAfterFrame();
+      }
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
   // The context exists, its beans not yet: the start's stage, the
   // `splashStages` bean, the pacer and the trace of
   // `spring.flutter.splash.*`.
@@ -415,7 +437,9 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         ..enter(SplashStage.ready)
         ..publishTo(context);
       setState(() => _context = context);
-      if (_splashTheme == null) {
+      if (_splashTheme != null) {
+        _handOffAfterAppFrames();
+      } else {
         _handOffAfterFrame();
         _stages
           ..enter(SplashStage.exit)
@@ -679,7 +703,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
           progress: _progress,
           ready: ready,
           stages: _stages,
-          onShown: _handOff,
+          onShown: _splashShown,
           onExiting: () => _stages.enter(SplashStage.exit),
           onExited: () {
             _stages.enter(SplashStage.app);

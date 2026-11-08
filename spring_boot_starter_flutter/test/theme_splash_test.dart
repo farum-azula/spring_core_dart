@@ -159,12 +159,14 @@ void main() {
       expect(splash.progress.value, greaterThan(0));
       expect(splash.progress.value, lessThan(1));
       expect(splash.ready, isFalse);
-      expect(handOffs, hasLength(1));
+      // The web page loader stays over the splash until the app is built.
+      expect(handOffs, isEmpty);
 
       release.complete();
       await _pumpFor(tester, const Duration(milliseconds: 300));
       // Ready, but 2 s have not passed.
       expect(find.text('home'), findsOneWidget);
+      expect(handOffs, hasLength(1));
       expect(
         tester.widget<ThemeSplash>(find.byType(ThemeSplash)).ready,
         isTrue,

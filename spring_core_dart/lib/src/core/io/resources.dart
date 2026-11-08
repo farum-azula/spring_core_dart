@@ -180,7 +180,7 @@ abstract final class Resources {
     }
     final embedded = _embedded[normalized];
     if (embedded != null) {
-      return _EmbeddedClasspathResource(normalized, embedded.bytes);
+      return _EmbeddedClasspathResource(normalized, embedded);
     }
     return ClasspathFileResource(directory, normalized);
   }
@@ -248,12 +248,42 @@ final class _OutsideClasspathResource extends AbstractResource
 
 // An embedded file, with a file name and relative resources like Spring's
 // ClassPathResource.
-final class _EmbeddedClasspathResource extends ByteArrayResource
+// An embedded file: its text read as it is, its bytes made the first time
+// they are asked for, so listing many files (a pattern over the docs of a
+// site) encodes none of them.
+final class _EmbeddedClasspathResource extends AbstractResource
     implements ContextResource {
-  _EmbeddedClasspathResource(this.path, Uint8List bytes)
-    : super(bytes, description: 'class path resource [$path]');
+  _EmbeddedClasspathResource(this.path, this._embedded);
 
   final String path;
+  final EmbeddedResource _embedded;
+  late final Uint8List _bytes = _embedded.bytes;
+
+  @override
+  String get description => 'class path resource [$path]';
+
+  @override
+  bool exists() => true;
+
+  @override
+  bool get supportsSyncRead => true;
+
+  @override
+  Future<Uint8List> readAsBytes() async => readAsBytesSync();
+
+  @override
+  Uint8List readAsBytesSync() => Uint8List.fromList(_bytes);
+
+  @override
+  Future<String> readAsString({Encoding encoding = utf8}) async =>
+      readAsStringSync(encoding: encoding);
+
+  @override
+  String readAsStringSync({Encoding encoding = utf8}) =>
+      switch (_embedded.text) {
+        final text? when encoding == utf8 => text,
+        _ => encoding.decode(_bytes),
+      };
 
   @override
   String get pathWithinContext => path;

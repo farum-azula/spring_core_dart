@@ -45,9 +45,12 @@ import 'package:yaml/yaml.dart';
 final class SeoBuilder implements Builder {
   /// The builder; [files] reads and writes the app's own files (on disk
   /// unless given; tests pass files held in memory).
-  SeoBuilder({SeoFiles? files}) : _files = files ?? const _Disk();
+  SeoBuilder({SeoFiles? files, SeoDates? dates})
+    : _files = files ?? const _Disk(),
+      _dates = dates ?? const _GitDates();
 
   final SeoFiles _files;
+  final SeoDates _dates;
 
   /// The prefix of the properties read.
   static const prefix = 'spring.flutter.web.seo';
@@ -102,6 +105,9 @@ final class SeoBuilder implements Builder {
         texts: texts,
         routes: routes,
         template: template,
+        modified: settings.lastmod
+            ? await _dates.of(package)
+            : const <String, String>{},
       ).render();
     } on SeoException catch (e) {
       log.severe('$e');
@@ -213,6 +219,7 @@ final class SeoSettings {
     required this.sitemap,
     required this.llms,
     required this.markdown,
+    this.lastmod = true,
     this.exclude = const [],
     this.pageFiles = SeoPageFiles.directory,
     this.languages = const [],
@@ -328,6 +335,7 @@ final class SeoSettings {
       sitemap: flag('sitemap', true),
       llms: flag('llms', true),
       markdown: flag('markdown', true),
+      lastmod: flag('lastmod', true),
       pageFiles: files == 'html' ? SeoPageFiles.html : SeoPageFiles.directory,
       languages: languages,
     );
@@ -370,6 +378,10 @@ final class SeoSettings {
 
   /// Whether `<path>.md` is written next to a Markdown page.
   final bool markdown;
+
+  /// Whether the sitemap gives each Markdown page its `lastmod`: the day
+  /// of the last commit that changed its file (`git log`).
+  final bool lastmod;
 
   /// How a page's file is named (`page-files`).
   final SeoPageFiles pageFiles;
@@ -456,7 +468,11 @@ final class SeoPages {
     required this.texts,
     required this.routes,
     required this.template,
+    this.modified = const {},
   });
+
+  /// The day each file below `lib/resources/` last changed (`2026-11-08`),
+  /// for the sitemap's `lastmod`; a file without one has none.
 
   /// What to make.
   final SeoSettings settings;
@@ -469,6 +485,9 @@ final class SeoPages {
 
   /// The app's page.
   final String template;
+
+  /// See the constructor.
+  final Map<String, String> modified;
 
   static const String _headStart = WebPageHead.seoHeadStart;
   static const _headEnd = '<!-- spring:seo:head:end -->';
@@ -562,12 +581,19 @@ final class SeoPages {
           language: settings.pageUrl(_prefixed(language, path)),
     };
 
+    final headings = _headings(pages);
+    final translatedHeadings = {
+      for (final MapEntry(key: language, value: byPath) in translated.entries)
+        language: _headings(byPath),
+    };
+
     final base = _baseTemplate();
     final files = <String, String>{};
     var root = withoutRoot(template);
     for (final page in pages.values) {
       final body = page.markdown == null ? null : _html(page);
       final links = alternates(page.path);
+      final crumbs = _crumbs(page.path, pages, (at) => at);
       if (page.path == '/') {
         root = _page(
           root,
@@ -576,6 +602,7 @@ final class SeoPages {
           root: true,
           language: settings.defaultLanguage,
           alternates: links,
+          heading: headings[page.path],
         );
         if (settings.markdown && page.markdown != null) {
           files['web${_markdownAt('/')}'] = page.markdown!;
@@ -588,6 +615,8 @@ final class SeoPages {
         body,
         language: settings.defaultLanguage,
         alternates: links,
+        heading: headings[page.path],
+        crumbs: crumbs,
       );
       if (settings.markdown && page.markdown != null) {
         files['web${_markdownAt(page.path)}'] = page.markdown!;
@@ -607,6 +636,14 @@ final class SeoPages {
           address: address,
           alternates: page.fallback ? const {} : alternates(page.path),
           canonical: page.fallback ? settings.pageUrl(page.path) : null,
+          heading: translatedHeadings[language]![page.path],
+          crumbs: page.fallback
+              ? const []
+              : _crumbs(
+                  page.path,
+                  byPath,
+                  (at) => _prefixed(language, at),
+                ),
         );
         if (settings.markdown && page.markdown != null && !page.fallback) {
           files['web${_markdownAt(address)}'] = page.markdown!;
@@ -955,10 +992,12 @@ final class SeoPages {
     String? address,
     Map<String, String> alternates = const {},
     String? canonical,
+    String? heading,
+    List<(String, String)> crumbs = const [],
   }) {
     final title = settings.title.replaceAll(
       '{title}',
-      page.title ?? '',
+      heading ?? page.title ?? '',
     );
     final description = page.description ?? settings.description;
     final image = page.image ?? settings.image;
@@ -993,6 +1032,7 @@ final class SeoPages {
         '<meta name="twitter:image" content="${_attr(_imageUrl(image))}">',
       if (settings.markdown && page.markdown != null && !page.fallback)
         _alternate(settings.url(_markdownAt(at))),
+      if (crumbs.length > 1) _breadcrumbs(crumbs),
       _headEnd,
     ].join('\n  ');
     var result = html;
@@ -1050,6 +1090,100 @@ final class SeoPages {
     return result;
   }
 
+  // The `<title>` of each page of [byPath]: its title, and where another
+  // page has the same one (`All properties` of several packages), the
+  // titles of its nearest ancestor pages after it until it is unique
+  // (`All properties · spring_boot_starter_data`). Search engines show one
+  // of two pages with one title.
+  // Only the pages search engines index count; the root page, whose title
+  // is the site's, is no ancestor that tells two pages apart.
+  static Map<String, String> _headings(Map<String, _Page> byPath) {
+    List<String> ancestors(String path) => [
+      for (final (at, page) in _ancestors(path, byPath))
+        if (at != '/') ?page.title,
+    ].reversed.toList();
+    final result = {
+      for (final page in byPath.values)
+        if (page.index && !page.fallback) page.path: ?page.title,
+    };
+    for (var depth = 1; depth <= 8; depth++) {
+      final byTitle = <String, List<String>>{};
+      for (final MapEntry(key: path, value: title) in result.entries) {
+        (byTitle[title] ??= []).add(path);
+      }
+      final repeated = [
+        for (final paths in byTitle.values)
+          if (paths.length > 1) ...paths,
+      ];
+      if (repeated.isEmpty) {
+        break;
+      }
+      for (final path in repeated) {
+        final above = ancestors(path);
+        if (above.length >= depth) {
+          result[path] = [
+            byPath[path]!.title!,
+            ...above.take(depth),
+          ].join(' · ');
+        }
+      }
+    }
+    return result;
+  }
+
+  // The pages above [path] in [byPath], the root first: `/a/b/c` has `/`,
+  // `/a`, `/a/b` where they are pages.
+  static List<(String, _Page)> _ancestors(
+    String path,
+    Map<String, _Page> byPath,
+  ) {
+    final result = <(String, _Page)>[];
+    var at = path;
+    while (at != '/' && at.isNotEmpty) {
+      final cut = at.lastIndexOf('/');
+      at = cut <= 0 ? '/' : at.substring(0, cut);
+      if (byPath[at] case final page?) {
+        result.insert(0, (at, page));
+      }
+    }
+    return result;
+  }
+
+  // The breadcrumbs of the page at [path]: each page above it with a
+  // title, then the page, with their addresses ([address] puts a path in
+  // the page's language).
+  List<(String, String)> _crumbs(
+    String path,
+    Map<String, _Page> byPath,
+    String Function(String path) address,
+  ) {
+    final page = byPath[path];
+    if (page?.title == null || path == '/') {
+      return const [];
+    }
+    return [
+      for (final (at, above) in _ancestors(path, byPath))
+        if (above.title case final title?)
+          (title, settings.pageUrl(address(at))),
+      (page!.title!, settings.pageUrl(address(path))),
+    ];
+  }
+
+  // A `BreadcrumbList` (schema.org) of [crumbs], name and address each:
+  // search results show the path above a page's title.
+  static String _breadcrumbs(List<(String, String)> crumbs) {
+    final json = jsonEncode({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        for (final (i, (name, url)) in crumbs.indexed)
+          {'@type': 'ListItem', 'position': i + 1, 'name': name, 'item': url},
+      ],
+    });
+    return '<script type="application/ld+json">'
+        '${json.replaceAll('</', r'<\/')}</script>';
+  }
+
   // A large card where a preview has a picture (messengers, X, Slack...).
   static String _card(String? image) =>
       image == null ? 'summary' : 'summary_large_image';
@@ -1069,16 +1203,19 @@ final class SeoPages {
     Map<String, Map<String, _Page>> translated,
     Map<String, String> Function(String path) alternates,
   ) {
-    String entry(String url, String path) {
+    String entry(String url, String path, String? file) {
       final links = alternates(path);
-      if (links.length < 2) {
+      final day = file == null ? null : modified[file];
+      if (links.length < 2 && day == null) {
         return '  <url><loc>${_text2(url)}</loc></url>';
       }
       return [
         '  <url>',
         '    <loc>${_text2(url)}</loc>',
-        for (final MapEntry(key: tag, value: href) in links.entries)
-          '    <xhtml:link rel="alternate" hreflang="$tag" href="${_text2(href)}"/>',
+        if (day != null) '    <lastmod>$day</lastmod>',
+        if (links.length > 1)
+          for (final MapEntry(key: tag, value: href) in links.entries)
+            '    <xhtml:link rel="alternate" hreflang="$tag" href="${_text2(href)}"/>',
         '  </url>',
       ].join('\n');
     }
@@ -1086,12 +1223,17 @@ final class SeoPages {
     final sorted = pages.toList()..sort((a, b) => a.path.compareTo(b.path));
     final entries = [
       for (final page in sorted)
-        if (page.index) entry(settings.pageUrl(page.path), page.path),
+        if (page.index)
+          entry(settings.pageUrl(page.path), page.path, page.file),
       for (final MapEntry(key: language, value: byPath) in translated.entries)
         for (final page in sorted)
           if (byPath[page.path] case final local?
               when local.index && !local.fallback)
-            entry(settings.pageUrl(_prefixed(language, page.path)), page.path),
+            entry(
+              settings.pageUrl(_prefixed(language, page.path)),
+              page.path,
+              local.file,
+            ),
     ];
     final xhtml = translated.isEmpty
         ? ''
@@ -1174,6 +1316,59 @@ final class _HtmlAsText extends md.HtmlBlockSyntax {
             ),
           ])
         : html;
+  }
+}
+
+/// The day each file below `lib/resources/` last changed, for the
+/// sitemap's `lastmod`.
+abstract interface class SeoDates {
+  /// The days of [package]'s files, by their path below `lib/resources/`
+  /// (`content/docs/beans.md`), as `2026-11-08`.
+  Future<Map<String, String>> of(String package);
+}
+
+// The day of the last commit that changed each file (`git log`); none
+// where the package is no Git checkout. A shallow clone has one commit,
+// whose day every file gets: a CI checkout needs its history
+// (`fetch-depth: 0`).
+final class _GitDates implements SeoDates {
+  const _GitDates();
+
+  @override
+  Future<Map<String, String>> of(String package) async {
+    final directory = PackageDirectories.current
+        .file(AssetId(package, 'lib/resources/x'))
+        ?.parent
+        .path;
+    if (directory == null || !io.Directory(directory).existsSync()) {
+      return const {};
+    }
+    try {
+      final result = await io.Process.run('git', [
+        '-C',
+        directory,
+        'log',
+        '--format=@%cs',
+        '--name-only',
+        '--relative',
+        '.',
+      ]);
+      if (result.exitCode != 0) {
+        return const {};
+      }
+      final days = <String, String>{};
+      String? day;
+      for (final line in LineSplitter.split('${result.stdout}')) {
+        if (line.startsWith('@')) {
+          day = line.substring(1);
+        } else if (line.isNotEmpty && day != null) {
+          days.putIfAbsent(line, () => day!);
+        }
+      }
+      return days;
+    } on io.ProcessException {
+      return const {};
+    }
   }
 }
 

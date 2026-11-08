@@ -20,6 +20,7 @@ export 'src/search_document.dart';
 export 'src/search_document_source.dart';
 export 'src/search_hit.dart';
 export 'src/search_index_invalidated_event.dart';
+export 'src/search_index_runner.dart';
 export 'src/search_query.dart';
 export 'src/search_ranker.dart';
 export 'src/search_service.dart';

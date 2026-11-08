@@ -124,14 +124,24 @@ final String _routes = jsonEncode({
   ],
 });
 
+final class _Dates implements SeoDates {
+  const _Dates(this.days);
+
+  final Map<String, String> days;
+
+  @override
+  Future<Map<String, String>> of(String package) async => days;
+}
+
 Future<List<String>> _build(
   _Memory files,
   Map<String, String> resources, {
   String? metadata,
+  Map<String, String> dates = const {},
 }) async {
   final logs = <String>[];
   await testBuilder(
-    SeoBuilder(files: files),
+    SeoBuilder(files: files, dates: _Dates(dates)),
     {
       'app|pubspec.yaml': 'name: app\n',
       'app|lib/spring_gen/spring_metadata.json': ?metadata,
@@ -534,5 +544,94 @@ spring.flutter.web.seo:
           'spring.flutter.navigation.languages: en, ../x\n',
     }, metadata: _routes);
     expect(logs, contains(allOf(startsWith('SEVERE'), contains('../x'))));
+  });
+
+  group('titles, lastmod and breadcrumbs', () {
+    Map<String, String> site() => {
+      ..._site(),
+      'content/docs/alpha/index.md': '# Alpha\n',
+      'content/docs/alpha/properties.md': '# All properties\n',
+      'content/docs/beta/index.md': '# Beta\n',
+      'content/docs/beta/properties.md': '# All properties\n',
+    };
+
+    String? title(_Memory files, String file) => RegExp(
+      '<title>(.*?)</title>',
+    ).firstMatch(files.files[file] ?? '')?.group(1);
+
+    test('a title two pages share gets its nearest ancestor page', () async {
+      final files = _Memory({'web/index.html': _index});
+      final logs = await _build(files, site(), metadata: _routes);
+      expect(logs.where((l) => l.startsWith('SEVERE')), isEmpty);
+      expect(
+        title(files, 'web/docs/alpha/properties/index.html'),
+        'All properties · Alpha · Spring Dart',
+      );
+      expect(
+        title(files, 'web/docs/beta/properties/index.html'),
+        'All properties · Beta · Spring Dart',
+      );
+      // A title of its own stays as it is.
+      expect(
+        title(files, 'web/docs/core/beans/index.html'),
+        'Beans · Spring Dart',
+      );
+    });
+
+    test('lastmod: the day of each page file, none without one', () async {
+      final files = _Memory({'web/index.html': _index});
+      await _build(
+        files,
+        site(),
+        metadata: _routes,
+        dates: {'content/docs/core/beans.md': '2026-11-01'},
+      );
+      final sitemap = files.files['web/sitemap.xml']!;
+      expect(
+        sitemap,
+        contains(
+          '<loc>https://spring-dart.dev/docs/core/beans/</loc>\n'
+          '    <lastmod>2026-11-01</lastmod>',
+        ),
+      );
+      expect('<lastmod>'.allMatches(sitemap).length, 1);
+    });
+
+    test('lastmod: false writes none', () async {
+      final files = _Memory({'web/index.html': _index});
+      await _build(
+        files,
+        {
+          ...site(),
+          'application.yml': _config.replaceFirst(
+            '        from-routes: true\n',
+            '        from-routes: true\n        lastmod: false\n',
+          ),
+        },
+        metadata: _routes,
+        dates: {'content/docs/core/beans.md': '2026-11-01'},
+      );
+      expect(files.files['web/sitemap.xml'], isNot(contains('<lastmod>')));
+    });
+
+    test('a BreadcrumbList of the pages above, the root first', () async {
+      final files = _Memory({'web/index.html': _index});
+      await _build(files, site(), metadata: _routes);
+      final html = files.files['web/docs/alpha/properties/index.html']!;
+      final json = RegExp(
+        r'<script type="application/ld\+json">(.*?)</script>',
+      ).firstMatch(html)!.group(1)!;
+      final items = (jsonDecode(json) as Map)['itemListElement'] as List;
+      expect(
+        [for (final item in items) (item as Map)['name']],
+        ['Spring Dart', 'Docs', 'Alpha', 'All properties'],
+      );
+      expect(
+        (items.last as Map)['item'],
+        'https://spring-dart.dev/docs/alpha/properties/',
+      );
+      // The root page has none.
+      expect(files.files['web/index.html'], isNot(contains('ld+json')));
+    });
   });
 }
