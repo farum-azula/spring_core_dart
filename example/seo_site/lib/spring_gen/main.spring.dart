@@ -91,7 +91,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
   ],
   resources: const {
     r'application-web.yml': _i1.EmbeddedResource.text(
-      "# The pages for search engines, link previews and language models. Only\n# the web build reads this profile's file.\nspring:\n  flutter:\n    web:\n      seo:\n        enabled: true\n        # Required: canonical, og:url and the sitemap are absolute.\n        site-url: https://lumen.example\n        # Every screen is a page: paths without variables, a page per file\n        # of a screen's Markdown folder, @RouteInfo(paths:) for the rest.\n        from-routes: true\n        title: '{title} · Lumen'\n        description: Lumen, a small library documented with a Flutter web site.\n        image: resources:images/preview.png\n        # A Markdown folder the routes cannot name: /legal/{*path} reads it\n        # itself, without content:.\n        content:\n          - location: resources:content/legal/\n            path: /legal\n            exclude: ['_*.md']\n        # A route's page, said differently: a longer title on the home page.\n        pages:\n          - path: /\n            title: Lumen, a small library\n",
+      "# The pages for search engines, link previews and language models. Only\n# the web build reads this profile's file.\nspring:\n  flutter:\n    web:\n      seo:\n        enabled: true\n        # Required: canonical, og:url and the sitemap are absolute.\n        site-url: https://lumen.example\n        # Every screen is a page: paths without variables, a page per file\n        # of a screen's Markdown folder, @RouteInfo(paths:) for the rest.\n        from-routes: true\n        title: '{title} · Lumen'\n        description: Lumen, a small library documented with a Flutter web site.\n        image: resources:images/preview.png\n        # No lastmod: the pages are committed and CI builds them again from\n        # a checkout whose dates are not the ones they were built from.\n        lastmod: false\n        # A Markdown folder the routes cannot name: /legal/{*path} reads it\n        # itself, without content:.\n        content:\n          - location: resources:content/legal/\n            path: /legal\n            exclude: ['_*.md']\n        # A route's page, said differently: a longer title on the home page.\n        pages:\n          - path: /\n            title: Lumen, a small library\n",
     ),
     r'application.yml': _i1.EmbeddedResource.text(
       '# The site: the app widget, its theme, the dev server of `flutter run`.\n# The pages for search engines are in application-web.yml (the web build\n# reads them).\nspring:\n  application:\n    name: seo-site\n  flutter:\n    app:\n      type: material\n      title: Lumen Docs\n      description: Lumen, a small library documented with a Flutter web site.\n      debug-banner: false\n    theme:\n      seed-color: \'#3F6FB5\'\n      styles:\n        code:\n          background: \$colors.surface-container-high\n          radius: 8\n    # English without a prefix, Japanese under /ja: the router sets the\n    # app\'s language from the address, the build writes the pages of both.\n    navigation:\n      languages: [en, ja]\n    web:\n      dev-server:\n        port: 5095\n',
@@ -239,6 +239,10 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
       'SPRING_FLUTTER_WEB_SEO_IMAGE': const String.fromEnvironment(
         'SPRING_FLUTTER_WEB_SEO_IMAGE',
       ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_WEB_SEO_LASTMOD'))
+      'SPRING_FLUTTER_WEB_SEO_LASTMOD': const String.fromEnvironment(
+        'SPRING_FLUTTER_WEB_SEO_LASTMOD',
+      ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_WEB_SEO_PAGES_0_PATH'))
       'SPRING_FLUTTER_WEB_SEO_PAGES_0_PATH': const String.fromEnvironment(
         'SPRING_FLUTTER_WEB_SEO_PAGES_0_PATH',
@@ -356,6 +360,10 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
       'spring.flutter.web.seo.image': const String.fromEnvironment(
         'spring.flutter.web.seo.image',
       ),
+    if (const bool.hasEnvironment('spring.flutter.web.seo.lastmod'))
+      'spring.flutter.web.seo.lastmod': const String.fromEnvironment(
+        'spring.flutter.web.seo.lastmod',
+      ),
     if (const bool.hasEnvironment('spring.flutter.web.seo.pages[0].path'))
       'spring.flutter.web.seo.pages[0].path': const String.fromEnvironment(
         'spring.flutter.web.seo.pages[0].path',
@@ -387,7 +395,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '49bfe516',
+  fingerprint: 'ad564c9b',
 );
 
 /// Starts the application: config files, environment, context, runners

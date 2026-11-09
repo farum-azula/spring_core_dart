@@ -380,7 +380,8 @@ final class SeoSettings {
   final bool markdown;
 
   /// Whether the sitemap gives each Markdown page its `lastmod`: the day
-  /// of the last commit that changed its file (`git log`).
+  /// of the last commit that changed its file (`git log`); none in a
+  /// shallow clone, whose one commit would date every file.
   final bool lastmod;
 
   /// How a page's file is named (`page-files`).
@@ -1328,9 +1329,9 @@ abstract interface class SeoDates {
 }
 
 // The day of the last commit that changed each file (`git log`); none
-// where the package is no Git checkout. A shallow clone has one commit,
-// whose day every file gets: a CI checkout needs its history
-// (`fetch-depth: 0`).
+// where the package is no Git checkout, and none in a shallow clone,
+// whose one commit would give every file its day (a CI checkout needs
+// its history for them: `fetch-depth: 0`).
 final class _GitDates implements SeoDates {
   const _GitDates();
 
@@ -1344,6 +1345,15 @@ final class _GitDates implements SeoDates {
       return const {};
     }
     try {
+      final shallow = await io.Process.run('git', [
+        '-C',
+        directory,
+        'rev-parse',
+        '--is-shallow-repository',
+      ]);
+      if (shallow.exitCode != 0 || '${shallow.stdout}'.trim() == 'true') {
+        return const {};
+      }
       final result = await io.Process.run('git', [
         '-C',
         directory,

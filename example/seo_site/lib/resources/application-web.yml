@@ -13,6 +13,9 @@ spring:
         title: '{title} · Lumen'
         description: Lumen, a small library documented with a Flutter web site.
         image: resources:images/preview.png
+        # No lastmod: the pages are committed and CI builds them again from
+        # a checkout whose dates are not the ones they were built from.
+        lastmod: false
         # A Markdown folder the routes cannot name: /legal/{*path} reads it
         # itself, without content:.
         content:

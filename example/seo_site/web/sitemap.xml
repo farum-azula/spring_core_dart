@@ -10,10 +10,7 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/about/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/about/"/>
   </url>
-  <url>
-    <loc>https://lumen.example/blog/hello/</loc>
-    <lastmod>2026-11-06</lastmod>
-  </url>
+  <url><loc>https://lumen.example/blog/hello/</loc></url>
   <url>
     <loc>https://lumen.example/books/1/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/books/1/"/>
@@ -26,28 +23,17 @@
   </url>
   <url>
     <loc>https://lumen.example/docs/</loc>
-    <lastmod>2026-11-06</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/"/>
   </url>
   <url>
     <loc>https://lumen.example/docs/getting-started/</loc>
-    <lastmod>2026-11-06</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/getting-started/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/getting-started/"/>
   </url>
-  <url>
-    <loc>https://lumen.example/docs/guides/routing/</loc>
-    <lastmod>2026-11-06</lastmod>
-  </url>
-  <url>
-    <loc>https://lumen.example/legal/privacy/</loc>
-    <lastmod>2026-11-06</lastmod>
-  </url>
-  <url>
-    <loc>https://lumen.example/legal/terms/</loc>
-    <lastmod>2026-11-06</lastmod>
-  </url>
+  <url><loc>https://lumen.example/docs/guides/routing/</loc></url>
+  <url><loc>https://lumen.example/legal/privacy/</loc></url>
+  <url><loc>https://lumen.example/legal/terms/</loc></url>
   <url>
     <loc>https://lumen.example/ja/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/"/>
@@ -70,13 +56,11 @@
   </url>
   <url>
     <loc>https://lumen.example/ja/docs/</loc>
-    <lastmod>2026-11-06</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/"/>
   </url>
   <url>
     <loc>https://lumen.example/ja/docs/getting-started/</loc>
-    <lastmod>2026-11-06</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://lumen.example/docs/getting-started/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://lumen.example/ja/docs/getting-started/"/>
   </url>
