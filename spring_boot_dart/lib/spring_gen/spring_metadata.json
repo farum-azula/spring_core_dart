@@ -69,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 290,
+      "line": 306,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -79,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 294,
+      "line": 310,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 298,
+      "line": 314,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -99,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 302,
+      "line": 318,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -109,7 +109,7 @@
       "default": "always",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 186,
+      "line": 202,
       "class": "JsonProperties"
     },
     {
@@ -119,7 +119,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 241,
+      "line": 257,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -129,7 +129,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 244,
+      "line": 260,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -139,7 +139,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 247,
+      "line": 263,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -149,7 +149,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 250,
+      "line": 266,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -159,7 +159,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 273,
+      "line": 289,
       "class": "JsonMapperProperties"
     },
     {
@@ -169,7 +169,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 276,
+      "line": 292,
       "class": "JsonMapperProperties"
     },
     {
@@ -179,7 +179,7 @@
       "default": "LOWER_CAMEL_CASE",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 183,
+      "line": 199,
       "class": "JsonProperties"
     },
     {
@@ -189,7 +189,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 235,
+      "line": 251,
       "class": "JsonSchemasRegistryProperties"
     },
     {
@@ -199,7 +199,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 219,
+      "line": 235,
       "class": "JsonSchemaProperties"
     },
     {
@@ -209,7 +209,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 228,
+      "line": 244,
       "class": "JsonSchemaProperties"
     },
     {
@@ -219,7 +219,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 225,
+      "line": 241,
       "class": "JsonSchemaProperties"
     },
     {
@@ -229,7 +229,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 222,
+      "line": 238,
       "class": "JsonSchemaProperties"
     },
     {
@@ -239,7 +239,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 256,
+      "line": 272,
       "class": "JsonSerializationProperties"
     },
     {
@@ -249,7 +249,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 259,
+      "line": 275,
       "class": "JsonSerializationProperties"
     },
     {
@@ -259,7 +259,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 264,
+      "line": 280,
       "class": "JsonSerializationProperties"
     },
     {
@@ -269,7 +269,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 267,
+      "line": 283,
       "class": "JsonSerializationProperties"
     },
     {
@@ -279,7 +279,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 190,
+      "line": 206,
       "class": "JsonProperties"
     },
     {
@@ -349,7 +349,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 143,
+      "line": 159,
       "class": "MessagesProperties"
     },
     {
@@ -361,7 +361,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 147,
+      "line": 163,
       "class": "MessagesProperties"
     },
     {
@@ -371,7 +371,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 152,
+      "line": 168,
       "class": "MessagesProperties"
     },
     {
@@ -381,7 +381,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 155,
+      "line": 171,
       "class": "MessagesProperties"
     },
     {
@@ -391,7 +391,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 158,
+      "line": 174,
       "class": "MessagesProperties"
     },
     {
@@ -401,7 +401,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 161,
+      "line": 177,
       "class": "MessagesProperties"
     },
     {
@@ -411,7 +411,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 164,
+      "line": 180,
       "class": "MessagesProperties"
     },
     {
@@ -421,8 +421,18 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 167,
+      "line": 183,
       "class": "MessagesProperties"
+    },
+    {
+      "name": "spring.observations.annotations.enabled",
+      "type": "bool",
+      "description": "Whether `@Observed` works: with `true` the build has the advisor that puts it into effect and writes a proxy for each bean marked `@Observed`; without it, no proxy at all. Read by the generator.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 152,
+      "class": "ObservationsAnnotationsProperties"
     },
     {
       "name": "spring.resources.embed.exclude",
@@ -1095,7 +1105,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 172,
+      "line": 188,
       "injects": [],
       "members": [
         {
@@ -1529,7 +1539,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 141,
+      "line": 157,
       "injects": [],
       "members": [
         {
@@ -1613,6 +1623,144 @@
           "name": "pointcut",
           "kind": "getter",
           "type": "AnnotationPointcut"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "observationRegistry",
+      "type": "ObservationRegistry",
+      "types": [
+        "ObservationRegistry"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(ObservationRegistry)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/observation_auto_configuration.dart",
+      "line": 21,
+      "injects": [],
+      "members": [
+        {
+          "name": "addHandler",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ObservationHandler handler"
+          ]
+        },
+        {
+          "name": "currentObservation",
+          "kind": "getter",
+          "type": "Observation?"
+        },
+        {
+          "name": "handlers",
+          "kind": "getter",
+          "type": "List<ObservationHandler>"
+        },
+        {
+          "name": "isNoop",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "observation",
+          "kind": "method",
+          "type": "Observation",
+          "parameters": [
+            "String name",
+            "{String? contextualName}",
+            "{Map<String, String> lowCardinalityKeyValues}",
+            "{Observation? parent}"
+          ]
+        },
+        {
+          "name": "observe",
+          "kind": "method",
+          "type": "T",
+          "parameters": [
+            "String name",
+            "T Function() body",
+            "{String? contextualName}",
+            "{Map<String, String> lowCardinalityKeyValues}"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "Observation",
+          "parameters": [
+            "String name",
+            "{String? contextualName}",
+            "{Map<String, String> lowCardinalityKeyValues}",
+            "{Observation? parent}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "observationsProperties",
+      "type": "ObservationsProperties",
+      "types": [
+        "ObservationsProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 141,
+      "injects": [],
+      "members": [
+        {
+          "name": "annotations",
+          "kind": "field",
+          "type": "ObservationsAnnotationsProperties"
+        }
+      ]
+    },
+    {
+      "name": "observedAdvisor",
+      "type": "DefaultPointcutAdvisor",
+      "types": [
+        "DefaultPointcutAdvisor",
+        "PointcutAdvisor",
+        "Advisor",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/spring_auto_configuration.dart",
+      "line": 62,
+      "injects": [],
+      "members": [
+        {
+          "name": "advice",
+          "kind": "field",
+          "type": "MethodInterceptor"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "pointcut",
+          "kind": "field",
+          "type": "AopPointcut"
         },
         {
           "name": "toString",

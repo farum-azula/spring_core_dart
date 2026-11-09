@@ -62,6 +62,8 @@ const _notProperties = <String, String>{
       'a startup step name (ApplicationStartup)',
   'spring_boot_starter_flutter:spring.beans.instantiate':
       'a startup step name (ApplicationStartup)',
+  'spring_boot_starter_flutter:spring.event':
+      'a startup step name (ApplicationStartup)',
   'spring_boot_dart:spring.boot.application.starting':
       'a startup step name (ApplicationStartup)',
   'spring_boot_dart:spring.boot.application.environment-prepared':

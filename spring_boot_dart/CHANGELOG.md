@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `spring.observations.annotations.enabled` is a property of `ObservationsProperties` (`spring.observations.*`), with its documentation in the editor metadata.
 - The events of `SpringApplication`, `ExitCodeEvent` and `AvailabilityChangeEvent` (with its state) name themselves (`eventName`), readable in a release build.
 - Observations: the `observationRegistry` bean with every `ObservationHandler` bean (`ObservationAutoConfiguration`), and `@Observed` put into effect by the `observedAdvisor` of `springBootObservedAnnotationsAutoConfiguration`, a module in the build only with `spring.observations.annotations.enabled: true`: without it the beans marked `@Observed` get no proxy at all.
 - `spring.resources.prefetch` (`locations`, `stage`, `delay`): the files a Flutter web app downloads together, after it is shown or behind its splash (`ResourcesPrefetchProperties`).

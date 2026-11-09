@@ -136,6 +136,22 @@ class ResourcesEmbedProperties {
   List<String> exclude = [];
 }
 
+/// The observations: `spring.observations.*`.
+@ConfigurationProperties('spring.observations')
+class ObservationsProperties {
+  /// `@Observed`.
+  ObservationsAnnotationsProperties annotations =
+      ObservationsAnnotationsProperties();
+}
+
+/// `spring.observations.annotations.*`.
+class ObservationsAnnotationsProperties {
+  /// Whether `@Observed` works: with `true` the build has the advisor that
+  /// puts it into effect and writes a proxy for each bean marked
+  /// `@Observed`; without it, no proxy at all. Read by the generator.
+  bool enabled = false;
+}
+
 /// The message source: `spring.messages.*`.
 @ConfigurationProperties('spring.messages')
 class MessagesProperties {
