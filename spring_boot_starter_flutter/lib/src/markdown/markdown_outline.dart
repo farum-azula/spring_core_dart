@@ -80,13 +80,32 @@ class MarkdownOutline extends ChangeNotifier {
     Duration duration = const Duration(milliseconds: 250),
     Curve curve = Curves.easeOut,
   }) {
-    final target = _keys[(_page, id)]?.currentContext;
-    if (target == null) {
+    final key = _keys[(_page, id)];
+    final target = key?.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(target, duration: duration, curve: curve);
+      return true;
+    }
+    // A heading of a long page not built yet: the page is built, then
+    // shown there.
+    final build = buildAll;
+    if (key == null || build == null) {
       return false;
     }
-    Scrollable.ensureVisible(target, duration: duration, curve: curve);
+    build();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final built = key.currentContext;
+      if (built != null) {
+        Scrollable.ensureVisible(built, duration: duration, curve: curve);
+      }
+    });
     return true;
   }
+
+  /// Set by the [MarkdownView] that shows the page: builds the rest of a
+  /// long page, which comes in over a few frames, so [show] reaches a
+  /// heading further down at once.
+  VoidCallback? buildAll;
 
   /// The key of the heading [id] of [page]; the view gives it to the
   /// heading's widget. Each page has its own keys: while one page goes and

@@ -561,6 +561,35 @@ List<ThemeProp> _motion() => [
     defaultValue: '1',
   ),
   _p(
+    'motion.wheel-scroll.inertia',
+    'text',
+    'The inertia of scrolling, each kind of pointer its own: `none` (the '
+        'default), or a map of `mouse`, `trackpad` and `touch`.',
+    defaultValue: 'none',
+  ),
+  _p(
+    'motion.wheel-scroll.inertia.mouse',
+    'number',
+    'What each quick step of the wheel in a row adds to the next (0.2: a '
+        'fifth more), and the longer glide of a fast run; 0 for none.',
+    defaultValue: '0',
+  ),
+  _p(
+    'motion.wheel-scroll.inertia.trackpad',
+    'number',
+    'How much of its last step the page keeps each frame once the fingers '
+        'stop on the trackpad (0.9 glides on); 0 for none, for a system '
+        'that glides by itself.',
+    defaultValue: '0',
+  ),
+  _p(
+    'motion.wheel-scroll.inertia.touch',
+    'number',
+    'How much further a flick of the finger throws the page (0.5: half '
+        'again as far); 0 for none.',
+    defaultValue: '0',
+  ),
+  _p(
     'motion.scroll-to-top',
     'text',
     'How a screen goes back to its top when it shows another page '

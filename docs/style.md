@@ -146,3 +146,17 @@ drift from the starter's.
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 // not also spring_boot_dart, spring_core_dart or spring_web_dart
 ```
+
+## Code that runs in a browser compiles to WebAssembly
+
+Every package an app can run in a browser compiles to WebAssembly, so a
+Flutter web app can be built with `flutter build web --wasm`: no
+`dart:html`, `dart:js` or `package:js` (the browser through
+`dart:js_interop`), `dart:ffi` and `dart:io` only behind a conditional
+import or a platform check ([dependencies](dependencies.md#1-the-rule)).
+`tool/check_wasm.dart` compiles them, and CI fails on one that does not.
+
+```dart
+export 'secret_store_stub.dart'
+    if (dart.library.ffi) 'secret_store_ffi.dart'; // not import 'dart:ffi'
+```

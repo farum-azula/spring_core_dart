@@ -1,17 +1,19 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 
 /// The frames: the frame meter turned on or off over the running app, and
-/// its corner, without a new build.
+/// its corner, without a new build. Without the meter in the build
+/// (`spring.flutter.debug.frame-meter.enabled`) it says so.
 final class DebugFramesSection implements DebugPanelSection, Ordered {
-  /// The section of [panel]'s switches.
-  const DebugFramesSection(this.panel);
+  /// The section of [meter]'s switch, `null` when the build left it out.
+  const DebugFramesSection(this.meter);
 
-  /// The switches.
-  final DebugPanel panel;
+  /// The switch.
+  final DebugFrameMeter? meter;
 
   @override
   String get title => 'Frames';
@@ -20,11 +22,19 @@ final class DebugFramesSection implements DebugPanelSection, Ordered {
   int get order => 10;
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: panel,
-    builder: (context, _) {
-      final style = DebugStyle.of(context);
-      return Column(
+  Widget build(BuildContext context) {
+    final style = DebugStyle.of(context);
+    final meter = this.meter;
+    if (meter == null) {
+      return Text(
+        'The frame meter is not in this build '
+        '(spring.flutter.debug.frame-meter.enabled).',
+        style: style.text.copyWith(color: style.muted),
+      );
+    }
+    return ListenableBuilder(
+      listenable: meter,
+      builder: (context, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Frame meter', style: style.title),
@@ -32,9 +42,9 @@ final class DebugFramesSection implements DebugPanelSection, Ordered {
           Wrap(
             children: [
               DebugChip(
-                panel.frameMeter ? 'On' : 'Off',
-                selected: panel.frameMeter,
-                onTap: () => panel.frameMeter = !panel.frameMeter,
+                meter.on ? 'On' : 'Off',
+                selected: meter.on,
+                onTap: () => meter.on = !meter.on,
               ),
             ],
           ),
@@ -46,13 +56,13 @@ final class DebugFramesSection implements DebugPanelSection, Ordered {
               for (final position in FrameMeterPosition.values)
                 DebugChip(
                   position.name,
-                  selected: panel.frameMeterPosition == position,
-                  onTap: () => panel.frameMeterPosition = position,
+                  selected: meter.position == position,
+                  onTap: () => meter.position = position,
                 ),
             ],
           ),
         ],
-      );
-    },
-  );
+      ),
+    );
+  }
 }

@@ -332,6 +332,20 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
         child: content,
       );
     }
+    // `motion.wheel-scroll.inertia.touch`: a flick throws the page further.
+    final touch = SpringTheme.maybeOf(context)?.wheelScroll.inertia.touch ?? 0;
+    if (touch > 0) {
+      final behavior = ScrollConfiguration.of(context);
+      content = ScrollConfiguration(
+        behavior: behavior.copyWith(
+          physics: InertiaScrollPhysics(
+            touch,
+            parent: behavior.getScrollPhysics(context),
+          ),
+        ),
+        child: content,
+      );
+    }
     if (SpringTheme.maybeOf(context)?.overscroll == OverscrollEffect.none) {
       content = ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),

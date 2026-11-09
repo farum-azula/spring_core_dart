@@ -9,7 +9,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 509,
+      "line": 533,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 493,
+      "line": 517,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 509,
+      "line": 533,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 493,
+      "line": 517,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 474,
+      "line": 498,
       "class": "FlutterRestartProperties"
     },
     {
@@ -109,8 +109,28 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 81,
+      "line": 85,
       "class": "FlutterDebugProperties"
+    },
+    {
+      "name": "spring.flutter.debug.frame-meter.enabled",
+      "type": "bool?",
+      "description": "Whether the app has the feature: `true` in every build, `false` in none (the build leaves its code out), not set in debug and profile builds only (a release build compiles it away).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 105,
+      "class": "FlutterDebugFeatureProperties"
+    },
+    {
+      "name": "spring.flutter.debug.motion.enabled",
+      "type": "bool?",
+      "description": "Whether the app has the feature: `true` in every build, `false` in none (the build leaves its code out), not set in debug and profile builds only (a release build compiles it away).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 105,
+      "class": "FlutterDebugFeatureProperties"
     },
     {
       "name": "spring.flutter.desktop.window.initial-size",
@@ -119,7 +139,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 214,
+      "line": 238,
       "class": "DesktopWindowProperties"
     },
     {
@@ -129,7 +149,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 220,
+      "line": 244,
       "class": "DesktopWindowProperties"
     },
     {
@@ -139,7 +159,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 217,
+      "line": 241,
       "class": "DesktopWindowProperties"
     },
     {
@@ -149,7 +169,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 204,
+      "line": 228,
       "class": "DesktopWindowProperties"
     },
     {
@@ -159,7 +179,7 @@
       "default": "default",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 210,
+      "line": 234,
       "class": "DesktopWindowProperties"
     },
     {
@@ -169,7 +189,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 160,
+      "line": 184,
       "class": "FlutterFontsProperties"
     },
     {
@@ -179,7 +199,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 163,
+      "line": 187,
       "class": "FlutterFontsProperties"
     },
     {
@@ -189,7 +209,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 179,
+      "line": 203,
       "class": "FontFamilyProperties"
     },
     {
@@ -199,7 +219,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 184,
+      "line": 208,
       "class": "FontFamilyProperties"
     },
     {
@@ -209,7 +229,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 99,
+      "line": 123,
       "class": "FlutterFrameMeterProperties"
     },
     {
@@ -219,7 +239,7 @@
       "default": "top-right",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 102,
+      "line": 126,
       "class": "FlutterFrameMeterProperties"
     },
     {
@@ -229,7 +249,7 @@
       "default": 60,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 106,
+      "line": 130,
       "class": "FlutterFrameMeterProperties"
     },
     {
@@ -239,7 +259,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 146,
+      "line": 170,
       "class": "FlutterLifecycleProperties"
     },
     {
@@ -381,7 +401,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 266,
+      "line": 290,
       "class": "FlutterWebProperties"
     },
     {
@@ -391,7 +411,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 275,
+      "line": 299,
       "class": "FlutterWebProperties"
     },
     {
@@ -401,7 +421,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 285,
+      "line": 309,
       "class": "FlutterWebProperties"
     },
     {
@@ -411,7 +431,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 281,
+      "line": 305,
       "class": "FlutterWebProperties"
     },
     {
@@ -421,7 +441,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 272,
+      "line": 296,
       "class": "FlutterWebProperties"
     },
     {
@@ -431,7 +451,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 248,
+      "line": 272,
       "class": "FlutterWebProperties"
     },
     {
@@ -441,7 +461,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 300,
+      "line": 324,
       "class": "FlutterWebHttps"
     },
     {
@@ -451,7 +471,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 297,
+      "line": 321,
       "class": "FlutterWebHttps"
     },
     {
@@ -461,7 +481,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 263,
+      "line": 287,
       "class": "FlutterWebProperties"
     },
     {
@@ -471,7 +491,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 315,
+      "line": 339,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -481,7 +501,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 319,
+      "line": 343,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -491,7 +511,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 323,
+      "line": 347,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -501,7 +521,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 327,
+      "line": 351,
       "class": "FlutterWebProxyRule"
     },
     {
@@ -511,7 +531,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 130,
+      "line": 154,
       "class": "FlutterWebPageProperties"
     },
     {
@@ -521,7 +541,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 123,
+      "line": 147,
       "class": "FlutterWebPageProperties"
     },
     {
@@ -531,7 +551,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 136,
+      "line": 160,
       "class": "FlutterWebPageProperties"
     },
     {
@@ -541,7 +561,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 435,
+      "line": 459,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -551,7 +571,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 428,
+      "line": 452,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -561,7 +581,7 @@
       "default": "/",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 432,
+      "line": 456,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -571,7 +591,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 390,
+      "line": 414,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -581,7 +601,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 369,
+      "line": 393,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -591,7 +611,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 384,
+      "line": 408,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -601,7 +621,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 378,
+      "line": 402,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -611,7 +631,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 395,
+      "line": 419,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -621,7 +641,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 410,
+      "line": 434,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -631,7 +651,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 413,
+      "line": 437,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -641,7 +661,7 @@
       "default": "directory",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 419,
+      "line": 443,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -651,7 +671,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 456,
+      "line": 480,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -661,7 +681,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 459,
+      "line": 483,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -671,7 +691,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 463,
+      "line": 487,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -681,7 +701,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 450,
+      "line": 474,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -691,7 +711,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 453,
+      "line": 477,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -701,7 +721,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 398,
+      "line": 422,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -711,7 +731,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 374,
+      "line": 398,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -721,7 +741,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 407,
+      "line": 431,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -731,7 +751,7 @@
       "default": "{title}",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 387,
+      "line": 411,
       "class": "FlutterWebSeoProperties"
     }
   ],
@@ -938,7 +958,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 94,
+      "line": 97,
       "injects": [],
       "members": [
         {
@@ -974,7 +994,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 113,
+      "line": 116,
       "injects": [],
       "members": [
         {
@@ -1016,7 +1036,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 356,
+      "line": 360,
       "injects": [],
       "members": [
         {
@@ -1060,7 +1080,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 347,
+      "line": 351,
       "injects": [],
       "members": [
         {
@@ -1095,6 +1115,119 @@
       ]
     },
     {
+      "name": "debugFrameMeter",
+      "type": "DebugFrameMeter",
+      "types": [
+        "DebugFrameMeter",
+        "ChangeNotifier",
+        "Listenable",
+        "KeyedShortcutHandler",
+        "ShortcutHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 417,
+      "injects": [],
+      "members": [
+        {
+          "name": "action",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "handle",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ShortcutInvocation invocation"
+          ]
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "keys",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "on",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "position",
+          "kind": "getter",
+          "type": "FrameMeterPosition"
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "debugFrameMeterCustomizer",
+      "type": "DebugFrameMeterCustomizer",
+      "types": [
+        "DebugFrameMeterCustomizer",
+        "FlutterAppCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 432,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "FlutterAppSettings app"
+          ]
+        },
+        {
+          "name": "meter",
+          "kind": "field",
+          "type": "DebugFrameMeter"
+        }
+      ]
+    },
+    {
       "name": "debugFramesSection",
       "type": "DebugFramesSection",
       "types": [
@@ -1110,7 +1243,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 333,
+      "line": 336,
       "injects": [],
       "members": [
         {
@@ -1122,14 +1255,14 @@
           ]
         },
         {
+          "name": "meter",
+          "kind": "field",
+          "type": "DebugFrameMeter?"
+        },
+        {
           "name": "order",
           "kind": "getter",
           "type": "int"
-        },
-        {
-          "name": "panel",
-          "kind": "field",
-          "type": "DebugPanel"
         },
         {
           "name": "title",
@@ -1154,7 +1287,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 326,
+      "line": 329,
       "injects": [],
       "members": [
         {
@@ -1183,6 +1316,114 @@
       ]
     },
     {
+      "name": "debugMotion",
+      "type": "DebugMotion",
+      "types": [
+        "DebugMotion",
+        "ChangeNotifier",
+        "Listenable",
+        "KeyedShortcutHandler",
+        "ShortcutHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 452,
+      "injects": [],
+      "members": [
+        {
+          "name": "action",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "animations",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "handle",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ShortcutInvocation invocation"
+          ]
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "keys",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "debugMotionCustomizer",
+      "type": "DebugMotionCustomizer",
+      "types": [
+        "DebugMotionCustomizer",
+        "FlutterAppCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 465,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "FlutterAppSettings app"
+          ]
+        },
+        {
+          "name": "motion",
+          "kind": "field",
+          "type": "DebugMotion"
+        }
+      ]
+    },
+    {
       "name": "debugMotionSection",
       "type": "DebugMotionSection",
       "types": [
@@ -1198,7 +1439,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 340,
+      "line": 344,
       "injects": [],
       "members": [
         {
@@ -1210,14 +1451,14 @@
           ]
         },
         {
+          "name": "motion",
+          "kind": "field",
+          "type": "DebugMotion?"
+        },
+        {
           "name": "order",
           "kind": "getter",
           "type": "int"
-        },
-        {
-          "name": "panel",
-          "kind": "field",
-          "type": "DebugPanel"
         },
         {
           "name": "title",
@@ -1244,7 +1485,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 313,
+      "line": 316,
       "injects": [],
       "members": [
         {
@@ -1261,11 +1502,6 @@
           ]
         },
         {
-          "name": "animations",
-          "kind": "getter",
-          "type": "bool"
-        },
-        {
           "name": "close",
           "kind": "method",
           "type": "void",
@@ -1276,16 +1512,6 @@
           "kind": "method",
           "type": "void",
           "parameters": []
-        },
-        {
-          "name": "frameMeter",
-          "kind": "getter",
-          "type": "bool"
-        },
-        {
-          "name": "frameMeterPosition",
-          "kind": "getter",
-          "type": "FrameMeterPosition"
         },
         {
           "name": "handle",
@@ -1347,7 +1573,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 380,
+      "line": 384,
       "injects": [],
       "members": [
         {
@@ -1386,7 +1612,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 373,
+      "line": 377,
       "injects": [],
       "members": [
         {
@@ -1430,7 +1656,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 363,
+      "line": 367,
       "injects": [],
       "members": [
         {
@@ -1475,7 +1701,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 190,
+      "line": 214,
       "injects": [],
       "members": [
         {
@@ -1519,7 +1745,7 @@
         "@ConditionalOnMissingBean(FileTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 247,
+      "line": 250,
       "injects": [],
       "members": [
         {
@@ -1651,7 +1877,7 @@
         "@ConditionalOnMissingBean(ThemeChoiceStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 214,
+      "line": 217,
       "injects": [],
       "members": [
         {
@@ -1724,7 +1950,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 481,
+      "line": 505,
       "injects": [],
       "members": [
         {
@@ -1751,7 +1977,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 514,
+      "line": 538,
       "injects": [],
       "members": [
         {
@@ -1780,6 +2006,16 @@
           "name": "enabled",
           "kind": "field",
           "type": "bool?"
+        },
+        {
+          "name": "frameMeter",
+          "kind": "field",
+          "type": "FlutterDebugFeatureProperties"
+        },
+        {
+          "name": "motion",
+          "kind": "field",
+          "type": "FlutterDebugFeatureProperties"
         }
       ]
     },
@@ -1795,7 +2031,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 151,
+      "line": 175,
       "injects": [],
       "members": [
         {
@@ -1827,7 +2063,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 89,
+      "line": 113,
       "injects": [],
       "members": [
         {
@@ -1859,7 +2095,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 141,
+      "line": 165,
       "injects": [],
       "members": [
         {
@@ -1908,7 +2144,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 468,
+      "line": 492,
       "injects": [],
       "members": [
         {
@@ -1930,7 +2166,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 112,
+      "line": 136,
       "injects": [],
       "members": [
         {
@@ -1962,7 +2198,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 232,
+      "line": 256,
       "injects": [],
       "members": [
         {
@@ -2024,7 +2260,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 349,
+      "line": 373,
       "injects": [],
       "members": [
         {
@@ -2115,7 +2351,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 122,
+      "line": 125,
       "injects": [],
       "members": [
         {
@@ -2217,7 +2453,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 133,
+      "line": 136,
       "injects": [],
       "members": [
         {
@@ -2250,7 +2486,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 104,
+      "line": 107,
       "injects": [],
       "members": [
         {
@@ -2290,7 +2526,7 @@
         "@ConditionalOnMissingBean(FileStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 236,
+      "line": 239,
       "injects": [],
       "members": [
         {
@@ -2385,7 +2621,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 141,
+      "line": 144,
       "injects": [],
       "members": [
         {
@@ -2484,7 +2720,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 189,
+      "line": 192,
       "injects": [],
       "members": [
         {
@@ -2635,7 +2871,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 154,
+      "line": 157,
       "injects": [],
       "members": [
         {
@@ -2758,7 +2994,7 @@
         "@ConditionalOnProperty('spring.flutter.theme.remember', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 226,
+      "line": 229,
       "injects": [],
       "members": [
         {
@@ -2799,7 +3035,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 273,
+      "line": 276,
       "injects": [],
       "members": [
         {
@@ -2863,7 +3099,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 205,
+      "line": 208,
       "injects": [],
       "members": [
         {
@@ -2968,7 +3204,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 261,
+      "line": 264,
       "injects": [],
       "members": [
         {
@@ -5314,6 +5550,38 @@
         "values": [],
         "description": "The share of the wheel's step: below 1 slower, above faster.",
         "default": "1"
+      },
+      {
+        "name": "motion.wheel-scroll.inertia",
+        "type": "text",
+        "states": false,
+        "values": [],
+        "description": "The inertia of scrolling, each kind of pointer its own: `none` (the default), or a map of `mouse`, `trackpad` and `touch`.",
+        "default": "none"
+      },
+      {
+        "name": "motion.wheel-scroll.inertia.mouse",
+        "type": "number",
+        "states": false,
+        "values": [],
+        "description": "What each quick step of the wheel in a row adds to the next (0.2: a fifth more), and the longer glide of a fast run; 0 for none.",
+        "default": "0"
+      },
+      {
+        "name": "motion.wheel-scroll.inertia.trackpad",
+        "type": "number",
+        "states": false,
+        "values": [],
+        "description": "How much of its last step the page keeps each frame once the fingers stop on the trackpad (0.9 glides on); 0 for none, for a system that glides by itself.",
+        "default": "0"
+      },
+      {
+        "name": "motion.wheel-scroll.inertia.touch",
+        "type": "number",
+        "states": false,
+        "values": [],
+        "description": "How much further a flick of the finger throws the page (0.5: half again as far); 0 for none.",
+        "default": "0"
       },
       {
         "name": "motion.scroll-to-top",

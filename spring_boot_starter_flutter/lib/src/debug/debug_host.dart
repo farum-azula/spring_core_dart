@@ -1,11 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
-import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 
-/// Puts the debug panel over the app, inside the app's own `builder`: the
-/// panel when it is open, the frame meter when it is on.
+/// Puts the debug panel over the app, inside the app's own `builder`,
+/// when it is open.
 final class DebugPanelCustomizer implements FlutterAppCustomizer {
   /// The panel [panel] with [sections].
   const DebugPanelCustomizer(this.panel, this.sections);
@@ -53,13 +52,7 @@ class DebugHost extends StatelessWidget {
     builder: (context, app) => Stack(
       fit: StackFit.expand,
       children: [
-        if (panel.frameMeter)
-          FrameMeter(
-            position: panel.frameMeterPosition,
-            child: _Motion(on: panel.animations, child: app!),
-          )
-        else
-          _Motion(on: panel.animations, child: app!),
+        app!,
         if (panel.isOpen)
           Positioned.fill(
             child: _Panel(panel: panel, sections: sections),
@@ -131,21 +124,4 @@ class _PanelState extends State<_Panel> {
       ),
     );
   }
-}
-
-// The app with its motion on, or off as the device's "reduce motion"
-// turns it off (`MediaQuery.disableAnimations`), from the panel's switch.
-class _Motion extends StatelessWidget {
-  const _Motion({required this.on, required this.child});
-
-  final bool on;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => on
-      ? child
-      : MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: true),
-          child: child,
-        );
 }

@@ -2302,6 +2302,38 @@
       "default": "1"
     },
     {
+      "name": "motion.wheel-scroll.inertia",
+      "type": "text",
+      "states": false,
+      "values": [],
+      "description": "The inertia of scrolling, each kind of pointer its own: `none` (the default), or a map of `mouse`, `trackpad` and `touch`.",
+      "default": "none"
+    },
+    {
+      "name": "motion.wheel-scroll.inertia.mouse",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "What each quick step of the wheel in a row adds to the next (0.2: a fifth more), and the longer glide of a fast run; 0 for none.",
+      "default": "0"
+    },
+    {
+      "name": "motion.wheel-scroll.inertia.trackpad",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "How much of its last step the page keeps each frame once the fingers stop on the trackpad (0.9 glides on); 0 for none, for a system that glides by itself.",
+      "default": "0"
+    },
+    {
+      "name": "motion.wheel-scroll.inertia.touch",
+      "type": "number",
+      "states": false,
+      "values": [],
+      "description": "How much further a flick of the finger throws the page (0.5: half again as far); 0 for none.",
+      "default": "0"
+    },
+    {
       "name": "motion.scroll-to-top",
       "type": "text",
       "states": false,

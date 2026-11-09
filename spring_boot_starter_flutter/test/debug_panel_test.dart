@@ -1,7 +1,8 @@
 // The debug panel: the module the build puts in by
 // spring.flutter.debug.enabled, opened by debug.open (keys or taps,
 // overridden in spring.flutter.shortcuts), its sections, and off in a
-// running app with enabled=false.
+// running app with enabled=false; the frame meter and the motion switch,
+// modules of their own with their own keys, the meter without the panel.
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +19,7 @@ class _Home extends StatelessWidget {
 Future<ApplicationContext> _start(
   WidgetTester tester, [
   String properties = '',
+  List<BeanModule>? debug,
 ]) async {
   await tester.pumpWidget(
     SpringApplicationWidget(
@@ -38,7 +40,12 @@ Future<ApplicationContext> _start(
         // logging's.
         autoConfigurations: [
           springBootStarterFlutterAutoConfiguration,
-          springBootStarterFlutterDebugAutoConfiguration,
+          ...debug ??
+              [
+                springBootStarterFlutterDebugAutoConfiguration,
+                springBootStarterFlutterDebugFrameMeterAutoConfiguration,
+                springBootStarterFlutterDebugMotionAutoConfiguration,
+              ],
           springBootStarterLoggingAutoConfiguration,
         ],
         bannerMode: BannerMode.off,
@@ -124,13 +131,13 @@ void main() {
     tester,
   ) async {
     final context = await _start(tester);
-    final panel = context.getBean<DebugPanel>()..toggle();
+    context.getBean<DebugPanel>().toggle();
     await tester.pump();
     await tester.tap(find.text('Frames'));
     await tester.pump();
     await tester.tap(find.text('Off'));
     await tester.pump();
-    expect(panel.frameMeter, isTrue);
+    expect(context.getBean<DebugFrameMeter>().on, isTrue);
     expect(find.byType(FrameMeter), findsOneWidget);
 
     // Motion off: the app under the panel has animations disabled.
@@ -138,7 +145,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Off').last);
     await tester.pump();
-    expect(panel.animations, isFalse);
+    expect(context.getBean<DebugMotion>().animations, isFalse);
     expect(
       MediaQuery.disableAnimationsOf(
         tester.element(find.byType(Navigator).first),
@@ -156,5 +163,58 @@ void main() {
     expect(context.containsBean('debugPanel'), isFalse);
     await _keys(tester);
     expect(find.text('Debug'), findsNothing);
+  });
+
+  testWidgets('the frame meter alone: ⌘⇧X and five taps and a hold', (
+    tester,
+  ) async {
+    final context = await _start(tester, '', [
+      springBootStarterFlutterDebugFrameMeterAutoConfiguration,
+    ]);
+    expect(context.containsBean('debugPanel'), isFalse);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyX);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(find.byType(FrameMeter), findsOneWidget);
+    // The panel's keys do nothing: it is not in the app.
+    await _keys(tester);
+    expect(find.text('Debug'), findsNothing);
+
+    for (var i = 0; i < 5; i++) {
+      final tap = await tester.startGesture(const Offset(100, 100));
+      await tap.up();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final hold = await tester.startGesture(const Offset(100, 100));
+    await tester.pump(const Duration(seconds: 2));
+    await hold.up();
+    await tester.pump();
+    expect(find.byType(FrameMeter), findsNothing);
+  });
+
+  testWidgets('⌘⇧M turns the motion off; enabled=false, no switch', (
+    tester,
+  ) async {
+    final context = await _start(
+      tester,
+      'spring.flutter.debug.frame-meter.enabled=false',
+    );
+    expect(context.containsBean('debugFrameMeter'), isFalse);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyM);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(context.getBean<DebugMotion>().animations, isFalse);
+    // The panel's Frames tab says the meter is not there.
+    context.getBean<DebugPanel>().toggle();
+    await tester.pump();
+    await tester.tap(find.text('Frames'));
+    await tester.pump();
+    expect(find.textContaining('not in this build'), findsOneWidget);
   });
 }

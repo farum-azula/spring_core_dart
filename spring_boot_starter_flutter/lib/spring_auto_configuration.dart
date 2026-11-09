@@ -11,7 +11,10 @@ import 'package:flutter/material.dart' show ThemeData;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
 import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_host.dart';
+import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_motion.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/beans_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/configuration_section.dart';
@@ -335,14 +338,15 @@ final BeanModule springBootStarterFlutterDebugAutoConfiguration = BeanModule(
       types: const [DebugFramesSection, DebugPanelSection, Ordered],
       source: _debugSource,
       conditions: const [_debugOn],
-      create: (r) => DebugFramesSection(r.dependency<DebugPanel>()),
+      create: (r) =>
+          DebugFramesSection(r.optionalDependency<DebugFrameMeter>()),
     ),
     BeanDefinition<DebugMotionSection>(
       name: 'debugMotionSection',
       types: const [DebugMotionSection, DebugPanelSection, Ordered],
       source: _debugSource,
       conditions: const [_debugOn],
-      create: (r) => DebugMotionSection(r.dependency<DebugPanel>()),
+      create: (r) => DebugMotionSection(r.optionalDependency<DebugMotion>()),
     ),
     BeanDefinition<DebugConfigurationSection>(
       name: 'debugConfigurationSection',
@@ -389,3 +393,80 @@ final BeanModule springBootStarterFlutterDebugAutoConfiguration = BeanModule(
     ),
   ],
 );
+
+// A debug feature in a running app: off with its enabled=false in a
+// profile, though the build has it.
+ConditionalOnProperty _debugFeatureOn(String feature) => ConditionalOnProperty(
+  'spring.flutter.debug.$feature.enabled',
+  havingValue: 'true',
+  matchIfMissing: true,
+);
+
+/// The frame meter over the app, on and off by the action
+/// `debug.frame-meter` (⌘⇧X, or five quick taps and a sixth held two
+/// seconds) or the debug panel's Frames tab (`debugFrameMeter`). The
+/// generator puts this module into the app by
+/// `spring.flutter.debug.frame-meter.enabled`: `true` always, `false`
+/// never (no code), not set debug and profile builds only; apart from the
+/// panel, so a release can have the meter alone.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('spring.flutter.debug.frame-meter.enabled'),
+)
+final BeanModule springBootStarterFlutterDebugFrameMeterAutoConfiguration =
+    BeanModule('springBootStarterFlutterDebugFrameMeterAutoConfiguration', [
+      BeanDefinition<DebugFrameMeter>(
+        name: 'debugFrameMeter',
+        types: const [
+          DebugFrameMeter,
+          ChangeNotifier,
+          Listenable,
+          ShortcutHandler,
+          KeyedShortcutHandler,
+        ],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('frame-meter')],
+        create: (r) => DebugFrameMeter(
+          position: r.dependency<FlutterFrameMeterProperties>().position,
+        ),
+      ),
+      BeanDefinition<DebugFrameMeterCustomizer>(
+        name: 'debugFrameMeterCustomizer',
+        types: const [DebugFrameMeterCustomizer, FlutterAppCustomizer],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('frame-meter')],
+        create: (r) =>
+            DebugFrameMeterCustomizer(r.dependency<DebugFrameMeter>()),
+      ),
+    ]);
+
+/// Every animation of the app on or off by the action `debug.motion`
+/// (⌘⇧M) or the debug panel's Motion tab (`debugMotion`). The generator
+/// puts this module into the app by `spring.flutter.debug.motion.enabled`:
+/// `true` always, `false` never (no code), not set debug and profile
+/// builds only.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('spring.flutter.debug.motion.enabled'),
+)
+final BeanModule springBootStarterFlutterDebugMotionAutoConfiguration =
+    BeanModule('springBootStarterFlutterDebugMotionAutoConfiguration', [
+      BeanDefinition<DebugMotion>(
+        name: 'debugMotion',
+        types: const [
+          DebugMotion,
+          ChangeNotifier,
+          Listenable,
+          ShortcutHandler,
+          KeyedShortcutHandler,
+        ],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('motion')],
+        create: (_) => DebugMotion(),
+      ),
+      BeanDefinition<DebugMotionCustomizer>(
+        name: 'debugMotionCustomizer',
+        types: const [DebugMotionCustomizer, FlutterAppCustomizer],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('motion')],
+        create: (r) => DebugMotionCustomizer(r.dependency<DebugMotion>()),
+      ),
+    ]);

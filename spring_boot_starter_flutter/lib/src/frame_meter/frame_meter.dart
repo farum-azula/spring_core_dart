@@ -214,17 +214,26 @@ class _Panel extends StatelessWidget {
       for (final frame in frames)
         if (last != null && last - frame.start < window) frame,
     ];
-    final idle = recent.length < 2;
+    // The time between frames while the app moves: a gap of a few frames
+    // with nothing to draw is a pause (Flutter draws only what changes),
+    // unless the frame before took that long itself.
+    final moving = <int>[
+      for (final (i, frame) in recent.indexed)
+        if (i > 0 &&
+            frame.interval > 0 &&
+            (frame.interval <= budget * 4 ||
+                recent[i - 1].build > budget ||
+                recent[i - 1].raster > budget))
+          frame.interval,
+    ];
+    final idle = moving.isEmpty;
     final rate = idle
         ? 0
-        : ((recent.length - 1) * 1e6 / (recent.last.start - recent.first.start))
-              .round();
+        : (moving.length * 1e6 / moving.reduce((a, b) => a + b)).round();
     double average(int Function(_Frame) of) => recent.isEmpty
         ? 0
         : recent.map(of).reduce((a, b) => a + b) / recent.length / 1000;
-    final worst = recent.isEmpty
-        ? 0
-        : recent.map((f) => f.interval).reduce((a, b) => a > b ? a : b);
+    final worst = moving.isEmpty ? 0 : moving.reduce((a, b) => a > b ? a : b);
 
     return DecoratedBox(
       decoration: BoxDecoration(

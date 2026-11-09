@@ -3580,13 +3580,16 @@ spring:
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `spring.flutter.debug.enabled` | `true` / `false` | not set | Read by the generator when it writes `main.spring.dart`. `true`: the panel is in every build. `false`: it is in none; the module is not written, so the app has none of its code. Not set: it is written for debug and profile builds only, and a release build compiles it away. Set to `false` in a profile, it turns off the panel of a running app whose build has it |
+| `spring.flutter.debug.frame-meter.enabled` | `true` / `false` | not set | The same, for the frame meter, a module of its own (`springBootStarterFlutterDebugFrameMeterAutoConfiguration`, bean `debugFrameMeter` with `on` and `position`). Its action `debug.frame-meter` has the keys `primary+shift+x` and `taps:5+hold:2s` (`spring.flutter.shortcuts.debug.frame-meter`), and it starts in the corner `spring.flutter.frame-meter.position`. With `debug.enabled: false` and this `true`, a release build has the frame meter and no panel |
+| `spring.flutter.debug.motion.enabled` | `true` / `false` | not set | The same, for the motion switch, a module of its own (`springBootStarterFlutterDebugMotionAutoConfiguration`, bean `debugMotion` with `animations`). Its action `debug.motion` has the key `primary+shift+m` (`spring.flutter.shortcuts.debug.motion`) |
 
 The tabs:
 
 | Tab | What it shows |
 |---|---|
 | Logs | The records of the logging system's buffer (`logBuffer`), newest first and live, by level and text |
-| Frames | The [frame meter](#the-app-widget) on or off over the app, and its corner, without a new build |
+| Frames | The [frame meter](#the-app-widget) on or off over the app, and its corner, without a new build (the `debugFrameMeter` bean; "not in this build" when the module is left out) |
+| Motion | Every animation of the app on or off (the `debugMotion` bean; "not in this build" when the module is left out) |
 | Configuration | The active profiles and every property with the source that sets it; values of keys that name a secret (`password`, `secret`, `token`, `key`, `credential`) show as `******` |
 | Beans | Every bean of the context with its type |
 | Theme | The app's themes and `system`; a tap shows one |
@@ -3611,7 +3614,7 @@ class CartSection implements DebugPanelSection {
 
 `DebugStyle.of(context)`, `DebugChip` and `DebugFilter` give a tab the
 panel's look. `debugPanel` (`DebugPanel`) is the panel's state: `toggle()`,
-`close()`, `frameMeter`.
+`close()`. The frame meter's state is `debugFrameMeter` (`on`, `position`), the animations' is `debugMotion` (`animations`).
 
 ### Keyboard shortcuts
 

@@ -714,4 +714,49 @@ void main() {
     expect(scroll.position.pixels, greaterThan(0));
     expect(outline.show('nowhere'), isFalse);
   });
+
+  testWidgets('a long page comes in over frames; show builds the rest', (
+    tester,
+  ) async {
+    final outline = MarkdownOutline();
+    addTearDown(outline.dispose);
+    final paragraph = 'word ' * 100;
+    await tester.pumpWidget(
+      _app(
+        SingleChildScrollView(
+          child: MarkdownView(
+            '# Top\n\n${'$paragraph\n\n' * 200}## Bottom\n\nThe end.\n',
+            outline: outline,
+            selectable: false,
+          ),
+        ),
+      ),
+    );
+    // The first frame has the top of the page, not the whole of it.
+    expect(find.text('Top'), findsOneWidget);
+    expect(find.text('Bottom', skipOffstage: false), findsNothing);
+    await tester.pump();
+    // A heading not built yet: the page is built, then scrolled to it.
+    expect(outline.show('bottom'), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('The end.'), findsOneWidget);
+    final scroll = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scroll.position.pixels, greaterThan(0));
+  });
+
+  testWidgets('a long page is whole after a few frames', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        SingleChildScrollView(
+          child: MarkdownView(
+            '# Top\n\n${'${'word ' * 100}\n\n' * 200}The end.\n',
+            selectable: false,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('The end.', skipOffstage: false), findsNothing);
+    await tester.pumpAndSettle();
+    expect(find.text('The end.', skipOffstage: false), findsOneWidget);
+  });
 }

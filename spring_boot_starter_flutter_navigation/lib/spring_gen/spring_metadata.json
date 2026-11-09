@@ -155,7 +155,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 75,
+      "line": 76,
       "injects": [],
       "members": [
         {
@@ -434,7 +434,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 69,
+      "line": 70,
       "injects": [],
       "members": [
         {
@@ -462,7 +462,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 109,
+      "line": 110,
       "injects": [],
       "members": [
         {
@@ -494,7 +494,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 120,
+      "line": 121,
       "injects": [],
       "members": [
         {
@@ -663,7 +663,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 130,
+      "line": 131,
       "injects": [],
       "members": [
         {
@@ -699,7 +699,7 @@
         "@ConditionalOnBean(ScreenRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart",
-      "line": 144,
+      "line": 145,
       "injects": [],
       "members": [
         {

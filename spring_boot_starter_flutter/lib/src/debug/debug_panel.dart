@@ -1,10 +1,12 @@
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_frame_meter.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_motion.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_handler.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_invocation.dart';
 
-/// The debug panel's state (the `debugPanel` bean): whether it is open,
-/// and the switches it sets for the running app, such as the frame meter.
+/// The debug panel's state (the `debugPanel` bean): whether it is open.
+/// The switches of its tabs are beans of their own, each in the build by
+/// its own property: [DebugFrameMeter], [DebugMotion].
 /// The action `debug.open` toggles it: by default ⌘⇧D (Ctrl+Shift+D) or
 /// four quick taps and a fifth held three seconds, on every platform;
 /// `spring.flutter.shortcuts.debug.open` names other keys or taps.
@@ -13,9 +15,6 @@ import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_invocation.da
 /// the build put it there; see [DebugPanelSection] for its sections.
 class DebugPanel extends ChangeNotifier implements KeyedShortcutHandler {
   bool _open = false;
-  bool _frameMeter = false;
-  bool _animations = true;
-  FrameMeterPosition _position = FrameMeterPosition.topRight;
 
   @override
   String get action => 'debug.open';
@@ -42,40 +41,6 @@ class DebugPanel extends ChangeNotifier implements KeyedShortcutHandler {
   void close() {
     if (_open) {
       _open = false;
-      notifyListeners();
-    }
-  }
-
-  /// Whether the frame meter shows over the app.
-  bool get frameMeter => _frameMeter;
-
-  set frameMeter(bool value) {
-    if (value != _frameMeter) {
-      _frameMeter = value;
-      notifyListeners();
-    }
-  }
-
-  /// The corner the frame meter shows in.
-  /// Whether the app under the panel moves: `false` makes every animation
-  /// instant, as the device's "reduce motion" does (the Motion tab).
-  bool get animations => _animations;
-
-  /// Turns the app's motion on or off.
-  set animations(bool value) {
-    if (value != _animations) {
-      _animations = value;
-      notifyListeners();
-    }
-  }
-
-  /// The corner the frame meter shows in.
-  FrameMeterPosition get frameMeterPosition => _position;
-
-  /// Moves the frame meter to a corner.
-  set frameMeterPosition(FrameMeterPosition value) {
-    if (value != _position) {
-      _position = value;
       notifyListeners();
     }
   }

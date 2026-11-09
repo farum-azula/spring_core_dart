@@ -169,6 +169,11 @@ jobs:
       - name: Dependencies only from this repository and the Dart team
         run: dart run tool/check_dependencies.dart
 
+      # Every package an app can run in a browser compiles to WebAssembly
+      # (docs/dependencies.md, "WebAssembly").
+      - name: The browser packages compile to WebAssembly
+        run: dart run tool/check_wasm.dart
+
       # A package whose lib/ or pubspec.yaml changed since the last release
       # needs an `## Unreleased` section in its changelog: the release never
       # writes commit subjects (a squash merge's subject is the pull
@@ -673,6 +678,9 @@ jobs:
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
+
+      - name: The Flutter starters compile to WebAssembly (flutter build web --wasm)
+        run: dart run tool/check_wasm.dart --flutter
 
       # A Flutter app per Flutter starter, listing that starter alone
       # (tool/check_app_dependencies.dart --flutter; the Dart starters'

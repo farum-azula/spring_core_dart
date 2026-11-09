@@ -73,11 +73,35 @@ final class FlutterProperties {
 @ConfigurationProperties('spring.flutter.debug')
 final class FlutterDebugProperties {
   /// Settings with these values.
-  const FlutterDebugProperties({this.enabled});
+  const FlutterDebugProperties({
+    this.enabled,
+    this.frameMeter = const FlutterDebugFeatureProperties(),
+    this.motion = const FlutterDebugFeatureProperties(),
+  });
 
   /// Whether the app has the debug panel: `true` in every build, `false`
   /// in none (the build leaves its code out), not set in debug and
   /// profile builds only (a release build compiles it away).
+  final bool? enabled;
+
+  /// The frame meter, on and off by `debug.frame-meter` (⌘⇧X, or five
+  /// quick taps and a sixth held two seconds): in the build apart from the
+  /// panel, so a release can have it alone.
+  final FlutterDebugFeatureProperties frameMeter;
+
+  /// The switch of every animation, `debug.motion` (⌘⇧M): in the build
+  /// apart from the panel.
+  final FlutterDebugFeatureProperties motion;
+}
+
+/// A debug feature in the build or not, `spring.flutter.debug.<feature>.*`.
+final class FlutterDebugFeatureProperties {
+  /// Settings with these values.
+  const FlutterDebugFeatureProperties({this.enabled});
+
+  /// Whether the app has the feature: `true` in every build, `false` in
+  /// none (the build leaves its code out), not set in debug and profile
+  /// builds only (a release build compiles it away).
   final bool? enabled;
 }
 

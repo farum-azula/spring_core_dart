@@ -102,5 +102,62 @@ void main() {
     expect(received.single.scrollDeltaY, 30);
     await tester.pump(const Duration(milliseconds: 16));
     expect(received, hasLength(1));
+    // The frames after it, which make up for missing steps, end.
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+  });
+
+  testWidgets('a frame the trackpad sends nothing in gets its last step', (
+    tester,
+  ) async {
+    final dispatcher = tester.binding.platformDispatcher;
+    final original = dispatcher.onPointerDataPacket;
+    addTearDown(() => dispatcher.onPointerDataPacket = original);
+    final received = <double>[];
+    dispatcher.onPointerDataPacket = (packet) => received.addAll([
+      for (final data in packet.data) data.scrollDeltaY,
+    ]);
+    WheelScrollSmoother.of(dispatcher).spec = WheelScrollSpec.none;
+    void pad(double dy, int ms) => dispatcher.onPointerDataPacket!(
+      PointerDataPacket(
+        data: [
+          PointerData(
+            kind: PointerDeviceKind.trackpad,
+            signalKind: PointerSignalKind.scroll,
+            timeStamp: Duration(milliseconds: ms),
+            scrollDeltaY: dy,
+          ),
+        ],
+      ),
+    );
+
+    // A step a frame.
+    pad(10, 0);
+    await tester.pump(const Duration(milliseconds: 16));
+    pad(10, 16);
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(received, [10, 10]);
+    // A frame without one: the last step again.
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(received.last, closeTo(10, 0.5));
+    // The next that comes is shorter by as much.
+    pad(14, 48);
+    expect(received.last, closeTo(4, 0.5));
+    await tester.pump(const Duration(milliseconds: 16));
+
+    // The fingers stop: two frames made up, less and less, then nothing.
+    received.clear();
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(received, hasLength(2));
+    expect(received[1], lessThan(received[0]));
+    // A new scroll later is not shortened by them.
+    pad(10, 2000);
+    expect(received.last, 10);
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
   });
 }

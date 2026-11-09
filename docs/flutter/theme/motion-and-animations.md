@@ -47,7 +47,7 @@ spring:
 | `motion.text-change` | enum, or a map | `none`, `fade`, `morph` | `none` | What a `ThemeText` does when its text changes, another language say |
 | `motion.text-change.type` / `.duration` / `.curve` / `.stagger` / `.keep-unchanged` / `.glyphs` / `.glyph-duration` | enum / duration / curve / duration / boolean / text / duration | as above, `450ms`, a curve name, `12ms`, `true` / `false`, any characters, a duration over zero | `none`, `450ms`, `ease-out`, `12ms`, `false`, `▓▒░<>/\|=+*#%&@$?!01`, `40ms` | The map form; `stagger` is how much later each character of `morph` starts; `keep-unchanged` leaves the characters that stay the same in place |
 | `motion.overscroll` | `platform`, `none` | | `platform` | What a scrollable shows when pulled past its end: the app type's own (Material's stretch on Android, which distorts the content for a moment) or nothing |
-| `motion.wheel-scroll` | `none`, or a map of `duration` and `speed` | | `none` (`250ms`, `1` in the map) | How a mouse wheel scrolls every scrollable: `none` jumps by the wheel's step as Flutter does; a map eases each step over `duration` and scales it by `speed` |
+| `motion.wheel-scroll` | `none`, or a map of `duration`, `speed` and `inertia` | | `none` (`250ms`, `1`, no inertia in the map) | How a mouse wheel scrolls every scrollable: `none` jumps by the wheel's step as Flutter does; a map eases each step over `duration`, scales it by `speed`, and gives each kind of pointer its `inertia` ([inertia](#inertia)) |
 | `motion.scroll-to-top` | `none`, or a map of `duration` and `curve` | | `400ms`, `ease-out-cubic` | How a screen goes back to its top when it shows another page (`RouteContentView`); `none` jumps |
 | `motion.content-change` | a kind, or a map | `none`, `fade`, `fade-up`, `morph`, or a kind of the app's own | `none` | How a part of a screen shows other content in its place (another page in `RouteContentView`) |
 | `motion.content-change.type` / `.duration` / `.curve` | kind / duration / curve | as above, `200ms`, a curve name | `none`, `200ms`, `ease-out` | The map form |
@@ -244,11 +244,34 @@ motion:
   the other add up and keep moving.
 - `speed`: the share of the step, below 1 slower, above faster.
 - `none` (the default): Flutter's own behavior.
+- `inertia`: see [inertia](#inertia).
 
 Touch scrolling keeps its physics. A trackpad that the platform reports
 as wheel steps (the web) is eased too; its steps are small, so it moves
 almost as before. `WheelScrollSmoother` does the work, and `SpringApp`
 sets it from the active theme.
+
+
+## Inertia
+
+`motion.wheel-scroll.inertia` gives scrolling some weight, each kind of
+pointer its own; every one is off (0) by default:
+
+```yaml
+motion:
+  wheel-scroll: { duration: 260ms, speed: 0.75, inertia: { mouse: 0.2 } }
+```
+
+| Key | What it does |
+|---|---|
+| `mouse` | Quick wheel steps one after another go further each (0.2: a fifth more each, up to six in a row) and glide longer, so a wheel spun fast crosses a page and a single notch still moves one step |
+| `trackpad` | Once the fingers stop, the page glides on, keeping that share of its last step each frame (0.9). For a trackpad whose system does not glide by itself, such as many on Windows and Linux; macOS does, so leave it 0 there |
+| `touch` | A flick of the finger throws the page further (0.5: half again as far) |
+
+Whatever the inertia, a frame a trackpad sends no step in while the
+fingers move gets the step of the frames before, and the next step is
+that much shorter: browsers send a step a frame and now and then none,
+which made the page stop for a frame and jump twice as far in the next.
 
 ## Durations
 

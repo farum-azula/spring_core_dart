@@ -8,7 +8,8 @@ library;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart' show RouterConfig;
-import 'package:flutter_web_plugins/url_strategy.dart' show usePathUrlStrategy;
+import 'package:flutter_web_plugins/url_strategy.dart'
+    show BrowserPlatformLocation, PathUrlStrategy, setUrlStrategy;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     show FlutterAppCustomizer;
@@ -168,13 +169,14 @@ final BeanModule springBootStarterFlutterNavigationAutoConfiguration =
       imports: [navigationConfigBeans],
     );
 
-// The browser's address bar without `#`. It must be set before the engine
+// The browser's address bar without `#` for the route, its `#heading`
+// kept (a link straight to a heading). It must be set before the engine
 // reads the first address, which the router does: the context starts
 // while the splash shows, before any router exists. A second start (a hot
 // restart, a test) finds it set and keeps it.
 void _pathUrls() {
   try {
-    usePathUrlStrategy();
+    setUrlStrategy(PathUrlStrategy(BrowserPlatformLocation(), true));
   } on Object catch (e) {
     _log.debug(() => 'The URL strategy was set already: $e');
   }

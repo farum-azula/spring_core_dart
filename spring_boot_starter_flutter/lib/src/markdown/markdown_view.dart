@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
@@ -279,6 +280,21 @@ class _MarkdownViewState extends State<MarkdownView>
   final _ids = <String>{};
   final _headings = <MarkdownHeading>[];
   final _ownOutline = MarkdownOutline();
+  // A long page comes in over a few frames: [_built] of its [_cached]
+  // blocks this frame, more at each next one, so no frame lays the whole
+  // page out (a page of tables took a fifth of a second on the web).
+  // [_cachedFor] is what the blocks were made from, [_weights] what each
+  // costs, roughly.
+  List<Widget>? _cached;
+  List<Object?>? _cachedFor;
+  var _weights = <int>[];
+  int _built = 0;
+  Object? _grownFor;
+  bool _growing = false;
+
+  // How much of a page one frame builds, in characters of its text (a
+  // table cell counts more: its columns are measured).
+  static const _frameBudget = 3000;
 
   MarkdownOutline get _outline => widget.outline ?? _ownOutline;
   Future<String>? _loading;
@@ -361,6 +377,9 @@ class _MarkdownViewState extends State<MarkdownView>
 
   @override
   void dispose() {
+    if (_outline.buildAll == _buildAll) {
+      _outline.buildAll = null;
+    }
     _disposeRecognizers();
     _ownOutline.dispose();
     _appear.dispose();
@@ -461,30 +480,96 @@ class _MarkdownViewState extends State<MarkdownView>
     );
   }
 
-  Widget _view(BuildContext context, String markdown, {Object? content}) {
-    _renewRecognizers(content ?? markdown);
-    _ids.clear();
-    _headings.clear();
-    _line = 0;
-    final nodes = md.Document(
-      extensionSet: MarkdownView.syntax,
-    ).parse(MarkdownView.withoutFrontMatter(markdown));
-    final look = _Look.of(context);
-    final blocks = _blocks(nodes, look);
-    _lines = _line;
-    final headings = List.of(_headings);
-    final page = _builtFor;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _outline.update(headings, page: page);
+  // The same blocks again: what they were made from has not changed.
+  bool _sameAs(List<Object?> made) {
+    final cached = _cachedFor;
+    if (cached == null || cached.length != made.length) {
+      return false;
+    }
+    for (var i = 0; i < made.length; i++) {
+      if (!identical(cached[i], made[i])) {
+        return false;
       }
-    });
+    }
+    return true;
+  }
+
+  // The blocks of the first frame of a page, then of each next one: up to
+  // the frame's budget, at least one.
+  int _grow(int from) {
+    var spent = 0;
+    var to = from;
+    while (to < _weights.length && (to == from || spent < _frameBudget)) {
+      spent += _weights[to++];
+    }
+    return to;
+  }
+
+  // Builds the rest of the page now: a heading further down is wanted.
+  void _buildAll() {
+    final cached = _cached;
+    if (mounted && cached != null && _built < cached.length) {
+      setState(() => _built = cached.length);
+    }
+  }
+
+  Widget _view(BuildContext context, String markdown, {Object? content}) {
+    final look = _Look.of(context);
+    final made = <Object?>[
+      widget,
+      markdown,
+      SpringTheme.maybeOf(context),
+      DefaultTextStyle.of(context).style,
+      _morph,
+    ];
+    if (!_growing || !_sameAs(made)) {
+      _renewRecognizers(content ?? markdown);
+      _ids.clear();
+      _headings.clear();
+      _line = 0;
+      final nodes = md.Document(
+        extensionSet: MarkdownView.syntax,
+      ).parse(MarkdownView.withoutFrontMatter(markdown));
+      final weights = <int>[];
+      _cached = _blocks(nodes, look, weights: weights);
+      _weights = weights;
+      _cachedFor = made;
+      _lines = _line;
+      final headings = List.of(_headings);
+      final page = _builtFor;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _outline.update(headings, page: page);
+        }
+      });
+    }
+    _growing = false;
+    _outline.buildAll = _buildAll;
+    final blocks = _cached!;
+    final key = content ?? markdown;
+    if (!identical(key, _grownFor) && key != _grownFor) {
+      _grownFor = key;
+      _built = _grow(0);
+    } else {
+      _built = _built.clamp(_grow(0), blocks.length);
+    }
+    if (_built < blocks.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final cached = _cached;
+        if (mounted && cached != null && _built < cached.length) {
+          setState(() {
+            _growing = true;
+            _built = _grow(_built);
+          });
+        }
+      });
+    }
     final view = DefaultTextStyle.merge(
       style: look.body,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: blocks,
+        children: _built >= blocks.length ? blocks : blocks.sublist(0, _built),
       ),
     );
     if (!widget.selectable) {
@@ -514,7 +599,12 @@ class _MarkdownViewState extends State<MarkdownView>
 
   // The blocks of [nodes] with the gaps between them: none before the
   // first or after the last, more above a heading, less below one.
-  List<Widget> _blocks(List<md.Node> nodes, _Look look) {
+  // [weights], when given, gets what each block costs to build.
+  List<Widget> _blocks(
+    List<md.Node> nodes,
+    _Look look, {
+    List<int>? weights,
+  }) {
     final result = <Widget>[];
     md.Node? previous;
     for (final node in nodes) {
@@ -531,11 +621,36 @@ class _MarkdownViewState extends State<MarkdownView>
             },
           ),
         );
+        weights?.add(0);
       }
       result.addAll(blocks);
+      if (weights != null) {
+        weights.add(_weight(node));
+        for (var i = 1; i < blocks.length; i++) {
+          weights.add(0);
+        }
+      }
       previous = node;
     }
     return result;
+  }
+
+  // Roughly what [node] costs to build and lay out: its text, and more for
+  // a table's cells, whose columns are measured.
+  static int _weight(md.Node node) {
+    var cells = 0;
+    void count(md.Node node) {
+      if (node is md.Element) {
+        if (node.tag == 'td' || node.tag == 'th') {
+          cells++;
+        }
+        node.children?.forEach(count);
+      }
+    }
+
+    count(node);
+    // A long table builds its first rows only (_LongTable).
+    return 40 + node.textContent.length ~/ 4 + math.min(cells, 80) * 60;
   }
 
   // The level of a heading, or `null`.
@@ -874,6 +989,25 @@ class _MarkdownViewState extends State<MarkdownView>
       (max, row) =>
           (row.children?.length ?? 0) > max ? row.children!.length : max,
     );
+    // A long table: its columns measured from their longest cells, its
+    // rows coming in over a few frames.
+    if (rows.length > _LongTable.from) {
+      return _LongTable(
+        [
+          for (final row in rows)
+            [
+              for (var i = 0; i < width; i++)
+                switch (row.children?.elementAtOrNull(i)) {
+                  final md.Element cell => _cell(cell, look),
+                  _ => const _Cell.empty(),
+                },
+            ],
+        ],
+        rule: look.rule,
+        cellWidth: look.cellWidth,
+        fill: look.tableFill,
+      );
+    }
     // Each column as wide as its text up to `cellWidth`, the text wrapping
     // beyond; a table wider than the view scrolls sideways instead of
     // squeezing its columns. With `tableFill`, a narrower table widens its
@@ -916,6 +1050,14 @@ class _MarkdownViewState extends State<MarkdownView>
         ),
       ),
     );
+  }
+
+  _Cell _cell(md.Element cell, _Look look) {
+    final span = TextSpan(children: _inline(cell.children ?? [], look));
+    final style = cell.tag == 'th'
+        ? const TextStyle(fontWeight: FontWeight.w600)
+        : null;
+    return _Cell(span, style, _text(span, style: style));
   }
 
   List<InlineSpan> _inline(List<md.Node> nodes, _Look look) => [
@@ -1425,5 +1567,194 @@ final class _HtmlAsText extends md.HtmlBlockSyntax {
   md.Node parse(md.BlockParser parser) {
     final html = super.parse(parser);
     return html is md.Text ? md.Element('p', [md.Text(html.text)]) : html;
+  }
+}
+
+// A cell of a long table: its text, to measure the column, and the widget
+// shown.
+final class _Cell {
+  const _Cell(this.span, this.style, this.child);
+
+  const _Cell.empty() : span = null, style = null, child = const SizedBox();
+
+  final InlineSpan? span;
+  final TextStyle? style;
+  final Widget child;
+
+  int get length => span?.toPlainText().length ?? 0;
+}
+
+// A table of many rows: each column as wide as its longest cells (up to
+// `cellWidth`), measured once, and the rows coming in a few at a frame (up
+// to [budget] characters), so no frame lays out the whole table and
+// measures every cell twice as [IntrinsicColumnWidth] does.
+class _LongTable extends StatefulWidget {
+  const _LongTable(
+    this.rows, {
+    required this.rule,
+    required this.cellWidth,
+    required this.fill,
+  });
+
+  // A table of more rows than this is a long one.
+  static const from = 30;
+  // The characters of the rows one frame adds (a cell counts some more).
+  static const budget = 1500;
+  // The cells of a column measured: its longest ones by their text.
+  static const measured = 4;
+  static const padding = 6.0;
+
+  final List<List<_Cell>> rows;
+  final Color rule;
+  final double cellWidth;
+  final bool fill;
+
+  @override
+  State<_LongTable> createState() => _LongTableState();
+}
+
+class _LongTableState extends State<_LongTable> {
+  // Where the pieces added frame after frame end: each is a [Table].
+  late final _ends = [_next(0)];
+  List<double>? _widths;
+
+  // The end of the piece from row [from]: rows up to the budget, one at
+  // least.
+  int _next(int from) {
+    final rows = widget.rows;
+    var spent = 0;
+    var to = from;
+    while (to < rows.length && (to == from || spent < _LongTable.budget)) {
+      for (final cell in rows[to++]) {
+        spent += cell.length + 10;
+      }
+    }
+    return to;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _widths = null;
+  }
+
+  @override
+  void didUpdateWidget(_LongTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.rows, widget.rows)) {
+      _widths = null;
+      _ends.removeWhere((end) => end > widget.rows.length);
+      if (_ends.isEmpty) {
+        _ends.add(_next(0));
+      }
+    }
+  }
+
+  List<double> _measure(BuildContext context) {
+    final base = DefaultTextStyle.of(context).style;
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    final columns = widget.rows.fold(0, (n, row) => math.max(n, row.length));
+    return [
+      for (var column = 0; column < columns; column++)
+        () {
+          final cells = [
+            for (final row in widget.rows)
+              if (column < row.length && row[column].span != null) row[column],
+          ]..sort((a, b) => b.length.compareTo(a.length));
+          var text = 0.0;
+          for (final cell in cells.take(_LongTable.measured)) {
+            final painter = TextPainter(
+              text: TextSpan(
+                style: base.merge(cell.style),
+                children: [cell.span!],
+              ),
+              textDirection: direction,
+              textScaler: scaler,
+            )..layout();
+            text = math.max(text, painter.maxIntrinsicWidth);
+            painter.dispose();
+          }
+          return math.min(
+            (text + _LongTable.padding * 2 + 1).ceilToDouble(),
+            widget.cellWidth,
+          );
+        }(),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = widget.rows;
+    final measured = _widths ??= _measure(context);
+    if (_ends.last < rows.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _ends.last < widget.rows.length) {
+          setState(() => _ends.add(_next(_ends.last)));
+        }
+      });
+    }
+    final side = BorderSide(color: widget.rule);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var widths = measured;
+        final total = widths.fold(0.0, (sum, w) => sum + w);
+        // Like the flex of a short table: what the view has left is shared
+        // out evenly.
+        if (widget.fill &&
+            constraints.hasBoundedWidth &&
+            total < constraints.maxWidth &&
+            widths.isNotEmpty) {
+          final extra = (constraints.maxWidth - total) / widths.length;
+          widths = [for (final w in widths) w + extra];
+        }
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: widths.fold<double>(0, (sum, w) => sum + w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final (piece, end) in _ends.indexed)
+                  Table(
+                    // One line between two pieces: the upper one's bottom.
+                    border: TableBorder(
+                      top: piece == 0 ? side : BorderSide.none,
+                      bottom: side,
+                      left: side,
+                      right: side,
+                      horizontalInside: side,
+                      verticalInside: side,
+                    ),
+                    columnWidths: {
+                      for (final (i, w) in widths.indexed)
+                        i: FixedColumnWidth(w),
+                    },
+                    children: [
+                      for (final row in rows.sublist(
+                        piece == 0 ? 0 : _ends[piece - 1],
+                        end,
+                      ))
+                        TableRow(
+                          children: [
+                            for (var i = 0; i < widths.length; i++)
+                              Padding(
+                                padding: const EdgeInsets.all(
+                                  _LongTable.padding,
+                                ),
+                                child: i < row.length
+                                    ? row[i].child
+                                    : const SizedBox(),
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

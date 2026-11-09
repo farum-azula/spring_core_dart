@@ -81,6 +81,31 @@ packages are allowed there. Six exceptions:
   packages and the OAuth2 client only, **until it can be removed**
   ([section 2](#pointycastle-third-party-to-be-removed)).
 
+**WebAssembly: every package an app can run in a browser compiles to
+it.** A Flutter web app built with `flutter build web --wasm` runs its
+Dart as WebAssembly, faster than the JavaScript build, and the engine
+draws with Skwasm. One library that cannot be compiled to Wasm makes the
+whole app fall back to JavaScript, so the rule holds for every package an
+app can use there: `spring_core_dart`, `spring_boot_dart`, the logging,
+scheduling, cache, Feign, WebSocket and data starters,
+`spring_security_core`, `spring_search_dart` and the three Flutter
+starters, and for every dependency they bring (a new one is checked the
+same way before it is added).
+
+- No `dart:html`, `dart:js`, `dart:js_util`, `dart:indexed_db`,
+  `dart:svg`, `dart:web_audio`, `dart:web_gl` and no `package:js`: the
+  browser is reached with `dart:js_interop` and `dart:js_interop_unsafe`.
+- `dart:ffi` only behind a conditional import
+  (`if (dart.library.ffi)`), with a stub for the web.
+- `dart:io` compiles to Wasm, but its calls throw in a browser: code that
+  needs it sits behind a conditional import (`if (dart.library.io)`) or
+  runs only where the platform has it.
+
+`tool/check_wasm.dart` compiles every public library of each of these
+packages with `dart compile wasm`, and with `--flutter` builds the Flutter
+starters in the Flutter guide and the SEO site with `flutter build web
+--wasm`. CI runs both; a library that does not compile fails the build.
+
 **How it is checked.** `tool/check_dependencies.dart` asks pub.dev who
 publishes each package the repository reaches, and fails on any package
 outside the rule, showing the path to it. CI runs it on every push and
@@ -726,12 +751,15 @@ repository use other ecosystems:
 3. **Run the check:** `dart run tool/check_dependencies.dart` (and
    `--flutter` for the Flutter packages). It fails on anything outside
    the rule and shows the path to it.
-4. **Anything else is forbidden.** In the rare case it cannot be avoided
+4. **It must compile to WebAssembly** when it reaches a package an app
+   can run in a browser ([section 1](#1-the-rule)): run
+   `dart run tool/check_wasm.dart` (and `--flutter`).
+5. **Anything else is forbidden.** In the rare case it cannot be avoided
    (a database driver for a future data starter, for example), add an entry
    to `allowedPackages` in `tool/check_dependencies.dart`. Give it a
    reason and `onlyIn` (the packages allowed to pull it), and add it to
    [section 2](#2-exceptions).
-5. **Update this page:** the tables of sections 3 and 9, and section 2
+6. **Update this page:** the tables of sections 3 and 9, and section 2
    for a new exception. `tool/test/docs_dependency_graph_test.dart` fails
    when a package of the pub workspace has no row in section 9, a
    package of the repository is missing from section 3, or an exception
