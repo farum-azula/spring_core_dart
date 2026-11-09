@@ -39,6 +39,14 @@ final class DebugFramesSection implements DebugPanelSection, Ordered {
         children: [
           Text('Frame meter', style: style.title),
           const SizedBox(height: 8),
+          // Live here: the overlays hide while the panel is open.
+          const FrameMeterGauge(),
+          const SizedBox(height: 12),
+          Text(
+            'On screen',
+            style: style.text.copyWith(color: style.muted),
+          ),
+          const SizedBox(height: 6),
           Wrap(
             children: [
               DebugChip(

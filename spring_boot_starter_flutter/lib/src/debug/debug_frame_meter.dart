@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart';
 import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_handler.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_invocation.dart';
@@ -12,7 +13,8 @@ import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 ///
 /// It is in the app only when `spring.flutter.debug.frame-meter.enabled`
 /// lets the build put it there, with the debug panel or without it.
-class DebugFrameMeter extends ChangeNotifier implements KeyedShortcutHandler {
+class DebugFrameMeter extends ChangeNotifier
+    implements KeyedShortcutHandler, DebugOverlay {
   /// Off, in the corner [position] (`spring.flutter.frame-meter.position`
   /// in the app).
   DebugFrameMeter({this._position = FrameMeterPosition.topRight});
@@ -42,9 +44,34 @@ class DebugFrameMeter extends ChangeNotifier implements KeyedShortcutHandler {
     }
   }
 
+  @override
+  String get id => 'frame-meter';
+
+  @override
+  String get title => 'Frames';
+
+  @override
+  DebugOverlayCorner get corner => _position;
+
+  @override
+  int get order => 0;
+
+  @override
+  bool get shown => on;
+
+  @override
+  set shown(bool value) => on = value;
+
+  @override
+  Size get size => const Size(170, 64);
+
+  @override
+  Widget build(BuildContext context) => const FrameMeterGauge();
+
   /// The corner the meter shows in.
   FrameMeterPosition get position => _position;
 
+  /// Moves the meter to [value].
   set position(FrameMeterPosition value) {
     if (value != _position) {
       _position = value;

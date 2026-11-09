@@ -29,10 +29,18 @@ import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
 import 'package:spring_boot_starter_flutter/src/properties/properties_beans.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
+import 'package:flutter/painting.dart' show EdgeInsets;
 import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts_customizer.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_handler.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
+import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_dock.dart';
+import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart';
+import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay_drag.dart';
+import 'package:spring_boot_starter_flutter/src/debug/sections/overlays_section.dart';
+import 'package:spring_boot_starter_flutter/src/debug/timeline/debug_timeline.dart';
+import 'package:spring_boot_starter_flutter/src/debug/timeline/timeline_observations.dart';
+import 'package:spring_boot_starter_flutter/src/debug/timeline/timeline_section.dart';
 import 'package:spring_boot_starter_flutter/src/resource_prefetch.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_task.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_trace.dart';
@@ -148,8 +156,7 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       name: 'startupEvents',
       types: const [StartupEvents, GenericApplicationListener],
       source: _source,
-      conditions: const [ConditionalOnBean(SplashTrace)],
-      create: (r) => StartupEvents(r.dependency<SplashTrace>()),
+      create: (r) => StartupEvents(r.optionalDependency<SplashTrace>()),
     ),
     BeanDefinition<ResourcePrefetch>(
       name: 'resourcePrefetch',
@@ -363,6 +370,16 @@ final BeanModule springBootStarterFlutterDebugAutoConfiguration = BeanModule(
       create: (r) =>
           DebugFramesSection(r.optionalDependency<DebugFrameMeter>()),
     ),
+    BeanDefinition<DebugOverlaysSection>(
+      name: 'debugOverlaysSection',
+      types: const [DebugOverlaysSection, DebugPanelSection, Ordered],
+      source: _debugSource,
+      conditions: const [_debugOn],
+      create: (r) => DebugOverlaysSection(
+        r.optionalDependencyList<DebugOverlay>() ?? const [],
+        placement: r.optionalDependency<DebugOverlayPlacement>(),
+      ),
+    ),
     BeanDefinition<DebugMotionSection>(
       name: 'debugMotionSection',
       types: const [DebugMotionSection, DebugPanelSection, Ordered],
@@ -444,6 +461,7 @@ final BeanModule springBootStarterFlutterDebugFrameMeterAutoConfiguration =
           Listenable,
           ShortcutHandler,
           KeyedShortcutHandler,
+          DebugOverlay,
         ],
         source: _debugSource,
         conditions: [_debugFeatureOn('frame-meter')],
@@ -451,15 +469,43 @@ final BeanModule springBootStarterFlutterDebugFrameMeterAutoConfiguration =
           position: r.dependency<FlutterFrameMeterProperties>().position,
         ),
       ),
-      BeanDefinition<DebugFrameMeterCustomizer>(
-        name: 'debugFrameMeterCustomizer',
-        types: const [DebugFrameMeterCustomizer, FlutterAppCustomizer],
-        source: _debugSource,
-        conditions: [_debugFeatureOn('frame-meter')],
-        create: (r) =>
-            DebugFrameMeterCustomizer(r.dependency<DebugFrameMeter>()),
-      ),
+      ..._debugDock,
     ]);
+
+/// The dock of the debug overlays, in every module of a feature that has
+/// one (the frame meter, the timeline): the first makes it, so it is in the
+/// build only with such a feature.
+final List<BeanDefinition<Object>> _debugDock = [
+  BeanDefinition<DebugDockCustomizer>(
+    name: 'debugDock',
+    types: const [DebugDockCustomizer, FlutterAppCustomizer, Ordered],
+    source: _debugSource,
+    conditions: const [
+      ConditionGroup('$_debugSource#debugDock', [
+        ConditionalOnMissingBean(DebugDockCustomizer),
+      ]),
+    ],
+    create: (r) {
+      final overlays = r.dependency<FlutterDebugProperties>().overlays;
+      final panel = r.optionalDependency<DebugPanel>();
+      return DebugDockCustomizer(
+        r.optionalDependencyList<DebugOverlay>() ?? const [],
+        settings: DebugDockSettings(
+          layout: overlays.layout,
+          maxHeight: overlays.maxHeight,
+          margin: EdgeInsets.fromLTRB(
+            overlays.margin.left,
+            overlays.margin.top,
+            overlays.margin.right,
+            overlays.margin.bottom,
+          ),
+        ),
+        placement: r.optionalDependency<DebugOverlayPlacement>(),
+        hiddenWhile: panel == null ? null : DebugPanelOpen(panel),
+      );
+    },
+  ),
+];
 
 /// Every animation of the app on or off by the action `debug.motion`
 /// (⌘⇧M) or the debug panel's Motion tab (`debugMotion`). The generator
@@ -491,4 +537,107 @@ final BeanModule springBootStarterFlutterDebugMotionAutoConfiguration =
         conditions: [_debugFeatureOn('motion')],
         create: (r) => DebugMotionCustomizer(r.dependency<DebugMotion>()),
       ),
+    ]);
+
+/// Dragging the debug overlays (`debugOverlayDrag`): a mouse drags one at
+/// once, a finger after a long press; dropped, it joins the nearest corner
+/// or stays where it is (`spring.flutter.debug.overlays.drag.snap`), kept
+/// for the next start with `remember`. The generator puts this module into
+/// the app only with `spring.flutter.debug.drag.enabled: true`: without it
+/// there is no code to drag.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild(
+    'spring.flutter.debug.drag.enabled',
+    whenMissing: BuildInclusion.never,
+  ),
+)
+final BeanModule springBootStarterFlutterDebugDragAutoConfiguration =
+    BeanModule('springBootStarterFlutterDebugDragAutoConfiguration', [
+      BeanDefinition<DebugOverlayDrag>(
+        name: 'debugOverlayDrag',
+        types: const [
+          DebugOverlayDrag,
+          DebugOverlayPlacement,
+          ChangeNotifier,
+          Listenable,
+        ],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('drag')],
+        create: (r) {
+          final drag = r.dependency<FlutterDebugProperties>().overlays.drag;
+          return DebugOverlayDrag(
+            snap: drag.snap,
+            places: drag.remember
+                ? FileDebugOverlayPlaces(r.dependency<FileTemplate>())
+                : null,
+          );
+        },
+      ),
+    ]);
+
+/// The timeline of the start and the observations (`debugTimeline`), on
+/// and off by the action `debug.timeline` (⌘⇧L, or six quick taps and a
+/// seventh held): a pill in the dock, the full view over the app when it is
+/// tapped, and its tab in the debug panel. The `timelineObservations` bean
+/// is an `ObservationHandler`, so it gets every observation. The generator
+/// puts this module into the app by `spring.flutter.debug.timeline.enabled`:
+/// `true` always, `false` never (no code), not set debug and profile builds
+/// only. With it, each bean's creation is measured too.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('spring.flutter.debug.timeline.enabled'),
+)
+final BeanModule springBootStarterFlutterDebugTimelineAutoConfiguration =
+    BeanModule('springBootStarterFlutterDebugTimelineAutoConfiguration', [
+      BeanDefinition<TimelineObservations>(
+        name: 'timelineObservations',
+        types: const [
+          TimelineObservations,
+          ObservationHandler,
+          ChangeNotifier,
+          Listenable,
+        ],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('timeline')],
+        create: (_) => TimelineObservations(),
+      ),
+      BeanDefinition<DebugTimeline>(
+        name: 'debugTimeline',
+        types: const [
+          DebugTimeline,
+          ChangeNotifier,
+          Listenable,
+          ShortcutHandler,
+          KeyedShortcutHandler,
+          DebugOverlay,
+        ],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('timeline')],
+        create: (r) => DebugTimeline(
+          // The SpringApplicationWidget's; an app without it has no stages.
+          trace:
+              r.optionalDependency<SplashTrace>() ??
+              SplashTrace(SplashStages(), log: false),
+          observations: r.dependency<TimelineObservations>(),
+          position: r.dependency<FlutterDebugProperties>().timeline.position,
+        ),
+      ),
+      BeanDefinition<DebugTimelineCustomizer>(
+        name: 'debugTimelineCustomizer',
+        types: const [
+          DebugTimelineCustomizer,
+          FlutterAppCustomizer,
+          Ordered,
+        ],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('timeline')],
+        create: (r) => DebugTimelineCustomizer(r.dependency<DebugTimeline>()),
+      ),
+      BeanDefinition<DebugTimelineSection>(
+        name: 'debugTimelineSection',
+        types: const [DebugTimelineSection, DebugPanelSection, Ordered],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('timeline')],
+        create: (r) => DebugTimelineSection(r.dependency<DebugTimeline>()),
+      ),
+      ..._debugDock,
     ]);

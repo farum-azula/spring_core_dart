@@ -303,12 +303,14 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
           false;
       final startup = SplashTrace(
         _stages,
+        // The timeline is in the build with the property, or without it
+        // outside a release.
         beans:
             trace ||
             (environment.getPropertyAs<bool>(
                   'spring.flutter.debug.timeline.enabled',
                 ) ??
-                false),
+                !kReleaseMode),
         log: trace,
       );
       factory

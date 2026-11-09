@@ -1,4 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart'
+    show DebugOverlayLayout;
 import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart'
     show FrameMeterPosition;
 import 'package:spring_boot_starter_flutter/src/spring_app.dart' show AppType;
@@ -77,6 +79,9 @@ final class FlutterDebugProperties {
     this.enabled,
     this.frameMeter = const FlutterDebugFeatureProperties(),
     this.motion = const FlutterDebugFeatureProperties(),
+    this.timeline = const FlutterDebugTimelineProperties(),
+    this.drag = const FlutterDebugFeatureProperties(),
+    this.overlays = const FlutterDebugOverlaysProperties(),
   });
 
   /// Whether the app has the debug panel: `true` in every build, `false`
@@ -92,6 +97,109 @@ final class FlutterDebugProperties {
   /// The switch of every animation, `debug.motion` (⌘⇧M): in the build
   /// apart from the panel.
   final FlutterDebugFeatureProperties motion;
+
+  /// The timeline of the start and the observations, `debug.timeline`
+  /// (⌘⇧L, or six quick taps and a seventh held): in the build apart from
+  /// the panel; with it, each bean's creation is measured too.
+  final FlutterDebugTimelineProperties timeline;
+
+  /// Moving the debug overlays by dragging them: in the build apart from
+  /// the panel.
+  final FlutterDebugFeatureProperties drag;
+
+  /// How the debug overlays of one corner are put together.
+  final FlutterDebugOverlaysProperties overlays;
+}
+
+/// `spring.flutter.debug.timeline.*`.
+final class FlutterDebugTimelineProperties {
+  /// Settings with these values.
+  const FlutterDebugTimelineProperties({
+    this.enabled,
+    this.position = FrameMeterPosition.bottomLeft,
+  });
+
+  /// Whether the app has the timeline: `true` in every build, `false` in
+  /// none (the build leaves its code out), not set in debug and profile
+  /// builds only (a release build compiles it away).
+  final bool? enabled;
+
+  /// The corner its pill shows in.
+  final FrameMeterPosition position;
+}
+
+/// `spring.flutter.debug.overlays.*`: the overlays of the debug features
+/// (the frame meter, the timeline) that show in one corner.
+final class FlutterDebugOverlaysProperties {
+  /// Settings with these values.
+  const FlutterDebugOverlaysProperties({
+    this.layout = DebugOverlayLayout.auto,
+    this.maxHeight = 0.4,
+    this.margin = const FlutterDebugOverlaysMargin(),
+    this.drag = const FlutterDebugOverlaysDrag(),
+  });
+
+  /// `auto`: one under the other when they fit in the corner's room, else
+  /// one at a time with dots to swipe between; `stack` or `pages` always.
+  final DebugOverlayLayout layout;
+
+  /// The room of a corner for `auto`, a fraction of the screen's height.
+  final double maxHeight;
+
+  /// Kept free around the overlays (a header under the top corners), past
+  /// the screen's safe area, in logical pixels.
+  final FlutterDebugOverlaysMargin margin;
+
+  /// How a dragged overlay is placed (the `drag` feature).
+  final FlutterDebugOverlaysDrag drag;
+}
+
+/// `spring.flutter.debug.overlays.margin.*`, in logical pixels.
+final class FlutterDebugOverlaysMargin {
+  /// Settings with these values.
+  const FlutterDebugOverlaysMargin({
+    this.top = 0,
+    this.bottom = 0,
+    this.left = 0,
+    this.right = 0,
+  });
+
+  /// Above the top corners.
+  final double top;
+
+  /// Under the bottom corners.
+  final double bottom;
+
+  /// Left of the left corners.
+  final double left;
+
+  /// Right of the right corners.
+  final double right;
+}
+
+/// `spring.flutter.debug.overlays.drag.*`.
+final class FlutterDebugOverlaysDrag {
+  /// Settings with these values.
+  const FlutterDebugOverlaysDrag({
+    this.snap = DebugOverlaySnap.corners,
+    this.remember = true,
+  });
+
+  /// `corners`: a dropped overlay joins the nearest corner; `free`: it
+  /// stays where it is dropped.
+  final DebugOverlaySnap snap;
+
+  /// Whether a moved overlay is where it was left after the app restarts.
+  final bool remember;
+}
+
+/// Where a dragged debug overlay goes when it is dropped.
+enum DebugOverlaySnap {
+  /// The nearest corner, with its others.
+  corners,
+
+  /// Where it was dropped.
+  free,
 }
 
 /// A debug feature in the build or not, `spring.flutter.debug.<feature>.*`.

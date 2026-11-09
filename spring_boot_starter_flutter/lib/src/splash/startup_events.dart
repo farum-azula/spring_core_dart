@@ -9,16 +9,17 @@ import 'package:spring_boot_starter_flutter/src/splash/splash_trace.dart';
 ///
 /// Spring has no counterpart.
 final class StartupEvents implements GenericApplicationListener {
-  /// The recorder into [trace].
+  /// The recorder into [trace]; nothing without one (an app started
+  /// without the `SpringApplicationWidget`).
   const StartupEvents(this.trace);
 
   /// Where the events go.
-  final SplashTrace trace;
+  final SplashTrace? trace;
 
   @override
   bool supportsEvent(Object event) =>
-      event is ApplicationEvent && event is! SplashStageEvent;
+      trace != null && event is ApplicationEvent && event is! SplashStageEvent;
 
   @override
-  void onApplicationEvent(Object event) => trace.recordEvent(event);
+  void onApplicationEvent(Object event) => trace?.recordEvent(event);
 }

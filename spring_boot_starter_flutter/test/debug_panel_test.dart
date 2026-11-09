@@ -138,7 +138,8 @@ void main() {
     await tester.tap(find.text('Off'));
     await tester.pump();
     expect(context.getBean<DebugFrameMeter>().on, isTrue);
-    expect(find.byType(FrameMeter), findsOneWidget);
+    // In the panel itself; the overlays hide while it is open.
+    expect(find.byType(FrameMeterGauge), findsOneWidget);
 
     // Motion off: the app under the panel has animations disabled.
     await tester.tap(find.text('Motion'));
@@ -178,7 +179,7 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
     await tester.pump();
-    expect(find.byType(FrameMeter), findsOneWidget);
+    expect(find.byType(FrameMeterGauge), findsOneWidget);
     // The panel's keys do nothing: it is not in the app.
     await _keys(tester);
     expect(find.text('Debug'), findsNothing);
@@ -192,7 +193,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await hold.up();
     await tester.pump();
-    expect(find.byType(FrameMeter), findsNothing);
+    expect(find.byType(FrameMeterGauge), findsNothing);
   });
 
   testWidgets('⌘⇧M turns the motion off; enabled=false, no switch', (

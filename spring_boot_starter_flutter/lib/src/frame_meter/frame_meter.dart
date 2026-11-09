@@ -35,7 +35,7 @@ enum FrameMeterPosition {
 /// included. The panel is drawn again at most four times a second, and
 /// its own frames are not counted, so an idle app shows `idle`, not the
 /// meter.
-class FrameMeter extends StatefulWidget {
+class FrameMeter extends StatelessWidget {
   /// A meter over [child] in the corner [position].
   const FrameMeter({
     required this.child,
@@ -59,14 +59,59 @@ class FrameMeter extends StatefulWidget {
   final ValueListenable<SplashStage>? stages;
 
   @override
-  State<FrameMeter> createState() => _FrameMeterState();
+  Widget build(BuildContext context) {
+    final top =
+        position == FrameMeterPosition.topLeft ||
+        position == FrameMeterPosition.topRight;
+    final left =
+        position == FrameMeterPosition.topLeft ||
+        position == FrameMeterPosition.bottomLeft;
+    return Stack(
+      textDirection: TextDirection.ltr,
+      children: [
+        child,
+        Positioned(
+          top: top ? 0 : null,
+          bottom: top ? null : 0,
+          left: left ? 0 : null,
+          right: left ? null : 0,
+          child: IgnorePointer(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: FrameMeterGauge(targetRate: targetRate, stages: stages),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The meter's panel alone, measuring the frames while it is shown: what
+/// [FrameMeter] puts in a corner, and what the debug overlays stack with
+/// the others. Nothing until the app shows ([stages]).
+class FrameMeterGauge extends StatefulWidget {
+  /// The panel, with the budget of [targetRate].
+  const FrameMeterGauge({this.targetRate = 60, this.stages, super.key});
+
+  /// The frames a second the screen is meant to show.
+  final int targetRate;
+
+  /// The stages of the start: until the app shows, the gauge neither shows
+  /// nor counts. `null`: always on.
+  final ValueListenable<SplashStage>? stages;
+
+  @override
+  State<FrameMeterGauge> createState() => _FrameMeterState();
 }
 
 // One frame of the app: when it started, how long its build and raster
 // took.
 typedef _Frame = ({int start, int interval, int build, int raster});
 
-class _FrameMeterState extends State<FrameMeter> {
+class _FrameMeterState extends State<FrameMeterGauge> {
   static const _shown = 48;
   static const _window = Duration(seconds: 1);
   static const _pause = 250000;
@@ -137,40 +182,13 @@ class _FrameMeterState extends State<FrameMeter> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final position = widget.position;
-    final top =
-        position == FrameMeterPosition.topLeft ||
-        position == FrameMeterPosition.topRight;
-    final left =
-        position == FrameMeterPosition.topLeft ||
-        position == FrameMeterPosition.bottomLeft;
-    return Stack(
-      textDirection: TextDirection.ltr,
-      children: [
-        widget.child,
-        if (_started)
-          Positioned(
-            top: top ? 0 : null,
-            bottom: top ? null : 0,
-            left: left ? 0 : null,
-            right: left ? null : 0,
-            child: IgnorePointer(
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: _Panel(
-                    frames: _frames.toList(),
-                    budget: 1000000 ~/ widget.targetRate,
-                    window: _window.inMicroseconds,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => !_started
+      ? const SizedBox.shrink()
+      : _Panel(
+          frames: _frames.toList(),
+          budget: 1000000 ~/ widget.targetRate,
+          window: _window.inMicroseconds,
+        );
 }
 
 class _Panel extends StatelessWidget {
