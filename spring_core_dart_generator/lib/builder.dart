@@ -69,6 +69,7 @@ import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/deep_links_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
 import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
+import 'package:spring_core_dart_generator/src/prefetch_builder.dart';
 import 'package:spring_core_dart_generator/src/search_index_builder.dart';
 import 'package:spring_core_dart_generator/src/seo_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
@@ -363,3 +364,9 @@ Builder springMetadataBuilder(BuilderOptions options) =>
 /// takes no options.
 Builder springSearchIndexBuilder(BuilderOptions options) =>
     SearchIndexBuilder();
+
+/// Creates the builder of `spring.resources.prefetch` ([PrefetchBuilder]),
+/// registered in `build.yaml` as `spring_prefetch`: the files of its
+/// locations in one file, `lib/resources/spring_gen/prefetch/
+/// resources.json`. It takes no options.
+Builder springPrefetchBuilder(BuilderOptions options) => PrefetchBuilder();

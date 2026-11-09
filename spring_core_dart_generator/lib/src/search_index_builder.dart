@@ -215,6 +215,9 @@ final class SearchIndexBuilder implements Builder {
 
 /// Where [SearchIndexBuilder] writes.
 abstract interface class SearchIndexOutput {
+  /// The files on disk, below the package's directory.
+  static const SearchIndexOutput disk = _DiskOutput();
+
   /// Writes [content] to [path] below [package]'s directory.
   Future<void> write(String package, String path, String content);
 

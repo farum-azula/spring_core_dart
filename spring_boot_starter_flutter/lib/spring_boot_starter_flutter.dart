@@ -52,6 +52,7 @@ export 'package:spring_web_dart/spring_web_dart.dart';
 export 'src/annotations.dart';
 export 'src/app_lifecycle.dart';
 export 'src/asset_resource.dart';
+export 'src/resource_prefetch.dart';
 export 'src/bean_lookup_scope.dart';
 export 'src/bean_reads.dart' show BeanReadsPointcut, BeanReadsInterceptor;
 export 'src/context_extensions.dart';

@@ -33,6 +33,7 @@ import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts.dar
 import 'package:spring_boot_starter_flutter/src/shortcuts/keyboard_shortcuts_customizer.dart';
 import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_handler.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
+import 'package:spring_boot_starter_flutter/src/resource_prefetch.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_task.dart';
 import 'package:spring_boot_starter_flutter/src/splash/text_warm_up.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
@@ -140,6 +141,18 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       create: (r) => KeyboardShortcutsCustomizer(
         r.dependency<KeyboardShortcuts>(),
       ),
+    ),
+    BeanDefinition<ResourcePrefetch>(
+      name: 'resourcePrefetch',
+      types: const [
+        ResourcePrefetch,
+        SplashTask,
+        GenericApplicationListener,
+      ],
+      source: _source,
+      preDestroy: (bean) => bean.stop(),
+      create: (r) =>
+          ResourcePrefetch.of(r.dependency<ConfigurableEnvironment>()),
     ),
     BeanDefinition<ResourceTextWarmUpSource>(
       name: 'resourceTextWarmUpSource',

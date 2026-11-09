@@ -4,10 +4,11 @@
 ///
 /// This library exports everything: the container and its annotations,
 /// the environment and config files, events, messages, resources, type
-/// conversion, SpEL expressions, JSON, validation and AOP. Import it in an
-/// application; import a single part (`core.dart`, `beans.dart`,
-/// `context.dart`, `expression.dart`, `json.dart`, `validation.dart`,
-/// `aop.dart`) to keep a library's dependencies small. The JSR-330/250
+/// conversion, SpEL expressions, JSON, validation, AOP and observations.
+/// Import it in an application; import a single part (`core.dart`,
+/// `beans.dart`, `context.dart`, `expression.dart`, `json.dart`,
+/// `validation.dart`, `aop.dart`, `observation.dart`) to keep a library's
+/// dependencies small. The JSR-330/250
 /// names live apart in `jakarta.dart`. The annotations are read at build
 /// time by `spring_core_dart_generator`, which writes the wiring code
 /// (`$appBeans` below); applications built on Spring Boot's conventions
@@ -52,4 +53,5 @@ export 'package:spring_core_dart/context.dart';
 export 'package:spring_core_dart/core.dart';
 export 'package:spring_core_dart/expression.dart';
 export 'package:spring_core_dart/json.dart';
+export 'package:spring_core_dart/observation.dart';
 export 'package:spring_core_dart/validation.dart';

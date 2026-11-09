@@ -98,6 +98,16 @@ builders:
     build_extensions: {"$package$": []}
     auto_apply: dependents
     build_to: source
+  # Writes the files of spring.resources.prefetch.locations into one file,
+  # lib/resources/spring_gen/prefetch/resources.json (a Flutter asset, never
+  # embedded), which a web app downloads once after it is shown. No declared
+  # outputs, like spring_search_index: the app's own resources folder.
+  spring_prefetch:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springPrefetchBuilder"]
+    build_extensions: {"$package$": []}
+    auto_apply: dependents
+    build_to: source
   spring_metadata:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springMetadataBuilder"]

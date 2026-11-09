@@ -93,6 +93,37 @@ class DebugProperties {
 class ResourcesProperties {
   /// What the build embeds in the binary.
   ResourcesEmbedProperties embed = ResourcesEmbedProperties();
+
+  /// What a Flutter app downloads in one file after it is shown.
+  ResourcesPrefetchProperties prefetch = ResourcesPrefetchProperties();
+}
+
+/// `spring.resources.prefetch.*`: the files left out of the binary that a
+/// web app downloads together, in one file the build writes
+/// (`lib/resources/spring_gen/prefetch/`), instead of one by one when each
+/// is read: a site's pages, so every page opens at once after the first.
+class ResourcesPrefetchProperties {
+  /// Globs below `lib/resources/` (`content/**`) of the text files to put
+  /// in the file. Empty: none is written. Read by the generator.
+  List<String> locations = [];
+
+  /// When the app downloads it.
+  ResourcesPrefetchStage stage = ResourcesPrefetchStage.app;
+
+  /// How long after the app is shown (`stage: app`), so the files of the
+  /// page shown come first.
+  Duration delay = const Duration(seconds: 1);
+}
+
+/// When `spring.resources.prefetch` downloads its file.
+enum ResourcesPrefetchStage {
+  /// Once the splash is gone and the app shown, after `delay`: the first
+  /// page does not wait for it.
+  app,
+
+  /// While the splash shows, as a splash task: the splash waits for it, and
+  /// every page is there from the first tap.
+  tasks,
 }
 
 /// `spring.resources.embed.*`.

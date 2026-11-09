@@ -69,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 259,
+      "line": 290,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -79,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 263,
+      "line": 294,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 267,
+      "line": 298,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -99,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 271,
+      "line": 302,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -109,7 +109,7 @@
       "default": "always",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 155,
+      "line": 186,
       "class": "JsonProperties"
     },
     {
@@ -119,7 +119,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 210,
+      "line": 241,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -129,7 +129,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 213,
+      "line": 244,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -139,7 +139,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 216,
+      "line": 247,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -149,7 +149,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 219,
+      "line": 250,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -159,7 +159,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 242,
+      "line": 273,
       "class": "JsonMapperProperties"
     },
     {
@@ -169,7 +169,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 245,
+      "line": 276,
       "class": "JsonMapperProperties"
     },
     {
@@ -179,7 +179,7 @@
       "default": "LOWER_CAMEL_CASE",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 152,
+      "line": 183,
       "class": "JsonProperties"
     },
     {
@@ -189,7 +189,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 204,
+      "line": 235,
       "class": "JsonSchemasRegistryProperties"
     },
     {
@@ -199,7 +199,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 188,
+      "line": 219,
       "class": "JsonSchemaProperties"
     },
     {
@@ -209,7 +209,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 197,
+      "line": 228,
       "class": "JsonSchemaProperties"
     },
     {
@@ -219,7 +219,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 194,
+      "line": 225,
       "class": "JsonSchemaProperties"
     },
     {
@@ -229,7 +229,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 191,
+      "line": 222,
       "class": "JsonSchemaProperties"
     },
     {
@@ -239,7 +239,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 225,
+      "line": 256,
       "class": "JsonSerializationProperties"
     },
     {
@@ -249,7 +249,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 228,
+      "line": 259,
       "class": "JsonSerializationProperties"
     },
     {
@@ -259,7 +259,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 233,
+      "line": 264,
       "class": "JsonSerializationProperties"
     },
     {
@@ -269,7 +269,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 236,
+      "line": 267,
       "class": "JsonSerializationProperties"
     },
     {
@@ -279,7 +279,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 159,
+      "line": 190,
       "class": "JsonProperties"
     },
     {
@@ -349,7 +349,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 112,
+      "line": 143,
       "class": "MessagesProperties"
     },
     {
@@ -361,7 +361,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 116,
+      "line": 147,
       "class": "MessagesProperties"
     },
     {
@@ -371,7 +371,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 121,
+      "line": 152,
       "class": "MessagesProperties"
     },
     {
@@ -381,7 +381,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 124,
+      "line": 155,
       "class": "MessagesProperties"
     },
     {
@@ -391,7 +391,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 127,
+      "line": 158,
       "class": "MessagesProperties"
     },
     {
@@ -401,7 +401,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 130,
+      "line": 161,
       "class": "MessagesProperties"
     },
     {
@@ -411,7 +411,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 133,
+      "line": 164,
       "class": "MessagesProperties"
     },
     {
@@ -421,7 +421,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 136,
+      "line": 167,
       "class": "MessagesProperties"
     },
     {
@@ -431,8 +431,38 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 105,
+      "line": 136,
       "class": "ResourcesEmbedProperties"
+    },
+    {
+      "name": "spring.resources.prefetch.delay",
+      "type": "Duration",
+      "description": "How long after the app is shown (`stage: app`), so the files of the page shown come first.",
+      "default": "1s",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 115,
+      "class": "ResourcesPrefetchProperties"
+    },
+    {
+      "name": "spring.resources.prefetch.locations",
+      "type": "List<String>",
+      "description": "Globs below `lib/resources/` (`content/**`) of the text files to put in the file. Empty: none is written. Read by the generator.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 108,
+      "class": "ResourcesPrefetchProperties"
+    },
+    {
+      "name": "spring.resources.prefetch.stage",
+      "type": "ResourcesPrefetchStage",
+      "description": "When the app downloads it.",
+      "default": "app",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 111,
+      "class": "ResourcesPrefetchProperties"
     },
     {
       "name": "trace",
@@ -518,6 +548,19 @@
         {
           "value": "log",
           "description": "Logged at INFO under the logger `spring_boot_dart.SpringApplication`, so it goes wherever the log goes (a log file, for example)."
+        }
+      ]
+    },
+    {
+      "name": "spring.resources.prefetch.stage",
+      "values": [
+        {
+          "value": "app",
+          "description": "Once the splash is gone and the app shown, after `delay`: the first page does not wait for it."
+        },
+        {
+          "value": "tasks",
+          "description": "While the splash shows, as a splash task: the splash waits for it, and every page is there from the first tap."
         }
       ]
     }
@@ -1052,7 +1095,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 141,
+      "line": 172,
       "injects": [],
       "members": [
         {
@@ -1486,7 +1529,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 110,
+      "line": 141,
       "injects": [],
       "members": [
         {
@@ -1657,6 +1700,11 @@
           "name": "embed",
           "kind": "field",
           "type": "ResourcesEmbedProperties"
+        },
+        {
+          "name": "prefetch",
+          "kind": "field",
+          "type": "ResourcesPrefetchProperties"
         }
       ]
     }

@@ -1,5 +1,6 @@
 ## 0.7.3
 
+- `ResourcePrefetch` (`resourcePrefetch`): on the web, the file of `spring.resources.prefetch` is downloaded once, `delay` after the app is shown (`stage: app`, the default) or behind the splash (`stage: tasks`), and its files kept in memory as resources, read a piece at a time: a site's pages then open without a download each.
 - `spring.flutter.web.seo.lastmod` is in the metadata (`FlutterWebSeoProperties.lastmod`): the build read it, editors called it unknown.
 - The Flutter assets are resource roots (`AssetResourceRoot`): `resources:` finds the assets below `lib/resources/` the build did not embed (`spring.resources.embed.exclude`), and `asset:` patterns list the assets (`asset:docs/**/*.md`), so both read, check and search alike. `AssetResource` is a `ContextResource`: its path within the root it was found in.
 - `spring.flutter.markdown.placeholders` (`false` by default): `MarkdownView` replaces each `{{key}}` of a page by the configuration's value of the key (`^{{site.package-version}}` in a dependency example), leaving one without a value as it is (`FlutterMarkdownProperties`).
