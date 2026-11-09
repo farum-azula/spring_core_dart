@@ -13,13 +13,15 @@ library;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_dart/src/autoconfigure/availability_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.dart';
+import 'package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/lifecycle_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/validation_auto_configuration.dart';
 
 /// The auto-configuration of `spring_boot_dart`:
 /// `MessageSourceAutoConfiguration`, `JacksonAutoConfiguration`,
-/// `ValidationAutoConfiguration`, `LifecycleAutoConfiguration` and
+/// `JsonSchemaAutoConfiguration`, `ValidationAutoConfiguration`,
+/// `LifecycleAutoConfiguration` and
 /// `ApplicationAvailabilityAutoConfiguration`.
 ///
 /// Each one backs off when the application declares its own bean, and
@@ -32,6 +34,7 @@ final BeanModule springBootAutoConfiguration = BeanModule(
   [
     ...messageSourceAutoConfiguration,
     ...jacksonAutoConfiguration,
+    ...jsonSchemaAutoConfiguration,
     ...validationAutoConfiguration,
     ...lifecycleAutoConfiguration,
     ...availabilityAutoConfiguration,

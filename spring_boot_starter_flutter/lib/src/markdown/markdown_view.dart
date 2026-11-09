@@ -22,6 +22,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:spring_boot_dart/spring_boot_dart.dart' show BracePlaceholders;
 import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/markdown_outline.dart';
 import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
@@ -513,7 +514,30 @@ class _MarkdownViewState extends State<MarkdownView>
     }
   }
 
-  Widget _view(BuildContext context, String markdown, {Object? content}) {
+  // [markdown] with its `{{key}}` placeholders replaced from the
+  // configuration, with `spring.flutter.markdown.placeholders: true`; the
+  // same text again while [markdown] is the same, so the blocks are kept.
+  String? _resolvedFor;
+  String _resolved = '';
+
+  String _withValues(BuildContext context, String markdown) {
+    final environment = SpringScope.maybeOf(context)?.environment;
+    if (environment == null ||
+        environment.getPropertyAs<bool>(
+              'spring.flutter.markdown.placeholders',
+            ) !=
+            true) {
+      return markdown;
+    }
+    if (!identical(markdown, _resolvedFor)) {
+      _resolvedFor = markdown;
+      _resolved = BracePlaceholders.resolve(markdown, environment.getProperty);
+    }
+    return _resolved;
+  }
+
+  Widget _view(BuildContext context, String source, {Object? content}) {
+    final markdown = _withValues(context, source);
     final look = _Look.of(context);
     final made = <Object?>[
       widget,

@@ -69,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 210,
+      "line": 242,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -79,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 214,
+      "line": 246,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 218,
+      "line": 250,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -99,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 222,
+      "line": 254,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -119,7 +119,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 161,
+      "line": 193,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -129,7 +129,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 164,
+      "line": 196,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -139,7 +139,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 167,
+      "line": 199,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -149,7 +149,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 170,
+      "line": 202,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -159,7 +159,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 193,
+      "line": 225,
       "class": "JsonMapperProperties"
     },
     {
@@ -169,7 +169,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 196,
+      "line": 228,
       "class": "JsonMapperProperties"
     },
     {
@@ -183,13 +183,63 @@
       "class": "JsonProperties"
     },
     {
+      "name": "spring.json.schemas-registry.properties",
+      "type": "bool",
+      "description": "The schemas of `spring.json.schemas` and of `@JsonSchemaSource` go into the registry bean, the app's own too.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 187,
+      "class": "JsonSchemasRegistryProperties"
+    },
+    {
+      "name": "spring.json.schemas[*].location",
+      "type": "String?",
+      "description": "Where it is: `resources:schemas/order.json`, an `https://` address or `github:owner/repo/path@ref`; the build downloads a remote one.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 171,
+      "class": "JsonSchemaProperties"
+    },
+    {
+      "name": "spring.json.schemas[*].name",
+      "type": "String?",
+      "description": "The name of its root class, instead of its `title`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 180,
+      "class": "JsonSchemaProperties"
+    },
+    {
+      "name": "spring.json.schemas[*].prefix",
+      "type": "String?",
+      "description": "What the names of its classes start with (`Api`: `ApiOrder`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 177,
+      "class": "JsonSchemaProperties"
+    },
+    {
+      "name": "spring.json.schemas[*].sha256",
+      "type": "String?",
+      "description": "The SHA-256 of a remote schema (hex): the build refuses another.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 174,
+      "class": "JsonSchemaProperties"
+    },
+    {
       "name": "spring.json.serialization.indent-output",
       "type": "bool",
       "description": "Pretty-printed JSON.",
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 176,
+      "line": 208,
       "class": "JsonSerializationProperties"
     },
     {
@@ -199,7 +249,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 179,
+      "line": 211,
       "class": "JsonSerializationProperties"
     },
     {
@@ -209,7 +259,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 184,
+      "line": 216,
       "class": "JsonSerializationProperties"
     },
     {
@@ -219,7 +269,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 187,
+      "line": 219,
       "class": "JsonSerializationProperties"
     },
     {
@@ -910,6 +960,11 @@
           "parameters": []
         },
         {
+          "name": "schemaResolver",
+          "kind": "field",
+          "type": "JsonSchema? Function(String)?"
+        },
+        {
           "name": "serializers",
           "kind": "field",
           "type": "List<JsonSerializer<Object>>"
@@ -1016,6 +1071,16 @@
           "type": "String"
         },
         {
+          "name": "schemas",
+          "kind": "field",
+          "type": "List<JsonSchemaProperties>"
+        },
+        {
+          "name": "schemasRegistry",
+          "kind": "field",
+          "type": "JsonSchemasRegistryProperties"
+        },
+        {
           "name": "serialization",
           "kind": "field",
           "type": "JsonSerializationProperties"
@@ -1024,6 +1089,118 @@
           "name": "timeZone",
           "kind": "field",
           "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "jsonSchemaMapperCustomizer",
+      "type": "JsonMapperBuilderCustomizer",
+      "types": [
+        "JsonMapperBuilderCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuration.dart",
+      "line": 65,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "JsonMapperBuilder builder"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jsonSchemaRegistry",
+      "type": "JsonSchemaRegistry",
+      "types": [
+        "JsonSchemaRegistry"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(JsonSchemaRegistry)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuration.dart",
+      "line": 33,
+      "injects": [],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "JsonSchema schema",
+            "{Uri? uri}"
+          ]
+        },
+        {
+          "name": "resolve",
+          "kind": "method",
+          "type": "JsonSchema?",
+          "parameters": [
+            "Uri uri"
+          ]
+        },
+        {
+          "name": "schemas",
+          "kind": "getter",
+          "type": "Map<Uri, JsonSchema>"
+        }
+      ]
+    },
+    {
+      "name": "jsonSchemaRegistryPostProcessor",
+      "type": "JsonSchemaRegistryPostProcessor",
+      "types": [
+        "JsonSchemaRegistryPostProcessor",
+        "BeanPostProcessor",
+        "BeanFactoryAware",
+        "Aware"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuration.dart",
+      "line": 44,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
         }
       ]
     },
@@ -1389,6 +1566,65 @@
           "kind": "method",
           "type": "String",
           "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "propertiesJsonSchemas",
+      "type": "PropertiesJsonSchemas",
+      "types": [
+        "PropertiesJsonSchemas",
+        "JsonSchemaRegistryCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuration.dart",
+      "line": 54,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "JsonSchemaRegistry registry"
+          ]
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector"
+        },
+        {
+          "name": "locations",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "JsonProperties"
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "JsonSchema?",
+          "parameters": [
+            "String location"
+          ]
+        },
+        {
+          "name": "resources",
+          "kind": "field",
+          "type": "ResourceLoader"
+        },
+        {
+          "name": "schemas",
+          "kind": "field",
+          "type": "List<JsonSchema>"
         }
       ]
     }

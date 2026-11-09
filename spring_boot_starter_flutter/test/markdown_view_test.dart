@@ -759,4 +759,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('The end.', skipOffstage: false), findsOneWidget);
   });
+
+  testWidgets(
+    '{{key}} placeholders with spring.flutter.markdown.placeholders',
+    (
+      tester,
+    ) async {
+      Future<ApplicationContext> start(String properties) async {
+        final context = await SpringApplication([
+          BeanModule(
+            'test',
+            const [],
+            resources: {
+              'application.properties': EmbeddedResource.text(
+                'site.package-version=0.7.2\n$properties',
+              ),
+            },
+          ),
+        ], bannerMode: BannerMode.off).runAsync(const []);
+        addTearDown(context.close);
+        return context;
+      }
+
+      Widget view(ApplicationContext context) => SpringScope(
+        applicationContext: context,
+        child: _app(
+          const MarkdownView(
+            'Version ^{{site.package-version}}, {{baseUrl}}, \\{{x}}.',
+            selectable: false,
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        view(await start('spring.flutter.markdown.placeholders=true')),
+      );
+      expect(find.text('Version ^0.7.2, {{baseUrl}}, {{x}}.'), findsOneWidget);
+      // Off by default: the text as it is (Markdown makes `\{` a `{`).
+      await tester.pumpWidget(view(await start('')));
+      expect(
+        find.text('Version ^{{site.package-version}}, {{baseUrl}}, {{x}}.'),
+        findsOneWidget,
+      );
+    },
+  );
 }

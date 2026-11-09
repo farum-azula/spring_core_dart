@@ -10,6 +10,8 @@ import 'package:spring_core_dart/src/json/json_mapper.dart';
 import 'package:spring_core_dart/src/json/json_node.dart';
 import 'package:spring_core_dart/src/json/json_serializer.dart';
 import 'package:spring_core_dart/src/json/naming.dart';
+import 'package:spring_core_dart/src/json/schema/json_schema.dart';
+import 'package:spring_core_dart/src/json/schema/json_schema_source.dart';
 
 /// Converts Dart objects to JSON and back: the one place where models,
 /// JSON text, decoded maps and [JsonNode] trees meet.
@@ -127,6 +129,9 @@ class ObjectMapper {
   ///   view is active (off, like Jackson 3).
   /// - [serializers] and [deserializers] handle types the mapper does not
   ///   know; those of [modules] come after them.
+  /// - [schemaResolver] finds the JSON Schema of a class marked
+  ///   `@JsonSchemaSource`, which its JSON is checked against before it is
+  ///   read (none by default: nothing is checked).
   ObjectMapper({
     BeanIntrospector? introspector,
     this.namingStrategy = PropertyNamingStrategy.lowerCamelCase,
@@ -145,6 +150,7 @@ class ObjectMapper {
     Iterable<JsonSerializer<Object>> serializers = const [],
     Iterable<JsonDeserializer<Object>> deserializers = const [],
     Iterable<JsonModule> modules = const [],
+    this.schemaResolver,
   }) : introspector = introspector ?? BeanIntrospector.shared,
        _offset = timeZone == null ? null : parseTimeZone(timeZone),
        _view = null,
@@ -174,7 +180,8 @@ class ObjectMapper {
       sortPropertiesAlphabetically = other.sortPropertiesAlphabetically,
       defaultViewInclusion = other.defaultViewInclusion,
       serializers = other.serializers,
-      deserializers = other.deserializers;
+      deserializers = other.deserializers,
+      schemaResolver = other.schemaResolver;
 
   /// Where class metadata comes from: the generated introspections of the
   /// `@Introspected` classes.
@@ -244,6 +251,26 @@ class ObjectMapper {
   /// The custom deserializers, including those of the modules, tried in
   /// order before the built-in conversions.
   final List<JsonDeserializer<Object>> deserializers;
+
+  /// Finds the JSON Schema of a `@JsonSchemaSource` location; `null` (the
+  /// default) checks no JSON against a schema.
+  ///
+  /// When a class whose introspection carries `@JsonSchemaSource` is read
+  /// (the whole document, or a property, list element or map value of
+  /// that class) and the resolver gives a schema for its location, the
+  /// decoded JSON of that value is checked before it is read; violations
+  /// throw a [JsonSchemaValidationException] listing them. A class read
+  /// by a [JsonDeserializer] is not checked. The resolver is asked once
+  /// per location; a `null` answer checks nothing.
+  ///
+  /// ```dart
+  /// final mapper = ObjectMapper(
+  ///   schemaResolver: (location) => schemas[location],
+  /// );
+  /// ```
+  final JsonSchemaResolver? schemaResolver;
+
+  final _schemas = <String, JsonSchema?>{};
 
   final Type? _view;
 
@@ -320,7 +347,8 @@ class ObjectMapper {
       )
       .configure(MapperFeature.defaultViewInclusion, defaultViewInclusion)
       .addSerializers(serializers)
-      .addDeserializers(deserializers);
+      .addDeserializers(deserializers)
+      .schemaResolver(schemaResolver);
 
   /// Returns a writer that writes only the properties of [view] (see
   /// `@JsonView`), with this mapper's settings.
@@ -862,11 +890,13 @@ class ObjectMapper {
     if (arguments != null) {
       final generic = introspector.forGenericType<T>(arguments);
       if (generic != null) {
+        _checkSchema(generic, json, path);
         return _info(generic).read(json, path);
       }
     }
     final introspection = introspector.forTypeArgument<T>();
     if (introspection != null) {
+      _checkSchema(introspection, json, path);
       return _info(introspection).read(json, path);
     }
     // A type test on the type argument T, not a constant.
@@ -936,6 +966,39 @@ class ObjectMapper {
       'register a JsonDeserializer',
       path: '$path',
     );
+  }
+
+  // `@JsonSchemaSource`: the decoded JSON of the value against its schema.
+  void _checkSchema(
+    BeanIntrospection<Object> introspection,
+    Object json,
+    _Path path,
+  ) {
+    final resolver = schemaResolver;
+    if (resolver == null) {
+      return;
+    }
+    final source = introspection.annotations
+        .whereType<JsonSchemaSource>()
+        .firstOrNull;
+    if (source == null) {
+      return;
+    }
+    final schema = _schemas.putIfAbsent(
+      source.location,
+      () => resolver(source.location),
+    );
+    if (schema == null) {
+      return;
+    }
+    final result = schema.validate(json);
+    if (!result.isValid) {
+      throw JsonSchemaValidationException(
+        result.violations,
+        location: source.location,
+        path: '$path',
+      );
+    }
   }
 
   // Jackson: a number with a fraction is truncated (ACCEPT_FLOAT_AS_INT),

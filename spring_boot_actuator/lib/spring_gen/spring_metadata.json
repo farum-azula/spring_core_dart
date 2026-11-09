@@ -904,6 +904,58 @@
       ]
     },
     {
+      "name": "jsonSchemasEndpoint",
+      "type": "JsonSchemasEndpoint",
+      "types": [
+        "JsonSchemasEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/json/json_schemas_endpoint.dart",
+      "line": 27,
+      "injects": [
+        {
+          "parameter": "registry",
+          "type": "JsonSchemaRegistry",
+          "qualifier": null
+        },
+        {
+          "parameter": "generator",
+          "type": "JsonSchemaGenerator",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "generator",
+          "kind": "field",
+          "type": "JsonSchemaGenerator"
+        },
+        {
+          "name": "registry",
+          "kind": "field",
+          "type": "JsonSchemaRegistry?"
+        },
+        {
+          "name": "schema",
+          "kind": "method",
+          "type": "Map<String, Object?>?",
+          "parameters": [
+            "List<String> path"
+          ]
+        },
+        {
+          "name": "schemas",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": []
+        }
+      ]
+    },
+    {
       "name": "managementHealthProperties",
       "type": "ManagementHealthProperties",
       "types": [

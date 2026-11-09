@@ -217,6 +217,7 @@ class ModuleEmitter {
     Map<String, ({String? text, String? base64})> resources = const {},
     List<String> parts = const [],
     List<String> partImports = const [],
+    List<String> extraIntrospections = const [],
   }) {
     _module = module;
     _usesTypeOf = false;
@@ -311,10 +312,12 @@ class ModuleEmitter {
         ]),
       if (module.foreignProxies.any((f) => f.proxy.unavailableReason == null))
         'aopProxies': _foreignProxies(module.foreignProxies),
-      if (module.introspections.isNotEmpty)
+      if (module.introspections.isNotEmpty || extraIntrospections.isNotEmpty)
         'introspections': literalList([
           for (final introspection in module.introspections)
             _introspection(introspection),
+          // The lists of a part (the classes of spring.json.schemas).
+          for (final list in extraIntrospections) refer('...$list'),
         ]),
       if (module.configurables.isNotEmpty)
         'configurers': literalMap({
@@ -367,7 +370,14 @@ class ModuleEmitter {
         // The generated files that are `part of` this one (the typed keys),
         // and the imports they need, as a part has none of its own.
         ..directives.addAll([
-          for (final url in partImports) Directive.import(url),
+          for (final url in partImports)
+            switch (url.split(' as ')) {
+              [final library, final prefix] => Directive.import(
+                library,
+                as: prefix,
+              ),
+              _ => Directive.import(url),
+            },
           for (final url in parts) Directive.part(url),
         ])
         ..body.addAll(classes)

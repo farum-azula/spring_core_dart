@@ -153,6 +153,38 @@ class JsonProperties {
 
   /// Settings of the date and time module.
   JsonDatatypeProperties datatype = JsonDatatypeProperties();
+
+  /// The JSON Schemas of the app: the build writes a class for each of
+  /// their objects (`lib/spring_gen/json_schemas.spring.dart`) and keeps a
+  /// remote one as a resource; the `jsonSchemaRegistry` bean has them.
+  List<JsonSchemaProperties> schemas = [];
+
+  /// What the `jsonSchemaRegistry` bean is given.
+  JsonSchemasRegistryProperties schemasRegistry =
+      JsonSchemasRegistryProperties();
+}
+
+/// `spring.json.schemas[n].*`: a JSON Schema of the app.
+class JsonSchemaProperties {
+  /// Where it is: `resources:schemas/order.json`, an `https://` address
+  /// or `github:owner/repo/path@ref`; the build downloads a remote one.
+  String? location;
+
+  /// The SHA-256 of a remote schema (hex): the build refuses another.
+  String? sha256;
+
+  /// What the names of its classes start with (`Api`: `ApiOrder`).
+  String? prefix;
+
+  /// The name of its root class, instead of its `title`.
+  String? name;
+}
+
+/// `spring.json.schemas-registry.*`.
+class JsonSchemasRegistryProperties {
+  /// The schemas of `spring.json.schemas` and of `@JsonSchemaSource` go
+  /// into the registry bean, the app's own too.
+  bool properties = true;
 }
 
 /// `spring.json.deserialization.*`.

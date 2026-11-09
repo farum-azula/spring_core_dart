@@ -82,6 +82,12 @@ builders:
   # Writes lib/spring_gen/spring_metadata.json (properties, beans, profiles,
   # hints; the theme for spring_boot_starter_flutter) for a package with
   # Spring code. The language server and tool/spring_schema.dart read it.
+  spring_json_schemas:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springJsonSchemasBuilder"]
+    build_extensions: {"$package$": ["lib/spring_gen/json_schemas.spring.dart"]}
+    auto_apply: dependents
+    build_to: source
   spring_metadata:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springMetadataBuilder"]

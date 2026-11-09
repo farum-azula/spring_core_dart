@@ -72,7 +72,7 @@
         "@ConditionalOnMissingBean(BuildInfoContributor)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 332,
+      "line": 334,
       "injects": [],
       "members": [
         {
@@ -107,7 +107,7 @@
         "@ConditionalOnMissingBean(BuildProperties)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 264,
+      "line": 266,
       "injects": [],
       "members": [
         {
@@ -391,7 +391,7 @@
         "@ConditionalOnEnabledInfoContributor('dart', enabledByDefault: false)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 360,
+      "line": 362,
       "injects": [],
       "members": [
         {
@@ -422,7 +422,7 @@
         "@ConditionalOnMissingBean.named('diskSpaceHealthIndicator')"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 81,
+      "line": 83,
       "injects": [],
       "members": [
         {
@@ -476,7 +476,7 @@
         "@ConditionalOnEnabledInfoContributor('env', enabledByDefault: false)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 300,
+      "line": 302,
       "injects": [],
       "members": [
         {
@@ -511,7 +511,7 @@
         "@ConditionalOnMissingBean(GitInfoContributor)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 314,
+      "line": 316,
       "injects": [],
       "members": [
         {
@@ -551,7 +551,7 @@
         "@ConditionalOnMissingBean(GitProperties)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 282,
+      "line": 284,
       "injects": [],
       "members": [
         {
@@ -831,7 +831,7 @@
         "@ConditionalOnMissingBean(HealthContributorRegistry)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 142,
+      "line": 144,
       "injects": [],
       "members": [
         {
@@ -881,7 +881,7 @@
         "@ConditionalOnMissingBean(HealthEndpoint)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 181,
+      "line": 183,
       "injects": [],
       "members": [
         {
@@ -940,7 +940,7 @@
         "@ConditionalOnMissingBean(HealthEndpointGroups)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 166,
+      "line": 168,
       "injects": [],
       "members": [
         {
@@ -979,7 +979,7 @@
         "@ConditionalOnMissingBean(HealthEndpointWebExtension)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 216,
+      "line": 218,
       "injects": [],
       "members": [
         {
@@ -1043,7 +1043,7 @@
         "@ConditionalOnMissingBean(InfoEndpoint)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 373,
+      "line": 375,
       "injects": [],
       "members": [
         {
@@ -1055,6 +1055,49 @@
           "name": "info",
           "kind": "method",
           "type": "Future<Map<String, Object?>>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "jsonSchemasEndpoint",
+      "type": "JsonSchemasEndpoint",
+      "types": [
+        "JsonSchemasEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(JsonSchemasEndpoint)"
+      ],
+      "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
+      "line": 426,
+      "injects": [],
+      "members": [
+        {
+          "name": "generator",
+          "kind": "field",
+          "type": "JsonSchemaGenerator"
+        },
+        {
+          "name": "registry",
+          "kind": "field",
+          "type": "JsonSchemaRegistry?"
+        },
+        {
+          "name": "schema",
+          "kind": "method",
+          "type": "Map<String, Object?>?",
+          "parameters": [
+            "List<String> path"
+          ]
+        },
+        {
+          "name": "schemas",
+          "kind": "method",
+          "type": "Map<String, Object?>",
           "parameters": []
         }
       ]
@@ -1077,7 +1120,7 @@
         "@ConditionalOnMissingBean(LivenessStateHealthIndicator)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 105,
+      "line": 107,
       "injects": [],
       "members": [
         {
@@ -1117,7 +1160,7 @@
         "@ConditionalOnMissingBean(MappingsEndpoint)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 396,
+      "line": 398,
       "injects": [],
       "members": [
         {
@@ -1153,7 +1196,7 @@
         "@ConditionalOnEnabledInfoContributor('os', enabledByDefault: false)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 347,
+      "line": 349,
       "injects": [],
       "members": [
         {
@@ -1182,7 +1225,7 @@
         "@ConditionalOnEnabledHealthIndicator('ping')"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 69,
+      "line": 71,
       "injects": [],
       "members": [
         {
@@ -1211,7 +1254,7 @@
         "@ConditionalOnMissingBean(ReadinessStateHealthIndicator)"
       ],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 123,
+      "line": 125,
       "injects": [],
       "members": [
         {
@@ -1249,7 +1292,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 424,
+      "line": 462,
       "injects": [],
       "members": [
         {
@@ -1285,7 +1328,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 434,
+      "line": 472,
       "injects": [],
       "members": [
         {
@@ -1419,7 +1462,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_actuator/src/actuator_auto_configuration.dart",
-      "line": 445,
+      "line": 483,
       "injects": [],
       "members": [
         {

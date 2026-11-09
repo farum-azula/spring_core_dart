@@ -10,7 +10,10 @@
 /// annotations shape the HTTP JSON too. The mapper reads metadata that
 /// `spring_core_dart_generator` writes for classes marked
 /// `@Introspected()`; there is no reflection. It also offers a tree model
-/// (`JsonNode`), naming strategies and `JsonMapper.builder()`.
+/// (`JsonNode`), naming strategies and `JsonMapper.builder()`, and JSON
+/// Schema: `JsonSchema` checks JSON, `JsonSchemaGenerator` writes the
+/// schema of introspected classes, and `@JsonSchemaSource` makes the mapper
+/// check a class's JSON before reading it.
 ///
 /// ```dart
 /// @Introspected()
@@ -39,3 +42,6 @@ export 'package:spring_core_dart/src/json/json_node.dart';
 export 'package:spring_core_dart/src/json/json_serializer.dart';
 export 'package:spring_core_dart/src/json/naming.dart';
 export 'package:spring_core_dart/src/json/object_mapper.dart';
+export 'package:spring_core_dart/src/json/schema/json_schema.dart';
+export 'package:spring_core_dart/src/json/schema/json_schema_generator.dart';
+export 'package:spring_core_dart/src/json/schema/json_schema_source.dart';

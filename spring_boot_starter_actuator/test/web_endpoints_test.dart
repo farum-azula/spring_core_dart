@@ -50,8 +50,17 @@ void main() {
               'health',
               'health-path',
               'info',
+              'jsonschemas',
+              'jsonschemas-path',
               'mappings',
               'whoami',
+            ]);
+            // The JSON Schemas: the registry's and the classes'.
+            final schemas = await mvc.get('/actuator/jsonschemas');
+            expect(schemas.response.statusCode, 200);
+            expect((jsonOf(schemas)! as Map).keys, [
+              'registry',
+              'introspected',
             ]);
             // `echo` is off by default.
             expect(

@@ -1,3 +1,7 @@
+## Unreleased
+
+- The `jsonschemas` endpoint (`JsonSchemasEndpoint`): the schemas of the context's `JsonSchemaRegistry` by location, and the schema of every `@Introspected` class made from its introspection with the `ObjectMapper`'s naming; `GET /actuator/jsonschemas/{name}` one by class name or location.
+
 ## 0.7.2
 
 - README: the link goes to the package's own page on farum-azula.org, and what the README says was checked against the code and brought up to date.

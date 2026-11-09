@@ -19,6 +19,8 @@ const _infoContributors =
     'package:spring_boot_starter_actuator#InfoContributorAutoConfiguration';
 const _mappings =
     'package:spring_boot_starter_actuator#MappingsEndpointAutoConfiguration';
+const _jsonSchemas =
+    'package:spring_boot_starter_actuator#JsonSchemasEndpointAutoConfiguration';
 const _web =
     'package:spring_boot_starter_actuator#WebEndpointAutoConfiguration';
 
@@ -416,6 +418,42 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
       BeanMethod<MappingsEndpoint>(
         'mappings',
         invoke: (bean, _) => bean.mappings(),
+        annotations: const [ReadOperation()],
+      ),
+    ],
+  ),
+  // JSON Schemas.
+  BeanDefinition<JsonSchemasEndpoint>(
+    name: 'jsonSchemasEndpoint',
+    factoryMethodName: 'jsonSchemasEndpoint',
+    source: _jsonSchemas,
+    annotations: const [Endpoint(id: 'jsonschemas')],
+    conditions: const [
+      ConditionGroup('$_jsonSchemas.jsonSchemasEndpoint', [
+        ConditionalOnMissingBean(JsonSchemasEndpoint),
+      ]),
+    ],
+    create: (r) => JsonSchemasEndpoint(
+      registry: r.optionalDependency<JsonSchemaRegistry>(),
+      // The names the app's JSON has.
+      generator: JsonSchemaGenerator(
+        introspector: r.dependency<BeanIntrospector>(),
+        namingStrategy:
+            r.optionalDependency<ObjectMapper>()?.namingStrategy ??
+            PropertyNamingStrategy.lowerCamelCase,
+      ),
+    ),
+    annotatedMethods: [
+      BeanMethod<JsonSchemasEndpoint>(
+        'schemas',
+        invoke: (bean, _) => bean.schemas(),
+        annotations: const [ReadOperation()],
+      ),
+      BeanMethod<JsonSchemasEndpoint>(
+        'schema',
+        invoke: (bean, arguments) =>
+            bean.schema(arguments.single! as List<String>),
+        parameters: const [_pathParameter],
         annotations: const [ReadOperation()],
       ),
     ],

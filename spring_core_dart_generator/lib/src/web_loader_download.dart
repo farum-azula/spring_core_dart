@@ -19,7 +19,20 @@ final class WebLoaderDownload {
     required this.cache,
     WebLoaderFetch? fetch,
     bool allowInsecure = false,
+    this.extension = '.html',
+    this.pinProperty = 'web-sha256',
+    this.limit = maxBytes,
   }) : _fetch = fetch ?? ((uri) => _network(uri, allowInsecure: allowInsecure));
+
+  /// The extension of the copies (`.html` for a loader, `.json` for a JSON
+  /// Schema).
+  final String extension;
+
+  /// The property that pins a file, named when its digest differs.
+  final String pinProperty;
+
+  /// The size a file may have.
+  final int limit;
 
   /// The size a loader's file may have: 512 KiB.
   static const int maxBytes = 512 * 1024;
@@ -40,17 +53,17 @@ final class WebLoaderDownload {
     String? sha256,
   ) async {
     final copy = File(
-      '${cache.path}/${_hex(utf8.encode('$uri\n${sha256 ?? ''}'))}.html',
+      '${cache.path}/${_hex(utf8.encode('$uri\n${sha256 ?? ''}'))}$extension',
     );
     String? problem;
     try {
       final text = await _fetch(uri).timeout(timeout);
       if (text == null) {
         problem = '$uri could not be downloaded';
-      } else if (utf8.encode(text).length > maxBytes) {
-        problem = '$uri is bigger than ${maxBytes ~/ 1024} KiB';
+      } else if (utf8.encode(text).length > limit) {
+        problem = '$uri is bigger than ${limit ~/ 1024} KiB';
       } else if (sha256 != null && _hex(utf8.encode(text)) != sha256) {
-        problem = '$uri does not have the SHA-256 of web-sha256: refused';
+        problem = '$uri does not have the SHA-256 of $pinProperty: refused';
       } else {
         await copy.parent.create(recursive: true);
         await copy.writeAsString(text);

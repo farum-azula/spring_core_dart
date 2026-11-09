@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `BracePlaceholders`: `{{key}}` in a text that is not configuration (Markdown pages) replaced by a value of the key; one without a value stays as it is, `\{{` writes `{{`, and `${...}` is left alone.
+- `JsonSchemaRegistry.schemas`: the schemas added, by the URI each is known by (read only), for the actuator's `jsonschemas` endpoint.
+- JSON Schema (draft 2020-12): `JsonSchema` checks decoded JSON and lists each `JsonSchemaViolation` with its JSON pointer (`/items/2/price: must be at least 1`), `$ref` across documents through a `JsonSchemaRegistry`; `JsonSchemaGenerator` writes the schema of `@Introspected` classes as `ObjectMapper` writes them (JSON names, `readOnly` / `writeOnly`, constraints as keywords, nested classes in `$defs`); `@JsonSchemaSource('resources:...' | 'https://...' | 'github:...')` names the schema of a class, `JsonSchemaLocations.resourceOf` the place of a downloaded copy below `lib/resources/`, and `ObjectMapper(schemaResolver:)` (also `JsonMapperBuilder.schemaResolver`) checks the JSON of such a class before reading it, throwing `JsonSchemaValidationException`.
 - An embedded resource (`EmbeddedResource.text`) gives its text as it is and makes its bytes only when they are read: a pattern over many files (`resources:content/**/*.md`) encoded every one of them to UTF-8 to list it, and `readAsString` decoded them back (47 ms for 834 Markdown files, now 2 ms).
 
 ## 0.7.2

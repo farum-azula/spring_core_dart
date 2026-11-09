@@ -47,6 +47,7 @@ export 'src/health/indicators.dart';
 export 'src/info/contributors.dart';
 export 'src/info/info.dart';
 export 'src/info/info_properties.dart';
+export 'src/json/json_schemas_endpoint.dart';
 export 'src/properties/actuator_properties.dart';
 export 'src/properties/properties.dart';
 export 'src/web/endpoint_request_target.dart';

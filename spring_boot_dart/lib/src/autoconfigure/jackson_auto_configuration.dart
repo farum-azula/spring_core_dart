@@ -266,8 +266,11 @@ void _warnUnsupportedKeys(Environment environment) {
       continue;
     }
     for (final key in source.propertyNames) {
+      // An element of a list (`spring.json.schemas[0].location`): the list.
+      final list = key.contains('[') ? key.substring(0, key.indexOf('[')) : key;
       if (key.startsWith('spring.json.') &&
           !supported.contains(_canonical(key)) &&
+          !supported.contains(_canonical(list)) &&
           reported.add(_canonical(key))) {
         _log.warning(
           "Ignoring unsupported property '$key': spring.json.* supports "

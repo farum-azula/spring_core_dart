@@ -68,6 +68,7 @@ import 'package:build/build.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/deep_links_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
+import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
 import 'package:spring_core_dart_generator/src/seo_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_metadata_builder.dart';
@@ -327,6 +328,11 @@ Builder springFlutterPageLoaderBuilder(BuilderOptions options) =>
 /// ```
 Builder springFlutterKeysBuilder(BuilderOptions options) =>
     FlutterKeysBuilder();
+
+/// The builder of `lib/spring_gen/json_schemas.spring.dart`: the classes
+/// of the JSON Schemas of `spring.json.schemas` ([JsonSchemasBuilder]).
+Builder springJsonSchemasBuilder(BuilderOptions options) =>
+    JsonSchemasBuilder();
 
 /// Creates the builder of `lib/spring_gen/spring_metadata.json`
 /// ([SpringMetadataBuilder]), registered in `build.yaml` as

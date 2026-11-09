@@ -22,6 +22,11 @@ export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.da
         JsonMapperBuilderCustomizer,
         jsonMapperBuilderFromProperties,
         objectMapperFromProperties;
+export 'package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuration.dart'
+    show
+        JsonSchemaRegistryCustomizer,
+        JsonSchemaRegistryPostProcessor,
+        PropertiesJsonSchemas;
 export 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart'
     show MessagesBundleCondition;
 export 'package:spring_boot_dart/src/availability.dart';

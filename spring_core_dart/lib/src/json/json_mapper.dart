@@ -3,6 +3,7 @@ import 'package:spring_core_dart/src/json/annotations.dart';
 import 'package:spring_core_dart/src/json/json_serializer.dart';
 import 'package:spring_core_dart/src/json/naming.dart';
 import 'package:spring_core_dart/src/json/object_mapper.dart';
+import 'package:spring_core_dart/src/json/schema/json_schema.dart';
 
 /// An on/off setting of a mapper, named after Jackson's feature flags.
 ///
@@ -164,6 +165,7 @@ class JsonMapper extends ObjectMapper {
     super.serializers,
     super.deserializers,
     super.modules,
+    super.schemaResolver,
   });
 
   /// Returns a builder that starts from the default settings.
@@ -192,6 +194,7 @@ final class JsonMapperBuilder {
   final _features = <JsonFeature, bool>{};
   final _serializers = <JsonSerializer<Object>>[];
   final _deserializers = <JsonDeserializer<Object>>[];
+  JsonSchemaResolver? _schemaResolver;
 
   /// Reads class metadata from [introspector] instead of
   /// `BeanIntrospector.shared`, for example the context's.
@@ -280,6 +283,14 @@ final class JsonMapperBuilder {
     return this;
   }
 
+  /// Checks the JSON of classes marked `@JsonSchemaSource` against the
+  /// schemas [resolver] finds (see `ObjectMapper.schemaResolver`); `null`
+  /// checks nothing.
+  JsonMapperBuilder schemaResolver(JsonSchemaResolver? resolver) {
+    _schemaResolver = resolver;
+    return this;
+  }
+
   /// Creates a mapper with the settings collected so far.
   JsonMapper build() => JsonMapper(
     introspector: _introspector,
@@ -310,5 +321,6 @@ final class JsonMapperBuilder {
     defaultViewInclusion: isEnabled(MapperFeature.defaultViewInclusion),
     serializers: _serializers,
     deserializers: _deserializers,
+    schemaResolver: _schemaResolver,
   );
 }

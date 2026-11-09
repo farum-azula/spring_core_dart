@@ -105,6 +105,19 @@ final class FlutterDebugFeatureProperties {
   final bool? enabled;
 }
 
+/// How `MarkdownView` reads its pages, `spring.flutter.markdown.*`.
+@ConfigurationProperties('spring.flutter.markdown')
+final class FlutterMarkdownProperties {
+  /// Settings with these values.
+  const FlutterMarkdownProperties({this.placeholders = false});
+
+  /// Replaces each `{{key}}` of a page by the value of the configuration's
+  /// key (`{{site.version}}`); one whose key has no value stays as it is,
+  /// and `\{{` writes `{{`. The build's pages for search engines do the
+  /// same (`BracePlaceholders`).
+  final bool placeholders;
+}
+
 /// The frame meter, `spring.flutter.frame-meter.*`: a small panel over
 /// the app with the frames a second it really draws and their times, to
 /// see on a phone whether it keeps up. Its look is the theme's

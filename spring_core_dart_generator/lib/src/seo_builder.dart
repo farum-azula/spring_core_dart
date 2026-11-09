@@ -65,7 +65,7 @@ final class SeoBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
     final resources = await SpringBuilder.resources(buildStep, warn: false);
-    final texts = {
+    var texts = {
       for (final MapEntry(:key, value: (:text, base64: _)) in resources.entries)
         key: ?text,
     };
@@ -73,9 +73,24 @@ final class SeoBuilder implements Builder {
     SeoSettings? settings;
     if (texts.values.any((t) => t.contains('seo'))) {
       try {
-        settings = SeoSettings.of(
-          readPlatformEnvironment(texts, profiles: const ['web']),
+        final environment = readPlatformEnvironment(
+          texts,
+          profiles: const ['web'],
         );
+        settings = SeoSettings.of(environment);
+        // The `{{key}}` of the pages, as MarkdownView replaces them.
+        if (environment
+                .getProperty('spring.flutter.markdown.placeholders')
+                ?.trim()
+                .toLowerCase() ==
+            'true') {
+          texts = {
+            for (final MapEntry(:key, :value) in texts.entries)
+              key: key.endsWith('.md')
+                  ? BracePlaceholders.resolve(value, environment.getProperty)
+                  : value,
+          };
+        }
       } on WebDevConfigException catch (e) {
         log.severe('$e\nThe pages of $prefix are not written.');
         return;

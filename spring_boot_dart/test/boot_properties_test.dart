@@ -61,7 +61,13 @@ void main() {
       jsonPropertyKeys(),
       contains('spring.json.datatype.datetime.write-dates-as-timestamps'),
     );
-    expect(jsonPropertyKeys(), hasLength(17));
+    // The schemas' keys: the list, and the registry's switch.
+    expect(jsonPropertyKeys(), contains('spring.json.schemas'));
+    expect(
+      jsonPropertyKeys(),
+      contains('spring.json.schemas-registry.properties'),
+    );
+    expect(jsonPropertyKeys(), hasLength(19));
   });
 
   test('the banner mode accepts false and any case, and rejects the rest', () {

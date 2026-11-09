@@ -27,6 +27,7 @@ import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
 import 'package:spring_core_dart_generator/src/driver_glue.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/generated_path.dart';
+import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
@@ -358,6 +359,7 @@ class SpringBuilder implements Builder {
 
     final resources = await SpringBuilder.resources(buildStep);
     final keyParts = await _keyParts(buildStep);
+    final json = await _jsonSchemaPart(buildStep);
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
@@ -423,9 +425,13 @@ class SpringBuilder implements Builder {
       module: module,
       extra: [for (final output in glue) output.code],
       extraDefinitions: [for (final output in glue) output.definition],
-      resources: resources,
-      parts: keyParts,
-      partImports: keyParts.isEmpty ? const [] : SpringKeyFiles.imports,
+      resources: {...resources, ...json.resources},
+      parts: [...keyParts, ...json.parts],
+      partImports: [
+        if (keyParts.isNotEmpty) ...SpringKeyFiles.imports,
+        ...json.imports,
+      ],
+      extraIntrospections: json.introspections,
     );
   }
 
@@ -461,6 +467,19 @@ class SpringBuilder implements Builder {
       if (parts.messages != null)
         SpringKeyFiles.partPath(parent, SpringKeyFiles.messagesFile),
     ];
+  }
+
+  /// The classes of `spring.json.schemas` (`json_schemas.spring.dart`)
+  /// when the input is the library their part belongs to: the part, the
+  /// import it needs, its list of introspections, and the downloaded
+  /// schemas as resources of the app (`JsonSchemaLocations.resourceOf`).
+  /// The classes builder writes the part from the same computation.
+  Future<JsonSchemaPart> _jsonSchemaPart(BuildStep buildStep) async {
+    final part = await JsonSchemaPart.of(buildStep);
+    if (part == null || part.parent != buildStep.inputId) {
+      return JsonSchemaPart.none;
+    }
+    return part;
   }
 
   // The text files among [resources], by path.
@@ -738,14 +757,19 @@ class SpringBuilder implements Builder {
       dartDefinesExclude,
     );
     final keyParts = await _keyParts(buildStep);
+    final json = await _jsonSchemaPart(buildStep);
     final source = emitter.emit(
       moduleName: 'application',
       variableName: r'$application',
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
       module: module,
-      resources: resources,
-      parts: keyParts,
-      partImports: keyParts.isEmpty ? const [] : SpringKeyFiles.imports,
+      resources: {...resources, ...json.resources},
+      parts: [...keyParts, ...json.parts],
+      partImports: [
+        if (keyParts.isNotEmpty) ...SpringKeyFiles.imports,
+        ...json.imports,
+      ],
+      extraIntrospections: json.introspections,
       extraDefinitions: [for (final output in glue) output.definition],
       extra: [
         for (final output in glue) output.code,
