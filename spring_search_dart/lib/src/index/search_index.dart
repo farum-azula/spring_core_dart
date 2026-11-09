@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:spring_search_dart/src/analysis/search_analyzer.dart';
@@ -60,36 +61,33 @@ final class SearchIndex {
   factory SearchIndex.fromJson(
     Map<String, Object?> json,
     SearchAnalyzer analyzer,
-  ) {
-    final fields = [for (final f in json['fields']! as List) f as String];
-    final documents = [
-      for (final d in json['documents']! as List)
-        _document(d as Map<String, Object?>),
-    ];
-    final lengths = [
-      for (final row in json['lengths']! as List)
-        {
-          for (final (i, n) in (row as List).indexed)
-            if ((n as int) >= 0) fields[i]: n,
-        },
-    ];
-    final encoded = (json['terms']! as Map).cast<String, String>();
-    final surfaces = {
-      for (final MapEntry(:key, :value)
-          in (json['surfaces']! as Map<String, Object?>).entries)
-        key: {for (final t in value! as List) t as String},
-    };
-    return SearchIndex._(
-        analyzer,
-        List.unmodifiable(documents),
-        List<Map<String, List<SearchToken>>?>.filled(documents.length, null),
-        lengths,
-        {},
-        Map.of(encoded),
-      )
-      .._fieldNames = fields
-      .._bySurfaceCache = surfaces
-      .._termsCache = (encoded.keys.toList()..sort());
+  ) => (_Parts()..add(json)).index(analyzer);
+
+  /// The index of [parts], the JSON texts of pieces of what [toJson]
+  /// writes (`fields`, then any of `documents` with their `lengths`,
+  /// `terms` and `surfaces`), read one at a time with a pause ([pause]: a
+  /// turn of the event loop by default) whenever it has worked [budget]
+  /// without one: a large index is read without holding the thread that
+  /// draws for longer than a frame.
+  static Future<SearchIndex> fromJsonParts(
+    Iterable<String> parts,
+    SearchAnalyzer analyzer, {
+    Duration budget = const Duration(milliseconds: 8),
+    Future<void> Function()? pause,
+  }) async {
+    final collected = _Parts();
+    final watch = Stopwatch()..start();
+    for (final part in parts) {
+      if (watch.elapsed >= budget) {
+        await (pause?.call() ?? Future<void>.delayed(Duration.zero));
+        watch.reset();
+      }
+      collected.add(jsonDecode(part) as Map<String, Object?>);
+    }
+    if (watch.elapsed >= budget) {
+      await (pause?.call() ?? Future<void>.delayed(Duration.zero));
+    }
+    return collected.index(analyzer);
   }
 
   /// The index of [documents] as [SearchIndex.build] makes it, with a
@@ -307,12 +305,12 @@ final class SearchIndex {
         continue;
       }
       hits.add(
-        SearchHit(
+        SearchHit.lazy(
           document: documents[doc],
           score: operator == SearchOperator.and
               ? score
               : score * count / clauses.length,
-          highlights: _highlights(doc, matched[doc]!),
+          find: () => _highlights(doc, matched[doc]!),
         ),
       );
     }
@@ -650,4 +648,62 @@ final class _Clause {
   final List<Map<String, double>> expansions;
   final Map<int, Set<String>> docs;
   final bool phrase;
+}
+
+// What [SearchIndex.toJson] wrote, gathered piece by piece.
+final class _Parts {
+  var _fields = const <String>[];
+  final _documents = <SearchDocument>[];
+  final _lengths = <Map<String, int>>[];
+  final _terms = <String, String>{};
+  final _surfaces = <String, Set<String>>{};
+
+  void add(Map<String, Object?> json) {
+    if (json['fields'] case final List<Object?> fields) {
+      _fields = [for (final f in fields) f! as String];
+    }
+    if (json['documents'] case final List<Object?> documents) {
+      for (final d in documents) {
+        _documents.add(SearchIndex._document(d! as Map<String, Object?>));
+      }
+    }
+    if (json['lengths'] case final List<Object?> lengths) {
+      for (final row in lengths) {
+        _lengths.add({
+          for (final (i, n) in (row! as List).indexed)
+            if ((n as int) >= 0) _fields[i]: n,
+        });
+      }
+    }
+    if (json['terms'] case final Map<String, Object?> terms) {
+      for (final MapEntry(:key, :value) in terms.entries) {
+        _terms[key] = value! as String;
+      }
+    }
+    if (json['surfaces'] case final Map<String, Object?> surfaces) {
+      for (final MapEntry(:key, :value) in surfaces.entries) {
+        _surfaces[key] = {for (final t in value! as List) t as String};
+      }
+    }
+  }
+
+  SearchIndex index(SearchAnalyzer analyzer) {
+    // toJson writes the terms in order.
+    final terms = _terms.keys.toList();
+    var sorted = true;
+    for (var i = 1; i < terms.length && sorted; i++) {
+      sorted = terms[i - 1].compareTo(terms[i]) <= 0;
+    }
+    return SearchIndex._(
+        analyzer,
+        List.unmodifiable(_documents),
+        List<Map<String, List<SearchToken>>?>.filled(_documents.length, null),
+        _lengths,
+        {},
+        _terms,
+      )
+      .._fieldNames = _fields
+      .._bySurfaceCache = _surfaces
+      .._termsCache = sorted ? terms : (terms..sort());
+  }
 }

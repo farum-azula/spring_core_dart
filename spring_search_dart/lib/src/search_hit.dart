@@ -40,8 +40,17 @@ final class SearchHit {
   const SearchHit({
     required this.document,
     required this.score,
-    this.highlights = const {},
-  });
+    Map<String, List<SearchRange>> this._highlights = const {},
+  }) : _find = null;
+
+  /// The hit of [document], whose highlights [find] gives the first time
+  /// they are asked for: an index finds them for the hits shown only.
+  SearchHit.lazy({
+    required this.document,
+    required this.score,
+    required Map<String, List<SearchRange>> Function() find,
+  }) : _highlights = null,
+       _find = _Once(find);
 
   /// The document found.
   final SearchDocument document;
@@ -50,11 +59,19 @@ final class SearchHit {
   final double score;
 
   /// The matches of each field, in order.
-  final Map<String, List<SearchRange>> highlights;
+  Map<String, List<SearchRange>> get highlights => _highlights ?? _find!.value;
+
+  final Map<String, List<SearchRange>>? _highlights;
+  final _Once? _find;
 
   /// The same hit with another [score] (a `SearchRanker`'s).
-  SearchHit withScore(double score) =>
-      SearchHit(document: document, score: score, highlights: highlights);
+  SearchHit withScore(double score) => _find == null
+      ? SearchHit(document: document, score: score, highlights: highlights)
+      : SearchHit.lazy(
+          document: document,
+          score: score,
+          find: () => _find.value,
+        );
 
   /// About [length] characters of [field] around its first match (from the
   /// start when it has none), cut at spaces, with the matches in it.
@@ -91,4 +108,12 @@ final class SearchHit {
 
   @override
   String toString() => 'SearchHit(${document.id}, $score)';
+}
+
+// Highlights found once, when first asked for.
+final class _Once {
+  _Once(this._find);
+
+  final Map<String, List<SearchRange>> Function() _find;
+  late final Map<String, List<SearchRange>> value = _find();
 }

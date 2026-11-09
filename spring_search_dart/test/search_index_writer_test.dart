@@ -143,7 +143,7 @@ void main() {
           .cast<String, String>();
       expect(files.keys, ['en', 'ja']);
       expect(
-        (jsonDecode(files['en']!) as Map)['analyzer'],
+        (jsonDecode(files['en']!.split('\n').first) as Map)['analyzer'],
         'english',
       );
     },

@@ -24,7 +24,7 @@ final class SearchIndexFiles {
   const SearchIndexFiles(this.resources);
 
   /// The version of the files' format; a file of another is not read.
-  static const format = 1;
+  static const format = 2;
 
   /// The directory of the files below `lib/resources/`.
   static const directory = 'spring_gen/search/';
@@ -45,13 +45,50 @@ final class SearchIndexFiles {
     required SearchAnalyzer analyzer,
     required List<MarkdownSearchSource> sources,
     required SearchIndex index,
-  }) => jsonEncode({
-    'format': format,
-    'language': language,
-    'analyzer': analyzer.name,
-    'sources': [for (final source in sources) _signature(source)],
-    'index': index.toJson(),
-  });
+  }) {
+    // A line per piece, so the app reads it a piece at a time.
+    final json = index.toJson();
+    final documents = json['documents']! as List;
+    final lengths = json['lengths']! as List;
+    final terms = (json['terms']! as Map).entries.toList();
+    final surfaces = (json['surfaces']! as Map).entries.toList();
+    return [
+      jsonEncode({
+        'format': format,
+        'language': language,
+        'analyzer': analyzer.name,
+        'sources': [for (final source in sources) _signature(source)],
+      }),
+      jsonEncode({'fields': json['fields']}),
+      for (var i = 0; i < documents.length; i += _documents)
+        jsonEncode({
+          'documents': documents.sublist(
+            i,
+            (i + _documents).clamp(0, documents.length),
+          ),
+          'lengths': lengths.sublist(
+            i,
+            (i + _documents).clamp(0, lengths.length),
+          ),
+        }),
+      for (var i = 0; i < terms.length; i += _terms)
+        jsonEncode({
+          'terms': Map.fromEntries(
+            terms.sublist(i, (i + _terms).clamp(0, terms.length)),
+          ),
+        }),
+      for (var i = 0; i < surfaces.length; i += _terms)
+        jsonEncode({
+          'surfaces': Map.fromEntries(
+            surfaces.sublist(i, (i + _terms).clamp(0, surfaces.length)),
+          ),
+        }),
+    ].join('\n');
+  }
+
+  // The documents and the terms of a line: a few milliseconds to read.
+  static const _documents = 100;
+  static const _terms = 1000;
 
   /// The index of [language] from its file, when there is one built with
   /// [analyzer] from [sources]; `null` otherwise.
@@ -65,9 +102,11 @@ final class SearchIndexFiles {
     if (!resource.exists()) {
       return null;
     }
+    final List<String> lines;
     final Map<String, Object?> json;
     try {
-      json = jsonDecode(await resource.readAsString()) as Map<String, Object?>;
+      lines = const LineSplitter().convert(await resource.readAsString());
+      json = jsonDecode(lines.first) as Map<String, Object?>;
     } on Object catch (error) {
       _log.warning('$location is not read: $error');
       return null;
@@ -80,10 +119,12 @@ final class SearchIndexFiles {
       );
       return null;
     }
-    return SearchIndex.fromJson(
-      json['index']! as Map<String, Object?>,
-      analyzer,
-    );
+    try {
+      return await SearchIndex.fromJsonParts(lines.skip(1), analyzer);
+    } on Object catch (error) {
+      _log.warning('$location is not read: $error');
+      return null;
+    }
   }
 
   static String? _mismatch(

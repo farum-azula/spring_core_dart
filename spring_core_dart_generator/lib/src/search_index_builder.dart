@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
@@ -136,6 +137,9 @@ final class SearchIndexBuilder implements Builder {
     return written;
   }
 
+  static const _timeout = Duration(minutes: 3);
+  static const _packages = '.dart_tool/package_config.json';
+
   static List<String> _list(String? Function(String) property, String key) => [
     ...?property(
       key,
@@ -152,7 +156,8 @@ final class SearchIndexBuilder implements Builder {
   ) async {
     final directories = PackageDirectories.current;
     final root = directories.directoryOf(package);
-    if (root == null || directories.directoryOf('spring_search_dart') == null) {
+    final search = directories.directoryOf('spring_search_dart');
+    if (root == null || search == null) {
       return const {};
     }
     final work = io.Directory.fromUri(
@@ -165,17 +170,37 @@ final class SearchIndexBuilder implements Builder {
       responseFile.deleteSync();
     }
     // The dart of the SDK running the build (next to dartaotruntime when
-    // the build script is compiled ahead of time).
+    // the build script is compiled ahead of time), on the script itself
+    // with the app's packages: no snapshot of `dart run` to make or lock.
     final dart = p.join(
       p.dirname(io.Platform.resolvedExecutable),
       io.Platform.isWindows ? 'dart.exe' : 'dart',
     );
-    final result = await io.Process.run(dart, [
-      'run',
-      'spring_search_dart:search_index',
+    final process = await io.Process.start(dart, [
+      '--packages=${io.File.fromUri(root.resolve(_packages)).path}',
+      io.File.fromUri(search.resolve('bin/search_index.dart')).path,
       requestFile.path,
       responseFile.path,
     ], workingDirectory: io.Directory.fromUri(root).path);
+    unawaited(process.stdin.close());
+    final out = StringBuffer();
+    final drained = [
+      process.stdout.transform(utf8.decoder).forEach(out.write),
+      process.stderr.transform(utf8.decoder).forEach(out.write),
+    ];
+    final exitCode = await process.exitCode.timeout(
+      _timeout,
+      onTimeout: () {
+        process.kill();
+        out.write('no answer in ${_timeout.inMinutes} minutes');
+        return -1;
+      },
+    );
+    await Future.wait(drained).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => const [],
+    );
+    final result = (exitCode: exitCode, stderr: out, stdout: '');
     if (result.exitCode != 0 || !responseFile.existsSync()) {
       log.warning(
         'The search index is not written (exit code ${result.exitCode}): '
