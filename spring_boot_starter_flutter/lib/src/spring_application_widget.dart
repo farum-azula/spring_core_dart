@@ -296,10 +296,24 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
               const Duration(milliseconds: 8),
         );
       }
-      if (environment.getPropertyAs<bool>('spring.flutter.splash.trace') ??
-          false) {
-        factory.applicationStartup = SplashTrace(_stages);
-      }
+      // The stages and the events always; each bean with the trace or the
+      // debug timeline.
+      final trace =
+          environment.getPropertyAs<bool>('spring.flutter.splash.trace') ??
+          false;
+      final startup = SplashTrace(
+        _stages,
+        beans:
+            trace ||
+            (environment.getPropertyAs<bool>(
+                  'spring.flutter.debug.timeline.enabled',
+                ) ??
+                false),
+        log: trace,
+      );
+      factory
+        ..applicationStartup = startup
+        ..registerSingleton('splashTrace', startup);
     }
     _starting = context;
     _beanSpan = 1 - SplashTasks.shareIn(environment);

@@ -194,6 +194,31 @@ class BufferingApplicationStartup implements ApplicationStartup {
     return step;
   }
 
+  /// Records a step that already ran, from [startedAt] for [duration], at
+  /// the top (not inside a running step), with [tags]: what happened before
+  /// the startup existed, or a moment (an event) of no length. [steps]
+  /// stay in the order they began.
+  RecordedStartupStep? record(
+    String name, {
+    required Duration startedAt,
+    Duration duration = Duration.zero,
+    List<(String, Object?)> tags = const [],
+  }) {
+    if (_steps.length >= capacity) {
+      return null;
+    }
+    final step = RecordedStartupStep._(name, _next++, null, startedAt, this)
+      ..duration = duration;
+    step._tags.addAll(tags);
+    var at = _steps.length;
+    while (at > 0 && _steps[at - 1].startedAt > startedAt) {
+      at--;
+    }
+    _steps.insert(at, step);
+    onEnd?.call(step);
+    return step;
+  }
+
   void _ended(RecordedStartupStep step) {
     _running.remove(step);
     onEnd?.call(step);

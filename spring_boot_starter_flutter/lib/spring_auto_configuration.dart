@@ -35,6 +35,8 @@ import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_handler.dart'
 import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
 import 'package:spring_boot_starter_flutter/src/resource_prefetch.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_task.dart';
+import 'package:spring_boot_starter_flutter/src/splash/splash_trace.dart';
+import 'package:spring_boot_starter_flutter/src/splash/startup_events.dart';
 import 'package:spring_boot_starter_flutter/src/splash/text_warm_up.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
@@ -141,6 +143,13 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       create: (r) => KeyboardShortcutsCustomizer(
         r.dependency<KeyboardShortcuts>(),
       ),
+    ),
+    BeanDefinition<StartupEvents>(
+      name: 'startupEvents',
+      types: const [StartupEvents, GenericApplicationListener],
+      source: _source,
+      conditions: const [ConditionalOnBean(SplashTrace)],
+      create: (r) => StartupEvents(r.dependency<SplashTrace>()),
     ),
     BeanDefinition<ResourcePrefetch>(
       name: 'resourcePrefetch',

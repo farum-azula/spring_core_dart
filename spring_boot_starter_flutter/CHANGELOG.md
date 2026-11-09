@@ -1,5 +1,6 @@
 ## 0.7.3
 
+- The start is measured always: the `SplashTrace` is the app's `ApplicationStartup` and the `splashTrace` bean, with a step per splash stage (`spring.flutter.splash.<stage>`), the steps of the start and every application event the context publishes (`spring.event`, by the `startupEvents` bean); each bean's creation only with `spring.flutter.splash.trace` or the debug timeline in the build, and the log only with the trace.
 - `ResourcePrefetch` (`resourcePrefetch`): on the web, the file of `spring.resources.prefetch` is downloaded once, `delay` after the app is shown (`stage: app`, the default) or behind the splash (`stage: tasks`), and its files kept in memory as resources, read a piece at a time: a site's pages then open without a download each.
 - `spring.flutter.web.seo.lastmod` is in the metadata (`FlutterWebSeoProperties.lastmod`): the build read it, editors called it unknown.
 - The Flutter assets are resource roots (`AssetResourceRoot`): `resources:` finds the assets below `lib/resources/` the build did not embed (`spring.resources.embed.exclude`), and `asset:` patterns list the assets (`asset:docs/**/*.md`), so both read, check and search alike. `AssetResource` is a `ContextResource`: its path within the root it was found in.

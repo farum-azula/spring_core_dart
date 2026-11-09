@@ -164,6 +164,31 @@ void main() {
       now += const Duration(milliseconds: 5);
       stages.enter(stage);
     }
-    expect(trace.steps, hasLength(1));
+    // Each stage a step, from it to the next; the app of no length.
+    final staged = trace.steps.skip(1).toList();
+    expect(
+      [for (final step in staged) step.name],
+      [for (final stage in SplashStage.values) SplashTrace.stepOf(stage)],
+    );
+    expect(staged.first.startedAt, const Duration(milliseconds: 5));
+    expect(staged.first.duration, const Duration(milliseconds: 5));
+    expect(staged.last.duration, Duration.zero);
   });
+
+  test('without beans, a bean is no step; an event is one of no length', () {
+    var now = Duration.zero;
+    final stages = SplashStages(clock: () => now);
+    final trace = SplashTrace(stages, beans: false, log: false);
+    trace.start('spring.beans.instantiate').end();
+    expect(trace.steps, isEmpty);
+    now = const Duration(milliseconds: 7);
+    trace.recordEvent(const _Event());
+    expect(trace.steps.single.name, SplashTrace.event);
+    expect(trace.steps.single.startedAt, const Duration(milliseconds: 7));
+    expect(trace.steps.single.tags, [('type', '_Event')]);
+  });
+}
+
+final class _Event {
+  const _Event();
 }

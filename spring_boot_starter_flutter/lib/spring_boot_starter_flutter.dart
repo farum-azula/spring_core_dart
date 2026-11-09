@@ -106,6 +106,7 @@ export 'src/splash/splash_stages.dart';
 export 'src/splash/splash_task.dart';
 export 'src/splash/splash_tasks.dart';
 export 'src/splash/splash_trace.dart';
+export 'src/splash/startup_events.dart';
 export 'src/splash/text_warm_up.dart';
 export 'src/theme/loader_tracks.dart';
 export 'src/theme/spring_theme_data.dart'
