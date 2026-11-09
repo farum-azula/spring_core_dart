@@ -53,6 +53,9 @@
   <meta name="twitter:description" content="The terms of use of the site.">
   <meta name="twitter:image" content="https://lumen.example/assets/lib/resources/images/preview.png">
   <!-- spring:seo:head:end -->
+  <!-- spring:page:touch:start -->
+  <style>html,body{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}#spring-content{-webkit-user-select:none;user-select:none;pointer-events:none}</style>
+  <!-- spring:page:touch:end -->
 </head>
 <body>
   <!--
@@ -64,7 +67,7 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
 <!-- spring:seo:content:start -->
-<main id="spring-content" style="position:absolute; top:0; left:0; width:100%; z-index:-1; overflow:hidden">
+<main id="spring-content" style="position:absolute; top:0; left:0; width:100%; z-index:-1; overflow:hidden; user-select:none; -webkit-user-select:none; pointer-events:none">
 <h1 id="terms">Terms</h1>
 <p>Use the site as you like.</p>
 </main>

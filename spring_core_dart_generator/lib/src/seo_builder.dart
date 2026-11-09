@@ -1359,7 +1359,8 @@ final class SeoPages {
 
   static const _mainTag =
       '<main id="spring-content" style="position:absolute; top:0; left:0; '
-      'width:100%; z-index:-1; overflow:hidden">';
+      'width:100%; z-index:-1; overflow:hidden; user-select:none; '
+      '-webkit-user-select:none; pointer-events:none">';
 
   static String _attr(String value) =>
       const HtmlEscape(HtmlEscapeMode.attribute).convert(value);

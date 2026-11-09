@@ -208,8 +208,37 @@ abstract final class WebPageHead {
     if (description != null && !seo) {
       result = _meta(result, 'description', description, add: true);
     }
-    return _themeColor(result, themeColor, dark: darkThemeColor);
+    return _touch(_themeColor(result, themeColor, dark: darkThemeColor));
   }
+
+  /// Where the block of the page's touch settings starts.
+  static const touchStart = '<!-- spring:page:touch:start -->';
+
+  /// Where it ends.
+  static const touchEnd = '<!-- spring:page:touch:end -->';
+
+  /// The touch settings of a Flutter page. A long press on a phone is
+  /// Flutter's (its own selection and menu), but the browser saw it too:
+  /// iOS greyed the whole view with its tap highlight and offered its
+  /// menu, and could select the hidden text of the SEO pages, its
+  /// highlight drawn over the app.
+  static const touchStyle =
+      'html,body{-webkit-tap-highlight-color:transparent;'
+      '-webkit-touch-callout:none}'
+      '#spring-content{-webkit-user-select:none;user-select:none;'
+      'pointer-events:none}';
+
+  // [html] with the block of [touchStyle].
+  static String _touch(String html) => place(
+    html,
+    RegExp(
+      r'\n?[ \t]*' +
+          RegExp.escape(touchStart) +
+          r'[\s\S]*?' +
+          RegExp.escape(touchEnd),
+    ),
+    '  $touchStart\n  <style>$touchStyle</style>\n  $touchEnd',
+  );
 
   /// Where the block of the light and dark `theme-color` tags starts.
   static const themeColorStart = '<!-- spring:page:theme-color:start -->';

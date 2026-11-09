@@ -597,6 +597,13 @@ spring.flutter.theme:
                 '<!-- spring:page:background:end -->',
               ),
               '',
+            )
+            .replaceFirst(
+              RegExp(
+                '\\s*${WebPageHead.touchStart}[\\s\\S]*?'
+                '${WebPageHead.touchEnd}',
+              ),
+              '',
             ),
         _page,
       );

@@ -65,7 +65,17 @@ void main() {
     expect(WebPageHead.html(html), html, reason: 'written once');
     const own =
         '<head>\n  <meta name="viewport" content="width=500">\n</head>\n';
-    expect(WebPageHead.html(own), own);
+    expect(WebPageHead.html(own), contains('content="width=500"'));
+    expect(WebPageHead.html(own), isNot(contains(WebPageHead.viewport)));
+  });
+
+  test('a long press is left to Flutter: no tap highlight, no menu, no '
+      'selection of the hidden text, written once', () {
+    final html = WebPageHead.html(_template);
+    expect(html, contains('<style>${WebPageHead.touchStyle}</style>'));
+    expect(html, contains('-webkit-tap-highlight-color:transparent'));
+    expect(WebPageHead.html(html), html);
+    expect(WebPageHead.touchStart.allMatches(html), hasLength(1));
   });
 
   test("the page's background is the theme's, written once", () {
