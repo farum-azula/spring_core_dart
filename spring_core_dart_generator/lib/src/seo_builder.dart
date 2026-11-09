@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:build/build.dart';
+import 'package:glob/glob.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
@@ -68,6 +69,8 @@ final class SeoBuilder implements Builder {
     var texts = {
       for (final MapEntry(:key, value: (:text, base64: _)) in resources.entries)
         key: ?text,
+      // The Markdown of the Flutter assets, for content of `asset:`.
+      ...await _assetTexts(buildStep, package),
     };
     final previous = await _files.read(buildStep, package, ledger);
     SeoSettings? settings;
@@ -164,6 +167,38 @@ final class SeoBuilder implements Builder {
     if (written.isEmpty && previous != null) {
       await _files.delete(buildStep, package, ledger);
     }
+  }
+
+  // The Markdown files of the package's Flutter assets outside
+  // `lib/resources/` (its own files are there already), keyed
+  // `asset:<path>`: what a route's or `content`'s `asset:` folder reads.
+  // An asset directory has its own files, as Flutter ships them.
+  static Future<Map<String, String>> _assetTexts(
+    BuildStep buildStep,
+    String package,
+  ) async {
+    final assets = await SpringBuilder.flutterAssets(buildStep);
+    if (assets == null) {
+      return const {};
+    }
+    final result = <String, String>{};
+    for (final asset in assets) {
+      if (asset.startsWith('lib/resources/')) {
+        continue;
+      }
+      final glob = asset.endsWith('/')
+          ? Glob('${Glob.quote(asset)}*.md')
+          : null;
+      final ids = glob == null
+          ? [if (asset.endsWith('.md')) AssetId(package, asset)]
+          : await buildStep.findAssets(glob).toList();
+      for (final id in ids) {
+        if (await buildStep.canRead(id)) {
+          result['asset:${id.path}'] = await buildStep.readAsString(id);
+        }
+      }
+    }
+    return result;
   }
 
   Future<List<Map<String, Object?>>> _routes(
@@ -919,6 +954,10 @@ final class SeoPages {
   ).firstMatch(markdown)?.group(1);
 
   static String _location(String location) {
+    if (location.startsWith('asset:')) {
+      final path = location.substring('asset:'.length);
+      return 'asset:${path.startsWith('/') ? path.substring(1) : path}';
+    }
     final path = location.startsWith('resources:')
         ? location.substring('resources:'.length)
         : location;

@@ -634,4 +634,34 @@ spring.flutter.web.seo:
       expect(files.files['web/index.html'], isNot(contains('ld+json')));
     });
   });
+
+  test('a Markdown folder of Flutter assets (asset:) makes pages', () async {
+    final files = _Memory({'web/index.html': _index});
+    final logs = <String>[];
+    await testBuilder(
+      SeoBuilder(files: files, dates: const _Dates({})),
+      {
+        'app|pubspec.yaml': 'name: app\nflutter:\n  assets:\n    - guides/\n',
+        'app|guides/intro.md': '# Intro\n\nThe guide starts here.',
+        'app|lib/resources/application.yml': '''
+spring:
+  flutter:
+    web:
+      seo:
+        enabled: true
+        site-url: https://spring-dart.dev
+        content:
+          - location: asset:guides/
+            path: /guides
+''',
+      },
+      rootPackage: 'app',
+      onLog: (record) => logs.add('${record.level.name}: ${record.message}'),
+    );
+    expect(logs.where((l) => l.startsWith('SEVERE')), isEmpty);
+    expect(
+      files.files['web/guides/intro/index.html'],
+      contains('The guide starts here.'),
+    );
+  });
 }

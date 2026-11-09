@@ -399,6 +399,7 @@ final class FlutterWebSeoProperties {
     this.sitemap = true,
     this.llms = true,
     this.markdown = true,
+    this.lastmod = true,
     this.pageFiles = 'directory',
   });
 
@@ -448,6 +449,12 @@ final class FlutterWebSeoProperties {
 
   /// Whether the Markdown of a page is written next to it (`<path>.md`).
   final bool markdown;
+
+  /// Whether the sitemap gives each Markdown page its `lastmod`: the day
+  /// of the last commit that changed its file (`git log`); none in a
+  /// shallow clone, whose one commit would date every page (a CI checkout
+  /// needs `fetch-depth: 0`).
+  final bool lastmod;
 
   /// How a page's file is named: `directory` (`<path>/index.html`, which a
   /// static host serves after a redirect to `<path>/`, so the page's

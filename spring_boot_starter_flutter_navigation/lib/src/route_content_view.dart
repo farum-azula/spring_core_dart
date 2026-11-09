@@ -149,9 +149,8 @@ class RouteContentView extends StatelessWidget {
         !uri.path.endsWith('.md')) {
       return null;
     }
-    var file = Uri.parse(from.replaceFirst('resources:', 'resources:/'))
-        .resolve(uri.path)
-        .path;
+    final target = _hierarchical(from).resolve(uri.path);
+    var file = target.path;
     // A link to a translation (`beans.ja.md`) is the page of `beans.md`.
     for (final language in navigation.languages.skip(1)) {
       if (file.endsWith('.$language.md')) {
@@ -164,9 +163,12 @@ class RouteContentView extends StatelessWidget {
       if (folder == null) {
         continue;
       }
-      final base = Uri.parse(
-        folder.replaceFirst('resources:', 'resources:/'),
-      ).path;
+      final folderUri = _hierarchical(folder);
+      // A folder of another root (`asset:` against `resources:`) is not it.
+      if (folderUri.scheme != target.scheme) {
+        continue;
+      }
+      final base = folderUri.path;
       if (!folder.endsWith('/')) {
         if (base == file && rest == null) {
           return RouteLocation(
@@ -197,6 +199,17 @@ class RouteContentView extends StatelessWidget {
   }
 
   static String? _fragment(Uri uri) => uri.hasFragment ? uri.fragment : null;
+
+  // [location] (`resources:content/a.md`, `asset:docs/a.md`) as a URI
+  // with a path, so a relative link resolves against it.
+  static Uri _hierarchical(String location) {
+    final scheme = RegExp(r'^([a-zA-Z][\w+.-]*):(?!/)').firstMatch(location);
+    return Uri.parse(
+      scheme == null
+          ? location
+          : location.replaceRange(0, scheme.end, '${scheme[1]}:/'),
+    );
+  }
 }
 
 // Scrolls to the address's [fragment] once the headings of [file] are

@@ -123,4 +123,50 @@ void main() {
       isNull,
     );
   });
+
+  test('a root of assets: resources: and asset: patterns find them', () async {
+    final bundle = _Bundle({
+      'lib/resources/content/docs/a.md': '# A',
+      'lib/resources/content/docs/deep/b.md': '# B',
+      'assets/notes/c.md': '# C',
+    });
+    final manifest = _Manifest(bundle.files.keys.toList());
+    final removeResources = Resources.addRoot(
+      AssetResourceRoot(manifest, prefix: 'lib/resources/', bundle: bundle),
+    );
+    final removeAssets = Resources.addProtocolRoot(
+      'asset:',
+      AssetResourceRoot(manifest, bundle: bundle),
+    );
+    addTearDown(() {
+      removeResources();
+      removeAssets();
+    });
+    final loader = DefaultResourceLoader();
+    final a = loader.getResource('resources:content/docs/a.md');
+    expect(a, isA<AssetResource>());
+    expect((a as AssetResource).pathWithinContext, 'content/docs/a.md');
+    expect(await a.readAsString(), '# A');
+    expect(
+      loader.getResource('resources:content/docs/none.md').exists(),
+      isFalse,
+    );
+    final patterns = PathMatchingResourcePatternResolver(
+      resourceLoader: loader,
+    );
+    expect(
+      [
+        for (final r in patterns.getResources('resources:content/**/*.md'))
+          (r as ContextResource).pathWithinContext,
+      ],
+      ['content/docs/a.md', 'content/docs/deep/b.md'],
+    );
+    expect(
+      [
+        for (final r in patterns.getResources('asset:assets/**/*.md'))
+          (r as AssetResource).key,
+      ],
+      ['assets/notes/c.md'],
+    );
+  });
 }

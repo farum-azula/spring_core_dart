@@ -9,7 +9,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 546,
+      "line": 553,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 530,
+      "line": 537,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 546,
+      "line": 553,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 530,
+      "line": 537,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 511,
+      "line": 518,
       "class": "FlutterRestartProperties"
     },
     {
@@ -571,7 +571,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 472,
+      "line": 479,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -581,7 +581,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 465,
+      "line": 472,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -591,7 +591,7 @@
       "default": "/",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 469,
+      "line": 476,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -601,7 +601,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 427,
+      "line": 428,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -611,7 +611,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 406,
+      "line": 407,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -621,7 +621,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 421,
+      "line": 422,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -631,7 +631,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 415,
+      "line": 416,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -641,7 +641,17 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 432,
+      "line": 433,
+      "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.flutter.web.seo.lastmod",
+      "type": "bool",
+      "description": "Whether the sitemap gives each Markdown page its `lastmod`: the day of the last commit that changed its file (`git log`); none in a shallow clone, whose one commit would date every page (a CI checkout needs `fetch-depth: 0`).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 457,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -651,7 +661,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 447,
+      "line": 448,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -661,7 +671,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 450,
+      "line": 451,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -671,7 +681,7 @@
       "default": "directory",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 456,
+      "line": 463,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -681,7 +691,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 493,
+      "line": 500,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -691,7 +701,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 496,
+      "line": 503,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -701,7 +711,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 500,
+      "line": 507,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -711,7 +721,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 487,
+      "line": 494,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -721,7 +731,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 490,
+      "line": 497,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -731,7 +741,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 435,
+      "line": 436,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -741,7 +751,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 411,
+      "line": 412,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -751,7 +761,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 444,
+      "line": 445,
       "class": "FlutterWebSeoProperties"
     },
     {
@@ -761,7 +771,7 @@
       "default": "{title}",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 424,
+      "line": 425,
       "class": "FlutterWebSeoProperties"
     }
   ],
@@ -1960,7 +1970,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 518,
+      "line": 525,
       "injects": [],
       "members": [
         {
@@ -1987,7 +1997,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 551,
+      "line": 558,
       "injects": [],
       "members": [
         {
@@ -2176,7 +2186,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 505,
+      "line": 512,
       "injects": [],
       "members": [
         {
@@ -2324,6 +2334,11 @@
           "name": "image",
           "kind": "field",
           "type": "String?"
+        },
+        {
+          "name": "lastmod",
+          "kind": "field",
+          "type": "bool"
         },
         {
           "name": "llms",

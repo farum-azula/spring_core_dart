@@ -70,9 +70,12 @@ final class SearchService implements GenericApplicationListener {
   /// The attribute whose value only its best hit keeps.
   final String? collapseBy;
 
-  // The documents, read once, by language; the index of each language,
-  // built when that language is first searched (or prepared).
-  Future<Map<String, List<SearchDocument>>>? _documents;
+  // The documents of the sources that do not know their languages, read
+  // once, by language; those of each language of the other sources, read
+  // when that language is first searched; the index of each language,
+  // built then too (or prepared).
+  Future<Map<String, List<SearchDocument>>>? _others;
+  final _documents = <String, Future<List<SearchDocument>>>{};
   final _indexes = <String, Future<SearchIndex>>{};
 
   /// The hits of [query] in [language], best first, at most [limit]
@@ -122,17 +125,20 @@ final class SearchService implements GenericApplicationListener {
   /// documents; `null` when there are none at all. Built the first time
   /// it is asked for: a search in one language waits for its index only.
   Future<SearchIndex?> index(String language) async {
-    final documents = await (_documents ??= _read());
-    final key = documents.containsKey(language)
+    final languages = await _languages();
+    final short = language.split(RegExp('[-_]')).first;
+    final key = languages.contains(language)
         ? language
-        : documents.containsKey(language.split(RegExp('[-_]')).first)
-        ? language.split(RegExp('[-_]')).first
+        : languages.contains(short)
+        ? short
         : defaultLanguage;
-    final texts = documents[key];
-    if (texts == null) {
+    if (!languages.contains(key)) {
       return null;
     }
-    return await _indexes.putIfAbsent(key, () => _build(key, texts));
+    return await _indexes.putIfAbsent(
+      key,
+      () async => await _build(key, await _documentsOf(key)),
+    );
   }
 
   /// Starts building the index of [language] now (every language when
@@ -146,17 +152,17 @@ final class SearchService implements GenericApplicationListener {
       await index(language);
       return;
     }
-    final documents = await (_documents ??= _read());
+    final languages = await _languages();
     for (final key in [
-      if (documents.containsKey(defaultLanguage)) defaultLanguage,
-      ...documents.keys.where((key) => key != defaultLanguage),
+      if (languages.contains(defaultLanguage)) defaultLanguage,
+      ...languages.where((key) => key != defaultLanguage),
     ]) {
       await index(key);
     }
   }
 
   /// Whether the documents are read (or being read): a build started.
-  bool get prepared => _documents != null;
+  bool get prepared => _others != null;
 
   /// Whether the index of [language] (as the documents name it) is built
   /// or being built.
@@ -165,37 +171,72 @@ final class SearchService implements GenericApplicationListener {
   /// Forgets the documents and the indexes: the next search reads and
   /// builds them again.
   void invalidate() {
-    _documents = null;
+    _others = null;
+    _documents.clear();
     _indexes.clear();
   }
 
-  Future<Map<String, List<SearchDocument>>> _read() async {
-    final watch = Stopwatch()..start();
+  // The languages of the documents: those the sources know, and those of
+  // the documents of the others.
+  Future<Set<String>> _languages() async {
+    final others = await (_others ??= _readOthers());
+    return {
+      for (final source in sources)
+        if (source is LanguageSearchDocumentSource) ...source.languages,
+      ...others.keys,
+    };
+  }
+
+  // The documents in [language]: those of the sources that know their
+  // languages, read now, and those of the others.
+  Future<List<SearchDocument>> _documentsOf(String language) =>
+      _documents.putIfAbsent(language, () async {
+        final watch = Stopwatch()..start();
+        final documents = [...?(await _others)?[language]];
+        final slice = Stopwatch()..start();
+        for (final source in sources) {
+          if (source is! LanguageSearchDocumentSource ||
+              !source.languages.contains(language)) {
+            continue;
+          }
+          await for (final document in source.documentsIn(language)) {
+            documents.add(document);
+            await _pause(slice);
+          }
+        }
+        _log.debug(
+          () =>
+              'Search documents read in ${watch.elapsedMilliseconds} ms '
+              '($language: ${documents.length})',
+        );
+        return documents;
+      });
+
+  Future<Map<String, List<SearchDocument>>> _readOthers() async {
     final byLanguage = <String, List<SearchDocument>>{};
-    // A source may give its documents without a real pause (resources read
-    // from memory): a turn of the event loop every few milliseconds lets
-    // the app draw its frames meanwhile.
     final slice = Stopwatch()..start();
     for (final source in sources) {
+      if (source is LanguageSearchDocumentSource) {
+        continue;
+      }
       await for (final document in source.documents()) {
         byLanguage
             .putIfAbsent(document.language ?? defaultLanguage, () => [])
             .add(document);
-        if (slice.elapsed >= _slice) {
-          await Future<void>.delayed(Duration.zero);
-          slice.reset();
-        }
+        await _pause(slice);
       }
     }
-    _log.debug(() {
-      final counts = [
-        for (final MapEntry(:key, :value) in byLanguage.entries)
-          '$key: ${value.length}',
-      ];
-      return 'Search documents read in ${watch.elapsedMilliseconds} ms '
-          '(${counts.join('; ')})';
-    });
     return byLanguage;
+  }
+
+  // A source may give its documents without a real pause (resources read
+  // from memory): a turn of the event loop every few milliseconds lets the
+  // app draw its frames meanwhile.
+  static Future<void> _pause(Stopwatch slice) async {
+    if (slice.elapsed >= _slice) {
+      await Future<void>.delayed(Duration.zero);
+      slice.reset();
+    }
   }
 
   Future<SearchIndex> _build(

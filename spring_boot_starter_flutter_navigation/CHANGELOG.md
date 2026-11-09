@@ -1,5 +1,6 @@
 ## Unreleased
 
+- A relative link between Markdown pages (`../beans.md`) resolves for a content folder of any root (`asset:docs/`), not only of `resources:`.
 - Fixed: an address with `#heading` opened at the top of the page: the address bar's strategy left the `#` part out of the first address (`PathUrlStrategy` keeps it now), so a link straight to a heading scrolls there.
 - `PageTransition.content` (`motion.page-transition: content`): the screen comes in as the theme's `motion.content-change` shows other content.
 - The first address's language (`/ja/...`) is the app's locale from the start (`FlutterAppSettings.locale`), so what the start prepares for a language is ready for the first frame: the fonts of `spring.flutter.fonts.families`. `switchLanguage` loads the fonts declared for the language before the text changes; `Navigation.languageOf(path)` is the language a path names.

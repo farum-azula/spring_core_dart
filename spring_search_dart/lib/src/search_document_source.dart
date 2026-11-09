@@ -27,3 +27,18 @@ abstract interface class SearchDocumentSource {
   /// The documents, in any language.
   Stream<SearchDocument> documents();
 }
+
+/// A [SearchDocumentSource] that knows the languages of its documents
+/// before reading them (a file `name.ja.md` is Japanese), so the search
+/// reads the documents of one language only: a site whose pages are
+/// downloaded on the web fetches those of the language searched.
+///
+/// Spring has no counterpart.
+abstract interface class LanguageSearchDocumentSource
+    implements SearchDocumentSource {
+  /// The languages it has documents in.
+  Set<String> get languages;
+
+  /// Its documents in [language] (one of [languages]).
+  Stream<SearchDocument> documentsIn(String language);
+}

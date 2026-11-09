@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `LanguageSearchDocumentSource`: a source that knows its languages before reading; `MarkdownSearchSource` is one, and the search reads only the files of the language searched (and the default language's for a page without a translation), so a site whose pages are downloaded fetches those of one language. A location of any root (`asset:docs/**/*.md`) gives its paths relative to its folder.
 - The documents are read once and the index of a language is built when that language is first searched: a search waits for its own language only (`SearchService.isIndexed(language)`, `prepare(language:)`).
 - `spring.search.indexing: background`: the indexes build right after the start, while the app runs, the default language first.
 - `spring.search.indexing` (`first-search` by default, `start`): `start` builds the indexes while the application starts (the `searchIndexRunner`, an `ApplicationRunner`), so a Flutter app builds them behind its splash. `SearchService.prepare()` starts the build now (when the search opens) and `prepared` tells whether it started; a search waits for the same build.

@@ -186,6 +186,19 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
         : locationPattern.startsWith(Resources.prefix)
         ? locationPattern.substring(Resources.prefix.length)
         : locationPattern;
+    // A protocol with a root of its own (`asset:`): its files listed.
+    if (!(isFile || isClasspath) && pathMatcher.isPattern(locationPattern)) {
+      if (Resources.protocolRootOf(locationPattern) case (
+        final root,
+        final rest,
+      )) {
+        final pattern = _slashes(rest);
+        return [
+          for (final path in root.paths.toList()..sort())
+            if (pathMatcher.match(pattern, path)) ?root.resolve(path),
+        ];
+      }
+    }
     if (!(isFile || isClasspath) || !pathMatcher.isPattern(path)) {
       final resource = getResource(locationPattern);
       return resource.exists() ? [resource] : const [];
@@ -348,6 +361,7 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   List<_ClasspathRoot> _roots() => [
     for (final directory in Resources.directories) _DirectoryRoot(directory),
     _EmbeddedRoot(),
+    for (final root in Resources.roots) _AddedRoot(root),
   ];
 
   // The resources of [root] matching [pattern], sorted by path.
@@ -479,4 +493,31 @@ final class _EmbeddedRoot extends _ClasspathRoot {
     }
     return ClasspathFileResource(_directory, path);
   }
+}
+
+// A root added with Resources.addRoot: the files it lists.
+final class _AddedRoot extends _ClasspathRoot {
+  _AddedRoot(this.root);
+
+  final ResourceRoot root;
+
+  @override
+  bool hasDirectory(String base) =>
+      base.isEmpty || root.paths.any((path) => path.startsWith(base));
+
+  @override
+  Iterable<String> paths(
+    PathMatchingResourcePatternResolver resolver,
+    String base,
+    String pattern,
+  ) => [
+    for (final path in root.paths)
+      if (path.startsWith(base) &&
+          resolver.pathMatcher.match(pattern, path.substring(base.length)))
+        path,
+  ]..sort();
+
+  @override
+  Resource resolve(String path) =>
+      root.resolve(path) ?? Resources.resolveEmbedded(path);
 }

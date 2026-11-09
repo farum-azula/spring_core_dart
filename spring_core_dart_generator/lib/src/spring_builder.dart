@@ -425,7 +425,10 @@ class SpringBuilder implements Builder {
       module: module,
       extra: [for (final output in glue) output.code],
       extraDefinitions: [for (final output in glue) output.definition],
-      resources: {...resources, ...json.resources},
+      resources: {
+        ...await embedded(buildStep, resources),
+        ...json.resources,
+      },
       parts: [...keyParts, ...json.parts],
       partImports: [
         if (keyParts.isNotEmpty) ...SpringKeyFiles.imports,
@@ -480,6 +483,117 @@ class SpringBuilder implements Builder {
       return JsonSchemaPart.none;
     }
     return part;
+  }
+
+  /// The files of [resources] to embed: all of them but those of
+  /// `spring.resources.embed.exclude` (globs below `lib/resources/`:
+  /// `content/**`), which the app reads as Flutter assets instead, so they
+  /// are not in its binary and the web downloads one when it is read. The
+  /// configuration (`application*.yml`, `*.properties`, `config/`) is
+  /// always embedded: the start reads it at once. A file left out that is
+  /// no Flutter asset of `pubspec.yaml` is reported, with the lines to add
+  /// (an asset directory has its own files only, not its subdirectories').
+  static Future<Map<String, ({String? text, String? base64})>> embedded(
+    BuildStep buildStep,
+    Map<String, ({String? text, String? base64})> resources,
+  ) async {
+    final patterns = embedExclusions(_texts(resources));
+    if (patterns.isEmpty) {
+      return resources;
+    }
+    final globs = [for (final pattern in patterns) Glob(pattern)];
+    final kept = <String, ({String? text, String? base64})>{};
+    final left = <String>[];
+    for (final MapEntry(key: path, :value) in resources.entries) {
+      if (_isConfiguration(path) || !globs.any((g) => g.matches(path))) {
+        kept[path] = value;
+      } else {
+        left.add(path);
+      }
+    }
+    final assets = await flutterAssets(buildStep);
+    if (assets != null) {
+      final missing = {
+        for (final path in left)
+          if (!assets.contains('lib/resources/$path') &&
+              !assets.contains(
+                '${p.url.dirname('lib/resources/$path')}/',
+              ))
+            '${p.url.dirname('lib/resources/$path')}/',
+      }.toList()..sort();
+      if (missing.isNotEmpty) {
+        log.warning(
+          'spring.resources.embed.exclude leaves ${missing.length} '
+          'director${missing.length == 1 ? 'y' : 'ies'} out of the binary '
+          'that are no Flutter assets, so resources: finds nothing there at '
+          'run time. Add to pubspec.yaml, under flutter: assets: (a '
+          'directory has its own files, not those of its subdirectories):\n'
+          '${[for (final directory in missing) '    - $directory'].join('\n')}',
+        );
+      }
+    }
+    return kept;
+  }
+
+  /// The globs of `spring.resources.embed.exclude` in the configuration
+  /// [texts] (a list, or one text of comma-separated globs).
+  static List<String> embedExclusions(Map<String, String> texts) {
+    if (!texts.values.any((text) => text.contains('embed'))) {
+      return const [];
+    }
+    final String? Function(String key) property;
+    try {
+      property = readPlatformEnvironment(
+        texts,
+        profiles: const [],
+      ).getProperty;
+    } on Object {
+      return const [];
+    }
+    const key = 'spring.resources.embed.exclude';
+    return [
+      ...?property(key)
+          ?.split(',')
+          .map((String part) => part.trim())
+          .where((String part) => part.isNotEmpty),
+      for (var i = 0; property('$key[$i]') != null; i++)
+        property('$key[$i]')!.trim(),
+    ];
+  }
+
+  // The configuration the start reads at once: never left out.
+  static bool _isConfiguration(String path) =>
+      path.startsWith('config/') ||
+      path.endsWith('.properties') ||
+      RegExp(r'^application[^/]*\.(ya?ml|properties)$').hasMatch(path);
+
+  /// The `flutter: assets:` of the package's pubspec.yaml (directories end
+  /// with `/`); `null` when it is no Flutter package.
+  static Future<Set<String>?> flutterAssets(BuildStep buildStep) async {
+    final pubspec = AssetId(buildStep.inputId.package, 'pubspec.yaml');
+    if (!await buildStep.canRead(pubspec)) {
+      return null;
+    }
+    final Object? yaml;
+    try {
+      yaml = loadYaml(await buildStep.readAsString(pubspec));
+    } on YamlException {
+      return null;
+    }
+    if (yaml is! Map || yaml['flutter'] is! Map) {
+      return null;
+    }
+    final list = (yaml['flutter'] as Map)['assets'];
+    return {
+      if (list is List)
+        for (final entry in list)
+          switch (entry) {
+            final String path => path,
+            final Map<Object?, Object?> map when map['path'] is String =>
+              map['path']! as String,
+            _ => '',
+          },
+    }..remove('');
   }
 
   // The text files among [resources], by path.
@@ -763,7 +877,10 @@ class SpringBuilder implements Builder {
       variableName: r'$application',
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
       module: module,
-      resources: {...resources, ...json.resources},
+      resources: {
+        ...await embedded(buildStep, resources),
+        ...json.resources,
+      },
       parts: [...keyParts, ...json.parts],
       partImports: [
         if (keyParts.isNotEmpty) ...SpringKeyFiles.imports,

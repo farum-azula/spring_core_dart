@@ -47,13 +47,26 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// is not declared.
 ///
 /// Spring (Java): a `ClassPathResource` from `@Value("resources:...")`.
-final class AssetResource extends AbstractResource {
+final class AssetResource extends AbstractResource implements ContextResource {
   /// The asset [key] (`assets/intro.mp4`; a leading `/` is dropped) of
   /// [bundle] (`rootBundle` by default). [manifest], when given, makes
-  /// [exists] exact.
-  AssetResource(String key, {AssetBundle? bundle, this.manifest})
-    : key = key.startsWith('/') ? key.substring(1) : key,
-      bundle = bundle ?? rootBundle;
+  /// [exists] exact. [pathWithinContext] is its path in the root it was
+  /// found in (below `lib/resources/` for `resources:`); the key itself by
+  /// default.
+  AssetResource(
+    String key, {
+    AssetBundle? bundle,
+    this.manifest,
+    String? pathWithinContext,
+  }) : key = key.startsWith('/') ? key.substring(1) : key,
+       pathWithinContext =
+           pathWithinContext ?? (key.startsWith('/') ? key.substring(1) : key),
+       bundle = bundle ?? rootBundle;
+
+  /// Its path in the root it was found in: `content/docs/a.md` for the
+  /// asset `lib/resources/content/docs/a.md` read as `resources:`.
+  @override
+  final String pathWithinContext;
 
   /// The asset key, as declared under `flutter: assets:` in `pubspec.yaml`
   /// (`packages/<package>/...` for a package's assets).
@@ -173,11 +186,72 @@ final class AssetProtocolResolverRegistrar
       return;
     }
     final bundle = beanFactory.findBean<AssetBundle>();
+    final manifest = bundle == null ? AssetProtocolResolver.rootManifest : null;
     context.addProtocolResolver(
-      AssetProtocolResolver(
-        bundle: bundle,
-        manifest: bundle == null ? AssetProtocolResolver.rootManifest : null,
-      ),
+      AssetProtocolResolver(bundle: bundle, manifest: manifest),
     );
+    // The assets as roots: `resources:` finds the Flutter assets below
+    // `lib/resources/` the build did not embed, and `asset:` patterns list
+    // the assets. Only with the app's manifest (none in a widget test).
+    _removeRoots?.call();
+    _removeRoots = null;
+    if (manifest != null) {
+      final removeResources = Resources.addRoot(
+        AssetResourceRoot(manifest, prefix: '${Resources.directory}/'),
+      );
+      final removeAssets = Resources.addProtocolRoot(
+        AssetProtocolResolver.prefix,
+        AssetResourceRoot(manifest),
+      );
+      _removeRoots = () {
+        removeResources();
+        removeAssets();
+      };
+    }
   }
+
+  static void Function()? _removeRoots;
+}
+
+/// The Flutter assets of [manifest] whose key starts with [prefix], as a
+/// root of resources: what `resources:` finds of the files below
+/// `lib/resources/` the build did not embed (`spring.resources.embed
+/// .exclude`, declared under `flutter: assets:`), and what an `asset:`
+/// pattern (`asset:docs/**/*.md`) lists. On the web a file is downloaded
+/// when it is read, not with the app.
+///
+/// Spring has no counterpart.
+final class AssetResourceRoot implements ResourceRoot {
+  /// The assets of [manifest] below [prefix] (all of them by default), read
+  /// from [bundle] (`rootBundle` by default).
+  AssetResourceRoot(this.manifest, {this.prefix = '', AssetBundle? bundle})
+    : bundle = bundle ?? rootBundle;
+
+  /// The app's list of assets.
+  final AssetManifest manifest;
+
+  /// What the keys of the root start with (`lib/resources/`), left out of
+  /// its paths.
+  final String prefix;
+
+  /// Where the assets are read from.
+  final AssetBundle bundle;
+
+  late final Set<String> _paths = {
+    for (final key in manifest.listAssets())
+      if (key.startsWith(prefix)) key.substring(prefix.length),
+  };
+
+  @override
+  Iterable<String> get paths => _paths;
+
+  @override
+  Resource? resolve(String path) => _paths.contains(path)
+      ? AssetResource(
+          '$prefix$path',
+          bundle: bundle,
+          manifest: manifest,
+          pathWithinContext: path,
+        )
+      : null;
 }

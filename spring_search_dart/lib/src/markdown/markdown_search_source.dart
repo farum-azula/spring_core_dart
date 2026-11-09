@@ -10,7 +10,10 @@ import 'package:spring_search_dart/src/search_document_source.dart';
 /// last `index`) and the section's anchor (`#why-beans`).
 ///
 /// A file `name.ja.md` is the Japanese of `name.md`. A page without a
-/// translation is also searched in the other languages, in its own.
+/// translation is also searched in the other languages, in its own. The
+/// files of one language are read when that language is searched
+/// ([documentsIn]), and its pages without a translation in the default
+/// language's file.
 ///
 /// The attributes: `page` (the page's link, for
 /// `spring.search.collapse-by: page`), `section` (the heading) and `path`
@@ -18,7 +21,7 @@ import 'package:spring_search_dart/src/search_document_source.dart';
 ///
 /// `spring.search.markdown[n]` makes one per entry; an application makes
 /// its own for another link or field.
-final class MarkdownSearchSource implements SearchDocumentSource {
+final class MarkdownSearchSource implements LanguageSearchDocumentSource {
   /// The files of [location] but those of [exclude], read by [resources].
   MarkdownSearchSource(
     this.resources, {
@@ -50,16 +53,18 @@ final class MarkdownSearchSource implements SearchDocumentSource {
     r'^(.*)\.([a-z]{2,3}(?:[-_][A-Za-z]{2,4})?)$',
   );
 
-  // The directory before the first wildcard, below lib/resources/.
+  // The directory before the first wildcard, below the location's root
+  // (lib/resources/ for resources:, the assets for asset:).
   String get _root {
-    final path = location.replaceFirst(RegExp(r'^resources\*?:/?'), '');
+    final path = location.replaceFirst(RegExp(r'^[a-zA-Z][\w+.-]*\*?:/?'), '');
     final segments = path.split('/');
     final fixed = segments.takeWhile((s) => !_matcher.isPattern(s)).toList();
     return fixed.isEmpty ? '' : '${fixed.join('/')}/';
   }
 
-  @override
-  Stream<SearchDocument> documents() async* {
+  // The files of the location by page (its path without language and
+  // `.md`) and language; listed, not read.
+  Map<String, Map<String, Resource>> _pages() {
     final root = _root;
     final pages = <String, Map<String, Resource>>{};
     for (final resource in resources.getResources(location)) {
@@ -80,41 +85,51 @@ final class MarkdownSearchSource implements SearchDocumentSource {
           : (match[1]!, match[2]!);
       pages.putIfAbsent(base, () => {})[language] = resource;
     }
-    final languages = {
-      defaultLanguage,
-      for (final page in pages.values) ...page.keys,
-    };
-    for (final MapEntry(key: base, value: files) in pages.entries) {
+    return pages;
+  }
+
+  @override
+  Set<String> get languages => {
+    defaultLanguage,
+    for (final page in _pages().values) ...page.keys,
+  };
+
+  @override
+  Stream<SearchDocument> documents() async* {
+    for (final language in languages) {
+      yield* documentsIn(language);
+    }
+  }
+
+  @override
+  Stream<SearchDocument> documentsIn(String language) async* {
+    for (final MapEntry(key: base, value: files) in _pages().entries) {
+      final resource = files[language] ?? files[defaultLanguage];
+      if (resource == null) {
+        continue;
+      }
       final page = _link(link.replaceAll('{path}', _path(base)));
-      for (final language in languages) {
-        final resource = files[language] ?? files[defaultLanguage];
-        if (resource == null) {
-          continue;
-        }
-        final sections = MarkdownSections.parse(
-          await resource.readAsString(),
+      final sections = MarkdownSections.parse(await resource.readAsString());
+      for (final section in sections.sections) {
+        final address = section.anchor == null
+            ? page
+            : '$page#${section.anchor}';
+        yield SearchDocument(
+          id: address,
+          language: language,
+          link: address,
+          fields: {
+            'title': sections.title,
+            'heading': section.heading,
+            'body': section.body,
+          },
+          attributes: {
+            'page': page,
+            'section': section.heading,
+            if (resource case final ContextResource file)
+              'path': file.pathWithinContext,
+          },
         );
-        for (final section in sections.sections) {
-          final address = section.anchor == null
-              ? page
-              : '$page#${section.anchor}';
-          yield SearchDocument(
-            id: address,
-            language: language,
-            link: address,
-            fields: {
-              'title': sections.title,
-              'heading': section.heading,
-              'body': section.body,
-            },
-            attributes: {
-              'page': page,
-              'section': section.heading,
-              if (resource case final ContextResource file)
-                'path': file.pathWithinContext,
-            },
-          );
-        }
       }
     }
   }

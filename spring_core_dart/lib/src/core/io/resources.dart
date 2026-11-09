@@ -31,6 +31,21 @@ final class EmbeddedResource {
       : base64Decode(base64!);
 }
 
+/// A set of files that is no directory on disk and not embedded: what
+/// [Resources.addRoot] adds to `resources:` (files the build left out of
+/// the binary) and [Resources.addProtocolRoot] to a protocol of its own
+/// (`asset:`), so their patterns (`**/*.md`) list them.
+///
+/// Spring has no counterpart: Java's class path is directories and jars.
+abstract interface class ResourceRoot {
+  /// The paths of its files, relative to the root (`content/docs/a.md`).
+  Iterable<String> get paths;
+
+  /// The resource at [path] (relative to the root); `null` when the root
+  /// has no such file.
+  Resource? resolve(String path);
+}
+
 /// The registry behind `resources:` locations: the files of
 /// `lib/resources/` of the application and of its dependencies.
 ///
@@ -77,6 +92,56 @@ abstract final class Resources {
   static final _embedded = <String, EmbeddedResource>{};
   static final _owners = <String, String>{};
   static final _directories = <String>[];
+  static final _roots = <ResourceRoot>[];
+  static final _protocolRoots = <String, ResourceRoot>{};
+
+  /// Makes `resources:` look in [root] for a path that is not embedded,
+  /// before `lib/resources/` on disk, until the returned function is
+  /// called: a file the build left out of the binary
+  /// (`spring.resources.embed.exclude`) is then still `resources:<path>`.
+  /// The Flutter starter adds the app's Flutter assets below
+  /// `lib/resources/`, which the web downloads when a file is read.
+  ///
+  /// ```dart
+  /// final remove = Resources.addRoot(myRoot);
+  /// ```
+  static void Function() addRoot(ResourceRoot root) {
+    _roots.add(root);
+    var removed = false;
+    return () {
+      if (!removed) {
+        removed = true;
+        _roots.remove(root);
+      }
+    };
+  }
+
+  /// The roots added with [addRoot], in search order.
+  static List<ResourceRoot> get roots => List.unmodifiable(_roots);
+
+  /// Makes the patterns of the protocol [prefix] (`asset:`) list the
+  /// files of [root] (`asset:docs/**/*.md`), until the returned function
+  /// is called; without one, a pattern of another protocol finds the one
+  /// location as written.
+  static void Function() addProtocolRoot(String prefix, ResourceRoot root) {
+    _protocolRoots[prefix] = root;
+    return () {
+      if (identical(_protocolRoots[prefix], root)) {
+        _protocolRoots.remove(prefix);
+      }
+    };
+  }
+
+  /// The root of the protocol of [location] added with
+  /// [addProtocolRoot], and the path after its prefix; `null` when none.
+  static (ResourceRoot, String)? protocolRootOf(String location) {
+    for (final MapEntry(key: prefix, value: root) in _protocolRoots.entries) {
+      if (location.startsWith(prefix)) {
+        return (root, location.substring(prefix.length));
+      }
+    }
+    return null;
+  }
 
   /// Makes `resources:` look in [directory] on disk before the embedded
   /// files, until the returned function is called. The most recently
@@ -181,6 +246,12 @@ abstract final class Resources {
     final embedded = _embedded[normalized];
     if (embedded != null) {
       return _EmbeddedClasspathResource(normalized, embedded);
+    }
+    for (final root in _roots) {
+      if (root.resolve(normalized) case final resource?
+          when resource.exists()) {
+        return resource;
+      }
     }
     return ClasspathFileResource(directory, normalized);
   }

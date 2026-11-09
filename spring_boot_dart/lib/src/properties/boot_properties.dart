@@ -88,6 +88,23 @@ class DebugProperties {
   String? trace;
 }
 
+/// `spring.resources.*`: how the build ships the files of `lib/resources/`.
+@ConfigurationProperties('spring.resources')
+class ResourcesProperties {
+  /// What the build embeds in the binary.
+  ResourcesEmbedProperties embed = ResourcesEmbedProperties();
+}
+
+/// `spring.resources.embed.*`.
+class ResourcesEmbedProperties {
+  /// Globs below `lib/resources/` (`content/**`) the build does not embed:
+  /// a Flutter app reads them as its Flutter assets under the same
+  /// `resources:` locations (the web downloads one when it is read). The
+  /// configuration (`application*`, `*.properties`, `config/`) is always
+  /// embedded. Read by the generator.
+  List<String> exclude = [];
+}
+
 /// The message source: `spring.messages.*`.
 @ConfigurationProperties('spring.messages')
 class MessagesProperties {
