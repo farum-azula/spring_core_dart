@@ -51,6 +51,17 @@ LoadedJsonSchema _schema(String text, {String prefix = ''}) => (
   resource: 'schemas/order.json',
 );
 
+const _invoice =
+    '{"title": "Invoice", "type": "object", "required": ["customer"], '
+    r'"properties": {"customer": {"$ref": "resources:customer.json"}}}';
+
+const _employee =
+    r'{"title": "Employee", "allOf": [{"$ref": "#/$defs/Person"}, '
+    '{"type": "object", "required": ["salary"], '
+    '"properties": {"salary": {"type": "integer"}}}], '
+    r'"$defs": {"Person": {"type": "object", "required": ["name"], '
+    '"properties": {"name": {"type": "string"}}}}}';
+
 const _written =
     '{"customer_email":"a@b.dev","id":"ORD-1",'
     '"items":[{"qty":2,"sku":"x"}],"status":"IN_PROGRESS",'
@@ -175,4 +186,96 @@ void main() {
     },
     timeout: const Timeout(Duration(minutes: 3)),
   );
+  group('cases', () {
+    LoadedJsonSchema at(String location, String text) => (
+      entry: (location: location, sha256: null, prefix: '', name: null),
+      text: text,
+      document: jsonDecode(text) as Map<String, Object?>,
+      resource: '',
+    );
+
+    test(r'a $ref to another listed schema is its class', () {
+      final code = JsonSchemaClasses.code([
+        at(
+          'resources:invoice.json',
+          _invoice,
+        ),
+        at(
+          'resources:customer.json',
+          '{"title": "Customer", "type": "object", '
+              '"properties": {"name": {"type": "string"}}}',
+        ),
+      ], report: false)!;
+      expect(code, contains('final Customer customer;'));
+      // One class per schema, not one per use.
+      expect('class Customer {'.allMatches(code), hasLength(1));
+    });
+
+    test('allOf of objects: their properties together', () {
+      final code = JsonSchemaClasses.code([
+        at(
+          'resources:a.json',
+          _employee,
+        ),
+      ], report: false)!;
+      expect(code, contains('class Employee {'));
+      expect(code, contains('final String name;'));
+      expect(code, contains('final int salary;'));
+    });
+
+    test('a list of an enum; Dart keywords as names', () {
+      final code = JsonSchemaClasses.code([
+        at(
+          'resources:a.json',
+          '{"title": "Shape", "type": "object", "properties": { '
+              '"tags": {"type": "array", "items": '
+              '{"enum": ["red", "the-blue", "class"]}}, '
+              '"class": {"type": "string"}, '
+              '"default": {"type": "integer"}}}',
+        ),
+      ], report: false)!;
+      expect(code, contains('final List<ShapeTagsItem>? tags;'));
+      expect(code, contains('enum ShapeTagsItem {'));
+      expect(code, contains('theBlue,'));
+      // A keyword is no Dart name: a suffix, the JSON name kept.
+      expect(code, contains('valueClass,'));
+      expect(code, contains('final String? classValue;'));
+      expect(code, contains("@_sj.JsonProperty(r'class')"));
+      expect(code, contains('final int? defaultValue;'));
+    });
+
+    test('the name of a class of Spring is warned about', () {
+      final warnings = <String>[];
+      JsonSchemaClasses.code(
+        [at('resources:order.json', _order)],
+        report: false,
+        warnings: warnings,
+      );
+      expect(
+        warnings,
+        contains(contains('the class Order has the name of a class')),
+      );
+    });
+
+    test('anyOf of a type and null is nullable; of two types Object?', () {
+      final warnings = <String>[];
+      final code = JsonSchemaClasses.code(
+        [
+          at(
+            'resources:a.json',
+            '{"title": "Note", "type": "object", '
+                '"required": ["text", "size"], "properties": { '
+                '"text": {"anyOf": [{"type": "string"}, {"type": "null"}]}, '
+                '"size": {"oneOf": [{"type": "string"}, '
+                '{"type": "integer"}]}}}',
+          ),
+        ],
+        report: false,
+        warnings: warnings,
+      )!;
+      expect(code, contains('final String? text;'));
+      expect(code, contains('final Object? size;'));
+      expect(warnings, contains(contains('oneOf of 2 kinds')));
+    });
+  });
 }

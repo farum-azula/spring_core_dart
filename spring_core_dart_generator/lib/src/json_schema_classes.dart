@@ -89,6 +89,14 @@ abstract final class JsonSchemaClasses {
 
   static final _memo = <String, Future<List<LoadedJsonSchema>>>{};
 
+  /// How a remote schema is downloaded when no `fetch` is given: the
+  /// network (`null`). Tests set their own.
+  static WebLoaderFetch? defaultFetch;
+
+  /// Forgets the schemas read in this process, so the next build reads
+  /// them again; for tests.
+  static void reset() => _memo.clear();
+
   /// The entries of `spring.json.schemas` in the configuration [texts]
   /// (paths below `lib/resources/`).
   static List<JsonSchemaEntry> entries(Map<String, String> texts) {
@@ -127,7 +135,12 @@ abstract final class JsonSchemaClasses {
   }) {
     final package = buildStep.inputId.package;
     final key = '$package\n${[for (final e in entries) '$e'].join('\n')}';
-    return _memo[key] ??= _load(buildStep, package, entries, fetch);
+    return _memo[key] ??= _load(
+      buildStep,
+      package,
+      entries,
+      fetch ?? defaultFetch,
+    );
   }
 
   static Future<List<LoadedJsonSchema>> _load(
@@ -210,7 +223,11 @@ abstract final class JsonSchemaClasses {
 
   /// The part's code for [schemas] (its `part of` is written by the
   /// caller), or `null` when no class comes of them.
-  static String? code(List<LoadedJsonSchema> schemas, {bool report = true}) {
+  static String? code(
+    List<LoadedJsonSchema> schemas, {
+    bool report = true,
+    List<String>? warnings,
+  }) {
     if (schemas.isEmpty) {
       return null;
     }
@@ -227,6 +244,7 @@ abstract final class JsonSchemaClasses {
         );
       }
     }
+    warnings?.addAll(model.warnings);
     if (report) {
       model.warnings.forEach(log.warning);
     }
@@ -501,25 +519,27 @@ final class _Model {
   // The type of each schema by its document and JSON pointer.
   final _byPointer = <String, _Type>{};
 
-  void build() {
-    for (final schema in schemas) {
-      final document = schema.document;
-      final title =
-          schema.entry.name ??
-          (document['title'] is String ? document['title']! as String : null) ??
-          _fileName(schema.entry.location);
-      _typeOf(
-        document,
-        schema,
-        '#',
-        schema.entry.prefix + _pascal(title),
-        root: true,
-      );
-    }
+  void build() => schemas.forEach(_root);
+
+  // The class of [schema]'s document, named by its entry's name, else its
+  // title, else its file: the same whoever reaches it first.
+  _Type _root(LoadedJsonSchema schema) {
+    final document = schema.document;
+    final title =
+        schema.entry.name ??
+        (document['title'] is String ? document['title']! as String : null) ??
+        _fileName(schema.entry.location);
+    return _typeOf(
+      document,
+      schema,
+      '#',
+      schema.entry.prefix + _pascal(title),
+      root: true,
+    );
   }
 
   static String _fileName(String location) {
-    var last = location.split('/').last.split('@').first;
+    var last = location.split('/').last.split(':').last.split('@').first;
     if (last.contains('.')) {
       last = last.substring(0, last.indexOf('.'));
     }
@@ -641,7 +661,10 @@ final class _Model {
               uri != null &&
               id.removeFragment() == uri.removeFragment())) {
         final fragment = uri?.fragment ?? '';
-        final pointer = fragment.isEmpty ? '#' : '#$fragment';
+        if (fragment.isEmpty) {
+          return (_root(other), false);
+        }
+        final pointer = '#$fragment';
         final key = '${other.entry.location}$pointer';
         if (_byPointer[key] case final known?) {
           return (known, false);
@@ -650,12 +673,7 @@ final class _Model {
           _at(other, pointer),
           other,
           pointer,
-          other.entry.prefix +
-              _pascal(
-                pointer == '#'
-                    ? _fileName(other.entry.location)
-                    : pointer.split('/').last,
-              ),
+          other.entry.prefix + _pascal(pointer.split('/').last),
         );
       }
     }

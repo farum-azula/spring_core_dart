@@ -185,4 +185,39 @@ void main() {
       isA<Line>(),
     );
   });
+
+  test('the customizers run in their order, once', () {
+    final calls = <String>[];
+    final context = run(
+      beans: [
+        BeanDefinition<_Ordered>(
+          name: 'late',
+          types: const [_Ordered, JsonSchemaRegistryCustomizer, Ordered],
+          create: (_) => _Ordered('late', 10, calls),
+        ),
+        BeanDefinition<_Ordered>(
+          name: 'early',
+          types: const [_Ordered, JsonSchemaRegistryCustomizer, Ordered],
+          create: (_) => _Ordered('early', -10, calls),
+        ),
+      ],
+    );
+    addTearDown(context.close);
+    context
+      ..getBean<JsonSchemaRegistry>()
+      ..getBean<ObjectMapper>();
+    expect(calls, ['early', 'late']);
+  });
+}
+
+final class _Ordered implements JsonSchemaRegistryCustomizer, Ordered {
+  _Ordered(this.name, this.order, this.calls);
+
+  final String name;
+  @override
+  final int order;
+  final List<String> calls;
+
+  @override
+  void customize(JsonSchemaRegistry registry) => calls.add(name);
 }
