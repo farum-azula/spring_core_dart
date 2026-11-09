@@ -27,7 +27,7 @@ of `spring-boot-starter-logging`, with Logback's pattern syntax.
 
 ```yaml
 dependencies:
-  spring_boot_starter_logging: ^0.7.2
+  spring_boot_starter_logging: ^0.7.3
 ```
 
 ## A first log line

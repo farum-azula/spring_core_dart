@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.3
 
 - `ResourceRoot`, `Resources.addRoot` and `Resources.addProtocolRoot`: a set of files that is no directory and not embedded joins `resources:` (a path not embedded is looked up there, before `lib/resources/` on disk, and its patterns `**/*.md` list them) or gives a protocol of its own patterns (`asset:docs/**/*.md`).
 - `BracePlaceholders`: `{{key}}` in a text that is not configuration (Markdown pages) replaced by a value of the key; one without a value stays as it is, `\{{` writes `{{`, and `${...}` is left alone.

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.3
 
 - A relative link between Markdown pages (`../beans.md`) resolves for a content folder of any root (`asset:docs/`), not only of `resources:`.
 - Fixed: an address with `#heading` opened at the top of the page: the address bar's strategy left the `#` part out of the first address (`PathUrlStrategy` keeps it now), so a link straight to a heading scrolls there.

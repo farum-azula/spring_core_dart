@@ -27,11 +27,11 @@ The guide to the annotations themselves is the
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.7.2
+  spring_core_dart: ^0.7.3
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.2
+  spring_core_dart_generator: ^0.7.3
 ```
 
 Mark a scan root: a top-level variable with `@ComponentScan()`. Every

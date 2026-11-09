@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.3
 
 - The `jsonschemas` endpoint (`JsonSchemasEndpoint`): the schemas of the context's `JsonSchemaRegistry` by location, and the schema of every `@Introspected` class made from its introspection with the `ObjectMapper`'s naming; `GET /actuator/jsonschemas/{name}` one by class name or location.
 

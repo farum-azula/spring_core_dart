@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.3
 
 - `spring.flutter.web.seo.lastmod` is in the metadata (`FlutterWebSeoProperties.lastmod`): the build read it, editors called it unknown.
 - The Flutter assets are resource roots (`AssetResourceRoot`): `resources:` finds the assets below `lib/resources/` the build did not embed (`spring.resources.embed.exclude`), and `asset:` patterns list the assets (`asset:docs/**/*.md`), so both read, check and search alike. `AssetResource` is a `ContextResource`: its path within the root it was found in.

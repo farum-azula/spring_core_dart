@@ -136,14 +136,14 @@ system (an app of type `widgets`) built from the library
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_starter_flutter: ^0.7.2
+  spring_boot_starter_flutter: ^0.7.3
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.2
+  spring_core_dart_generator: ^0.7.3
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.7.2   # springBootTest, BeanOverride
+  spring_boot_starter_test: ^0.7.3   # springBootTest, BeanOverride
 ```
 
 Then:

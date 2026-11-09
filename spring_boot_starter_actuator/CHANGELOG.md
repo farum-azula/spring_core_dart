@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.3
 
 - The `jsonSchemasEndpoint` bean: the `jsonschemas` endpoint, over HTTP once exposed (`management.endpoints.web.exposure.include=jsonschemas`).
 
