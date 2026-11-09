@@ -1,6 +1,7 @@
 // The head of web/index.html from spring.flutter.app.*: the template's
 // values replaced, and a page with the SEO build's head keeping the title
-// and description the SEO build wrote for it.
+// and description the SEO build wrote for it; the blocks of the builders
+// keep their places, whichever builder runs again.
 import 'package:spring_core_dart_generator/src/web_page_head.dart';
 import 'package:test/test.dart';
 
@@ -117,5 +118,35 @@ void main() {
     );
     expect(single, isNot(contains('prefers-color-scheme')));
     expect(single, contains('<meta name="theme-color" content="#8a6a00">'));
+  });
+
+  test('a block written again keeps its place before the SEO head', () {
+    const seo =
+        '  ${WebPageHead.seoHeadStart}\n'
+        '  <meta name="description" content="A page.">\n'
+        '  <!-- spring:seo:head:end -->\n';
+    String once(String html) => WebPageHead.html(
+      WebPageHead.translate(
+        WebPageHead.pixelRatio(
+          WebPageHead.swipe(html, swipeToClose: false),
+          max: 2,
+        ),
+        translate: false,
+      ),
+      themeColor: '#111111',
+      darkThemeColor: '#eeeeee',
+    );
+    final first = once('<html>\n<head>\n$seo</head>\n</html>\n');
+    // The page blocks came after the SEO head; moved before it by hand,
+    // they stay there when written again.
+    final start = first.indexOf('  <!-- spring:page:swipe:start');
+    final blocks = first.substring(start, first.indexOf('</head>'));
+    const seoStart = '  ${WebPageHead.seoHeadStart}';
+    final moved = first
+        .replaceFirst(blocks, '')
+        .replaceFirst(seoStart, '$blocks$seoStart');
+    expect(moved.indexOf(seoStart), greaterThan(moved.indexOf('swipe:end')));
+    expect(once(moved), moved);
+    expect(once(first), first);
   });
 }

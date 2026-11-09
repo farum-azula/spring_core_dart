@@ -545,6 +545,21 @@ final class SeoPages {
   static const _bodyStart = '<!-- spring:seo:content:start -->';
   static const _bodyEnd = '<!-- spring:seo:content:end -->';
 
+  // Where the head block was: a page's head goes back there, so the blocks
+  // other builders write into the head keep their order from build to
+  // build.
+  static const _headHere = '<!-- spring:seo:head:here -->';
+
+  // [html] without the root page's blocks, the head's place kept.
+  static String _holding(String html) => withoutRoot(
+    html.replaceFirst(
+      RegExp(
+        '${RegExp.escape(_headStart)}[\\s\\S]*?${RegExp.escape(_headEnd)}',
+      ),
+      _headHere,
+    ),
+  );
+
   /// [html] without the blocks the build put into the root page.
   static String withoutRoot(String html) => html
       .replaceAll(
@@ -640,7 +655,7 @@ final class SeoPages {
 
     final base = _baseTemplate();
     final files = <String, String>{};
-    var root = withoutRoot(template);
+    var root = _holding(template);
     for (final page in pages.values) {
       final body = page.markdown == null ? null : _html(page);
       final links = alternates(page.path);
@@ -701,6 +716,10 @@ final class SeoPages {
         }
       }
     }
+    root = root.replaceAll(
+      RegExp('[ \\t]*${RegExp.escape(_headHere)}\\n?'),
+      '',
+    );
     if (root != template) {
       files['web/index.html'] = root;
     }
@@ -1034,7 +1053,7 @@ final class SeoPages {
   // The template for the pages below the root: the root page's blocks out,
   // the base address written (Flutter fills `$FLUTTER_BASE_HREF` in
   // web/index.html only).
-  String _baseTemplate() => withoutRoot(
+  String _baseTemplate() => _holding(
     template,
   ).replaceAll(r'$FLUTTER_BASE_HREF', settings.basePath);
 
@@ -1115,7 +1134,9 @@ final class SeoPages {
         (_) => '<title>${_text2(title)}</title>',
       );
     }
-    result = result.replaceFirst('</head>', '  $head\n</head>');
+    result = result.contains(_headHere)
+        ? result.replaceFirst(_headHere, head)
+        : result.replaceFirst('</head>', '  $head\n</head>');
     if (body != null) {
       final main = [
         _bodyStart,

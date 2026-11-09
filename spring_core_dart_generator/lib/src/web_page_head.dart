@@ -64,6 +64,25 @@ abstract final class WebPageHead {
   /// Where it ends.
   static const pixelRatioEnd = '<!-- spring:page:pixel-ratio:end -->';
 
+  /// [html] with the block [block] matches replaced by [written] where it
+  /// is, or, when it has none, [written] put before `</head>`; without the
+  /// block when [written] is `null`. A block keeps its place, so the blocks
+  /// of the builders that write into the head keep their order.
+  static String place(String html, RegExp block, String? written) {
+    final match = block.firstMatch(html);
+    if (match == null) {
+      return written == null
+          ? html
+          : html.replaceFirst('</head>', '$written\n</head>');
+    }
+    final here = written == null
+        ? ''
+        : '${match[0]!.startsWith('\n') ? '\n' : ''}$written';
+    return html.substring(0, match.start) +
+        here +
+        html.substring(match.end).replaceAll(block, '');
+  }
+
   /// [html] with a block that caps the pixel ratio Flutter draws at to
   /// [max] (`spring.flutter.web.page.max-pixel-ratio`), before the engine
   /// starts; without it when [max] is `null`.
@@ -80,15 +99,15 @@ abstract final class WebPageHead {
           r'[\s\S]*?' +
           RegExp.escape(pixelRatioEnd),
     );
-    final without = html.replaceAll(block, '');
-    if (max == null) {
-      return without;
-    }
-    return without.replaceFirst('</head>', '''
-  $pixelRatioStart
-  <script>${pixelRatioScript(max)}</script>
-  $pixelRatioEnd
-</head>''');
+    return place(
+      html,
+      block,
+      max == null
+          ? null
+          : '  $pixelRatioStart\n'
+                '  <script>${pixelRatioScript(max)}</script>\n'
+                '  $pixelRatioEnd',
+    );
   }
 
   /// Where the block that keeps browsers from offering a translation
@@ -113,9 +132,9 @@ abstract final class WebPageHead {
           RegExp.escape(translateEnd),
     );
     final ours = block.hasMatch(html);
-    var result = html.replaceAll(block, '');
     final tag = RegExp(r'<html\b([^>]*)>');
     if (translate) {
+      final result = html.replaceAll(block, '');
       if (!ours) {
         return result;
       }
@@ -125,17 +144,19 @@ abstract final class WebPageHead {
         (match) => '<html${match[1]!.replaceAll(attribute, '')}>',
       );
     }
-    result = result.replaceFirstMapped(
+    final result = html.replaceFirstMapped(
       tag,
       (match) => match[1]!.contains('translate=')
           ? match[0]!
           : '<html${match[1]} translate="no">',
     );
-    return result.replaceFirst('</head>', '''
-  $translateStart
-  <meta name="google" content="notranslate">
-  $translateEnd
-</head>''');
+    return place(
+      result,
+      block,
+      '  $translateStart\n'
+      '  <meta name="google" content="notranslate">\n'
+      '  $translateEnd',
+    );
   }
 
   /// [html] with the [swipeBlock] in its head when [swipeToClose] is
@@ -147,11 +168,7 @@ abstract final class WebPageHead {
           r'[\s\S]*?' +
           RegExp.escape(swipeEnd),
     );
-    final without = html.replaceAll(block, '');
-    if (swipeToClose) {
-      return without;
-    }
-    return without.replaceFirst('</head>', '$swipeBlock\n</head>');
+    return place(html, block, swipeToClose ? null : swipeBlock);
   }
 
   /// [html] with [title] in `<title>` and `apple-mobile-web-app-title`,
@@ -210,12 +227,20 @@ abstract final class WebPageHead {
           r'[\s\S]*?' +
           RegExp.escape(themeColorEnd),
     );
-    var result = html.replaceAll(block, '');
+    // The block's place held while the page's own tags go.
+    const hold = '<!-- spring:page:theme-color:here -->';
+    final unheld = RegExp('\\n?[ \\t]*${RegExp.escape(hold)}');
+    var result = place(html, block, '  $hold');
     if (color == null) {
-      return result;
+      return result.replaceAll(unheld, '');
     }
     if (dark == null) {
-      return _meta(result, 'theme-color', color, add: true);
+      return _meta(
+        result.replaceAll(unheld, ''),
+        'theme-color',
+        color,
+        add: true,
+      );
     }
     // The page's own single tag gives way to the two.
     result = result.replaceAll(
@@ -229,7 +254,9 @@ abstract final class WebPageHead {
         '  <meta name="theme-color" content="${_attribute(dark)}" '
         'media="(prefers-color-scheme: dark)">\n'
         '  $themeColorEnd';
-    return result.replaceFirst('</head>', '$written\n</head>');
+    return result.contains(hold)
+        ? result.replaceFirst(hold, written.trimLeft())
+        : result.replaceFirst('</head>', '$written\n</head>');
   }
 
   /// [manifest] (the JSON of `web/manifest.json`) with these values; the
