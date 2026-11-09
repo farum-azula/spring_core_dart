@@ -1,5 +1,6 @@
 ## 0.7.3
 
+- The advisors of an auto-configuration module the build leaves out (`AutoConfigurationBuild` decided `never`) no longer keep proxies: a bean whose annotation only such an advisor matches gets no proxy class.
 - `spring.resources.prefetch.locations`: the build writes those files into one file, `lib/resources/spring_gen/prefetch/resources.json`, a line per piece, never embedded, with a warning when `pubspec.yaml` does not list the directory (`PrefetchBuilder`, `spring_prefetch` in `build.yaml`).
 - Fixed: on an iPhone a long press to select text greyed the whole app: the browser drew its tap highlight over Flutter's view (and could offer its menu, or select the hidden text of the pages for search engines). The head of `web/index.html` gets a `spring:page:touch` block (`-webkit-tap-highlight-color: transparent`, `-webkit-touch-callout: none`), and the hidden text cannot be selected or touched.
 - Fixed: the blocks the page loader builder and the SEO builder write into the head of `web/index.html` swapped places whenever only one of them ran again (in `build_runner watch`), so the file and every page for search engines changed with no change of content; a block written again now stays where it is (`WebPageHead.place`).

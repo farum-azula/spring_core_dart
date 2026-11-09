@@ -818,6 +818,7 @@ class SpringBuilder implements Builder {
     final (
       modules: autoConfigurations,
       proxies: proxyBuild,
+      excluded: excludedModules,
     ) = await _autoConfigurations(
       buildStep,
       includeOwn: example,
@@ -862,6 +863,7 @@ class SpringBuilder implements Builder {
               // starter's test applications use its auto-configuration):
               // knowing one more advisor only keeps more proxies.
               includeOwn: true,
+              excluded: excludedModules,
             )
           : null,
     );
@@ -1081,13 +1083,17 @@ class SpringBuilder implements Builder {
 
   // Runs [visitor] over the resolved declarations of [library]; `false`
   // when one cannot be resolved.
+  // The advisors of the modules left out of the build ([excluded]: their
+  // `library#name`) are not visited: they put no advice into the app.
   static Future<bool> _visitDeclarations(
     Resolver resolver,
     LibraryElement library,
-    _AdvisorCreations visitor,
-  ) async {
+    _AdvisorCreations visitor, {
+    Set<String> excluded = const {},
+  }) async {
     final declarations = <Element>[
-      ...library.topLevelVariables,
+      for (final variable in library.topLevelVariables)
+        if (!excluded.contains('${library.uri}#${variable.name}')) variable,
       ...library.topLevelFunctions,
       ...library.classes,
     ];
@@ -1116,6 +1122,7 @@ class SpringBuilder implements Builder {
     BeanScanner scanner,
     List<AssetId> nested, {
     bool includeOwn = false,
+    Set<String> excluded = const {},
   }) async {
     final foreign = ForeignAdvice();
     final resolver = buildStep.resolver;
@@ -1164,7 +1171,12 @@ class SpringBuilder implements Builder {
           foreign.unknown = true;
         }
         if (source.contains('Advisor') &&
-            !await _visitDeclarations(resolver, library, advisors)) {
+            !await _visitDeclarations(
+              resolver,
+              library,
+              advisors,
+              excluded: excluded,
+            )) {
           foreign.advisors = true;
         }
         for (final fragment in library.fragments) {
@@ -1246,6 +1258,7 @@ class SpringBuilder implements Builder {
     ({
       List<(Expression, Expression?)> modules,
       Map<String, _BuildChoice> proxies,
+      Set<String> excluded,
     })
   >
   _autoConfigurations(
@@ -1341,6 +1354,11 @@ class SpringBuilder implements Builder {
     return (
       modules: modules,
       proxies: await _proxyBuild(buildStep.resolver, decided),
+      excluded: {
+        for (final TopLevelVariableElement variable
+            in decided[_BuildChoice.never] ?? const [])
+          '${variable.library.uri}#${variable.name}',
+      },
     );
   }
 

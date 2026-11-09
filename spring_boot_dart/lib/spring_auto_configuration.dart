@@ -16,13 +16,14 @@ import 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.da
 import 'package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/lifecycle_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart';
+import 'package:spring_boot_dart/src/autoconfigure/observation_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/validation_auto_configuration.dart';
 
 /// The auto-configuration of `spring_boot_dart`:
 /// `MessageSourceAutoConfiguration`, `JacksonAutoConfiguration`,
 /// `JsonSchemaAutoConfiguration`, `ValidationAutoConfiguration`,
-/// `LifecycleAutoConfiguration` and
-/// `ApplicationAvailabilityAutoConfiguration`.
+/// `LifecycleAutoConfiguration`, `ApplicationAvailabilityAutoConfiguration`
+/// and `ObservationAutoConfiguration`.
 ///
 /// Each one backs off when the application declares its own bean, and
 /// each can be switched off by name, for example
@@ -38,6 +39,39 @@ final BeanModule springBootAutoConfiguration = BeanModule(
     ...validationAutoConfiguration,
     ...lifecycleAutoConfiguration,
     ...availabilityAutoConfiguration,
+    ...observationAutoConfiguration,
   ],
   imports: [bootPropertiesBeans],
+);
+
+/// `@Observed` put into effect (`ObservedAnnotationsAutoConfiguration`): in
+/// the build only with `spring.observations.annotations.enabled: true`, so
+/// without it no proxy is written for the beans marked `@Observed`.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild(
+    'spring.observations.annotations.enabled',
+    whenMissing: BuildInclusion.never,
+  ),
+)
+// The advisor is written here, in the module: the build reads the advisors
+// of a module it leaves out as none, so the beans marked @Observed get no
+// proxy then.
+final BeanModule springBootObservedAnnotationsAutoConfiguration = BeanModule(
+  'springBootObservedAnnotationsAutoConfiguration',
+  [
+    BeanDefinition<DefaultPointcutAdvisor>(
+      name: 'observedAdvisor',
+      types: const [
+        DefaultPointcutAdvisor,
+        PointcutAdvisor,
+        Advisor,
+        Ordered,
+      ],
+      source: observedAnnotationsSource,
+      create: (r) => DefaultPointcutAdvisor(
+        const ObservedPointcut(),
+        ObservedInterceptor(r.dependency<ObservationRegistry>()),
+      ),
+    ),
+  ],
 );

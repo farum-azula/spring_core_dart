@@ -1,4 +1,5 @@
 import 'package:spring_core_dart/src/aop/annotations.dart';
+import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 import 'package:spring_core_dart/src/aop/join_point.dart';
 import 'package:spring_core_dart/src/observation/observation.dart';
 
@@ -122,4 +123,41 @@ class ObservedAspect {
         keyValues[i]: keyValues[i + 1],
     };
   }
+}
+
+/// The pointcut of the members marked `@Observed`: a method marked, or a
+/// method of a class marked (not its getters and setters), for
+/// [ObservedInterceptor] in an advisor bean.
+///
+/// It declares [annotationTypes], so the build gives a proxy class only to
+/// the beans that carry `@Observed`; without the advisor in the build (its
+/// module left out), none gets one.
+final class ObservedPointcut implements AnnotationPointcut {
+  /// The pointcut; it has no settings.
+  const ObservedPointcut();
+
+  /// The annotation this pointcut matches; the generator reads it.
+  static const List<Type> annotationTypes = [Observed];
+
+  @override
+  bool matches(MethodSignature signature, String beanName) =>
+      signature.annotations.any((a) => a is Observed) ||
+      (signature.kind == MemberKind.method &&
+          ObservedAspect._observedOf(signature) != null);
+
+  @override
+  String toString() => 'ObservedPointcut';
+}
+
+/// The advice of [ObservedAspect] as a method interceptor, for an advisor
+/// bean with [ObservedPointcut]: each call in an observation of the registry.
+final class ObservedInterceptor implements MethodInterceptor {
+  /// The interceptor observing into [registry].
+  ObservedInterceptor(ObservationRegistry registry)
+    : _aspect = ObservedAspect(registry);
+
+  final ObservedAspect _aspect;
+
+  @override
+  Object? invoke(MethodInvocation invocation) => _aspect.observe(invocation);
 }
