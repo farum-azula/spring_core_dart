@@ -31,7 +31,7 @@ final class _Start {
     }
     now = const Duration(milliseconds: 3200);
     refresh.end();
-    trace.recordEvent(const _Refreshed());
+    trace.recordEvent('ContextRefreshedEvent');
     stages.enter(SplashStage.ready);
     now = const Duration(milliseconds: 4100);
     stages.enter(SplashStage.app);
@@ -41,22 +41,21 @@ final class _Start {
   late final SplashTrace trace;
 }
 
-final class _Refreshed {
-  const _Refreshed();
-}
-
 Future<DebugTimeline> _pump(
   WidgetTester tester, {
   Size size = const Size(1200, 800),
   int beans = 12,
+  void Function(_Start start)? after,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final observations = TimelineObservations();
   addTearDown(observations.dispose);
+  final start = _Start(beans: beans);
+  after?.call(start);
   final timeline = DebugTimeline(
-    trace: _Start(beans: beans).trace,
+    trace: start.trace,
     observations: observations,
   );
   await tester.pumpWidget(
@@ -206,6 +205,26 @@ void main() {
     expect(find.text('bean11'), findsNothing);
   });
 
+  testWidgets('an event long after the start does not stretch it', (
+    tester,
+  ) async {
+    final timeline = await _pump(
+      tester,
+      after: (start) {
+        start.now = const Duration(seconds: 100);
+        start.trace.recordEvent('AppLifecycleStateEvent hidden');
+      },
+    );
+    timeline.expanded = true;
+    await tester.pump();
+    expect(find.textContaining('4.1s · zoom'), findsOneWidget);
+    // The axis ends with the start, not at the event 100 s later.
+    expect(find.text('0ms'), findsOneWidget);
+    expect(find.text('10.0s'), findsNothing);
+    expect(find.text('100.0s'), findsNothing);
+    expect(find.text('events 1'), findsOneWidget);
+  });
+
   testWidgets('Observations and Events list theirs', (tester) async {
     final timeline = await _pump(tester);
     timeline
@@ -222,7 +241,7 @@ void main() {
     await tester.ensureVisible(find.text('Events'));
     await tester.tap(find.text('Events'));
     await tester.pump();
-    expect(find.text('_Refreshed'), findsOneWidget);
+    expect(find.text('ContextRefreshedEvent'), findsOneWidget);
   });
 
   testWidgets('Copy JSON puts the steps and the stats on the clipboard', (

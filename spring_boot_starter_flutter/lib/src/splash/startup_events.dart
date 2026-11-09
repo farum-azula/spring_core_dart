@@ -21,5 +21,6 @@ final class StartupEvents implements GenericApplicationListener {
       trace != null && event is ApplicationEvent && event is! SplashStageEvent;
 
   @override
-  void onApplicationEvent(Object event) => trace?.recordEvent(event);
+  void onApplicationEvent(Object event) =>
+      trace?.recordEvent((event as ApplicationEvent).eventName);
 }

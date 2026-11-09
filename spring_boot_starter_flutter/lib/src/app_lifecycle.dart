@@ -36,5 +36,8 @@ class AppLifecycleStateEvent extends ApplicationEvent {
   final AppLifecycleState state;
 
   @override
+  String get eventName => 'AppLifecycleStateEvent ${state.name}';
+
+  @override
   String toString() => 'AppLifecycleStateEvent[$state]';
 }

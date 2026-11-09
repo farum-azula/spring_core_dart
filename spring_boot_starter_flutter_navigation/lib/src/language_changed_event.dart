@@ -28,4 +28,7 @@ final class LanguageChangedEvent extends ApplicationEvent {
 
   @override
   String toString() => 'LanguageChangedEvent[$from -> $to]';
+
+  @override
+  String get eventName => 'LanguageChangedEvent';
 }

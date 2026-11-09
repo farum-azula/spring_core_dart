@@ -62,6 +62,9 @@ abstract class ApplicationContextEvent extends ApplicationEvent {
 class ContextRefreshedEvent extends ApplicationContextEvent {
   /// Creates the event for the context [source]; contexts do this.
   ContextRefreshedEvent(super.source);
+
+  @override
+  String get eventName => 'ContextRefreshedEvent';
 }
 
 /// Published after `start()` was called on a context and its lifecycle
@@ -84,6 +87,9 @@ class ContextRefreshedEvent extends ApplicationContextEvent {
 class ContextStartedEvent extends ApplicationContextEvent {
   /// Creates the event for the context [source]; contexts do this.
   ContextStartedEvent(super.source);
+
+  @override
+  String get eventName => 'ContextStartedEvent';
 }
 
 /// Published after `stop()` was called on a context and its running
@@ -105,6 +111,9 @@ class ContextStartedEvent extends ApplicationContextEvent {
 class ContextStoppedEvent extends ApplicationContextEvent {
   /// Creates the event for the context [source]; contexts do this.
   ContextStoppedEvent(super.source);
+
+  @override
+  String get eventName => 'ContextStoppedEvent';
 }
 
 /// Published after `restart()` was called on a context: the auto-startup
@@ -175,4 +184,7 @@ class ContextPausedEvent extends ContextStoppedEvent {
 class ContextClosedEvent extends ApplicationContextEvent {
   /// Creates the event for the context [source]; contexts do this.
   ContextClosedEvent(super.source);
+
+  @override
+  String get eventName => 'ContextClosedEvent';
 }

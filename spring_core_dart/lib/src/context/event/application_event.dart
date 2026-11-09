@@ -40,6 +40,17 @@ abstract class ApplicationEvent {
   /// When the event was created (not when a listener receives it).
   final DateTime timestamp;
 
+  /// The event's name in logs and in the debug timeline: its class's name
+  /// by default. A release build shortens class names (`minified:Class12`),
+  /// so an event that should be recognised there names itself, as the
+  /// framework's do:
+  ///
+  /// ```dart
+  /// @override
+  /// String get eventName => 'OrderShipped';
+  /// ```
+  String get eventName => '$runtimeType';
+
   @override
   String toString() => '$runtimeType[source=$source]';
 }

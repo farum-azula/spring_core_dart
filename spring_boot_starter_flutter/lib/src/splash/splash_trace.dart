@@ -87,11 +87,12 @@ final class SplashTrace extends BufferingApplicationStartup {
     }
   }
 
-  /// Records [event], published now, as a step of no length.
-  void recordEvent(Object event) => record(
+  /// Records the event [name] (an event's `eventName`), published now, as
+  /// a step of no length.
+  void recordEvent(String name) => record(
     SplashTrace.event,
     startedAt: stages.now,
-    tags: [('type', '${event.runtimeType}')],
+    tags: [('type', name)],
   );
 
   /// Logs the stages and the slowest beans.

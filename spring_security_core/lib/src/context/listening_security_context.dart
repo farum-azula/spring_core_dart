@@ -23,6 +23,9 @@ class SecurityContextChangedEvent extends ApplicationEvent {
 
   /// Whether the context was cleared (`clearContext`, a logout).
   bool get isCleared => newContext == null;
+
+  @override
+  String get eventName => 'SecurityContextChangedEvent';
 }
 
 /// Called after each change of the current [SecurityContext] made through

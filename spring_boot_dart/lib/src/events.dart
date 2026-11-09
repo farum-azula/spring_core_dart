@@ -71,6 +71,9 @@ class ApplicationStartingEvent extends SpringApplicationEvent {
   /// The event for [application] run with [args]; published by
   /// `SpringApplication`.
   ApplicationStartingEvent(super.application, super.args);
+
+  @override
+  String get eventName => 'ApplicationStartingEvent';
 }
 
 /// Published once every property is known (command line, environment
@@ -103,6 +106,9 @@ class ApplicationEnvironmentPreparedEvent extends SpringApplicationEvent {
 
   /// The environment of the run; it can still be changed.
   final ConfigurableEnvironment environment;
+
+  @override
+  String get eventName => 'ApplicationEnvironmentPreparedEvent';
 }
 
 /// Published once the context is created and the
@@ -126,6 +132,9 @@ class ApplicationContextInitializedEvent extends SpringApplicationEvent {
   /// The new context. Its bean definitions can still be changed; no bean
   /// is created yet.
   final ConfigurableApplicationContext applicationContext;
+
+  @override
+  String get eventName => 'ApplicationContextInitializedEvent';
 }
 
 /// Published when the context is fully prepared, just before its beans are
@@ -149,6 +158,9 @@ class ApplicationPreparedEvent extends SpringApplicationEvent {
 
   /// The prepared context; no bean is created yet.
   final ConfigurableApplicationContext applicationContext;
+
+  @override
+  String get eventName => 'ApplicationPreparedEvent';
 }
 
 /// Published once every bean is created and the `Started ...` line is
@@ -174,6 +186,9 @@ class ApplicationStartedEvent extends SpringApplicationEvent {
 
   /// The time from the beginning of `run` until the beans were created.
   final Duration timeTaken;
+
+  @override
+  String get eventName => 'ApplicationStartedEvent';
 }
 
 /// Published when the start is complete: every bean is created and every
@@ -218,6 +233,9 @@ class ApplicationReadyEvent extends SpringApplicationEvent {
 
   /// The time from the beginning of `run` until the last runner finished.
   final Duration timeTaken;
+
+  @override
+  String get eventName => 'ApplicationReadyEvent';
 }
 
 /// Published when the start fails or a runner throws, before the failure
@@ -255,4 +273,7 @@ class ApplicationFailedEvent extends SpringApplicationEvent {
 
   /// The error that stopped the start, as it is rethrown afterwards.
   final Object exception;
+
+  @override
+  String get eventName => 'ApplicationFailedEvent';
 }

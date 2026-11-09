@@ -96,6 +96,9 @@ class AvailabilityChangeEvent<S extends AvailabilityState>
   ) => publisher.publishEvent(AvailabilityChangeEvent<S>(publisher, state));
 
   @override
+  String get eventName => 'AvailabilityChangeEvent $state';
+
+  @override
   String toString() => 'AvailabilityChangeEvent[state=$state]';
 }
 

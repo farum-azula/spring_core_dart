@@ -111,6 +111,9 @@ class ExitCodeEvent extends ApplicationEvent {
 
   /// The exit code the application ends with; never `0`.
   final int exitCode;
+
+  @override
+  String get eventName => 'ExitCodeEvent';
 }
 
 /// Combines several [ExitCodeGenerator]s into one exit code; used by

@@ -182,13 +182,9 @@ void main() {
     trace.start('spring.beans.instantiate').end();
     expect(trace.steps, isEmpty);
     now = const Duration(milliseconds: 7);
-    trace.recordEvent(const _Event());
+    trace.recordEvent('OrderShipped');
     expect(trace.steps.single.name, SplashTrace.event);
     expect(trace.steps.single.startedAt, const Duration(milliseconds: 7));
-    expect(trace.steps.single.tags, [('type', '_Event')]);
+    expect(trace.steps.single.tags, [('type', 'OrderShipped')]);
   });
-}
-
-final class _Event {
-  const _Event();
 }

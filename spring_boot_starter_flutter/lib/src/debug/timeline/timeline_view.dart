@@ -303,20 +303,25 @@ class _WaterfallState extends State<_Waterfall> {
     final style = DebugStyle.of(context);
     final steps = widget.trace.steps;
     final reached = widget.trace.stages.reached.entries.toList();
-    final events = [
-      for (final step in steps)
-        if (step.name == SplashTrace.event) step,
-    ];
     final rows = _rows(steps, style);
+    // The start: up to the last stage or step of it. The events after it
+    // (a tab hidden a minute later) are on the Events tab, not stretching
+    // the start into a sliver.
     final total = math.max(
       1.0,
       _ms(
         [
-          for (final step in steps) _end(step),
+          for (final step in steps)
+            if (step.name != SplashTrace.event) _end(step),
           for (final MapEntry(:value) in reached) value,
         ].fold(Duration.zero, _max),
       ),
     );
+    final events = [
+      for (final step in steps)
+        if (step.name == SplashTrace.event && _ms(step.startedAt) <= total)
+          step,
+    ];
     final small = style.code.copyWith(fontSize: 10);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -506,7 +511,10 @@ class _WaterfallState extends State<_Waterfall> {
 class _Ruler extends StatelessWidget {
   const _Ruler({required this.total, required this.scale, required this.style});
 
-  static const _steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
+  static const _steps = [
+    1, 2, 5, 10, 20, 50, 100, 200, 500, //
+    1000, 2000, 5000, 10000, 20000, 30000, 60000, 120000, 300000, 600000,
+  ];
 
   final double total;
   final double scale;
@@ -514,9 +522,10 @@ class _Ruler extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Labels at least 60 apart, so they never run into each other.
     final step = _steps.firstWhere(
       (ms) => ms * scale >= 60,
-      orElse: () => _steps.last,
+      orElse: () => (60 / scale).ceil(),
     );
     final muted = DebugStyle.of(context).muted;
     return SizedBox(
@@ -691,7 +700,9 @@ class _Events extends StatelessWidget {
         final event = events[i];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
+          // A long name wraps under itself, the time stays on top.
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
                 width: 64,
@@ -704,8 +715,6 @@ class _Events extends StatelessWidget {
                 child: Text(
                   _tag(event, 'type') ?? event.name,
                   style: style.code,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

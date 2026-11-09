@@ -10,4 +10,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 final class SearchIndexInvalidatedEvent extends ApplicationEvent {
   /// The event of [source].
   SearchIndexInvalidatedEvent(super.source);
+
+  @override
+  String get eventName => 'SearchIndexInvalidatedEvent';
 }

@@ -29,4 +29,7 @@ final class SplashStageEvent extends ApplicationEvent {
 
   @override
   String toString() => 'SplashStageEvent[${stage.name} at $at]';
+
+  @override
+  String get eventName => 'SplashStageEvent';
 }

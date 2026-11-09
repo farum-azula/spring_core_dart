@@ -652,4 +652,7 @@ class WebServerInitializedEvent extends ApplicationEvent {
 
   @override
   String toString() => 'WebServerInitializedEvent[port=$port]';
+
+  @override
+  String get eventName => 'WebServerInitializedEvent';
 }
