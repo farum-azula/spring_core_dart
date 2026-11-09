@@ -79,7 +79,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_search_dart/src/config/search_properties.dart",
-      "line": 83,
+      "line": 90,
       "class": "MarkdownSearchProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": "/{path}",
       "deprecated": null,
       "source": "package:spring_search_dart/src/config/search_properties.dart",
-      "line": 87,
+      "line": 94,
       "class": "MarkdownSearchProperties"
     },
     {
@@ -99,7 +99,7 @@
       "default": "",
       "deprecated": null,
       "source": "package:spring_search_dart/src/config/search_properties.dart",
-      "line": 79,
+      "line": 86,
       "class": "MarkdownSearchProperties"
     },
     {
@@ -120,6 +120,16 @@
       "deprecated": null,
       "source": "package:spring_search_dart/src/config/search_properties.dart",
       "line": 40,
+      "class": "SearchProperties"
+    },
+    {
+      "name": "spring.search.prebuilt",
+      "type": "bool",
+      "description": "The build writes the index of `spring.search.markdown`, a file per language below `lib/resources/spring_gen/search/`, and the search reads it instead of reading every page and building the index: a Flutter app lists the directory under `flutter: assets:` (the build never embeds it), so the web downloads one file.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_search_dart/src/config/search_properties.dart",
+      "line": 64,
       "class": "SearchProperties"
     }
   ],
@@ -172,7 +182,7 @@
         "@ConditionalOnProperty('indexing', prefix: 'spring.search')"
       ],
       "source": "package:spring_search_dart/src/search_auto_configuration.dart",
-      "line": 19,
+      "line": 20,
       "injects": [],
       "members": [
         {
@@ -259,6 +269,11 @@
           "name": "operator",
           "kind": "field",
           "type": "SearchOperator"
+        },
+        {
+          "name": "prebuilt",
+          "kind": "field",
+          "type": "bool"
         }
       ]
     },
@@ -277,7 +292,7 @@
         "@ConditionalOnProperty('enabled', prefix: 'spring.search', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_search_dart/src/search_auto_configuration.dart",
-      "line": 39,
+      "line": 40,
       "injects": [],
       "members": [
         {
@@ -294,6 +309,11 @@
           "name": "defaultLanguage",
           "kind": "field",
           "type": "String"
+        },
+        {
+          "name": "files",
+          "kind": "field",
+          "type": "SearchIndexFiles?"
         },
         {
           "name": "fuzzy",

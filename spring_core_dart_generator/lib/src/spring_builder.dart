@@ -632,6 +632,8 @@ class SpringBuilder implements Builder {
       final assets = await buildStep
           .findAssets(Glob('$directory**'))
           .where((asset) => !asset.path.endsWith('.dart'))
+          // The search index the build writes: a Flutter asset only.
+          .where((asset) => !asset.path.startsWith('${directory}spring_gen/'))
           .toList();
       assets.sort((a, b) => a.path.compareTo(b.path));
       await _embed(buildStep, assets, directory, result, warn: warn);

@@ -1,6 +1,8 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_search_dart/src/analysis/search_analyzer.dart';
 import 'package:spring_search_dart/src/index/search_index.dart';
+import 'package:spring_search_dart/src/index/search_index_files.dart';
+import 'package:spring_search_dart/src/markdown/markdown_search_source.dart';
 import 'package:spring_search_dart/src/search_document.dart';
 import 'package:spring_search_dart/src/search_document_source.dart';
 import 'package:spring_search_dart/src/search_hit.dart';
@@ -19,7 +21,9 @@ import 'package:spring_search_dart/src/search_ranker.dart';
 /// ```
 ///
 /// The index is built at the first search, one per language, and again
-/// after a `SearchIndexInvalidatedEvent`. A search in a language without
+/// after a `SearchIndexInvalidatedEvent`; the index the build wrote for a
+/// language ([files]) is read instead when the documents are those of
+/// `spring.search.markdown` only. A search in a language without
 /// documents searches the default language's.
 final class SearchService implements GenericApplicationListener {
   /// Searches the documents of [sources], analyzed by [analyzers], ranked
@@ -34,6 +38,7 @@ final class SearchService implements GenericApplicationListener {
     this.maxHits = 20,
     this.operator = SearchOperator.and,
     this.collapseBy,
+    this.files,
   }) : analyzers = analyzers ?? SearchAnalyzers();
 
   /// The weights when `spring.search.fields` names none.
@@ -69,6 +74,9 @@ final class SearchService implements GenericApplicationListener {
 
   /// The attribute whose value only its best hit keeps.
   final String? collapseBy;
+
+  /// The indexes the build wrote; `null`: none is read.
+  final SearchIndexFiles? files;
 
   // The documents of the sources that do not know their languages, read
   // once, by language; those of each language of the other sources, read
@@ -137,7 +145,8 @@ final class SearchService implements GenericApplicationListener {
     }
     return await _indexes.putIfAbsent(
       key,
-      () async => await _build(key, await _documentsOf(key)),
+      () async =>
+          await _prebuilt(key) ?? await _build(key, await _documentsOf(key)),
     );
   }
 
@@ -211,6 +220,41 @@ final class SearchService implements GenericApplicationListener {
         );
         return documents;
       });
+
+  // The index of [language] the build wrote, when its documents all come
+  // from the Markdown sources.
+  Future<SearchIndex?> _prebuilt(String language) async {
+    final files = this.files;
+    if (files == null || ((await _others)?[language]?.isNotEmpty ?? false)) {
+      return null;
+    }
+    final markdown = <MarkdownSearchSource>[];
+    for (final source in sources) {
+      if (source is MarkdownSearchSource) {
+        markdown.add(source);
+      } else if (source is LanguageSearchDocumentSource &&
+          source.languages.contains(language)) {
+        return null;
+      }
+    }
+    if (markdown.isEmpty) {
+      return null;
+    }
+    final watch = Stopwatch()..start();
+    final index = await files.read(
+      language,
+      analyzer: analyzers.of(language),
+      sources: markdown,
+    );
+    if (index != null) {
+      _log.debug(
+        () =>
+            'Search index read in ${watch.elapsedMilliseconds} ms '
+            '(${_size(language, index)})',
+      );
+    }
+    return index;
+  }
 
   Future<Map<String, List<SearchDocument>>> _readOthers() async {
     final byLanguage = <String, List<SearchDocument>>{};

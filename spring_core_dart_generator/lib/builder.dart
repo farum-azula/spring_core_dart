@@ -69,6 +69,7 @@ import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/deep_links_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
 import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
+import 'package:spring_core_dart_generator/src/search_index_builder.dart';
 import 'package:spring_core_dart_generator/src/seo_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_metadata_builder.dart';
@@ -355,3 +356,10 @@ Builder springJsonSchemasBuilder(BuilderOptions options) =>
 /// ```
 Builder springMetadataBuilder(BuilderOptions options) =>
     SpringMetadataBuilder();
+
+/// Creates the builder of the search index ([SearchIndexBuilder]),
+/// registered in `build.yaml` as `spring_search_index`: a file per language
+/// of `spring.search.markdown` in `lib/resources/spring_gen/search/`. It
+/// takes no options.
+Builder springSearchIndexBuilder(BuilderOptions options) =>
+    SearchIndexBuilder();

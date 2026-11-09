@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_search_dart/src/analysis/search_analyzer.dart';
 import 'package:spring_search_dart/src/config/search_properties.dart';
+import 'package:spring_search_dart/src/index/search_index_files.dart';
 import 'package:spring_search_dart/src/markdown/markdown_search_source.dart';
 import 'package:spring_search_dart/src/search_document_source.dart';
 import 'package:spring_search_dart/src/search_index_runner.dart';
@@ -82,6 +83,7 @@ final searchAutoConfiguration = <BeanDefinition<Object>>[
         maxHits: properties.maxHits,
         operator: properties.operator,
         collapseBy: properties.collapseBy,
+        files: properties.prebuilt ? SearchIndexFiles(loader) : null,
       );
     },
   ),

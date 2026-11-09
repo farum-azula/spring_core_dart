@@ -55,6 +55,13 @@ class SearchProperties {
   /// `ApplicationRunner`, so a Flutter app builds them behind its splash),
   /// or right after it, behind the running app (`background`).
   SearchIndexing indexing = SearchIndexing.firstSearch;
+
+  /// The build writes the index of `spring.search.markdown`, a file per
+  /// language below `lib/resources/spring_gen/search/`, and the search
+  /// reads it instead of reading every page and building the index: a
+  /// Flutter app lists the directory under `flutter: assets:` (the build
+  /// never embeds it), so the web downloads one file.
+  bool prebuilt = true;
 }
 
 /// When `spring.search.indexing` builds the indexes.
