@@ -1,3 +1,7 @@
+## Unreleased
+
+- `LanguageChangedEvent` names itself (`eventName`), readable in a release build's debug timeline.
+
 ## 0.7.3
 
 - A relative link between Markdown pages (`../beans.md`) resolves for a content folder of any root (`asset:docs/`), not only of `resources:`.

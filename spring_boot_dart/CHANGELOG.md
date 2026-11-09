@@ -1,8 +1,11 @@
-## 0.7.3
+## Unreleased
 
 - The events of `SpringApplication`, `ExitCodeEvent` and `AvailabilityChangeEvent` (with its state) name themselves (`eventName`), readable in a release build.
 - Observations: the `observationRegistry` bean with every `ObservationHandler` bean (`ObservationAutoConfiguration`), and `@Observed` put into effect by the `observedAdvisor` of `springBootObservedAnnotationsAutoConfiguration`, a module in the build only with `spring.observations.annotations.enabled: true`: without it the beans marked `@Observed` get no proxy at all.
 - `spring.resources.prefetch` (`locations`, `stage`, `delay`): the files a Flutter web app downloads together, after it is shown or behind its splash (`ResourcesPrefetchProperties`).
+
+## 0.7.3
+
 - `spring.resources.embed.exclude` in the metadata (`ResourcesProperties`), the files the build leaves out of the binary.
 - `JsonSchemaAutoConfiguration`: the `jsonSchemaRegistry` bean (left out when the app declares its own `JsonSchemaRegistry`), filled by every `JsonSchemaRegistryCustomizer` bean whoever declares the registry; `propertiesJsonSchemas` adds the schemas of `spring.json.schemas`, of every `@JsonSchemaSource` and of every `JsonSchema` bean (`spring.json.schemas-registry.properties=false`: none), and the `ObjectMapper` gets the registry as its `schemaResolver`, so reading a class with `@JsonSchemaSource` checks the JSON first. The keys of a list under `spring.json.*` (`spring.json.schemas[0].location`) are no unknown keys any more.
 

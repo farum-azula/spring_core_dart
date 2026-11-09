@@ -1,3 +1,7 @@
+## Unreleased
+
+- `SearchIndexInvalidatedEvent` names itself (`eventName`), readable in a release build.
+
 ## 0.7.3
 
 - A hit's highlights are found when first asked for (`SearchHit.lazy`): a search finds them for the hits shown, not for every document that matched, which with an index read from its file analyzed every one of them again (800 ms on a slow laptop for a common word). The index file is a line per piece (format 2), read with a pause every few milliseconds (`SearchIndex.fromJsonParts`), so reading it does not hold the thread that draws.

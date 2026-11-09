@@ -1,4 +1,4 @@
-## 0.7.3
+## Unreleased
 
 - Fixed: the timeline's Start tab stretched to the last event (a tab hidden a minute later), squeezing the start and its labels; it ends with the start now, the labels at least 60 apart. Long event names wrap in the Events tab, and events show by their `eventName`.
 - Debug overlays: the frame meter and the timeline are `DebugOverlay` beans that the `debugDock` puts on screen: those of one corner one under the other when they fit (`spring.flutter.debug.overlays.layout: auto`, `max-height`), one at a time with dots to swipe, tap or turn a wheel otherwise (a stack on a laptop, pages on a phone), past the safe area and `margin`; hidden while the debug panel is open. The debug panel's Overlays tab shows or hides each, and the Frames tab shows the live meter. `FrameMeterGauge` is the meter's panel alone.
@@ -6,6 +6,9 @@
 - The timeline (`spring.flutter.debug.timeline.enabled`, `debug.timeline`: ⌘⇧L or six taps and a hold): a pill with the start (context ready, app shown) and the last observation, and a full view (a side panel, the whole screen on a phone) with the splash stages, each bean (grouped, the slowest first), the events, the observations' statistics and Copy JSON; also a tab of the debug panel. `TimelineObservations` is an `ObservationHandler` bean collecting every observation.
 - The start is measured always: the `SplashTrace` is the app's `ApplicationStartup` and the `splashTrace` bean, with a step per splash stage (`spring.flutter.splash.<stage>`), the steps of the start and every application event the context publishes (`spring.event`, by the `startupEvents` bean); each bean's creation only with `spring.flutter.splash.trace` or the debug timeline in the build, and the log only with the trace.
 - `ResourcePrefetch` (`resourcePrefetch`): on the web, the file of `spring.resources.prefetch` is downloaded once, `delay` after the app is shown (`stage: app`, the default) or behind the splash (`stage: tasks`), and its files kept in memory as resources, read a piece at a time: a site's pages then open without a download each.
+
+## 0.7.3
+
 - `spring.flutter.web.seo.lastmod` is in the metadata (`FlutterWebSeoProperties.lastmod`): the build read it, editors called it unknown.
 - The Flutter assets are resource roots (`AssetResourceRoot`): `resources:` finds the assets below `lib/resources/` the build did not embed (`spring.resources.embed.exclude`), and `asset:` patterns list the assets (`asset:docs/**/*.md`), so both read, check and search alike. `AssetResource` is a `ContextResource`: its path within the root it was found in.
 - `spring.flutter.markdown.placeholders` (`false` by default): `MarkdownView` replaces each `{{key}}` of a page by the configuration's value of the key (`^{{site.package-version}}` in a dependency example), leaving one without a value as it is (`FlutterMarkdownProperties`).

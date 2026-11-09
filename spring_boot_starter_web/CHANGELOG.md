@@ -1,3 +1,7 @@
+## Unreleased
+
+- `WebServerInitializedEvent` names itself (`eventName`), readable in a release build.
+
 ## 0.7.3
 
 - No changes of its own; released with the family version 0.7.3.
