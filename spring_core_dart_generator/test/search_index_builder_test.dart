@@ -1,17 +1,13 @@
-// The search index of spring.search.markdown in a build: a file per
-// language that the SearchService reads as it would have built it; none
-// with spring.search.prebuilt=false, for a location outside resources: or
-// a language whose analyzer is the app's own; the files of a language gone
-// are deleted; a missing Flutter asset directory is warned about; the main
-// builder never embeds them.
-import 'dart:convert';
-import 'dart:typed_data';
-
+// The search index of spring.search.markdown in a build: the builder hands
+// the pages and the settings to the app's spring_search_dart and writes the
+// file of each language it gets; nothing with spring.search.prebuilt=false;
+// the files of a language gone are deleted, and kept when making them
+// failed; a missing Flutter asset directory is warned about; the main
+// builder never embeds them. (What the files hold, and that the search reads
+// them: spring_search_dart's tests.)
 import 'package:build_test/build_test.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_core_dart_generator/src/search_index_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_search_dart/spring_search_dart.dart';
 import 'package:test/test.dart';
 
 const _main = '''
@@ -64,15 +60,26 @@ final class _Memory implements SearchIndexOutput {
   );
 }
 
+final _requests = <Map<String, Object?>>[];
+
+Future<Map<String, String>?> _runner(
+  String package,
+  Map<String, Object?> request,
+) async {
+  _requests.add(request);
+  return {'en': '{"en": 1}', 'ja': '{"ja": 1}'};
+}
+
 Future<List<String>> _build(
   _Memory output,
-  Map<String, Object> sources,
-) async {
+  Map<String, Object> sources, {
+  SearchIndexRunner runner = _runner,
+}) async {
   final logs = <String>[];
   final readerWriter = TestReaderWriter(rootPackage: 'pkg');
   await readerWriter.testing.loadIsolateSources();
   await testBuilder(
-    SearchIndexBuilder(output: output),
+    SearchIndexBuilder(output: output, runner: runner),
     sources,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -84,70 +91,38 @@ Future<List<String>> _build(
 const _en = 'lib/resources/spring_gen/search/en.json';
 const _ja = 'lib/resources/spring_gen/search/ja.json';
 
-final class _Files implements ResourceLoader {
-  _Files(this.files);
-
-  final Map<String, String> files;
-
-  @override
-  Resource getResource(String location) {
-    final path = 'lib/resources/${location.replaceFirst('resources:', '')}';
-    final text = files[path];
-    return text == null
-        ? DescriptiveResource(location)
-        : ByteArrayResource(utf8.encode(text));
-  }
-}
-
-final class _NoPages implements ResourcePatternResolver {
-  @override
-  List<Resource> getResources(String locationPattern) => [
-    // The service lists the pages' languages; it does not read them.
-    for (final path in ['docs/beans.md', 'docs/beans.ja.md']) _Listed(path),
-  ];
-
-  @override
-  Resource getResource(String location) => DescriptiveResource(location);
-}
-
-final class _Listed extends AbstractResource implements ContextResource {
-  _Listed(this.pathWithinContext);
-
-  @override
-  final String pathWithinContext;
-
-  @override
-  String get description => pathWithinContext;
-
-  @override
-  bool exists() => true;
-
-  @override
-  Future<Uint8List> readAsBytes() =>
-      throw StateError('$pathWithinContext was read');
-}
-
 void main() {
-  test('a file per language, which the service reads', () async {
-    final output = _Memory();
-    await _build(output, _sources());
-    expect(output.files.keys, unorderedEquals([_en, _ja]));
-    final service = SearchService(
-      [
-        MarkdownSearchSource(
-          _NoPages(),
-          location: 'resources:docs/**/*.md',
-          exclude: const ['**/contents*.md'],
-          link: '/docs/{path}',
-        ),
-      ],
-      files: SearchIndexFiles(_Files(output.files)),
-    );
-    final hits = await service.search('scopes');
-    expect(hits.single.document.link, '/docs/beans#scopes');
-    expect(hits.single.snippet('body').text, 'Singleton scopes.');
-    expect(await service.search('ビーン', language: 'ja'), isNotEmpty);
-  });
+  setUp(_requests.clear);
+
+  test(
+    'the pages and the settings go to the runner; its files are written',
+    () async {
+      final output = _Memory({'lib/resources/spring_gen/search/de.json': '{}'});
+      await _build(
+        output,
+        _sources(config: _config(extra: '    analyzers: { ja: standard }\n')),
+      );
+      expect(output.files, {_en: '{"en": 1}', _ja: '{"ja": 1}'});
+      final request = _requests.single;
+      expect(
+        (request['texts']! as Map).keys,
+        unorderedEquals([
+          'docs/beans.md',
+          'docs/beans.ja.md',
+          'docs/contents.md',
+        ]),
+      );
+      expect(request['markdown'], [
+        {
+          'location': 'resources:docs/**/*.md',
+          'exclude': ['**/contents*.md'],
+          'link': '/docs/{path}',
+        },
+      ]);
+      expect(request['analyzers'], {'ja': 'standard'});
+      expect(request['defaultLanguage'], 'en');
+    },
+  );
 
   test('none with prebuilt=false; the files before are deleted', () async {
     final output = _Memory({_en: '{}', _ja: '{}'});
@@ -156,24 +131,13 @@ void main() {
       _sources(config: _config(extra: '    prebuilt: false\n')),
     );
     expect(output.files, isEmpty);
+    expect(_requests, isEmpty);
   });
 
-  test('none for a location outside resources:', () async {
-    final output = _Memory();
-    await _build(
-      output,
-      _sources(config: _config(location: 'asset:docs/**/*.md')),
-    );
-    expect(output.files, isEmpty);
-  });
-
-  test("none for a language whose analyzer is the app's own", () async {
-    final output = _Memory();
-    await _build(
-      output,
-      _sources(config: _config(extra: '    analyzers: { ja: kuromoji }\n')),
-    );
-    expect(output.files.keys, [_en]);
+  test('when the runner fails, the files before stay', () async {
+    final output = _Memory({_en: 'before'});
+    await _build(output, _sources(), runner: (_, _) async => null);
+    expect(output.files, {_en: 'before'});
   });
 
   test('a missing Flutter asset directory is warned about', () async {
@@ -181,10 +145,7 @@ void main() {
       _Memory(),
       _sources(pubspec: 'name: pkg\nflutter:\n  assets:\n    - lib/x/\n'),
     );
-    expect(
-      logs,
-      contains(contains('    - lib/resources/spring_gen/search/')),
-    );
+    expect(logs, contains(contains('    - lib/resources/spring_gen/search/')));
     final quiet = await _build(
       _Memory(),
       _sources(

@@ -15,6 +15,7 @@ export 'src/analysis/search_tokenizer.dart';
 export 'src/config/search_properties.dart';
 export 'src/index/search_index.dart';
 export 'src/index/search_index_files.dart';
+export 'src/index/search_index_writer.dart';
 export 'src/markdown/markdown_search_source.dart';
 export 'src/markdown/markdown_sections.dart';
 export 'src/search_document.dart';

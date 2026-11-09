@@ -30,8 +30,6 @@ dependencies:
   pub_semver: ^2.1.0
   source_gen: ^4.3.0
   spring_core_dart: ^0.7.2
-  # The search index of spring.search.markdown, built as the app builds it.
-  spring_search_dart: ^0.7.2
   yaml: ^3.1.0
 
 dev_dependencies:

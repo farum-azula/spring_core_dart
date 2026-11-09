@@ -1,40 +1,50 @@
 import 'dart:convert';
 import 'dart:io' as io;
-import 'dart:typed_data';
 
-import 'package:build/build.dart' hide Resource;
+import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
-import 'package:spring_search_dart/spring_search_dart.dart';
+
+/// Makes the index files from a request (the pages and the
+/// `spring.search.*` settings); by language, `null` when it failed.
+typedef SearchIndexRunner = Future<Map<String, String>?> Function(
+  String package,
+  Map<String, Object?> request,
+);
 
 /// Writes the search index of `spring.search.markdown`, a file per
-/// language in `lib/resources/spring_gen/search/` ([SearchIndexFiles]),
-/// which the `SearchService` reads instead of reading every page and
-/// building the index while the app runs: on the web, one download and no
-/// work on the thread that draws.
+/// language in `lib/resources/spring_gen/search/` (`SearchIndexFiles` of
+/// `spring_search_dart`), which the `SearchService` reads instead of
+/// reading every page and building the index while the app runs: on the
+/// web, one download and no work on the thread that draws.
 ///
-/// The documents are those the app's `MarkdownSearchSource`s would read,
-/// cut and analyzed by the same code (the app's `spring_search_dart`),
-/// with the analyzers of `spring.search.analyzers`; a language whose
-/// analyzer is an app's own bean gets no file. A location other than
-/// `resources:` writes none. The build never embeds the files: a Flutter
-/// app lists the directory under `flutter: assets:`, which is warned about
-/// when missing.
+/// The index is made by the app's own `spring_search_dart` (`dart run
+/// spring_search_dart:search_index` in the app's package), so it is cut and
+/// analyzed by the code that searches it, and the generator does not depend
+/// on the search. A package without `spring_search_dart` gets nothing. A
+/// language whose analyzer is an app's own bean gets no file, nor does any
+/// when a location is not `resources:`. The build never embeds the files:
+/// a Flutter app lists the directory under `flutter: assets:`, which is
+/// warned about when missing.
 ///
 /// `spring.search.prebuilt=false` (or `spring.search.enabled=false`)
 /// writes none and deletes those written before.
 final class SearchIndexBuilder implements Builder {
   /// The builder; [output] writes and deletes the files (on disk unless
-  /// given; tests pass their own).
-  SearchIndexBuilder({SearchIndexOutput? output})
-    : _output = output ?? const _DiskOutput();
+  /// given), [runner] makes them (`dart run spring_search_dart:search_index`
+  /// unless given; tests pass their own).
+  SearchIndexBuilder({SearchIndexOutput? output, SearchIndexRunner? runner})
+    : _output = output ?? const _DiskOutput(),
+      _runner = runner ?? _run;
 
   final SearchIndexOutput _output;
+  final SearchIndexRunner _runner;
 
   /// The directory of the files below the package.
-  static const directory = 'lib/resources/${SearchIndexFiles.directory}';
+  static const directory = 'lib/resources/spring_gen/search/';
 
   @override
   Map<String, List<String>> get buildExtensions => const {r'$package$': []};
@@ -43,10 +53,14 @@ final class SearchIndexBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
     final written = await _write(buildStep, package);
-    await _output.deleteOthers(package, directory, written);
+    if (written != null) {
+      await _output.deleteOthers(package, directory, written);
+    }
   }
 
-  Future<Set<String>> _write(BuildStep buildStep, String package) async {
+  // The files written; `null` when making them failed (those of a build
+  // before stay).
+  Future<Set<String>?> _write(BuildStep buildStep, String package) async {
     final resources = await SpringBuilder.resources(buildStep, warn: false);
     final texts = {
       for (final MapEntry(:key, value: (:text, base64: _)) in resources.entries)
@@ -55,81 +69,60 @@ final class SearchIndexBuilder implements Builder {
     if (!texts.values.any((t) => t.contains('search'))) {
       return const {};
     }
-    final String? Function(String key) property;
+    final StandardEnvironment environment;
     try {
-      property = readPlatformEnvironment(texts, profiles: const []).getProperty;
+      environment = readPlatformEnvironment(texts, profiles: const []);
     } on Object {
       return const {};
     }
+    final property = environment.getProperty;
     bool off(String key) =>
         property('spring.search.$key')?.trim().toLowerCase() == 'false';
     if (off('enabled') || off('prebuilt')) {
       return const {};
     }
-    final defaultLanguage =
-        property('spring.search.default-language')?.trim() ?? 'en';
-    final resolver = _Texts(texts);
-    final sources = <MarkdownSearchSource>[];
+    final markdown = <Map<String, Object?>>[];
     for (var i = 0; ; i++) {
       final prefix = 'spring.search.markdown[$i]';
       final location = property('$prefix.location')?.trim();
       if (location == null) {
         break;
       }
-      if (!location.startsWith(RegExp(r'resources\*?:'))) {
-        log.info(
-          'No search index is written: $prefix.location is not in '
-          'resources: ($location).',
-        );
-        return const {};
-      }
-      sources.add(
-        MarkdownSearchSource(
-          resolver,
-          location: location,
-          exclude: _list(property, '$prefix.exclude'),
-          link: property('$prefix.link')?.trim() ?? '/{path}',
-          defaultLanguage: defaultLanguage,
-        ),
-      );
+      markdown.add({
+        'location': location,
+        'exclude': _list(property, '$prefix.exclude'),
+        'link': property('$prefix.link')?.trim() ?? '/{path}',
+      });
     }
-    if (sources.isEmpty) {
+    if (markdown.isEmpty) {
       return const {};
     }
-    final languages = {for (final source in sources) ...source.languages};
+    // spring.search.analyzers.<language>, in any of the files.
+    const analyzer = 'spring.search.analyzers.';
+    final analyzers = <String, String>{
+      for (final source in environment.propertySources)
+        if (source is EnumerablePropertySource<Object>)
+          for (final name in source.propertyNames)
+            if (name.startsWith(analyzer))
+              name.substring(analyzer.length): ?property(name)?.trim(),
+    };
+    final files = await _runner(package, {
+      'texts': {
+        for (final MapEntry(:key, :value) in texts.entries)
+          if (key.endsWith('.md')) key: value,
+      },
+      'markdown': markdown,
+      'analyzers': analyzers,
+      'defaultLanguage':
+          property('spring.search.default-language')?.trim() ?? 'en',
+    });
+    if (files == null) {
+      return null;
+    }
     final written = <String>{};
-    for (final language in languages.toList()..sort()) {
-      final name =
-          property('spring.search.analyzers.$language')?.trim() ??
-          property(
-            'spring.search.analyzers.${language.split(RegExp('[-_]')).first}',
-          )?.trim();
-      final SearchAnalyzer analyzer;
-      try {
-        analyzer = SearchAnalyzers(
-          languages: {language: ?name},
-        ).of(language);
-      } on ArgumentError {
-        // An app's own analyzer, which only the running app has.
-        continue;
-      }
-      final documents = [
-        for (final source in sources)
-          if (source.languages.contains(language))
-            ...await source.documentsIn(language).toList(),
-      ];
-      final index = SearchIndex.build(documents, analyzer);
+    for (final MapEntry(key: language, value: content) in files.entries) {
       final path = '$directory$language.json';
-      await _output.write(
-        package,
-        path,
-        SearchIndexFiles.encode(
-          language: language,
-          analyzer: analyzer,
-          sources: sources,
-          index: index,
-        ),
-      );
+      await _output.write(package, path, content);
       written.add(path);
     }
     final assets = await SpringBuilder.flutterAssets(buildStep);
@@ -150,6 +143,49 @@ final class SearchIndexBuilder implements Builder {
     for (var i = 0; property('$key[$i]') != null; i++)
       property('$key[$i]')!.trim(),
   ];
+
+  // Runs the index writer of the app's spring_search_dart in the app's
+  // package; nothing for a package without it.
+  static Future<Map<String, String>?> _run(
+    String package,
+    Map<String, Object?> request,
+  ) async {
+    final directories = PackageDirectories.current;
+    final root = directories.directoryOf(package);
+    if (root == null || directories.directoryOf('spring_search_dart') == null) {
+      return const {};
+    }
+    final work = io.Directory.fromUri(
+      root.resolve('.dart_tool/spring/search_index/'),
+    )..createSync(recursive: true);
+    final requestFile = io.File(p.join(work.path, 'request.json'))
+      ..writeAsStringSync(jsonEncode(request));
+    final responseFile = io.File(p.join(work.path, 'response.json'));
+    if (responseFile.existsSync()) {
+      responseFile.deleteSync();
+    }
+    // The dart of the SDK running the build (next to dartaotruntime when
+    // the build script is compiled ahead of time).
+    final dart = p.join(
+      p.dirname(io.Platform.resolvedExecutable),
+      io.Platform.isWindows ? 'dart.exe' : 'dart',
+    );
+    final result = await io.Process.run(dart, [
+      'run',
+      'spring_search_dart:search_index',
+      requestFile.path,
+      responseFile.path,
+    ], workingDirectory: io.Directory.fromUri(root).path);
+    if (result.exitCode != 0 || !responseFile.existsSync()) {
+      log.warning(
+        'The search index is not written (exit code ${result.exitCode}): '
+        '${result.stderr}${result.stdout}',
+      );
+      return null;
+    }
+    return (jsonDecode(responseFile.readAsStringSync()) as Map)
+        .cast<String, String>();
+  }
 }
 
 /// Where [SearchIndexBuilder] writes.
@@ -203,64 +239,4 @@ final class _DiskOutput implements SearchIndexOutput {
       }
     }
   }
-}
-
-// The text files of lib/resources/ as resources: locations, for the
-// Markdown sources.
-final class _Texts implements ResourcePatternResolver {
-  _Texts(this._texts);
-
-  final Map<String, String> _texts;
-  final _matcher = AntPathMatcher();
-
-  static String _path(String location) =>
-      location.replaceFirst(RegExp(r'^resources\*?:/?'), '');
-
-  @override
-  Resource getResource(String location) {
-    final path = _path(location);
-    final text = _texts[path];
-    return text == null
-        ? DescriptiveResource('resources:$path')
-        : _Text(path, text);
-  }
-
-  @override
-  List<Resource> getResources(String locationPattern) {
-    final pattern = _path(locationPattern);
-    return [
-      for (final MapEntry(:key, :value) in _texts.entries)
-        if (_matcher.match(pattern, key)) _Text(key, value),
-    ];
-  }
-}
-
-final class _Text extends AbstractResource implements ContextResource {
-  _Text(this.pathWithinContext, this._text);
-
-  @override
-  final String pathWithinContext;
-
-  final String _text;
-
-  @override
-  bool exists() => true;
-
-  @override
-  String get description => 'resources:$pathWithinContext';
-
-  @override
-  String? get filename => pathWithinContext.split('/').last;
-
-  @override
-  bool get supportsSyncRead => true;
-
-  @override
-  Future<Uint8List> readAsBytes() async => readAsBytesSync();
-
-  @override
-  Uint8List readAsBytesSync() => utf8.encode(_text);
-
-  @override
-  Future<String> readAsString({Encoding encoding = utf8}) async => _text;
 }
